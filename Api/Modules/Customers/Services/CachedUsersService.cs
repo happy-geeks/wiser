@@ -102,7 +102,7 @@ namespace Api.Modules.Customers.Services
                 EncryptedId = IdentityHelpers.GetWiserUserId(identity).ToString().EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true),
                 EncryptedCustomerId = customer.ModelObject.CustomerId.ToString().EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true),
                 ZeroEncrypted = "0".EncryptWithAesWithSalt(encryptionKey, true),
-                Wiser2Id = userId,
+                Id = userId,
                 EmailAddress = await GetUserEmailAddressAsync(userId)
             };
             
