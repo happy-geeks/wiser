@@ -97,7 +97,7 @@ const moduleSettings = {
             this.settings.userId = userData.encrypted_id;
             this.settings.customerId = userData.encrypted_customer_id;
             this.settings.zeroEncrypted = userData.zero_encrypted;
-            this.settings.wiser2UserId = userData.wiser2_id;
+            this.settings.wiser2UserId = userData.id;
             
             this.settings.serviceRoot = `${this.settings.wiserApiV21Root}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiV21Root}data-selectors`;
