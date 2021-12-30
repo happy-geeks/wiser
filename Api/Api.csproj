@@ -1,0 +1,153 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <PackageId>HappyGeeks.Wiser.Api</PackageId>
+    <Version>3.0.0</Version>
+    <Authors>Happy Geeks B.V.</Authors>
+    <Company>Happy Geeks B.V.</Company>
+    <Product>Wiser API</Product>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath></OutputPath>
+    <DocumentationFile>bin\Debug\net5.0\Api.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\Release\net5.0\Api.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Core\Queries\WiserInstallation\CreateTables.sql" />
+    <None Remove="Core\Queries\WiserInstallation\CreateTriggers.sql" />
+    <None Remove="Core\Queries\WiserInstallation\InsertInitialData.sql" />
+    <None Remove="Core\Queries\WiserInstallation\InsertInitialDataConfigurator.sql" />
+    <None Remove="Core\Queries\WiserInstallation\InsertInitialDataEcommerce.sql" />
+    <None Remove="Modules\Items\FieldTemplates\action-button.html" />
+    <None Remove="Modules\Items\FieldTemplates\action-button.js" />
+    <None Remove="Modules\Items\FieldTemplates\auto-increment.html" />
+    <None Remove="Modules\Items\FieldTemplates\auto-increment.js" />
+    <None Remove="Modules\Items\FieldTemplates\chart.html" />
+    <None Remove="Modules\Items\FieldTemplates\chart.js" />
+    <None Remove="Modules\Items\FieldTemplates\checkbox.html" />
+    <None Remove="Modules\Items\FieldTemplates\checkbox.js" />
+    <None Remove="Modules\Items\FieldTemplates\color-picker.html" />
+    <None Remove="Modules\Items\FieldTemplates\color-picker.js" />
+    <None Remove="Modules\Items\FieldTemplates\combobox.html" />
+    <None Remove="Modules\Items\FieldTemplates\combobox.js" />
+    <None Remove="Modules\Items\FieldTemplates\data-selector.html" />
+    <None Remove="Modules\Items\FieldTemplates\data-selector.js" />
+    <None Remove="Modules\Items\FieldTemplates\date-time picker.html" />
+    <None Remove="Modules\Items\FieldTemplates\date-time picker.js" />
+    <None Remove="Modules\Items\FieldTemplates\empty.html" />
+    <None Remove="Modules\Items\FieldTemplates\empty.js" />
+    <None Remove="Modules\Items\FieldTemplates\file-upload.html" />
+    <None Remove="Modules\Items\FieldTemplates\file-upload.js" />
+    <None Remove="Modules\Items\FieldTemplates\gpslocation.html" />
+    <None Remove="Modules\Items\FieldTemplates\gpslocation.js" />
+    <None Remove="Modules\Items\FieldTemplates\grid.html" />
+    <None Remove="Modules\Items\FieldTemplates\grid.js" />
+    <None Remove="Modules\Items\FieldTemplates\HTMLeditor.html" />
+    <None Remove="Modules\Items\FieldTemplates\HTMLeditor.js" />
+    <None Remove="Modules\Items\FieldTemplates\image-upload.html" />
+    <None Remove="Modules\Items\FieldTemplates\image-upload.js" />
+    <None Remove="Modules\Items\FieldTemplates\input.html" />
+    <None Remove="Modules\Items\FieldTemplates\input.js" />
+    <None Remove="Modules\Items\FieldTemplates\item-linker.html" />
+    <None Remove="Modules\Items\FieldTemplates\item-linker.js" />
+    <None Remove="Modules\Items\FieldTemplates\linked-item.html" />
+    <None Remove="Modules\Items\FieldTemplates\linked-item.js" />
+    <None Remove="Modules\Items\FieldTemplates\multiselect.html" />
+    <None Remove="Modules\Items\FieldTemplates\multiselect.js" />
+    <None Remove="Modules\Items\FieldTemplates\numeric-input.html" />
+    <None Remove="Modules\Items\FieldTemplates\numeric-input.js" />
+    <None Remove="Modules\Items\FieldTemplates\qr.html" />
+    <None Remove="Modules\Items\FieldTemplates\qr.js" />
+    <None Remove="Modules\Items\FieldTemplates\radiobutton.html" />
+    <None Remove="Modules\Items\FieldTemplates\radiobutton.js" />
+    <None Remove="Modules\Items\FieldTemplates\scheduler.html" />
+    <None Remove="Modules\Items\FieldTemplates\scheduler.js" />
+    <None Remove="Modules\Items\FieldTemplates\secure-input.html" />
+    <None Remove="Modules\Items\FieldTemplates\secure-input.js" />
+    <None Remove="Modules\Items\FieldTemplates\sub-entities-grid.html" />
+    <None Remove="Modules\Items\FieldTemplates\sub-entities-grid.js" />
+    <None Remove="Modules\Items\FieldTemplates\textbox.html" />
+    <None Remove="Modules\Items\FieldTemplates\textbox.js" />
+    <None Remove="Modules\Items\FieldTemplates\timeline.html" />
+    <None Remove="Modules\Items\FieldTemplates\timeline.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateTables.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateTriggers.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialData.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataConfigurator.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataEcommerce.sql" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\action-button.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\action-button.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\auto-increment.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\auto-increment.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\chart.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\chart.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\checkbox.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\checkbox.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\color-picker.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\color-picker.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\combobox.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\combobox.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\data-selector.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\data-selector.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\date-time picker.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\date-time picker.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\empty.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\empty.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\file-upload.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\file-upload.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\gpslocation.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\gpslocation.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\grid.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\grid.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\HTMLeditor.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\HTMLeditor.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\image-upload.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\image-upload.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\input.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\input.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\item-linker.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\item-linker.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\linked-item.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\linked-item.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\multiselect.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\multiselect.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\numeric-input.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\numeric-input.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\qr.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\qr.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\radiobutton.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\radiobutton.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\scheduler.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\scheduler.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\secure-input.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\secure-input.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\sub-entities-grid.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\sub-entities-grid.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\textbox.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\textbox.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\timeline.html" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\timeline.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GeeksCoreLibrary" Version="0.2.0" />
+    <PackageReference Include="IdentityServer4" Version="4.1.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.12" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.10" />
+    <PackageReference Include="PusherServer" Version="4.6.1" />
+    <PackageReference Include="QRCoder" Version="1.4.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.2.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.2.3" />
+  </ItemGroup>
+
+</Project>

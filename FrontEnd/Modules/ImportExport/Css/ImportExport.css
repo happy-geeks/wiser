@@ -1,0 +1,289 @@
+﻿@import "../../Base/scss/base.scss";
+
+#dataSelectorContainer > iframe {
+    width: 100%;
+    min-height: 1000px;
+    border: none;
+    overflow-y: hidden;
+    overflow-x: hidden;
+}
+
+.padding-8 {
+    padding: 8px;
+}
+
+.margin-top-20 {
+    margin-top: 20px;
+}
+
+.w-10 {
+    width: 10% !important;
+}
+
+.w-20 {
+    width: 20% !important;
+}
+
+.w-45 {
+    width: 45% !important;
+}
+
+.import-module {
+    margin: 0 !important;
+}
+
+.import-module .pane-content {
+    max-height: 100%;
+    height: 100% !important;
+    display: flex;
+}
+
+.import-module .pane-content .formview footer {
+    box-sizing: border-box;
+    z-index: 1500;
+    margin-top: auto;
+    min-height: 63px;
+}
+
+.import-module .pane-content .formview footer .actions:after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
+.import-module .formview.compact .item h4.tooltip {
+    float: none;
+    width: auto;
+    overflow: visible;
+    white-space: normal;
+    line-height: normal;
+}
+.import-module .formview.compact .item h4.tooltip-left {
+    overflow: visible;
+    white-space: normal;
+    line-height: normal;
+}
+.import-module .formview.compact .item h4.tooltip label {
+    font-family: var(--bold-txt);
+	padding-left: 10px;
+}
+
+.import-module .k-tabstrip {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: 100%;
+    width: 100%;
+}
+
+.import-module .k-tabstrip .k-content.k-state-active {
+    box-sizing: border-box;
+    display: flex !important;
+    height: 100%;
+    width: 100%;
+}
+
+.import-module .k-tabstrip .k-content.k-state-active > div {
+    width: 100%;
+}
+
+.import-module .k-tabstrip .k-tabstrip-items {
+    top: 0;
+}
+
+.import-module .k-tabstrip .k-tabstrip-items:before {
+    background: var(--white-color);
+    content: "";
+    height: 20px;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    width: 100%;
+	top: -20px;
+}
+
+.import-module .k-tabstrip-wrapper {
+    padding: 0;
+    max-height: 100%;
+    width: 100%;
+}
+
+.import-module .formview {
+    height: 100%;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    width: 100%;
+}
+
+#import-start > .item {
+    overflow: hidden;
+}
+
+#import-start .item .inline {
+    display: inline-block;
+    max-width: calc(100% - 160px);
+    margin: 0 0 5px 0;
+}
+
+#import-start .k-widget {
+    margin: 0 0 5px 0;
+    display: inline-block;
+    width: 100%;
+}
+
+#import-start .k-dateinput.k-widget {
+    max-width: 100%;
+}
+
+#import-start .k-timepicker.k-widget,
+#import-start .half-width.k-widget {
+    margin-bottom: 10px !important;
+}
+
+#import-start h4 {
+    display: inline-block;
+    float: left;
+    line-height: 2.5em;
+    padding: .25em 1em .25em 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 135px;
+}
+
+#import-start header {
+    padding: 0 10px;
+}
+
+.formview.compact span.k-widget {
+    margin: 5px 0;
+    max-width: 500px;
+    width: calc(100% - 235px);
+}
+
+.formview.compact .k-grid span.k-widget {
+    width: 100%;
+}
+
+.import-module .formview.compact h4 {
+    margin: 5px 0;
+}
+
+.floatLeft {
+    float: left;
+}
+
+.state {
+    height: 42px;
+    line-height: 42px;
+    padding: 0 10px;
+}
+
+.rToggle:checked ~ header + div {
+    min-height: 120px;
+}
+
+/* BUTTONS */
+.actions {
+    left: 10px;
+}
+
+.actions .leftButton,
+.item > .leftButton {
+    float: left;
+}
+
+.actions .leftButton {
+    margin: 0 0 0 10px;
+}
+
+.actions .rightButton,
+.item > .rightButton {
+    float: right;
+}
+
+.actions .rightButton {
+    margin: 0 10px 0 0;
+}
+
+/* FOOTER */
+footer {
+    background: var(--white-color);
+    border-top: 1px solid var(--handle-bg-color);
+    min-height: 38px;
+    padding: 10px;
+    position: -webkit-sticky;
+    position: sticky;
+    bottom: 0;
+    z-index: 150;
+}
+
+.k-sprite {
+    color: var(--dark-txt);
+    font-family: 'icomoon' !important;
+    font-size: 16px;
+    margin-right: 5px;
+    padding-top: 1px;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.rootfolder:before {
+    content: "\e968";
+}
+
+.folder:before {
+    content: "\e9be";
+}
+
+.wiserfolderclosed:before {
+    content: "\e9bf";
+}
+
+.wiserfolderopened:before {
+    content: "\e951";
+}
+
+.pdf:before {
+    content: "\e9c0";
+}
+
+.html:before {
+    content: "\e947";
+}
+
+.image:before {
+    content: "\e986";
+}
+
+.file:before {
+    content: "\e93c";
+}
+
+.edit:before {
+    content: "\e983";
+}
+
+.delete:before {
+    content: "\e92a";
+}
+.pane-content .formview footer {
+    width: 100%;
+}
+
+#ImportContainer > .item > .k-input {
+    float: left;
+    margin: 5px 0;
+    width: calc(100% - 235px);
+}
+
+/* MOUSEOVERS */
+.item:hover {
+    z-index: 1000;
+}

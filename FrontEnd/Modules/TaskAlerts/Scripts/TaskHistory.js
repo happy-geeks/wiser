@@ -1,0 +1,239 @@
+﻿import { TrackJS } from "trackjs";
+import { Wiser2 } from "../../Base/Scripts/Utils.js";
+require("@progress/kendo-ui/js/kendo.all.js");
+require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
+require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
+
+import "../css/TaskAlerts.css";
+
+// Any custom settings can be added here. They will overwrite most default settings inside the module.
+const moduleSettings = {
+    
+};
+
+((moduleSettings) => {
+    // Main Class
+    class TaskHistory {
+        constructor(settings) {
+            kendo.culture("nl-NL");
+
+            // Base settings.
+            this.settings = {
+                pageSize: 100
+            };
+            Object.assign(this.settings, settings);
+            
+            // Add logged in user access token to default authorization headers for all jQuery ajax requests.
+            $.ajaxSetup({
+                headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+            });
+
+            this.mainGrid = null;
+            this.mainGridFirstLoad = true;
+
+            this.backendUsers = [];
+
+            // Fire event on page ready for direct actions
+            document.addEventListener("DOMContentLoaded", () => {
+                this.onPageReady();
+            });
+        }
+
+        async onPageReady() {
+            Object.assign(this.settings, $("body").data());
+
+            if (this.settings.trackJsToken) {
+                TrackJS.install({
+                    token: this.settings.trackJsToken
+                });
+            }
+            
+            // Show an error if the user is no longer logged in.
+            const accessTokenExpires = localStorage.getItem("access_token_expires_on");
+            if (!accessTokenExpires || accessTokenExpires <= new Date()) {
+                Wiser2.alert({
+                    title: "Niet ingelogd",
+                    content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
+                });
+                
+                this.toggleMainLoader(false);
+                return;
+            }
+
+            const user = JSON.parse(localStorage.getItem("userData"));
+            this.settings.oldStyleUserId = user.oldStyleUserId;
+            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.adminAccountLoggedIn = user.adminAccountName;
+            
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiV21Root, this.settings.isTestEnvironment);
+            this.settings.userId = userData.encrypted_id;
+            this.settings.customerId = userData.encrypted_customer_id;
+            this.settings.zeroEncrypted = userData.zero_encrypted;
+            this.settings.wiserUserId = userData.wiser2_id;
+
+
+            if (!this.settings.wiserApiRoot.endsWith("/")) {
+                this.settings.wiserApiRoot += "/";
+            }
+
+            if (!this.settings.wiserApiV21Root.endsWith("/")) {
+                this.settings.wiserApiV21Root += "/";
+            }
+            
+            this.backendUsers = await Wiser2.api({ url: `${this.settings.wiserApiV21Root}users` });
+            console.log(this.backendUsers);
+
+            this.initializeMainGrid();
+        }
+
+        /**
+         * Get the name of a back end user.
+         * @param {number} id The ID of the user.
+         * @param {boolean} showUnknownPrefix Whether the prefix "Onbekend" should be added to the result if user couldn't be found.
+         * @returns {string} The name of the user, or the ID if the user couldn't be found.
+         */
+        getBackEndUserName(id, showUnknownPrefix = false) {
+            if (!this.backendUsers || !this.backendUsers.length) {
+                return id;
+            }
+
+            if (typeof id === "string" && id === "") {
+                // Check for empty string, otherwise "NaN" will be returned.
+                if (showUnknownPrefix) {
+                    return `Onbekend`;
+                } else {
+                    return id;
+                }
+            }
+
+            if (typeof id !== "number") {
+                // Make sure id is a number.
+                id = Number.parseInt(id, 10);
+            }
+
+            const user = this.backendUsers.find(u => u.id === id);
+            if (!user) {
+                if (showUnknownPrefix) {
+                    return `Onbekend (${id})`;
+                } else {
+                    return id;
+                }
+            }
+
+            return user.title;
+        }
+
+        /**
+         * Does everything to make sure that the main grid works properly.
+         */
+        async initializeMainGrid() {
+            try {
+                const mainGridElement = $("#task-grid");
+
+                const options = {
+                    page: 1,
+                    pageSize: this.settings.pageSize,
+                    skip: 0,
+                    take: this.settings.pageSize,
+                    filter: {
+                        logic: "and",
+                        filters: [
+                            { field: "receiver", operator: "eq", value: this.settings.wiserUserId }
+                        ]
+                    }
+                };
+
+                const gridDataResult = await Wiser2.api({
+                    url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(this.settings.zeroEncrypted)}/entity-grids/agendering?mode=2&moduleId=${this.settings.moduleId}`,
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(options)
+                });
+
+                if (gridDataResult.extra_javascript) {
+                    jQuery.globalEval(gridDataResult.extra_javascript);
+                }
+
+                for (let column of gridDataResult.columns) {
+                    if (column.field !== "sender" && column.field !== "receiver") {
+                        continue;
+                    }
+
+                    column.template = `#: window.taskHistory.getBackEndUserName(${column.field}, true) #`;
+
+                    column.filterable = {
+                        ui: (element) => {
+                            element.kendoDropDownList({
+                                dataSource: this.backendUsers,
+                                dataTextField: "title",
+                                dataValueField: "id",
+                                optionLabel: "--Kies een waarde--"
+                            });
+                        },
+                        operators: {
+                            string: {
+                                eq: "Is gelijk aan",
+                                neq: "Is niet gelijk aan"
+                            }
+                        }
+                    };
+                }
+
+                this.mainGridFirstLoad = true;
+                this.mainGrid = mainGridElement.kendoGrid({
+                    dataSource: {
+                        serverPaging: true,
+                        serverSorting: true,
+                        serverFiltering: true,
+                        pageSize: gridDataResult.page_size,
+                        filter: [
+                            { field: "receiver", operator: "eq", value: this.settings.wiserUserId }
+                        ],
+                        transport: {
+                            read: async (transportOptions) => {
+                                try {
+                                    if (this.mainGridFirstLoad) {
+                                        transportOptions.success(gridDataResult);
+                                        this.mainGridFirstLoad = false;
+                                        return;
+                                    }
+
+                                    const newGridDataResult = await Wiser2.api({
+                                        url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(this.settings.zeroEncrypted)}/entity-grids/agendering?mode=2&moduleId=${this.settings.moduleId}`,
+                                        method: "POST",
+                                        contentType: "application/json",
+                                        data: JSON.stringify(transportOptions.data)
+                                    });
+
+                                    transportOptions.success(newGridDataResult);
+                                } catch (exception) {
+                                    console.error(exception);
+                                    transportOptions.error(exception);
+                                }
+                            }
+                        },
+                        schema: {
+                            data: "data",
+                            total: "total_results",
+                            model: gridDataResult.schema_model
+                        }
+                    },
+                    columns: gridDataResult.columns,
+                    resizable: true,
+                    sortable: false,
+                    scrollable: {
+                        virtual: true
+                    },
+                    filterable: {
+                        extra: false
+                    }
+                }).getKendoGrid();
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het initialiseren van het overzicht. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+            }
+        }
+    }
+
+    window.taskHistory = new TaskHistory(moduleSettings);
+})(moduleSettings);

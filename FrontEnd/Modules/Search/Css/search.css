@@ -1,0 +1,278 @@
+﻿@import "../../Base/scss/base.scss";
+
+#wiser {
+    height: 100%;
+}
+.searching .pane-content {
+    background-color: var(--item-bg-color);
+    min-height: 100%;
+    position: relative;
+}
+
+/* SEARCH INPUT */
+.search-container {
+    max-width: 1440px;
+    width: 80%;
+    height: 60px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    transition: all 0.4s ease;
+    z-index: 10;
+	
+	display: flex;
+    flex-wrap: wrap;
+	justify-content: space-between;
+}
+
+.search-container.search-top {
+	max-width: 80%;
+	top: 20px;
+	transform: translate(-50%,0);
+}
+
+.search-container input#search-field {
+	border: 0;
+	box-sizing: border-box;
+	width: 100%;
+	height: 100%;
+	padding: 10px;
+	background: var(--white-color);
+	border-radius: 0 3px 3px 0;
+	box-shadow: 0px 8px 15px rgba(75, 72, 72, 0.1);
+	transition: all 0.4s ease;
+}
+
+.search-container .text-container {
+    position: relative;
+    width: 40%;
+    display: inline-block;
+    height: 100%;
+}
+
+.search-container .k-combobox {
+    width: 19%;
+    display: inline-block;
+    height: 60px;
+    border-radius: 3px 0 0 3px;
+    box-shadow: 0px 8px 15px rgba(75, 72, 72, 0.1);
+    transition: all 0.4s ease;
+    margin: -1px 0 0 0;
+    overflow: hidden; /* Otherwise the borders won't have a radius. */
+}
+
+.search-container .k-combobox input.k-input {
+    height: 60px;
+    background-color: var(--white-color);
+}
+
+.search-container .k-combobox .k-i-arrow-60-down {
+    top: 15px;
+}
+
+.icon-line-search {
+    cursor: pointer;
+    font-size: 26px;
+    height: 60px;
+    line-height: 60px;
+    position: absolute;
+    right: 0;
+    top: 0;
+    text-align: center;
+    width: 60px;
+}
+
+.loading .icon-line-search:before,
+.loading input:focus + .icon-line-search:before {
+    opacity: 0;
+}
+
+/* CHECK */
+.checkbox-container {
+    display: block;
+    width: 100%;
+    padding: 15px 0;
+}
+
+.checkbox-container label {
+    cursor: pointer;
+    display: inline-block;
+    line-height: 24px;
+}
+
+.checkbox-container label span:before {
+    border-radius: 3px;
+    box-shadow: 0px 8px 15px rgba(75, 72, 72, 0.1);
+    background-color: var(--white-color);
+    color: var(--white-color);
+    content: "\e937";
+    font-family: 'icomoon' !important;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    width: 24px;
+    transition: all 200ms ease-in-out;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.checkbox-container input:checked + label span:before {
+    background-color: var(--primary-color);
+}
+
+/* LOADER */
+.loading .loader-icon {
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60px;
+    height: 60px;
+}
+
+.loader-icon div {
+    margin: 15px;
+}
+.loader-icon.loader-white div {
+    border: 4px solid var(--white-color);
+}
+
+/* SEARCH OUTPUT */
+.search-output {
+    height: 0;
+    max-width: 80%;
+    margin: 0 auto;
+    overflow: hidden;
+    padding-top: 125px;
+    position: relative;
+    top: 60vh;
+    transition: all 0.4s ease;
+}
+
+.search-top ~ .search-output {
+    height: auto;
+    top: 20px;
+}
+
+.search-output .grid {
+    margin: 15px auto;
+}
+
+.grid-icon {
+    color: var(--white-color);
+    font-size: 30px;
+    height: 50px;
+    width: 50px;
+    line-height: 50px;
+    text-align: center;
+}
+
+.search-output .grid td {
+    vertical-align: top;
+}
+
+.search-output .grid small {
+    color: var(--lighter-txt);
+}
+
+.search-output .k-grid-norecords {
+    width: auto;
+    height: auto;
+    padding-top: 10px;
+}
+
+#search-settings,
+#search-settings * {
+    list-style: none;
+}
+#search-settings {
+    cursor: pointer;
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 100;
+}
+#search-settings > li {
+    height: 56px;
+    width: 56px;
+}
+#search-settings > li > ins {
+    color: var(--color-1);
+    display: block;
+    font-size: 32px;
+    height: 56px;
+    line-height: 56px;
+    text-align: center;
+    width: 56px;
+}
+#search-settings:hover > li > ins,
+#search-settings.hover > li > ins {
+    background: rgba(0,0,0,0.08);
+}
+#search-settings .sub {
+    background: var(--white-color);
+    display: block;
+    opacity: 0;
+    padding: 8px;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 80px;
+    transition: 0.2s ease;
+    width: 220px;
+}
+#search-settings:hover .sub,
+#search-settings.hover .sub {
+    opacity: 1;
+    pointer-events: all;
+    top: 100%;
+}
+#search-settings .sub > li {
+    height: 30px;
+    line-height: 30px;
+    width: 100%;
+}
+#search-settings .sub > li:hover {
+    background: var(--bg-color);
+}
+#search-settings .sub label {
+    cursor: pointer;
+    display: block;
+    height: 30px;
+    line-height: 30px;
+}
+#search-settings .sub ins {
+    display: inline-block;
+    float: right;
+    height: 30px;
+    line-height: 30px;
+    opacity: 0;
+    text-align: center;
+    width: 30px;
+}
+#search-settings .sub label input:checked ~ ins {
+    opacity: 1;
+}
+#search-settings .sub span {
+    display: inline-block;
+    height: 30px;
+    line-height: 30px;
+    max-width: calc(100% - 40px);
+    padding: 0 8px;
+}
+
+.k-list > .k-item.k-first {
+    padding-top: 2em;
+}
+
+.k-list > .k-item.k-first > .k-group {
+    height: 2em;
+    left: 0;
+    border-bottom: 1px dashed var(--medium-color);
+    border-top: 1px dashed var(--medium-color);
+    padding-top: 3px;
+}

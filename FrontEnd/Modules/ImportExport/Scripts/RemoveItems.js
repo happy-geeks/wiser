@@ -1,0 +1,316 @@
+﻿import { Wiser2 } from "../../Base/Scripts/Utils.js";
+
+require("@progress/kendo-ui/js/kendo.all.js");
+require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
+require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
+
+export class RemoveItems {
+    constructor(settings) {
+        this.mainLoader = null;
+        this.messageEventCallbacks = {};
+
+        // Default settings
+        this.settings = {
+            customerId: 0,
+            username: "Onbekend"
+        };
+        Object.assign(this.settings, settings);
+
+        // Fire event on page ready for direct actions
+        $(document).ready(() => {
+            this.onPageReady();
+        });
+    }
+
+    async onPageReady() {
+        this.dataSelectorIframe = document.getElementById("dataSelectorIframe");
+        
+        // Add logged in user access token to default authorization headers for all jQuery ajax requests.
+        $.ajaxSetup({
+            headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+        });
+
+        this.mainLoader = $("#mainLoader");
+
+        // Setup JJL processing.
+        document.addEventListener("processing.Busy", this.toggleMainLoader.bind(this, true));
+        document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
+
+        // Setup any settings from the body element data. These settings are added via the Wiser backend and they take preference.
+        Object.assign(this.settings, $("body").data());
+
+        if (!this.settings.wiserApiRoot.endsWith("/")) {
+            this.settings.wiserApiRoot += "/";
+        }
+
+        if (!this.settings.wiserApiV21Root.endsWith("/")) {
+            this.settings.wiserApiV21Root += "/";
+        }
+
+        window.addEventListener("message", (e) => {
+            if (e.data.hasOwnProperty("from") && e.data.from === "DataSelector") {
+                const callback = e.data.callback || "";
+                if (callback !== "") {
+                    this.executeMessageEventCallback(callback, e.data);
+                }
+            }
+        });
+
+        this.initializeKendoComponents();
+    }
+
+    /**
+     * Shows or hides the main (full screen) loader.
+     * @param {boolean} show True to show the loader, false to hide it.
+     */
+    toggleMainLoader(show) {
+        this.mainLoader.toggleClass("loading", show);
+    }
+
+    /**
+     * Initializes all Kendo components for the base class.
+     * @param {HTMLElement} context The context (HTML element) in which items will have their elements initialized with Kendo.
+     */
+    async initializeKendoComponents(context = null) {
+        if (!context || !(context instanceof HTMLElement)) {
+            context = document.body;
+        }
+
+        let me = this;
+
+        //File upload
+        $(".removeItemsFileUpload").kendoUpload({
+            async: {
+                saveUrl: "/Modules/ImportExport/Import/Upload?type=feed",
+                autoUpload: true
+            },
+            localization: {
+                select: "Selecteer bestand",
+                invalidFileExtension: "Data bestand moet een CSV bestand zijn",
+                invalidMaxFileSize: "Bestand mag maar maximaal 25 MB zijn"
+            },
+            validation: {
+                allowedExtensions: [".csv"],
+                maxFileSize: 26214400 // 25 MB = 25 * 1024 * 1024
+            },
+            multiple: false,
+            success: (e) => {
+                if (e.operation !== "upload") {
+                    return;
+                }
+
+                this.importFilename = e.response.filename;
+                if (e.response.rowCount > e.response.importLimit) {
+                    Wiser2.alert({
+                        title: "Import limiet overschreden",
+                        content: `De import bevat meer dan ${e.response.importLimit} rijen. Alleen de eerste ${e.response.importLimit} van de ${e.response.rowCount} rijen zullen worden geïmporteerd.`
+                    });
+                }
+            }
+        });
+
+        //Combox
+        const process = `loadDropdowns_${Date.now()}`;
+        jjl.processing.addProcess(process);
+
+        try {
+            const promiseResults = await Promise.all([
+                Wiser2.api({ url: `${this.settings.wiserApiV21Root}entity-types?onlyEntityTypesWithDisplayName=false` })
+            ]);
+            const entityTypes = promiseResults[0];
+
+            if (!entityTypes || !entityTypes.length) {
+                $(context).find("#EntityTypesContainer").hide();
+            } else {
+                $(context).find("#EntityTypesContainer").kendoDropDownList({
+                    dataTextField: "display_name",
+                    dataValueField: "id",
+                    dataSource: entityTypes,
+                    change: function (e) {
+                        me.loadEntityProperties(this.value(), true);
+                    },
+                    optionLabel: "Maak uw keuze..."
+                });
+
+                await this.loadEntityProperties("<none>", false, context);
+            }
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+        }
+
+        jjl.processing.removeProcess(process);
+
+        //Button
+        $(context).find("#deleteItemsButton").kendoButton({
+            click: function (e) {
+                me.prepareDelete();
+            }
+        });
+    }
+
+    //Get all the properties of a specific entity and replace the combox with it's values.
+    async loadEntityProperties(entityName, ownProcess = false, context = null) {
+        if (!context || !(context instanceof HTMLElement)) {
+            context = document.body;
+        }
+
+        let process = null;
+        if (ownProcess) {
+            process = `loadEntityProperties_${Date.now()}`;
+            jjl.processing.addProcess(process);
+        }
+
+        try {
+            const promiseResults = await Promise.all([
+                Wiser2.api({ url: `${this.settings.wiserApiV21Root}entity-properties/${entityName}?onlyEntityTypesWithDisplayName=false&onlyEntityTypesWithPropertyName=true&addIdProperty=true` })
+            ]);
+            const entityProperties = promiseResults[0];
+
+            if (!entityProperties || !entityProperties.length) {
+                $(context).find("#EntityPropertiesContainer").hide();
+            } else {
+                $(context).find("#EntityPropertiesContainer").kendoDropDownList({
+                    dataTextField: "display_name",
+                    dataValueField: "property_name",
+                    dataSource: entityProperties,
+                    optionLabel: "Maak uw keuze..."
+                });
+            }
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+        }
+
+        if (ownProcess && process) {
+            jjl.processing.removeProcess(process);
+        }
+    }
+
+    //Let the API prepare the delete to retrieve all information for delete.
+    prepareDelete() {
+        let context = document.body;
+
+        let deleteByFile = $(context).find("#DeleteItemsFile").is(":checked");
+        let deleteByDataSelector = $(context).find("#DeleteItemsDataSelector").is(":checked");
+
+        if (deleteByFile) {
+            if (!this.importFilename || this.importFilename === "") {
+                Wiser2.showMessage({
+                    title: "Ongeldig bestand",
+                    content: "Er is geen bestand geüpload om te gebruiken voor het verwijderen van items."
+                });
+                return;
+            }
+
+            let entityName = $(context).find("#EntityTypesContainer").data("kendoDropDownList").value();
+            let propertyName = $(context).find("#EntityPropertiesContainer").data("kendoDropDownList").value();
+
+            if (entityName === "") {
+                Wiser2.showMessage({
+                    title: "Entiteit mist",
+                    content: "Er is geen entiteit gekozen waarbinnen items verwijdert moeten worden."
+                });
+                return;
+            }
+
+            if (propertyName === "") {
+                Wiser2.showMessage({
+                    title: "Eigenschap mist",
+                    content: "Er is geen eigenschap gekozen om de waardes in het bestand mee te vergelijken."
+                });
+                return;
+            }
+
+            let promise = Wiser2.api({
+                url: `${this.settings.wiserApiV21Root}imports/delete-items/prepare`,
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    file_path: this.importFilename,
+                    entity_name: entityName,
+                    property_name: propertyName
+                })
+            });
+
+            promise.done(this.prepareDeleteFinished);
+        }
+        else if (deleteByDataSelector) {
+            this.messageEventCallbacks["dataSelectorResults"] = (response) => {
+                this.messageEventCallbacks["dataSelectorEntityType"] = (entityType) => {
+                    var result = {
+                        entity_type: entityType.actionResult,
+                        ids: []
+                    };
+
+                    response.actionResult.forEach(element => {
+                        result.ids.push(element.id);
+                    });
+
+                    this.prepareDeleteFinished(result);
+                }
+
+                this.dataSelectorIframe.contentWindow.postMessage(Object.assign({
+                    action: "get-entity-type",
+                    callback: "dataSelectorEntityType"
+                }, {}));
+            };
+
+            this.dataSelectorIframe.contentWindow.postMessage(Object.assign({
+                action: "get-result",
+                callback: "dataSelectorResults"
+            }, {}));
+        }
+    }
+
+    //Handle preparation response from the API.
+    prepareDeleteFinished(results) {
+        Wiser2.confirm({
+            title: "Bevestig items verwijderen",
+            content: `U staat op het punt om ${results.ids.length} item(s) te verwijderen. Wilt u doorgaan?`,
+            actions: [{
+                text: "Ok",
+                action: function (e) {
+                    let promise = Wiser2.api({
+                        url: `${window.removeItems.settings.wiserApiV21Root}imports/delete-items/confirm`,
+                        method: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify(results)
+                    });
+
+                    promise.done((result) => {
+                        if (result === true) {
+                            Wiser2.showMessage({
+                                title: "Items verwijderd",
+                                content: "De items zijn verwijderd."
+                            });
+                        } else {
+                            Wiser2.showMessage({
+                                title: "Items verwijderen mislukt.",
+                                content: "Er is iets mis gegaan tijdens het verwijderen van de items, de actie is teruggedraaid."
+                            });
+                        }
+                    });
+                }
+            }]
+        });
+    }
+
+    executeMessageEventCallback(name, data = {}, keepCallback = false) {
+        if (typeof name !== "string" || name.trim() === "" || !this.messageEventCallbacks.hasOwnProperty(name)) {
+            return;
+        }
+
+        const callback = this.messageEventCallbacks[name];
+        if (typeof callback !== "function") {
+            return;
+        }
+
+        callback.call(this, data);
+
+        // Check if callback should be remembered. In most cases you'll want to delete the callback after one use.
+        if (!keepCallback) {
+            delete this.messageEventCallbacks[name];
+        }
+    }
+}
