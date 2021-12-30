@@ -35,7 +35,9 @@ namespace FrontEnd
 
             // Get the base directory for secrets and then load the secrets file from that directory.
             var secretsBasePath = Configuration.GetSection("GCL").GetValue<string>("SecretsBaseDirectory");
-            builder.AddJsonFile($"{secretsBasePath}appsettings-secrets.json", false, false);
+            builder
+                .AddJsonFile($"{secretsBasePath}appsettings-secrets.json", false, false)
+                .AddJsonFile($"appsettings.{webHostEnvironment.EnvironmentName}.json", true, true);
 
             // Build the final configuration with all combined settings.
             Configuration = builder.Build();
