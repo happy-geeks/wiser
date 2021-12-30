@@ -1,0 +1,320 @@
+﻿"use strict";
+
+import { TrackJS } from "trackjs";
+import { createApp, defineAsyncComponent } from "vue";
+import * as axios from "axios";
+
+/*import SwiperCore, { Virtual } from "swiper";
+import { Swiper, SwiperSlide } from "swiper/vue";
+SwiperCore.use([Virtual]);*/
+
+import UsersService from "./shared/users.service";
+import ModulesService from "./shared/modules.service";
+import CustomersService from "./shared/customers.service";
+import ItemsService from "./shared/items.service";
+
+import store from "./store/index";
+import login from "./components/login";
+import taskAlerts from "./components/task-alerts";
+
+import { DropDownList } from "@progress/kendo-vue-dropdowns";
+import WiserDialog from "./components/wiser-dialog";
+
+import "../scss/main.scss";
+import "../scss/task-alerts.scss";
+
+import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, ACTIVATE_MODULE, LOAD_ENTITY_TYPES_OF_ITEM_ID, GET_CUSTOMER_TITLE } from "./store/mutation-types";
+
+(() => {
+    class Main {
+        constructor(settings) {
+            this.vueApp = null;
+            this.appSettings = null;
+
+            this.usersService = new UsersService(this);
+            this.modulesService = new ModulesService(this);
+            this.customersService = new CustomersService(this);
+            this.itemsService = new ItemsService(this);
+
+            // Fire event on page ready for direct actions
+            document.addEventListener("DOMContentLoaded", () => {
+                this.onPageReady();
+            });
+        }
+
+        /**
+         * Do things that need to wait until the DOM has been fully loaded.
+         */
+        async onPageReady() {
+            const configElement = document.getElementById("vue-config");
+            this.appSettings = JSON.parse(configElement.innerHTML);
+
+            if (this.appSettings.trackJsToken) {
+                TrackJS.install({
+                    token: this.appSettings.trackJsToken
+                });
+            }
+
+            if (this.appSettings.loadPartnerStyle) {
+                import(`../scss/partner/${this.appSettings.subDomain}.scss`);
+            }
+
+            this.api = axios.create({
+                baseURL: this.appSettings.apiBase
+            });
+
+            this.api.interceptors.response.use(undefined, async (error) => {
+                // Automatically re-authenticate with refresh token if login token expired or logout if that doesn't work or it is otherwise invalid.
+                if (error.response.status === 401) {
+                    // If we ever get an unauthorized, logout the user.
+                    if (error.response.config.url === "/connect/token") {
+                        this.vueApp.$store.dispatch(AUTH_LOGOUT);
+                    } else {
+                        await this.vueApp.$store.dispatch(AUTH_REQUEST, { gotUnauthorized: true });
+                    }
+                }
+
+                return Promise.reject(error);
+            });
+
+            if (this.appSettings.markerIoToken) {
+                const markerSdk = await import("@marker.io/browser");
+                this.markerWidget = await markerSdk.loadWidget({ destination: this.appSettings.markerIoToken });
+                this.markerWidget.hide();
+            }
+
+            this.initVue();
+        }
+
+        initVue() {
+            this.vueApp = createApp({
+                data: () => {
+                    return {
+                        appSettings: this.appSettings,
+                        wiserIdPromptValue: null,
+                        wiserEntityTypePromptValue: null,
+                        markerWidget: this.markerWidget
+                    };
+                },
+                created() {
+                    this.$store.dispatch(GET_CUSTOMER_TITLE, this.appSettings.subDomain);
+                },
+                computed: {
+                    loginStatus() {
+                        return this.$store.state.login.loginStatus;
+                    },
+                    mainLoader() {
+                        return this.$store.state.base.mainLoader;
+                    },
+                    user() {
+                        return this.$store.state.login.user;
+                    },
+                    requirePasswordChange() {
+                        return this.$store.state.login.requirePasswordChange;
+                    },
+                    listOfUsers() {
+                        return this.$store.state.login.listOfUsers;
+                    },
+                    modules() {
+                        return this.$store.state.modules.allModules;
+                    },
+                    moduleGroups() {
+                        return this.$store.state.modules.moduleGroups;
+                    },
+                    openedModules() {
+                        return this.$store.state.modules.openedModules;
+                    },
+                    openedModulesWithBackend() {
+                        return this.$store.state.modules.openedModules.filter(m => !m.javascriptOnly && m.type !== "Wiser1");
+                    },
+                    openedDynamicItemsModules() {
+                        return this.$store.state.modules.openedModules.filter(m => m.type === "DynamicItems");
+                    },
+                    openedWiser1Modules() {
+                        return this.$store.state.modules.openedModules.filter(m => m.type === "Wiser1");
+                    },
+                    activeModule() {
+                        return this.$store.state.modules.activeModule;
+                    },
+                    hasModules() {
+                        return this.$store.state.modules.allModules && this.$store.state.modules.allModules.length > 0;
+                    },
+                    listOfEntityTypes() {
+                        return this.$store.state.items.listOfEntityTypes;
+                    },
+                    markerIoEnabled() {
+                        return !!this.appSettings.markerIoToken;
+                    },
+                    customerTitle() {
+                        return this.$store.state.customers.title;
+                    },
+                    validSubDomain() {
+                        return this.$store.state.customers.validSubDomain;
+                    }
+                },
+                components: {
+                    "dropdownlist": DropDownList,
+                    "WiserDialog": WiserDialog,
+                    "customerManagement": defineAsyncComponent(() => import(/* webpackChunkName: "customer-management" */"./components/customer-management")),
+                    "login": login,
+                    "taskAlerts": taskAlerts
+                },
+                methods: {
+                    handleBodyClick(event) {
+                        if (event.target.id !== "side-menu" && !event.target.closest("#side-menu")) {
+                            this.toggleMenuActive(false);
+                        }
+                    },
+
+                    toggleMenuActive(show) {
+                        if (show === undefined || show === null) {
+                            show = !document.body.classList.contains("menu-active");
+                        }
+
+                        if (document.body.classList.contains("on-canvas")) {
+                            if (show) {
+                                document.body.classList.add("menu-active");
+                            } else {
+                                document.body.classList.remove("menu-active");
+                            }
+                        }
+                    },
+
+                    toggleMenuVisibility(show) {
+                        if (show === undefined || show === null) {
+                            show = !document.body.classList.contains("off-canvas");
+                        }
+
+                        if (show) {
+                            document.body.classList.add("off-canvas");
+                        } else {
+                            document.body.classList.remove("off-canvas");
+                        }
+                    },
+
+                    toggleMenuState() {
+                        if (document.body.classList.contains("off-canvas")) {
+                            document.body.classList.remove("off-canvas");
+                            document.body.classList.add("on-canvas");
+
+                        } else if (document.body.classList.contains("on-canvas")) {
+                            document.body.classList.add("menu-active");
+                            document.body.classList.remove("on-canvas");
+                        } else {
+                            document.body.classList.add("off-canvas");
+                            document.body.classList.remove("menu-active");
+                        }
+                    },
+
+                    logout() {
+                        this.$store.dispatch(CLOSE_ALL_MODULES);
+                        this.$store.dispatch(AUTH_LOGOUT);
+                    },
+
+                    openModule(module) {
+                        if (typeof module === "number") {
+                            module = this.modules.find(m => m.module_id === module);
+                        }
+                        if (typeof(module.queryString) === "undefined") {
+                            module.queryString = "";
+                        }
+                        this.$store.dispatch(OPEN_MODULE, module);
+                    },
+
+                    closeModule(module) {
+                        this.$store.dispatch(CLOSE_MODULE, module);
+                    },
+
+                    setActiveModule(event, moduleId) {
+                        if (event.target && event.target.classList.contains("close-module")) {
+                            return;
+                        }
+
+                        this.$store.dispatch(ACTIVATE_MODULE, moduleId);
+                    },
+
+                    async openCustomerManagement() {
+                        this.openModule({
+                            module_id: "customerManagement",
+                            name: "Klant toevoegen",
+                            type: "customerManagement",
+                            javascriptOnly: true
+                        });
+                    },
+
+                    openWiserIdPrompt() {
+                        this.$refs.wiserIdPrompt.open();
+                    },
+
+                    openWiserEntityTypePrompt() {
+                        this.$refs.wiserEntityTypePrompt.open();
+                    },
+
+                    async openWiserItem() {
+                        if (!this.wiserIdPromptValue || isNaN(parseInt(this.wiserIdPromptValue))) {
+                            return false;
+                        }
+                        
+                        await this.$store.dispatch(LOAD_ENTITY_TYPES_OF_ITEM_ID, this.wiserIdPromptValue);
+                        const encryptedId = await main.itemsService.encryptId(this.wiserIdPromptValue);
+
+                        if (!this.listOfEntityTypes || !this.listOfEntityTypes.length) {
+                            this.openModule({
+                                module_id: `wiserItem_${this.wiserIdPromptValue}`,
+                                name: `Wiser item #${this.wiserIdPromptValue}`,
+                                type: "dynamicItems",
+                                iframe: true,
+                                item_id: encryptedId,
+                                fileName: "",
+                                queryString: `?moduleId=0&iframe=true&itemId=${encodeURIComponent(encryptedId)}`
+                            });
+
+                            this.wiserIdPromptValue = null;
+                            this.wiserEntityTypePromptValue = null;
+                        } else if (this.listOfEntityTypes.length === 1) {
+                            this.openModule({
+                                module_id: `wiserItem_${this.wiserIdPromptValue}_${this.listOfEntityTypes[0].id}`,
+                                name: `Wiser item #${this.wiserIdPromptValue} (${this.listOfEntityTypes[0].display_name})`,
+                                type: "dynamicItems",
+                                iframe: true,
+                                item_id: encryptedId,
+                                fileName: "",
+                                queryString: `?moduleId=0&iframe=true&itemId=${encodeURIComponent(encryptedId)}&entityType=${encodeURIComponent(this.listOfEntityTypes[0].id)}`
+                            });
+
+                            this.wiserIdPromptValue = null;
+                            this.wiserEntityTypePromptValue = null;
+                        } else if (!this.wiserEntityTypePromptValue) {
+                            this.openWiserEntityTypePrompt();
+                        } else {
+                            this.openModule({
+                                module_id: `wiserItem_${this.wiserIdPromptValue}_${this.wiserEntityTypePromptValue.id}`,
+                                name: `Wiser item #${this.wiserIdPromptValue} (${this.wiserEntityTypePromptValue.display_name})`,
+                                type: "dynamicItems",
+                                iframe: true,
+                                item_id: encryptedId,
+                                fileName: "",
+                                queryString: `?moduleId=0&iframe=true&itemId=${encodeURIComponent(encryptedId)}&entityType=${encodeURIComponent(this.wiserEntityTypePromptValue.id)}`
+                            });
+
+                            this.wiserIdPromptValue = null;
+                            this.wiserEntityTypePromptValue = null;
+                        }
+                    },
+
+                    openMarkerIoScreen() {
+                        this.markerWidget.capture("fullscreen");
+                    }
+                }
+            });
+
+            // Let Vue know about our store.
+            this.vueApp.use(store);
+
+            // Mount our app to the main HTML element.
+            this.vueApp = this.vueApp.mount("#app");
+        }
+    }
+
+    window.main = new Main();
+})();

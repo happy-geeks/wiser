@@ -1,0 +1,126 @@
+@import "../variables";
+
+@mixin responsive-df {
+    $grid-responsive: 0;
+    $breakpoint-letters: df;
+    @include responsive-grid($grid-responsive, $breakpoint-letters);
+}
+
+@mixin responsive-sm {
+    $grid-responsive: $screen-sm-min;
+    $breakpoint-letters: sm;
+    @include responsive-grid($grid-responsive, $breakpoint-letters);
+}
+
+@mixin responsive-md {
+    $grid-responsive: $screen-md-min;
+    $breakpoint-letters: md;
+    @include responsive-grid($grid-responsive, $breakpoint-letters);
+}
+
+@mixin responsive-lg {
+    $grid-responsive: $screen-lg-min;
+    $breakpoint-letters: lg;
+    @include responsive-grid($grid-responsive, $breakpoint-letters);
+}
+
+@mixin responsive-xl {
+    $grid-responsive: $screen-xl-min;
+    $breakpoint-letters: xl;
+    @include responsive-grid($grid-responsive, $breakpoint-letters);
+}
+
+@mixin responsive-grid($grid-responsive, $breakpoint) {
+    @media (min-width: #{$grid-responsive}) {
+        @for $i from 1 through $column-count {
+            $col-devide: calc(#{$column-count} / #{$i});
+            $col-width: calc(100% / #{$col-devide});
+
+            .col-#{$breakpoint}-#{$i} {
+                flex-basis: calc(#{$col-width} - #{$gutter-width});
+                max-width: calc(#{$col-width} - #{$gutter-width});
+            }
+        }
+    }
+}
+
+//// DO NOT MODIFY BELOW
+.container {
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: $base-width + $gutter-width;
+    margin: auto;
+
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        width: 100%;
+        padding: calc(#{$gutter-width} / 2);
+
+        > .col {
+            flex: 0 0 calc(100% - #{$gutter-width});
+            max-width: calc(100% - #{$gutter-width});
+            margin: calc(#{$gutter-width} / 2);
+
+            $margin-width: calc(#{$gutter-width} / 2);
+
+            .row {
+                /* NESTED */
+                margin-top: -$margin-width;
+                margin-left: -$margin-width;
+                padding: 0;
+                width: calc(100% + #{$gutter-width});
+            }
+        }
+
+        @for $i from 1 through $column-count {
+            $col-devide: calc(#{$column-count} / #{$i});
+            $col-width: calc(100% / #{$col-devide});
+
+            .col-#{$i} {
+                flex-basis: calc(#{$col-width} - #{$gutter-width});
+                max-width: calc(#{$col-width} - #{$gutter-width});
+            }
+        }
+
+        @include responsive-df;
+        @include responsive-sm;
+        @include responsive-md;
+        @include responsive-lg;
+        @include responsive-xl;
+    }
+
+    .row,
+    .col {
+        &.no-margin {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        &.no-top-margin {
+            margin-top: 0;
+        }
+
+        &.no-bottom-margin {
+            margin-bottom: 0;
+        }
+
+        &.no-padding {
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        &.no-top-padding {
+            padding-top: 0;
+        }
+
+        &.no-bottom-padding {
+            padding-bottom: 0;
+        }
+
+        &.flex-center {
+            justify-content: center;
+        }
+    }
+}

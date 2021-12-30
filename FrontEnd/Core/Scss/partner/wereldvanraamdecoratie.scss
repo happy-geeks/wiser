@@ -1,0 +1,89 @@
+//// VARIABLES
+@import '../variables';
+
+//// MIXINS 
+@import '../mixin/mixin';
+
+//// custom colors
+$custom-color: #E41B12;
+$body-bg-color: #FFFFFF;
+$logo-url: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyNi4wLjEsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4NCjxzdmcgdmVyc2lvbj0iMS4xIiBpZD0iTG9nbyIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiDQoJIHZpZXdCb3g9IjAgMCAyODMuNSA1Ni43IiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAyODMuNSA1Ni43OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+DQo8c3R5bGUgdHlwZT0idGV4dC9jc3MiPg0KCS5zdDB7ZmlsbDojRTQxQjEyO30NCjwvc3R5bGU+DQo8cGF0aCBjbGFzcz0ic3QwIiBkPSJNOTYuOCwyNS44aC02LjdjMC4xLTQsMS4yLTQuOCwzLjMtNC44Qzk2LDIxLDk2LjcsMjEuNSw5Ni44LDI1Ljh6IE0xNTIuOSwyOS4yYy0wLjQsMC0zLjksMC4xLTMuOSwyLjkNCgljMCwxLjYsMS4xLDIuOCwyLjUsMi44aDMuNnYtNS43QzE1NC40LDI5LjIsMTUyLjksMjkuMiwxNTIuOSwyOS4yeiBNMTI2LjMsMjkuMWMwLDMuNCwxLjYsNS44LDMuOSw1LjhoMi41VjIxLjdoLTINCglDMTI4LjcsMjEuNywxMjYuMywyMi42LDEyNi4zLDI5LjF6IE0yODMuNSwwdjU2LjdIMFYwSDI4My41eiBNMzUuNSwxMS42aC0wLjRoLTQuNlYzOWg1VjExLjZ6IE02MS41LDIzLjljMC0zLjItMC40LTYuMi01LTYuMg0KCWMtMC4yLDAtMC42LDAtMS41LDBoLTguNWgtNC40aC0wLjR2NEg0NVYzOWg1VjIxLjhoNC43YzEuMSwwLDEuOCwwLjUsMS44LDIuOFYzOWg1VjIzLjl6IE04MC4zLDE3LjdoLTQuN3YtNi4xaC0wLjRoLTQuNnY2LjENCgljLTAuNiwwLTMuMywwLTMuMywwdjRoMy4zdjEwLjh2Mi44YzAsMiwxLjcsMy42LDMuNywzLjZoNnYtNGgtNC43VjIxLjdoNC43VjE3Ljd6IE05MC4yLDI5LjhjMC43LDAsMTEuNywwLDExLjcsMGwtMC4xLTEuOQ0KCWMwLTguMS0yLTEwLjgtOC4xLTEwLjhjLTYuMywwLTguNywzLjItOC43LDExLjNjMCw3LjUsMi42LDEwLjUsOC45LDEwLjVoNi44di00aC02LjhjLTEuNCwwLTIuMy0wLjMtMi44LTAuOA0KCUM5MC4zLDMzLjMsOTAuMiwzMS45LDkwLjIsMjkuOHogTTExOC4xLDE3LjdoLTZjLTIuMSwwLTMuNywxLjctMy43LDMuN1YzOWg1VjIxLjdoNC43VjE3Ljd6IE0xNDEsMTcuN2gtOS43DQoJYy02LjcsMC05LjksMy43LTkuOSwxMS41YzAsNS45LDMuMyw5LjgsOC41LDkuOGMwLjEsMCwwLjMsMCwwLjUsMGgyLjNjMCw0LTAuNyw1LjgtNSw1LjhoLTAuMUgxMjNoLTAuNHY0aDQuNg0KCWM5LjMsMCwxMC41LTUuMSwxMC41LTkuNVYyMS43aDMuM1YxNy43eiBNMTYzLjIsMzQuOEgxNjBjMC0xLjMsMC0xMC43LDAtMTAuN2MwLTQuNS0yLjMtNi40LTcuMy02LjRjLTAuMSwwLTAuMiwwLTAuMywwaC01Ljd2NGg1LjQNCgljMi40LDAsMi45LDAuMywyLjksMi45djAuNmMtMC42LDAtMi41LDAtMi41LDBjLTIuOSwwLTguNSwxLjUtOC41LDcuMWMwLDMuOSwyLjUsNi41LDYuMyw2LjVjMC4xLDAsMC4zLDAsMC42LDBoMTIuM1YzNC44eg0KCSBNMTk1LjgsMjMuOWMwLTMuMi0wLjQtNi4yLTUtNi4yYy0wLjEsMC0wLjIsMC0wLjMsMGgtMTkuMmgtNC4yaC0wLjR2NGgzLjNWMzloNC45VjIxLjdoNS41VjM5aDQuOVYyMS44aDMuN2MxLjEsMCwxLjgsMC41LDEuOCwyLjgNCglWMzloNVYyMy45eiBNMjMwLjksMjMuOWMwLTMuMi0wLjQtNi4yLTUtNi4yYy0wLjEsMC0wLjIsMC0wLjMsMGgtMTkuMmgtNC4yaC0wLjR2NGgzLjNWMzloNC45VjIxLjdoNS41VjM5aDQuOVYyMS44aDMuNw0KCWMxLjEsMCwxLjgsMC41LDEuOCwyLjhWMzloNVYyMy45eiBNMjU2LjEsMzQuOGgtMy4yYzAtMS4zLDAtMTAuNywwLTEwLjdjMC00LjUtMi4zLTYuNC03LjMtNi40Yy0wLjEsMC0wLjIsMC0wLjMsMGgtNS43djRoNS40DQoJYzIuNCwwLDIuOSwwLjMsMi45LDIuOXYwLjZjLTAuNiwwLTIuNSwwLTIuNSwwYy0yLjksMC04LjUsMS41LTguNSw3LjFjMCwzLjksMi41LDYuNSw2LjMsNi41YzAuMSwwLDAuMywwLDAuNiwwaDEyLjNWMzQuOHoNCgkgTTI0MS45LDMyLjFjMCwxLjYsMS4xLDIuOCwyLjUsMi44aDMuNnYtNS43Yy0wLjcsMC0yLjIsMC0yLjIsMEMyNDUuNCwyOS4yLDI0MS45LDI5LjMsMjQxLjksMzIuMXoiLz4NCjwvc3ZnPg0K");
+$logo-height: 40px;
+$logo-pos: 75px;
+$logo-login-size: 50px;
+
+/* Common */
+body {
+    background-color: $body-bg-color;
+}
+main {
+    background-color: rgba($custom-color, 0.05);
+}
+a:not(.btn):hover {
+    color: $custom-color;
+}
+
+/* Side menu */
+.main-menu {
+    > li {
+        &#side-menu {
+            width: 300px;
+        }
+
+        &.login {
+            .title {
+                color: $custom-color;
+            }
+        }
+
+        &.logo {
+            .logo1 {
+                fill: $custom-color;
+            }
+
+            .logo2 {
+                fill: rgba($custom-color, 0.5);
+            }
+        }
+
+        &.tabs {
+            .tab-item {
+                &:hover {
+                    color: $custom-color;
+
+                    > span {
+
+                        &:before,
+                        &:after {
+                            background: $custom-color;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    nav {
+        strong {
+            color: $custom-color;
+        }
+    }
+}
+
+#menu-btn,
+.login-screen .logo  {
+    background-image: $logo-url;
+    background-repeat: no-repeat;
+
+    img {
+        display: none;
+    }
+}
+#menu-btn {
+    background-position: $logo-pos center;
+    background-size: auto $logo-height;
+}
+.login-screen .logo {
+    background-position: center center;
+    height: $logo-login-size;
+}

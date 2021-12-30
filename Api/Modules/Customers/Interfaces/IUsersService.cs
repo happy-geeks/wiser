@@ -1,0 +1,135 @@
+﻿using System.Collections.Generic;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using Api.Core.Models;
+using Api.Core.Services;
+using Api.Modules.Customers.Models;
+using GeeksCoreLibrary.Core.Models;
+using Newtonsoft.Json.Linq;
+
+namespace Api.Modules.Customers.Interfaces
+{
+    /// <summary>
+    /// Interface for operations related to Wiser 2 users (users that can log in to Wiser 2.0).
+    /// </summary>
+    public interface IUsersService
+    {
+        /// <summary>
+        /// Gets a list of all users for a customer.
+        /// </summary>
+        /// <returns>A list of <see cref="WiserItemModel">ItemModel</see>.</returns>
+        Task<ServiceResult<List<WiserItemModel>>> GetAsync();
+
+        /// <summary>
+        /// Method for logging in admin accounts.
+        /// </summary>
+        /// <param name="emailAddress">The e-mail address of the admin account.</param>
+        /// <param name="password">The password of the admin account.</param>
+        /// <param name="ipAddress">The IP address of the user that is trying to login.</param>
+        /// <returns>A populated <see cref="AdminAccountModel"/> if successful, a 401 error if not.</returns>
+        Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string emailAddress, string password, string ipAddress = null);
+        
+        /// <summary>
+        /// Login a customer to Wiser 2.0. Normal users login with their username and password.
+        /// Admin accounts login via their own credentials and can then login as any other user.
+        /// </summary>
+        /// <param name="username">The username of the user to login as.</param>
+        /// <param name="password">The password of the user. Can be empty if logging in with an admin account.</param>
+        /// <param name="encryptedAdminAccountId">Optional: The encrypted admin account ID.</param>
+        /// <param name="subDomain">The Wiser 2 sub domain used to access the site.</param>
+        /// <param name="generateAuthenticationTokenForCookie">Optional: Indicate whether to generate a token for a login cookie so that the user stays login for a certain amount of time.</param>
+        /// <param name="ipAddress">The IP address of the user.</param>
+        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user to check for rights.</param>
+        /// <returns>Either an unauthorized error, or the <see cref="UserModel"/> of the user that is trying to login.</returns>
+        Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null);
+
+        /// <summary>
+        /// Sends a new password to a user.
+        /// </summary>
+        /// <param name="resetPasswordRequestModel">The information for the account to reset the password.</param>
+        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user to check for rights.</param>
+        /// <returns>Always returns true, unless an exception occurred.</returns>
+        Task<ServiceResult<bool>> ResetPasswordAsync(ResetPasswordRequestModel resetPasswordRequestModel, ClaimsIdentity identity);
+
+        /// <summary>
+        /// Method for validating a "Remember me" cookie.
+        /// </summary>
+        /// <param name="cookieValue">The exact contents of the cookie.</param>
+        /// <param name="subDomain">The Wiser 2 sub domain used to access the site.</param>
+        /// <param name="ipAddress">Optional: The IP address of the user that is trying to login.</param>
+        /// <param name="sessionId">Optional: The ID of the current session of the user.</param>
+        /// <param name="encryptedAdminAccountId">Optional: The encrypted admin account ID.</param>
+        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user to check for rights.</param>
+        /// <returns>Whether the cookie is (still) valid. If it's not valid, an error will be returned. Otherwise the user ID will be returned (encrypted).</returns>
+        Task<ServiceResult<ValidateCookieModel>> ValidateLoginCookieAsync(string cookieValue, string subDomain = null, string ipAddress = null, string sessionId = null, string encryptedAdminAccountId = null, ClaimsIdentity identity = null);
+
+        /// <summary>
+        /// Changes the password of a user.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <param name="passwords">The old and new passwords of the user.</param>
+        Task<ServiceResult<UserModel>> ChangePasswordAsync(ClaimsIdentity identity, ChangePasswordModel passwords);
+
+        /// <summary>
+        /// Changes the e-mail address of a user.
+        /// </summary>
+        /// <param name="userId">The ID of the user.</param>
+        /// <param name="subDomain">The Wiser 2 sub domain used to access the site.</param>
+        /// <param name="newEmailAddress">The new e-mail address.</param>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        Task<ServiceResult<UserModel>> ChangeEmailAddressAsync(ulong userId, string subDomain, string newEmailAddress, ClaimsIdentity identity);
+
+        /// <summary>
+        /// Gets data for the logged in user, such as the encrypted ID (which is only valid for 1 hour), for use with json.jcl.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <returns></returns>
+        Task<ServiceResult<UserModel>> GetUserDataAsync(ClaimsIdentity identity);
+        
+        /// <summary>
+        /// Gets settings for a grid for the authenticated user, so that users can keep their state of all grids in Wiser.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <param name="uniqueKey">The unique key for the grid settings. This should be unique for each grid in Wiser, so that no 2 grids use the same settings.</param>
+        Task<ServiceResult<string>> GetGridSettingsAsync(ClaimsIdentity identity, string uniqueKey);
+
+        /// <summary>
+        /// Saves settings for a grid for the authenticated user, so that the next time the grid is loaded, the user keeps those settings.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <param name="uniqueKey">The unique key for the grid settings. This should be unique for each grid in Wiser, so that no 2 grids use the same settings.</param>
+        /// <param name="settings">A JSON object with the settings to save.</param>
+        Task<ServiceResult<bool>> SaveGridSettingsAsync(ClaimsIdentity identity, string uniqueKey, JToken settings);
+
+
+        /// <summary>
+        /// Get the e-mail address of the user.
+        /// </summary>
+        /// <param name="id">The ID of the user.</param>
+        Task<string> GetUserEmailAddressAsync(ulong id);
+
+        /// <summary>
+        /// Get some settings for Wiser.
+        /// </summary>
+        /// <param name="encryptionKey">The encryption key of the customer.</param>
+        /// <returns></returns>
+        Task<UserModel> GetWiserSettingsForUserAsync(string encryptionKey);
+
+        /// <summary>
+        /// Generates a new refresh token and saves it in the database. The refresh token can be used to re-authenticate without having to enter credentials again.
+        /// </summary>
+        /// <param name="cookieSelector"></param>
+        /// <param name="subDomain">The Wiser 2 sub domain used to access the site.</param>
+        /// <param name="ticket">The serialized ticket from the OWIN context.</param>
+        /// <returns>The newly generated refresh token.</returns>
+        Task<string> GenerateAndSaveNewRefreshTokenAsync(string cookieSelector, string subDomain, string ticket);
+
+        /// <summary>
+        /// Gets the ticket corresponding to a refresh token from the database and then deleted that refresh token, so that it can only be used once.
+        /// </summary>
+        /// <param name="subDomain">The Wiser 2 sub domain used to access the site.</param>
+        /// <param name="refreshToken">The refresh token.</param>
+        /// <returns>The serialized ticket for OWIN context.</returns>
+        Task<string> UseRefreshTokenAsync(string subDomain, string refreshToken);
+    }
+}

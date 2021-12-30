@@ -1,0 +1,66 @@
+//// SITE FONTS
+$font-url: 'fonts/';
+$font-body: 'Roboto', sans-serif;
+$font-bold: 'AvantGardeGothic-Bd', sans-serif;
+$font-medium: 'AvantGardeGothic-Md', sans-serif;
+$font-demi: 'AvantGardeGothic-Dm', sans-serif;
+$font-book: 'AvantGardeGothic-Bk', sans-serif;
+
+//// SITE COLORS
+$body-color: #F5F7F8;
+$text-color: #282828;
+$primary-color: #2ECC71;
+$primary-hover-color: #20BFF9;
+$alert-color: #FF6339;
+$color-1: #F55523;
+$color-2: #F8BA00;
+$color-3: #008ECB;
+$color-4: #D43362;
+$white-color: #FFFFFF;
+$black-color: #000000;
+$button-cancel-color: #CCCCCC;
+$grey-color: #777777;
+$line-color: #E6E6E6;
+$line-md-color: #F0F0F0;
+$line-lt-color: #F5F5F5;
+$ultra-lt-color: #FAFAFA;
+$tab-color: #EFF1F2;
+$form-text-color: #444444;
+$logo-color-1: #FCB62A;
+$logo-color-2: $text-color;
+
+//// SCROLL BAR
+$scroll-track-color: $line-color;
+$scroll-thumb-color: $grey-color;
+$scroll-bar-radius: 4px;
+
+//// SITE VARIABLES 
+
+// Base width defines the site width
+// gutter-width will be added to the total to provide spacing on the outside.
+// e.g. base-width: 1280px + gutter-width: 20px will result in a container width of 1300px
+
+$base-width: 1280px;
+
+// Gutter width defines the spacing around a colum.
+// e.g. 20px will result in a margin of 10px all round.
+
+$gutter-width: 20px;
+
+// Column count defines the maximum columns allowed in 1 row.
+// After which the next column will be forced to a new row.
+
+$column-count: 12;
+
+//// BREAKPOINTS 
+
+$screen-sm-min: 415px;
+$screen-md-min: 769px;
+$screen-lg-min: 1025px;
+$screen-xl-min: $base-width + $gutter-width;
+
+$screen-sm-max: 414px;
+$screen-md-max: 768px;
+$screen-lg-max: 1024px;
+
+$footer-bl-width: 160px;

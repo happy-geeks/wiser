@@ -1,0 +1,195 @@
+﻿// Variables
+@import 'variables';
+
+//// MIXINS
+@import 'mixin/mixin';
+
+#task {
+    .taskAlert {
+        background: #d8552b;
+        color: #ffffff;
+        display: flex;
+        flex-wrap: nowrap;
+        height: 42px;
+        min-width: 42px;
+        position: absolute;
+        top: -150px;
+        left: 50%;
+        transition: 0.3s ease;
+        transform: translateX(-50%);
+        transform-origin: top;
+        width: auto;
+        z-index: 1000;
+        margin-left: -6px;
+
+        &:before {
+            content: "";
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 7px 7px 7px;
+            border-color: transparent transparent #d8552b transparent;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        ins {
+            display: inline-block;
+            font-size: 20px;
+            height: 42px;
+            line-height: 42px;
+            text-align: center;
+            width: 42px;
+        }
+
+        span {
+            display: inline-block;
+            height: 42px;
+            line-height: 42px;
+            max-width: 0;
+            overflow: hidden;
+            padding-right: 0;
+            transition: 0.3s ease;
+            white-space: nowrap;
+        }
+    }
+
+    > iframe {
+        position: absolute;
+        top: 60px;
+        right: 0;
+        background: #ffffff;
+        -moz-transition: all 0.2s 0;
+        -webkit-transition: all 0.2s 0;
+        -o-transition: all 0.2s 0;
+        transition: all 0.2s 0;
+        opacity: 0;
+        visibility: hidden;
+        z-index: -1;
+        pointer-events: none;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        height: calc(100vh - 61px);
+        left: 0;
+        width: calc(100% + 267px);
+    }
+
+    &.alert {
+        .taskAlert {
+            top: 56px;
+            animation-duration: 2s;
+            animation-iteration-count: infinite;
+            animation-name: bounce;
+            animation-timing-function: ease;
+        }
+    }
+
+    &:hover {
+        animation-name: none;
+
+        .taskAlert {
+            animation-name: none;
+
+            span {
+                max-width: 200px;
+                padding-right: 18px;
+            }
+        }
+    }
+
+    &.open {
+        overflow: visible;
+        z-index: 100;
+
+        > iframe {
+            box-shadow: 0px 8px 15px rgb(75 72 72 / 10%);
+            border-top: 1px solid $text-color;
+            height: calc(100vh - 70px);
+            opacity: 1;
+            visibility: visible;
+            top: 70px;
+            pointer-events: all;
+            z-index: 1000;
+        }
+
+        .taskAlert {
+            display: none;
+        }
+
+        &:after {
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+            z-index: 1000;
+            border-color: rgba(255, 255, 255, 0);
+            border-bottom-color: $text-color;
+            border-width: 10px;
+            left: 50%;
+            margin-left: -15px;
+            bottom: 0;
+        }
+    }
+
+    &[data-alert] {
+        &:before {
+            background: #d8552b;
+            border-radius: 8px;
+            box-shadow: 1px 1px 1px 0 rgba(0, 0, 0, 0.4);
+            color: #ffffff;
+            content: "99+";
+            font-size: 10px;
+            font-weight: bold;
+            height: 16px;
+            line-height: 16px;
+            min-width: 16px;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            text-align: center;
+            padding: 0 5px;
+            z-index: 10;
+        }
+    }
+
+    &[data-alert="0"] {
+        &:before {
+            display: none;
+        }
+    }
+}
+
+@for $i from 1 through 99 {
+    #task[data-alert="#{$i}"] {
+        &:before {
+            content: attr(data-alert);
+        }
+    }
+}
+
+@media screen and (min-width: 961px) and (max-width: 1024px) {
+    #task {
+        > iframe {
+            width: 357px;
+        }
+
+        &.open {
+            > iframe {
+                width: 357px;
+            }
+        }
+    }
+}
+
+@keyframes bounce {
+	0%   { transform: scale(1,1) translateY(0) translateX(-50%); }
+	10%  { transform: scale(1.1,.9) translateY(0) translateX(-50%); }
+	30%  { transform: scale(.9,1.1) translateY(12px) translateX(-50%); }
+	50%  { transform: scale(1,1) translateY(0) translateX(-50%); }
+	57%  { transform: scale(1,1) translateY(3px) translateX(-50%); }
+	64%  { transform: scale(1,1) translateY(0) translateX(-50%); }
+	100% { transform: scale(1,1) translateY(0) translateX(-50%); }
+}
