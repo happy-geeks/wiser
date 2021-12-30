@@ -1,0 +1,120 @@
+﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <meta charset="utf-8" />
+    <title>Wiser 2.1 - Task Alerts</title>
+
+    <!-- TODO: These files should be loaded via webpack like the rest, but then we get errors.
+    TODO: If we add the NPM package @@progress/kendo-theme-material, then it works, but that theme has different CSS, some thing look different then... -->
+    <link href="/css/libraries/Kendo/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="/css/libraries/Kendo/kendo.material.min.css" rel="stylesheet" />
+
+    <script>
+        window.wiserVersion = "@Model.WiserVersion?.ToString()";
+    </script>
+</head>
+<body class="taskAlert"
+      data-module-id="708"
+      data-wiser-api-root="@Model.ApiRoot"
+      data-wiser-api-v21-root="@Model.ApiRoot"
+      data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
+      data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
+      data-api-client-id="@Model.Settings.ApiClientId"
+      data-api-client-secret="@Model.Settings.ApiClientSecret"
+      data-sub-domain="@Model.SubDomain"
+      data-track-js-token="@Model.Settings.TrackJsToken">
+
+    <ul id="taskList">
+        <li id="taskHistory">
+            <a href="#">Agendering historie</a>
+        </li>
+    </ul>
+
+    <div class="taskForm">
+        <div class="item">
+            <h4><label>Voeg een taak toe</label></h4>
+            <input id="taskDate" class="datepicker" value="@DateTime.Today.ToString("dd MMMM yyyy")" title="datepicker" />
+        </div>
+        <div class="item">
+            <h4><label>Gebruikers toevoegen</label></h4>
+            <select id="taskUsers" class="multi-select" multiple="multiple" data-placeholder="Kies gebruikers..." data-data-text-field="title" data-data-value-field="id" data-auto-bind="false"></select>
+        </div>
+        <div class="item">
+            <h4><label>Taakomschrijving</label></h4>
+            <textarea id="taskDescription" placeholder="Omschrijving van de taak..."></textarea>
+        </div>
+        <div class="item">
+            <div class="actions btn2">
+                <button type="button" id="saveTask" class="module-button k-primary" data-icon="save">Opslaan</button>
+                <button type="button" id="cancelTask" class="module-button" data-icon="cancel">Annuleren</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="editTaskForm">
+        <div class="item">
+            <h4><label>Taak aanpassen</label></h4>
+            <input id="editTaskDate" class="datepicker" value="@DateTime.Today.ToString("dd MMMM yyyy")" title="datepicker" />
+        </div>
+        <div class="item">
+            <h4><label>Gebruiker</label></h4>
+            <select id="editTaskUser" class="drop-down-list" data-option-label="Kies gebruiker..." data-data-text-field="title" data-data-value-field="id" data-auto-bind="false"></select>
+        </div>
+        <div class="item">
+            <h4><label>Taakomschrijving</label></h4>
+            <textarea id="editTaskDescription" placeholder="Omschrijving van de taak..."></textarea>
+        </div>
+        <div class="item">
+            <h4><label>Status</label></h4>
+            <select id="editTaskStatus" class="drop-down-list" data-option-label="Kies een status..." data-data-text-field="name" data-data-value-field="id">
+                <option value="">Geen status</option>
+                <option value="in behandeling">In behandeling</option>
+                <option value="wacht op reactie">Wacht op reactie</option>
+                <option value="afgerond">Afgerond</option>
+            </select>
+        </div>
+        <div class="item">
+            <div class="actions btn2">
+                <button type="button" id="saveEditTask" class="module-button k-primary" data-icon="save">Opslaan</button>
+                <button type="button" id="cancelEditTask" class="module-button" data-icon="cancel">Annuleren</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="actions">
+        <button type="button" class="module-button k-primary k-button-round" id="addTask" data-icon="plus"></button>
+    </div>
+
+    <div id="mainLoader" class="fullscreen-loader loading">
+        <div class="loader-icon">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+
+    <script type="text/x-wiser-template" id="taskHtmlTemplate">
+        <li data-has-linked-item="{has_linked_item}">
+            <div class="taskListItemDetails">
+                <label>
+                    <input type="checkbox" class="noForm" value="{idencrypted}" />
+                    <ins class="icon-check"></ins>
+                </label>
+                <span>{content}</span>
+                <small>{agendering_date_pretty}</small>
+                <small>{status}</small>
+                <strong>{placed_by}</strong>
+            </div>
+            <a role="button" class="k-button k-button-icontext open-task" data-item-id="{linked_item_id}" data-module-id="{linked_item_module_id}" data-entity-type="{linked_item_entity_type}" href="#"><span class="k-icon k-i-hyperlink-open"></span></a>
+            <a role="button" class="k-button k-button-icontext edit-task" data-task-id="{idencrypted}" href="#"><span class="k-icon k-i-edit"></span></a>
+        </li>
+    </script>
+
+    <script src="/scripts/Jjl.min.js"></script>
+    <script src="/scripts/Utils.min.js"></script>
+    <script src="/scripts/TaskAlerts.min.js"></script>
+</body>
+</html>

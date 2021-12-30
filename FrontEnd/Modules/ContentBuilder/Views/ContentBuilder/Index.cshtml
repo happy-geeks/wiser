@@ -1,0 +1,35 @@
+﻿@model FrontEnd.Core.Models.BaseViewModel
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Content Builder</title>
+
+    <link href="/ContentBuilder/assets/minimalist-blocks/content.css" rel="stylesheet" type="text/css" />
+    <link href="/ContentBuilder/assets/ionicons/css/ionicons.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="app" v-cloak>
+        <div class="is-tool main-tools-container">
+            <button @@click="viewSnippets()" class="classic view-snippets-button">+ Toevoegen</button>
+            <button @@click="viewHtml()" class="classic view-html-button">HTML</button>
+        </div>
+
+        <div id="contentarea" class="container is-container">
+        </div>
+    </div>
+
+    <script id="vue-config" type="application/json">
+    {
+        "apiBase": "@Model.ApiRoot",
+        "subDomain": "@Model.SubDomain",
+        "isTestEnvironment": @Model.IsTestEnvironment.ToString().ToLowerInvariant(),
+        "wiser1BaseUrl": "@Model.Wiser1BaseUrl",
+        "trackJsToken": "@Model.Settings.TrackJsToken"
+    }
+    </script>
+    <script type="module" src="/scripts/ContentBuilder.min.js"></script>
+</body>
+</html>

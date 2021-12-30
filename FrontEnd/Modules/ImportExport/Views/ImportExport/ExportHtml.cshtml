@@ -1,0 +1,43 @@
+﻿<div class="formview full" id="ExportContainer">
+    <div class="item">
+        <div id="DataSelectorContainer">
+            <input type="radio" name="exportType" id="ExportDataSelector" class="noForm rToggle" value="dataselector" />
+            <header>
+                <label for="ExportDataSelector" class="radio rToggle"><span>Data selector</span></label>
+            </header>
+            <div>
+                <select id="DataSelectorList" name="dataSelector" class="kendo-dropdown-list">
+                </select>
+            </div>
+        </div>
+
+        <div id="QueryContainer">
+            <input type="radio" name="exportType" id="ExportQuery" class="noForm rToggle" value="query" />
+            <header>
+                <label for="ExportQuery" class="radio rToggle"><span>Query</span></label>
+            </header>
+            <div>
+                <select id="QueryList" name="query" class="kendo-dropdown-list">
+                </select>
+            </div>
+        </div>
+
+        <div id="ModuleContainer">
+            <input type="radio" name="exportType" id="ExportModule" class="noForm rToggle" value="module" />
+            <header>
+                <label for="ExportModule" class="radio rToggle"><span>Module</span></label>
+            </header>
+            <div>
+                <select id="ModuleList" name="module" class="kendo-dropdown-list">
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIXED FOOTER -->
+    <footer class="fixed">
+        <div class="actions">
+            <button id="startExportButton" class="k-primary button rightButton">Start export</button>
+        </div>
+    </footer>
+</div>

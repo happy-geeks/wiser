@@ -1,0 +1,751 @@
+﻿@model FrontEnd.Modules.DynamicItems.Models.DynamicItemsViewModel
+
+<!DOCTYPE html>
+<html>
+
+<head runat="server">
+    <title>Wiser 2.1 - Dynamic items</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- TODO: These files should be loaded via webpack like the rest, but then we get errors.
+        TODO: If we add the NPM package @@progress/kendo-theme-material, then it works, but that theme has different CSS, some thing look different then... -->
+    <link href="/css/libraries/Kendo/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="/css/libraries/Kendo/kendo.material.min.css" rel="stylesheet" />
+    <script>
+        window.wiserVersion = "@Model.WiserVersion?.ToString()";
+    </script>
+</head>
+
+<body class="@Model.BodyCssClass"
+      data-module-id="@Model.ModuleId"
+      data-module-name="@Model.ModuleName"
+      data-initial-item-id="@Model.InitialItemId"
+      data-iframe-mode="@Model.IframeMode.ToString().ToLowerInvariant()"
+      data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
+      data-wiser-api-root="@Model.ApiRoot"
+      data-wiser-api-v21-root="@Model.ApiRoot"
+      data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
+      data-read-only="@Model.ReadOnly.ToString().ToLowerInvariant()"
+      data-hide-footer="@Model.HideFooter.ToString().ToLowerInvariant()"
+      data-hide-header="@Model.HideHeader.ToString().ToLowerInvariant()"
+      data-sub-domain="@Model.SubDomain"
+      data-create-new-item="@Model.CreateNewItem.ToString().ToLowerInvariant()"
+      data-parent-id="@Model.ParentItemId"
+      data-new-item-data="@Model.NewItemData"
+      data-entity-type="@Model.EntityType"
+      data-track-js-token="@Model.Settings.TrackJsToken"
+      data-api-client-id="@Model.Settings.ApiClientId"
+      data-api-client-secret="@Model.Settings.ApiClientSecret">
+
+    <form id="mainScreenForm" autocomplete="off" novalidate>
+        <div id="wiser">
+
+            <div id="gridView"></div>
+            <div id="informationBlock" class="hidden"></div>
+            <div id="window" style="margin: 0 auto; padding: 0;">
+
+                <!-- START --- EDIT LAYOUT -->
+                <input type="checkbox" id="editToggle" class="noForm edit" />
+                <input type="checkbox" id="widthToggle" class="noForm edit" />
+                <!-- END ----- EDIT LAYOUT -->
+
+                <div id="panelwithsplitter" style="height: 100%; margin: 0; padding: 0; border: 0;">
+
+                    <div id="horizontal" style="border: 0; height: 100%; width: 100%;">
+
+                        <div id="left-pane" style="background-color: #ccc;">
+                            <div class="pane-content">
+                                <div id="treeview"></div>
+
+                                <button id="addButton" class="k-primary k-button-round"></button>
+                            </div>
+                        </div>
+
+
+                        <div id="right-pane" style="background-color: #eee;">
+                            <div id="alert-first" class="alert-overlay">
+                                <div class="alert">
+                                    <ins class="icon-arrow-left"></ins>Maak eerst een keuze in het linkermenu.
+                                    <div class="alert-close icon-close"></div>
+                                </div>
+                            </div>
+
+                            <div class="pane-content entity-container" style="border: 0; margin: 0; padding: 0; height: 100%">
+                                <!-- FIXED HEADER -->
+                                <header class="fixed clear">
+                                    <ul id="crumbTrail" class="path">
+                                        <li>Nog geen item geselecteerd</li>
+                                    </ul>
+
+                                    <div class="actions">
+                                        <button id="saveButton" class="k-primary saveButton">@Model.SaveButtonText</button>
+                                    </div>
+                                </header>
+
+                                <!-- ALERT MESSAGES -->
+                                <div id="alert"></div>
+                                <div id="alert-pane"></div>
+
+                                <!-- Edit menu -->
+                                <ul id="mainEditMenu" class="editMenu">
+                                    <li>
+                                        <ins class="icon-quickmenu"></ins>
+                                        <ul id="editSub" class="editSub">
+                                            <li>
+                                                <label class="reloadItem"><span>Item verversen</span></label>
+                                            </li>
+                                            <li>
+                                                <label class="deleteItem"><span>Item verwijderen</span></label>
+                                            </li>
+                                            <li>
+                                                <label class="undeleteItem"><span>Verwijderen ongedaan maken</span></label>
+                                            </li>
+                                            @if (Model.IsAllowedToChangePropertyWidth)
+                                            {
+                                                <li>
+                                                    <label for="widthToggle" class="widthToggle"><span>Breedtes aanpassen</span> <ins class="icon-check"></ins></label>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </li>
+                                </ul>
+
+                                <!-- TABS -->
+                                <div id="tabstrip">
+                                    <ul>
+                                        <li class="k-state-active">Gegevens</li>
+                                        <li class="overview-tab hidden">Overzicht</li>
+                                    </ul>
+                                    <div>
+                                        <div class="formview full static-fields itemNameFieldContainer">
+                                            <div class="item _existingItemName" data-item-id="0" data-depends-on-field="" data-depends-on-operator="" data-depends-on-value="" data-property-name="title">
+                                                <h4><label>Naam voor item</label></h4>
+                                                <span class="k-widget k-input k-state-default">
+                                                    <input type="text" class="textField k-input _nameForExistingItem itemNameField" name="_nameForExistingItem" autocomplete="off" value="">
+                                                </span>
+                                                <div class="form-hint"></div>
+                                            </div>
+                                        </div>
+                                        <div class="formview half dynamicTabContent" id="right-pane-content"></div>
+                                    </div>
+                                    <div>
+                                        <div class="formview full" id="overViewGridContainer">
+                                            <div id="overViewGrid"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FIXED FOOTER -->
+                            <footer class="fixed">
+                                <div id="metaData" class="metaData">
+                                    <input type="checkbox" id="meta-toggle_main" class="hidden">
+                                    <p class="no-selection">Nog geen item geselecteerd</p>
+                                    <ul class="meta-data hidden">
+                                        <li class="visible">ID: <span class="id"></span></li>
+                                        <li>UUID: <span class="uuid"></span></li>
+                                        <li>Naam: <span class="title"></span></li>
+                                        <li class="visible">Type: <span class="entity-type"></span></li>
+                                        <li>Omgeving: <span class="published-environment"></span></li>
+                                        <li>Alleen lezen: <span class="read-only"></span></li>
+                                        <li>Toegevoegd op: <span class="added-on"></span></li>
+                                        <li>Toegevoegd door: <span class="added-by"></span></li>
+                                        <li><a class="changedon-footer" href="javascript: void(0)">Gewijzigd op: <span class="changed-on"></span></a></li>
+                                        <li>Gewijzigd door: <span class="changed-by"></span></li>
+                                        <li class="meta-toggle"><label for="meta-toggle_main"><span>Alles tonen</span><span>Minder tonen</span></label></li>
+                                    </ul>
+                                </div>
+                                <div class="actions">
+                                    @if (!Model.ReadOnly)
+                                    {
+                                    <button id="saveBottom" class="k-primary saveButton">@Model.SaveButtonText</button>
+                                    <button id="saveAndCreateNewItemButton" class="k-primary saveButton hidden">Opslaan en nieuw item maken</button>
+                                    }
+                                </div>
+                            </footer>
+
+                            <!-- Template info slide-panel -->
+                            <div id="infoPanel_main" class="info-container">
+                                <div class="info-panel">
+                                    <h2 class="info-title"></h2>
+                                    <div class="close-panel k-button" role="button" aria-label="Close">
+                                        <span class="k-icon k-i-close"></span>
+                                    </div>
+                                    <div class="info-content"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Item popup / window -->
+    <div id="itemWindow_template" class="popup-container entity-container">
+        <div class="pane-content">
+            <div class="tabStripPopup">
+                <ul>
+                    <li class="k-state-active">Gegevens</li>
+                </ul>
+                <div>
+                    <div class="formview full static-fields itemNameFieldContainer">
+                        <div class="item _existingItemName" data-item-id="0" data-depends-on-field="" data-depends-on-operator="" data-depends-on-value="" data-property-name="title">
+                            <h4><label>Naam voor item</label></h4>
+                            <span class="k-widget k-input k-state-default">
+                                <input type="text" class="textField k-input _nameForExistingItem itemNameField" name="_nameForExistingItem" autocomplete="off" value="">
+                            </span>
+                            <div class="form-hint"></div>
+                        </div>
+                    </div>
+                    <div class="formview full right-pane-content-popup dynamicTabContent">
+                    </div>
+                </div>
+                <div>
+                    <div class="formview full" class="historyGridContainer">
+                        <div class="historyGrid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FIXED FOOTER -->
+        <footer class="fixed ">
+            <div class="metaData">
+                <input type="checkbox" id="meta-toggle_template" class="hidden">
+                <p class="no-selection">Nog geen item geselecteerd</p>
+                <ul class="meta-data hidden">
+                    <li class="visible">ID: <span class="id"></span></li>
+                    <li>UUID: <span class="uuid"></span></li>
+                    <li>Naam: <span class="title"></span></li>
+                    <li class="visible">Type: <span class="entity-type"></span></li>
+                    <li>Omgeving: <span class="published-environment"></span></li>
+                    <li>Alleen lezen: <span class="read-only"></span></li>
+                    <li>Toegevoegd op: <span class="added-on"></span></li>
+                    <li>Toegevoegd door: <span class="added-by"></span></li>
+                    <li><a class="changedon-footer" href="javascript: void(0)">Gewijzigd op: <span class="changed-on"></span></a></li>
+                    <li>Gewijzigd door: <span class="changed-by"></span></li>
+                    <li class="meta-toggle"><label for="meta-toggle_template"><span>Alles tonen</span><span>Minder tonen</span></label></li>
+                </ul>
+            </div>
+            <div class="actions">
+                <button class="saveAndCloseBottomPopup k-primary saveButton" name="saveAndClose">Opslaan en sluiten</button>
+                <button class="saveBottomPopup k-secondary saveButton" name="save">Opslaan</button>
+                <button class="cancelItemPopup k-secondary" name="cancel">Annuleren</button>
+            </div>
+        </footer>
+
+        <div class="popup-loader fullscreen-loader loading">
+            <div class="loader-icon">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template info slide-panel -->
+    <div id="infoPanel_template" class="info-container">
+        <div class="info-panel">
+            <h2 class="info-title"></h2>
+            <div class="close-panel k-button" role="button" aria-label="Close">
+                <span class="k-icon k-i-close"></span>
+            </div>
+            <div class="info-content"></div>
+        </div>
+    </div>
+
+    <!-- Item search popup / window -->
+    <div id="searchItemsWindow">
+        <div class="pane-content">
+            <p><strong>Let op!</strong> Het (de)selecteren van een item in deze lijst wordt direct verwerkt in het systeem.</p>
+            <div class="grid-parent">
+                <div id="searchItemsWindowGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item search popup / window -->
+    <div id="historyWindow">
+        <div class="pane-content">
+            <div class="grid-parent">
+                <div id="historyWindowGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Window for previewing the generation of PDF files (via an action button). -->
+    <div id="previewFrame">
+        <div class="k-content-frame">
+            <div id="previewTabStrip">
+            </div>
+        </div>
+        <footer class="fixed clear">
+            <div class="actions">
+                <button id="normalPreview" class="k-secondary k-blue button-left">Voorbeeld</button>
+                <button id="htmlPreview" class="k-secondary k-blue button-left">HTML wijzigen</button>
+                <button id="savePreview" class="k-primary">Opslaan als PDF</button>
+                <button id="printPreview" class="k-secondary k-blue">Printen</button>
+                <button id="mailPreview" class="k-secondary k-blue">E-Mail</button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Window for previewing and editing the HTML source of a kendo HTML editor. -->
+    <div id="htmlSourceWindow" class="html-source-window">
+        <div class="k-content-frame pane-content">
+            <textarea class="editor-html"></textarea>
+        </div>
+        <footer class="fixed clear">
+            <div class="actions">
+                <button class="k-primary" name="save">Update</button>
+                <button class="k-secondary" name="cancel">Annuleren</button>
+                <button class="addDynamicContent"></button>
+                <button class="addTemplate"></button>
+                <button class="addImage"></button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Window for previewing and editing the HTML source of a kendo HTML editor. -->
+    <div id="contentBuilderWindow" class="content-builder-window">
+        <div class="k-content-frame pane-content">
+            <iframe frameborder="0" class="k-content-frame"></iframe>
+        </div>
+        <footer class="fixed clear">
+            <div class="actions">
+                <button class="k-primary" name="save">Update</button>
+                <button class="k-secondary" name="cancel">Annuleren</button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Window for maximizing a kendo HTML editor. -->
+    <div id="maximizeEditorWindow" class="maximize-editor-window">
+        <div class="k-content-frame pane-content">
+            <textarea class="editor-html"></textarea>
+        </div>
+    </div>
+
+    <!-- Images uploader window -->
+    <div id="imagesUploaderWindow" class="popup-container">
+        <input type="file" id="newImageUpload" class="hidden" multiple />
+        <div class="horizontal">
+            <div class="left-pane">
+                <div class="pane-content">
+                    <div id="imagesUploaderTreeView"></div>
+                    <ul id="imagesUploaderTreeViewContextMenu">
+                        <li data-action="delete"><span class="k-sprite icon-delete"></span> Afbeelding verwijderen</li>
+                        <li data-action="rename"><span class="k-sprite icon-album-rename"></span> Afbeelding hernoemen</li>
+                        <li data-action="add-directory"><span class="k-icon k-i-folder-add"></span> Map toevoegen</li>
+                        <li data-action="add-image"><span class="k-icon k-i-image-insert"></span> Afbeelding toevoegen</li>
+                    </ul>
+                </div>
+
+                <div class="imagesUploaderActions">
+                    <button id="addNewImageButton" class="k-primary">Nieuwe afbeelding toevoegen</button>
+                    <button id="addNewImageDirectoryButton" class="k-primary">Nieuw map toevoegen</button>
+                </div>
+            </div>
+
+            <div class="right-pane hidden">
+                <div class="pane-content image-preview">
+
+                    <div class="formview full static-fields group-columns">
+                        <div class="item-group">
+                            <h3>Opties</h3>
+
+                            <div class="item preferredWidth">
+                                <h4><label>Gewenste breedte (in pixels)</label></h4>
+                                <span class="k-widget k-input k-state-default">
+                                    <input type="number" id="preferredWidth" class="textField k-input" name="preferredWidth" value="0" />
+                                </span>
+                                <div class="form-hint">
+                                    <p>Vul 0 in om de originele breedte van de afbeelding te gebruiken.</p>
+                                </div>
+                            </div>
+
+                            <div class="item preferredHeight">
+                                <h4><label>Gewenste hoogte (in pixels)</label></h4>
+                                <span class="k-widget k-input k-state-default">
+                                    <input type="number" id="preferredHeight" class="textField k-input" name="preferredHeight" value="0" />
+                                </span>
+                                <div class="form-hint">
+                                    <p>Vul 0 in om de originele hoogte van de afbeelding te gebruiken.</p>
+                                </div>
+                            </div>
+
+                            <div class="item resizeMode">
+                                <h4><label>Methode</label></h4>
+                                <span class="k-widget k-input k-state-default">
+                                    <select id="resizeMode" name="resizeMode" class="select">
+                                        <option value="normal">Normaal</option>
+                                        <option value="stretch">Uitrekken</option>
+                                        <option value="crop">Knippen</option>
+                                        <option value="fill">Opvullen</option>
+                                    </select>
+                                </span>
+                                <div class="form-hint">
+                                    <p>De manier waarop de afmetingen van de afbeelding aangepast moet worden:</p>
+                                    <dl>
+                                        <dt>Normaal</dt>
+                                        <dd>De afbeelding wordt verkleind of vergroot naar de afmeting die het dichtst bij het gewenste formaat komt. Verhoudingen van de originele afbeelding worden hierbij behouden. Voorbeeld: De afbeelding is 150x200 pixels en het gewenste formaat is 150x150. De uiteindelijke afbeelding wordt dan 113x150 pixels.</dd>
+                                        <dt>Uitrekken</dt>
+                                        <dd>De afbeelding wordt uitgerekt of ingekrompen totdat de resulutie exact is zoals opgegeven. Waarschuwing: Dit zorgt in veel gevallen voor misvormde afbeeldingen.</dd>
+                                        <dt>Knippen</dt>
+                                        <dd>De afbeelding wordt eerst verkleind totdat de breedte of de hoogte (degene die het grootste is) overeenkomt met de opgegeven maat, daarna worden overblijfsels afgeknipt. Voorbeeld: De afbeelding is 150x200 pixels en het gewenste formaat is 100x100 pixels. De uiteindelijke afbeelding wordt dan exact 100x100 pizels, maar omdat de verhoudingen nu anders zijn, wordt er boven en/of onder een stuk van de afbeelding afgeknipt. Hierdoor kunnen dus delen van een afbeelding verdwijnen.</dd>
+                                        <dt>Opvullen</dt>
+                                        <dd>De afbeelding wordt eerst verkleind totdat de breedte of de hoogte (degene die het kleinste is) overeenkomt met de opgegeven maat, daarna wordt de afbeelding opgevuld met witruimte totdat de resulatie exact overeenkomt. Voorbeeld: De afbeelding is 150x200 pixels en het gewenste formaat is 100x100 pixels. De uiteindelijke afbeelding wordt dan exact 100x100 pizels, maar omdat de verhoudingen nu anders zijn, wordt er links en/of rechts witruimte toegevoegd aan de afbeelding.</dd>
+                                    </dl>
+                                </div>
+                            </div>
+
+                            <div class="item anchorPosition hidden">
+                                <h4><label>Ankerpositie</label></h4>
+                                <span class="k-widget k-input k-state-default">
+                                    <select id="anchorPosition" name="anchorPosition" class="select">
+                                        <option value="center">Midden</option>
+                                        <option value="top">Boven</option>
+                                        <option value="bottom">Onder</option>
+                                        <option value="left">Links</option>
+                                        <option value="right">Rechts</option>
+                                        <option value="topleft">Linksboven</option>
+                                        <option value="topright">Rechtsboven</option>
+                                        <option value="bottomleft">Linksonder</option>
+                                        <option value="bottomright">Rechtsboven</option>
+                                    </select>
+                                </span>
+                                <div class="form-hint">
+                                    <p>De positie op de afbeelding vanuit waar geknipt of opgevuld moet worden.</p>
+                                    <dl>
+                                        <dt>Midden</dt>
+                                        <dd>De afbeelding kan boven, onder links en rechts afgeknipt/opgevuld worden.</dd>
+                                        <dt>Boven</dt>
+                                        <dd>De afbeelding kan onder, links en rechts afgeknipt/opgevuld worden.</dd>
+                                        <dt>Onder</dt>
+                                        <dd>De afbeelding kan boven, links en rechts afgeknipt/opgevuld worden.</dd>
+                                        <dt>Links</dt>
+                                        <dd>De afbeelding kan boven, onder en rechts afgeknipt/opgevuld worden.</dd>
+                                        <dt>Rechts</dt>
+                                        <dd>De afbeelding kan boven, onder en links afgeknipt/opgevuld worden.</dd>
+                                        <dt>Linksboven</dt>
+                                        <dd>De afbeelding kan onder en rechts afgeknipt/opgevuld worden.</dd>
+                                        <dt>Rechtsboven</dt>
+                                        <dd>De afbeelding kan onder en links afgeknipt/opgevuld worden.</dd>
+                                        <dt>Linksonder</dt>
+                                        <dd>De afbeelding kan boven en rechts afgeknipt/opgevuld worden.</dd>
+                                        <dt>Rechtsonder</dt>
+                                        <dd>De afbeelding kan boven en links afgeknipt/opgevuld worden.</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="item-group">
+                            <h3>Voorbeeld</h3>
+                            <div class="item">
+                                <a class="image-preview-link" target="_blank"><img /></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FIXED FOOTER -->
+                <footer class="fixed hidden">
+                    <div class="actions">
+                        <button class="test k-primary saveButton" name="addImageToEditor">Invoegen</button>
+                    </div>
+                </footer>
+            </div>
+        </div>
+
+        <div class="popup-loader fullscreen-loader loading">
+            <div class="loader-icon">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Files uploader window -->
+    <div id="filesUploaderWindow" class="popup-container">
+        <input type="file" id="newFileUpload" class="hidden" multiple />
+        <div class="horizontal">
+            <div class="left-pane">
+                <div class="pane-content">
+                    <div id="filesUploaderTreeView"></div>
+                    <ul id="filesUploaderTreeViewContextMenu">
+                        <li data-action="delete"><span class="k-sprite icon-delete"></span> Bestand verwijderen</li>
+                        <li data-action="rename"><span class="k-sprite icon-album-rename"></span> Bestand hernoemen</li>
+                        <li data-action="add-directory"><span class="k-icon k-i-folder-add"></span> Map toevoegen</li>
+                        <li data-action="add-file"><span class="k-icon k-i-image-insert"></span> Bestand toevoegen</li>
+                    </ul>
+                </div>
+
+                <div class="filesUploaderActions">
+                    <button id="addNewFileButton" class="k-primary">Nieuw bestand toevoegen</button>
+                    <button id="addNewFileDirectoryButton" class="k-primary">Nieuw map toevoegen</button>
+                </div>
+            </div>
+
+            <div class="right-pane hidden">
+                <div class="pane-content file-preview">
+
+                    <div class="formview full static-fields group-columns">
+                        <div class="item-group">
+                            <h3>Opties</h3>
+
+                            <div class="item">
+                                <h4><label>Tekst</label></h4>
+                                <span class="k-widget k-input k-state-default">
+                                    <input type="text" id="fileLinkText" class="textField k-input" name="fileLinkText" />
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="item-group">
+                            <h3>Voorbeeld</h3>
+                            <div class="item">
+                                <a class="file-preview-link" target="_blank">Download bestand</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FIXED FOOTER -->
+                <footer class="fixed hidden">
+                    <div class="actions">
+                        <button class="test k-primary saveButton" name="addFileToEditor">Invoegen</button>
+                    </div>
+                </footer>
+            </div>
+        </div>
+
+        <div class="popup-loader fullscreen-loader loading">
+            <div class="loader-icon">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Images uploader window -->
+    <div id="templatesUploaderWindow" class="popup-container">
+        <input type="file" id="newTemplateUpload" class="hidden" multiple />
+        <div class="horizontal">
+            <div class="left-pane">
+                <div class="pane-content">
+                    <div id="templatesUploaderTreeView"></div>
+                    <ul id="templatesUploaderTreeViewContextMenu">
+                        <li data-action="delete"><span class="k-sprite icon-delete"></span> Template verwijderen</li>
+                        <li data-action="rename"><span class="k-sprite icon-album-rename"></span> Template hernoemen</li>
+                        <li data-action="add-directory"><span class="k-icon k-i-folder-add"></span> Map toevoegen</li>
+                        <li data-action="add-template"><span class="k-icon k-i-image-insert"></span> Template toevoegen</li>
+                    </ul>
+                </div>
+
+                <div class="templatesUploaderActions">
+                    <button id="addNewTemplateButton" class="k-primary">Nieuwe template toevoegen</button>
+                    <button id="addNewTemplateDirectoryButton" class="k-primary">Nieuw map toevoegen</button>
+                </div>
+            </div>
+
+            <div class="right-pane hidden">
+                <div class="pane-content template-preview">
+
+                    <div class="formview full static-fields group-columns">
+                        <div class="item-group">
+                            <h3>Voorbeeld</h3>
+                            <div class="item">
+                                <iframe class="template-preview-iframe"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FIXED FOOTER -->
+                <footer class="fixed hidden">
+                    <div class="actions">
+                        <button class="test k-primary saveButton" name="addTemplateToEditor">Invoegen</button>
+                    </div>
+                </footer>
+            </div>
+        </div>
+
+        <div class="popup-loader fullscreen-loader loading">
+            <div class="loader-icon">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sendMailDialog">
+        <div class="formview full static-fields">
+            <div class="item">
+                <h4><label>Naam verzender</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="text" class="textField k-input" name="senderName" autocomplete="off" value="">
+                </span>
+            </div>
+            <div class="item">
+                <h4><label>E-mailadres verzender</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="email" class="textField k-input" name="senderEmail" autocomplete="off" value="" required>
+                </span>
+            </div>
+            <div class="item">
+                <h4><label>Naam ontvanger</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="text" class="textField k-input" name="receiverName" autocomplete="off" value="">
+                </span>
+            </div>
+            <div class="item">
+                <h4><label>E-mailadres ontvanger</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="email" class="textField k-input" name="receiverEmail" autocomplete="off" value="" required>
+                </span>
+            </div>
+            <div class="item">
+                <h4><label>CC</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="email" class="textField k-input" name="cc" autocomplete="off" value="">
+                </span>
+            </div>
+            <div class="item">
+                <h4><label>BCC</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="email" class="textField k-input" name="bcc" autocomplete="off" value="">
+                </span>
+            </div>
+            <div class="item">
+                <h4><label>Onderwerp</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="text" class="textField k-input" name="subject" autocomplete="off" value="" required>
+                </span>
+            </div>
+        </div>
+
+        <div class="formview full static-fields">
+            <div class="item">
+                <h4><label>Extra bijlagen</label></h4>
+                <span class="k-widget k-input k-state-default" id="attachmentFilesContainer">
+                    <input name="files" type="file" aria-label="files" />
+                </span>
+            </div>
+            <div class="item">
+                <h4><label>Inhoud</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <textarea class="editor" name="subject"></textarea>
+                </span>
+            </div>
+        </div>
+
+        <div class="popup-loader fullscreen-loader">
+            <div class="loader-icon">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="gridDeleteDialog"></div>
+
+    <div id="data-builder" class="x-window"></div>
+
+    <div id="mainLoader" class="fullscreen-loader loading">
+        <div class="loader-icon">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+
+    <!-- Kendo Templates -->
+    <div id="imageDialog"></div>
+    <script id="errorTemplate" type="text/x-kendo-template">
+        <div class="wrong-pass">
+            <img src="../../img/error-icon.png" />
+            <h3>#= message #</h3>
+        </div>
+    </script>
+
+    <script id="successTemplate" type="text/x-kendo-template">
+        <div class="success">
+            <img src="../../img/success-icon.png" />
+            <h3>#= message #</h3>
+        </div>
+    </script>
+
+    <script id="uploaderTemplate" type="text/x-kendo-template">
+        <div class="product" data-item-id="#= itemId #" data-image-id="#= fileId #" data-item-link-id="#= itemLinkId #">
+            <img src="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(itemId) #/files/#= fileId #/#= encodeURIComponent(name) #?encryptedCustomerId=#= encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#= encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#= window.dynamicItems.settings.isTestEnvironment #&subDomain=#= encodeURIComponent(window.dynamicItems.settings.subDomain) #&itemLinkId=#= encodeURIComponent(itemLinkId) #" alt="#: name # image" />
+            <div class="imgTools">
+                <button type="button" class="imgZoom" title="Preview"></button>
+                # if(!readonly) { #
+                <button type="button" class="imgEdit" title="Edit"></button>
+                <button type="button" class="imgDelete" title="Delete"></button>
+                # } #
+            </div>
+        </div>
+    </script>
+
+    <div id="createNewItemDialog"></div>
+    <script id="createNewItemDialogTemplate" type="text/x-kendo-template">
+        <div class="new-item-dialog-row" id="newItemEntityTypeContainer">
+            <h4><label for="newItemEntityTypeField">Kies een entiteit-type</label></h4>
+            <select id="newItemEntityTypeField" class="select"></select>
+        </div>
+        <div class="new-item-dialog-row">
+            <h4><label for="newItemNameField">Vul een naam in</label></h4>
+            <span class="k-widget k-input k-state-default">
+                <input type="text" id="newItemNameField" class="textField k-input" />
+            </span>
+        </div>
+    </script>
+
+    <script id="userNormalInputParameterTemplate" type="text/x-kendo-template">
+        <div class="new-item-dialog-row" id="normalInputUserParameterContainer">
+            <input type="text" id="normalInputUserParameter" name="normalInputUserParameter" class="k-input" />
+        </div>
+    </script>
+
+    <script id="userMultiLineInputParameterTemplate" type="text/x-kendo-template">
+        <div class="new-item-dialog-row" id="multiLineInputUserParameterContainer">
+            <textarea id="multiLineInputUserParameter" name="multiLineInputUserParameter" class="k-input"></textarea>
+        </div>
+    </script>
+    <script id="userComboBoxParameterTemplate" type="text/x-kendo-template">
+        <div class="new-item-dialog-row" id="comboBoxUserParameterContainer">
+            <select class="select" id="comboBoxUserParameter" name="comboBoxUserParameter" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."></select>
+        </div>
+    </script>
+    <script id="userGridParameterTemplate" type="text/x-kendo-template">
+        <div class="new-item-dialog-row" id="comboBoxUserParameterContainer">
+            <div class="grid" id="gridUserParameter"></grid>
+        </div>
+    </script>
+    <script id="userFileUploadParameterTemplate" type="text/x-kendo-template">
+        <div class="new-item-dialog-row" id="fileUploadUserParameterContainer">
+            <input type="file" id="fileUploadUserParameter" name="fileUploadUserParameter" />
+        </div>
+    </script>
+
+    <script src="/scripts/Jjl.min.js"></script>
+    <script src="/scripts/Utils.min.js"></script>
+    <script src="/scripts/DynamicItems.min.js"></script>
+
+    <!-- CONTEXT MENU FOR TREEVIEW -->
+    <ul id="menu"></ul>
+</body>
+
+</html>

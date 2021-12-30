@@ -1,0 +1,18 @@
+﻿[
+  {
+    "name": "ROUND({value}, 0)",
+    "value": "ROUND({value}, 0)"
+  },
+  {
+    "name": "ROUND({value}, 2)",
+    "value": "ROUND({value}, 2)"
+  },
+  {
+    "name": "DATE_FORMAT({value}, '%d-%m-%Y')",
+    "value": "DATE_FORMAT({value}, '%d-%m-%Y')"
+  },
+  {
+    "name": "DATE_ADD(NOW(), INTERVAL {value} YEAR)",
+    "value": "DATE_ADD(NOW(), INTERVAL {value} YEAR)"
+  }
+]

@@ -1,0 +1,358 @@
+﻿@using FrontEnd.Core.Models
+
+@model BaseViewModel
+<!-- Current Wiser version: @Model.WiserVersion?.ToString() -->
+<div id="app" v-cloak :class="{ loading: mainLoader }">
+    <header v-if="user.loggedIn && !requirePasswordChange">
+        <ul class="main-menu">
+            <li id="side-menu">
+                <div id="menu-btn" @@click="toggleMenuState()"><ins class="icon-menu"></ins><span>Menu</span></div>
+                <div id="side-btn" @@click="toggleMenuActive()"><ins class="icon-chevron-right"></ins></div>
+
+                <nav id="side-nav">
+                    <div class="menu-scroller">
+                        <ul>
+                            <li v-for="moduleGroup in moduleGroups" :key="moduleGroup.name">
+                                <strong v-if="moduleGroup.name">{{ moduleGroup.name }}</strong>
+                                <ul>
+                                    <li v-for="module in moduleGroup.modules" :key="module.module_id" @@click="openModule(module)">
+                                        <a href="#" :title="module.name"><ins :class="module.icon"></ins><span>{{ module.name }}</span></a>
+                                        <label>
+                                            <input type="checkbox" class="hidden" />
+                                            <ins class="icon-line-pin-empty"></ins>
+                                        </label>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </li>
+
+            <li class="tabs">
+                <div v-for="module in openedModules" :key="module.module_id" :class="{ 'tab-item': true, active: module.module_id === activeModule }" @@click="setActiveModule($event, module.module_id)" :title="module.name">
+                    <ins :class="module.icon"></ins>
+                    <strong>{{ module.name }}</strong>
+                    <span class="close-module" title="module sluiten" @@click="closeModule(module)"></span>
+                </div>
+            </li>
+
+            <li class="icons">
+                <div class="ico-item" v-if="modules.find(m => m.module_id === 709)">
+                    <ins class="icon-line-search" @@click="openModule(709)"></ins>
+                </div>
+                <div class="ico-item" title="Bug melden!" v-if="markerIoEnabled" @@click="openMarkerIoScreen()">
+                    <ins class="icon-line-bug"></ins>
+                </div>
+                <div class="ico-item">
+                    <ins class="icon-line-database-search" @@click="openWiserIdPrompt"></ins>
+                </div>
+                <task-alerts ref="taskAlerts"></task-alerts>
+            </li>
+
+            <li class="login">
+                <span>
+                    <strong class="title">Welkom</strong>
+                    <span class="sub-title">{{ user.name }}</span>
+                    <ins class="icon-chevron-down"></ins>
+                </span>
+
+                <ul class="sub-menu">
+                    <li><a href="#" v-if="user.adminAccountId" @@click="openCustomerManagement()"><ins class="icon-line-user-plus"></ins><span>Klant toevoegen</span></a></li>
+                    <li><a href="#" @@click="logout()"><ins class="icon-line-log-out"></ins><span>Uitloggen</span></a></li>
+                </ul>
+            </li>
+            <li class="logo">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 266" style="enable-background:new 0 0 512 266;" xml:space="preserve">
+                <circle class="logo1" cx="183.1" cy="97.1" r="24.3" />
+                <circle class="logo1" cx="328.9" cy="97.1" r="24.3" />
+                <path class="logo1" d="M256,179.6c-9.6,10.8-21.5,19.5-35,25.2l35,60.8l35-60.8C277.5,199.1,265.6,190.4,256,179.6z" />
+                <path class="logo2" d="M352.1,54.5c15.1,8.3,25.3,24.3,25.3,42.7c0,26.8-21.8,48.6-48.6,48.6c-26.8,0-48.6-21.7-48.6-48.4 c0-26.8,21.8-48.3,48.6-48.3L511,1H328.9c-29,0-55.1,12.6-72.9,32.6C238.2,13.6,212.2,1,183.1,1H1l182.1,48.1 c26.8,0,48.6,21.5,48.6,48.3c0,26.8-21.8,48.4-48.6,48.4c-26.8,0-48.6-21.9-48.6-48.6c0-18.4,10.2-34.4,25.3-42.7l-55.1-14.7 C93,55.9,86,75.7,86,97.1c0,53.7,43.5,97.1,97.1,97.1c29,0,55.1-12.6,72.9-32.6c17.8,20,43.8,32.6,72.9,32.6 c53.7,0,97.1-43.5,97.1-97.1c0-21.4-7-41.3-18.7-57.3L352.1,54.5z" />
+                </svg>
+            </li>
+        </ul>
+    </header>
+
+    <main :class="{ login: !user.loggedIn || requirePasswordChange }">
+        <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
+        <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
+        <section class="iframe-container">
+            <iframe v-for="module in openedModulesWithBackend" :key="module.module_id" :src="`/Modules/${module.type}${module.fileName}${module.queryString}`" :class="{ active: module.module_id === activeModule }" frameborder="0" scrolling="auto"></iframe>
+            <iframe v-for="module in openedWiser1Modules" :key="module.module_id" :src="`${appSettings.wiser1BaseUrl}?singleModuleId=${module.module_id}&autoLoginCookie=${encodeURIComponent(user.cookieValue)}&autoLoginUserId=${encodeURIComponent(user.encrypted_id)}`" :class="{ active: module.module_id === activeModule }" frameborder="0" scrolling="auto"></iframe>
+        </section>
+
+        <keep-alive>
+            <customer-management v-if="user.adminAccountId && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
+        </keep-alive>
+    </main>
+
+    <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een ID in'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
+        <div class="form-row">
+            <input type="number" id="wiserId" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" onkeypress="return event.charCode >= 48 && event.charCode <= 57" required>
+        </div>
+    </wiser-dialog>
+    <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
+        <p>Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:</p>
+        <div class="form-row">
+            <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
+        </div>
+    </wiser-dialog>
+</div>
+
+<script type="text/html" id="login-template">
+    <section>
+        <form id="loginForm" class="login-screen" method="post" @@submit="login">
+            <div class="logo"><img src="/img/logo-wiser-login.png" alt=""></div>
+            <section class="full-error" v-if="message">
+                <ins class="icon-line-alert"></ins>
+                <span>{{ message }}</span>
+            </section>
+            <section class="full-error" v-if="!validSubDomain">
+                <ins class="icon-line-alert"></ins>
+                <span>U heeft een ongeldig subdomein gebruikt. Controleer a.u.b. het subdomein of neem contact op met ons.</span>
+            </section>
+
+            <div v-if="validSubDomain && loginStatus !== 'list' && loginStatus !== 'list_loading' && !showForgotPasswordScreen && !requirePasswordChange">
+                <div class="form-row">
+                    <input type="text" id="username" placeholder="Gebruikersnaam" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="loginForm.username" required>
+                </div>
+
+                <div class="form-row">
+                    <input type="password" id="password" placeholder="Wachtwoord" autocomplete="off" v-model="loginForm.password" required>
+                </div>
+
+                <div class="form-row">
+                    <label id="remember" class="check-box">
+                        <input type="checkbox" name="remember" class="no-form" v-model="loginForm.rememberMe"><span>Ingelogd blijven</span>
+                    </label>
+                </div>
+
+                <div class="btn-row">
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'loading' }">Inloggen</button>
+
+                    <a href="#" v-on:click="togglePasswordForgottenScreen(true)" id="forgotten-password">Wachtwoord vergeten?</a>
+                </div>
+            </div>
+            <div v-if="loginStatus === 'list' || loginStatus === 'list_loading' && !showForgotPasswordScreen">
+                <p>Kies de gebruiker waarmee u wilt inloggen</p>
+
+                <div class="form-row">
+                    <combobox :data-items="listOfUsers" :text-field="'Title'" :data-item-key="'username'" v-model="loginForm.selectedUser" :filterable="true" @@filterchange="userFilterChange"></combobox>
+                </div>
+
+                <div class="btn-row">
+                    <a href="#" class="btn btn-secundary" @@click="logout()">Annuleren</a>
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'list_loading' }">Verder</button>
+                </div>
+            </div>
+            <div v-if="showForgotPasswordScreen" class="forgotPasswordScreen">
+                <section class="success" v-if="resetPassword">
+                    <span>Een email is verstuurd met uw nieuwe wachtwoord.</span>
+                </section>
+                <div class="form-row">
+                    <input type="text" class="loginField usernameField" placeholder="Gebruikersnaam" v-model="forgotPasswordForm.username" />
+                </div>
+                <div class="form-row">
+                    <input type="text" class="loginField passwordField" placeholder="E-mailadres" v-model="forgotPasswordForm.email" />
+                </div>
+
+                <div class="btn-row">
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true }">Verzenden</button>
+                    <div :class="{ btn: true }" v-on:click="togglePasswordForgottenScreen(false)">Annuleren</div>
+                </div>
+            </div>
+            <div class="changePasswordAfterLogin" v-if="requirePasswordChange">
+                <h3>U moet een nieuw wachtwoord kiezen, vul dit a.u.b. hier in</h3>
+                <div class="form-row">
+                    <input type="password" id="newPassword" name="newPassword" class="loginField passwordField" placeholder="Uw nieuwe wachtwoord" v-model="changePasswordForm.newPassword" />
+                </div>
+                <div class="form-row">
+                    <input type="password" id="newPasswordRepeat" name="newPasswordRepeat" class="loginField passwordField" placeholder="Nogmaals uw nieuwe wachtwoord" v-model="changePasswordForm.newPasswordRepeat" />
+                </div>
+
+                <div class="error"></div>
+
+                <div class="btn-row">
+                    <button id="submitPasswordChange" type="submit" :class="{ btn: true, 'btn-primary': true }">Wijzigen</button>
+                    <button id="cancelPasswordChange" :class="{ btn: true }">Annuleren</button>
+                </div>
+            </div>
+        </form>
+    </section>
+</script>
+
+<script type="text/html" id="customer-management-template">
+    <div :class="{ loading: loading, 'form-inline': true, 'new-customer-form': true }">
+        <h1>Nieuwe Wiser account toevoegen...</h1>
+        <p class="success" v-if="currentStep === 'end'">
+            De klant is successvol aangemaakt en heeft als ID '<em>{{ createCustomerResult.data.id }}</em>' gekregen. De encryption key voor de live is '<em>{{ createCustomerResult.data.wiser2_encryption_key }}</em>' en voor de test/dev is '<em>{{ createCustomerResult.data.wiser2_encryption_key_test }}</em>'.<br />
+            Zie <a href="https://app.nuclino.com/Juice-BV/Development/Nieuwe-Wiser-20-klant-6a3b885c-1101-430d-885e-5cac0b12551e" target="_blank">Nuclino voor uitleg</a> over waar je die voor nodig hebt.<br />
+            De URL voor Wiser Live is geworden: <a :href="'https://' + newCustomerData.subDomain + '.wiser3.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.nl</a>. (Deze werkt pas nadat er een DNS-record is toegevoegd voor dit subdomein.)<br />
+            De URL voor Wiser dev is geworden: <a :href="'http://' + newCustomerData.subDomain + '.wiser3.juicedev.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.juicedev.nl</a>. (Deze kan al direct gebruikt worden.)
+        </p>
+        <p v-if="newCustomerData.createNewDatabase">Verder zijn nog de volgende databasegebruikers aangemaakt:</p>
+        <p v-else>Je hebt de volgende databasegebruiker ingevuld:</p>
+        <ul class="success" v-if="currentStep === 'end'">
+            <li v-for="user in createCustomerResult.databaseUsers" :key="user.name">
+                <strong>{{ user.name }}:</strong> {{ user.password }}
+            </li>
+        </ul>
+        <p class="success" v-if="currentStep === 'end'"><a href="#" class="btn btn-secundary" @@click="reset">Nog een klant aanmaken</a></p>
+        <form method="post" v-if="currentStep !== 'end'">
+            <section class="step" v-if="currentStep === 1">
+                <div class="form-row">
+                    <label for="newCustomerName">Wat is de gewenste bedrijfsnaam en/of accountnaam?</label>
+                    <input type="text" id="newCustomerName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.name" required :class="{ error: errors.indexOf('NameNotAvailable') > -1, small: true }" placeholder="Happy Geeks B.V.">
+                    <p class="hint">De volledige bedrijfsnaam van de klant. Bijvoorbeeld 'Happy Geeks B.V.'. Alleen wij zien deze naam terug, de klant ziet deze naam nergens.</p>
+                </div>
+                <div class="form-row error-row" v-if="errors.indexOf('NameNotAvailable') > -1">
+                    <ins class="icon-line-alert"></ins>
+                    <span>Er bestaat al een klant met deze naam. Kies a.u.b. een andere naam.</span>
+                </div>
+
+                <div class="form-row">
+                    <label for="subDomain">Wat is het subdomein dat gebruikt moet worden voor Wiser 2?</label>
+                    <input type="text" id="subDomain" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.subDomain" required :class="{ error: errors.indexOf('SubDomainNotAvailable') > -1, small: true }" placeholder="happygeeks"><span class="hint">.wiser.nl</span>
+                    <p class="hint">Alleen het subdomein, met kleine letters, bijvoorbeeld 'happygeeks'. Dit is verplicht voor Wiser 2 klanten, die moeten kunnen inloggen via een subdomein, zoals 'happygeeks.wiser.nl'.</p>
+                </div>
+                <div class="form-row error-row" v-if="errors.indexOf('SubDomainNotAvailable') > -1">
+                    <ins class="icon-line-alert"></ins>
+                    <span>Er bestaat al een klant met dit subdomein. Kies a.u.b. een ander subdomein.</span>
+                </div>
+                <div class="form-row">
+                    <label>
+                        <input type="checkbox" name="isWebShop" v-model="newCustomerData.isWebShop" />
+                        Is webshop
+                    </label>
+                    <p class="hint">Zet dit vinkje aan indien de klant ook een webshop krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld verzendmethodes, btw-regels etc.</p>
+                </div>
+            </section>
+
+            <section class="step" v-if="currentStep === 2">
+                <fieldset>
+                    <legend>Domein</legend>
+
+                    <div class="form-row">
+                        <label for="siteName">Naam van website</label>
+                        <input type="text" id="siteName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.siteName" placeholder="Happy Geeks">
+                        <p class="hint">De naam van de website, deze wordt op elke pagina achteraan de titel toegevoegd. Voorbeeld: Contact - Happy Geeks</p>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="hostDev">Domein dev</label>
+                        <input type="text" id="hostDev" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostDev" placeholder="happygeeks.nl.juicedev.nl">
+                        <p class="hint">
+                            Het domein wat straks voor de test gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
+                            <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
+                        </p>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="hostTest">Domein test</label>
+                        <input type="text" id="hostTest" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostTest" placeholder="klant.happygeeks.dev">
+                        <p class="hint">
+                            Het domein wat straks voor de test gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
+                            <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
+                        </p>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="hostLive">Domein live</label>
+                        <input type="text" id="hostLive" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostLive" placeholder="happygeeks.nl">
+                        <p class="hint">
+                            Het domein wat straks voor de live gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
+                            <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
+                        </p>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Database</legend>
+
+                    <div class="form-row">
+                        <label>
+                            <input type="checkbox" name="newDatabase" v-model="newCustomerData.createNewDatabase" />
+                            Nieuw databaseschema maken
+                        </label>
+                    </div>
+
+                    <div class="form-row" v-if="newCustomerData.createNewDatabase">
+                        <label for="digitalOceanApiAccessToken">Digital Ocean access token</label>
+                        <input type="text" id="digitalOceanApiAccessToken" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.digitalOceanApiAccessToken" required>
+                        <p class="hint">
+                            <a href="@(Model.Settings.ApiBaseUrl)api/v3/digital-ocean/authorize" target="_blank">Open eerst deze pagina</a> en geef toestemming op die pagina.
+                            Vervolgens krijg je wat JSON te zien. Kopieer hieruit de waarde van "access_token" en plak die in dit veld.<br />
+                            Klik daarna op de knop "Haal clusters op" hieronder en selecteer daarna het cluster waar de klant aan toegevoegd moet worden.
+                        </p>
+                    </div>
+
+                    <ul v-if="newCustomerData.createNewDatabase && availableDbClusters.length > 0">
+                        <li v-for="item in availableDbClusters" :key="item.id">
+                            <label :for="'db-'+ item.id">
+                                <input type="radio" :id="'db-'+ item.id" name="dbClusterChoice" v-model="newCustomerData.dbClusterChoice" :value="item.id" />
+                                {{item.name}}
+                            </label>
+                        </li>
+                    </ul>
+                    <div class="btn-row" v-else-if="newCustomerData.createNewDatabase">
+                        <button type="button" class="btn btn-primary" @@click="getDbClusters">Haal clusters op</button>
+                    </div>
+
+                    <div class="form-row" v-if="!newCustomerData.createNewDatabase">
+                        <label for="databaseHost">Host <strong>*</strong></label>
+                        <input type="text" id="databaseHost" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseHost" required>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="databaseUsername">Loginnaam <strong>*</strong></label>
+                        <input type="text" id="databaseUsername" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseUsername" required>
+                        <p class="hint" v-if="newCustomerData.createNewDatabase">Vul een naam in voor een databagebruiker die nog niet bestaat.</p>
+                        <p class="hint" v-else>Vul een naam in van een bestaande databasegebruiker.</p>
+                    </div>
+
+                    <div class="form-row" v-if="!newCustomerData.createNewDatabase">
+                        <label for="databasePassword">Wachtwoord <strong>*</strong></label>
+                        <input type="text" id="databasePassword" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databasePassword" required>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="databaseSchema">Schemanaam <strong>*</strong></label>
+                        <input type="text" id="databaseSchema" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseSchema" required>
+                        <p class="hint" v-if="newCustomerData.createNewDatabase">Vul een naam in voor een databaseschema die nog niet bestaat.</p>
+                        <p class="hint" v-else>Vul een naam in van een bestaand databaseschema.</p>
+                    </div>
+                    <div class="form-row" v-if="!newCustomerData.createNewDatabase">
+                        <label for="databasePort">Poortnummer <strong>*</strong></label>
+                        <input type="number" id="databasePort" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databasePort" required min="1" step="1">
+                    </div>
+                </fieldset>
+            </section>
+
+            <div class="form-row error-row" v-if="message">
+                <ins class="icon-line-alert"></ins>
+                <span>{{ message }}</span>
+            </div>
+
+            <div class="btn-row">
+                <a href="#" class="btn btn-secundary" v-if="currentStep > 1" @@click="previousStep">Terug</a>
+                <button type="submit" class="btn btn-primary" @@click="nextStep">{{ nextButtonText }}</button>
+            </div>
+        </form>
+    </div>
+</script>
+
+<script id="vue-config" type="application/json">
+{
+    "apiBase": "@Model.Settings.ApiBaseUrl",
+    "subDomain": "@Model.SubDomain" ,
+    "isTestEnvironment": @Model.IsTestEnvironment.ToString().ToLowerInvariant(),
+    "wiser1BaseUrl": "@Model.Wiser1BaseUrl",
+    "loadPartnerStyle": @Model.LoadPartnerStyle.ToString().ToLowerInvariant(),
+    "apiClientId": "@Model.Settings.ApiClientId",
+    "apiClientSecret": "@Model.Settings.ApiClientSecret",
+    "trackJsToken": "@Model.Settings.TrackJsToken",
+    "markerIoToken": "@Model.Settings.MarkerIoToken"
+}
+</script>
+
+<script type="module" src="/scripts/main.min.js"></script>

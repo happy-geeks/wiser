@@ -1,0 +1,406 @@
+﻿@model FrontEnd.Modules.DataSelector.Models.DataSelectorViewModel
+
+<!DOCTYPE html>
+<html>
+<head runat="server">
+    <meta charset="utf-8" />
+    <title>Wiser 2.1 - Data selector</title>
+
+    <!-- TODO: These files should be loaded via webpack like the rest, but then we get errors.
+    TODO: If we add the NPM package @@progress/kendo-theme-material, then it works, but that theme has different CSS, some thing look different then... -->
+    <link href="/css/libraries/Kendo/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="/css/libraries/Kendo/kendo.material.min.css" rel="stylesheet" />
+
+    <script>
+        window.wiserVersion = "@Model.WiserVersion";
+    </script>
+</head>
+<body class="@Model.BodyCssClass"
+      data-module-id="706"
+      data-wiser-api-root="@Model.ApiRoot"
+      data-wiser-api-v21-root="@Model.ApiRoot"
+      data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
+      data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
+      data-api-client-id="@Model.Settings.ApiClientId"
+      data-api-client-secret="@Model.Settings.ApiClientSecret"
+      data-sub-domain="@Model.SubDomain"
+      data-track-js-token="@Model.Settings.TrackJsToken">
+    <form id="fullForm">
+        <div id="wiser">
+            <div id="window" class="data-builder" style="margin: 0 auto; padding: 0;">
+                <div id="dataBuilder">
+                    <div id="dataSelectorId" class="item" style="display: none;">
+                        <h3><label></label></h3>
+                    </div>
+
+                    <div class="item">
+                        <h4><label>Data Selector voor export module</label></h4>
+                        <label class="checkbox">
+                            <input type="checkbox" id="useExportMode" @if (@Model.ExportMode) { @Html.Raw("checked") } />
+                            <span>Data Selector voor export module</span>
+                        </label>
+                        <div class="form-hint"><span>Zorgt ervoor dat talen apart geladen worden</span></div>
+                    </div>
+
+                    <div class="item" id="modulesHolder">
+                        <h4><label>Selecteer module</label></h4>
+                    </div>
+
+                    <div class="item">
+                        <h4><label>Entiteit van het type</label></h4>
+                        <select id="selectEntity" class="drop-down-list" data-option-label="Maak uw keuze..." data-data-text-field="text" data-data-value-field="value"></select>
+                    </div>
+
+                    <div id="connectionBlocks"></div>
+
+                    <div class="item">
+                        <h4><label>Groeperen op</label></h4>
+                        <select id="groupBy" class="multi-select" multiple="multiple"
+                                data-placeholder="Maak een keuze..." data-sortable="true"
+                                data-data-text-field="aliasOrValue" data-data-value-field="aliasOrValue" data-filter="contains"
+                                data-item-template-id="propertyWithAliasTemplate" data-tag-template-id="propertyWithAliasTagListTemplate"></select>
+                        <div class="form-hint"><span>De geselecteerde items kunnen versleept worden</span></div>
+                    </div>
+
+                    <div class="item dynamic havingList">
+                        <h4><label>Having</label></h4>
+                        <div class="havingContainer" id="havingContainer"></div>
+                        <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Having toevoegen</span></button>
+                    </div>
+
+                    <div class="item">
+                        <h4><label>Stel de sorteervolgorde in</label></h4>
+                        <select id="sorting" class="multi-select" multiple="multiple"
+                                data-placeholder="Maak een keuze..." data-sortable="true"
+                                data-data-text-field="aliasOrValue" data-data-value-field="aliasOrValue" data-filter="contains"
+                                data-item-template-id="propertyWithAliasTemplate" data-tag-template-id="orderByTagListTemplate"></select>
+                        <div class="form-hint"><span>De geselecteerde items kunnen versleept worden</span></div>
+                    </div>
+
+                    <div class="item">
+                        <h4><label>Stel een limiet in</label></h4>
+                        <input id="exportLimit" type="text" class="k-input" value="0" />
+                        <div class="form-hint"><span>Stel 0 in voor geen limiet</span></div>
+                    </div>
+
+                    <div class="item">
+                        <h4><label>Data onbeveiligd inladen</label></h4>
+                        <label class="checkbox">
+                            <input type="checkbox" id="insecureData" />
+                            <span>Data onbeveiligd inladen</span>
+                        </label>
+                        <div class="form-hint"><span>Dit werkt alleen als de data selector op basis van ID geladen wordt</span></div>
+                    </div>
+
+                    <div class="item">
+                        <h4><label>Beschikbaar maken in export module</label></h4>
+                        <label class="checkbox">
+                            <input type="checkbox" id="showInExportModule" />
+                            <span>Beschikbaar maken in export module</span>
+                        </label>
+                        <div class="form-hint"><span>Zorgt ervoor dat de data selector gebruikt kan worden in de export module</span></div>
+                    </div>
+                </div>
+
+                @if (!Model.EmbedOptions.Contains("no-toolbar", StringComparer.OrdinalIgnoreCase))
+                {
+                <div class="item fixed">
+                    @if (!Model.EmbedOptions.Contains("no-save-button", StringComparer.OrdinalIgnoreCase))
+                    {
+                    <button type="button" class="kendoButton k-primary" id="saveButton" data-icon="save"><span>Opslaan</span></button>
+                    }
+                    <button type="button" class="kendoButton k-button k-blue" id="loadButton" data-icon="upload"><span>Laden</span></button>
+                    <button type="button" class="kendoButton k-button k-blue" id="viewJsonResultButton" data-icon="eye"><span>Toon resultaat</span></button>
+                    <button type="button" class="kendoButton k-button k-blue" id="viewQueryButton" data-icon="eye"><span>Toon query</span></button>
+                    <button type="button" class="kendoButton k-button k-blue" id="viewJsonRequestButton" data-icon="eye"><span>Toon JSON</span></button>
+                    <button type="button" class="kendoButton k-button k-blue" id="newButton" data-icon="file"><span>Nieuw</span></button>
+
+                    <div id="viewResult">
+                        <ins id="resultClose" class="icon-close"></ins>
+                        <pre></pre>
+                        <textarea id="jsonText"></textarea>
+                        <textarea id="queryText"></textarea>
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+    </form>
+
+    <div id="mainLoader" class="fullscreen-loader loading">
+        <div class="loader-icon">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+
+    <!-- Kendo Templates -->
+    <script id="errorTemplate" type="text/x-kendo-template">
+        <div class="wrong-pass">
+            <img src="img/error-icon.png" />
+            <h3>#= message #</h3>
+        </div>
+    </script>
+
+    <script id="propertyTemplate" type="text/x-kendo-template">
+        # if (entityName !== "") { #
+            #: entityName # - #: displayName #
+        # } else { #
+            #: displayName #
+        # } #
+    </script>
+
+    <script id="propertyWithAliasTemplate" type="text/x-kendo-template">
+        # if (entityName !== "") { #
+            # if (fieldAlias !== "") { #
+                #: entityName # - #: fieldAlias #
+            # } else { #
+                #: entityName # - #: displayName #
+            # } #
+        # } else { #
+            # if (fieldAlias !== "") { #
+                #: fieldAlias #
+            # } else { #
+                #: displayName #
+            # } #
+        # } #
+    </script>
+
+    <script id="linkPropertyWithAliasTemplate" type="text/x-kendo-template">
+        # if (fieldAlias !== "") { #
+            #: fieldAlias #
+        # } else { #
+            #: displayName #
+        # } #
+    </script>
+
+    <script id="propertyTagListTemplate" type="text/x-kendo-template">
+        <span class="tagListItem" data-item-uid="#: data.uid #">
+            # if (data.entityName !== "") { #
+                #: data.entityName # - #: data.displayName #
+            # } else { #
+                #: data.displayName #
+            # } #
+        </span>
+    </script>
+
+    <script id="propertyWithAliasTagListTemplate" type="text/x-kendo-template">
+        <span class="tagListItem" data-item-uid="#: data.uid #">
+            # if (data.entityName !== "") { #
+                # if (data.fieldAlias !== "") { #
+                    #: data.entityName # - #: data.fieldAlias #
+                # } else { #
+                    #: data.entityName # - #: data.displayName #
+                # } #
+            # } else { #
+                # if (data.fieldAlias !== "") { #
+                    #: data.fieldAlias #
+                # } else { #
+                    #: data.displayName #
+                # } #
+            # } #
+        </span>
+    </script>
+
+    <script id="linkPropertyWithAliasTagListTemplate" type="text/x-kendo-template">
+        <span class="tagListItem" data-item-uid="#: data.uid #">
+            # if (data.fieldAlias !== "") { #
+                #: data.fieldAlias #
+            # } else { #
+                #: data.displayName #
+            # } #
+        </span>
+    </script>
+
+    <script id="orderByTagListTemplate" type="text/x-kendo-template">
+        <span class="tagListItem" data-item-uid="#: data.uid #">
+            # if (data.entityName !== "") { #
+                # if (data.fieldAlias !== "") { #
+                    #: data.entityName # - #: data.fieldAlias # (#: data.direction #)
+                # } else { #
+                    #: data.entityName # - #: data.displayName # (#: data.direction #)
+                # } #
+            # } else { #
+                # if (data.fieldAlias !== "") { #
+                    #: data.fieldAlias # (#: data.direction #)
+                # } else { #
+                    #: data.displayName # (#: data.direction #)
+                # } #
+            # } #
+        </span>
+    </script>
+
+    <!-- Wiser Templates -->
+    <script id="connectionTemplate" type="text/x-wiser-template">
+        <div class="connectionBlock">
+            <div class="blockItems">
+                <div class="item dynamic scopesList">
+                    <h4><label>Scope</label></h4>
+                    <div class="scopesContainer"></div>
+                    <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Scope toevoegen</span></button>
+                </div>
+
+                <div class="item exportFields">
+                    <h4><label>Selecteer benodigde gegevens</label></h4>
+                    <select class="select-details multi-select" multiple="multiple"
+                        data-placeholder="Maak uw keuze..." data-filter="contains"
+                        data-data-text-field="displayName" data-data-value-field="value"
+                        data-item-template-id="propertyWithAliasTemplate" data-tag-template-id="propertyWithAliasTagListTemplate"></select>
+                    <!-- Item properties editor here -->
+                </div>
+
+                <div class="item exportFieldsLinks">
+                    <h4><label>Selecteer benodigde gegevens van koppelingen</label></h4>
+                    <select class="select-details-links multi-select" multiple="multiple"
+                        data-placeholder="Maak uw keuze..." data-filter="contains"
+                        data-data-text-field="displayName" data-data-value-field="value"
+                        data-item-template-id="linkPropertyWithAliasTemplate" data-tag-template-id="linkPropertyWithAliasTagListTemplate"></select>
+                </div>
+
+                <div class="item dynamic linkedToList direction-down">
+                    <h4><label>Onderliggende objecten</label></h4>
+                    <div class="linkedToContainer"></div>
+                    <button type="button" class="kendoButton scope-button add-linked-to-button k-button k-blue" data-icon="plus"><span>Onderliggend object toevoegen</span></button>
+                </div>
+
+                <div class="item dynamic linkedToList direction-up">
+                    <h4><label>Bovenliggende objecten</label></h4>
+                    <div class="linkedToContainer"></div>
+                    <button type="button" class="kendoButton scope-button add-linked-to-button k-button k-blue" data-icon="plus"><span>Bovenliggend object toevoegen</span></button>
+                </div>
+            </div>
+        </div>
+    </script>
+
+    <script id="subSelectionTemplate" type="text/x-wiser-template">
+        <div class="subSelection">
+            <div class="subEntitySelect">
+                <label>Entiteit van het type</label>
+                <select class="sub-entity-select drop-down-list" data-option-label="Maak uw keuze..." data-data-text-field="text" data-data-value-field="value"></select>
+            </div>
+
+            <div class="subExportFields">
+                <label>Selecteer benodigde gegevens</label>
+                <select class="sub-select-details multi-select" multiple="multiple"
+                    data-placeholder="Maak uw keuze..." data-filter="contains"
+                    data-data-text-field="displayName" data-data-value-field="value"
+                    data-item-template-id="propertyWithAliasTemplate" data-tag-template-id="propertyWithAliasTagListTemplate"></select>
+                <!-- Item properties editor here -->
+            </div>
+        </div>
+    </script>
+
+    <script id="addScopeTemplate" type="text/x-wiser-template">
+        <div class="inputRow dbInput">
+            <button type="button" class="kendoButton delete-button k-button" data-icon-class="icon-delete"></button>
+
+            <select class="scope-property-select drop-down-list"
+                data-option-label="Selecteer eigenschap"
+                data-data-text-field="displayName" data-data-value-field="value"
+                data-template-id="propertyWithAliasTemplate" data-value-template-id="propertyWithAliasTemplate"></select>
+
+            <button type="button" class="kendoButton edit-field-button k-button" data-icon-class="icon-tool"></button>
+
+            <select class="scope-comparison-select drop-down-list" data-option-label="Maak keuze">
+                <option value="is equal to">is gelijk aan</option>
+                <option value="is not equal to">is ongelijk aan</option>
+                <option value="is less than">is kleiner dan</option>
+                <option value="is less than or equal to">is kleiner dan of gelijk aan</option>
+                <option value="is greater than">is hoger dan</option>
+                <option value="is greater than or equal to">is hoger dan of gelijk aan</option>
+                <option value="contains">bevat</option>
+                <option value="does not contain">bevat niet</option>
+                <option value="begin with">begint met</option>
+                <option value="does not begin with">begint niet met</option>
+                <option value="end with">eindigt met</option>
+                <option value="does not end with">eindigt niet met</option>
+                <option value="is empty">is leeg</option>
+                <option value="is not empty">is niet leeg</option>
+            </select>
+
+            <select class="scope-value-select multi-select-add" multiple="multiple"
+                data-placeholder="Maak uw keuze..."
+                data-data-text-field="text" data-data-value-field="value" data-accept-custom-input="true"
+            ></select>
+
+            <div class="k-widget free-input inline" style="display: none;">
+                <input type="text" class="k-input" placeholder="Geef een waarde..." />
+            </div>
+
+            <button type="button" class="or-button or-button-scope k-button k-blue">OF</button>
+
+            <!-- Item properties editor here -->
+        </div>
+    </script>
+
+    <script id="addLinkedToTemplate" type="text/x-wiser-template">
+        <div class="inputRow dbInput">
+            <button type="button" class="kendoButton delete-button k-button" data-icon-class="icon-delete"></button>
+
+            <select class="linked-to-property-select drop-down-list" data-option-label="Selecteer koppeltype" data-data-text-field="name" data-data-value-field="linkKey" data-no-data-template="Geen koppeltypes gevonden."></select>
+
+            <div class="checkTree" data-data-text-field="name" data-data-value-field="id"></div>
+
+            <div class="optional-checkbox">
+                <label class="checkbox">
+                    <input type="checkbox" class="k-input" />
+                    <span>Optioneel</span>
+                </label>
+            </div>
+
+            <button type="button" class="or-button or-button-linked-to k-button k-blue">OF</button>
+        </div>
+    </script>
+
+    <script id="fieldEditorTemplate" type="text/x-wiser-template">
+        <div class="itemProperties">
+            <div class="languageCodeWrapper">
+                <label>Gewenste language-code</label>
+                <select class="combo-select languageCode" data-placeholder="Kies een taalcode..." data-data-text-field="text" data-data-value-field="value" data-open-on-focus="true"></select>
+            </div>
+
+            <label>Aggregatie</label>
+            <select class="drop-down-list aggregation" data-placeholder="Kies een aggregatie...">
+                <option value="">Geen aggregatie</option>
+                <option value="count">Telling resultaten (COUNT)</option>
+                <option value="sum">Som van waardes (SUM)</option>
+                <option value="min">Laagste waarde (MIN)</option>
+                <option value="max">Hoogste waarde (MAX)</option>
+                <option value="avg">Gemiddelde waarde (AVG)</option>
+            </select>
+
+            <label>Formatting</label>
+            <select class="combo-select formatting" data-placeholder="Kies een formatting..." data-open-on-focus="true">
+                <option value="">Geen formatting</option>
+                <%= PropertyFormattingOptionsHtml %>
+            </select>
+
+            <div class="fieldAliasWrapper">
+                <label>Alias</label>
+                <input type="text" class="k-input fieldAlias" placeholder="Alias" />
+            </div>
+
+            <div class="isItemIdWrapper">
+                <label>Is item ID</label>
+                <label class="checkbox"><input type="checkbox" class="isItemId" /><span></span></label>
+            </div>
+
+            <div class="subSelectionWrapper">
+            </div>
+
+            <div class="toolBar">
+                <button type="button" class="kendoButton k-button k-primary saveItemProperties" data-icon="save"><span>Toepassen</span></button>
+                <button type="button" class="kendoButton k-button k-blue closeItemProperties" data-icon="cancel"><span>Annuleren</span></button>
+            </div>
+        </div>
+    </script>
+
+    <script src="/scripts/Jjl.min.js"></script>
+    <script src="/scripts/Utils.min.js"></script>
+    <script src="/scripts/DataSelectorConnection.min.js"></script>
+    <script src="/scripts/DataSelectorDataLoad.min.js"></script>
+    <script src="/scripts/DataSelector.min.js"></script>
+</body>
+</html>

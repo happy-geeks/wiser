@@ -1,0 +1,896 @@
+﻿import { DateTime } from "luxon";
+window.$ = require("jquery");
+
+/**
+ * This function overrides the default ":contains" psuedo from jQuery, so that it's no longer case sensitive.
+ */
+$.expr[":"].contains = $.expr.createPseudo(function (arg) {
+    return function (elem) {
+        return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
+    };
+});
+
+/**
+ * Main class.
+ */
+export class Modules {
+    /**
+     * Get the settings of a module from the database.
+     * @param {string} apiRoot The root URL of the Wiser API.
+     * @param {number} moduleId The ID of the module.
+     * @param {string} customerId The encrypted ID of the customer.
+     * @param {string} userId The encrypted ID of the user.
+     * @param {boolean} isTestEnvironment Whether or not we're on a test environment.
+     * @param {string} subDomain The current sub domain, if any.
+     * @returns {any} The module settings as an object.
+     */
+    static async getModuleSettings(apiRoot, moduleId, customerId, userId, isTestEnvironment, subDomain = "") {
+        try {
+            const result = await Wiser2.api({ url: `${apiRoot}modules/${moduleId}/settings` });
+            if (!result) {
+                return {
+                    id: moduleId,
+                    options: {}
+                };
+            }
+
+            result.options = result.options || {};
+
+            return result;
+        } catch (exception) {
+            console.error("Error while getting module settings", exception);
+            kendo.alert("Er is iets fout gegaan met het ophalen van de instellingen voor deze module. Neem a.u.b. contact op met ons.");
+            return {};
+        }
+    }
+
+    /**
+     * Checks if the response from a request is an array and, optionally, if it contains at least one item. This can be used to validate the response from HTTP requests.
+     * @deprecated This function is deprecated in favor of Wiser2.validateArray.
+     * @param {any} response The response from a request.
+     * @param {boolean} allowEmptyResponse Whether the response must contain at least one item.
+     * @returns {boolean} Whether the result is an array and satisfies the condition of mustHaveItems.
+     */
+    static validateJsonResponse(response, allowEmptyResponse = false) {
+        console.warn("Modules.validateJsonResponse is deprecated. User Wiser2.validateArray instead.");
+        return Wiser2.validateArray(response, allowEmptyResponse);
+    }
+}
+
+/**
+ * Date utils.
+ */
+export class Dates {
+    static get LongDateTimeFormat() { return { year: "numeric", month: "long", day: "2-digit", hour: "2-digit", minute: "2-digit", weekDay: "long" } }
+
+    /**
+     * Parses a string with a date and time into an actual date object. This function uses Luxon for parsing the date.
+     * @param {string} value The date string.
+     * @returns {any} A momentJs object. You can use result.isValid() to check whether the date has been parsed successfully, or result.toDate() to get a normal javascript date object. For more information, see https://momentjs.com/docs/.
+     */
+    static parseDateTime(value) {
+        value = (value || "").trim();
+
+        return DateTime.fromSQL(value, { locale: "nl-NL" });
+    }
+
+    /**
+     * Parses a string with a date into an actual date object. This function uses Luxon for parsing the date.
+     * @param {string} value The date string.
+     * @returns {any} A momentJs object. You can use result.isValid() to check whether the date has been parsed successfully, or result.toDate() to get a normal javascript date object. For more information, see https://momentjs.com/docs/.
+     */
+    static parseDate(value) {
+        value = (value || "").trim();
+
+        return DateTime.fromSQL(value, { locale: "nl-NL" });
+    }
+
+    /**
+     * Parses a string with a time into an actual date object. This function uses Luxon for parsing the date.
+     * @param {string} value The date string.
+     * @returns {any} A momentJs object. You can use result.isValid() to check whether the date has been parsed successfully, or result.toDate() to get a normal javascript date object. For more information, see https://momentjs.com/docs/.
+     */
+    static parseTime(value) {
+        value = (value || "").trim();
+
+        return DateTime.fromSQL(value);
+    }
+
+    static formatWiserDateString(dateString) {
+        return this.parseDateTime(dateString).toLocaleString(this.LongDateTimeFormat);
+    }
+
+    static convertMomentFormatToLuxonFormat(momentFormattingString) {
+        if (!momentFormattingString) return momentFormattingString;
+
+        return momentFormattingString
+            .replace(/M/g, "L")
+            .replace("DDDD", "ooo")
+            .replace("DDD", "o")
+            .replace(/D/g, "d")
+            .replace(/Y/g, "y");
+    }
+}
+
+/**
+ * String utils.
+ */
+export class Strings {
+    /**
+     * Converts the first letter of a string to upper case and returns the new string.
+     * @param {string} input The input.
+     * @returns {string} The new string where the first letter is now upper case.
+     */
+    static capitalizeFirst(input) {
+        if (!input) {
+            return input;
+        }
+
+        return input[0].toUpperCase() + input.slice(1);
+    }
+
+    /**
+     * Checks if the input is a number and returns that parsed as a number.
+     * If the input is not a number, it returns the original value.
+     * @param {string} input The input string.
+     * @returns {any} The input parsed as number, if it is a number, otherwise the original value.
+     */
+    static convertToNumberIfPossible(input) {
+        const numberValue = Number(input);
+        return isNaN(numberValue) ? input : numberValue;
+    }
+
+    /**
+     * Returns a string to show a human readable file size.
+     * @param {any} sizeInBytes The size in bytes.
+     * @returns {string} The human readable value.
+     */
+    static getTotalFileSizeMessage(sizeInBytes) {
+        if (!sizeInBytes) {
+            return sizeInBytes;
+        }
+
+        if (typeof sizeInBytes === "string") {
+            sizeInBytes = parseInt(sizeInBytes);
+        } else if (typeof sizeInBytes !== "number") {
+            return sizeInBytes;
+        }
+
+        if (sizeInBytes < 1024) {
+            return sizeInBytes.toString() + " B";
+        }
+
+        sizeInBytes /= 1024;
+
+        if (sizeInBytes < 1024) {
+            return sizeInBytes.toFixed(2) + " KB";
+        } else {
+            return (sizeInBytes / 1024).toFixed(2) + " MB";
+        }
+    }
+
+    /**
+     * Function to clean up HTML in html editors after pasting.
+     * @param {string} input The input HTML.
+     * @returns {string} The clean HTML.
+     */
+    static cleanupHtml(input) {
+        return input.replace(/<\/?[wo]:[^>]*>/gm, "");
+    }
+
+    /**
+     * Checks whether the given string is undefined, null, or an empty string.
+     * @param {string} input The input string.
+     * @returns {boolean} True if the given string is undefined, null, or an empty string; otherwise, false.
+     */
+    static isNullOrEmpty(input) {
+        return input === undefined || input === null || (typeof input === "string" && input === "");
+    }
+
+    /**
+     * Checks whether the given string is undefined, null, an empty string, or consists exclusively of white-space characters.
+     * @param {string} value The input string.
+     * @returns {boolean} True if the given string is undefined, null, an empty string, or if the given consists exclusively of white-space characters; otherwise, false.
+     */
+    static isNullOrWhiteSpace(value) {
+        return value === undefined || value === null || (typeof value === "string" && value.trim() === "");
+    }
+}
+
+/**
+ * Wiser2 utils.
+ */
+export class Wiser2 {
+    static async api(settings) {
+        const accessTokenExpires = localStorage.getItem("access_token_expires_on");
+        const user = JSON.parse(localStorage.getItem("userData"));
+        if (settings.url.indexOf("/connect/token") === -1 && (!accessTokenExpires || new Date(accessTokenExpires) <= new Date())) {
+            if (!user || !user.refresh_token) {
+                console.error("No refresh token found!");
+
+                // If we have no refresh token for some reason, logout the user.
+                if (window.parent && window.parent.main && window.parent.main.vueApp) {
+                    window.parent.main.vueApp.logout();
+                }
+                
+                return Promise.reject("No refresh token found!");
+            }
+
+            const wiserSettings = document.body.dataset;
+
+            const refreshTokenResult = await $.ajax({
+                url: wiserSettings.wiserApiAuthenticationUrl,
+                method: "POST",
+                data: {
+                    "grant_type": "refresh_token",
+                    "refresh_token": user.refresh_token,
+                    "subDomain": wiserSettings.subDomain,
+                    "client_id": wiserSettings.apiClientId,
+                    "client_secret": wiserSettings.apiClientSecret,
+                    "isTestEnvironment": wiserSettings.isTestEnvironment
+                }
+            });
+
+            refreshTokenResult.expires_on = new Date(new Date().getTime() + (refreshTokenResult.expires_in * 1000));
+            refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true;
+
+            localStorage.setItem("access_token", refreshTokenResult.access_token);
+            localStorage.setItem("access_token_expires_on", refreshTokenResult.expires_on);
+            localStorage.setItem("userData", JSON.stringify(Object.assign({}, user, refreshTokenResult)));
+
+            // Add logged in user access token to default authorization headers for all jQuery ajax requests.
+            $.ajaxSetup({
+                headers: { "Authorization": `Bearer ${refreshTokenResult.access_token}` }
+            });
+        }
+
+        return $.ajax(settings).fail((jqXhr, textStatus, errorThrown) => {
+            if (jqXhr.status !== 401) {
+                return;
+            }
+
+            if (settings.url.indexOf("/connect/token") > -1) {
+                console.error("Refresh token failed!");
+                
+                // If we got a 401 while using the refresh token, it means the refresh token is no longer valid, so logout the user.
+                if (window.parent && window.parent.main && window.parent.main.vueApp) {
+                    window.parent.main.vueApp.logout();
+                }
+                return;
+            }
+        });
+    }
+
+    /**
+     * Get the data of the logged in user.
+     * @param {string} apiRoot The root URL of the Wiser API.
+     * @param {boolean} isTestEnvironment Whether or not we're on a test environment.
+     * @returns {any} The user data as an object.
+     */
+    static async getLoggedInUserData(apiRoot, isTestEnvironment) {
+        try {
+            let result = sessionStorage.getItem("userSettings");
+            if (result) {
+                const sessionData = JSON.parse(result);
+                if (sessionData.dateTime && new Date() - new Date(sessionData.dateTime) < 3600000) {
+                    // Only use the data from session if it's less than 1 hour old (1000 milliseconds * 60 seconds * 60 minutes).
+                    result = sessionData.data;
+                } else {
+                    result = null;
+                }
+            }
+
+            if (!result) {
+                result = await Wiser2.api({ url: `${apiRoot}users/self` });
+                if (result) {
+                    sessionStorage.setItem("userSettings", JSON.stringify({ dateTime: new Date(), data: result }));
+                }
+            }
+
+            if (!result) {
+                return {};
+            }
+
+            return result;
+        } catch (exception) {
+            console.error("Error while getting logged in user data", exception);
+            kendo.alert("Er is iets fout gegaan met het ophalen van instellingen (logged in user data) die nodig zijn voor bepaalde functionaliteit. Neem a.u.b. contact op met ons.");
+            return {};
+        }
+    }
+
+    /**
+     * Shows a default alert window using Kendo UI.
+     * @param {any} options The options for the alert window.
+     * @returns {kendo.ui.Alert} The Kendo Alert widget that was created.
+     */
+    static alert(options) {
+        return $("<div />").kendoAlert(options).getKendoAlert().open();
+    }
+
+    /**
+     * Shows a default confirm dialog using Kendo UI.
+     * @param {any} options The options for the confirm dialog.
+     * @returns {kendo.ui.Confirm} The Kendo Confirm widget that was created.
+     */
+    static confirm(options) {
+        return $("<div />").kendoConfirm(options).getKendoConfirm().open();
+    }
+
+    /**
+     * Shows a simple popup with a message, and optionally a title.
+     * @param {any} options The options for the message dialog.
+     * @returns {kendo.ui.Dialog} The KendoDialog widget that was created, or null if Kendo UI was unavailable.
+     */
+    static showMessage(options) {
+        options = Object.assign({
+            actions: [{
+                text: "OK",
+                primary: true
+            }]
+        }, options);
+
+        return $("<div />").kendoDialog(options).getKendoDialog().open();
+    }
+
+    /**
+     * Checks if a given object is an array and, optionally, if it contains at least one item. This can be used to validate the response from HTTP requests.
+     * @param {any} obj The response from a request.
+     * @param {boolean} allowEmpty Whether the response must contain at least one item.
+     * @returns {boolean} Whether the given object is an array and satisfies the condition of {@param allowEmpty}.
+     */
+    static validateArray(obj, allowEmpty = false) {
+        return Array.isArray(obj) && (allowEmpty || obj.length > 0);
+    }
+
+    /**
+     * This function can be used the fix a problem with scrolling in Kendo components, such as DropDownList, ComboBox and MultiSelect.
+     * The problem is when you scroll past the bottom of the list, the entire page will start scrolling, which closes the dropdown list.
+     * @param {any} widget The kendo widget.
+     */
+    static fixKendoDropDownScrolling(widget) {
+        if (!widget || !widget.ul) {
+            console.warn("Wiser2.fixKendoDropDownScrolling called with an undefined widget, or a widget that has no 'ul' property.", widget);
+            return;
+        }
+
+        // The container must be a DOM element (so not a jQuery object).
+        // The .get function gets the DOM element.
+        const container = widget.ul.parent().get(0);
+        container.addEventListener("wheel", (event) => {
+            const triedToScrollPastTop = container.scrollTop === 0 && event.deltaY < 0;
+            const triedToScrollPastBottom = container.scrollTop === container.scrollHeight - container.offsetHeight && event.deltaY > 0;
+
+            if (triedToScrollPastTop || triedToScrollPastBottom) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
+    }
+
+    /**
+     * A method to replace variables with values from item details.
+     * @param {string} input The input string to do the replacements on.
+     * @param {any} itemDetails The details (fields/properties + values) of an item.
+     * @param {boolean} uriEncodeValues Whether or not to encode all values to be safely used in an URL.
+     * @returns {string} The input string with all variables replaced with values from fields.
+     */
+    static doWiserItemReplacements(input, itemDetails, uriEncodeValues = false) {
+        if (!input || typeof input !== "string") {
+            return input;
+        }
+
+        let output = input.replace(/{itemTitle}/gi, !uriEncodeValues ? itemDetails.title : encodeURIComponent(itemDetails.title));
+        output = output.replace(/{itemId}/gi, !uriEncodeValues ? itemDetails.id : encodeURIComponent(itemDetails.id));
+        output = output.replace(/{encryptedId}/gi, !uriEncodeValues ? (itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid) : encodeURIComponent(itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid));
+        output = output.replace(/{environment}/gi, !uriEncodeValues ? itemDetails.published_environment : encodeURIComponent(itemDetails.published_environment));
+        output = output.replace(/{entityType}/gi, !uriEncodeValues ? itemDetails.entity_type : encodeURIComponent(itemDetails.entity_type));
+
+        if (itemDetails.details && !itemDetails.property_) {
+            itemDetails.property_ = {};
+
+            for (let field of itemDetails.details) {
+                itemDetails.property_[field.key] = field.value;
+            }
+        }
+
+        return Wiser2.doObjectReplacements(output, itemDetails.property_, uriEncodeValues);
+    }
+
+    /**
+     * A method to replace variables with values from item details.
+     * @param {string} input The input string to do the replacements on.
+     * @param {any} data An JSON object with keys and values to use for replacements.
+     * @param {boolean} uriEncodeValues Whether or not to encode all values to be safely used in an URL.
+     * @returns {any} The input string with all variables replaced with values from the object.
+     */
+    static doObjectReplacements(input, data, uriEncodeValues = false) {
+        if (!data) {
+            return input;
+        }
+
+        let output = input || "";
+        for (let key in data) {
+            if (!data.hasOwnProperty(key)) {
+                continue;
+            }
+
+            const regExp = new RegExp(`{${key}([\?a-zA-Z0-9]*)?}`, "gi");
+            let value = !uriEncodeValues ? data[key] : encodeURIComponent(data[key]);
+
+            // If output is just one single variable and it ends with a question mark followed by a text or number,
+            // it means that the default value should be the value after the question mark, instead of empty string.
+            // If there is no value after the question mark, the default value becomes NULL.
+            const regExpMatch = output.match(regExp);
+            if (regExpMatch && regExpMatch.length === 1 && regExpMatch[0] === output && output.indexOf("?") > 0 && !value) {
+                const split = output.split(/[\{\}\?]+/);
+
+                return split.length <= 3 ? null : Strings.convertToNumberIfPossible(split[2]);
+            }
+
+            output = output.replace(regExp, value);
+        }
+
+        return Strings.convertToNumberIfPossible(output);
+    }
+
+    /**
+     * This method will call an external API, based on the options that are set in the table "wiser_api_connection".
+     * @param {string} settings The Wiser settings.
+     * @param {number} apiConnectionId The ID of the API options in "wiser_api_connection".
+     * @param {any} itemDetails Optional: If this is called via an action button, you can enter the details of the opened item here so that they can be used in the API call.
+     * @param {any} extraData Optional: A JSON object with keys and values, with any other extra data that should be used for replacements in the data that will be sent to the API.
+     * @param {any} newAuthenticationData Optional: New authentication data, such as authenticationCode. This will override any authenticationData from database.
+     * @param {string} subDomain The current sub domain, if any.
+     * @returns {any} A promise.
+     */
+    static doApiCall(settings, apiConnectionId, itemDetails = null, extraData = null, newAuthenticationData = null) {
+        console.log("doApiCall", { settings: settings, apiConnectionId: apiConnectionId, itemDetails: itemDetails, extraData: extraData, newAuthenticationData: newAuthenticationData });
+
+        return new Promise(async (success, reject) => {
+            const process = `doApiCall_${apiConnectionId}_${Date.now()}`;
+
+            try {
+                // Initial checks.
+                if (!apiConnectionId) {
+                    reject("Er is geen 'apiConnectionId' ingesteld. Neem a.u.b. contact op met ons.");
+                    return;
+                }
+
+                if (!settings || !settings.serviceRoot) {
+                    reject("Er is geen 'serviceRoot' ingesteld. Neem a.u.b. contact op met ons.");
+                    return;
+                }
+
+                jjl.processing.addProcess(process);
+
+                // Get the settings.
+                const apiConnectionData = await Wiser2.api({ url: `${settings.wiserApiRoot}api-connections/${encodeURIComponent(apiConnectionId)}` });
+                if (!apiConnectionData || !apiConnectionData.options) {
+                    reject("Er werd geprobeerd om een API aan te roepen, echter zijn er niet genoeg gegevens bekend. Neem a.u.b. contact op met ons.");
+                    jjl.processing.removeProcess(process);
+                    return;
+                }
+
+
+                // Parse the settings.
+                const apiOptions = apiConnectionData.options || {};
+                let authenticationData = apiConnectionData.authentication_data || {};
+                if (newAuthenticationData) {
+                    authenticationData = $.extend(authenticationData, newAuthenticationData);
+                }
+
+                const extraHeaders = apiOptions.extraHeaders || {};
+
+                if (!apiOptions.baseUrl) {
+                    reject("Er werd geprobeerd om een API aan te roepen, echter zijn er niet genoeg gegevens bekend. Neem a.u.b. contact op met ons.");
+                    jjl.processing.removeProcess(process);
+                    return;
+                }
+
+                // If base URL ends with a slash, remove it.
+                if (apiOptions.baseUrl[apiOptions.baseUrl.length - 1] === "/") {
+                    apiOptions.baseUrl = apiOptions.baseUrl.substr(0, apiOptions.baseUrl.length - 2);
+                }
+
+                // Do authentication if required.
+                if (apiOptions.authentication) {
+                    switch ((apiOptions.authentication.type || "").toUpperCase()) {
+                        case "OAUTH2":
+                            await Wiser2.doOauth2Authentication(settings, apiOptions, apiConnectionId, authenticationData, extraHeaders, itemDetails, extraData, success, reject);
+                            break;
+                        default:
+                            reject("Geen of onbekend authenticatie-type opgegeven. Neem a.u.b. contact op met ons.");
+                            jjl.processing.removeProcess(process);
+                            return;
+                    }
+                }
+
+                // Execute all the actions.
+                const allActionResults = [];
+                for (let action of apiOptions.actions) {
+                    // Set default values to all properties.
+                    action.method = action.method || "POST";
+                    action.contentType = action.contentType || "application/json";
+                    action.extraHeaders = action.extraHeaders || {};
+
+                    // If a query ID is set, execute that query first, so that the results can be used in the call to the API.
+                    if (action.preRequestQueryId && itemDetails) {
+                        const queryResult = await Wiser2.api({
+                            method: "POST",
+                            url: `${settings.wiserApiRoot}items/${encodeURIComponent(itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid)}/action-button/0?queryId=${encodeURIComponent(action.preRequestQueryId)}&itemLinkId=${encodeURIComponent(itemDetails.link_id || itemDetails.linkId || 0)}`,
+                            data: !extraData ? null : JSON.stringify(extraData),
+                            contentType: "application/json"
+                        });
+                        
+                        if (queryResult && queryResult.other_data && queryResult.other_data.length > 0) {
+                            extraData = $.extend(extraData || {}, queryResult.other_data[0]);
+                        }
+                    }
+
+                    // Do replacements on action function.
+                    if (extraData) {
+                        action.function = Wiser2.doObjectReplacements(action.function, extraData);
+                    }
+                    if (itemDetails) {
+                        action.function = Wiser2.doWiserItemReplacements(action.function, itemDetails);
+                    }
+
+                    // If function does not start with a slash, add it.
+                    if (action.function[0] !== "/") {
+                        action.function = "/" + action.function;
+                    }
+
+                    // Setup the headers for the request.
+                    const headers = $.extend({
+                        "X-Api-Url": `${apiOptions.baseUrl}${action.function}`,
+                        "X-Http-Method": action.method
+                    }, extraHeaders, action.extraHeaders);
+
+                    // Do replacements on the request data, if there is any.
+                    if (action.data) {
+                        const doAllReplacements = (data) => {
+                            for (let key in data) {
+                                if (!data.hasOwnProperty(key)) {
+                                    continue;
+                                }
+
+                                switch (typeof data[key]) {
+                                    case "string":
+                                        if (extraData) {
+                                            data[key] = Wiser2.doObjectReplacements(data[key], extraData);
+                                        }
+                                        if (itemDetails) {
+                                            data[key] = Wiser2.doWiserItemReplacements(data[key], itemDetails);
+                                        }
+                                        break;
+                                    case "object":
+                                        doAllReplacements(data[key]);
+                                        break;
+                                }
+                            }
+                        };
+
+                        doAllReplacements(action.data);
+                    }
+
+                    // Execute the request.
+                    let apiResults = await $.ajax({
+                        url: "/Wiser2/ApiProxy.aspx",
+                        headers: headers,
+                        method: "POST",
+                        contentType: action.contentType,
+                        data: action.contentType.toLowerCase() === "application/json" ? JSON.stringify(action.data) : action.data
+                    });
+
+                    // A lot of APIs don't directly return their data, they will have a surrounding property (or more than one).
+                    // For Example, Exact returns results like this: { d: { results: [] } }. So we added settings for handling this.
+                    let resultsPropertyNames = [];
+                    if (action.resultsPropertyName) {
+                        resultsPropertyNames = action.resultsPropertyName.split(".");
+                    }
+                    else if (apiOptions.resultsPropertyName) {
+                        resultsPropertyNames = apiOptions.resultsPropertyName.split(".");
+                    }
+
+                    for (let resultsPropertyName of resultsPropertyNames) {
+                        if (!apiResults) {
+                            break;
+                        }
+
+                        apiResults = apiResults[resultsPropertyName];
+                    }
+
+                    // If a postRequestQueryId is set, execute that query after the API call, so that the results of the API call can be used in the query.
+                    if (action.postRequestQueryId && itemDetails) {
+                        const postRequestQueryResult = await Wiser2.api({
+                            method: "POST",
+                            url: `${settings.wiserApiRoot}items/${encodeURIComponent(itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid)}/action-button/0?queryId=${encodeURIComponent(action.postRequestQueryId)}&itemLinkId=${encodeURIComponent(itemDetails.link_id || itemDetails.linkId || 0)}`,
+                            data: !apiResults ? null : JSON.stringify(apiResults),
+                            contentType: "application/json"
+                        });
+                    }
+
+                    allActionResults.push(apiResults);
+                }
+
+                // We're done, handle the promise' success.
+                jjl.processing.removeProcess(process);
+                success(allActionResults);
+
+                // Do the actual API call, after authentication.
+            } catch (exception) {
+                jjl.processing.removeProcess(process);
+                reject(exception);
+            }
+        });
+    }
+
+    /**
+     * Use standard full OAUTH2 authentication.
+     * If a manual login is required, this will open a window where the user can login.
+     * @param {string} serviceRoot The base URL for json.aspx.
+     * @param {any} apiOptions The API options from wiser_api_connection.
+     * @param {any} apiConnectionId The ID of the API connection/authentication data in wiser_api_connection.
+     * @param {any} authenticationData The saved authentication data from wiser_api_connection.
+     * @param {any} extraHeaders The extra headers that are going to be sent with the final API request. This method will add the authorization header to this object.
+     * @param {any} itemDetails Optional: If this is called via an action button, you can enter the details of the opened item here so that they can be used in the API call.
+     * @param {any} extraData The extra data to send with the authentication.
+     * @param {any} success The success from the promise of the doApiCall function.
+     * @param {any} reject The reject from the promise of the doApiCall function.
+     */
+    static async doOauth2Authentication(settings, apiOptions, apiConnectionId, authenticationData, extraHeaders, itemDetails, extraData, success, reject) {
+        // Check if we still have a valid authentication token.
+        if (!authenticationData.accessTokenExpire || new Date(authenticationData.accessTokenExpire) <= new Date()) {
+            console.log(`[doApiCall] - AccessToken has expired on ${authenticationData.accessTokenExpire}`);
+
+            // If we have either a refresh token, or an authentication token, then the user doesn't have to manually login anymore.
+            if (authenticationData.refresh_token || authenticationData.authenticationToken) {
+                const authenticationRequest = {
+                    method: "POST",
+                    url: "/Wiser2/ApiProxy.aspx",
+                    headers: { "X-Api-Url": `${apiOptions.baseUrl}${apiOptions.authentication.accessTokenUrl}` },
+                    data: {}
+                };
+
+                if (authenticationData.refresh_token) {
+                    console.log(`[doApiCall] - We have a refresh token, so using that to get a new access token and a new refresh token.`);
+                    authenticationRequest.data.refresh_token = authenticationData.refresh_token;
+                    authenticationRequest.data.grant_type = "refresh_token";
+                } else {
+                    console.log(`[doApiCall] - We have no refresh token, but we do have an authentication code, using that to get access token and refresh token.`);
+                    authenticationRequest.data.redirect_uri = apiOptions.authentication.callBackUrl;
+                    authenticationRequest.data.code = authenticationData.authenticationToken;
+                    authenticationRequest.data.grant_type = "authorization_code";
+                }
+
+                authenticationRequest.data.client_id = apiOptions.authentication.clientId;
+                authenticationRequest.data.client_secret = apiOptions.authentication.clientSecret;
+
+                console.log("Do ajax request:", authenticationRequest);
+                const authenticationResult = await $.ajax(authenticationRequest);
+                console.log("authenticationResult", authenticationResult);
+                authenticationData = $.extend(authenticationData, authenticationResult);
+                authenticationData.accessTokenExpire = moment().add(parseInt(authenticationData.expires_in), "seconds").toDate();
+
+                await Wiser2.api({
+                    method: "POST",
+                    url: `${settings.serviceRoot}/UPDATE_API_AUTHENTICATION_DATA?id=${encodeURIComponent(apiConnectionId)}`,
+                    data: {
+                        id: apiConnectionId,
+                        authenticationData: JSON.stringify(authenticationData)
+                    }
+                });
+            } else {
+                // We have no refresh token and no authentication token, this means the user must manually login first (that is how OAUTH2 works).
+                if (!apiOptions.authentication.authUrl || !apiOptions.authentication.clientId || !apiOptions.authentication.callBackUrl) {
+                    reject("Er werd geprobeerd om een API aan te roepen, echter zijn er niet genoeg gegevens bekend voor de authenticatie. Neem a.u.b. contact op met ons.");
+                    return;
+                }
+
+                // Open a window where the user can login.
+                const loginUrl = `${apiOptions.baseUrl}${apiOptions.authentication.authUrl}?client_id=${encodeURIComponent(apiOptions.authentication.clientId)}&redirect_uri=${encodeURIComponent(apiOptions.authentication.callBackUrl)}&response_type=code&force_login=0`;
+                console.log(`[doApiCall] - We have no information for authentication, which means the customer needs to login first. Opening window with url '${loginUrl}'...`);
+                const loginWindow = window.open(loginUrl, "_blank", "height=550, width=550, status=yes, toolbar=no, menubar=no, location=no,addressbar=no");
+
+                // Wait for the user to finish logging in
+                let interval = setInterval(async () => {
+                    try {
+                        if (loginWindow.document.domain === document.domain && loginWindow.document.readyState === "complete") {
+                            // we're here when the child window returned to our domain
+                            const urlParams = new URLSearchParams(loginWindow.location.search);
+                            const authenticationToken = urlParams.get("code");
+
+                            if (!authenticationToken) {
+                                console.log("No token/code found yet.");
+                                return;
+                            }
+
+                            clearInterval(interval);
+                            loginWindow.close();
+                            Wiser2.doApiCall(settings, apiConnectionId, itemDetails, extraData, { authenticationToken: authenticationToken }).then(success).catch(reject);
+                        }
+                    } catch (intervalException) {
+                        // we're here when the child window has been navigated away or closed
+                        if (loginWindow.closed) {
+                            clearInterval(interval);
+                            console.warn("Window was closed");
+                            reject("Het loginscherm was vroegtijdig gesloten.");
+                            return;
+                        }
+                    }
+                }, 200);
+            }
+        }
+
+        extraHeaders.Authorization = `${Strings.capitalizeFirst(authenticationData.token_type)} ${authenticationData.access_token}`;
+    }
+}
+
+/**
+ * Miscellaneous utils.
+ */
+export class Misc {
+    static loadExternalScript(url) {
+        return new Promise((resolve) => {
+            const scriptEl = document.createElement("script");
+            scriptEl.src = url;
+            if (scriptEl.readyState) {  //IE
+                scriptEl.onreadystatechange = () => {
+                    if (scriptEl.readyState === "loaded" ||
+                        scriptEl.readyState === "complete") {
+                        scriptEl.onreadystatechange = null;
+                        resolve();
+                    }
+                };
+            } else {  //Others
+                scriptEl.onload = resolve;
+            }
+
+            document.body.insertAdjacentElement("beforeEnd", scriptEl);
+        });
+    }
+
+    /**
+     * Loads CodeMirror if it's not loaded yet.
+     * @return {Promise} A promise.
+     */
+    static ensureCodeMirror() {
+        return new Promise((resolve) => {
+            if (window.CodeMirror) {
+                resolve(window.CodeMirror);
+                return;
+            }
+
+            const codeMirrorPromises = [
+                import("codemirror"),
+                import("codemirror/mode/css/css.js"),
+                import("codemirror/mode/xml/xml.js"),
+                import("codemirror/mode/htmlmixed/htmlmixed.js"),
+                import("codemirror/mode/javascript/javascript.js"),
+                import("codemirror/mode/sql/sql.js"),
+                import("codemirror/addon/hint/show-hint.js"),
+                import("codemirror/addon/hint/css-hint.js"),
+                import("codemirror/addon/hint/xml-hint.js"),
+                import("codemirror/addon/hint/html-hint.js"),
+                import("codemirror/addon/hint/javascript-hint.js"),
+                import("codemirror/addon/edit/matchbrackets.js"),
+                import("codemirror/addon/display/fullscreen.js"),
+                import("codemirror/addon/fold/foldcode.js"),
+                import("codemirror/addon/fold/foldgutter.js"),
+                import("codemirror/addon/fold/brace-fold.js"),
+                import("codemirror/addon/fold/xml-fold.js"),
+                import("codemirror/addon/fold/comment-fold.js"),
+                import("codemirror/addon/lint/lint.js"),
+                import("jshint"),
+                import("codemirror/addon/lint/javascript-lint.js"),
+                import("csslint"),
+                import("codemirror/addon/lint/css-lint.js"),
+                import("codemirror/addon/search/searchcursor.js"),
+                import("codemirror/addon/search/search.js"),
+                import("codemirror/addon/dialog/dialog.js"),
+
+                import("codemirror/lib/codemirror.css"),
+                import("codemirror/addon/hint/show-hint.css"),
+                import("codemirror/addon/display/fullscreen.css"),
+                import("codemirror/addon/fold/foldgutter.css"),
+                import("codemirror/addon/lint/lint.css")
+            ];
+
+            Promise.all(codeMirrorPromises).then((modules) => {
+                window.CodeMirror = modules[0];
+                window.JSHINT = modules[19].JSHINT;
+                window.CSSLint = modules[21].CSSLint;
+                resolve(window.CodeMirror);
+                return;
+            });
+        });
+    }
+
+    async printDymoLabel(stringToPrint, labelXml) {
+        await loadExternalScript("/scripts/labelwriter/DYMO.Label.Framework.js");
+
+        if (labelXml === "") {
+            // Specify Label Layout to Print
+            labelXml = '<DieCutLabel Version="8.0" Units="twips"> \
+                        <PaperOrientation>Landscape</PaperOrientation> \
+                        <Id>Address</Id> \
+                        <PaperName>30252 Address</PaperName> \
+                        <DrawCommands> \
+                            <RoundRectangle X="0" Y="0" Width="2040" Height="5000" Rx="270" Ry="270" /> \
+                        </DrawCommands> \
+                        <ObjectInfo> \
+                            <TextObject> \
+                                <Name>stringToPrint</Name> \
+                                <ForeColor Alpha="255" Red="0" Green="0" Blue="0" /> \
+                                <BackColor Alpha="0" Red="255" Green="255" Blue="255" /> \
+                                <LinkedObjectName></LinkedObjectName> \
+                                <Rotation>Rotation0</Rotation> \
+                                <IsMirrored>False</IsMirrored> \
+                                <IsVariable>True</IsVariable> \
+                                <HorizontalAlignment>Left</HorizontalAlignment> \
+                                <VerticalAlignment>Top</VerticalAlignment> \
+                                <TextFitMode>ShrinkToFit</TextFitMode> \
+                                <UseFullFontHeight>True</UseFullFontHeight> \
+                                <Verticalized>False</Verticalized> \
+                                <StyledText> \
+                                    <Element> \
+                                        <String xml:space="preserve">[stringToPrint]</String> \
+                                        <Attributes> \
+                                            <Font Family="Arial" Size="14" Bold="False" Italic="False" Underline="False" Strikeout="False" /> \
+                                            <ForeColor Alpha="255" Red="0" Green="0" Blue="0" HueScale="100" /> \
+                                        </Attributes> \
+                                    </Element> \
+                                </StyledText> \
+                            </TextObject> \
+                            <Bounds X="400" Y="50" Width="4500" Height="2000" /> \
+                        </ObjectInfo> \
+                     </DieCutLabel>';
+        }
+        let label = dymo.label.framework.openLabelXml(labelXml);
+
+        // Setting Data to Print
+        label.setObjectText("stringToPrint", stringToPrint);
+
+        // Selecting the Printer to Print on
+        let printers = dymo.label.framework.getPrinters();
+        if (printers.length === 0) {
+            Wiser2.showMessage({
+                title: "Geen printer gevonden",
+                content: "No DYMO printers are installed. Install DYMO printers."
+            });
+        }
+
+        let printerName = "";
+        for (let i = 0; i < printers.length; ++i) {
+            let printer = printers[i];
+            if (printer.printerType === "LabelWriterPrinter") {
+                printerName = printer.name;
+                break;
+            }
+        }
+
+        // Actual Printing
+        label.print(printerName);
+    }
+
+    static async downloadFile(fetchResult, fileName) {
+        const pdfBlob = await fetchResult.blob();
+        const pdfUrl = window.URL.createObjectURL(pdfBlob);
+
+        const anchor = document.createElement("a");
+        anchor.href = pdfUrl;
+        anchor.download = fileName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        window.URL.revokeObjectURL(pdfUrl);
+    }
+}
+
+// Make the classes globally available, so that they also work in scripts that are not loaded via Webpack.
+window.modules = Modules;
+window.Dates = Dates;
+window.Strings = Strings;
+window.Wiser2 = Wiser2;
+window.Misc = Misc;
