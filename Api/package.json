@@ -1,0 +1,15 @@
+{
+  "name": "wiser-api",
+  "version": "3.0.0",
+  "author": "Happy Geeks B.V.",
+  "scripts": {
+    "setup:mysql": "node Scripts/setup-mysql.js"
+  },
+  "dependencies": {
+    "cli-color": "^2.0.1",
+    "fs": "^0.0.1-security",
+    "minimist": "^1.2.5",
+    "mysql": "^2.18.1",
+    "util": "^0.12.4"
+  }
+}
