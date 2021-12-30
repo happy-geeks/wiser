@@ -55,6 +55,21 @@ Wiser v3. This includes the API and the front-end projects.
 
 #### Datasbase
 Wiser requires a certain database structure to work, several tables and triggers are required. At the moment, we only support MySQL, but other databases might be added in the future.
+
+To setup this database, you can open a PowerShell or CMD window in the directory that contains the `Api.csproj` file and run the following command:
+```
+npm run setup:mysql -- --host=host --database=database --user=user --password=password
+```
+You can use the following parameters with this command:
+- **host** (required): The hostname or IP address to the MySQL database.
+- **database** (required): The name of the database scheme to create.
+- **user** (required): The username of the MySQL user.
+- **password** (required): The password of the MySQL user. Note that the script does not support the new MySQL 8 password, only `mysql_native_password`.
+- **port** (optional): The port for the database. Default value is `3306`.
+- **isConfigurator** (optional): Set to `true` if you want to make a configurator with Wiser.
+- **isWebshop** (optional): Set to `true` if you want to make a webshop with Wiser.
+
+You can also do this manually:
 The first table you need is called `easy_customers`, this table is needed to lookup the connection string and other information for the customer when using multi tenancy. At the moment this table is always required, even if you don't use multi tenancy (but that will change in the future). This table can be created like this:
 ```sql
 CREATE TABLE `easy_customers`  (
