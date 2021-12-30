@@ -1,8 +1,7 @@
 {
-  "name": "wiser",
+  "name": "wiser-front-end",
   "version": "3.0.0",
-  "description": "",
-  "author": "",
+  "author": "Happy Geeks B.V.",
   "scripts": {
     "build-dev": "webpack --mode=development",
     "build-prod": "webpack --mode=production"
