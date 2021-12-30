@@ -1,0 +1,28 @@
+﻿<div class="item" style="{style}" id="container_{propertyIdWithSuffix}" data-property-id="{propertyId}" data-item-id="{itemId}" data-depends-on-field="{dependsOnField}" data-depends-on-operator="{dependsOnOperator}" data-depends-on-value="{dependsOnValue}" data-depends-on-action="{dependsOnAction}" data-property-name="{propertyName}" data-item-link-id="{itemLinkId}" data-language-code="{languageCode}" data-width="{width}" data-save-on-change="{saveOnChange}" data-label-style="{labelStyle}" data-label-width="{labelWidth}">
+    <span class="handler">&nbsp;</span>
+    <h4 class="{titleClass}">
+        <label for="field_{propertyIdWithSuffix}">{title}</label>
+        <span class="info-link no-hover {infoIconClass}">
+            <ins class="icon-info-full"></ins>
+        </span>
+    </h4>
+    <div class="editor-container">
+        <div class="editor-overlay"></div>
+        <button class="openEditorInDialogButton">Bewerken</button>
+        <div class="editor">
+            <textarea id="field_{propertyIdWithSuffix}" name="{propertyName}_{languageCode}" data-kendo-control="kendoEditor" class="editor" rows="5" cols="30" {required} pattern="{pattern}" style="{elementStyle}">{default_value}</textarea>
+        </div>
+        <div class="editorWindow">
+            <div class="pane-content">
+                <textarea id="field_window_{propertyIdWithSuffix}" name="{propertyName}_{languageCode}" data-kendo-control="kendoEditor" class="editor" rows="5" cols="30" {required} pattern="{pattern}">{default_value}</textarea>
+            </div>
+            <footer class="fixed clear">
+                <div class="actions">
+                    <button class="saveEditorWindowButton k-primary">Ok</button>
+                    <button class="closeEditorWindowButton">Annuleren</button>
+                </div>
+            </footer>
+        </div>
+    </div>
+    <div class="form-hint {formHintClass}"><span>{hint}</span></div>
+</div>

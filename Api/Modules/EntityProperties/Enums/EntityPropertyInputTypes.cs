@@ -1,0 +1,35 @@
+﻿namespace Api.Modules.EntityProperties.Enums
+{
+    public enum EntityPropertyInputTypes
+    {
+        Input,
+        SecureInput,
+        TextBox,
+        RadioButton,
+        CheckBox,
+        ComboBox,
+        MultiSelect,
+        NumericInput,
+        FileUpload,
+        HtmlEditor,
+        QueryBuilder,
+        DateTimePicker,
+        Grid,
+        ImageCoordinates,
+        ImageUpload,
+        GpsLocation,
+        DateRange,
+        SubEntitiesGrid,
+        ItemLinker,
+        ColorPicker,
+        AutoIncrement,
+        LinkedItem,
+        ActionButton,
+        DataSelector,
+        Chart,
+        Scheduler,
+        TimeLine,
+        Empty,
+        Qr
+    }
+}

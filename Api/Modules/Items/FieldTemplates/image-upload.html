@@ -1,0 +1,24 @@
+﻿<div class="item image-upload" style="{style}" id="container_{propertyIdWithSuffix}" data-property-id="{propertyId}" data-item-id="{itemId}" data-depends-on-field="{dependsOnField}" data-depends-on-operator="{dependsOnOperator}" data-depends-on-value="{dependsOnValue}" data-depends-on-action="{dependsOnAction}" data-property-name="{propertyName}" data-item-link-id="{itemLinkId}" data-language-code="{languageCode}" data-width="{width}" data-encrypted-item-id="{itemIdEncrypted}" data-save-on-change="{saveOnChange}" data-label-style="{labelStyle}" data-label-width="{labelWidth}">
+    <span class="handler">&nbsp;</span>
+    <h4 class="{titleClass}">
+        <label for="field_{propertyIdWithSuffix}">{title}</label>
+        <span class="info-link no-hover {infoIconClass}">
+            <ins class="icon-info-full"></ins>
+        </span>
+    </h4>
+    <div class="wrapper uploader imageUploader_{propertyIdWithSuffix} k-dropzone">
+        <div id="images_{propertyIdWithSuffix}" class="imagesContainer"></div>
+        <div class="dropZoneElement">
+            <div class="textWrapper">
+                <p class="dropImageHereText">
+                    <strong><ins class="icon-cloud-up"></ins>Voeg afbeelding(en) toe...</strong>
+                    <span>Sleep afbeeldingen naar dit gebied</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <input name="{propertyName}_{languageCode}" id="field_{propertyIdWithSuffix}" type="file" />
+
+    <div class="form-hint {formHintClass}"><span>{hint}</span></div>
+</div>

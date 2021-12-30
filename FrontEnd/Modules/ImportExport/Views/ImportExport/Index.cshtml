@@ -1,0 +1,241 @@
+﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+
+<!DOCTYPE html>
+<html>
+
+<head runat="server">
+    <title>Wiser 2.1 - Import/Export</title>
+    <!-- TODO: These files should be loaded via webpack like the rest, but then we get errors.
+    TODO: If we add the NPM package @@progress/kendo-theme-material, then it works, but that theme has different CSS, some thing look different then... -->
+    <link href="/css/libraries/Kendo/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="/css/libraries/Kendo/kendo.material.min.css" rel="stylesheet" />
+
+    <script>
+        window.wiserVersion = "@Model.WiserVersion?.ToString()";
+    </script>
+</head>
+<body data-wiser-api-root="@Model.ApiRoot"
+      data-wiser-api-v21-root="@Model.ApiRoot"
+      data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
+      data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
+      data-api-client-id="@Model.Settings.ApiClientId"
+      data-api-client-secret="@Model.Settings.ApiClientSecret"
+      data-sub-domain="@Model.SubDomain"
+      data-track-js-token="@Model.Settings.TrackJsToken">
+    <div id="wiser">
+        <div id="window" class="import-module" style="margin: 0 auto; padding: 0;">
+            <div class="pane-content">
+                <div id="mainLoader" class="fullscreen-loader loading">
+                    <div class="loader-icon">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </div>
+
+                <!-- TABS -->
+                <div id="tabstrip">
+                    <ul>
+                        <li class="k-state-active">Import</li>
+                        <li>Export</li>
+                        <li>Verwijderen items</li>
+                        <li>Verwijderen koppelingen</li>
+                    </ul>
+
+                    <div id="ImportHtml"></div>
+
+                    <div id="ExportHtml"></div>
+
+                    <div id="DeleteItemsHtml">
+                        <div>
+                            <div class="formview compact" id="DeleteItemsContainer">
+                                <div class="item">
+                                    <h4 class="tooltip">
+                                        <label>Verwijderen items</label>
+                                        <span class="info-link">
+                                            <ins class="icon-info-full"></ins>
+                                            <span class="info-tooltip">
+                                                <span>
+                                                    Verwijder gemakkelijk meerdere items binnen Wiser.
+                                                </span>
+                                            </span>
+                                        </span>
+                                    </h4>
+                                </div>
+
+                                <div class="item">
+                                    <div>
+                                        <input type="radio" name="DeleteItemsType" id="DeleteItemsFile" class="noForm rToggle" value="datafile" checked="checked" />
+                                        <header>
+                                            <label for="DeleteItemsFile" class="radio rToggle"><span>Bestand</span></label>
+                                        </header>
+                                        <div>
+                                            <div class="item">
+                                                <h4>
+                                                    <label>Data-bestand</label>
+                                                </h4>
+                                                <input name="fileUpload" class="fileUpload removeItemsFileUpload" type="file" />
+                                                <div class="form-hint"><span>Selecteer een data-bestand... (max. 25 MB)</span></div>
+                                                <div class="clear clear15"></div>
+                                            </div>
+
+                                            <div class="item">
+                                                <h4 class="tooltip-left">
+                                                    <label>Entiteit</label>
+                                                    <span class="info-link">
+                                                        <ins class="icon-info-full"></ins>
+                                                        <span class="info-tooltip">
+                                                            <span>
+                                                                Kies de entititeit van de items die verwijderd moeten worden.
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                </h4>
+                                                <div id="EntityTypesContainer">
+                                                    <select class="combo-select" placeholder="Maak uw keuze...">
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="item">
+                                                <h4 class="tooltip-left">
+                                                    <label>Matchen tegen</label>
+                                                    <span class="info-link">
+                                                        <ins class="icon-info-full"></ins>
+                                                        <span class="info-tooltip">
+                                                            <span>
+                                                                Kies de eigenschap waarvan de waarde overeen moet komen met de aangeleverde gegevens.
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                </h4>
+                                                <div id="EntityPropertiesContainer">
+                                                    <select class="combo-select" placeholder="Maak uw keuze...">
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <input type="radio" name="DeleteItemsType" id="DeleteItemsDataSelector" class="noForm rToggle" value="dataselector" />
+                                        <header>
+                                            <label for="DeleteItemsDataSelector" class="radio rToggle"><span>Selectie</span></label>
+                                        </header>
+                                        <div>
+                                            <div class="item">
+                                                <h4 class="tooltip-left">
+                                                    <label>Data selector</label>
+                                                    <span class="info-link">
+                                                        <ins class="icon-info-full"></ins>
+                                                        <span class="info-tooltip">
+                                                            <span>
+                                                                Gebruik de Data selector om een selectie te maken welke items verwijderd moeten worden.
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                </h4>
+                                            </div>
+                                            <div id="dataSelectorContainer">
+                                                <iframe id="dataSelectorIframe" src="/Modules/DataSelector?embedded=true&amp;embedoptions=no-save-button"></iframe>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <footer class="fixed">
+                                    <div class="actions">
+                                        <button id="deleteItemsButton" class="k-primary button rightButton">Start acties</button>
+                                    </div>
+                                </footer>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="DeleteConnectionsHtml">
+                        <div>
+                            <div class="formview compact" id="DeleteConnectionsContainer">
+                                <div class="item">
+                                    <h4 class="tooltip">
+                                        <label>Verwijderen koppelingen</label>
+                                        <span class="info-link">
+                                            <ins class="icon-info-full"></ins>
+                                            <span class="info-tooltip">
+                                                <span>
+                                                    Verwijder gemakkelijk meerdere koppelingen tussen items binnen Wiser.
+                                                </span>
+                                            </span>
+                                        </span>
+                                    </h4>
+                                </div>
+
+                                <div class="item">
+                                    <h4>
+                                        <label>Data-bestand</label>
+                                    </h4>
+                                    <input name="fileUpload" class="fileUpload removeConnectionsFileUpload" type="file" />
+                                    <div class="form-hint"><span>Selecteer een data-bestand... (max. 25 MB)</span></div>
+                                    <div class="clear clear15"></div>
+                                </div>
+
+                                <div class="item singleColumnItem">
+                                    <h4 class="tooltip-left">
+                                        <label>Koppeltype</label>
+                                        <span class="info-link">
+                                            <ins class="icon-info-full"></ins>
+                                            <span class="info-tooltip">
+                                                <span>
+                                                    Kies het koppelingstype waarmee de koppeling is gelegd die je wilt verwijderen. Het aangeleverde bestand kan de ids van zowel de oorsprong als de bestemming bevatten.
+                                                </span>
+                                            </span>
+                                        </span>
+                                    </h4>
+                                    <select id="deleteConnectionsLinkCombobox" class="combo-select" placeholder="Maak uw keuze...">
+                                    </select>
+                                </div>
+
+                                <div class="item multipleColumnsItem">
+                                    <h4 class="tooltip">
+                                        <label>Matchen kolommen</label>
+                                        <span class="info-link">
+                                            <ins class="icon-info-full"></ins>
+                                            <span class="info-tooltip tooltip-wide">
+                                                <span>
+                                                    Kies de entiteiten waartussen koppelingen moeten worden verwijderd en kies de eigenschapen waarvan de waardes overeen moeten komen met de aangeleverde gegevens.
+                                                </span>
+                                            </span>
+                                        </span>
+                                    </h4>
+                                    <div id="DeleteConnectionsGrid" class="grid"></div>
+                                </div>
+
+                                <footer class="fixed clear">
+                                    <div class="actions">
+                                        <button id="deleteConnectionsButton" class="k-primary button rightButton">Start acties</button>
+                                    </div>
+                                </footer>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WINDOW - ALERT -->
+            <div id="import-upload" class="x-window alert-window">
+                <div class="item clear">
+                    <p>De import is klaargezet. Zodra deze gereed is, ontvangt u bericht.</p>
+                    <button id="closeButton" class="k-primary button rightButton">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/scripts/Jjl.min.js"></script>
+    <script src="/scripts/Utils.min.js"></script>
+    <script src="/scripts/ImportExport.min.js"></script>
+    <script src="/scripts/Import.min.js"></script>
+    <script src="/scripts/Export.min.js"></script>
+</body>
+</html>

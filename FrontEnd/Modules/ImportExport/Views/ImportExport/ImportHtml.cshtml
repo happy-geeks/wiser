@@ -1,0 +1,96 @@
+﻿<div>
+    <div class="formview compact" id="ImportContainer">
+        <div class="item" id="EmailAddressContainer">
+            <h4><label for="UserEmailAddress">E-mailadres</label></h4>
+            <input name="email" type="email" class="k-input" id="UserEmailAddress" />
+            <div class="form-hint"><span>We hebben geen e-mailadres gevonden in uw account. Vul a.u.b. een e-mailadres in zodat we u een bericht kunnen sturen wanneer de import klaar is.</span></div>
+            <div class="clear clear15"></div>
+        </div>
+
+        <div class="item">
+            <h4><label for="ImportName">Naam</label></h4>
+            <input name="name" type="text" class="k-input" id="ImportName" />
+            <div class="form-hint"><span>Vul een naam in voor deze import, waar u deze import later nog aan kunt herkennen.</span></div>
+            <div class="clear clear15"></div>
+        </div>
+
+        <div class="item">
+            <h4><label for="DateTime">Startdatum en -tijd</label></h4>
+            <input name="datetime" type="date" class="k-input datetimepicker" id="StartDateTime" />
+            <div class="form-hint"><span>Kies een moment waarop de import gedaan moet worden. Indien er geen waarde wordt ingevuld, of een moment in het verleden, zal de import zo snel mogelijk gestart worden. <br /> <strong>Let op:</strong> Kies een moment uit waarop er niet veel gebruikers zijn, bijvoorbeeld in de nacht, omdat het importeren van data een zwaar proces is.</span></div>
+            <div class="clear clear15"></div>
+        </div>
+
+        <div class="item">
+            <h4><label>Data-bestand of URL</label></h4>
+            <input name="fileUpload" class="fileUpload" type="file" />
+            <div class="form-hint"><span>Selecteer een data-bestand... (max. 25 MB)</span></div>
+            <div class="clear clear15"></div>
+        </div>
+        <div class="item">
+            <h4 class="tooltip-left">
+                <label>Afbeeldingen</label>
+                <span class="info-link">
+                    <ins class="icon-info-full"></ins>
+                    <span class="info-tooltip">
+                        <span>De waarde van het veld in het data-bestand die de afbeelding moet importeren moet de naam van de afbeelding bevatten zoals deze in het ZIP-bestand zit, bijvoorbeeld &quot;product.jpg&quot;. De afbeeldingen in het ZIP-bestand mogen niet in een folder staan.</span>
+                    </span>
+                </span>
+            </h4>
+            <input name="imgUpload" class="imgUpload" type="file" />
+            <div class="form-hint"><span>Selecteer een ZIP-bestand met afbeeldingen... (max. 400 MB)</span></div>
+            <div class="clear clear15"></div>
+        </div>
+        <div class="item">
+            <h4 class="tooltip">
+                <label>Importeren eigenschappen</label>
+                <span class="info-link">
+                    <ins class="icon-info-full"></ins>
+                    <span class="info-tooltip">
+                        <span>
+                            Kies in de kolom &quot;Importeren naar&quot; het entiteit-type van de items in het importbestand. Deze wordt daarna automatisch gevuld bij alle andere rijen. Bij specificatienaam zal er vervolgens per eigenschap die geïmporteerd moet worden een keuze gemaakt moeten worden. Alleen rijen met een vinkje worden meegenomen in de import.
+                        </span>
+                    </span>
+                </span>
+            </h4>
+            <div id="importGrid" class="grid"></div>
+        </div>
+
+        <div class="item">
+            <h4 class="tooltip">
+                <label>Importeren koppelingen</label>
+                <span class="info-link">
+                    <ins class="icon-info-full"></ins>
+                    <span class="info-tooltip tooltip-wide">
+                        <span>
+                            Hier kan ingesteld worden hoe de geïmporteerde items gekoppeld moeten gaan worden. De waarde van het veld die een koppeling gaat leggen moet de numerieke waarde zijn van een item, ofwel het item ID. Koppeltype wat voor soort link het wordt. De kolom &quot;Waarde is het doelitem&quot; houdt in dat het geïmporteerde item wordt gekoppeld aan dat item, i.p.v. dat het item van die koppeling gekoppeld wordt aan het geïmporteerde item. Alleen rijen met een vinkje worden meegenomen in de import.
+                            <br /><br />Indien u wilt dat alle huidige koppelingen worden vervangen, van elk item in deze import, door de koppelingen in deze import, vink zet dan de optie 'Huidige koppelingen verwijderen' aan bij de betreffende koppeling(en). Deze optie zorgt ervoor dat eerst alle koppelingen van elk item in deze import worden verwijderd en daarna de nieuwe koppelingen worden geïmporteerd.
+                            <br /><strong><u>Let op!</u></strong> Met deze optie kan het mogelijk zijn dat u koppelingen kwijtraakt, als het aangeleverde import-bestand niet correct is.
+                        </span>
+                    </span>
+                </span>
+            </h4>
+            <div id="importLinksGrid" class="grid"></div>
+        </div>
+
+        <div class="item hidden" id="importLinkDetailsContainer">
+            <h4 class="tooltip">
+                <label>Importeren eigenschappen van koppelingen</label>
+                <span class="info-link">
+                    <ins class="icon-info-full"></ins>
+                    <span class="info-tooltip">
+                        <span>Kies in de kolom &quot;Koppeltype&quot; het koppeltype van de items in het importbestand. Hiermee kunnen waardes gevuld worden die opgeslagen worden bij een koppeling tussen 2 items. In Wiser zijn deze velden altijd te vinden op het tabblad "Velden vanuit koppeling". Bij specificatienaam zal er vervolgens per eigenschap die geïmporteerd moet worden een keuze gemaakt moeten worden. Alleen rijen met een vinkje worden meegenomen in de import.</span>
+                    </span>
+                </span>
+            </h4>
+            <div id="importLinkDetailsGrid" class="grid"></div>
+        </div>
+
+        <!-- FIXED FOOTER -->
+        <footer class="fixed">
+            <div class="actions">
+                <button id="startImportButton" class="k-primary button rightButton">Import klaarzetten</button>
+            </div>
+        </footer>
+    </div>
+</div>

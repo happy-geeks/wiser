@@ -1,0 +1,219 @@
+﻿@import "../../Base/scss/base.scss";
+
+.k-window .window-content {
+    bottom: 0;
+    top: 75px;
+    padding: 0;
+}
+
+.k-window .window-header {
+    background-color: var(--item-bg-color);
+    box-sizing: border-box;
+    height: 75px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+
+    display: flex;
+    justify-content: space-between;
+    padding: 16px;
+}
+
+.search-container {
+    height: 42px;
+    max-width: 25%;
+    position: relative;
+    width: 100%;
+}
+
+.icon-line-search {
+    cursor: pointer;
+    font-size: 24px;
+    height: 42px;
+    line-height: 42px;
+    position: absolute;
+    right: 0;
+    top: 0;
+    text-align: center;
+    width: 42px;
+}
+
+.version-block {
+    padding: 20px 6px 0 6px;
+}
+
+.version-block .item {
+    max-width: 300px;
+    width: calc(100% / 3);
+}
+
+.version-block .item .flex-container {
+    position: relative;
+}
+
+.version-block .item button {
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 0;
+    right: 35px;
+    width: calc(100% - 35px);
+}
+
+/** TREEVIEW **/
+.pane-content .k-treeview {
+    min-height: calc(100vh - 230px);
+    overflow-x: hidden;
+}
+.k-treeview + button {
+    position: -webkit-sticky;
+    position: sticky;
+    left: 100%;
+    bottom: 20px;
+    margin-right: 20px;
+    padding: 0;
+}
+
+/** TABSTRIP **/
+#right-pane .k-tabstrip-wrapper,
+#right-pane .k-tabstrip {
+    height: 100%;
+}
+
+#right-pane .k-tabstrip .k-content.k-state-active {
+    min-height: calc(100% - 55px);
+}
+
+#right-pane .k-tabstrip .k-tabstrip-items {
+    top: 5px;
+}
+
+/** ADVANCED **/
+.advanced {
+    transition: 200ms ease-in-out;
+    border: 1px solid var(--dark-bd-color);
+    margin: 20px 6px;
+}
+
+.advanced:hover {
+    border-color: var(--action-hover);
+}
+
+.group-label {
+    display: flex;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.group-label ins {
+    transition: 200ms ease-in-out;
+    margin-left: auto;
+}
+
+.advanced input:checked ~ .group-label ins {
+    transform: rotate(180deg);
+}
+
+.advanced-panel {
+    display: flex;
+    align-items: flex-start;
+    transition: 200ms ease-in-out;
+    max-height: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.advanced input:checked ~ .advanced-panel {
+    max-height: 2000px;
+    padding: 10px 0;
+}
+
+.advanced-panel .checkColumns {
+    list-style: none;
+    column-count: 3;
+    width: 100%;
+}
+
+.advanced-panel .item-left {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.advanced-panel .item-left .item {
+    width: 50%;
+}
+
+.advanced-panel .item-right {
+    padding-left: 40px;
+    padding-top: 15px;
+}
+
+.user-check-panel {
+    transition: 200ms ease-in-out;
+    max-height: 0;
+    padding: 0 0 0 22px;
+    overflow: hidden;
+}
+
+#user-check:checked ~ .user-check-panel {
+    max-height: 2000px;
+    padding: 0 0 0 22px;
+}
+
+/** ICONS **/
+.k-sprite {
+    color: var(--dark-txt);
+    font-family: 'icomoon' !important;
+    font-size: 16px;
+    margin-right: 5px;
+    padding-top: 1px;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.k-sprite.rootfolder:before {
+    content: "\e968";
+}
+
+.k-sprite.folder:before {
+    content: "\e9be";
+}
+
+.k-sprite.wiserfolderclosed:before {
+    content: "\e9bf";
+}
+
+.k-sprite.wiserfolderopened:before {
+    content: "\e951";
+}
+
+.k-sprite.pdf:before {
+    content: "\e9c0";
+}
+
+.k-sprite.html:before {
+    content: "\e947";
+}
+
+.k-sprite.image:before {
+    content: "\e986";
+}
+
+.k-sprite.file:before {
+    content: "\e93c";
+}
+
+.k-sprite.edit:before {
+    content: "\e983";
+}
+
+.k-sprite.delete:before {
+    content: "\e92a";
+}

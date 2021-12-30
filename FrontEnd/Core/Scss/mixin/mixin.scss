@@ -1,0 +1,162 @@
+// RESPONSIVE
+@mixin sm {
+    @media (min-width: #{$screen-sm-min}) {
+        @content;
+    }
+}
+
+@mixin md {
+    @media (min-width: #{$screen-md-min}) {
+        @content;
+    }
+}
+
+@mixin lg {
+    @media (min-width: #{$screen-lg-min}) {
+        @content;
+    }
+}
+
+@mixin xl {
+    @media (min-width: #{$screen-xl-min}) {
+        @content;
+    }
+}
+
+@mixin sm-down {
+    @media (max-width: #{$screen-sm-max}) {
+        @content;
+    }
+}
+
+@mixin md-down {
+    @media (max-width: #{$screen-md-max}) {
+        @content;
+    }
+}
+
+@mixin lg-down {
+    @media (max-width: #{$screen-lg-max}) {
+        @content;
+    }
+}
+
+// MIXINS
+@mixin make-col($size) {
+    $col-devide: $column-count / $size;
+    $col-width: 100% / $col-devide;
+     
+    flex-basis: calc(#{$col-width} - #{$gutter-width});
+}
+
+@mixin transition($duration) {
+    transition: $duration all ease-in-out;
+}
+
+// COLORS
+@mixin background-color-rgba($color, $opacity) {
+    background-color: $color;
+    background-color: rgba(red($color), green($color), blue($color), $opacity);
+}
+
+@mixin background-rgba($color, $opacity) {
+    @include background-color-rgba($color, $opacity);
+}
+
+@mixin text-color-rgba($color, $opacity) {
+    color: rgba(red($color), green($color), blue($color), $opacity);
+}
+
+@mixin text-rgba($color, $opacity) {
+    @include text-color-rgba($color, $opacity);
+}
+
+@mixin border-color-rgba($color, $opacity) {
+    border-color: rgba(red($color), green($color), blue($color), $opacity);
+}
+
+@mixin border-rgba($color, $opacity) {
+    @include border-color-rgba($color, $opacity);
+}
+
+@mixin header-shadow($color, $opacity) {
+    box-shadow: 0 0 15px 0 rgba($color, $opacity);
+}
+
+@mixin drop-shadow($color, $blur, $opacity) {
+    box-shadow: 0 2px $blur 0 rgba($color, $opacity);
+}
+
+// VERTICAL ALIGN 
+@mixin v-align($location, $distance) {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    #{$location}: #{$distance};
+}
+
+// ICON FONT
+@mixin icon-font {
+    font-family: 'icomoon' !important;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+// CSS ARROWS
+@mixin arrow($direction, $color, $size){
+    display: block;
+    height: 0;
+    width: 0;
+    
+    @if $direction == 'top' {
+        border-left: $size solid transparent;
+    	border-right: $size solid transparent;
+    	border-bottom: $size solid $color;
+    } @else if $direction == 'right' {
+        border-top: $size solid transparent;
+        border-bottom: $size solid transparent;
+    	border-left: $size solid $color;
+    } @else if $direction == 'bottom' {
+        border-top: $size solid $color;
+        border-right: $size solid transparent;
+        border-left: $size solid transparent;
+    } @else if $direction == 'left' {
+        border-top: $size solid transparent;
+    	border-right: $size solid $color;
+    	border-bottom: $size solid transparent;
+    } @else if $direction == 'top-left' {
+        border-top: $size solid $color; 
+        border-right: $size solid transparent;	
+    } @else if $direction == 'top-right' {
+        border-top: $size solid $color; 
+        border-left: $size solid transparent;
+    } @else if $direction == 'bottom-left' {
+        border-bottom: $size solid $color; 
+        border-right: $size solid transparent;	
+    } @else if $direction == 'bottom-right' {
+        border-bottom: $size solid $color; 
+        border-left: $size solid transparent;
+    }
+}
+
+// CHECK NUMBER OF CHILD ELEMENTS
+@mixin has-nth($expression, $element: '*') {
+    &:nth-last-child(#{$expression}):first-child,
+    &:nth-last-child(#{$expression}):first-child ~ #{$element} {
+        @content;
+    }
+}
+
+@mixin at-least($quantity, $element: '*') {
+    @include has-nth('n + #{$quantity}', $element) {
+        @content;
+    }
+}
