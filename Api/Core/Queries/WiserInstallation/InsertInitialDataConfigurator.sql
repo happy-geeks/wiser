@@ -1,4 +1,4 @@
-﻿-- ----------------------------
+-- ----------------------------
 -- Configurator modules
 -- ----------------------------
 INSERT INTO `wiser_module` (id, `custom_query`, `count_query`, `options`, `name`, `icon`, `type`, `group`) VALUES (800, NULL, NULL, NULL, 'Configurator beheer module 2.0', 'routes', 'DynamicItems', 'Instellingen');
