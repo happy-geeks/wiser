@@ -1,4 +1,4 @@
-﻿SET @customerId = ?newCustomerId;
+SET @customerId = ?newCustomerId;
 
 -- ----------------------------
 -- Records of wiser_roles
