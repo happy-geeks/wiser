@@ -212,7 +212,6 @@ namespace Api.Modules.Customers.Services
                         LEFT JOIN {WiserTableNames.WiserRoles} role ON role.id = userRole.role_id
                         LEFT JOIN {WiserTableNames.WiserItemDetail} email ON email.item_id = user.id AND email.`key` = '{EmailAddressKey}'
                         WHERE user.entity_type = '{WiserUserEntityType}'
-                        AND user.removed = 0
                         AND user.published_environment > 0";
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
