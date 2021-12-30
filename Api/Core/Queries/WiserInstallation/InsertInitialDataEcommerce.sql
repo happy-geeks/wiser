@@ -1,4 +1,4 @@
-﻿-- ----------------------------
+-- ----------------------------
 -- Records of easy_items
 -- ----------------------------
 INSERT INTO `easy_items` VALUES (6, @customerId, 143, 'ShoppingBasket', 2, 3, 1, 0, 1, 1, 'query', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);

@@ -1,4 +1,4 @@
-﻿SET NAMES utf8;
+SET NAMES utf8;
 
 -- ----------------------------
 -- Triggers structure for table wiser_entityproperty
