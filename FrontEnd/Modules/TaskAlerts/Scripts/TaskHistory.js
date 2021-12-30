@@ -69,7 +69,7 @@ const moduleSettings = {
             this.settings.userId = userData.encrypted_id;
             this.settings.customerId = userData.encrypted_customer_id;
             this.settings.zeroEncrypted = userData.zero_encrypted;
-            this.settings.wiserUserId = userData.wiser2_id;
+            this.settings.wiserUserId = userData.id;
 
 
             if (!this.settings.wiserApiRoot.endsWith("/")) {

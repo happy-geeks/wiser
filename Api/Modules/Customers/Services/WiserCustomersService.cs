@@ -72,26 +72,8 @@ namespace Api.Modules.Customers.Services
                             db_passencrypted,
                             db_port,
                             db_dbname,
-                            db_host_test,
-                            db_login_test,
-                            db_passencrypted_test,
-                            db_port_test,
-                            db_dbname_test,
-                            ftp_host,
-                            ftp_user,
-                            ftp_passencrypted,
-                            ftp_root,
-                            emailadres,
-                            startdatum,
-                            enddate,
-                            notes,
                             google_auth,
-                            backup_ordernr,
-                            webmanagerManualURL,
-                            data_url,
                             {(IdentityHelpers.IsTestEnvironment(identity) ? "encryption_key_test" : "encryption_key")} AS encryption_key,
-                            data_url_test,
-                            mailhost,
                             subdomain
                         FROM {ApiTableNames.WiserCustomers} 
                         WHERE subdomain = ?name";
@@ -235,12 +217,7 @@ namespace Api.Modules.Customers.Services
                     {
                         customer.LiveDatabase.Password = customer.LiveDatabase.Password.EncryptWithAes(apiSettings.DatabasePasswordEncryptionKey);
                     }
-
-                    if (!String.IsNullOrWhiteSpace(customer.TestDatabase?.Password))
-                    {
-                        customer.TestDatabase.Password = customer.TestDatabase.Password.EncryptWithAes(apiSettings.DatabasePasswordEncryptionKey);
-                    }
-
+                    
                     if (String.IsNullOrWhiteSpace(customer.EncryptionKey))
                     {
                         customer.EncryptionKey = SecurityHelpers.GenerateRandomPassword(20);
@@ -257,17 +234,7 @@ namespace Api.Modules.Customers.Services
                     {
                         customer.LiveDatabase.Password = null;
                     }
-
-                    if (customer.Ftp != null)
-                    {
-                        customer.Ftp.Password = null;
-                    }
-
-                    if (customer.TestDatabase != null)
-                    {
-                        customer.TestDatabase.Password = null;
-                    }
-
+                    
                     var createTablesQuery = ReadTextResourceFromAssembly("CreateTables");
                     var createTriggersQuery = ReadTextResourceFromAssembly("CreateTriggers");
                     var insertInitialDataQuery = ReadTextResourceFromAssembly("InsertInitialData");
@@ -373,31 +340,11 @@ namespace Api.Modules.Customers.Services
             // Note: Passwords should be encrypted by Wiser before sending them to the API.
             wiserDatabaseConnection.ClearParameters();
             wiserDatabaseConnection.AddParameter("name", customer.Name);
-            wiserDatabaseConnection.AddParameter("propertys", String.Join(Environment.NewLine, customer.Properties.Select(x => $"{x.Key}={x.Value}")));
             wiserDatabaseConnection.AddParameter("db_host", customer.LiveDatabase.Host);
             wiserDatabaseConnection.AddParameter("db_login", customer.LiveDatabase.Username);
             wiserDatabaseConnection.AddParameter("db_passencrypted", customer.LiveDatabase?.Password ?? String.Empty);
             wiserDatabaseConnection.AddParameter("db_port", customer.LiveDatabase.PortNumber);
             wiserDatabaseConnection.AddParameter("db_dbname", customer.LiveDatabase.DatabaseName);
-            wiserDatabaseConnection.AddParameter("db_connectionmethod", "direct");
-            wiserDatabaseConnection.AddParameter("startdatum", customer.StartDate);
-            wiserDatabaseConnection.AddParameter("ftp_host", customer.Ftp?.Host);
-            wiserDatabaseConnection.AddParameter("ftp_user", customer.Ftp?.Username);
-            wiserDatabaseConnection.AddParameter("ftp_passencrypted", customer.Ftp?.Password ?? String.Empty);
-            wiserDatabaseConnection.AddParameter("ftp_root", customer.Ftp?.RootFolder);
-            wiserDatabaseConnection.AddParameter("emailadres", customer.EmailAddress);
-            wiserDatabaseConnection.AddParameter("webmanagerManualURL", customer.InstructionsUrl);
-            wiserDatabaseConnection.AddParameter("enddate", customer.EndDate);
-            wiserDatabaseConnection.AddParameter("notes", customer.Notes);
-            wiserDatabaseConnection.AddParameter("google_auth", customer.GoogleAuthenticationEnabled);
-            wiserDatabaseConnection.AddParameter("backup_ordernr", customer.BackupOrderNumber);
-            wiserDatabaseConnection.AddParameter("db_host_test", customer.TestDatabase?.Host);
-            wiserDatabaseConnection.AddParameter("db_login_test", customer.TestDatabase?.Username);
-            wiserDatabaseConnection.AddParameter("db_passencrypted_test", customer.TestDatabase?.Password ?? String.Empty);
-            wiserDatabaseConnection.AddParameter("db_port_test", customer.TestDatabase?.PortNumber ?? 3306);
-            wiserDatabaseConnection.AddParameter("db_connectionmethod_test", "direct");
-            wiserDatabaseConnection.AddParameter("db_dbname_test", customer.TestDatabase?.DatabaseName);
-            
             wiserDatabaseConnection.AddParameter("encryption_key", customer.EncryptionKey);
             wiserDatabaseConnection.AddParameter("subdomain", customer.SubDomain);
 

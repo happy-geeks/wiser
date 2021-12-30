@@ -111,7 +111,7 @@ namespace Api.Core.Services
                 {"role", loginResult.ModelObject.Role},
                 {"lastLoginIpAddress", loginResult.ModelObject.LastLoginIpAddress ?? ""},
                 {"lastLoginDate", (loginResult.ModelObject.LastLoginDate ?? DateTime.Now).ToString("dd-MM-yyyy HH:mm:ss")},
-                {"oldStyleUserId", loginResult.ModelObject.Wiser2Id.ToString().EncryptWithAesWithSalt()},
+                {"oldStyleUserId", loginResult.ModelObject.Id.ToString().EncryptWithAesWithSalt()},
                 {"cookieValue", loginResult.ModelObject.CookieValue},
                 {"requirePasswordChange", loginResult.ModelObject.RequirePasswordChange }
             };
@@ -122,7 +122,7 @@ namespace Api.Core.Services
                 customResponse.Add("adminAccountName", adminAccountName);
             }
             
-            context.Result = new GrantValidationResult(loginResult.ModelObject.Wiser2Id.ToString(), OidcConstants.AuthenticationMethods.Password, CreateClaimsList(loginResult.ModelObject, subDomain, adminAccountId, isTestEnvironment), customResponse: customResponse);
+            context.Result = new GrantValidationResult(loginResult.ModelObject.Id.ToString(), OidcConstants.AuthenticationMethods.Password, CreateClaimsList(loginResult.ModelObject, subDomain, adminAccountId, isTestEnvironment), customResponse: customResponse);
         }
 
         private static IEnumerable<Claim> CreateClaimsList(AdminAccountModel adminAccount, string subDomain, string isTestEnvironment)

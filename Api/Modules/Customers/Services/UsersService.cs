@@ -234,7 +234,7 @@ namespace Api.Modules.Customers.Services
                 Int32.TryParse(dataRow.Field<string>("require_password_change"), out var requirePasswordChange);
                 user = new UserModel
                 {
-                    Wiser2Id = dataRow.Field<ulong>("id"),
+                    Id = dataRow.Field<ulong>("id"),
                     Username = dataRow.Field<string>("username"),
                     Password = dataRow.Field<string>("password"),
                     Name = dataRow.Field<string>("name"),
@@ -269,13 +269,13 @@ namespace Api.Modules.Customers.Services
 
             if (generateAuthenticationTokenForCookie)
             {
-                user.CookieValue = await GenerateNewCookieTokenAsync(user.Wiser2Id);
+                user.CookieValue = await GenerateNewCookieTokenAsync(user.Id);
             }
 
             // Update last login information of the user, if it's not an admin account.
             if (String.IsNullOrWhiteSpace(encryptedAdminAccountId))
             {
-                await LogDateAndIpOfLoginAsync(ipAddress, user.Wiser2Id);
+                await LogDateAndIpOfLoginAsync(ipAddress, user.Id);
             }
 
             await ResetFailedLoginAttemptAsync(username, clientDatabaseConnection);
@@ -410,7 +410,7 @@ namespace Api.Modules.Customers.Services
 
             var user = new UserModel
             {
-                Wiser2Id = userId,
+                Id = userId,
                 Username = dataRow.Field<string>("username"),
                 Name = dataRow.Field<string>("name"),
                 LastLoginDate = dataRow.Field<DateTime?>("last_login_date"),
@@ -510,7 +510,7 @@ namespace Api.Modules.Customers.Services
                 EncryptedId = IdentityHelpers.GetWiserUserId(identity).ToString().EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true),
                 EncryptedCustomerId = customer.ModelObject.CustomerId.ToString().EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true),
                 ZeroEncrypted = "0".EncryptWithAesWithSalt(encryptionKey, true),
-                Wiser2Id = userId,
+                Id = userId,
                 EmailAddress = await GetUserEmailAddressAsync(userId)
             };
             
