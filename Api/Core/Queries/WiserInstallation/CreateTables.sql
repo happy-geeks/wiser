@@ -1,6 +1,5 @@
-﻿SET NAMES utf8;
+SET NAMES utf8;
 SET FOREIGN_KEY_CHECKS = 0;
-SET @customerId = ?newCustomerId;
 
 -- ----------------------------
 -- Table structure for wiser_login_attempts
