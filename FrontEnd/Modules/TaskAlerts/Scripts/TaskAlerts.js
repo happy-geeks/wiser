@@ -92,7 +92,7 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = user.adminAccountName;
             
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiV21Root, this.settings.isTestEnvironment);
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot, this.settings.isTestEnvironment);
             this.settings.userId = userData.encrypted_id;
             this.settings.customerId = userData.encrypted_customer_id;
             this.settings.zeroEncrypted = userData.zero_encrypted;
@@ -102,11 +102,11 @@ const moduleSettings = {
                 this.settings.wiserApiRoot += "/";
             }
 
-            if (!this.settings.wiserApiV21Root.endsWith("/")) {
-                this.settings.wiserApiV21Root += "/";
+            if (!this.settings.wiserApiRoot.endsWith("/")) {
+                this.settings.wiserApiRoot += "/";
             }
             
-            this.settings.serviceRoot = `${this.settings.wiserApiV21Root}templates/get-and-execute-query`;
+            this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
 
             // Some elements for easy access.
             this.taskForm = document.querySelector(".taskForm");
@@ -142,7 +142,7 @@ const moduleSettings = {
             this.taskUserSelect.setDataSource({
                 transport: {
                     read: {
-                        url: `${this.settings.wiserApiV21Root}users`,
+                        url: `${this.settings.wiserApiRoot}users`,
                         dataType: "json"
                     }
                 }
@@ -150,7 +150,7 @@ const moduleSettings = {
             this.editTaskUserSelect.setDataSource({
                 transport: {
                     read: {
-                        url: `${this.settings.wiserApiV21Root}users`,
+                        url: `${this.settings.wiserApiRoot}users`,
                         dataType: "json"
                     }
                 }
@@ -198,7 +198,7 @@ const moduleSettings = {
             });
 
             // Generate pusher event for the current logged-in customer
-            const eventId = await Wiser2.api({ url: `${this.settings.wiserApiV21Root}pusher/event-id` });
+            const eventId = await Wiser2.api({ url: `${this.settings.wiserApiRoot}pusher/event-id` });
 
             // User update channel for pusher messages
             channel.bind("agendering_" + eventId, (event) => {
@@ -296,7 +296,7 @@ const moduleSettings = {
         }
 
         async loadTasks() {
-            const data = await Wiser2.api({ url: `${this.settings.wiserApiV21Root}task-alerts` });
+            const data = await Wiser2.api({ url: `${this.settings.wiserApiRoot}task-alerts` });
 
             if (!data) {
                 return;
@@ -410,7 +410,7 @@ const moduleSettings = {
 
                     // Send a pusher to notify the receiving user.
                     await Wiser2.api({
-                        url: `${this.settings.wiserApiV21Root}pusher/message`,
+                        url: `${this.settings.wiserApiRoot}pusher/message`,
                         method: "POST",
                         contentType: "application/json",
                         data: JSON.stringify({ user_id: userId })
@@ -477,7 +477,7 @@ const moduleSettings = {
 
                 // Send a pusher to notify the receiving user
                 await Wiser2.api({
-                    url: `${this.settings.wiserApiV21Root}pusher/message`,
+                    url: `${this.settings.wiserApiRoot}pusher/message`,
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify({ user_id: this.editTaskUserSelect.value() })
