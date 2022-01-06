@@ -89,10 +89,6 @@ const importModuleSettings = {
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
-
-            if (!this.settings.wiserApiRoot.endsWith("/")) {
-                this.settings.wiserApiRoot += "/";
-            }
             
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("access_token_expires_on");
