@@ -2502,6 +2502,7 @@ export class Fields {
                     error = exception.statusText;
                 }
                 kendo.alert(`Er is iets fout gegaan met het laden of verwerken van data voor dit scherm. Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br><pre>${kendo.htmlEncode(error)}</pre>`);
+                reject(exception);
             }
 
             if (element && element.siblings(".grid-loader").length) {
