@@ -92,7 +92,7 @@ namespace Api.Modules.Templates.Services
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
 
             // Set the encryption key for the GCL internally. The GCL can't know which key to use otherwise.
-            GclSettings.Current.QueryTemplatesDecryptionKey = customer.EncryptionKey;
+            GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
             
             var queryTemplate = GetQueryTemplate(0, templateName);
             queryTemplate.Content = apiReplacementsService.DoIdentityReplacements(queryTemplate.Content, identity, true);
