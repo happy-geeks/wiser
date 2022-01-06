@@ -128,8 +128,7 @@ namespace Api.Modules.DataSelectors.Services
 
             // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            httpContext.Items["QueryTemplatesDecryptionKey"] = customer.EncryptionKey;
-            GclSettings.Current.QueryTemplatesDecryptionKey = customer.EncryptionKey;
+            GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
 
             var queryId = 0;
             var dataSelectorId = 0;
@@ -181,8 +180,7 @@ namespace Api.Modules.DataSelectors.Services
 
             // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            httpContext.Items["QueryTemplatesDecryptionKey"] = customer.EncryptionKey;
-            GclSettings.Current.QueryTemplatesDecryptionKey = customer.EncryptionKey;
+            GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
 
             var (jsonResult, statusCode, error) = await GetJsonResponseAsync(data, identity);
             if (statusCode != HttpStatusCode.OK)
@@ -221,8 +219,7 @@ namespace Api.Modules.DataSelectors.Services
 
             // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            httpContext.Items["QueryTemplatesDecryptionKey"] = customer.EncryptionKey;
-            GclSettings.Current.QueryTemplatesDecryptionKey = customer.EncryptionKey;
+            GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
 
             // This is for backwards compatibility, a lot of queries in wiser_query contain {itemId_decrypt_withdate}, but the GCL expects something like {itemId:decrypt(true)}.
             // To not have to change all queries for all our customers, we made this workaround so that old queries still work. The GCL will replace everything from httpContext.Items automatically.
@@ -257,8 +254,7 @@ namespace Api.Modules.DataSelectors.Services
 
             // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            httpContext.Items["QueryTemplatesDecryptionKey"] = customer.EncryptionKey;
-            GclSettings.Current.QueryTemplatesDecryptionKey = customer.EncryptionKey;
+            GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
             
             var (result, statusCode, error) = await gclDataSelectorsService.ToPdfAsync(data);
             if (statusCode != HttpStatusCode.OK)
@@ -314,8 +310,7 @@ namespace Api.Modules.DataSelectors.Services
 
             // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            httpContext.Items["QueryTemplatesDecryptionKey"] = customer.EncryptionKey;
-            GclSettings.Current.QueryTemplatesDecryptionKey = customer.EncryptionKey;
+            GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
 
             var queryId = 0;
             var dataSelectorId = 0;
