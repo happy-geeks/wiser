@@ -56,7 +56,7 @@ if (typeof options.dataSource === "string") {
                 transport: {
                     read: {
                         dataType: "json",
-                        url: window.dynamicItems.settings.wiserApiV21Root + "users"
+                        url: window.dynamicItems.settings.wiserApiRoot + "users"
                     }
                 }
             }

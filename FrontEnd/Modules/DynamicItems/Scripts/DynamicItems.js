@@ -171,7 +171,7 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
                 
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiV21Root, this.settings.isTestEnvironment);
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot, this.settings.isTestEnvironment);
             this.settings.userId = userData.encrypted_id;
             this.settings.customerId = userData.encrypted_customer_id;
             this.settings.zeroEncrypted = userData.zero_encrypted;
@@ -183,12 +183,8 @@ const moduleSettings = {
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
-
-            if (!this.settings.wiserApiV21Root.endsWith("/")) {
-                this.settings.wiserApiV21Root += "/";
-            }
             
-            this.settings.serviceRoot = `${this.settings.wiserApiV21Root}templates/get-and-execute-query`;
+            this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.htmlEditorCssUrl = `${this.settings.wiserApiRoot}templates/css-for-html-editors?encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&isTest=${this.base.settings.isTestEnvironment}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&username=${encodeURIComponent(this.base.settings.username)}&userType=${encodeURIComponent(this.base.settings.userType)}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`
 
             const extraModuleSettings = await Modules.getModuleSettings(this.settings.wiserApiRoot, this.settings.moduleId, this.settings.customerId, this.settings.userId, this.settings.isTestEnvironment, this.settings.subDomain);
@@ -196,7 +192,7 @@ const moduleSettings = {
             let permissions = Object.assign({}, extraModuleSettings);
             delete permissions.options;
             this.settings.permissions = permissions;
-            this.settings.getItemsUrl = `${this.settings.wiserApiV21Root}data-selectors`;
+            this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
             $("body").toggleClass("gridViewMode", this.settings.gridViewMode);
 
             this.setupBindings();
@@ -2047,7 +2043,7 @@ const moduleSettings = {
          * @return {any} An array with all the available entity types.
          */
         async getAvailableEntityTypes(parentId) {
-            const names =  await Wiser2.api({ url: `${this.base.settings.wiserApiV21Root}entity-types/${encodeURIComponent(this.settings.moduleId)}?parentId=${encodeURIComponent(parentId)}` });
+            const names =  await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}entity-types/${encodeURIComponent(this.settings.moduleId)}?parentId=${encodeURIComponent(parentId)}` });
             return names.map(name => { return { name: name }; });
         }
 
