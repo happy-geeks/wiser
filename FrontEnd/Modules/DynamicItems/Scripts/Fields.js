@@ -2038,7 +2038,7 @@ export class Fields {
      * @param {any} propertyId The ID of the property / field that contains the action button. 
      * @param {any} selectedItems Array of all selected items in the grid.
      */
-    async initializeGenerateFileWindow(urls, templateDetails, emailData = {}, action = {}, element = null, userParametersWithValues = {}, itemId = null, linkId = null, propertyId = 0, selectedItems = []) {
+    initializeGenerateFileWindow(urls, templateDetails, emailData = {}, action = {}, element = null, userParametersWithValues = {}, itemId = null, linkId = null, propertyId = 0, selectedItems = []) {
         return new Promise(async (resolve, reject) => {
             emailData = emailData || {};
 
