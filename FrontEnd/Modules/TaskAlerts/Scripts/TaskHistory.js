@@ -65,22 +65,17 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = user.adminAccountName;
             
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiV21Root, this.settings.isTestEnvironment);
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot, this.settings.isTestEnvironment);
             this.settings.userId = userData.encrypted_id;
             this.settings.customerId = userData.encrypted_customer_id;
             this.settings.zeroEncrypted = userData.zero_encrypted;
             this.settings.wiserUserId = userData.id;
-
-
+            
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
-
-            if (!this.settings.wiserApiV21Root.endsWith("/")) {
-                this.settings.wiserApiV21Root += "/";
-            }
             
-            this.backendUsers = await Wiser2.api({ url: `${this.settings.wiserApiV21Root}users` });
+            this.backendUsers = await Wiser2.api({ url: `${this.settings.wiserApiRoot}users` });
             console.log(this.backendUsers);
 
             this.initializeMainGrid();

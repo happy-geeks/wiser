@@ -43,10 +43,6 @@ export class RemoveItems {
             this.settings.wiserApiRoot += "/";
         }
 
-        if (!this.settings.wiserApiV21Root.endsWith("/")) {
-            this.settings.wiserApiV21Root += "/";
-        }
-
         window.addEventListener("message", (e) => {
             if (e.data.hasOwnProperty("from") && e.data.from === "DataSelector") {
                 const callback = e.data.callback || "";
@@ -115,7 +111,7 @@ export class RemoveItems {
 
         try {
             const promiseResults = await Promise.all([
-                Wiser2.api({ url: `${this.settings.wiserApiV21Root}entity-types?onlyEntityTypesWithDisplayName=false` })
+                Wiser2.api({ url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false` })
             ]);
             const entityTypes = promiseResults[0];
 
@@ -143,8 +139,8 @@ export class RemoveItems {
 
         //Button
         $(context).find("#deleteItemsButton").kendoButton({
-            click: function (e) {
-                me.prepareDelete();
+            click: async function (e) {
+                await me.prepareDelete();
             }
         });
     }
@@ -163,7 +159,7 @@ export class RemoveItems {
 
         try {
             const promiseResults = await Promise.all([
-                Wiser2.api({ url: `${this.settings.wiserApiV21Root}entity-properties/${entityName}?onlyEntityTypesWithDisplayName=false&onlyEntityTypesWithPropertyName=true&addIdProperty=true` })
+                Wiser2.api({ url: `${this.settings.wiserApiRoot}entity-properties/${entityName}?onlyEntityTypesWithDisplayName=false&onlyEntityTypesWithPropertyName=true&addIdProperty=true` })
             ]);
             const entityProperties = promiseResults[0];
 
@@ -188,7 +184,7 @@ export class RemoveItems {
     }
 
     //Let the API prepare the delete to retrieve all information for delete.
-    prepareDelete() {
+    async prepareDelete() {
         let context = document.body;
 
         let deleteByFile = $(context).find("#DeleteItemsFile").is(":checked");
@@ -222,8 +218,8 @@ export class RemoveItems {
                 return;
             }
 
-            let promise = Wiser2.api({
-                url: `${this.settings.wiserApiV21Root}imports/delete-items/prepare`,
+            const result = await Wiser2.api({
+                url: `${this.settings.wiserApiRoot}imports/delete-items/prepare`,
                 method: "POST",
                 contentType: "application/json",
                 data: JSON.stringify({
@@ -233,11 +229,11 @@ export class RemoveItems {
                 })
             });
 
-            promise.done(this.prepareDeleteFinished);
+            await this.prepareDeleteFinished(result);
         }
         else if (deleteByDataSelector) {
-            this.messageEventCallbacks["dataSelectorResults"] = (response) => {
-                this.messageEventCallbacks["dataSelectorEntityType"] = (entityType) => {
+            this.messageEventCallbacks["dataSelectorResults"] = async (response) => {
+                this.messageEventCallbacks["dataSelectorEntityType"] = async (entityType) => {
                     var result = {
                         entity_type: entityType.actionResult,
                         ids: []
@@ -247,7 +243,7 @@ export class RemoveItems {
                         result.ids.push(element.id);
                     });
 
-                    this.prepareDeleteFinished(result);
+                    await this.prepareDeleteFinished(result);
                 }
 
                 this.dataSelectorIframe.contentWindow.postMessage(Object.assign({
@@ -264,33 +260,31 @@ export class RemoveItems {
     }
 
     //Handle preparation response from the API.
-    prepareDeleteFinished(results) {
+    async prepareDeleteFinished(results) {
         Wiser2.confirm({
             title: "Bevestig items verwijderen",
             content: `U staat op het punt om ${results.ids.length} item(s) te verwijderen. Wilt u doorgaan?`,
             actions: [{
                 text: "Ok",
-                action: function (e) {
-                    let promise = Wiser2.api({
-                        url: `${window.removeItems.settings.wiserApiV21Root}imports/delete-items/confirm`,
+                action: async function (e) {
+                    const result = await Wiser2.api({
+                        url: `${window.removeItems.settings.wiserApiRoot}imports/delete-items/confirm`,
                         method: "POST",
                         contentType: "application/json",
                         data: JSON.stringify(results)
                     });
-
-                    promise.done((result) => {
-                        if (result === true) {
-                            Wiser2.showMessage({
-                                title: "Items verwijderd",
-                                content: "De items zijn verwijderd."
-                            });
-                        } else {
-                            Wiser2.showMessage({
-                                title: "Items verwijderen mislukt.",
-                                content: "Er is iets mis gegaan tijdens het verwijderen van de items, de actie is teruggedraaid."
-                            });
-                        }
-                    });
+                    
+                    if (result === true) {
+                        Wiser2.showMessage({
+                            title: "Items verwijderd",
+                            content: "De items zijn verwijderd."
+                        });
+                    } else {
+                        Wiser2.showMessage({
+                            title: "Items verwijderen mislukt.",
+                            content: "Er is iets mis gegaan tijdens het verwijderen van de items, de actie is teruggedraaid."
+                        });
+                    }
                 }
             }]
         });

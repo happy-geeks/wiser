@@ -150,7 +150,7 @@ export class Grids {
                     columns: gridViewSettings.columns,
                     page_size: gridViewSettings.pageSize || 100,
                     data: await Wiser2.api({
-                        url: `${this.base.settings.getItemsUrl}?encryptedDataSelectorId=${encodeURIComponent(gridViewSettings.dataSelectorId)}&userEmailAddress=${encodeURIComponent(this.base.settings.userEmailAddress)}`,
+                        url: `${this.base.settings.getItemsUrl}?encryptedDataSelectorId=${encodeURIComponent(gridViewSettings.dataSelectorId)}`,
                         contentType: "application/json"
                     })
                 };
@@ -225,7 +225,7 @@ export class Grids {
                         const mainItemDetails = this.mainGrid.dataItem($(event.currentTarget).closest("tr"));
                         await Wiser2.api({
                             method: "POST",
-                            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid || this.base.settings.zeroEncrypted)}/action-button/0?queryId=${encodeURIComponent(gridViewSettings.deleteItemQueryId)}&userEmailAddress=${encodeURIComponent(this.base.settings.userEmailAddress)}&itemLinkId=${encodeURIComponent(mainItemDetails.link_id || mainItemDetails.linkId || 0)}`,
+                            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid || this.base.settings.zeroEncrypted)}/action-button/0?queryId=${encodeURIComponent(gridViewSettings.deleteItemQueryId)}&itemLinkId=${encodeURIComponent(mainItemDetails.link_id || mainItemDetails.linkId || 0)}`,
                             data: JSON.stringify(mainItemDetails),
                             contentType: "application/json"
                         });
@@ -428,7 +428,7 @@ export class Grids {
                                         columns: gridViewSettings.columns,
                                         page_size: gridViewSettings.pageSize || 100,
                                         data: await Wiser2.api({
-                                            url: `${this.base.settings.getItemsUrl}?encryptedDataSelectorId=${encodeURIComponent(gridViewSettings.dataSelectorId)}&userEmailAddress=${encodeURIComponent(this.base.settings.userEmailAddress)}`,
+                                            url: `${this.base.settings.getItemsUrl}?encryptedDataSelectorId=${encodeURIComponent(gridViewSettings.dataSelectorId)}`,
                                             contentType: "application/json"
                                         })
                                     };

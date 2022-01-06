@@ -1233,7 +1233,7 @@ export class Fields {
                                             transport: {
                                                 read: (options) => {
                                                     Wiser2.api({
-                                                        url: `${this.base.settings.wiserApiV21Root}users`,
+                                                        url: `${this.base.settings.wiserApiRoot}users`,
                                                         dataType: "json",
                                                         method: "GET",
                                                         data: options.data
@@ -1357,7 +1357,7 @@ export class Fields {
 
                                         const uploadOptions = $.extend(true, {
                                             async: {
-                                                saveUrl: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=${encodeURIComponent(options.propertyName)}&itemLinkId=${itemLinkId}&userEmailAddress=${encodeURIComponent(this.base.settings.userEmailAddress)}`,
+                                                saveUrl: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=${encodeURIComponent(options.propertyName)}&itemLinkId=${itemLinkId}`,
                                                 removeUrl: "remove",
                                                 withCredentials: false
                                             },
@@ -1404,7 +1404,7 @@ export class Fields {
                 const executeQuery = () => {
                     return Wiser2.api({
                         method: "POST",
-                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.queryId || this.base.settings.zeroEncrypted)}&userEmailAddress=${encodeURIComponent(this.base.settings.userEmailAddress)}&itemLinkId=${encodeURIComponent(mainItemDetails.link_id || mainItemDetails.linkId || 0)}`,
+                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.queryId || this.base.settings.zeroEncrypted)}&itemLinkId=${encodeURIComponent(mainItemDetails.link_id || mainItemDetails.linkId || 0)}`,
                         data: JSON.stringify(userParametersWithValues),
                         contentType: "application/json"
                     });
@@ -1744,8 +1744,6 @@ export class Fields {
                             url = `${this.base.settings.getItemsUrl}/html?encryptedDataSelectorId=${encodeURIComponent(action.dataSelectorId)}`;
                         }
 
-                        url += `&userEmailAddress=${encodeURIComponent(this.base.settings.userEmailAddress)}`;
-
                         if (action.contentItemId && !userParametersWithValues.contentItemId) {
                             url += `&contentItemId=${encodeURIComponent(action.contentItemId)}`;
                         }
@@ -1821,7 +1819,7 @@ export class Fields {
                         if (action.emailDataQueryId) {
                             emailData = await Wiser2.api({
                                 method: "POST",
-                                url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.emailDataQueryId)}&userEmailAddress=${encodeURIComponent(this.base.settings.userEmailAddress)}&itemLinkId=${encodeURIComponent(linkId)}`,
+                                url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.emailDataQueryId)}&itemLinkId=${encodeURIComponent(linkId)}`,
                                 data: JSON.stringify($.extend(extraParameters, userParametersWithValues)),
                                 contentType: "application/json"
                             });
@@ -1986,7 +1984,7 @@ export class Fields {
                         // Send a pusher to notify the receiving user.
                         await Wiser2.api({
                             method: "POST",
-                            url: `${this.base.settings.wiserApiV21Root}pusher/message`,
+                            url: `${this.base.settings.wiserApiRoot}pusher/message`,
                             contentType: "application/json",
                             data: JSON.stringify({
                                 userId: userId,
@@ -2239,7 +2237,7 @@ export class Fields {
 
                             const process = `convertHtmlToPdf_${Date.now()}`;
                             jjl.processing.addProcess(process);
-                            const pdfResult = await fetch(`${this.base.settings.wiserApiV21Root}pdf/from-html`, {
+                            const pdfResult = await fetch(`${this.base.settings.wiserApiRoot}pdf/from-html`, {
                                 method: "POST",
                                 headers: {
                                     "Content-Type": "application/json",
@@ -2320,7 +2318,7 @@ export class Fields {
                                                 for (let index = 0; index < allEditors.length; index++) {
                                                     const kendoEditor = $(allEditors[index]).data("kendoEditor");
                                                     let ajaxOptions = {
-                                                        url: `${this.base.settings.wiserApiV21Root}pdf/save-html-as-pdf`,
+                                                        url: `${this.base.settings.wiserApiRoot}pdf/save-html-as-pdf`,
                                                         method: "POST",
                                                         contentType: "application/json",
                                                         data: json.stringify({
@@ -2371,7 +2369,7 @@ export class Fields {
                                                         for (let selectedItem of selectedItems) {
                                                             queryPromises.push(Wiser2.api({
                                                                 method: "POST",
-                                                                url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.dataItem.encrypted_id)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.executeQueryAfterEmail)}&userEmailAddress=${encodeURIComponent(this.base.settings.userEmailAddress)}&itemLinkId=${encodeURIComponent(selectedItem.dataItem.link_id)}`,
+                                                                url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.dataItem.encrypted_id)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.executeQueryAfterEmail)}&itemLinkId=${encodeURIComponent(selectedItem.dataItem.link_id)}`,
                                                                 data: JSON.stringify(userParametersWithValues),
                                                                 contentType: "application/json"
                                                             }));
@@ -2387,7 +2385,7 @@ export class Fields {
                                                     };
                                                 
                                                     Wiser2.api({
-                                                        url: `${this.base.settings.wiserApiV21Root}communications/email`,
+                                                        url: `${this.base.settings.wiserApiRoot}communications/email`,
                                                         method: "POST",
                                                         contentType: "application/json",
                                                         data: JSON.stringify({
@@ -2502,7 +2500,7 @@ export class Fields {
                     error = exception.statusText;
                 }
                 kendo.alert(`Er is iets fout gegaan met het laden of verwerken van data voor dit scherm. Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br><pre>${kendo.htmlEncode(error)}</pre>`);
-                reject(exception);
+                resolve();
             }
 
             if (element && element.siblings(".grid-loader").length) {
