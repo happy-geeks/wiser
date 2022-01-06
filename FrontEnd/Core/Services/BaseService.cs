@@ -38,15 +38,15 @@ namespace FrontEnd.Core.Services
 
             var requestUrl = new Uri(httpContextAccessor.HttpContext.Request.GetDisplayUrl());
             var result = "";
-            if (requestUrl.Host.Contains(".") && requestUrl.Host.Contains("wiser", StringComparison.OrdinalIgnoreCase))
-            {
-                result = frontEndSettings.WiserHostNames.Aggregate(requestUrl.Host, (current, host) => current.Replace(host, ""));
-            } 
-            else if (requestUrl.Port is DebuggingPortNumber or DebuggingSslPortNumber && requestUrl.Host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase))
+            if (requestUrl.Port is DebuggingPortNumber or DebuggingSslPortNumber && requestUrl.Host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase))
             {
                 // E.g.: customername.localhost
                 var lastDotIndex = requestUrl.Host.LastIndexOf('.');
                 result = requestUrl.Host[..lastDotIndex];
+            }
+            else if (requestUrl.Host.Contains("."))
+            {
+                result = frontEndSettings.WiserHostNames.Where(host => !String.IsNullOrWhiteSpace(host)).Aggregate(requestUrl.Host, (current, host) => current.Replace(host, ""));
             }
             else if (requestUrl.Port is DebuggingPortNumber or DebuggingSslPortNumber && !requestUrl.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
             {
