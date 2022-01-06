@@ -2040,471 +2040,476 @@ export class Fields {
      * @param {any} propertyId The ID of the property / field that contains the action button. 
      * @param {any} selectedItems Array of all selected items in the grid.
      */
-    async initializeGenerateFileWindow(urls, templateDetails, emailData = {}, action = {}, element = null, userParametersWithValues = {}, itemId = null, linkId = null, propertyId = 0, selectedItems = []) {
-        emailData = emailData || {};
+    initializeGenerateFileWindow(urls, templateDetails, emailData = {}, action = {}, element = null, userParametersWithValues = {}, itemId = null, linkId = null, propertyId = 0, selectedItems = []) {
+        return new Promise(async (resolve, reject) => {
+            emailData = emailData || {};
 
-        if (!action || !action.contentPropertyName) {
-            kendo.alert("Deze functionaliteit is nog niet volledig ingesteld ('contentPropertyName' is leeg). Neem a.u.b. contact op met ons.");
-            return;
-        }
+            if (!action || !action.contentPropertyName) {
+                kendo.alert("Deze functionaliteit is nog niet volledig ingesteld ('contentPropertyName' is leeg). Neem a.u.b. contact op met ons.");
+                resolve();
+                return;
+            }
 
-        const process = `initializeGenerateFileWindow_${Date.now()}`;
-        if (element && element.siblings(".grid-loader").length) {
-            element.siblings(".grid-loader").addClass("loading");
-        } else {
-            jjl.processing.addProcess(process);
-        }
+            const process = `initializeGenerateFileWindow_${Date.now()}`;
+            if (element && element.siblings(".grid-loader").length) {
+                element.siblings(".grid-loader").addClass("loading");
+            } else {
+                jjl.processing.addProcess(process);
+            }
 
-        try {
-            const loadContentInPreviewFrame = (iframe, content, printAfterLoad) => {
-                iframe.document.open();
-                iframe.onload = () => {
-                    if (printAfterLoad) {
-                        iframe.print();
-                    }
+            try {
+                const loadContentInPreviewFrame = (iframe, content, printAfterLoad) => {
+                    iframe.document.open();
+                    iframe.onload = () => {
+                        if (printAfterLoad) {
+                            iframe.print();
+                        }
+                    };
+                    iframe.document.write(content);
+                    iframe.document.close();
                 };
-                iframe.document.write(content);
-                iframe.document.close();
-            };
 
-            // Initialize the kendo Window.
-            let previewWindow = $("#previewFrame").data("kendoWindow");
-            let isNewWindow = false;
-            if (!previewWindow) {
-                isNewWindow = true;
-                previewWindow = $("#previewFrame").kendoWindow({
-                    width: "90%",
-                    height: "90%",
-                    actions: ["Maximize", "Close"],
-                    title: "Preview"
-                }).data("kendoWindow");
-            }
+                // Initialize the kendo Window.
+                let previewWindow = $("#previewFrame").data("kendoWindow");
+                let isNewWindow = false;
+                if (!previewWindow) {
+                    isNewWindow = true;
+                    previewWindow = $("#previewFrame").kendoWindow({
+                        width: "90%",
+                        height: "90%",
+                        actions: ["Maximize", "Close"],
+                        title: "Preview"
+                    }).data("kendoWindow");
+                }
 
-            const container = previewWindow.element.find("div.k-content-frame");
+                previewWindow.one("close", (event) => resolve());
 
-            // Save the email data in the container, otherwise the email popup will show out dated data after opening it for a second time.
-            container.data("emailData", emailData);
-            container.data("action", action);
-            container.data("templateDetails", templateDetails);
+                const container = previewWindow.element.find("div.k-content-frame");
 
-            // Initialize the tab strip.
-            const tabStripElement = container.find("#previewTabStrip");
-            let tabStrip = tabStripElement.data("kendoTabStrip");
-            if (tabStrip) {
-                tabStrip.destroy();
-                tabStripElement.html("");
-            }
+                // Save the email data in the container, otherwise the email popup will show out dated data after opening it for a second time.
+                container.data("emailData", emailData);
+                container.data("action", action);
+                container.data("templateDetails", templateDetails);
 
-            tabStrip = tabStripElement.kendoTabStrip({
-                animation: {
-                    open: {
-                        effects: "fadeIn"
+                // Initialize the tab strip.
+                const tabStripElement = container.find("#previewTabStrip");
+                let tabStrip = tabStripElement.data("kendoTabStrip");
+                if (tabStrip) {
+                    tabStrip.destroy();
+                    tabStripElement.html("");
+                }
+
+                tabStrip = tabStripElement.kendoTabStrip({
+                    animation: {
+                        open: {
+                            effects: "fadeIn"
+                        }
                     }
+                }).data("kendoTabStrip");
+
+                for (let i = 0; i < urls.length; i++) {
+                    const url = urls[i];
+
+                    // Execute the data selector and get the HTML result.
+                    const dataSelectorResult = await Wiser2.api({
+                        method: "POST",
+                        contentType: "application/json",
+                        url: url
+                    });
+
+                    // Add new tab.
+                    tabStrip.append({
+                        text: `Document ${i + 1}`,
+                        content: `<iframe id="previewBlock${i}" class="iframe"></iframe><textarea id="previewEditor${i}" class="editor"></textarea>`
+                    });
+
+                    // Load dataSelectorResult into iframe. This is an iframe so that the CSS from the template cannot affect Wiser in any way.
+                    let iframe = container.find(`iframe#previewBlock${i}`)[0];
+                    iframe = iframe.contentWindow || (iframe.contentDocument.document || iframe.contentDocument);
+
+                    loadContentInPreviewFrame(iframe, dataSelectorResult);
+
+                    // Initialize the kendo HTML editor.
+                    const kendoEditorElement = container.find(`#previewEditor${i}`);
+                    let kendoEditor = kendoEditorElement.data("kendoEditor");
+                    if (!kendoEditor) {
+                        await require("@progress/kendo-ui/js/kendo.editor.js");
+                        kendoEditor = kendoEditorElement.kendoEditor({
+                            tools: [
+                                "bold",
+                                "italic",
+                                "underline",
+                                "strikethrough",
+                                "justifyLeft",
+                                "justifyCenter",
+                                "justifyRight",
+                                "justifyFull",
+                                "insertUnorderedList",
+                                "insertOrderedList",
+                                "indent",
+                                "outdent",
+                                "createLink",
+                                "unlink",
+                                "insertImage",
+                                "insertFile",
+                                "subscript",
+                                "superscript",
+                                "tableWizard",
+                                "createTable",
+                                "addRowAbove",
+                                "addRowBelow",
+                                "addColumnLeft",
+                                "addColumnRight",
+                                "deleteRow",
+                                "deleteColumn",
+                                "viewHtml",
+                                "formatting",
+                                "cleanFormatting"
+                            ],
+                            stylesheets: [
+                                this.base.settings.htmlEditorCssUrl
+                            ]
+                        }).data("kendoEditor");
+                    }
+
+                    kendoEditor.value(dataSelectorResult);
                 }
-            }).data("kendoTabStrip");
 
-            for (let i = 0; i < urls.length; i++) {
-                const url = urls[i];
+                tabStrip.select(0);
 
-                // Execute the data selector and get the HTML result.
-                const dataSelectorResult = await Wiser2.api({
-                    method: "POST",
-                    contentType: "application/json",
-                    url: url
-                });
+                const htmlEditorButton = previewWindow.element.find("#htmlPreview");
+                const previewButton = previewWindow.element.find("#normalPreview");
+                htmlEditorButton.toggle(!action.disableHtmlEditor);
+                previewButton.toggle(!action.disableHtmlEditor);
 
-                // Add new tab.
-                tabStrip.append({
-                    text: `Document ${i + 1}`,
-                    content: `<iframe id="previewBlock${i}" class="iframe"></iframe><textarea id="previewEditor${i}" class="editor"></textarea>`
-                });
+                // Initialize all buttons in the window.
+                if (isNewWindow) {
+                    previewButton.kendoButton({
+                        click: (event) => {
+                            const currentTabStrip = container.find("#previewTabStrip").data("kendoTabStrip");
+                            const selectedTabContainer = $(currentTabStrip.contentElement(currentTabStrip.select().index()));
+                            const kendoEditor = selectedTabContainer.find(".editor").data("kendoEditor");
+                            let iframe = selectedTabContainer.find(".iframe")[0];
+                            iframe = iframe.contentWindow || (iframe.contentDocument.document || iframe.contentDocument);
+                            loadContentInPreviewFrame(iframe, kendoEditor.value());
+                            selectedTabContainer.find(".iframe").removeClass("hidden");
+                        },
+                        icon: "preview"
+                    });
 
-                // Load dataSelectorResult into iframe. This is an iframe so that the CSS from the template cannot affect Wiser in any way.
-                let iframe = container.find(`iframe#previewBlock${i}`)[0];
-                iframe = iframe.contentWindow || (iframe.contentDocument.document || iframe.contentDocument);
+                    htmlEditorButton.kendoButton({
+                        click: (event) => {
+                            const currentTabStrip = container.find("#previewTabStrip").data("kendoTabStrip");
+                            const selectedTabContainer = $(currentTabStrip.contentElement(currentTabStrip.select().index()));
+                            selectedTabContainer.find(".iframe").addClass("hidden");
+                        },
+                        icon: "html5"
+                    });
 
-                loadContentInPreviewFrame(iframe, dataSelectorResult);
-
-                // Initialize the kendo HTML editor.
-                const kendoEditorElement = container.find(`#previewEditor${i}`);
-                let kendoEditor = kendoEditorElement.data("kendoEditor");
-                if (!kendoEditor) {
-                    await require("@progress/kendo-ui/js/kendo.editor.js");
-                    kendoEditor = kendoEditorElement.kendoEditor({
-                        tools: [
-                            "bold",
-                            "italic",
-                            "underline",
-                            "strikethrough",
-                            "justifyLeft",
-                            "justifyCenter",
-                            "justifyRight",
-                            "justifyFull",
-                            "insertUnorderedList",
-                            "insertOrderedList",
-                            "indent",
-                            "outdent",
-                            "createLink",
-                            "unlink",
-                            "insertImage",
-                            "insertFile",
-                            "subscript",
-                            "superscript",
-                            "tableWizard",
-                            "createTable",
-                            "addRowAbove",
-                            "addRowBelow",
-                            "addColumnLeft",
-                            "addColumnRight",
-                            "deleteRow",
-                            "deleteColumn",
-                            "viewHtml",
-                            "formatting",
-                            "cleanFormatting"
-                        ],
-                        stylesheets: [
-                            this.base.settings.htmlEditorCssUrl
-                        ]
-                    }).data("kendoEditor");
-                }
-
-                kendoEditor.value(dataSelectorResult);
-            }
-
-            tabStrip.select(0);
-
-            const htmlEditorButton = previewWindow.element.find("#htmlPreview");
-            const previewButton = previewWindow.element.find("#normalPreview");
-            htmlEditorButton.toggle(!action.disableHtmlEditor);
-            previewButton.toggle(!action.disableHtmlEditor);
-
-            // Initialize all buttons in the window.
-            if (isNewWindow) {
-                previewButton.kendoButton({
-                    click: (event) => {
-                        const currentTabStrip = container.find("#previewTabStrip").data("kendoTabStrip");
-                        const selectedTabContainer = $(currentTabStrip.contentElement(currentTabStrip.select().index()));
-                        const kendoEditor = selectedTabContainer.find(".editor").data("kendoEditor");
-                        let iframe = selectedTabContainer.find(".iframe")[0];
-                        iframe = iframe.contentWindow || (iframe.contentDocument.document || iframe.contentDocument);
-                        loadContentInPreviewFrame(iframe, kendoEditor.value());
-                        selectedTabContainer.find(".iframe").removeClass("hidden");
-                    },
-                    icon: "preview"
-                });
-
-                htmlEditorButton.kendoButton({
-                    click: (event) => {
-                        const currentTabStrip = container.find("#previewTabStrip").data("kendoTabStrip");
-                        const selectedTabContainer = $(currentTabStrip.contentElement(currentTabStrip.select().index()));
-                        selectedTabContainer.find(".iframe").addClass("hidden");
-                    },
-                    icon: "html5"
-                });
-
-                previewWindow.element.find("#savePreview").kendoButton({
-                    click: async (event) => {
-                        const currentTabStrip = container.find("#previewTabStrip").data("kendoTabStrip");
-                        const selectedTabContainer = $(currentTabStrip.contentElement(currentTabStrip.select().index()));
-                        const currentTemplateDetails = container.data("templateDetails");
-                        const currentAction = container.data("action");
-                        const kendoEditor = selectedTabContainer.find(".editor").data("kendoEditor");
-                        const pdfToHtmlData = {
-                            html: kendo.htmlEncode(kendoEditor.value()),
-                            background_property_name: currentAction.pdfBackgroundPropertyName || "",
-                            item_id: currentTemplateDetails.id
-                        };
-
-                        if (currentAction.pdfFilename) {
-                            pdfToHtmlData.file_name = currentAction.pdfFilename.replace("{itemId}", currentTemplateDetails.id);
-                        }
-
-                        pdfToHtmlData.document_options = "";
-                        pdfToHtmlData.header = "";
-                        pdfToHtmlData.footer = "";
-
-                        if (currentAction.pdfDocumentOptionsPropertyName) {
-                            pdfToHtmlData.document_options = currentTemplateDetails.property_[currentAction.pdfDocumentOptionsPropertyName] || "";
-                        }
-                        if (currentAction.pdfHeaderPropertyName) {
-                            pdfToHtmlData.header = currentTemplateDetails.property_[currentAction.pdfHeaderPropertyName] || "";
-                        }
-                        if (currentAction.pdfFooterPropertyName) {
-                            pdfToHtmlData.footer = currentTemplateDetails.property_[currentAction.pdfFooterPropertyName] || "";
-                        }
-
-                        const process = `convertHtmlToPdf_${Date.now()}`;
-                        jjl.processing.addProcess(process);
-                        const pdfResult = await fetch(`${this.base.settings.wiserApiV21Root}pdf/from-html`, {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "Authorization": `Bearer ${localStorage.getItem("access_token")}`
-                            },
-                            body: JSON.stringify(pdfToHtmlData)
-                        });
-                        await Misc.downloadFile(pdfResult, pdfToHtmlData.file_name || "Pdf.pdf");
-                        jjl.processing.removeProcess(process);
-                    },
-                    icon: "pdf"
-                });
-
-                previewWindow.element.find("#printPreview").kendoButton({
-                    click: (event) => {
-                        const currentTabStrip = container.find("#previewTabStrip").data("kendoTabStrip");
-                        const selectedTabContainer = $(currentTabStrip.contentElement(currentTabStrip.select().index()));
-                        const kendoEditor = selectedTabContainer.find(".editor").data("kendoEditor");
-                        let printIframe = selectedTabContainer.find(".iframe")[0];
-                        printIframe = printIframe.contentWindow || (printIframe.contentDocument.document || printIframe.contentDocument);
-                        loadContentInPreviewFrame(printIframe, kendoEditor.value(), true);
-                    },
-                    icon: "print"
-                });
-
-                previewWindow.element.find("#mailPreview").kendoButton({
-                    click: async (event) => {
-                        try {
-                            const dialogElement = $("#sendMailDialog");
-                            const validator = dialogElement.find(".formview").kendoValidator().data("kendoValidator");
-                            let mailDialog = dialogElement.data("kendoDialog");
-
-                            // Set the initial values from the query.
-                            const currentEmailData = container.data("emailData");
-                            const currentAction = container.data("action");
+                    previewWindow.element.find("#savePreview").kendoButton({
+                        click: async (event) => {
+                            const currentTabStrip = container.find("#previewTabStrip").data("kendoTabStrip");
+                            const selectedTabContainer = $(currentTabStrip.contentElement(currentTabStrip.select().index()));
                             const currentTemplateDetails = container.data("templateDetails");
-                            dialogElement.find("input[name=senderName]").val(currentEmailData.senderName);
-                            dialogElement.find("input[name=senderEmail]").val(currentEmailData.senderEmail);
-                            dialogElement.find("input[name=receiverName]").val(currentEmailData.receiverName);
-                            dialogElement.find("input[name=receiverEmail]").val(currentEmailData.receiverEmail);
-                            dialogElement.find("input[name=cc]").val(currentEmailData.cc);
-                            dialogElement.find("input[name=bcc]").val(currentEmailData.bcc);
-                            dialogElement.find("input[name=subject]").val(currentEmailData.subject);
+                            const currentAction = container.data("action");
+                            const kendoEditor = selectedTabContainer.find(".editor").data("kendoEditor");
+                            const pdfToHtmlData = {
+                                html: kendo.htmlEncode(kendoEditor.value()),
+                                background_property_name: currentAction.pdfBackgroundPropertyName || "",
+                                item_id: currentTemplateDetails.id
+                            };
 
-                            let emailBodyEditor = dialogElement.find("textarea.editor").data("kendoEditor");
-                            let attachmentsUploader = dialogElement.find("input[name=files]").data("kendoUpload");
-
-                            if (mailDialog) {
-                                mailDialog.destroy();
+                            if (currentAction.pdfFilename) {
+                                pdfToHtmlData.file_name = currentAction.pdfFilename.replace("{itemId}", currentTemplateDetails.id);
                             }
 
-                            mailDialog = dialogElement.kendoDialog({
-                                width: "900px",
-                                title: "Mail versturen",
-                                closable: false,
-                                modal: true,
-                                actions: [
-                                    {
-                                        text: "Annuleren"
-                                    },
-                                    {
-                                        text: "Verstuur",
-                                        primary: true,
-                                        action: (event) => {
-                                            if (!validator.validate()) {
-                                                return false;
-                                            }
+                            pdfToHtmlData.document_options = "";
+                            pdfToHtmlData.header = "";
+                            pdfToHtmlData.footer = "";
 
-                                            const loader = mailDialog.element.find(".popup-loader").addClass("loading");
-                                            let documentOptions = "";
-                                            if (currentAction.pdfDocumentOptionsPropertyName) {
-                                                documentOptions = currentTemplateDetails.property_[currentAction.pdfDocumentOptionsPropertyName] || "";
-                                            }
+                            if (currentAction.pdfDocumentOptionsPropertyName) {
+                                pdfToHtmlData.document_options = currentTemplateDetails.property_[currentAction.pdfDocumentOptionsPropertyName] || "";
+                            }
+                            if (currentAction.pdfHeaderPropertyName) {
+                                pdfToHtmlData.header = currentTemplateDetails.property_[currentAction.pdfHeaderPropertyName] || "";
+                            }
+                            if (currentAction.pdfFooterPropertyName) {
+                                pdfToHtmlData.footer = currentTemplateDetails.property_[currentAction.pdfFooterPropertyName] || "";
+                            }
 
-                                            // We cant use await here, because for some reason the event does not get fired anymore if we make this method async.
-                                            const promises = [];
-                                            const allEditors = container.find(".editor");
-                                            for (let index = 0; index < allEditors.length; index++) {
-                                                const kendoEditor = $(allEditors[index]).data("kendoEditor");
-                                                let ajaxOptions = {
-                                                    url: `${this.base.settings.wiserApiV21Root}pdf/save-html-as-pdf`,
-                                                    method: "POST",
-                                                    contentType: "application/json",
-                                                    data: json.stringify({
-                                                        html: $("<div/>").text(kendoEditor.value()).html(), // alternative htmlEncode, because kendo.htmlEncode makes from a single quote &#039; (which goes wrong when posted to URL)
-                                                        background_property_name: currentAction.pdfBackgroundPropertyName || "",
-                                                        document_options: documentOptions,
-                                                        item_id: currentTemplateDetails.id,
-                                                        save_in_database: true
-                                                    })
-                                                };
-                                                promises.push(Wiser2.api(ajaxOptions));
-                                            }
+                            const process = `convertHtmlToPdf_${Date.now()}`;
+                            jjl.processing.addProcess(process);
+                            const pdfResult = await fetch(`${this.base.settings.wiserApiV21Root}pdf/from-html`, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": `Bearer ${localStorage.getItem("access_token")}`
+                                },
+                                body: JSON.stringify(pdfToHtmlData)
+                            });
+                            await Misc.downloadFile(pdfResult, pdfToHtmlData.file_name || "Pdf.pdf");
+                            jjl.processing.removeProcess(process);
+                        },
+                        icon: "pdf"
+                    });
 
-                                            Promise.all(promises).catch((error) => {
-                                                console.error(error);
-                                                loader.removeClass("loading");
-                                                kendo.alert("Er is iets fout gegaan met het genereren van de PDF. Probeer het a.u.b. nogmaals of neem contact op met ons");
-                                            }).then((results) => {
-                                                const allFiles = dialogElement.find("input[name=files]").data("kendoUpload").getFiles();
-                                                const wiser2FileAttachments = allFiles.filter(file => file.fileId > 0).map(file => file.fileId) || [];
-                                                
-                                                for (let fileId of results) {
-                                                    wiser2FileAttachments.push(parseInt(fileId.replace(/\"/g, "")));
+                    previewWindow.element.find("#printPreview").kendoButton({
+                        click: (event) => {
+                            const currentTabStrip = container.find("#previewTabStrip").data("kendoTabStrip");
+                            const selectedTabContainer = $(currentTabStrip.contentElement(currentTabStrip.select().index()));
+                            const kendoEditor = selectedTabContainer.find(".editor").data("kendoEditor");
+                            let printIframe = selectedTabContainer.find(".iframe")[0];
+                            printIframe = printIframe.contentWindow || (printIframe.contentDocument.document || printIframe.contentDocument);
+                            loadContentInPreviewFrame(printIframe, kendoEditor.value(), true);
+                        },
+                        icon: "print"
+                    });
+
+                    previewWindow.element.find("#mailPreview").kendoButton({
+                        click: async (event) => {
+                            try {
+                                const dialogElement = $("#sendMailDialog");
+                                const validator = dialogElement.find(".formview").kendoValidator().data("kendoValidator");
+                                let mailDialog = dialogElement.data("kendoDialog");
+
+                                // Set the initial values from the query.
+                                const currentEmailData = container.data("emailData");
+                                const currentAction = container.data("action");
+                                const currentTemplateDetails = container.data("templateDetails");
+                                dialogElement.find("input[name=senderName]").val(currentEmailData.senderName);
+                                dialogElement.find("input[name=senderEmail]").val(currentEmailData.senderEmail);
+                                dialogElement.find("input[name=receiverName]").val(currentEmailData.receiverName);
+                                dialogElement.find("input[name=receiverEmail]").val(currentEmailData.receiverEmail);
+                                dialogElement.find("input[name=cc]").val(currentEmailData.cc);
+                                dialogElement.find("input[name=bcc]").val(currentEmailData.bcc);
+                                dialogElement.find("input[name=subject]").val(currentEmailData.subject);
+
+                                let emailBodyEditor = dialogElement.find("textarea.editor").data("kendoEditor");
+                                let attachmentsUploader = dialogElement.find("input[name=files]").data("kendoUpload");
+
+                                if (mailDialog) {
+                                    mailDialog.destroy();
+                                }
+
+                                mailDialog = dialogElement.kendoDialog({
+                                    width: "900px",
+                                    title: "Mail versturen",
+                                    closable: false,
+                                    modal: true,
+                                    actions: [
+                                        {
+                                            text: "Annuleren"
+                                        },
+                                        {
+                                            text: "Verstuur",
+                                            primary: true,
+                                            action: (event) => {
+                                                if (!validator.validate()) {
+                                                    return false;
                                                 }
 
-                                                const success = () => {
-                                                    const successDialog = kendo.alert("De mail is succesvol verstuurd.");
-                                                    successDialog.bind("close", () => {
-                                                        mailDialog.close();
+                                                const loader = mailDialog.element.find(".popup-loader").addClass("loading");
+                                                let documentOptions = "";
+                                                if (currentAction.pdfDocumentOptionsPropertyName) {
+                                                    documentOptions = currentTemplateDetails.property_[currentAction.pdfDocumentOptionsPropertyName] || "";
+                                                }
 
-                                                        // For some reason the previewWindow disappears behind another window once the mailDialog gets closed. So move it back to the front.
-                                                        setTimeout(() => { previewWindow.toFront(); }, 100);
-                                                    });
-                                                };
-                                                const afterMail = () => {
-                                                    if (!action.executeQueryAfterEmail) {
-                                                        success();
-                                                        return;
-                                                    }
+                                                // We cant use await here, because for some reason the event does not get fired anymore if we make this method async.
+                                                const promises = [];
+                                                const allEditors = container.find(".editor");
+                                                for (let index = 0; index < allEditors.length; index++) {
+                                                    const kendoEditor = $(allEditors[index]).data("kendoEditor");
+                                                    let ajaxOptions = {
+                                                        url: `${this.base.settings.wiserApiV21Root}pdf/save-html-as-pdf`,
+                                                        method: "POST",
+                                                        contentType: "application/json",
+                                                        data: json.stringify({
+                                                            html: $("<div/>").text(kendoEditor.value()).html(), // alternative htmlEncode, because kendo.htmlEncode makes from a single quote &#039; (which goes wrong when posted to URL)
+                                                            background_property_name: currentAction.pdfBackgroundPropertyName || "",
+                                                            document_options: documentOptions,
+                                                            item_id: currentTemplateDetails.id,
+                                                            save_in_database: true
+                                                        })
+                                                    };
+                                                    promises.push(Wiser2.api(ajaxOptions));
+                                                }
 
-                                                    loader.addClass("loading");
-
-                                                    if (!selectedItems || !selectedItems.length) {
-                                                        selectedItems = [{ dataItem: { encrypted_id: itemId, link_id: linkId } }];
-                                                    }
-
-                                                    const queryPromises = [];
-                                                    for (let selectedItem of selectedItems) {
-                                                        queryPromises.push(Wiser2.api({
-                                                            method: "POST",
-                                                            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.dataItem.encrypted_id)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.executeQueryAfterEmail)}&userEmailAddress=${encodeURIComponent(this.base.settings.userEmailAddress)}&itemLinkId=${encodeURIComponent(selectedItem.dataItem.link_id)}`,
-                                                            data: JSON.stringify(userParametersWithValues),
-                                                            contentType: "application/json"
-                                                        }));
-                                                    }
-
-                                                    Promise.all(queryPromises).then(success).catch((error) => {
-                                                        console.error(error);
-                                                        kendo.alert(`Er is iets fout gegaan tijdens het uitvoeren van actie '${action.executeQueryAfterEmail}' na het sturen van de e-mail. De e-mail zelf is wel gestuurd. Neem a..u.b. contact op met ons.`);
-                                                    });
-                                                    Promise.allSettled(queryPromises).then(() => {
-                                                        loader.removeClass("loading");
-                                                    });
-                                                };
-                                                
-                                                Wiser2.api({
-                                                    url: `${this.base.settings.wiserApiV21Root}communications/email`,
-                                                    method: "POST",
-                                                    contentType: "application/json",
-                                                    data: JSON.stringify({
-                                                        sender_name: mailDialog.element.find("input[name=senderName]").val(),
-                                                        sender: mailDialog.element.find("input[name=senderEmail]").val(),
-                                                        receivers: [{
-                                                            display_name: mailDialog.element.find("input[name=receiverName]").val(),
-                                                            address: mailDialog.element.find("input[name=receiverEmail]").val(),
-                                                        }],
-                                                        cc: [mailDialog.element.find("input[name=cc]").val()],
-                                                        bcc: [mailDialog.element.find("input[name=bcc]").val()],
-                                                        subject: mailDialog.element.find("input[name=subject]").val(),
-                                                        wiser_item_files: wiser2FileAttachments,
-                                                        content: emailBodyEditor.value()
-                                                    })
-                                                }).catch((jqXHR, textStatus, errorThrown) => {
-                                                    console.error(jqXHR, textStatus, errorThrown);
-                                                    kendo.alert("Er is iets fout gegaan tijdens het sturen van de mail. Probeer het a.u.b. nogmaals of neem contact op met ons");
-                                                }).finally(() => {
+                                                Promise.all(promises).catch((error) => {
+                                                    console.error(error);
                                                     loader.removeClass("loading");
-                                                }).then((mailResult) => {
-                                                    afterMail();
+                                                    kendo.alert("Er is iets fout gegaan met het genereren van de PDF. Probeer het a.u.b. nogmaals of neem contact op met ons");
+                                                }).then((results) => {
+                                                    const allFiles = dialogElement.find("input[name=files]").data("kendoUpload").getFiles();
+                                                    const wiser2FileAttachments = allFiles.filter(file => file.fileId > 0).map(file => file.fileId) || [];
+                                                
+                                                    for (let fileId of results) {
+                                                        wiser2FileAttachments.push(parseInt(fileId.replace(/\"/g, "")));
+                                                    }
+
+                                                    const success = () => {
+                                                        const successDialog = kendo.alert("De mail is succesvol verstuurd.");
+                                                        successDialog.bind("close", () => {
+                                                            mailDialog.close();
+
+                                                            // For some reason the previewWindow disappears behind another window once the mailDialog gets closed. So move it back to the front.
+                                                            setTimeout(() => { previewWindow.toFront(); }, 100);
+                                                        });
+                                                    };
+                                                    const afterMail = () => {
+                                                        if (!action.executeQueryAfterEmail) {
+                                                            success();
+                                                            return;
+                                                        }
+
+                                                        loader.addClass("loading");
+
+                                                        if (!selectedItems || !selectedItems.length) {
+                                                            selectedItems = [{ dataItem: { encrypted_id: itemId, link_id: linkId } }];
+                                                        }
+
+                                                        const queryPromises = [];
+                                                        for (let selectedItem of selectedItems) {
+                                                            queryPromises.push(Wiser2.api({
+                                                                method: "POST",
+                                                                url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.dataItem.encrypted_id)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.executeQueryAfterEmail)}&userEmailAddress=${encodeURIComponent(this.base.settings.userEmailAddress)}&itemLinkId=${encodeURIComponent(selectedItem.dataItem.link_id)}`,
+                                                                data: JSON.stringify(userParametersWithValues),
+                                                                contentType: "application/json"
+                                                            }));
+                                                        }
+
+                                                        Promise.all(queryPromises).then(success).catch((error) => {
+                                                            console.error(error);
+                                                            kendo.alert(`Er is iets fout gegaan tijdens het uitvoeren van actie '${action.executeQueryAfterEmail}' na het sturen van de e-mail. De e-mail zelf is wel gestuurd. Neem a..u.b. contact op met ons.`);
+                                                        });
+                                                        Promise.allSettled(queryPromises).then(() => {
+                                                            loader.removeClass("loading");
+                                                        });
+                                                    };
+                                                
+                                                    Wiser2.api({
+                                                        url: `${this.base.settings.wiserApiV21Root}communications/email`,
+                                                        method: "POST",
+                                                        contentType: "application/json",
+                                                        data: JSON.stringify({
+                                                            sender_name: mailDialog.element.find("input[name=senderName]").val(),
+                                                            sender: mailDialog.element.find("input[name=senderEmail]").val(),
+                                                            receivers: [{
+                                                                display_name: mailDialog.element.find("input[name=receiverName]").val(),
+                                                                address: mailDialog.element.find("input[name=receiverEmail]").val(),
+                                                            }],
+                                                            cc: [mailDialog.element.find("input[name=cc]").val()],
+                                                            bcc: [mailDialog.element.find("input[name=bcc]").val()],
+                                                            subject: mailDialog.element.find("input[name=subject]").val(),
+                                                            wiser_item_files: wiser2FileAttachments,
+                                                            content: emailBodyEditor.value()
+                                                        })
+                                                    }).catch((jqXHR, textStatus, errorThrown) => {
+                                                        console.error(jqXHR, textStatus, errorThrown);
+                                                        kendo.alert("Er is iets fout gegaan tijdens het sturen van de mail. Probeer het a.u.b. nogmaals of neem contact op met ons");
+                                                    }).finally(() => {
+                                                        loader.removeClass("loading");
+                                                    }).then((mailResult) => {
+                                                        afterMail();
+                                                    });
                                                 });
-                                            });
 
-                                            return false;
+                                                return false;
+                                            }
                                         }
-                                    }
-                                ]
-                            }).data("kendoDialog");
+                                    ]
+                                }).data("kendoDialog");
 
-                            // Initialize the file uploader.
-                            if (attachmentsUploader) {
-                                // Destroy the kendo widget instance.
-                                attachmentsUploader.destroy();
+                                // Initialize the file uploader.
+                                if (attachmentsUploader) {
+                                    // Destroy the kendo widget instance.
+                                    attachmentsUploader.destroy();
 
-                                // Remove the HTML that was generated by Kendo (otherwise we'll still get duplicate elements after recreating the widget).
-                                dialogElement.find("#attachmentFilesContainer").append(dialogElement.find("input[name=files]"));
-                                dialogElement.find(".k-upload").remove();
-                            }
+                                    // Remove the HTML that was generated by Kendo (otherwise we'll still get duplicate elements after recreating the widget).
+                                    dialogElement.find("#attachmentFilesContainer").append(dialogElement.find("input[name=files]"));
+                                    dialogElement.find(".k-upload").remove();
+                                }
 
-                            let files = [];
-                            if (currentAction.emailDefaultAttachmentsPropertyName) {
-                                const initialFilesJson = currentTemplateDetails.property_[currentAction.emailDefaultAttachmentsPropertyName] || "[]";
-                                files = JSON.parse(initialFilesJson);
-                            }
+                                let files = [];
+                                if (currentAction.emailDefaultAttachmentsPropertyName) {
+                                    const initialFilesJson = currentTemplateDetails.property_[currentAction.emailDefaultAttachmentsPropertyName] || "[]";
+                                    files = JSON.parse(initialFilesJson);
+                                }
 
-                            // Always re-create the upload widget because it's not possible to add files to programmatically a widget after it's been initialized, without using weird hacks.
-                            attachmentsUploader = dialogElement.find("input[name=files]").kendoUpload({
-                                files: files,
-                                enabled: false
-                            }).data("kendoUpload");
+                                // Always re-create the upload widget because it's not possible to add files to programmatically a widget after it's been initialized, without using weird hacks.
+                                attachmentsUploader = dialogElement.find("input[name=files]").kendoUpload({
+                                    files: files,
+                                    enabled: false
+                                }).data("kendoUpload");
 
-                            // Initialize the kendo HTML editor.
-                            if (emailBodyEditor) {
-                                // Destroy Kendo instance.
-                                emailBodyEditor.destroy();
+                                // Initialize the kendo HTML editor.
+                                if (emailBodyEditor) {
+                                    // Destroy Kendo instance.
+                                    emailBodyEditor.destroy();
 
-                                // Clean up HTML of destroyed Kendo instance.
-                                const textArea = dialogElement.find("textarea.editor");
-                                const parent = textArea.closest("span.k-input");
-                                parent.append(textArea);
-                                parent.find("table.k-editor").remove();
-                            }
+                                    // Clean up HTML of destroyed Kendo instance.
+                                    const textArea = dialogElement.find("textarea.editor");
+                                    const parent = textArea.closest("span.k-input");
+                                    parent.append(textArea);
+                                    parent.find("table.k-editor").remove();
+                                }
                             
-                            await require("@progress/kendo-ui/js/kendo.editor.js");
-                            emailBodyEditor = dialogElement.find("textarea.editor").kendoEditor({
-                                tools: [
-                                    "bold",
-                                    "italic",
-                                    "underline",
-                                    "justifyLeft",
-                                    "justifyCenter",
-                                    "justifyRight",
-                                    "justifyFull",
-                                    "insertUnorderedList",
-                                    "insertOrderedList",
-                                    "createLink",
-                                    "unlink"
-                                ],
-                                stylesheets: [
-                                    this.base.settings.htmlEditorCssUrl
-                                ]
-                            }).data("kendoEditor");
+                                await require("@progress/kendo-ui/js/kendo.editor.js");
+                                emailBodyEditor = dialogElement.find("textarea.editor").kendoEditor({
+                                    tools: [
+                                        "bold",
+                                        "italic",
+                                        "underline",
+                                        "justifyLeft",
+                                        "justifyCenter",
+                                        "justifyRight",
+                                        "justifyFull",
+                                        "insertUnorderedList",
+                                        "insertOrderedList",
+                                        "createLink",
+                                        "unlink"
+                                    ],
+                                    stylesheets: [
+                                        this.base.settings.htmlEditorCssUrl
+                                    ]
+                                }).data("kendoEditor");
 
-                            emailBodyEditor.value(currentEmailData.body || "");
+                                emailBodyEditor.value(currentEmailData.body || "");
 
-                            mailDialog.open();
-                        } catch (exception) {
-                            console.error(exception);
-                            let error = exception;
-                            if (exception.responseText) {
-                                error = exception.responseText;
-                            } else if (exception.statusText) {
-                                error = exception.statusText;
+                                mailDialog.open();
+                            } catch (exception) {
+                                console.error(exception);
+                                let error = exception;
+                                if (exception.responseText) {
+                                    error = exception.responseText;
+                                } else if (exception.statusText) {
+                                    error = exception.statusText;
+                                }
+                                kendo.alert(`Er is iets fout gegaan met het openen van het scherm om een e-mail te versturen. Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br><pre>${kendo.htmlEncode(error)}</pre>`);
                             }
-                            kendo.alert(`Er is iets fout gegaan met het openen van het scherm om een e-mail te versturen. Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br><pre>${kendo.htmlEncode(error)}</pre>`);
-                        }
-                    },
-                    icon: "email"
-                });
+                        },
+                        icon: "email"
+                    });
+                }
+
+                // Open the window.
+                previewWindow.maximize().open();
+            } catch (exception) {
+                console.error(exception);
+                let error = exception;
+                if (exception.responseText) {
+                    error = exception.responseText;
+                } else if (exception.statusText) {
+                    error = exception.statusText;
+                }
+                kendo.alert(`Er is iets fout gegaan met het laden of verwerken van data voor dit scherm. Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br><pre>${kendo.htmlEncode(error)}</pre>`);
             }
 
-            // Open the window.
-            previewWindow.maximize().open();
-        } catch (exception) {
-            console.error(exception);
-            let error = exception;
-            if (exception.responseText) {
-                error = exception.responseText;
-            } else if (exception.statusText) {
-                error = exception.statusText;
+            if (element && element.siblings(".grid-loader").length) {
+                element.siblings(".grid-loader").removeClass("loading");
+            } else {
+                jjl.processing.removeProcess(process);
             }
-            kendo.alert(`Er is iets fout gegaan met het laden of verwerken van data voor dit scherm. Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br><pre>${kendo.htmlEncode(error)}</pre>`);
-        }
-
-        if (element && element.siblings(".grid-loader").length) {
-            element.siblings(".grid-loader").removeClass("loading");
-        } else {
-            jjl.processing.removeProcess(process);
-        }
+        });
     }
 
     async wiser1FileHandlerInHtmlEditorCallBack(kendoEditor, codeMirror, imageDialog, fileHandler, imageSettings, imageTitle) {
