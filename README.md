@@ -78,7 +78,6 @@ CREATE TABLE `easy_customers`  (
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `db_host` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `db_login` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `db_pass` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `db_passencrypted` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL,
   `db_port` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `db_dbname` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
@@ -122,3 +121,5 @@ First you need to tell Wiser the main domain(s) that it will be running on. You 
 Wiser will take the entire host, remove the parts that are set in `WiserHostNames` in the appsettings and will use what's left over as the sub domain. So for example, if you use the example above in the appsettings and you open https://foo.wiser.nl/bar, then Wiser will take the host (which is `foo.wiser.nl`), remove the part `.wiser.nl` and then the final sub domain will be `foo`, which you should then add to `easy_customers`.
 
 We call this "sub domain" because that it how it was originally intended, but it doesn't have to be a subdomain. You could, for example, add `example.com` to the `WiserHostNames` and then use the domain `myexample.com`, then the 'sub domain' will be `my`. Or you could even set `WiserHostNames` to an empty array and then the entire hostname will be used as 'sub domain', so multitenancy also works with multiple domains that way, then you just need to add the entire domain to the `subdomain` column of `easy_customers`.
+
+You will also need to enter the credentials for the database in `easy_customers`, so that Wiser knows how to connect to the database of that tenant. The password needs to be encrypted with AES, with ciphermode CBC. You need to create a salt of 8-12 bytes, use that salt in the encryption and then append that same salt to the end of the encrypted value. The `GeeksCoreLibrary` has a method for this, called `StringExtensions.EncryptWithAesWithSalt()`. This value then needs to be saved in the `db_passencrypted` column. The encryption key that you use to encrypt the password, needs to be saved in the appsettings of the API, in the property `API.DatabasePasswordEncryptionKey`, so that Wiser can decrypt the password and use it the connection string.
