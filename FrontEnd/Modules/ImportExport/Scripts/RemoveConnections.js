@@ -101,7 +101,7 @@ export class RemoveConnections {
 
         try {
             const promiseResults = await Promise.all([
-                Wiser2.api({ url: `${this.settings.wiserApiV21Root}link-settings` })
+                Wiser2.api({ url: `${this.settings.wiserApiRoot}link-settings` })
             ]);
             const linkTypes = promiseResults[0];
 
@@ -123,7 +123,7 @@ export class RemoveConnections {
         jjl.processing.removeProcess(process);
 
         const promiseResults = await Promise.all([
-            Wiser2.api({ url: `${this.settings.wiserApiV21Root}entity-types?onlyEntityTypesWithDisplayName=false` })
+            Wiser2.api({ url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false` })
         ]);
         const entityNames = promiseResults[0];
 
@@ -172,7 +172,7 @@ export class RemoveConnections {
                         optionLabel: "Kies een eigenschap",
                         dataSource: {
                             transport: {
-                                read: `${this.settings.wiserApiV21Root}entity-properties/${options.model.entity}?onlyEntityTypesWithDisplayName=false&onlyEntityTypesWithPropertyName=true&addIdProperty=true`
+                                read: `${this.settings.wiserApiRoot}entity-properties/${options.model.entity}?onlyEntityTypesWithDisplayName=false&onlyEntityTypesWithPropertyName=true&addIdProperty=true`
                             }
                         }
                     });
@@ -187,8 +187,8 @@ export class RemoveConnections {
 
         //Button
         $(context).find("#deleteConnectionsButton").kendoButton({
-            click: function (e) {
-                me.prepareDeleteConnections();
+            click: async function (e) {
+                await me.prepareDeleteConnections();
             }
         });
     }
@@ -232,7 +232,7 @@ export class RemoveConnections {
     }
 
     //Let the API prepare the delete to retrieve all information for delete.
-    prepareDeleteConnections() {
+    async prepareDeleteConnections() {
         if (!this.importFilename || this.importFilename === "") {
             Wiser2.showMessage({
                 title: "Ongeldig bestand",
@@ -281,14 +281,14 @@ export class RemoveConnections {
             });
         }
 
-        let promise = Wiser2.api({
-            url: `${this.settings.wiserApiV21Root}imports/delete-links/prepare`,
+        const result = await Wiser2.api({
+            url: `${this.settings.wiserApiRoot}imports/delete-links/prepare`,
             method: "POST",
             contentType: "application/json",
             data: JSON.stringify(request)
         });
 
-        promise.done(this.prepareDeleteFinished);
+        this.prepareDeleteFinished(result);
     }
 
     //Handle preparation response from the API.
@@ -301,27 +301,25 @@ export class RemoveConnections {
             content: `U staat op het punt om ${totalLinksToDelete} link(s) te verwijderen. Wilt u doorgaan?`,
             actions: [{
                 text: "Ok",
-                action: function (e) {
-                    let promise = Wiser2.api({
-                        url: `${window.removeConnections.settings.wiserApiV21Root}imports/delete-links/confirm`,
+                action: async function (e) {
+                    const result = await Wiser2.api({
+                        url: `${window.removeConnections.settings.wiserApiRoot}imports/delete-links/confirm`,
                         method: "POST",
                         contentType: "application/json",
                         data: JSON.stringify(results)
                     });
-
-                    promise.done((result) => {
-                        if (result === true) {
-                            Wiser2.showMessage({
-                                title: "Koppelingen verwijderd",
-                                content: "De koppelingen zijn verwijderd."
-                            });
-                        } else {
-                            Wiser2.showMessage({
-                                title: "Koppelingen verwijderen mislukt.",
-                                content: "Er is iets mis gegaan tijdens het verwijderen van de koppelingen, de actie is teruggedraaid."
-                            });
-                        }
-                    });
+                    
+                    if (result === true) {
+                        Wiser2.showMessage({
+                            title: "Koppelingen verwijderd",
+                            content: "De koppelingen zijn verwijderd."
+                        });
+                    } else {
+                        Wiser2.showMessage({
+                            title: "Koppelingen verwijderen mislukt.",
+                            content: "Er is iets mis gegaan tijdens het verwijderen van de koppelingen, de actie is teruggedraaid."
+                        });
+                    }
                 }
             }]
         });

@@ -89,10 +89,6 @@ const importModuleSettings = {
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
-
-            if (!this.settings.wiserApiV21Root.endsWith("/")) {
-                this.settings.wiserApiV21Root += "/";
-            }
             
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("access_token_expires_on");
@@ -111,15 +107,15 @@ const importModuleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = user.adminAccountName;
             
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiV21Root, this.settings.isTestEnvironment);
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot, this.settings.isTestEnvironment);
             this.settings.userId = userData.encrypted_id;
             this.settings.customerId = userData.encrypted_customer_id;
             this.settings.zeroEncrypted = userData.zero_encrypted;
             this.settings.hasEmailAddress = !!userData.email_address;
             $("#EmailAddressContainer").toggle(!this.settings.hasEmailAddress);
             
-            this.settings.serviceRoot = `${this.settings.wiserApiV21Root}templates/get-and-execute-query`;
-            this.settings.getItemsUrl = `${this.settings.wiserApiV21Root}data-selectors`;
+            this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
+            this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
 
             await this.readServerData();
             this.setupBindings();
@@ -449,7 +445,7 @@ const importModuleSettings = {
                 data.importLinkDetailSettings = importLinkDetailSettings;
 
                 const results = await Wiser2.api({
-                    url: `${this.settings.wiserApiV21Root}imports/prepare`,
+                    url: `${this.settings.wiserApiRoot}imports/prepare`,
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify({

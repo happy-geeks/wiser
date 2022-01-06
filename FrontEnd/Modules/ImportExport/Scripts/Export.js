@@ -94,13 +94,13 @@ const exportModuleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
             
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiV21Root, this.settings.isTestEnvironment);
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot, this.settings.isTestEnvironment);
             this.settings.userId = userData.encrypted_id;
             this.settings.customerId = userData.encrypted_customer_id;
             this.settings.zeroEncrypted = userData.zero_encrypted;
             
-            this.settings.serviceRoot = `${this.settings.wiserApiV21Root}templates/get-and-execute-query`;
-            this.settings.getItemsUrl = `${this.settings.wiserApiV21Root}data-selectors`;
+            this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
+            this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
 
             this.setupBindings();
 
@@ -189,7 +189,7 @@ const exportModuleSettings = {
                     
                     const process = `exportToExcel_${Date.now()}`;
                     jjl.processing.addProcess(process);
-                    const result = await fetch(`${this.settings.wiserApiV21Root}modules/${moduleId}/export?fileName=${encodeURIComponent(fileName)}`, {
+                    const result = await fetch(`${this.settings.wiserApiRoot}modules/${moduleId}/export?fileName=${encodeURIComponent(fileName)}`, {
                         method: "GET",
                         headers: {
                             "Content-Type": "application/json",
@@ -237,9 +237,9 @@ const exportModuleSettings = {
 
             try {
                 const promiseResults = await Promise.all([
-                    Wiser2.api({ url: `${this.settings.wiserApiV21Root}data-selectors` }),
-                    Wiser2.api({ url: `${this.settings.wiserApiV21Root}queries/export-module` }),
-                    Wiser2.api({ url: `${this.settings.wiserApiV21Root}modules` })
+                    Wiser2.api({ url: `${this.settings.wiserApiRoot}data-selectors` }),
+                    Wiser2.api({ url: `${this.settings.wiserApiRoot}queries/export-module` }),
+                    Wiser2.api({ url: `${this.settings.wiserApiRoot}modules` })
                 ]);
                 const dataSelectors = promiseResults[0];
                 const queries = promiseResults[1];
