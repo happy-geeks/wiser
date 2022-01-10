@@ -19,7 +19,12 @@ using Api.Modules.Templates.Services;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using IdentityServer4.Services;
+using JavaScriptEngineSwitcher.ChakraCore;
+using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
+using JavaScriptEngineSwitcher.Jint;
+using JavaScriptEngineSwitcher.Vroom;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
@@ -27,6 +32,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
+using React.AspNet;
 using Serilog;
 
 namespace Api
@@ -134,10 +140,11 @@ namespace Api
                     config.IncludeXmlComments(xmlPath);
                 }
             });
+            
 
             // Services from GCL. Some services are registered because they are required by other GCL services, not because this API uses them.
             services.AddGclServices(Configuration, true, true);
-
+            
             // Set default settings for JSON.NET.
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
 
@@ -233,10 +240,31 @@ namespace Api
             services.Decorate<IDatabaseConnection, ClientDatabaseConnection>();
             services.Decorate<ITemplatesService, CachedTemplatesService>();
             services.Decorate<IUsersService, CachedUsersService>();
+
+            // Add JavaScriptEngineSwitcher services to the services container.
+            services.AddJsEngineSwitcher(options => options.DefaultEngineName = ChakraCoreJsEngine.EngineName).AddChakraCore().AddJint().AddVroom();
+
+            services.AddReact();
+
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         }
         
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
         {
+            app.UseReact(config => {
+                config.AddScript("~/Scripts/React.jsx");
+                //config.AddScriptWithoutTransform("~/Scripts/babelconfig.js");
+
+                //config.BabelConfig.Plugins.Add("polyfill");
+                //config.BabelConfig.Plugins.Add("transform-runtime");
+              
+                config.BabelConfig.Presets.Add("es2015");
+                config.BabelConfig.Presets.Add("stage-1");
+
+                //config.BabelConfig.Presets.Add(@"['env', {'targets':'ie 11'}]");
+                //config.BabelConfig.Presets.Add(@"'targets':'ie 11'");
+                config.ReuseJavaScriptEngines = true;
+            });
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
