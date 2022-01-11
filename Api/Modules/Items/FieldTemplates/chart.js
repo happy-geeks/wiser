@@ -7,10 +7,17 @@
         title: { text: "{title}" },
         dataSource: {
             transport: {
-                read: {
-                    method: "POST",
-                    url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.queryId || 0),
-                    contentType: "application/json"
+                read: (options) => {
+                    Wiser2.api({
+                        url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.queryId || 0),
+                        dataType: "json",
+                        method: "POST",
+                        data: options.data
+                    }).then((result) => {
+                        options.success(result);
+                    }).catch((result) => {
+                        options.error(result);
+                    });
                 }
             },
         

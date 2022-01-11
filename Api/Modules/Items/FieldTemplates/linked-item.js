@@ -13,7 +13,9 @@ if (options.reversed) {
     templateName = "GET_DESTINATION_ITEMS_REVERSED";
 }
 
-$.get(window.dynamicItems.settings.serviceRoot + "/" + templateName + "?itemId={itemId}&entity_type=" + encodeURIComponent(options.entityType) + "&linkTypeNumber=" + encodeURIComponent(options.linkType)).done(function(results) {
+Wiser2.api({
+    url: window.dynamicItems.settings.serviceRoot + "/" + templateName + "?itemId={itemId}&entity_type=" + encodeURIComponent(options.entityType) + "&linkTypeNumber=" + encodeURIComponent(options.linkType)
+}).then(function(results) {
     var field = $("#field_{propertyIdWithSuffix}").html("");
 
     if (!results || !results.length) {
