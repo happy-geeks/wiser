@@ -17,11 +17,11 @@
         dataSource: {
             transport: {
                 read: function (transportOptions) {
-                    $.ajax({
+                    Wiser2.api({
                         method: "POST",
                         url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.queryId || 0) + "&itemLinkId={itemLinkId}",
                         contentType: "application/json"
-                    }).done(function (queryResults) {
+                    }).then(function (queryResults) {
                         if (!queryResults || !queryResults.other_data || queryResults.other_data.length === 0) {
                             transportOptions.error("Geen data");
                             loader.removeClass("loading");
@@ -32,7 +32,7 @@
                         else {
                             transportOptions.success(queryResults.other_data);
                         }
-                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                    }).catch(function (jqXHR, textStatus, errorThrown) {
                         transportOptions.error(jqXHR, textStatus, errorThrown);
                     });
                 }
@@ -43,7 +43,7 @@
                     fields: {
                         date: {
                             type: "date"
-                        },
+                        }
                     }
                 }
             }

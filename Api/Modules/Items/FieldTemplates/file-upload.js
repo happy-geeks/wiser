@@ -38,13 +38,13 @@ var addFileUrl = function(event) {
         title: event.sender.element.find("#fileTitle").val()
     };
     
-    $.ajax({
+    Wiser2.api({
         method: "POST",
         contentType: "application/json",
         dataType: "json",
         url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/files/url?itemLinkId={itemLinkId}&propertyName=" + encodeURIComponent("{propertyName}"),
         data: JSON.stringify(fileData)
-    }).done(function(dataResult) {
+    }).then(function(dataResult) {
         var newFile = { 
             files: [dataResult],
             name: dataResult.name,
@@ -62,7 +62,7 @@ var addFileUrl = function(event) {
         var listItem = $("<li class='k-file k-file-success' />");
         listItem.html(fileTemplate(newFile));
         filesList.append(listItem);
-    }).fail(function(jqXHR, textStatus, errorThrown) {
+    }).catch(function(jqXHR, textStatus, errorThrown) {
         console.error("read error - {title}", jqXHR, textStatus, errorThrown);
         kendo.alert("Er is iets fout gegaan toevoegen van een bestands-URL voor het veld '{title}'. Probeer het a.u.b. nogmaals of neem contact op met ons.")
     });
@@ -111,15 +111,15 @@ var initialize = function() {
 if (!options.queryId) {
     initialize();
 } else {
-    $.ajax({
+    Wiser2.api({
         method: "POST",
         contentType: "application/json",
         dataType: "json",
         url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(options.queryId) + "&itemLinkId={itemLinkId}"
-    }).success(function(dataResult) {
+    }).then(function(dataResult) {
         files = dataResult.other_data;
         initialize();
-    }).error(function(jqXHR, textStatus, errorThrown) {
+    }).catch(function(jqXHR, textStatus, errorThrown) {
         console.error("read error - {title}", jqXHR, textStatus, errorThrown);
         kendo.alert("Er is iets fout gegaan tijdens het laden van de bestanden voor het veld '{title}'. Probeer het a.u.b. nogmaals of neem contact op met ons.");
     });
