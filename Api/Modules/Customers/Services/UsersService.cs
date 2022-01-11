@@ -252,7 +252,7 @@ namespace Api.Modules.Customers.Services
 
                 // If an admin account is logging in, we don't want to check the password, so just return the first user. 
                 // Otherwise find a user with the correct password.
-                if (validAdminAccount || password.VerifySha512(user.Password))
+                if (validAdminAccount || (!String.IsNullOrWhiteSpace(password) && password.VerifySha512(user.Password)))
                 {
                     break;
                 }
@@ -678,7 +678,7 @@ namespace Api.Modules.Customers.Services
                 return false;
             }
             
-            Int32.TryParse(encryptedAdminAccountId.DecryptWithAes(apiSettings.AdminUsersEncryptionKey), out var decryptedAdminAccountId);
+            UInt64.TryParse(encryptedAdminAccountId.DecryptWithAes(apiSettings.AdminUsersEncryptionKey), out var decryptedAdminAccountId);
 
             return (await ValidateAdminAccountIdAsync(decryptedAdminAccountId, identity)).ModelObject;
         }
@@ -689,7 +689,7 @@ namespace Api.Modules.Customers.Services
         /// <param name="id">The ID of the admin account.</param>
         /// <param name="identity">Optional: The <see cref="ClaimsIdentity"/> of the authenticated user.</param>
         /// <returns>A boolean, indicating whether this admin account is allowed to login or not.</returns>
-        public async Task<ServiceResult<bool>> ValidateAdminAccountIdAsync(int id, ClaimsIdentity identity = null)
+        private async Task<ServiceResult<bool>> ValidateAdminAccountIdAsync(ulong id, ClaimsIdentity identity = null)
         {
             // If the authenticated user is not an administrator, don't return sensitive information.
             if (identity != null && !IdentityHelpers.IsAdministrator(identity))
@@ -705,7 +705,11 @@ namespace Api.Modules.Customers.Services
             wiserDatabaseConnection.ClearParameters();
             wiserDatabaseConnection.AddParameter("id", id);
 
-            var query = $"SELECT NULL FROM {ApiTableNames.WiserAdminAccounts} WHERE id = ?id AND active > 0";
+            var query = $@"SELECT NULL FROM {WiserTableNames.WiserItem} AS account
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} AS active ON active.item_id = account.id AND active.`key` = '{UserActiveKey}'
+                        WHERE account.id = ?id
+                        AND account.entity_type = '{WiserUserEntityType}'
+                        AND (active.value IS NULL OR active.value = '1')";
             var result = await wiserDatabaseConnection.GetAsync(query);
             return new ServiceResult<bool>(result.Rows.Count > 0);
         }
@@ -713,7 +717,6 @@ namespace Api.Modules.Customers.Services
         /// <summary>
         /// Generates a new token for a "remember me" cookie.
         /// </summary>
-        /// <param name="connection">The database connection to use.</param>
         /// <param name="userId">The ID of the user to generate the token for.</param>
         /// <returns>The value that should be saved in the cookie.</returns>
         private async Task<string> GenerateNewCookieTokenAsync(ulong userId)
