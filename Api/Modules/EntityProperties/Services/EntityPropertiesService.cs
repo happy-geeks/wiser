@@ -592,8 +592,6 @@ namespace Api.Modules.EntityProperties.Services
                     return EntityPropertyInputTypes.QueryBuilder;
                 case "date-time picker":
                     return EntityPropertyInputTypes.DateTimePicker;
-                case "grid":
-                    return EntityPropertyInputTypes.Grid;
                 case "imagecoords":
                     return EntityPropertyInputTypes.ImageCoordinates;
                 case "image-upload":
@@ -659,8 +657,6 @@ namespace Api.Modules.EntityProperties.Services
                     return "querybuilder";
                 case EntityPropertyInputTypes.DateTimePicker:
                     return "date-time picker";
-                case EntityPropertyInputTypes.Grid:
-                    return "grid";
                 case EntityPropertyInputTypes.ImageCoordinates:
                     return "imagecoords";
                 case EntityPropertyInputTypes.ImageUpload:

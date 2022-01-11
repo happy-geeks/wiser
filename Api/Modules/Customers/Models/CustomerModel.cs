@@ -61,17 +61,21 @@ namespace Api.Modules.Customers.Models
                 Id = dataRow.Field<int>("id"),
                 CustomerId = dataRow.Field<int>("customerid"),
                 Name = dataRow.Field<string>("name"),
-                LiveDatabase = new ConnectionInformationModel
+                EncryptionKey = dataRow.Field<string>("encryption_key"),
+                SubDomain = dataRow.Field<string>("subdomain")
+            };
+
+            if (dataRow.Table.Columns.Contains("db_host"))
+            {
+                result.LiveDatabase = new ConnectionInformationModel
                 {
                     Password = dataRow.Field<string>("db_passencrypted"),
                     Username = dataRow.Field<string>("db_login"),
                     PortNumber = String.IsNullOrWhiteSpace(dataRow.Field<string>("db_port")) ? 3306 : Convert.ToInt32(dataRow.Field<string>("db_port")),
                     Host = dataRow.Field<string>("db_host"),
                     DatabaseName = dataRow.Field<string>("db_dbname")
-                },
-                EncryptionKey = dataRow.Field<string>("encryption_key"),
-                SubDomain = dataRow.Field<string>("subdomain")
-            };
+                };
+            }
 
             return result;
         }
