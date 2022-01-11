@@ -202,6 +202,27 @@ export class Strings {
  */
 export class Wiser2 {
     static async api(settings) {
+        // Find the Window that contains the main vue app of Wiser. We need this for saving the promise of refreshing the auth token.
+        // We do this on that window, because some modules have multiple iframes that all do xhr calls, so we need to make sure they all wait for each other
+        // and use the same refresh token.
+        let wiserMainWindow = window;
+        let previousWindow = null;
+        while (wiserMainWindow && !wiserMainWindow.main && previousWindow !== wiserMainWindow) {
+            previousWindow = wiserMainWindow;
+            wiserMainWindow = wiserMainWindow.parent;
+        }
+        
+        // If another process/request is already requesting a new access token, wait for that to finish first.
+        // This is to prevent multiple access token requests at the same time and to prevent racing conditions.
+        if (wiserMainWindow.wiserApiRefreshTokenPromise) {
+            const newRefreshToken = await wiserMainWindow.wiserApiRefreshTokenPromise;
+            
+            // Add logged in user access token to default authorization headers for all jQuery ajax requests.
+            $.ajaxSetup({
+                headers: { "Authorization": `Bearer ${newRefreshToken.access_token}` }
+            });
+        }
+
         const accessTokenExpires = localStorage.getItem("access_token_expires_on");
         const user = JSON.parse(localStorage.getItem("userData"));
         if (settings.url.indexOf("/connect/token") === -1 && (!accessTokenExpires || new Date(accessTokenExpires) <= new Date())) {
@@ -209,39 +230,47 @@ export class Wiser2 {
                 console.error("No refresh token found!");
 
                 // If we have no refresh token for some reason, logout the user.
-                if (window.parent && window.parent.main && window.parent.main.vueApp) {
-                    window.parent.main.vueApp.logout();
+                if (wiserMainWindow && wiserMainWindow.main && wiserMainWindow.main.vueApp) {
+                    wiserMainWindow.main.vueApp.logout();
                 }
                 
                 return Promise.reject("No refresh token found!");
             }
 
             const wiserSettings = document.body.dataset;
+            
+            // Create a promise for the refresh token, so that other requests know we're already busy getting one. They will then wait for this to finish.
+            wiserMainWindow.wiserApiRefreshTokenPromise = new Promise(async (resolve) => {
+                const refreshTokenResult = await $.ajax({
+                    url: wiserSettings.wiserApiAuthenticationUrl,
+                    method: "POST",
+                    data: {
+                        "grant_type": "refresh_token",
+                        "refresh_token": user.refresh_token,
+                        "subDomain": wiserSettings.subDomain,
+                        "client_id": wiserSettings.apiClientId,
+                        "client_secret": wiserSettings.apiClientSecret,
+                        "isTestEnvironment": wiserSettings.isTestEnvironment
+                    }
+                });
 
-            const refreshTokenResult = await $.ajax({
-                url: wiserSettings.wiserApiAuthenticationUrl,
-                method: "POST",
-                data: {
-                    "grant_type": "refresh_token",
-                    "refresh_token": user.refresh_token,
-                    "subDomain": wiserSettings.subDomain,
-                    "client_id": wiserSettings.apiClientId,
-                    "client_secret": wiserSettings.apiClientSecret,
-                    "isTestEnvironment": wiserSettings.isTestEnvironment
-                }
+                refreshTokenResult.expires_on = new Date(new Date().getTime() + (refreshTokenResult.expires_in * 1000));
+                refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true;
+
+                localStorage.setItem("access_token", refreshTokenResult.access_token);
+                localStorage.setItem("access_token_expires_on", refreshTokenResult.expires_on);
+                localStorage.setItem("userData", JSON.stringify(Object.assign({}, user, refreshTokenResult)));
+
+                // Add logged in user access token to default authorization headers for all jQuery ajax requests.
+                $.ajaxSetup({
+                    headers: { "Authorization": `Bearer ${refreshTokenResult.access_token}` }
+                });
+
+                resolve(refreshTokenResult);
             });
 
-            refreshTokenResult.expires_on = new Date(new Date().getTime() + (refreshTokenResult.expires_in * 1000));
-            refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true;
-
-            localStorage.setItem("access_token", refreshTokenResult.access_token);
-            localStorage.setItem("access_token_expires_on", refreshTokenResult.expires_on);
-            localStorage.setItem("userData", JSON.stringify(Object.assign({}, user, refreshTokenResult)));
-
-            // Add logged in user access token to default authorization headers for all jQuery ajax requests.
-            $.ajaxSetup({
-                headers: { "Authorization": `Bearer ${refreshTokenResult.access_token}` }
-            });
+            // Of course we also need to wait until we have the new auth token, otherwise the code below will be executed too early.
+            await wiserMainWindow.wiserApiRefreshTokenPromise;
         }
 
         return $.ajax(settings).fail((jqXhr, textStatus, errorThrown) => {
