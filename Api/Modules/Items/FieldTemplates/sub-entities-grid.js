@@ -24,7 +24,7 @@ if (options.fieldGroupName) {
 }
 
 if (customQueryGrid) {
-    $.get(window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}" + linkTypeParameter).then(function(customQueryResults) {
+    Wiser2.api({ url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}" + linkTypeParameter }).then(function(customQueryResults) {
         if (customQueryResults.extra_javascript) {
             jQuery.globalEval(customQueryResults.extra_javascript);
         }
@@ -182,12 +182,12 @@ if (customQueryGrid) {
     }
     
     if (usingDataSelector) {
-        $.ajax({
+        Wiser2.api({
             url: window.dynamicItems.settings.getItemsUrl + "?trace=false&encryptedDataSelectorId=" + encodeURIComponent(options.dataSelectorId) + "&itemId=" + encodeURIComponent("{itemIdEncrypted}"),
             contentType: "application/json"
         }).then(done);
     } else {
-        $.ajax({
+        Wiser2.api({
             url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/entity-grids/" + encodeURIComponent(options.entityType) + "?propertyId={propertyId}" + linkTypeParameter.replace("?", "&") + "&mode=" + gridMode.toString() + "&fieldGroupName=" + encodeURIComponent(options.fieldGroupName) + "&currentItemIsSourceId=" + (options.currentItemIsSourceId || false).toString(),
             method: "POST",
             contentType: "application/json"
@@ -314,12 +314,12 @@ function generateGrid(data, model, columns) {
                         }
                         
                         if (customQueryGrid) {
-                            $.ajax({
+                            Wiser2.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids-with-filters/{propertyId}" + linkTypeParameter,
                                 method: "POST",
                                 contentType: "application/json",
                                 data: JSON.stringify(transportOptions.data)
-                            }).done(function(customQueryResults) {
+                            }).then(function(customQueryResults) {
                                 if (customQueryResults.data) {
                                     for (var i = 0; i < customQueryResults.data.length; i++) {
                                         var row = customQueryResults.data[i];
@@ -330,15 +330,21 @@ function generateGrid(data, model, columns) {
                                 }
                                 transportOptions.success(customQueryResults.data);
                                 loader.removeClass("loading");
+                            }).catch(function(error) {
+                                transportOptions.error(error);
+                                loader.removeClass("loading");
                             });
                         } else {
-                            $.ajax({
+                            Wiser2.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/entity-grids/" + encodeURIComponent(options.entityType) + "?propertyId={propertyId}" + linkTypeParameter.replace("?", "&") + "&mode=" + gridMode.toString() + "&fieldGroupName=" + encodeURIComponent(options.fieldGroupName) + "&currentItemIsSourceId=" + (options.currentItemIsSourceId || false).toString(),
                                 method: "POST",
                                 contentType: "application/json",
                                 data: JSON.stringify(transportOptions.data)
-                            }).done(function(gridSettings) {
+                            }).then(function(gridSettings) {
                                 transportOptions.success(gridSettings.data);
+                                loader.removeClass("loading");
+                            }).catch(function(error) {
+                                transportOptions.error(error);
                                 loader.removeClass("loading");
                             });
                         }
@@ -358,17 +364,17 @@ function generateGrid(data, model, columns) {
                         loader.addClass("loading");
                         
                         if (customQueryGrid) {
-                            $.ajax({
+                            Wiser2.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
                                 method: "PUT",
                                 contentType: "application/json",
                                 dataType: "json",
                                 data: JSON.stringify(transportOptions.data)
-                            }).done(function(result) {
+                            }).then(function(result) {
                                 // notify the data source that the request succeeded
                                 transportOptions.success(result);
                                 loader.removeClass("loading");
-                            }).fail(function(jqXHR, textStatus, errorThrown) {
+                            }).catch(function(jqXHR, textStatus, errorThrown) {
                                 console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
                                 loader.removeClass("loading");
                                 // notify the data source that the request failed
@@ -441,13 +447,13 @@ function generateGrid(data, model, columns) {
 							}
 						}
                         
-                        $.ajax({
+                        Wiser2.api({
                             url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
                             method: "PUT",
                             contentType: "application/json",
                             dataType: "json",
                             data: JSON.stringify(itemModel)
-                        }).done(function(result) {
+                        }).then(function(result) {
 							if (transportOptions.data && transportOptions.data.details) {
 								for (var i = 0; i < transportOptions.data.details.length; i++) {
 									var currentField = transportOptions.data.details[i];
@@ -466,7 +472,7 @@ function generateGrid(data, model, columns) {
                                 kendoComponent.dataSource.read();
                             }
                             loader.removeClass("loading");
-                        }).fail(function(jqXHR, textStatus, errorThrown) {
+                        }).catch(function(jqXHR, textStatus, errorThrown) {
                             console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
                             loader.removeClass("loading");
                             // notify the data source that the request failed
@@ -494,13 +500,13 @@ function generateGrid(data, model, columns) {
 							transportOptions.data.group_name = options.fieldGroupName;
 							itemModel.details.push(transportOptions.data);
 							
-							$.ajax({
+							Wiser2.api({
 								url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
 								method: "PUT",
 								contentType: "application/json",
 								dataType: "json",
 								data: JSON.stringify(itemModel)
-							}).done(function(result) {
+							}).then(function(result) {
 								if (transportOptions.data && transportOptions.data.details) {
 									for (var i = 0; i < transportOptions.data.details.length; i++) {
 										var currentField = transportOptions.data.details[i];
@@ -515,7 +521,7 @@ function generateGrid(data, model, columns) {
 								// notify the data source that the request succeeded
 								transportOptions.success(transportOptions.data);
 								loader.removeClass("loading");
-							}).fail(function(jqXHR, textStatus, errorThrown) {
+							}).catch(function(jqXHR, textStatus, errorThrown) {
 								console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
 								loader.removeClass("loading");
 								// notify the data source that the request failed
@@ -525,17 +531,17 @@ function generateGrid(data, model, columns) {
 						} else if (customQueryGrid) {
                             loader.addClass("loading");
                             
-                            $.ajax({
+                            Wiser2.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
                                 method: "POST",
                                 contentType: "application/json",
                                 dataType: "json",
                                 data: JSON.stringify(transportOptions.data)
-                            }).done(function(result) {
+                            }).then(function(result) {
                                 // notify the data source that the request succeeded
                                 transportOptions.success(result);
                                 loader.removeClass("loading");
-                            }).fail(function(jqXHR, textStatus, errorThrown) {
+                            }).catch(function(jqXHR, textStatus, errorThrown) {
                                 // notify the data source that the request failed
                                 transportOptions.error(jqXHR);
                                 loader.removeClass("loading");
@@ -564,13 +570,13 @@ function generateGrid(data, model, columns) {
 							transportOptions.data.value = null;
 							itemModel.details.push(transportOptions.data);
 							
-							$.ajax({
+							Wiser2.api({
 								url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
 								method: "PUT",
 								contentType: "application/json",
 								dataType: "json",
 								data: JSON.stringify(itemModel)
-							}).done(function(result) {
+							}).then(function(result) {
 								if (transportOptions.data && transportOptions.data.details) {
 									for (var i = 0; i < transportOptions.data.details.length; i++) {
 										var currentField = transportOptions.data.details[i];
@@ -585,7 +591,7 @@ function generateGrid(data, model, columns) {
 								// notify the data source that the request succeeded
 								transportOptions.success(transportOptions.data);
 								loader.removeClass("loading");
-							}).fail(function(jqXHR, textStatus, errorThrown) {
+							}).catch(function(jqXHR, textStatus, errorThrown) {
 								console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
 								loader.removeClass("loading");
 								// notify the data source that the request failed
@@ -595,23 +601,21 @@ function generateGrid(data, model, columns) {
 						} else if (customQueryGrid) {
                             loader.addClass("loading");
                             
-                            $.ajax({
+                            Wiser2.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
                                 method: "DELETE",
                                 contentType: "application/json",
                                 dataType: "json",
-                                data: JSON.stringify(transportOptions.data),
-                                success: function(result) {
-                                    // notify the data source that the request succeeded
-                                    transportOptions.success(result);
-                                    loader.removeClass("loading");
-                                },
-                                error: function(jqXHR, textStatus, errorThrown) {
-                                    // notify the data source that the request failed
-                                    transportOptions.error(jqXHR);
-                                    loader.removeClass("loading");
-                                    kendo.alert("Er is iets fout gegaan tijdens het verwijderen van deze regel.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
-                                }
+                                data: JSON.stringify(transportOptions.data)
+                            }).then(function(result) {
+                                // notify the data source that the request succeeded
+                                transportOptions.success(result);
+                                loader.removeClass("loading");
+                            }).catch(function(jqXHR, textStatus, errorThrown) {
+                                // notify the data source that the request failed
+                                transportOptions.error(jqXHR);
+                                loader.removeClass("loading");
+                                kendo.alert("Er is iets fout gegaan tijdens het verwijderen van deze regel.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
                             });
                         }
                     } catch(exception) {

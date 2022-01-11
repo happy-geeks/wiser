@@ -1,8 +1,8 @@
 ﻿(function() {
-    $.ajax({
+    Wiser2.api({
         url: window.dynamicItems.settings.serviceRoot + "/GET_DATA_FOR_RADIO_BUTTONS?propertyid={propertyId}&itemId={itemId}",
         method: "GET"
-    }).done(function(results) {
+    }).then(function(results) {
         var field = $("#field_{propertyIdWithSuffix}");
         var defaultValue = field.data("defaultValue");
     
