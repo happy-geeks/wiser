@@ -35,6 +35,9 @@ export class Fields {
         // Bind tooltip click events.
         $("#right-pane").on("click", ".item h4.tooltip .info-link", this.onTooltipClick.bind(this, $("#infoPanel_main")));
         $("#right-pane").on("contextmenu", ".item > h4", this.onFieldLabelContextMenu.bind(this));
+
+        // Bind open link click event.
+        $("#right-pane").on("click", ".item .open-link", this.onOpenLinkClick.bind(this));
     }
 
     /**
@@ -515,6 +518,27 @@ export class Fields {
         }
 
         jjl.processing.removeProcess(process);
+    }
+
+    /**
+     * Event that gets triggered when the user clicks the link-icon in a field containing an URL.
+     * @param {any} event
+     */
+    onOpenLinkClick(event) {
+        let openLinkDialog = $("#openLinkDialog").kendoDialog({
+            width: "500px",
+            buttonLayout: "normal",
+            title: "Deze URL openen?",
+            closable: true,
+            modal: false,
+            content: "<p>Wilt u deze URL in een nieuw venster openen of binnen Wiser?<p>",
+            actions: [
+                { text: 'Cancel' },
+                { text: 'Open in Wiser' },
+                { text: 'Open in een nieuw venster', primary: true }
+            ]
+        });
+        event.preventDefault();
     }
 
     /**
