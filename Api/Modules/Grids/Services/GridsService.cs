@@ -991,7 +991,6 @@ namespace Api.Modules.Grids.Services
                                 case "querybuilder":
                                 case "file-upload":
                                 case "sub-entities-grid":
-                                case "grid":
                                     addField = false;
                                     break;
                             }
