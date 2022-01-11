@@ -85,5 +85,15 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="subDomain">The sub domain of the customer.</param>
         /// <returns>The title for the browser tab.</returns>
         Task<ServiceResult<string>> GetTitleAsync(string subDomain);
+        
+        /// <summary>
+        /// Get whether or not a sub domain is empty or the sub domain of the main Wiser database.
+        /// </summary>
+        bool IsMainDatabase(ClaimsIdentity identity);
+        
+        /// <summary>
+        /// Get whether or not a sub domain is empty or the sub domain of the main Wiser database.
+        /// </summary>
+        bool IsMainDatabase(string subDomain);
     }
 }

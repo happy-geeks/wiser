@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 using Newtonsoft.Json;
 
@@ -13,7 +14,7 @@ namespace Api.Core.Models
         /// Gets or sets the ID.
         /// </summary>
         [Key, JsonIgnore]
-        public int Id { get; set; }
+        public ulong Id { get; set; }
 
         /// <summary>
         /// Gets or sets the encrypted ID.
@@ -44,10 +45,10 @@ namespace Api.Core.Models
         {
             return new AdminAccountModel
             {
-                Id = dataRow.Field<int>("id"),
+                Id = dataRow.Field<ulong>("id"),
                 Login = dataRow.Field<string>("login"),
-                Name = dataRow.Field<string>("employee"),
-                Active = dataRow.Field<bool>("active")
+                Name = dataRow.Field<string>("name"),
+                Active = Convert.ToBoolean(dataRow["active"])
             };
         }
     }
