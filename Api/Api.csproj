@@ -46,8 +46,6 @@
     <None Remove="Modules\Items\FieldTemplates\file-upload.js" />
     <None Remove="Modules\Items\FieldTemplates\gpslocation.html" />
     <None Remove="Modules\Items\FieldTemplates\gpslocation.js" />
-    <None Remove="Modules\Items\FieldTemplates\grid.html" />
-    <None Remove="Modules\Items\FieldTemplates\grid.js" />
     <None Remove="Modules\Items\FieldTemplates\HTMLeditor.html" />
     <None Remove="Modules\Items\FieldTemplates\HTMLeditor.js" />
     <None Remove="Modules\Items\FieldTemplates\image-upload.html" />
@@ -106,8 +104,6 @@
     <EmbeddedResource Include="Modules\Items\FieldTemplates\file-upload.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\gpslocation.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\gpslocation.js" />
-    <EmbeddedResource Include="Modules\Items\FieldTemplates\grid.html" />
-    <EmbeddedResource Include="Modules\Items\FieldTemplates\grid.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\HTMLeditor.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\HTMLeditor.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\image-upload.html" />
