@@ -126,6 +126,8 @@ We call this "sub domain" because that it how it was originally intended, but it
 
 You will also need to enter the credentials for the database in `easy_customers`, so that Wiser knows how to connect to the database of that tenant. The password needs to be encrypted with AES, with ciphermode CBC. You need to create a salt of 8-12 bytes, use that salt in the encryption and then append that same salt to the end of the encrypted value. The `GeeksCoreLibrary` has a method for this, called `StringExtensions.EncryptWithAesWithSalt()`. This value then needs to be saved in the `db_passencrypted` column. The encryption key that you use to encrypt the password, needs to be saved in the appsettings of the API, in the property `API.DatabasePasswordEncryptionKey`, so that Wiser can decrypt the password and use it the connection string.
 
+When using multi tenancy, all users in the module `Gebruikers - Wiser` of the main database will be seen as admin users. Admin users are special users that can login in any tenant as another of that tenant. When someone tries to login, Wiser will first see if that is a user from that particular tenant. If Wiser was not able to login the user via the tenant database, then Wiser will check if that user exists in the main database. If it does, the user will be logged in and will then see an extra step for logging in. In that step, the user sees a dropdown with all users of that tenant. They can then select any of those users and will then be logged in as that user.
+
 ## Roles and permissions
 You can use roles and permissions to manage what users can see and do in Wiser. At the moment we don't have a module for this yet, so they need to be added/changed manually in the database.
 
