@@ -75,7 +75,7 @@ namespace Api.Core.Services
         /// </summary>
         private bool IsMainDatabase()
         {
-            return String.IsNullOrWhiteSpace(subDomain) || String.Equals(subDomain, "main", StringComparison.OrdinalIgnoreCase);
+            return String.IsNullOrWhiteSpace(subDomain) || String.Equals(subDomain, CustomerConstants.MainSubDomain, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

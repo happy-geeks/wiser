@@ -16,6 +16,7 @@ using Api.Modules.Customers.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
+using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
@@ -30,6 +31,7 @@ namespace Api.Modules.Customers.Services
         #region Private fields
         
         private readonly IDatabaseConnection clientDatabaseConnection;
+        private readonly GclSettings gclSettings;
         private readonly ApiSettings apiSettings;
         private readonly IDatabaseConnection wiserDatabaseConnection;
 
@@ -38,9 +40,10 @@ namespace Api.Modules.Customers.Services
         /// <summary>
         /// Creates a new instance of WiserCustomersService.
         /// </summary>
-        public WiserCustomersService(IDatabaseConnection connection, IOptions<ApiSettings> apiSettings)
+        public WiserCustomersService(IDatabaseConnection connection, IOptions<ApiSettings> apiSettings, IOptions<GclSettings> gclSettings)
         {
             clientDatabaseConnection = connection;
+            this.gclSettings = gclSettings.Value;
             this.apiSettings = apiSettings.Value;
 
             if (clientDatabaseConnection is ClientDatabaseConnection databaseConnection)
@@ -53,9 +56,16 @@ namespace Api.Modules.Customers.Services
         public async Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity)
         {
             var subDomain = IdentityHelpers.GetSubDomain(identity);
-            if (String.IsNullOrWhiteSpace(subDomain))
+            if (IsMainDatabase(subDomain))
             {
-                throw new Exception("No sub domain found in identity!");
+                return new ServiceResult<CustomerModel>(new CustomerModel
+                {
+                    CustomerId = 1,
+                    Id = 1,
+                    Name = "Main",
+                    SubDomain = CustomerConstants.MainSubDomain,
+                    EncryptionKey = String.IsNullOrWhiteSpace(gclSettings.ExpiringEncryptionKey) ? gclSettings.DefaultEncryptionKey : gclSettings.ExpiringEncryptionKey
+                });
             }
 
             // Get the customer data.
@@ -66,13 +76,6 @@ namespace Api.Modules.Customers.Services
                             id,
                             customerid,
                             name,
-                            propertys,
-                            db_host,
-                            db_login,
-                            db_passencrypted,
-                            db_port,
-                            db_dbname,
-                            google_auth,
                             {(IdentityHelpers.IsTestEnvironment(identity) ? "encryption_key_test" : "encryption_key")} AS encryption_key,
                             subdomain
                         FROM {ApiTableNames.WiserCustomers} 
@@ -97,9 +100,9 @@ namespace Api.Modules.Customers.Services
         public async Task<ServiceResult<string>> GetEncryptionKey(ClaimsIdentity identity)
         {
             var subDomain = IdentityHelpers.GetSubDomain(identity);
-            if (String.IsNullOrWhiteSpace(subDomain))
+            if (IsMainDatabase(subDomain))
             {
-                throw new Exception("No sub domain found in identity!");
+                return new ServiceResult<string>(String.IsNullOrWhiteSpace(gclSettings.ExpiringEncryptionKey) ? gclSettings.DefaultEncryptionKey : gclSettings.ExpiringEncryptionKey);
             }
             
             // Get the customer data.
@@ -166,6 +169,11 @@ namespace Api.Modules.Customers.Services
                 throw new ArgumentNullException(nameof(subDomain));
             }
 
+            if (IsMainDatabase(subDomain))
+            {
+                return new ServiceResult<CustomerExistsResults>(CustomerExistsResults.NameNotAvailable & CustomerExistsResults.SubDomainNotAvailable);
+            }
+            
             // Get the customer data.
             wiserDatabaseConnection.ClearParameters();
             wiserDatabaseConnection.AddParameter("name", name);
@@ -304,27 +312,52 @@ namespace Api.Modules.Customers.Services
                 };
             }
 
-            wiserDatabaseConnection.ClearParameters();
-            wiserDatabaseConnection.AddParameter("subDomain", subDomain);
-
-            var dataTable = await wiserDatabaseConnection.GetAsync($"SELECT name, wiser_title FROM {ApiTableNames.WiserCustomers} WHERE subdomain = ?subdomain");
-            if (dataTable.Rows.Count == 0)
+            try
             {
-                return new ServiceResult<string>
+                wiserDatabaseConnection.ClearParameters();
+                wiserDatabaseConnection.AddParameter("subDomain", subDomain);
+
+                var dataTable = await wiserDatabaseConnection.GetAsync($"SELECT name, wiser_title FROM {ApiTableNames.WiserCustomers} WHERE subdomain = ?subdomain");
+                if (dataTable.Rows.Count == 0)
                 {
-                    StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = "No customer found with this sub domain",
-                    ReasonPhrase = "No customer found with this sub domain"
-                };
-            }
+                    return new ServiceResult<string>
+                    {
+                        StatusCode = HttpStatusCode.NotFound,
+                        ErrorMessage = "No customer found with this sub domain",
+                        ReasonPhrase = "No customer found with this sub domain"
+                    };
+                }
 
-            var result = dataTable.Rows[0].Field<string>("wiser_title");
-            if (String.IsNullOrWhiteSpace(result))
+                var result = dataTable.Rows[0].Field<string>("wiser_title");
+                if (String.IsNullOrWhiteSpace(result))
+                {
+                    result = dataTable.Rows[0].Field<string>("name");
+                }
+
+                return new ServiceResult<string>(result);
+            }
+            catch (MySqlException mySqlException)
             {
-                result = dataTable.Rows[0].Field<string>("name");
-            }
+                // If easy_customers does not exist, just return null.
+                if (mySqlException.Number is (int)MySqlErrorCode.UnknownTable or (int)MySqlErrorCode.NoSuchTable)
+                {
+                    return new ServiceResult<string>(null);
+                }
 
-            return new ServiceResult<string>(result);
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public bool IsMainDatabase(ClaimsIdentity identity)
+        {
+            return IsMainDatabase(IdentityHelpers.GetSubDomain(identity));
+        }
+        
+        /// <inheritdoc />
+        public bool IsMainDatabase(string subDomain)
+        {
+            return String.IsNullOrWhiteSpace(subDomain) || String.Equals(subDomain, CustomerConstants.MainSubDomain, StringComparison.OrdinalIgnoreCase);
         }
 
         #endregion
