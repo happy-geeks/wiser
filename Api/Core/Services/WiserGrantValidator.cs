@@ -53,7 +53,7 @@ namespace Api.Core.Services
             httpContextAccessor.HttpContext?.Items.Add(HttpContextConstants.SubDomainKey, subDomain);
 
             Dictionary<string, object> customResponse;
-            var adminAccountId = 0;
+            ulong adminAccountId = 0;
             string adminAccountName = null;
             var selectedUser = context.Request.Raw[HttpContextConstants.SelectedUserKey];
             var isTestEnvironment = context.Request.Raw[HttpContextConstants.IsTestEnvironmentKey];
@@ -138,7 +138,7 @@ namespace Api.Core.Services
             };
         }
 
-        private static IEnumerable<Claim> CreateClaimsList(UserModel user, string subDomain, int adminAccountId, string isTestEnvironment)
+        private static IEnumerable<Claim> CreateClaimsList(UserModel user, string subDomain, ulong adminAccountId, string isTestEnvironment)
         {
             var claimsIdentity = new List<Claim>
             {
