@@ -57,7 +57,7 @@ export class Grids {
         const initialProcess = `loadInformationBlock_${Date.now()}`;
 
         try {
-            jjl.processing.addProcess(initialProcess);
+            //jjl.processing.addProcess(initialProcess);
             const mainContainer = $("#wiser").addClass(`with-information-block information-${informationBlockSettings.position || "bottom"}`);
             const informationBlockContainer = $("#informationBlock").removeClass("hidden").addClass(informationBlockSettings.position || "bottom");
             if (informationBlockSettings.height) {
@@ -78,7 +78,7 @@ export class Grids {
 
             this.informationBlockIframe = $(`<iframe />`).appendTo(informationBlockContainer);
             this.informationBlockIframe[0].onload = () => {
-                jjl.processing.removeProcess(initialProcess);
+                //jjl.processing.removeProcess(initialProcess);
 
                 dynamicItems.grids.informationBlockIframe[0].contentDocument.addEventListener("dynamicItems.onSaveButtonClick", () => {
                     if (!this.mainGrid || !this.mainGrid.dataSource) {
@@ -126,7 +126,7 @@ export class Grids {
         } catch (exception) {
             kendo.alert("Er is iets fout gegaan tijdens het laden van de data voor deze module. Sluit a.u.b. de module en probeer het nogmaals, of neem contact op met ons.");
             console.error(exception);
-            jjl.processing.removeProcess(initialProcess);
+            //jjl.processing.removeProcess(initialProcess);
         }
 
         return hideGrid;
@@ -139,7 +139,7 @@ export class Grids {
         const initialProcess = `loadMainGrid_${Date.now()}`;
 
         try {
-            jjl.processing.addProcess(initialProcess);
+            //jjl.processing.addProcess(initialProcess);
             let gridViewSettings = $.extend({}, this.base.settings.gridViewSettings);
             let gridDataResult;
             let previousFilters = null;
@@ -400,7 +400,7 @@ export class Grids {
                                 if (this.mainGridFirstLoad) {
                                     transportOptions.success(gridDataResult);
                                     this.mainGridFirstLoad = false;
-                                    jjl.processing.removeProcess(initialProcess);
+                                    //jjl.processing.removeProcess(initialProcess);
                                     return;
                                 }
 
@@ -408,7 +408,7 @@ export class Grids {
                                     transportOptions.data = {};
                                 }
 
-                                jjl.processing.addProcess(process);
+                                //jjl.processing.addProcess(process);
 
                                 // If we're using the same filters as before, we don't need to count the total amount of results again, 
                                 // so we tell the API whether this is the case, so that it can skip the execution of the count query, to make scrolling through the grid faster.
@@ -454,7 +454,7 @@ export class Grids {
                                 kendo.alert("Er is iets fout gegaan tijdens het laden van de data voor deze module. Sluit a.u.b. de module en probeer het nogmaals, of neem contact op met ons.");
                             }
 
-                            jjl.processing.removeProcess(process);
+                            //jjl.processing.removeProcess(process);
                         }
                     },
                     schema: {
@@ -502,7 +502,7 @@ export class Grids {
         } catch (exception) {
             kendo.alert("Er is iets fout gegaan tijdens het laden van de data voor deze module. Sluit a.u.b. de module en probeer het nogmaals, of neem contact op met ons.");
             console.error(exception);
-            jjl.processing.removeProcess(initialProcess);
+            //jjl.processing.removeProcess(initialProcess);
         }
     }
 

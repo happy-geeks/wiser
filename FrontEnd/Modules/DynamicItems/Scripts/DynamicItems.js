@@ -207,11 +207,11 @@ const moduleSettings = {
 
             if (this.settings.createNewItem && this.settings.entityType) {
                 const process = `createNewItem_${Date.now()}`;
-                jjl.processing.addProcess(process);
+                //jjl.processing.addProcess(process);
                 const newItemResult = await this.createItem(this.settings.entityType, this.settings.parentId || this.settings.zeroEncrypted, "", 1, this.settings.newItemData || [], false, this.settings.moduleId);
                 this.settings.initialItemId = newItemResult.itemId;
                 await this.loadItem(newItemResult.itemId, 0, newItemResult.entity_type);
-                jjl.processing.removeProcess(process);
+                //jjl.processing.removeProcess(process);
             } else if (this.settings.initialItemId) {
                 this.loadItem(this.settings.initialItemId, 0, this.settings.entityType);
             }
@@ -776,7 +776,7 @@ const moduleSettings = {
         async onSaveButtonClick(event) {
             event.preventDefault();
             const process = `saveItem_${Date.now()}`;
-            jjl.processing.addProcess(process);
+            //jjl.processing.addProcess(process);
 
             try {
                 const itemId = this.selectedItem && this.selectedItem.id ? this.selectedItem.id : this.settings.initialItemId;
@@ -784,7 +784,7 @@ const moduleSettings = {
                 const title = $("#tabstrip .itemNameFieldContainer .itemNameField").val();
 
                 if (!this.mainValidator.validate()) {
-                    jjl.processing.removeProcess(process);
+                    //jjl.processing.removeProcess(process);
                     return false;
                 }
                 
@@ -794,7 +794,7 @@ const moduleSettings = {
                     window.parent.document.dispatchEvent(new CustomEvent("dynamicItems.onSaveButtonClick", { detail: updateItemResult }));
                 }
                 
-                jjl.processing.removeProcess(process);
+                //jjl.processing.removeProcess(process);
                 return true;
             } catch (exception) {
                 console.error(exception);
@@ -805,7 +805,7 @@ const moduleSettings = {
                     kendo.alert("Er is iets fout gegaan tijdens het opslaan van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
                 }
                 
-                jjl.processing.removeProcess(process);
+                //jjl.processing.removeProcess(process);
                 return false;
             }
         }
@@ -1358,7 +1358,7 @@ const moduleSettings = {
             await kendo.confirm("Weet u zeker dat u het verwijderen ongedaan wilt maken voor dit item?");
 
             const process = `undeleteItem_${Date.now()}`;
-            jjl.processing.addProcess(process);
+            //jjl.processing.addProcess(process);
 
             const popupWindowContainer = $(event.currentTarget).closest(".popup-container");
 
@@ -1395,7 +1395,7 @@ const moduleSettings = {
                 }
             }
 
-            jjl.processing.removeProcess(process);
+            //jjl.processing.removeProcess(process);
             popupWindowContainer.find(".popup-loader").removeClass("loading");
             popupWindowContainer.data("saving", false);
         }
@@ -1407,14 +1407,14 @@ const moduleSettings = {
          */
         async loadItem(itemId, tabToSelect = 0, entityType = null) {
             const process = `loadItem_${Date.now()}`;
-            jjl.processing.addProcess(process);
+            //jjl.processing.addProcess(process);
 
             // Set meta data of the selected item in the footer.
             try {
                 const itemMetaData = await this.base.addItemMetaData(itemId, entityType, $("#metaData"), false, $("#right-pane .entity-container"));
                 if (!itemMetaData) {
                     console.warn("No meta data found for item, the user probably doesn't have rights for it anymore.");
-                    jjl.processing.removeProcess(process);
+                    //jjl.processing.removeProcess(process);
                     return;
                 }
 
@@ -1528,7 +1528,7 @@ const moduleSettings = {
                 }
             }
 
-            jjl.processing.removeProcess(process);
+            //jjl.processing.removeProcess(process);
         }
 
         /**
@@ -1626,14 +1626,14 @@ const moduleSettings = {
         async addItemMetaData(itemId, entityType, metaDataContainer, isForItemWindow = false, mainFieldsContainer = null, callerWindow = null) {
             const process = `loadMetaData_${Date.now()}`;
             if (!isForItemWindow) {
-                jjl.processing.addProcess(process);
+                //jjl.processing.addProcess(process);
             }
 
             try {
                 const itemMetaData = await this.getItemMetaData(itemId, entityType);
                 if (!itemMetaData) {
                     console.warn("No meta data found for item, the user probably doesn't have rights for it anymore.");
-                    jjl.processing.removeProcess(process);
+                    //jjl.processing.removeProcess(process);
                     return null;
                 }
 
@@ -1741,7 +1741,7 @@ const moduleSettings = {
                 }
                 
                 if (!isForItemWindow) {
-                    jjl.processing.removeProcess(process);
+                    //jjl.processing.removeProcess(process);
                 }
 
                 return itemMetaData;
@@ -1749,7 +1749,7 @@ const moduleSettings = {
                 console.error(`Error while loading meta data for item ${itemId}:`, exception);
                 
                 if (!isForItemWindow) {
-                    jjl.processing.removeProcess(process);
+                    //jjl.processing.removeProcess(process);
                 }
 
                 throw exception;

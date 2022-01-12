@@ -6,6 +6,7 @@ module.exports = {
         main: "./main.js",
         Jjl: "./libraries/JuiceJavaScriptLibrary/JuiceJavascriptLibrary.js",
         Utils: "../../Modules/Base/Scripts/Utils.js",
+        Processing: "../../Modules/Base/Scripts/Processing.js",
         DynamicItems: "../../Modules/DynamicItems/Scripts/DynamicItems.js",
         Fields: "../../Modules/DynamicItems/Scripts/Fields.js",
         Dialogs: "../../Modules/DynamicItems/Scripts/Dialogs.js",

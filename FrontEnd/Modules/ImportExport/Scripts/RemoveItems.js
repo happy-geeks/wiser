@@ -107,7 +107,7 @@ export class RemoveItems {
 
         //Combox
         const process = `loadDropdowns_${Date.now()}`;
-        jjl.processing.addProcess(process);
+        //jjl.processing.addProcess(process);
 
         try {
             const promiseResults = await Promise.all([
@@ -135,7 +135,7 @@ export class RemoveItems {
             kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
         }
 
-        jjl.processing.removeProcess(process);
+        //jjl.processing.removeProcess(process);
 
         //Button
         $(context).find("#deleteItemsButton").kendoButton({
@@ -154,7 +154,7 @@ export class RemoveItems {
         let process = null;
         if (ownProcess) {
             process = `loadEntityProperties_${Date.now()}`;
-            jjl.processing.addProcess(process);
+            //jjl.processing.addProcess(process);
         }
 
         try {
@@ -179,7 +179,7 @@ export class RemoveItems {
         }
 
         if (ownProcess && process) {
-            jjl.processing.removeProcess(process);
+            //jjl.processing.removeProcess(process);
         }
     }
 

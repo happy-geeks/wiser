@@ -237,9 +237,9 @@ const moduleSettings = {
                     return;
                 }
 
-                jjl.processing.addProcess("createTaskAlerts");
+                //jjl.processing.addProcess("createTaskAlerts");
                 await this.createTaskAlerts();
-                jjl.processing.removeProcess("createTaskAlerts");
+                //jjl.processing.removeProcess("createTaskAlerts");
             });
 
             // Edit buttons and inputs.
@@ -257,9 +257,9 @@ const moduleSettings = {
                     return;
                 }
 
-                jjl.processing.addProcess("updateTaskAlert");
+                //jjl.processing.addProcess("updateTaskAlert");
                 await this.updateTaskAlert();
-                jjl.processing.removeProcess("updateTaskAlert");
+                //jjl.processing.removeProcess("updateTaskAlert");
             });
         }
 

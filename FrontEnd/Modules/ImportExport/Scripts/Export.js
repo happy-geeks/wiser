@@ -149,7 +149,7 @@ const exportModuleSettings = {
                     const fileName = `${dataItem.name}.xlsx`;
 
                     const process = `exportToExcel_${Date.now()}`;
-                    jjl.processing.addProcess(process);
+                    //jjl.processing.addProcess(process);
                     const result = await fetch(`${this.settings.getItemsUrl}/excel?encryptedDataSelectorId=${encodeURIComponent(dataSelectorId)}&fileName=${encodeURIComponent(fileName)}`, {
                         method: "POST",
                         headers: {
@@ -158,7 +158,7 @@ const exportModuleSettings = {
                         }
                     });
                     await Misc.downloadFile(result, fileName);
-                    jjl.processing.removeProcess(process);
+                    //jjl.processing.removeProcess(process);
                     break;
                 }
                 case "query": {
@@ -168,7 +168,7 @@ const exportModuleSettings = {
                     const fileName = `${dataItem.description}.xlsx`;
 
                     const process = `exportToExcel_${Date.now()}`;
-                    jjl.processing.addProcess(process);
+                    //jjl.processing.addProcess(process);
                     const result = await fetch(`${this.settings.getItemsUrl}/excel?queryid=${encodeURIComponent(queryId)}&fileName=${encodeURIComponent(fileName)}`, {
                         method: "POST",
                         headers: {
@@ -177,7 +177,7 @@ const exportModuleSettings = {
                         }
                     });
                     await Misc.downloadFile(result, fileName);
-                    jjl.processing.removeProcess(process);
+                    //jjl.processing.removeProcess(process);
                     break;
                 }
                 case "module": {
@@ -188,7 +188,7 @@ const exportModuleSettings = {
                     const fileName = `${dataItem.name}.xlsx`;
                     
                     const process = `exportToExcel_${Date.now()}`;
-                    jjl.processing.addProcess(process);
+                    //jjl.processing.addProcess(process);
                     const result = await fetch(`${this.settings.wiserApiRoot}modules/${moduleId}/export?fileName=${encodeURIComponent(fileName)}`, {
                         method: "GET",
                         headers: {
@@ -197,7 +197,7 @@ const exportModuleSettings = {
                         }
                     });
                     await Misc.downloadFile(result, fileName);
-                    jjl.processing.removeProcess(process);
+                    //jjl.processing.removeProcess(process);
                     break;
                 }
                 default:
@@ -233,7 +233,7 @@ const exportModuleSettings = {
 
             //COMBOBOX
             const process = `loadDropdowns_${Date.now()}`;
-            jjl.processing.addProcess(process);
+            //jjl.processing.addProcess(process);
 
             try {
                 const promiseResults = await Promise.all([
@@ -298,7 +298,7 @@ const exportModuleSettings = {
                 kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
             }
 
-            jjl.processing.removeProcess(process);
+            //jjl.processing.removeProcess(process);
 
             //BUTTONS
             $(context).find(".saveButton").kendoButton({

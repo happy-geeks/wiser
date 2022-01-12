@@ -83,7 +83,7 @@ export class Dialogs {
      */
     async loadAvailableEntityTypesInDropDown(parentId) {
         const process = `loadAvailableEntityTypesInDropDown_${Date.now()}`;
-        jjl.processing.addProcess(process);
+        //jjl.processing.addProcess(process);
 
         try {
             // Get available entity types, for creating new sub items.
@@ -95,7 +95,7 @@ export class Dialogs {
             kendo.alert("Er is iets fout gegaan met het ophalen van de beschikbare entiteitstypes voor deze module. Neem a.u.b. contact op met ons.");
         }
 
-        jjl.processing.removeProcess(process);
+        //jjl.processing.removeProcess(process);
     }
 
     /**
@@ -114,11 +114,11 @@ export class Dialogs {
             let value = 0;
             checkedElements.each((_, element) => value += parseInt(element.value));
             const process = `copyToEnvironment_${Date.now()}`;
-            jjl.processing.addProcess(process);
+            //jjl.processing.addProcess(process);
             this.base.copyToEnvironment(currentItemId, value).then((result) => {
                 this.base.notification.show({ message: "Succesvol opgeslagen" }, "success");
                 event.sender.element.data("currentItemWindow", null);
-                jjl.processing.removeProcess(process);
+                //jjl.processing.removeProcess(process);
                 if (!currentItemWindow) {
                     this.base.loadItem(result.encrypted_id, 0, result.entity_type);
                 } else {

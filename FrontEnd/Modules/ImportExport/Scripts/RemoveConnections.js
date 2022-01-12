@@ -97,7 +97,7 @@ export class RemoveConnections {
 
         //Dropdown
         const process = `loadDropdowns_${Date.now()}`;
-        jjl.processing.addProcess(process);
+        //jjl.processing.addProcess(process);
 
         try {
             const promiseResults = await Promise.all([
@@ -120,7 +120,7 @@ export class RemoveConnections {
             kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
         }
 
-        jjl.processing.removeProcess(process);
+        //jjl.processing.removeProcess(process);
 
         const promiseResults = await Promise.all([
             Wiser2.api({ url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false` })

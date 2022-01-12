@@ -154,7 +154,7 @@ const moduleSettings = {
                 try {
                     await this.dataLoad.loadById(Number.parseInt(loadId, 10));
                 } catch (e) {
-                    jjl.processing.removeProcess("dataSelectorLoad");
+                    //jjl.processing.removeProcess("dataSelectorLoad");
                     Wiser2.alert({
                         title: "Laden mislukt",
                         content: "Er is een fout opgetreden tijdens het laden van de data selector. Probeer het a.u.b. nogmaals."
@@ -199,7 +199,7 @@ const moduleSettings = {
                             cancel: "Nee"
                         }
                     }).result.done(() => {
-                        jjl.processing.addProcess("newDataSelector");
+                        //jjl.processing.addProcess("newDataSelector");
                         location.assign(`${location.pathname}?exportMode=${exportModeCheckbox.checked ? "true" : "false"}`);
                     }).fail(() => {
                         // Revert to previous state.
@@ -218,7 +218,7 @@ const moduleSettings = {
                             cancel: "Nee"
                         }
                     }).result.done(() => {
-                        jjl.processing.addProcess("newDataSelector");
+                        //jjl.processing.addProcess("newDataSelector");
                         location.assign(`${location.pathname}?exportMode=${exportModeCheckbox.checked ? "true" : "false"}`);
                     });
                 });
@@ -256,7 +256,7 @@ const moduleSettings = {
 
                     // Wrapping it into an anonymous function will allow for an async function to be called without needing to declare the outer function as async.
                     (async () => {
-                        jjl.processing.addProcess("getJsonResult");
+                        //jjl.processing.addProcess("getJsonResult");
                         try {
                             const resultJson = await this.getJsonResult();
                             this.jsonCodeMirrorEditor.getDoc().setValue(JSON.stringify(resultJson, null, 2));
@@ -267,7 +267,7 @@ const moduleSettings = {
                             });
                             console.error(e);
                         }
-                        jjl.processing.removeProcess("getJsonResult");
+                        //jjl.processing.removeProcess("getJsonResult");
                     })();
                 });
             }
@@ -285,7 +285,7 @@ const moduleSettings = {
 
                     // Wrapping it into an anonymous function will allow for an async function to be called without needing to declare the outer function as async.
                     (async () => {
-                        jjl.processing.addProcess("getQuery");
+                        //jjl.processing.addProcess("getQuery");
                         try {
                             const resultQuery = await this.getQuery();
                             this.queryCodeMirrorEditor.getDoc().setValue(resultQuery);
@@ -296,7 +296,7 @@ const moduleSettings = {
                             });
                             console.error(e);
                         }
-                        jjl.processing.removeProcess("getQuery");
+                        //jjl.processing.removeProcess("getQuery");
                     })();
                 });
             }
@@ -1090,24 +1090,24 @@ const moduleSettings = {
                 value: this.currentName,
                 visible: false
             }).getKendoPrompt().open().result.done((input) => {
-                jjl.processing.addProcess("checkSavedNameExists");
+                //jjl.processing.addProcess("checkSavedNameExists");
                 Wiser2.api({ url: `${this.settings.serviceRoot}/CHECK_DATA_SELECTOR_NAME_EXISTS?name=${encodeURIComponent(input)}` }).then((existsResult) => {
-                    jjl.processing.removeProcess("checkSavedNameExists");
+                    //jjl.processing.removeProcess("checkSavedNameExists");
 
                     if (!Wiser2.validateArray(existsResult) || existsResult[0].nameExists !== 1) {
                         this.currentName = input;
 
-                        jjl.processing.addProcess("dataSelectorSave");
+                        //jjl.processing.addProcess("dataSelectorSave");
                         this.save(input).then(
                             () => {
-                                jjl.processing.removeProcess("dataSelectorSave");
+                                //jjl.processing.removeProcess("dataSelectorSave");
                                 Wiser2.showMessage({
                                     title: "Opslaan succesvol",
                                     content: "De data selector is succesvol opgeslagen."
                                 });
                             },
                             () => {
-                                jjl.processing.removeProcess("dataSelectorSave");
+                                //jjl.processing.removeProcess("dataSelectorSave");
                                 Wiser2.alert({
                                     title: "Opslaan mislukt",
                                     content: "Er is een fout opgetreden tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals."
@@ -1128,17 +1128,17 @@ const moduleSettings = {
                     }).result.done(() => {
                         this.currentName = input;
 
-                        jjl.processing.addProcess("dataSelectorSave");
+                        //jjl.processing.addProcess("dataSelectorSave");
                         this.save(input).then(
                             () => {
-                                jjl.processing.removeProcess("dataSelectorSave");
+                                //jjl.processing.removeProcess("dataSelectorSave");
                                 Wiser2.showMessage({
                                     title: "Opslaan succesvol",
                                     content: "De data selector is succesvol opgeslagen."
                                 });
                             },
                             () => {
-                                jjl.processing.removeProcess("dataSelectorSave");
+                                //jjl.processing.removeProcess("dataSelectorSave");
                                 Wiser2.alert({
                                     title: "Opslaan mislukt",
                                     content: "Er is een fout opgetreden tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals."
@@ -1217,7 +1217,7 @@ const moduleSettings = {
             switch (data.action) {
                 case "save":
                     // Saves the data selector with the given name. Will overwrite without warning.
-                    jjl.processing.addProcess("dataSelectorSave");
+                    //jjl.processing.addProcess("dataSelectorSave");
                     try {
                         actionResult = await this.save(data.name);
                     } catch (e) {
@@ -1226,10 +1226,10 @@ const moduleSettings = {
                             content: "Er is een fout opgetreden tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals."
                         });
                     }
-                    jjl.processing.removeProcess("dataSelectorSave");
+                    //jjl.processing.removeProcess("dataSelectorSave");
                     break;
                 case "get-result":
-                    jjl.processing.addProcess("getJsonResult");
+                    //jjl.processing.addProcess("getJsonResult");
                     try {
                         actionResult = await this.getJsonResult();
                     } catch (e) {
@@ -1238,12 +1238,12 @@ const moduleSettings = {
                             content: "Er is een fout opgetreden tijdens het ophalen van het data selector resultaat. Probeer het a.u.b. nogmaals."
                         });
                     }
-                    jjl.processing.removeProcess("getJsonResult");
+                    //jjl.processing.removeProcess("getJsonResult");
                     break;
                 case "get-entity-type":
-                    jjl.processing.addProcess("getEntityType");
+                    //jjl.processing.addProcess("getEntityType");
                     actionResult = this.selectedEntityType;
-                    jjl.processing.removeProcess("getEntityType");
+                    //jjl.processing.removeProcess("getEntityType");
                     break;
             }
 

@@ -3838,7 +3838,7 @@
         }
     }
 
-    core.processing = {
+    /*core.processing = {
         currentProcesses: {},
         onIdleFns: [],
         tempFn: function () {
@@ -3904,7 +3904,7 @@
 
             core.processing.onIdleFns = [];
         }
-    };
+    };*/
 
     class JjlFormInput {
         constructor(inputElement, forceInstantValidate = null) {

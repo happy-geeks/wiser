@@ -491,13 +491,13 @@ export class Wiser2 {
                     return;
                 }
 
-                jjl.processing.addProcess(process);
+                //jjl.processing.addProcess(process);
 
                 // Get the settings.
                 const apiConnectionData = await Wiser2.api({ url: `${settings.wiserApiRoot}api-connections/${encodeURIComponent(apiConnectionId)}` });
                 if (!apiConnectionData || !apiConnectionData.options) {
                     reject("Er werd geprobeerd om een API aan te roepen, echter zijn er niet genoeg gegevens bekend. Neem a.u.b. contact op met ons.");
-                    jjl.processing.removeProcess(process);
+                    //jjl.processing.removeProcess(process);
                     return;
                 }
 
@@ -513,7 +513,7 @@ export class Wiser2 {
 
                 if (!apiOptions.baseUrl) {
                     reject("Er werd geprobeerd om een API aan te roepen, echter zijn er niet genoeg gegevens bekend. Neem a.u.b. contact op met ons.");
-                    jjl.processing.removeProcess(process);
+                    //jjl.processing.removeProcess(process);
                     return;
                 }
 
@@ -530,7 +530,7 @@ export class Wiser2 {
                             break;
                         default:
                             reject("Geen of onbekend authenticatie-type opgegeven. Neem a.u.b. contact op met ons.");
-                            jjl.processing.removeProcess(process);
+                            //jjl.processing.removeProcess(process);
                             return;
                     }
                 }
@@ -644,12 +644,12 @@ export class Wiser2 {
                 }
 
                 // We're done, handle the promise' success.
-                jjl.processing.removeProcess(process);
+                //jjl.processing.removeProcess(process);
                 success(allActionResults);
 
                 // Do the actual API call, after authentication.
             } catch (exception) {
-                jjl.processing.removeProcess(process);
+                //jjl.processing.removeProcess(process);
                 reject(exception);
             }
         });
