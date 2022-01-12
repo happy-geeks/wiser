@@ -147,7 +147,13 @@ export class Windows {
                     return;
                 }
 
-                const html = `<img src="${this.generateImagePreviewUrl()}" />`;
+                const html = `<figure>` +
+                    `<picture>` +
+                        `<source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('jpg')}" type="image/jpeg" />` +
+                        `<source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('webp')}" type="image/webp" />` +
+                        `<img width="100%" height="auto" loading="lazy" src="${this.generateImagePreviewUrl('jpg')}" />` +
+                    `</picture>` +
+                `</figure>`;
                 if (this.imagesUploaderSender.kendoEditor) {
                     this.imagesUploaderSender.kendoEditor.exec("inserthtml", { value: html });
                 }
@@ -1030,9 +1036,10 @@ export class Windows {
 
     /**
      * Generates the URL for the image preview for the imagesUploaderWindow.
+     * @param ext The extension of the image file
      * @returns {string} The URL for the preview image.
      */
-    generateImagePreviewUrl() {
+    generateImagePreviewUrl(ext) {
         const selectedItem = this.imagesUploaderWindowTreeView.dataItem(this.imagesUploaderWindowTreeView.select());
         let resizeMode = this.imagesUploaderWindow.element.find("#resizeMode").data("kendoDropDownList").value() || "normal";
         if (resizeMode === "crop" || resizeMode === "fill") {
@@ -1043,8 +1050,7 @@ export class Windows {
         const width = this.imagesUploaderWindow.element.find("#preferredWidth").val() || 0;
         const height = this.imagesUploaderWindow.element.find("#preferredHeight").val() || 0;
 
-        let result = `${this.base.settings.mainDomain}/image/wiser2/${selectedItem.plainId}/direct/${selectedItem.property_name}/${resizeMode}/${width}/${height}/${selectedItem.name}`;
-        return result.replace("//image", "/image");
+        return `${this.base.settings.mainDomain}/image/wiser2/${selectedItem.plainId}/direct/${selectedItem.property_name}/${resizeMode}/${width}/${height}/${selectedItem.name}.${ext}`;
     }
 
     /**
