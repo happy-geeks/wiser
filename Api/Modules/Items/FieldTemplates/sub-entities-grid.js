@@ -758,7 +758,8 @@ function generateGrid(data, model, columns) {
                     e.sender.dataSource.read();
                 });
             }
-        }
+        },
+        change: dynamicItems.grids.onGridSelectionChange.bind(dynamicItems.grids)
     }, options);
 
     kendoGridOptions.editable = editable;
