@@ -1271,6 +1271,14 @@ export class Grids {
         grid.dataSource.filter({});
     }
 
+    /**
+     * Event handler for when a user (de)selects one or more rows in a Kendo UI grid.
+     * @param {any} event
+     */
+    onGridSelectionChange(event) {
+        console.log("onGridSelectionChange", event);
+    }
+
     timeEditor(container, options) {
         $(`<input data-text-field="${options.field}" data-value-field="${options.field}" data-bind="value:${options.field}" data-format="${options.format}"/>`)
             .appendTo(container)
