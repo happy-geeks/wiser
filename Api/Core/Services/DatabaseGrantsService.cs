@@ -16,19 +16,23 @@ namespace Api.Core.Services
     public class DatabaseGrantsService : IDatabaseGrantsService, IScopedService
     {
         private readonly IDatabaseConnection clientDatabaseConnection;
+        private readonly IDatabaseHelpersService databaseHelpersService;
 
         /// <summary>
         /// Creates a new instance of DatabaseGrantsService.
         /// </summary>
-        public DatabaseGrantsService(IDatabaseConnection clientDatabaseConnection)
+        public DatabaseGrantsService(IDatabaseConnection clientDatabaseConnection, IDatabaseHelpersService databaseHelpersService)
         {
             this.clientDatabaseConnection = clientDatabaseConnection;
+            this.databaseHelpersService = databaseHelpersService;
         }
 
         /// <inheritdoc />
         public async Task<PersistedGrant> GetAsync(string key)
         {
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserGrantStore });
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("key", key);
             var query = $@"SELECT `key`, `type`, `client_id`, `data`, `subject_id`, `description`, `creation_time`, `expiration`, `session_id` FROM {WiserTableNames.WiserGrantStore} WHERE `key` = ?key";
@@ -56,7 +60,9 @@ namespace Api.Core.Services
         /// <inheritdoc />
         public async Task<IEnumerable<PersistedGrant>> GetAllAsync(PersistedGrantFilter filter)
         {
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserGrantStore });
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
             clientDatabaseConnection.ClearParameters();
             
             var query = $@"SELECT `key`, `type`, `client_id`, `data`, `subject_id`, `description`, `creation_time`, `expiration`, `session_id` FROM {WiserTableNames.WiserGrantStore} {CreateFiltersForQuery(filter)}";
@@ -80,7 +86,9 @@ namespace Api.Core.Services
         /// <inheritdoc />
         public async Task CreateAsync(PersistedGrant grant)
         {
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserGrantStore });
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("key", grant.Key);
             clientDatabaseConnection.AddParameter("type", grant.Type);
@@ -100,7 +108,9 @@ namespace Api.Core.Services
         /// <inheritdoc />
         public async Task UpdateAsync(string key, PersistedGrant grant)
         {
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserGrantStore });
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("key", grant.Key);
             clientDatabaseConnection.AddParameter("type", grant.Type);
@@ -121,7 +131,9 @@ namespace Api.Core.Services
         /// <inheritdoc />
         public async Task DeleteAsync(string key)
         {
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserGrantStore });
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("key", key);
             var query = $"DELETE FROM {WiserTableNames.WiserGrantStore} WHERE `key` = ?key";
@@ -131,7 +143,9 @@ namespace Api.Core.Services
         /// <inheritdoc />
         public async Task DeleteAllAsync(PersistedGrantFilter filter)
         {
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserGrantStore });
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
             clientDatabaseConnection.ClearParameters();
             
             var query = $@"DELETE FROM {WiserTableNames.WiserGrantStore} {CreateFiltersForQuery(filter)}";
