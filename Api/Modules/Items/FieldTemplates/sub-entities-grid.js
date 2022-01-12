@@ -226,7 +226,7 @@ function generateGrid(data, model, columns) {
         : { 
             name: "add", 
             text: "Nieuw", 
-            template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onNewSubEntityClick(\"{itemIdEncrypted}\", {itemId}, \"" + options.entityType + "\", \"\\#overviewGrid{propertyIdWithSuffix}\", " + !options.hideTitleColumn + ", \"" + (options.linkTypeNumber || "") + "\")'><span class='k-icon k-i-file-add'></span>" + options.entityType + " toevoegen</a>" 
+            template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onNewSubEntityClick(\"{itemIdEncrypted}\", \"" + options.entityType + "\", \"\\#overviewGrid{propertyIdWithSuffix}\", " + !options.hideTitleColumn + ", \"" + (options.linkTypeNumber || "") + "\")'><span class='k-icon k-i-file-add'></span>" + options.entityType + " toevoegen</a>" 
         });
     }
     
