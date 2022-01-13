@@ -376,7 +376,8 @@ export class Wiser2 {
                 content: text,
                 actions: [
                     {
-                        text: "Annuleren"
+                        text: "Annuleren",
+                        cssClass: "cancel-button"
                     },
                     {
                         text: "Verwijderen", 
