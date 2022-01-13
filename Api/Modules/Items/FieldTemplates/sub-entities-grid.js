@@ -240,12 +240,13 @@ function generateGrid(data, model, columns) {
     
     if (options.toolbar && options.toolbar.customActions && options.toolbar.customActions.length > 0) {
         for (var i = 0; i < options.toolbar.customActions.length; i++) {
-            var customAction = options.toolbar.customActions[i];
+            const customAction = options.toolbar.customActions[i];
+            const className = !customAction.allowNoSelection ? "hidden hide-when-no-selected-rows" : "";
             
             toolbar.push({
                 name: "customAction" + i.toString(),
                 text: customAction.text,
-                template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick(\"\\#overviewGrid{propertyIdWithSuffix}\", \"{itemIdEncrypted}\", {propertyId}, " + JSON.stringify(customAction) + ", event)' style='" + (kendo.htmlEncode(customAction.style || "")) + "'><span class='k-icon k-i-" + customAction.icon + "'></span>" + customAction.text + "</a>" 
+                template: `<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("\\#overviewGrid{propertyIdWithSuffix}", "{itemIdEncrypted}", {propertyId}, ${JSON.stringify(customAction)}, event)' style='${kendo.htmlEncode(customAction.style || "")}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>` 
             });
         }
     }
@@ -681,6 +682,9 @@ function generateGrid(data, model, columns) {
             }
         },
         dataBound: function(event) {
+            // To hide toolbar buttons that require a row to be selected.
+            dynamicItems.grids.onGridSelectionChange(event);
+
             // Setup any progress bars.
             event.sender.tbody.find(".progress").each(function(e) {
                 var row = $(this).closest("tr");

@@ -306,6 +306,7 @@ export class Grids {
             if (gridViewSettings.toolbar && gridViewSettings.toolbar.customActions && gridViewSettings.toolbar.customActions.length > 0) {
                 for (let i = 0; i < gridViewSettings.toolbar.customActions.length; i++) {
                     const customAction = gridViewSettings.toolbar.customActions[i];
+                    const className = !customAction.allowNoSelection ? "hidden hide-when-no-selected-rows" : "";
 
                     // Check permissions.
                     if (customAction.doesCreate && !this.base.settings.permissions.can_create) {
@@ -321,7 +322,7 @@ export class Grids {
                     toolbar.push({
                         name: `customAction${i.toString()}`,
                         text: customAction.text,
-                        template: `<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("\\#gridView", 0, 0, ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
+                        template: `<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("\\#gridView", 0, 0, ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
                     });
                 }
             }
@@ -476,7 +477,11 @@ export class Grids {
                     counterContainer.find(".counter").html(kendo.toString(totalCount, "n0"));
                     counterContainer.find(".plural").toggle(totalCount !== 1);
                     counterContainer.find(".singular").toggle(totalCount === 1);
+
+                    // To hide toolbar buttons that require a row to be selected.
+                    this.onGridSelectionChange(event);
                 },
+                change: this.onGridSelectionChange.bind(this),
                 resizable: true,
                 sortable: true,
                 scrollable: usingDataSelector ? true : {
@@ -1276,7 +1281,8 @@ export class Grids {
      * @param {any} event
      */
     onGridSelectionChange(event) {
-        console.log("onGridSelectionChange", event);
+        // Some buttons in the toolbar of a grid require that at least one row is selected. Hide these buttons while no row is selected.
+        event.sender.wrapper.find(".hide-when-no-selected-rows").toggleClass("hidden", event.sender.select().length === 0);
     }
 
     timeEditor(container, options) {
