@@ -130,8 +130,8 @@ const loginModule = {
                         return;
                     }
 
-                    localStorage.setItem("access_token", loginResult.data.access_token);
-                    localStorage.setItem("access_token_expires_on", loginResult.data.expires_on);
+                    localStorage.setItem("accessToken", loginResult.data.access_token);
+                    localStorage.setItem("accessTokenExpiresOn", loginResult.data.expires_on);
                     localStorage.setItem("userData", JSON.stringify(Object.assign({}, user, loginResult.data)));
                 }
 
@@ -163,8 +163,8 @@ const loginModule = {
                 return;
             }
 
-            localStorage.setItem("access_token", loginResult.data.access_token);
-            localStorage.setItem("access_token_expires_on", loginResult.data.expires_on);
+            localStorage.setItem("accessToken", loginResult.data.access_token);
+            localStorage.setItem("accessTokenExpiresOn", loginResult.data.expires_on);
             localStorage.setItem("userData", JSON.stringify(loginResult.data));
             window.main.api.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("access_token")}`;
 

@@ -26,7 +26,7 @@ export class RemoveConnections {
     async onPageReady() {
         // Add logged in user access token to default authorization headers for all jQuery ajax requests.
         $.ajaxSetup({
-            headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+            headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
         });
 
         this.mainLoader = $("#mainLoader");
@@ -147,7 +147,7 @@ export class RemoveConnections {
                 editor: (container, options) => {
                     $(`<input name="${options.field}" />`).appendTo(container).kendoDropDownList({
                         autoBind: false,
-                        dataTextField: "display_name",
+                        dataTextField: "displayName",
                         dataValueField: "id",
                         filter: "contains",
                         optionLabel: "Kies een entiteit",
@@ -166,8 +166,8 @@ export class RemoveConnections {
 
                     $(`<input name="${options.field}" />`).appendTo(container).kendoDropDownList({
                         autoBind: false,
-                        dataTextField: "display_name",
-                        dataValueField: "property_name",
+                        dataTextField: "displayName",
+                        dataValueField: "propertyName",
                         filter: "contains",
                         optionLabel: "Kies een eigenschap",
                         dataSource: {
@@ -243,7 +243,7 @@ export class RemoveConnections {
 
         let context = document.body;
         let request = {
-            file_path: this.importFilename
+            filePath: this.importFilename
         }
 
         if (this.numberOfColumns === 1) {
@@ -257,12 +257,12 @@ export class RemoveConnections {
                 return;
             }
 
-            request.delete_links_type = 0;
-            request.link_id = linkId;
+            request.deleteLinksType = 0;
+            request.linkId = linkId;
         }
         else if (this.numberOfColumns >= 1) {
-            request.delete_links_type = 1;
-            request.delete_settings = [];
+            request.deleteLinksType = 1;
+            request.deleteSettings = [];
 
             this.connectionsGrid.dataItems().forEach(item => {
                 if (item.entity === "" || item.matchTo === "") {
@@ -273,10 +273,10 @@ export class RemoveConnections {
                     return;
                 }
 
-                request.delete_settings.push({
+                request.deleteSettings.push({
                     column: item.column,
                     entity: item.entity,
-                    match_to: item.matchTo
+                    matchTo: item.matchTo
                 });
             });
         }

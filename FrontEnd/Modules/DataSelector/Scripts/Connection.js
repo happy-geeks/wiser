@@ -187,7 +187,7 @@
                 entityType = linkedToPropertySelect.dataItem().entityType;
             }
             
-            const response = await $.get(`${this.dataSelector.settings.serviceRoot}/GET_ENTITY_PROPERTIES?entity_name=${entityType}&use_export_mode=${this.dataSelector.useExportMode ? "1" : "0"}`);
+            const response = await $.get(`${this.dataSelector.settings.serviceRoot}/GET_ENTITY_PROPERTIES?entityName=${entityType}&useExportMode=${this.dataSelector.useExportMode ? "1" : "0"}`);
 
             // Create clone of "response" so it doesn't use the reference value, but a completely new object.
             // Although it's also possible to use "[...response]", this JSON trick works better as it also clones deep properties.
@@ -219,7 +219,7 @@
                 linkType = linkedToPropertySelect.dataItem().typeNumber;
             }
 
-            const response = await Wiser2.api({ url: `${this.dataSelector.settings.serviceRoot}/GET_ENTITY_LINK_PROPERTIES?link_type=${linkType}` });
+            const response = await Wiser2.api({ url: `${this.dataSelector.settings.serviceRoot}/GET_ENTITY_LINK_PROPERTIES?linkType=${linkType}` });
 
             // Create clone of "response" so it doesn't use the reference value, but a completely new object.
             // Although it's also possible to use "[...response]", this JSON trick works better as it also clones deep properties.
@@ -387,7 +387,7 @@
                         }
 
                         Wiser2.api({
-                            url: `${this.dataSelector.settings.serviceRoot}/${templateName}?entity_name=${selectedEntityType}`,
+                            url: `${this.dataSelector.settings.serviceRoot}/${templateName}?entityName=${selectedEntityType}`,
                             dataType: "json"
                         }).then((result) => {
                             const dataSource = [];

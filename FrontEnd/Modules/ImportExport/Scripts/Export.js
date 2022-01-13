@@ -56,7 +56,7 @@ const exportModuleSettings = {
             
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
-                headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
             });
 
             const html = await Wiser2.api({ url: "/Modules/ImportExport/Export/Html" });
@@ -69,7 +69,7 @@ const exportModuleSettings = {
             document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
             
             // Show an error if the user is no longer logged in.
-            const accessTokenExpires = localStorage.getItem("access_token_expires_on");
+            const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
                 Wiser2.alert({
                     title: "Niet ingelogd",
@@ -95,9 +95,9 @@ const exportModuleSettings = {
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
             
             const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot, this.settings.isTestEnvironment);
-            this.settings.userId = userData.encrypted_id;
-            this.settings.customerId = userData.encrypted_customer_id;
-            this.settings.zeroEncrypted = userData.zero_encrypted;
+            this.settings.userId = userData.encryptedId;
+            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.zeroEncrypted = userData.zeroEncrypted;
             
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
@@ -145,7 +145,7 @@ const exportModuleSettings = {
                 case "dataselector": {
                     const dropDownList = $("#DataSelectorList").data("kendoDropDownList");
                     const dataItem = dropDownList.dataItem();
-                    const dataSelectorId = dataItem.encrypted_id;
+                    const dataSelectorId = dataItem.encryptedId;
                     const fileName = `${dataItem.name}.xlsx`;
 
                     const process = `exportToExcel_${Date.now()}`;
@@ -154,7 +154,7 @@ const exportModuleSettings = {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            "Authorization": `Bearer ${localStorage.getItem("access_token")}`
+                            "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
                         }
                     });
                     await Misc.downloadFile(result, fileName);
@@ -164,7 +164,7 @@ const exportModuleSettings = {
                 case "query": {
                     const dropDownList = $("#QueryList").data("kendoDropDownList");
                     const dataItem = dropDownList.dataItem();
-                    const queryId = dataItem.encrypted_id;
+                    const queryId = dataItem.encryptedId;
                     const fileName = `${dataItem.description}.xlsx`;
 
                     const process = `exportToExcel_${Date.now()}`;
@@ -173,7 +173,7 @@ const exportModuleSettings = {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            "Authorization": `Bearer ${localStorage.getItem("access_token")}`
+                            "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
                         }
                     });
                     await Misc.downloadFile(result, fileName);
@@ -184,7 +184,7 @@ const exportModuleSettings = {
                     const dropDownList = $("#ModuleList").data("kendoDropDownList");
                     const dataItem = dropDownList.dataItem();
                     
-                    const moduleId = dataItem.module_id;
+                    const moduleId = dataItem.moduleId;
                     const fileName = `${dataItem.name}.xlsx`;
                     
                     const process = `exportToExcel_${Date.now()}`;
@@ -193,7 +193,7 @@ const exportModuleSettings = {
                         method: "GET",
                         headers: {
                             "Content-Type": "application/json",
-                            "Authorization": `Bearer ${localStorage.getItem("access_token")}`
+                            "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
                         }
                     });
                     await Misc.downloadFile(result, fileName);
@@ -286,7 +286,7 @@ const exportModuleSettings = {
 
                     $(context).find("#ModuleList").kendoDropDownList({
                         dataTextField: "name",
-                        dataValueField: "module_id",
+                        dataValueField: "moduleId",
                         dataSource: {
                             data: flatModulesList,
                             group: { field: "group" }
