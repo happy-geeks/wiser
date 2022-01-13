@@ -530,7 +530,15 @@ export class Fields {
         const element = $(event.currentTarget);
         const propertyName = element.closest(".item").data("propertyName");
         element.html(`${element.html()} <span class="property-name">(${propertyName})</span>`);
-        kendo.alert(`Property name: ${propertyName}`);
+
+        // Copy to clip board.
+        const copyText = document.createElement("input");
+        copyText.value = propertyName;
+        document.body.appendChild(copyText);
+        copyText.focus();
+        copyText.select();
+        document.execCommand("copy");
+        document.body.removeChild(copyText);
     }
 
     /**
