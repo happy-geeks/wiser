@@ -1,4 +1,4 @@
-﻿import { Wiser2 } from "../../Base/Scripts/Utils.js";
+﻿import { Utils, Wiser2 } from "../../Base/Scripts/Utils.js";
 
 require("@progress/kendo-ui/js/kendo.button.js");
 require("@progress/kendo-ui/js/kendo.window.js");
@@ -1380,8 +1380,8 @@ export class Windows {
                             const container = currentItemWindow.element.find(".right-pane-content-popup").html(tabData.html_template);
                             await this.base.loadKendoScripts(tabData.script_template);
                             $.globalEval(tabData.script_template);
-
-                            await jjl.utils.sleep(150);
+                            
+                            await Utils.sleep(150);
                             container.find("input").first().focus();
                         } else {
                             currentItemTabStrip.insertAfter({

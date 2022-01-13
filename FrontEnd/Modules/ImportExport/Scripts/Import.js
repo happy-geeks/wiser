@@ -1,4 +1,5 @@
 ﻿import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import "../../Base/Scripts/Processing.js";
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
@@ -79,7 +80,7 @@ const importModuleSettings = {
 
             this.mainLoader = $("#mainLoader");
 
-            // Setup JJL processing.
+            // Setup processing.
             document.addEventListener("processing.Busy", this.toggleMainLoader.bind(this, true));
             document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
 
@@ -428,7 +429,7 @@ const importModuleSettings = {
                     }
                 }
 
-                //jjl.processing.addProcess(process);
+                window.processing.addProcess(process);
 
                 button.enable(false);
                 const data = {
@@ -498,7 +499,7 @@ const importModuleSettings = {
             }
             
             button.enable(true);
-            //jjl.processing.removeProcess(process);
+            window.processing.removeProcess(process);
         }
 
         /**

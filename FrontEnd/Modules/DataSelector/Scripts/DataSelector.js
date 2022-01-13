@@ -1,5 +1,6 @@
 ﻿import { TrackJS } from "trackjs";
 import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import "../../Base/Scripts/Processing.js";
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
@@ -11,8 +12,6 @@ const moduleSettings = {
 };
 
 ((jQuery, moduleSettings) => {
-    window.jjl = window.jjl || {};
-
     class DataSelector {
         constructor(settings) {
             kendo.culture("nl-NL");
@@ -56,7 +55,7 @@ const moduleSettings = {
         async onPageReady() {
             this.mainLoader = $("#mainLoader");
 
-            // Setup JJL processing.
+            // Setup processing.
             document.addEventListener("processing.Busy", this.toggleMainLoader.bind(this, true));
             document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
 
@@ -154,7 +153,7 @@ const moduleSettings = {
                 try {
                     await this.dataLoad.loadById(Number.parseInt(loadId, 10));
                 } catch (e) {
-                    //jjl.processing.removeProcess("dataSelectorLoad");
+                    window.processing.removeProcess("dataSelectorLoad");
                     Wiser2.alert({
                         title: "Laden mislukt",
                         content: "Er is een fout opgetreden tijdens het laden van de data selector. Probeer het a.u.b. nogmaals."
@@ -199,7 +198,7 @@ const moduleSettings = {
                             cancel: "Nee"
                         }
                     }).result.done(() => {
-                        //jjl.processing.addProcess("newDataSelector");
+                        window.processing.addProcess("newDataSelector");
                         location.assign(`${location.pathname}?exportMode=${exportModeCheckbox.checked ? "true" : "false"}`);
                     }).fail(() => {
                         // Revert to previous state.
@@ -218,7 +217,7 @@ const moduleSettings = {
                             cancel: "Nee"
                         }
                     }).result.done(() => {
-                        //jjl.processing.addProcess("newDataSelector");
+                        window.processing.addProcess("newDataSelector");
                         location.assign(`${location.pathname}?exportMode=${exportModeCheckbox.checked ? "true" : "false"}`);
                     });
                 });
@@ -256,7 +255,7 @@ const moduleSettings = {
 
                     // Wrapping it into an anonymous function will allow for an async function to be called without needing to declare the outer function as async.
                     (async () => {
-                        //jjl.processing.addProcess("getJsonResult");
+                        window.processing.addProcess("getJsonResult");
                         try {
                             const resultJson = await this.getJsonResult();
                             this.jsonCodeMirrorEditor.getDoc().setValue(JSON.stringify(resultJson, null, 2));
@@ -267,7 +266,7 @@ const moduleSettings = {
                             });
                             console.error(e);
                         }
-                        //jjl.processing.removeProcess("getJsonResult");
+                        window.processing.removeProcess("getJsonResult");
                     })();
                 });
             }
@@ -285,7 +284,7 @@ const moduleSettings = {
 
                     // Wrapping it into an anonymous function will allow for an async function to be called without needing to declare the outer function as async.
                     (async () => {
-                        //jjl.processing.addProcess("getQuery");
+                        window.processing.addProcess("getQuery");
                         try {
                             const resultQuery = await this.getQuery();
                             this.queryCodeMirrorEditor.getDoc().setValue(resultQuery);
@@ -296,7 +295,7 @@ const moduleSettings = {
                             });
                             console.error(e);
                         }
-                        //jjl.processing.removeProcess("getQuery");
+                        window.processing.removeProcess("getQuery");
                     })();
                 });
             }
@@ -1090,24 +1089,24 @@ const moduleSettings = {
                 value: this.currentName,
                 visible: false
             }).getKendoPrompt().open().result.done((input) => {
-                //jjl.processing.addProcess("checkSavedNameExists");
+                window.processing.addProcess("checkSavedNameExists");
                 Wiser2.api({ url: `${this.settings.serviceRoot}/CHECK_DATA_SELECTOR_NAME_EXISTS?name=${encodeURIComponent(input)}` }).then((existsResult) => {
-                    //jjl.processing.removeProcess("checkSavedNameExists");
+                    window.processing.removeProcess("checkSavedNameExists");
 
                     if (!Wiser2.validateArray(existsResult) || existsResult[0].nameExists !== 1) {
                         this.currentName = input;
 
-                        //jjl.processing.addProcess("dataSelectorSave");
+                        window.processing.addProcess("dataSelectorSave");
                         this.save(input).then(
                             () => {
-                                //jjl.processing.removeProcess("dataSelectorSave");
+                                window.processing.removeProcess("dataSelectorSave");
                                 Wiser2.showMessage({
                                     title: "Opslaan succesvol",
                                     content: "De data selector is succesvol opgeslagen."
                                 });
                             },
                             () => {
-                                //jjl.processing.removeProcess("dataSelectorSave");
+                                window.processing.removeProcess("dataSelectorSave");
                                 Wiser2.alert({
                                     title: "Opslaan mislukt",
                                     content: "Er is een fout opgetreden tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals."
@@ -1128,17 +1127,17 @@ const moduleSettings = {
                     }).result.done(() => {
                         this.currentName = input;
 
-                        //jjl.processing.addProcess("dataSelectorSave");
+                        window.processing.addProcess("dataSelectorSave");
                         this.save(input).then(
                             () => {
-                                //jjl.processing.removeProcess("dataSelectorSave");
+                                window.processing.removeProcess("dataSelectorSave");
                                 Wiser2.showMessage({
                                     title: "Opslaan succesvol",
                                     content: "De data selector is succesvol opgeslagen."
                                 });
                             },
                             () => {
-                                //jjl.processing.removeProcess("dataSelectorSave");
+                                window.processing.removeProcess("dataSelectorSave");
                                 Wiser2.alert({
                                     title: "Opslaan mislukt",
                                     content: "Er is een fout opgetreden tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals."
@@ -1217,7 +1216,7 @@ const moduleSettings = {
             switch (data.action) {
                 case "save":
                     // Saves the data selector with the given name. Will overwrite without warning.
-                    //jjl.processing.addProcess("dataSelectorSave");
+                    window.processing.addProcess("dataSelectorSave");
                     try {
                         actionResult = await this.save(data.name);
                     } catch (e) {
@@ -1226,10 +1225,10 @@ const moduleSettings = {
                             content: "Er is een fout opgetreden tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals."
                         });
                     }
-                    //jjl.processing.removeProcess("dataSelectorSave");
+                    window.processing.removeProcess("dataSelectorSave");
                     break;
                 case "get-result":
-                    //jjl.processing.addProcess("getJsonResult");
+                    window.processing.addProcess("getJsonResult");
                     try {
                         actionResult = await this.getJsonResult();
                     } catch (e) {
@@ -1238,12 +1237,12 @@ const moduleSettings = {
                             content: "Er is een fout opgetreden tijdens het ophalen van het data selector resultaat. Probeer het a.u.b. nogmaals."
                         });
                     }
-                    //jjl.processing.removeProcess("getJsonResult");
+                    window.processing.removeProcess("getJsonResult");
                     break;
                 case "get-entity-type":
-                    //jjl.processing.addProcess("getEntityType");
+                    window.processing.addProcess("getEntityType");
                     actionResult = this.selectedEntityType;
-                    //jjl.processing.removeProcess("getEntityType");
+                    window.processing.removeProcess("getEntityType");
                     break;
             }
 

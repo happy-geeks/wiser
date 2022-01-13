@@ -1,5 +1,7 @@
 ﻿import { TrackJS } from "trackjs";
 import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import "../../Base/Scripts/Processing.js";
+
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
@@ -63,7 +65,7 @@ const moduleSettings = {
         async onPageReady() {
             this.mainLoader = $("#mainLoader");
 
-            // Setup JJL processing.
+            // Setup processing.
             document.addEventListener("processing.Busy", this.toggleMainLoader.bind(this, true));
             document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
 
@@ -237,9 +239,9 @@ const moduleSettings = {
                     return;
                 }
 
-                //jjl.processing.addProcess("createTaskAlerts");
+                window.processing.addProcess("createTaskAlerts");
                 await this.createTaskAlerts();
-                //jjl.processing.removeProcess("createTaskAlerts");
+                window.processing.removeProcess("createTaskAlerts");
             });
 
             // Edit buttons and inputs.
@@ -257,9 +259,9 @@ const moduleSettings = {
                     return;
                 }
 
-                //jjl.processing.addProcess("updateTaskAlert");
+                window.processing.addProcess("updateTaskAlert");
                 await this.updateTaskAlert();
-                //jjl.processing.removeProcess("updateTaskAlert");
+                window.processing.removeProcess("updateTaskAlert");
             });
         }
 

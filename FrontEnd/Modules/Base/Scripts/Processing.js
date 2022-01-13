@@ -1,67 +1,66 @@
 ﻿export class Processing {
-    static currentProcesses = {};
-    static onIdleFns = [];
+    constructor() {
+        this.currentProcesses = {};
+        this.onIdleFns = [];
+    }
 
-    static addProcess(processId, isBlocking = true) {
-        if (currentProcesses[processId]) {
+    addProcess(processId, isBlocking = true) {
+        if (this.currentProcesses[processId]) {
             console.warn("Cannot add process, id already exists");
             return;
         }
         
-        if (!busy()) {
-            // todo: send busy event
-            //core.debug.log("Event: processing.Busy");
+        if (!this.busy()) {
             document.dispatchEvent(new CustomEvent("processing.Busy"));
         }
-        currentProcesses[processId] = new JProcess(processId, isBlocking);
+        this.currentProcesses[processId] = new JProcess(processId, isBlocking);
     }
 
-    static removeProcess(processId) {
-        if (!currentProcesses[processId]) {
+    removeProcess(processId) {
+        if (!this.currentProcesses[processId]) {
             console.warn("Cannot remove process, id does not exist");
             return;
         }
 
-        delete currentProcesses[processId];
+        delete this.currentProcesses[processId];
 
-        if (Object.keys(currentProcesses).length < 1) {
-            //core.debug.log("Event: processing.Idle");
+        if (Object.keys(this.currentProcesses).length < 1) {
             document.dispatchEvent(new CustomEvent("processing.Idle"));
-            runOnIdleFns();
+            this.runOnIdleFns();
         }
     }
 
-    static busy(showActiveProcesses = false) {
-        if (Object.keys(currentProcesses).length > 0) {
-            if (showActiveProcesses) showProcesses();
+    busy(showActiveProcesses = false) {
+        if (Object.keys(this.currentProcesses).length > 0) {
+            if (showActiveProcesses) this.showProcesses();
             return true;
         } else {
             return false;
         }
     }
 
-    static showProcesses() {
+    showProcesses() {
         console.log("Active processes: " + Object.keys(this.currentProcesses).length + ":", currentProcesses);
     }
 
-    static clearProcesses() {
-        currentProcesses = {};
+    clearProcesses() {
+        this.currentProcesses = {};
     }
 
-    static onDone(fn) {
-        onIdleFns.push(fn);
+    onDone(fn) {
+        this.onIdleFns.push(fn);
 
-        if (!busy()) {
-            runOnIdleFns();
+        if (!this.busy()) {
+            this.runOnIdleFns();
         }
     }
 
-    static runOnIdleFns() {
+    runOnIdleFns() {
         for (let i = 0; i < this.onIdleFns.length; i++) {
-            onIdleFns[i]();
+            this.onIdleFns[i]();
         }
 
-        onIdleFns = [];
+        this.onIdleFns = [];
     }
 }
 
@@ -74,4 +73,6 @@ class JProcess {
     }
 }
 
-window.processing = Processing;
+if (window.processing == undefined) {
+    window.processing = new Processing();
+}

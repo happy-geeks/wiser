@@ -4,7 +4,6 @@ module.exports = {
     context: path.join(__dirname, "Core/Scripts"),
     entry: {
         main: "./main.js",
-        Jjl: "./libraries/JuiceJavaScriptLibrary/JuiceJavascriptLibrary.js",
         Utils: "../../Modules/Base/Scripts/Utils.js",
         Processing: "../../Modules/Base/Scripts/Processing.js",
         DynamicItems: "../../Modules/DynamicItems/Scripts/DynamicItems.js",
