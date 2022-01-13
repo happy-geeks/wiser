@@ -2075,7 +2075,7 @@ export class Fields {
                     previewWindow = $("#previewFrame").kendoWindow({
                         width: "90%",
                         height: "90%",
-                        actions: ["Maximize", "Close"],
+                        actions: ["Close"],
                         title: "Preview"
                     }).data("kendoWindow");
                 }

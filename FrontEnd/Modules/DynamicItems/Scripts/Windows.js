@@ -96,7 +96,7 @@ export class Windows {
             title: "History",
             visible: false,
             modal: true,
-            actions: ["Maximize", "Close"]
+            actions: ["Close"]
         }).data("kendoWindow");
 
         // Window for searching for items to link to another item.
@@ -106,7 +106,7 @@ export class Windows {
             title: "Item zoeken",
             visible: false,
             modal: true,
-            actions: ["Maximize", "Close"]
+            actions: ["Close"]
         }).data("kendoWindow");
 
         // Window for viewing a all generic images and for adding them into an HTML editor.
@@ -116,7 +116,7 @@ export class Windows {
             title: "Afbeeldingen",
             visible: false,
             modal: true,
-            actions: ["Maximize", "Close"],
+            actions: ["Close"],
             open: (event) => {
                 this.imagesUploaderWindowSplitter.resize(true);
 
