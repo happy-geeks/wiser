@@ -2076,9 +2076,7 @@ const moduleSettings = {
             return !result || !result.length ? 0 : result[0].apiConnectionId || 0;
         }
     }
-
-
-
+    
     // Initialize the DynamicItems class and make one instance of it globally available.
     window.dynamicItems = new DynamicItems(settings);
 })(moduleSettings);
