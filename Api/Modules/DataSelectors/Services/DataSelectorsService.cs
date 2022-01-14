@@ -11,7 +11,6 @@ using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.DataSelectors.Interfaces;
 using Api.Modules.DataSelectors.Models;
-using Api.Modules.Pdfs.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
