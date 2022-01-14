@@ -1,4 +1,5 @@
 ﻿import { Dates, Wiser2, Misc } from "../../Base/Scripts/Utils.js";
+import "../../Base/Scripts/Processing.js";
 import { DateTime } from "luxon";
 
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -35,6 +36,9 @@ export class Fields {
         // Bind tooltip click events.
         $("#right-pane").on("click", ".item h4.tooltip .info-link", this.onTooltipClick.bind(this, $("#infoPanel_main")));
         $("#right-pane").on("contextmenu", ".item > h4", this.onFieldLabelContextMenu.bind(this));
+
+        // Bind open link click event.
+        $("#right-pane").on("click", ".item .open-link", this.onOpenLinkClick.bind(this));
     }
 
     /**
@@ -501,7 +505,7 @@ export class Fields {
         }
 
         const process = `initializeDynamicFields_${Date.now()}`;
-        jjl.processing.addProcess(process);
+        window.processing.addProcess(process);
 
         try {
             await this.base.loadKendoScripts(tabFields.script);
@@ -514,7 +518,28 @@ export class Fields {
             kendo.alert("Er is iets fout gegaan tijdens het uitvoeren van scripts voor velden op dit tabblad. Neem a.u.b. contact op met ons.");
         }
 
-        jjl.processing.removeProcess(process);
+        window.processing.removeProcess(process);
+    }
+
+    /**
+     * Event that gets triggered when the user clicks the link-icon in a field containing an URL.
+     * @param {any} event
+     */
+    onOpenLinkClick(event) {
+        let openLinkDialog = $("#openLinkDialog").kendoDialog({
+            width: "500px",
+            buttonLayout: "normal",
+            title: "Deze URL openen?",
+            closable: true,
+            modal: false,
+            content: "<p>Wilt u deze URL in een nieuw venster openen of binnen Wiser?<p>",
+            actions: [
+                { text: 'Cancel' },
+                { text: 'Open in Wiser' },
+                { text: 'Open in een nieuw venster', primary: true }
+            ]
+        });
+        event.preventDefault();
     }
 
     /**
@@ -2060,7 +2085,7 @@ export class Fields {
             if (element && element.siblings(".grid-loader").length) {
                 element.siblings(".grid-loader").addClass("loading");
             } else {
-                jjl.processing.addProcess(process);
+                window.processing.addProcess(process);
             }
 
             try {
@@ -2244,7 +2269,7 @@ export class Fields {
                             }
 
                             const process = `convertHtmlToPdf_${Date.now()}`;
-                            jjl.processing.addProcess(process);
+                            window.processing.addProcess(process);
                             const pdfResult = await fetch(`${this.base.settings.wiserApiRoot}pdf/from-html`, {
                                 method: "POST",
                                 headers: {
@@ -2254,7 +2279,7 @@ export class Fields {
                                 body: JSON.stringify(pdfToHtmlData)
                             });
                             await Misc.downloadFile(pdfResult, pdfToHtmlData.file_name || "Pdf.pdf");
-                            jjl.processing.removeProcess(process);
+                            window.processing.removeProcess(process);
                         },
                         icon: "pdf"
                     });
@@ -2514,7 +2539,7 @@ export class Fields {
             if (element && element.siblings(".grid-loader").length) {
                 element.siblings(".grid-loader").removeClass("loading");
             } else {
-                jjl.processing.removeProcess(process);
+                window.processing.removeProcess(process);
             }
         });
     }

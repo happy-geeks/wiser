@@ -76,12 +76,35 @@
 }
 
 /* LINE-ICONS */
-.icon-line-pin-full:before {
+.icon-export:before,
+.icon-line-export:before {
     content: "\ea3a";
 }
 
-.icon-line-pin-empty:before {
+.icon-import:before,
+.icon-line-import:before {
     content: "\ea3b";
+}
+
+.icon-im-ex:before,
+.icon-line-im-ex:before {
+    content: "\ea3c";
+}
+
+.icon-line-pin-empty:before {
+    content: "\ea3d";
+}
+
+.icon-line-pin-full:before {
+    content: "\ea3e";
+}
+
+.icon-line-return:before {
+    content: "\ea3f";
+}
+
+.icon-line-returns:before {
+    content: "\ea40";
 }
 
 .icon-line-bug:before {
@@ -646,7 +669,8 @@
 }
 
 .icon-database:before {
-    content: "\e928";
+    //    content: "\e928";
+    content: "\e9e4";
 }
 
 .icon-date:before {
@@ -1110,7 +1134,8 @@
 }
 
 .icon-search:before {
-    content: "\e99a";
+    //    content: "\e99a";
+    content: "\e9f2";
 }
 
 .icon-seo:before {
