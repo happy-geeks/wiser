@@ -1,4 +1,5 @@
 ﻿import { DateTime } from "luxon";
+import "./Processing.js";
 window.$ = require("jquery");
 
 /**
@@ -9,6 +10,53 @@ $.expr[":"].contains = $.expr.createPseudo(function (arg) {
         return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
     };
 });
+
+export class Utils {
+    static sleep(sleepTimeInMs = 1000) {
+        return new Promise((resolve) => {
+            setTimeout(resolve, sleepTimeInMs);
+        });
+    }
+
+    /**
+         * Check whether element is an array
+         * @param {element} element
+         * @return boolean
+         */
+    static isArray(element) {
+        if (Array.isArray) {
+            if (Array.isArray(element)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            if (element instanceof Array) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    static toQueryString(obj, prependQuestionMarkOnData = false, arraySeparator = ",") {
+        let returnString = "";
+        let cnt = 0;
+        for (const key in obj) {
+            if (!obj.hasOwnProperty(key) || obj[key] === undefined) continue;
+
+            if (cnt > 0) {
+                returnString += "&";
+            }
+            cnt++;
+
+            const val = obj[key];
+
+            returnString += `${key}=${(Utils.isArray(val) ? val.join(arraySeparator) : val)}`;
+        }
+        return returnString.length === 0 ? "" : `${prependQuestionMarkOnData ? "?" : ""}${returnString}`;
+    }
+}
 
 /**
  * Main class.
@@ -491,13 +539,13 @@ export class Wiser2 {
                     return;
                 }
 
-                jjl.processing.addProcess(process);
+                window.processing.addProcess(process);
 
                 // Get the settings.
                 const apiConnectionData = await Wiser2.api({ url: `${settings.wiserApiRoot}api-connections/${encodeURIComponent(apiConnectionId)}` });
                 if (!apiConnectionData || !apiConnectionData.options) {
                     reject("Er werd geprobeerd om een API aan te roepen, echter zijn er niet genoeg gegevens bekend. Neem a.u.b. contact op met ons.");
-                    jjl.processing.removeProcess(process);
+                    window.processing.removeProcess(process);
                     return;
                 }
 
@@ -513,7 +561,7 @@ export class Wiser2 {
 
                 if (!apiOptions.baseUrl) {
                     reject("Er werd geprobeerd om een API aan te roepen, echter zijn er niet genoeg gegevens bekend. Neem a.u.b. contact op met ons.");
-                    jjl.processing.removeProcess(process);
+                    window.processing.removeProcess(process);
                     return;
                 }
 
@@ -530,7 +578,7 @@ export class Wiser2 {
                             break;
                         default:
                             reject("Geen of onbekend authenticatie-type opgegeven. Neem a.u.b. contact op met ons.");
-                            jjl.processing.removeProcess(process);
+                            window.processing.removeProcess(process);
                             return;
                     }
                 }
@@ -644,12 +692,12 @@ export class Wiser2 {
                 }
 
                 // We're done, handle the promise' success.
-                jjl.processing.removeProcess(process);
+                window.processing.removeProcess(process);
                 success(allActionResults);
 
                 // Do the actual API call, after authentication.
             } catch (exception) {
-                jjl.processing.removeProcess(process);
+                window.processing.removeProcess(process);
                 reject(exception);
             }
         });
