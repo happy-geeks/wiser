@@ -43,7 +43,6 @@ html, body {
             position: relative;
             animation-name: removed;
             animation-duration: 500ms;
-            /* animation-delay: .5s; */
             animation-timing-function: ease-in;
             animation-fill-mode: forwards;
         }
