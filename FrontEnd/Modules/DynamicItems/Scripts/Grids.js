@@ -295,6 +295,22 @@ export class Grids {
                 });
             }
 
+            if (!gridViewSettings.toolbar || !gridViewSettings.toolbar.hideButtonGroup) {
+                toolbar.push({
+                    name: "buttonGroup",
+                    text: "",
+                    template: `<div class='k-button-drop'>
+                                <span class='k-button-toggle k-button k-button-icontext'><span class='k-icon k-i-js'></span>Selectie acties</span>
+                                <div>
+                                    <a class='k-button' title='Pakbon maken' href='\\#' onclick=''><span>Pakbon maken</span></a>
+                                    <a class='k-button' title='PostNL Label maken' href='\\#' onclick=''><span>PostNL Label maken</span></a>
+                                    <a class='k-button' title='PostNL Label downloaden' href='\\#' onclick=''><span>PostNL Label downloaden</span></a>
+                                    <a class='k-button' title='PostNL Label (Dev omgeving)' href='\\#' onclick=''><span>PostNL Label (Dev omgeving)</span></a>
+                                    <a class='k-button' title='Verwijderen' href='\\#' onclick=''><span>Verwijderen</span></a>
+                                </div>
+                              </div>`
+                });
+            }
 
             if ((!gridViewSettings.toolbar || !gridViewSettings.toolbar.hideCreateButton) && this.base.settings.permissions.can_create) {
                 toolbar.push({
@@ -745,7 +761,13 @@ export class Grids {
                 template: `<a class='k-button k-button-icontext clear-all-filters' title='Alle filters wissen' href='\\#' onclick='return window.dynamicItems.grids.onClearAllFiltersClick(event)'><span class='k-icon k-i-filter-clear'></span></a>`
             });
         }
-
+        if (!options.toolbar || !options.toolbar.hideFullScreenButton) {
+            toolbar.push({
+                name: "fullScreen",
+                text: "",
+                template: `<a class='k-button k-button-icontext full-screen' title='Grid naar fullscreen' href='\\#' onclick=''><span class='k-icon k-i-wiser-maximize'></span></a>`
+            });
+        }
         if (element.data("kendoGrid")) {
             element.data("kendoGrid").destroy();
             element.empty();

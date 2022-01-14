@@ -223,10 +223,10 @@
 
 /* KENDO - CUSTOM CSS */
 .k-button {
-	font-family: var(--bold-txt);
-    font-size: 18px;
-    line-height: 18px;
-    padding: 12px 8px;
+	font-family: var(--medium-txt);
+	font-size: 14px;
+	line-height: 18px;
+	padding: 12px 8px;
 	text-transform: none;
 }
 .k-button-icontext .k-icon, 
@@ -235,7 +235,8 @@
 	margin: 0 8px 0 0;
 }
 .k-button-icontext .k-i-refresh,
-.k-button-icontext .k-i-filter-clear{
+.k-button-icontext .k-i-filter-clear,
+.k-button-icontext .k-i-wiser-maximize {
 	margin: 0;
 }
 #buttons > span,
@@ -311,10 +312,70 @@
 	padding: 0;
 }
 
+.k-button-drop {
+	position: relative;
+	z-index: 10;
+}
+.k-button-drop > div {
+	box-shadow: var(--drop-shadow);
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+	display: flex;
+	flex-direction: column;
+	background-color: var(--white-color);
+	top: 100%;
+	min-width: fit-content;
+	white-space: nowrap;
+	margin-top: 15px;
+	transition: all 200ms ease-in-out;
+}
+.k-button-drop:hover > span {
+	background-color: var(--white-color);
+}
+.k-button-drop:hover > div {
+	opacity: 1;
+	pointer-events: all;
+	margin-top: 0;
+}
+.k-button-drop > div .k-button {
+	background-color: transparent;
+	justify-content: flex-start;
+	padding: 0.3em 0.5em;
+	text-align: left;
+	width: 100%;
+}
+.k-button-drop > div .k-button:hover {
+	background-color: var(--lighter-color);
+}
+.k-button-drop > div .k-button span {
+	margin: inherit;
+}
+.k-grid .k-button-toggle {
+	padding-right: 50px;
+}
+.k-button-toggle:before {
+	content: "";
+	height: 6px;
+	width: 6px;
+	border-bottom: 1.5px solid var(--dark-txt);
+	border-left: 1.5px solid var(--dark-txt);
+	position: absolute;
+	display: block;
+	opacity: 1;
+	background: none;
+	transform: rotate(-45deg);
+	top: 16px;
+	right: 20px;
+	left: auto;
+}
+.k-button-toggle:hover:before {
+	opacity: 1;
+}
 
 /* KENDO - WINDOW */
 .k-window-titlebar {
-    padding: 16px;
+	padding: 16px;
 }
 .k-window-titlebar .k-window-title {
     font: 24px/43px "AvantGardeGothic-Bk", sans-serif;
@@ -1018,9 +1079,12 @@ span.k-input .k-input:hover {
 .item .k-grid .k-loading-mask {
     display: none;
 }
-.k-grid-toolbar, 
+.k-grid-toolbar {
+	overflow: visible;
+}
+.k-grid-toolbar,
 .k-grouping-header {
-    padding: .2em;
+	padding: .2em;
 }
 .k-header.k-grid-toolbar {
     border-color: var(--border-color);
@@ -1531,8 +1595,9 @@ k-filter-menu .k-autocomplete,
 .k-editor .k-i-wiser-html-source:before {
     content: "\e918";
 }
-.k-editor .k-i-wiser-maximize-editor:before {
-    content: "\e137";
+.k-editor .k-i-wiser-maximize-editor:before,
+.k-i-wiser-maximize:before {
+	content: "\e137";
 }
 .k-editor .k-i-wiser-minimize-editor:before {
     content: "\e139";
