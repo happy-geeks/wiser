@@ -1,15 +1,15 @@
 ﻿<script id="fileTemplate_{propertyIdWithSuffix}" type="text/x-kendo-template">
-    <div class="fileContainer" data-file-id="#= files[0].fileId || files[0].file_id #" data-item-id="#= files[0].itemId || files[0].item_id #" data-name="#= name #" data-title="#= files[0].title #">
+    <div class="fileContainer" data-file-id="#= files[0].fileId || files[0].fileId #" data-item-id="#= files[0].itemId || files[0].itemId #" data-name="#= name #" data-title="#= files[0].title #">
         <span class="k-file-extension-wrapper">
             <span class="k-file-extension">#= files[0].extension #</span>
         </span>
         <span class="k-file-id-wrapper">
-            <span class="k-fil-id"><span>ID:</span> <span class="fileId">#= files[0].fileId || files[0].file_id #</span></span>
+            <span class="k-fil-id"><span>ID:</span> <span class="fileId">#= files[0].fileId || files[0].fileId #</span></span>
         </span>
         <span class="k-file-name-size-wrapper">
-            <span class="k-file-name" title="#= name #"><span>Name:</span> <a href="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(files[0].itemId || files[0].item_id) #/files/#= encodeURIComponent(files[0].fileId || files[0].file_id) #/#= name #" target="_blank" class="name">#= name #</a> <a class="editName" href="\#"><span class="k-icon k-i-edit"></span></a></span>
+            <span class="k-file-name" title="#= name #"><span>Name:</span> <a href="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(files[0].itemId || files[0].itemId) #/files/#= encodeURIComponent(files[0].fileId || files[0].fileId) #/#= name #" target="_blank" class="name">#= name #</a> <a class="editName" href="\#"><span class="k-icon k-i-edit"></span></a></span>
             <span class="k-file-name"><span>Omschrijving:</span> <span class="title">#= files[0].title #</span> <a class="editTitle" href="\#"><span class="k-icon k-i-edit"></span></a></span>
-            <span class="k-file-name"><span>Datum:</span> <span class="fileDate">#= dynamicItems.settings.wiserVersion < 210 ? moment(files[0].added_on).format("dddd, D MMMM YYYY, HH:mm") : Dates.formatWiserDateString(files[0].added_on) #</span></span>
+            <span class="k-file-name"><span>Datum:</span> <span class="fileDate">#= dynamicItems.settings.wiserVersion < 210 ? moment(files[0].addedOn).format("dddd, D MMMM YYYY, HH:mm") : Dates.formatWiserDateString(files[0].addedOn) #</span></span>
             # if (size > 0) { # <span class="k-file-size">#= Strings.getTotalFileSizeMessage(size) #</span> # } #
         </span>
         <strong class="k-upload-status">

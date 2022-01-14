@@ -23,9 +23,9 @@ var options = $.extend({
                     dataType: "json",
                     url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(fieldOptions.queryId || dynamicItems.settings.zeroEncrypted) + "&itemLinkId={itemLinkId}&userType=" + encodeURIComponent(dynamicItems.settings.userType),
                     data: JSON.stringify(inputData)
-                }).then(function(dataResult) {
-                    console.log("read success - {title}", dataResult.other_data);
-                    kendoOptions.success(dataResult.other_data);
+                }).then(function (dataResult) {
+                    console.log("read success - {title}", dataResult.otherData);
+                    kendoOptions.success(dataResult.otherData);
                 }).catch(function(jqXHR, textStatus, errorThrown) {
                     console.log("read error - {title}", jqXHR, textStatus, errorThrown);
                     kendoOptions.error(jqXHR, textStatus, errorThrown);

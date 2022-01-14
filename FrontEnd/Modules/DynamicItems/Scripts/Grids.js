@@ -191,12 +191,12 @@ export class Grids {
                     $.globalEval(gridDataResult.extraJavascript);
                 }
             }
-
+            
             let disableOpeningOfItems = gridViewSettings.disableOpeningOfItems;
             if (!disableOpeningOfItems) {
                 if (gridDataResult.schemaModel && gridDataResult.schemaModel.fields) {
                     // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
-                    disableOpeningOfItems = !(gridDataResult.schemaModel.fields.encryptedId || gridDataResult.schemaModel.fields.encryptedId || gridDataResult.schemaModel.fields.encryptedid || gridDataResult.schemaModel.fields.idencrypted);
+                    disableOpeningOfItems = !(gridDataResult.schemaModel.fields.encryptedId || gridDataResult.schemaModel.fields.encrypted_id || gridDataResult.schemaModel.fields.encryptedid || gridDataResult.schemaModel.fields.idencrypted);
                 }
             }
 
@@ -225,7 +225,7 @@ export class Grids {
                         const mainItemDetails = this.mainGrid.dataItem($(event.currentTarget).closest("tr"));
                         await Wiser2.api({
                             method: "POST",
-                            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encryptedId || mainItemDetails.encryptedid || this.base.settings.zeroEncrypted)}/action-button/0?queryId=${encodeURIComponent(gridViewSettings.deleteItemQueryId)}&itemLinkId=${encodeURIComponent(mainItemDetails.linkId || mainItemDetails.linkId || 0)}`,
+                            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid || this.base.settings.zeroEncrypted)}/action-button/0?queryId=${encodeURIComponent(gridViewSettings.deleteItemQueryId)}&itemLinkId=${encodeURIComponent(mainItemDetails.linkId || mainItemDetails.linkId || 0)}`,
                             data: JSON.stringify(mainItemDetails),
                             contentType: "application/json"
                         });
@@ -603,7 +603,7 @@ export class Grids {
                 if (!options.disableOpeningOfItems) {
                     if (customQueryResults.schemaModel && customQueryResults.schemaModel.fields) {
                         // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
-                        options.disableOpeningOfItems = !(customQueryResults.schemaModel.fields.encryptedId || customQueryResults.schemaModel.fields.encryptedId || customQueryResults.schemaModel.fields.encryptedid || customQueryResults.schemaModel.fields.idencrypted);
+                        options.disableOpeningOfItems = !(customQueryResults.schemaModel.fields.encryptedId || customQueryResults.schemaModel.fields.encrypted_id || customQueryResults.schemaModel.fields.encryptedid || customQueryResults.schemaModel.fields.idencrypted);
                     }
                 }
 
@@ -664,13 +664,13 @@ export class Grids {
                             case "id":
                                 column.hidden = options.hideIdColumn || false;
                                 break;
-                            case "linkId":
+                            case "link_id":
                                 column.hidden = options.hideLinkIdColumn || false;
                                 break;
-                            case "entityType":
+                            case "entity_type":
                                 column.hidden = options.hideTypeColumn || false;
                                 break;
-                            case "publishedEnvironment":
+                            case "published_environment":
                                 column.hidden = options.hideEnvironmentColumn || false;
                                 break;
                             case "name":
@@ -683,7 +683,7 @@ export class Grids {
                 if (!options.disableOpeningOfItems) {
                     if (gridSettings.schemaModel && gridSettings.schemaModel.fields) {
                         // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
-                        options.disableOpeningOfItems = !(gridSettings.schemaModel.fields.encryptedId || gridSettings.schemaModel.fields.encryptedId || gridSettings.schemaModel.fields.encryptedid || gridSettings.schemModel.fields.idencrypted);
+                        options.disableOpeningOfItems = !(gridSettings.schemaModel.fields.encryptedId || gridSettings.schemaModel.fields.encrypted_id || gridSettings.schemaModel.fields.encryptedid || gridSettings.schemModel.fields.idencrypted);
                     }
                 }
 
@@ -926,8 +926,8 @@ export class Grids {
         const tableCell = $(event.currentTarget).closest("td");
         const column = grid.options.columns[tableCell.index()] || {};
 
-        let itemId = dataItem.id || dataItem.itemId || dataItem.itemid;
-        let encryptedId = dataItem.encryptedId || dataItem.encryptedid || dataItem.idencrypted;
+        let itemId = dataItem.id || dataItem.itemId || dataItem.itemid || dataItem.item_id;
+        let encryptedId = dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid || dataItem.idencrypted;
         const originalEncryptedId = encryptedId;
         let entityType = dataItem.entityType;
         let title = dataItem.title;
@@ -1117,7 +1117,7 @@ export class Grids {
         const tr = $(event.target).closest("tr"); // get the current table row (tr)
         // get the data bound to the current table row
         const dataItem = senderGrid.dataItem(tr);
-        let encryptedId = dataItem.encryptedId || dataItem.encryptedid;
+        let encryptedId = dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid;
 
         if (!encryptedId) {
             // If the clicked column has no field property (such as the command column), use the item ID of the main entity type.
@@ -1129,7 +1129,7 @@ export class Grids {
             }
 
             const itemDetails = (await this.base.getItemDetails(itemId))[0];
-            encryptedId = itemDetails.encryptedId || itemDetails.encryptedId || itemDetails.encryptedid;
+            encryptedId = itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid;
         }
 
         switch (deletionType.toLowerCase()) {
@@ -1191,7 +1191,7 @@ export class Grids {
                     }
 
                     try {
-                        await this.base.deleteItem(dataItem.encryptedId || dataItem.encryptedid, options.entityType);
+                        await this.base.deleteItem(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid, options.entityType);
                     } catch (exception) {
                         console.error(exception);
                         if (exception.status === 409) {

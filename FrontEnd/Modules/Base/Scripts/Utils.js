@@ -219,14 +219,14 @@ export class Wiser2 {
             
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
-                headers: { "Authorization": `Bearer ${newRefreshToken.accessToken}` }
+                headers: { "Authorization": `Bearer ${newRefreshToken.access_token}` }
             });
         }
 
         const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
         const user = JSON.parse(localStorage.getItem("userData"));
         if (settings.url.indexOf("/connect/token") === -1 && (!accessTokenExpires || new Date(accessTokenExpires) <= new Date())) {
-            if (!user || !user.refreshToken) {
+            if (!user || !user.refresh_token) {
                 console.error("No refresh token found!");
 
                 // If we have no refresh token for some reason, logout the user.
@@ -245,25 +245,25 @@ export class Wiser2 {
                     url: wiserSettings.wiserApiAuthenticationUrl,
                     method: "POST",
                     data: {
-                        "grantType": "refresh_token",
-                        "refreshToken": user.refreshToken,
+                        "grant_type": "refresh_token",
+                        "refresh_token": user.refresh_token,
                         "subDomain": wiserSettings.subDomain,
-                        "clientId": wiserSettings.apiClientId,
-                        "clientSecret": wiserSettings.apiClientSecret,
+                        "client_id": wiserSettings.apiClientId,
+                        "client_secret": wiserSettings.apiClientSecret,
                         "isTestEnvironment": wiserSettings.isTestEnvironment
                     }
                 });
 
-                refreshTokenResult.expiresOn = new Date(new Date().getTime() + (refreshTokenResult.expiresIn * 1000));
+                refreshTokenResult.expiresOn = new Date(new Date().getTime() + (refreshTokenResult.expires_in * 1000));
                 refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true;
 
-                localStorage.setItem("accessToken", refreshTokenResult.accessToken);
+                localStorage.setItem("accessToken", refreshTokenResult.access_token);
                 localStorage.setItem("accessTokenExpiresOn", refreshTokenResult.expiresOn);
                 localStorage.setItem("userData", JSON.stringify(Object.assign({}, user, refreshTokenResult)));
 
                 // Add logged in user access token to default authorization headers for all jQuery ajax requests.
                 $.ajaxSetup({
-                    headers: { "Authorization": `Bearer ${refreshTokenResult.accessToken}` }
+                    headers: { "Authorization": `Bearer ${refreshTokenResult.access_token}` }
                 });
 
                 resolve(refreshTokenResult);
@@ -411,9 +411,9 @@ export class Wiser2 {
 
         let output = input.replace(/{itemTitle}/gi, !uriEncodeValues ? itemDetails.title : encodeURIComponent(itemDetails.title));
         output = output.replace(/{itemId}/gi, !uriEncodeValues ? itemDetails.id : encodeURIComponent(itemDetails.id));
-        output = output.replace(/{encryptedId}/gi, !uriEncodeValues ? (itemDetails.encryptedId || itemDetails.encryptedId || itemDetails.encryptedid) : encodeURIComponent(itemDetails.encryptedId || itemDetails.encryptedId || itemDetails.encryptedid));
-        output = output.replace(/{environment}/gi, !uriEncodeValues ? itemDetails.publishedEnvironment : encodeURIComponent(itemDetails.publishedEnvironment));
-        output = output.replace(/{entityType}/gi, !uriEncodeValues ? itemDetails.entityType : encodeURIComponent(itemDetails.entityType));
+        output = output.replace(/{encryptedId}/gi, !uriEncodeValues ? (itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid) : encodeURIComponent(itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid));
+        output = output.replace(/{environment}/gi, !uriEncodeValues ? (itemDetails.publishedEnvironment || itemDetails.published_environment) : (encodeURIComponent(itemDetails.publishedEnvironment) || encodeURIComponent(itemDetails.published_environment)));
+        output = output.replace(/{entityType}/gi, !uriEncodeValues ? (itemDetails.entityType || itemDetails.entity_type) : (encodeURIComponent(itemDetails.entityType) || encodeURIComponent(itemDetails.entity_type)));
 
         if (itemDetails.details && !itemDetails.property_) {
             itemDetails.property_ = {};
@@ -547,7 +547,7 @@ export class Wiser2 {
                     if (action.preRequestQueryId && itemDetails) {
                         const queryResult = await Wiser2.api({
                             method: "POST",
-                            url: `${settings.wiserApiRoot}items/${encodeURIComponent(itemDetails.encryptedId || itemDetails.encryptedId || itemDetails.encryptedid)}/action-button/0?queryId=${encodeURIComponent(action.preRequestQueryId)}&itemLinkId=${encodeURIComponent(itemDetails.linkId || itemDetails.linkId || 0)}`,
+                            url: `${settings.wiserApiRoot}items/${encodeURIComponent(itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid)}/action-button/0?queryId=${encodeURIComponent(action.preRequestQueryId)}&itemLinkId=${encodeURIComponent(itemDetails.linkId || itemDetails.link_id || 0)}`,
                             data: !extraData ? null : JSON.stringify(extraData),
                             contentType: "application/json"
                         });
@@ -634,7 +634,7 @@ export class Wiser2 {
                     if (action.postRequestQueryId && itemDetails) {
                         const postRequestQueryResult = await Wiser2.api({
                             method: "POST",
-                            url: `${settings.wiserApiRoot}items/${encodeURIComponent(itemDetails.encryptedId || itemDetails.encryptedId || itemDetails.encryptedid)}/action-button/0?queryId=${encodeURIComponent(action.postRequestQueryId)}&itemLinkId=${encodeURIComponent(itemDetails.linkId || itemDetails.linkId || 0)}`,
+                            url: `${settings.wiserApiRoot}items/${encodeURIComponent(itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid)}/action-button/0?queryId=${encodeURIComponent(action.postRequestQueryId)}&itemLinkId=${encodeURIComponent(itemDetails.linkId || itemDetails.link_id || 0)}`,
                             data: !apiResults ? null : JSON.stringify(apiResults),
                             contentType: "application/json"
                         });
@@ -684,17 +684,17 @@ export class Wiser2 {
 
                 if (authenticationData.refreshToken) {
                     console.log(`[doApiCall] - We have a refresh token, so using that to get a new access token and a new refresh token.`);
-                    authenticationRequest.data.refreshToken = authenticationData.refreshToken;
-                    authenticationRequest.data.grantType = "refresh_token";
+                    authenticationRequest.data.refresh_token = authenticationData.refreshToken;
+                    authenticationRequest.data.grant_type = "refresh_token";
                 } else {
                     console.log(`[doApiCall] - We have no refresh token, but we do have an authentication code, using that to get access token and refresh token.`);
-                    authenticationRequest.data.redirectUri = apiOptions.authentication.callBackUrl;
+                    authenticationRequest.data.redirect_uri = apiOptions.authentication.callBackUrl;
                     authenticationRequest.data.code = authenticationData.authenticationToken;
-                    authenticationRequest.data.grantType = "authorization_code";
+                    authenticationRequest.data.grant_type = "authorization_code";
                 }
 
-                authenticationRequest.data.clientId = apiOptions.authentication.clientId;
-                authenticationRequest.data.clientSecret = apiOptions.authentication.clientSecret;
+                authenticationRequest.data.client_id = apiOptions.authentication.clientId;
+                authenticationRequest.data.client_secret = apiOptions.authentication.clientSecret;
 
                 console.log("Do ajax request:", authenticationRequest);
                 const authenticationResult = await $.ajax(authenticationRequest);

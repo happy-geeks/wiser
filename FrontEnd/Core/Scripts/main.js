@@ -213,7 +213,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
 
                     openModule(module) {
                         if (typeof module === "number") {
-                            module = this.modules.find(m => m.module_id === module);
+                            module = this.modules.find(m => m.moduleId === module);
                         }
                         if (typeof(module.queryString) === "undefined") {
                             module.queryString = "";
@@ -235,7 +235,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
 
                     async openCustomerManagement() {
                         this.openModule({
-                            module_id: "customerManagement",
+                            moduleId: "customerManagement",
                             name: "Klant toevoegen",
                             type: "customerManagement",
                             javascriptOnly: true
@@ -260,11 +260,11 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
 
                         if (!this.listOfEntityTypes || !this.listOfEntityTypes.length) {
                             this.openModule({
-                                module_id: `wiserItem_${this.wiserIdPromptValue}`,
+                                moduleId: `wiserItem_${this.wiserIdPromptValue}`,
                                 name: `Wiser item #${this.wiserIdPromptValue}`,
                                 type: "dynamicItems",
                                 iframe: true,
-                                item_id: encryptedId,
+                                itemId: encryptedId,
                                 fileName: "",
                                 queryString: `?moduleId=0&iframe=true&itemId=${encodeURIComponent(encryptedId)}`
                             });
@@ -273,11 +273,11 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                             this.wiserEntityTypePromptValue = null;
                         } else if (this.listOfEntityTypes.length === 1) {
                             this.openModule({
-                                module_id: `wiserItem_${this.wiserIdPromptValue}_${this.listOfEntityTypes[0].id}`,
+                                moduleId: `wiserItem_${this.wiserIdPromptValue}_${this.listOfEntityTypes[0].id}`,
                                 name: `Wiser item #${this.wiserIdPromptValue} (${this.listOfEntityTypes[0].display_name})`,
                                 type: "dynamicItems",
                                 iframe: true,
-                                item_id: encryptedId,
+                                itemId: encryptedId,
                                 fileName: "",
                                 queryString: `?moduleId=0&iframe=true&itemId=${encodeURIComponent(encryptedId)}&entityType=${encodeURIComponent(this.listOfEntityTypes[0].id)}`
                             });
@@ -288,11 +288,11 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                             this.openWiserEntityTypePrompt();
                         } else {
                             this.openModule({
-                                module_id: `wiserItem_${this.wiserIdPromptValue}_${this.wiserEntityTypePromptValue.id}`,
-                                name: `Wiser item #${this.wiserIdPromptValue} (${this.wiserEntityTypePromptValue.display_name})`,
+                                moduleId: `wiserItem_${this.wiserIdPromptValue}_${this.wiserEntityTypePromptValue.id}`,
+                                name: `Wiser item #${this.wiserIdPromptValue} (${this.wiserEntityTypePromptValue.displayName})`,
                                 type: "dynamicItems",
                                 iframe: true,
-                                item_id: encryptedId,
+                                itemId: encryptedId,
                                 fileName: "",
                                 queryString: `?moduleId=0&iframe=true&itemId=${encodeURIComponent(encryptedId)}&entityType=${encodeURIComponent(this.wiserEntityTypePromptValue.id)}`
                             });

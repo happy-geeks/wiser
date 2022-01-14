@@ -113,29 +113,29 @@ const loginModule = {
 
             // Check if we have user data in the local storage and if that data is still valid.
             if (!user) {
-                const accessTokenExpires = localStorage.getItem("access_token_expires_on");
+                const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
 
                 // User is still logged in.
                 const user = JSON.parse(localStorage.getItem("userData"));
 
                 if (data.gotUnauthorized || !accessTokenExpires || new Date(accessTokenExpires) <= new Date() || user.requirePasswordChange) {
-                    if (!user || !user.refresh_token || user.requirePasswordChange) {
+                    if (!user || !user.refreshToken || user.requirePasswordChange) {
                         this.dispatch(AUTH_LOGOUT);
                         return;
                     }
 
-                    const loginResult = await main.usersService.refreshToken(user.refresh_token);
+                    const loginResult = await main.usersService.refreshToken(user.refreshToken);
                     if (!loginResult.success) {
                         this.dispatch(AUTH_LOGOUT);
                         return;
                     }
 
                     localStorage.setItem("accessToken", loginResult.data.access_token);
-                    localStorage.setItem("accessTokenExpiresOn", loginResult.data.expires_on);
+                    localStorage.setItem("accessTokenExpiresOn", loginResult.data.expiresOn);
                     localStorage.setItem("userData", JSON.stringify(Object.assign({}, user, loginResult.data)));
                 }
 
-                window.main.api.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("access_token")}`;
+                window.main.api.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("accessToken")}`;
 
                 user.loggedIn = true;
 
@@ -164,9 +164,9 @@ const loginModule = {
             }
 
             localStorage.setItem("accessToken", loginResult.data.access_token);
-            localStorage.setItem("accessTokenExpiresOn", loginResult.data.expires_on);
+            localStorage.setItem("accessTokenExpiresOn", loginResult.data.expiresOn);
             localStorage.setItem("userData", JSON.stringify(loginResult.data));
-            window.main.api.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("access_token")}`;
+            window.main.api.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("accessToken")}`;
 
             loginResult.data.loggedIn = true;
 
@@ -183,8 +183,8 @@ const loginModule = {
         },
 
         [AUTH_LOGOUT]({ commit }) {
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("access_token_expires_on");
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("accessTokenExpiresOn");
             localStorage.removeItem("userData");
             sessionStorage.removeItem("userSettings");
             delete window.main.api.defaults.headers.common["Authorization"];
@@ -265,7 +265,7 @@ const modulesModule = {
 
         [OPEN_MODULE]: (state, module) => {
             // Check if this module is already open.
-            let activeModule = state.openedModules.filter(m => m.module_id === module.module_id)[0];
+            let activeModule = state.openedModules.filter(m => m.moduleId === module.moduleId)[0];
 
             // Add the module to the list if it isn't open yet.
             if (!activeModule) {
@@ -287,7 +287,7 @@ const modulesModule = {
         },
         [CLOSE_MODULE]: (state, module) => {
             // Do some pre checks.
-            const moduleToClose = state.openedModules.filter(m => m.module_id === module.module_id)[0];
+            const moduleToClose = state.openedModules.filter(m => m.moduleId === module.moduleId)[0];
             if (!moduleToClose) {
                 return;
             }
@@ -301,9 +301,9 @@ const modulesModule = {
             state.openedModules.splice(moduleIndex, 1);
 
             // If the module that was closed was the active module, set the last opened module as active.
-            if (state.activeModule === moduleToClose.module_id) {
+            if (state.activeModule === moduleToClose.moduleId) {
                 if (state.openedModules.length > 0) {
-                    state.activeModule = state.openedModules[state.openedModules.length - 1].module_id;
+                    state.activeModule = state.openedModules[state.openedModules.length - 1].moduleId;
                 } else {
                     state.activeModule = null;
                 }
@@ -327,7 +327,7 @@ const modulesModule = {
             commit(OPEN_MODULE, module);
 
             // Set the newly opened module to active.
-            commit(ACTIVATE_MODULE, module.module_id);
+            commit(ACTIVATE_MODULE, module.moduleId);
         },
 
         [CLOSE_MODULE]({ commit }, module) {

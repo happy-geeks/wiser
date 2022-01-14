@@ -409,7 +409,7 @@ const moduleSettings = {
          */
         onShowDetailsClick(event) {
             const dataItem = this.resultsGrid.dataItem($(event.currentTarget).closest("tr"));
-            this.openDynamicItem(dataItem.encryptedId || dataItem.encryptedId || dataItem.encryptedid, dataItem.moduleId || dataItem.moduleid || dataItem.moduleId, dataItem.entityType);
+            this.openDynamicItem(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid, dataItem.moduleId || dataItem.moduleid || dataItem.moduleId, dataItem.entityType);
         }
     }
 

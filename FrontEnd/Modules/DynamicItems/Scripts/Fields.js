@@ -1060,7 +1060,7 @@ export class Fields {
                                             const comboBox = dialog.element.find("select").data("kendoComboBox");
                                             const dataItem = comboBox.dataItem();
                                             // Decode here to prevent duplicate encoding, because the JCL already encodes the value and then javascript will do it again later.
-                                            value = decodeURIComponent(dataItem.encryptedId || dataItem.encryptedid || dataItem.encryptedId || comboBox.value());
+                                            value = decodeURIComponent(dataItem.encryptedId || dataItem.encryptedid || dataItem.encrypted_id || comboBox.value());
                                             break;
                                         }
                                     case "dropdownlist":
@@ -1068,14 +1068,14 @@ export class Fields {
                                             const comboBox = dialog.element.find("select").data("kendoDropDownList");
                                             const dataItem = comboBox.dataItem();
                                             // Decode here to prevent duplicate encoding, because the JCL already encodes the value and then javascript will do it again later.
-                                            value = decodeURIComponent(dataItem.encryptedId || dataItem.encryptedid || dataItem.encryptedId || comboBox.value());
+                                            value = decodeURIComponent(dataItem.encryptedId || dataItem.encryptedid || dataItem.encrypted_id || comboBox.value());
                                             break;
                                         }
                                     case "multiselect":
                                         {
                                             const multiSelect = dialog.element.find("select").data("kendoMultiSelect");
                                             const dataItems = multiSelect.dataItems();
-                                            const encryptedIds = dataItems.filter(i => i.encryptedId || i.encryptedid || i.encryptedId).map(i => i.encryptedId || i.encryptedid || i.encryptedId);
+                                            const encryptedIds = dataItems.filter(i => i.encryptedId || i.encryptedid || i.encrypted_id).map(i => i.encryptedId || i.encryptedid || i.encrypted_id);
                                             // Decode here to prevent duplicate encoding, because the JCL already encodes the value and then javascript will do it again later.
                                             value = decodeURIComponent((encryptedIds.length > 0 ? encryptedIds : multiSelect.value()).join());
                                             break;
@@ -1087,7 +1087,7 @@ export class Fields {
                                             const dialogSelectedItems = [];
                                             for (const row of grid.select()) {
                                                 const selectedItem = grid.dataItem(row);
-                                                dialogSelectedItems.push(selectedItem.id || selectedItem.itemId || selectedItem.itemid || selectedItem.itemId);
+                                                dialogSelectedItems.push(selectedItem.id || selectedItem.itemId || selectedItem.itemid || selectedItem.item_id);
                                             }
 
                                             if (dialogSelectedItems.length === 0) {
@@ -1182,7 +1182,7 @@ export class Fields {
                                 try {
                                     const queryResult = await Wiser2.api({
                                         method: "POST",
-                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encryptedId || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(options.defaultValueQueryId)}`,
+                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(options.defaultValueQueryId)}`,
                                         contentType: "application/json"
                                     });
 
@@ -1205,7 +1205,7 @@ export class Fields {
                                             try {
                                                 const queryResult = await Wiser2.api({
                                                     method: "POST",
-                                                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encryptedId || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(queryId)}`,
+                                                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(queryId)}`,
                                                     contentType: "application/json"
                                                 });
 
@@ -1333,7 +1333,7 @@ export class Fields {
                                         }
                                     }
 
-                                    this.base.grids.initializeItemsGrid(options, dialog.element.find("#gridUserParameter"), null, mainItemDetails.encryptedId || mainItemDetails.encryptedId || mainItemDetails.encryptedid, `${gridHeight}px`, 0, userParametersWithValues);
+                                    this.base.grids.initializeItemsGrid(options, dialog.element.find("#gridUserParameter"), null, mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid, `${gridHeight}px`, 0, userParametersWithValues);
                                     break;
                                 case "fileupload":
                                     {
@@ -1351,8 +1351,8 @@ export class Fields {
                                             itemId = selectedItem[`encryptedItemId_${suffixToUse}`] || selectedItem[`encryptedId_${suffixToUse}`] || selectedItem[`itemId_${suffixToUse}`] || selectedItem[`id_${suffixToUse}`] || selectedItem.encryptedItemId || selectedItem.encryptedId || selectedItem.itemId || selectedItem.id || this.base.settings.zeroEncrypted;
                                             itemLinkId = selectedItem[`linkId_${suffixToUse}`] || selectedItem.linkId|| 0;
                                         } else {
-                                            itemId = mainItemDetails.encryptedId || mainItemDetails.encryptedId || mainItemDetails.encryptedid || this.base.settings.zeroEncrypted;
-                                            itemLinkId = mainItemDetails.linkId || mainItemDetails.linkId || 0;
+                                            itemId = mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid || this.base.settings.zeroEncrypted;
+                                            itemLinkId = mainItemDetails.linkId || mainItemDetails.link_id || 0;
                                         }
 
                                         const uploadOptions = $.extend(true, {
@@ -1404,7 +1404,7 @@ export class Fields {
                 const executeQuery = () => {
                     return Wiser2.api({
                         method: "POST",
-                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encryptedId || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.queryId || this.base.settings.zeroEncrypted)}&itemLinkId=${encodeURIComponent(mainItemDetails.linkId || mainItemDetails.linkId || 0)}`,
+                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.queryId || this.base.settings.zeroEncrypted)}&itemLinkId=${encodeURIComponent(mainItemDetails.linkId || mainItemDetails.link_id || 0)}`,
                         data: JSON.stringify(userParametersWithValues),
                         contentType: "application/json"
                     });
@@ -1683,8 +1683,8 @@ export class Fields {
 
                         const windowItemDetails = (await this.base.getItemDetails(windowItemId))[0];
 
-                        const itemId = windowItemDetails.id || windowItemDetails.itemId || windowItemDetails.itemid || windowItemDetails.itemId;
-                        const encryptedId = windowItemDetails.encryptedId || windowItemDetails.encryptedId || windowItemDetails.encryptedid;
+                        const itemId = windowItemDetails.id || windowItemDetails.itemId || windowItemDetails.itemid || windowItemDetails.item_id;
+                        const encryptedId = windowItemDetails.encryptedId || windowItemDetails.encrypted_id || windowItemDetails.encryptedid;
                         this.base.windows.loadItemInWindow(false, itemId, encryptedId, windowItemDetails.entityType, windowItemDetails.title, true, null, { hideTitleColumn: false }, windowLinkId);
 
                         break;
@@ -1799,14 +1799,14 @@ export class Fields {
                         }
 
                         let emailData = null;
-                        const mainItemId = mainItemDetails.encryptedId || mainItemDetails.encryptedId || mainItemDetails.encryptedid;
+                        const mainItemId = mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid;
                         let itemId = mainItemId;
-                        let linkId = mainItemDetails.linkId || mainItemDetails.linkId || 0;
+                        let linkId = mainItemDetails.linkId || mainItemDetails.link_id || 0;
                         const extraParameters = {};
                         if (selectedItems.length > 0) {
-                            const selectedId = selectedItems[0].dataItem.itemId || selectedItems[0].dataItem.itemId || selectedItems[0].dataItem.id;
-                            const selectedLinkId = selectedItems[0].dataItem.linkId || selectedItems[0].dataItem.linkId;
-                            itemId = selectedItems[0].dataItem.encryptedId || selectedItems[0].dataItem.encryptedId || selectedItems[0].dataItem.encryptedid || mainItemId;
+                            const selectedId = selectedItems[0].dataItem.itemId || selectedItems[0].dataItem.item_id || selectedItems[0].dataItem.id;
+                            const selectedLinkId = selectedItems[0].dataItem.linkId || selectedItems[0].dataItem.link_id;
+                            itemId = selectedItems[0].dataItem.encryptedId || selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || mainItemId;
                             linkId = selectedLinkId || 0;
 
                             if (selectedId) {
@@ -1838,7 +1838,7 @@ export class Fields {
                     case "updateItemLink": {
                         // The function that actually updates the link in the database.
                         const updateItemLink = async function () {
-                            if (!userParametersWithValues || !userParametersWithValues.selectedLinkId) {
+                            if (!userParametersWithValues || (!userParametersWithValues.selected_linkId && !userParametersWithValues.selected_link_id)) {
                                 kendo.alert(`Geen link ID gevonden voor actie '${action.type}'. Neem a.u.b. contact op met ons.`);
                                 return false;
                             }
@@ -1849,7 +1849,7 @@ export class Fields {
                                 userParametersWithValues.newItemId = destinationId;
                             }
 
-                            await this.base.updateItemLink(userParametersWithValues.selectedLinkId, destinationId);
+                            await this.base.updateItemLink(userParametersWithValues.selectedLinkId || userParametersWithValues.selected_linkId || userParametersWithValues.selected_link_id, destinationId);
                             return true;
                         }.bind(this);
 

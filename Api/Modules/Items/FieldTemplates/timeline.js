@@ -22,7 +22,7 @@
                         url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.queryId || 0) + "&itemLinkId={itemLinkId}",
                         contentType: "application/json"
                     }).then(function (queryResults) {
-                        if (!queryResults || !queryResults.other_data || queryResults.other_data.length === 0) {
+                        if (!queryResults || !queryResults.otherData || queryResults.otherData.length === 0) {
                             transportOptions.error("Geen data");
                             loader.removeClass("loading");
                             field.html("Geen data");
@@ -30,7 +30,7 @@
                             return;
                         }
                         else {
-                            transportOptions.success(queryResults.other_data);
+                            transportOptions.success(queryResults.otherData);
                         }
                     }).catch(function (jqXHR, textStatus, errorThrown) {
                         transportOptions.error(jqXHR, textStatus, errorThrown);

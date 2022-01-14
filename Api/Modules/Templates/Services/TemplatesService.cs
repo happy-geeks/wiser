@@ -1156,8 +1156,8 @@ SELECT
         THEN (SELECT CONCAT('Items van type ""', @sourceType, '"" mogen niet toegevoegd worden onder items van type ""', @destinationType, '"".') AS error)
         ELSE ''
     END AS error;");
-                TemplateQueryStrings.Add("GET_CONTEXT_MENU", @"SET @itemid = {item_id:decrypt(true)};
-SET @moduleid = {module_id};
+                TemplateQueryStrings.Add("GET_CONTEXT_MENU", @"SET @itemid = {itemId:decrypt(true)};
+SET @moduleid = {moduleId};
 SET @entity_type = (SELECT entity_type FROM wiser_item WHERE id=@itemid);
 SET @itemname = (SELECT title FROM wiser_item WHERE id=@itemid);
 SET @userId = {encryptedUserId:decrypt(true)};

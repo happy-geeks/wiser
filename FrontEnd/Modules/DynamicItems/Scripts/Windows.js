@@ -1623,7 +1623,7 @@ export class Windows {
                 const row = $(element);
                 const dataItem = grid.dataItem(row);
                 const isChecked = row.find("td > input[type=checkbox]").prop("checked");
-
+                
                 if (isChecked) {
                     if (alreadyLinkedItems.filter((item) => (item.id || item[`ID_${this.searchItemsWindowSettings.entityType}`]) === dataItem.id).length === 0) {
                         if (dataItem.parentItemId > 0 && dataItem.parentItemId !== this.searchItemsWindowSettings.plainParentId) {
@@ -1641,12 +1641,12 @@ export class Windows {
                             if (addLinksRequest.encryptedSourceIds.length === 0) {
                                 addLinksRequest.encryptedSourceIds.push(this.searchItemsWindowSettings.parentId);
                             }
-                            addLinksRequest.encryptedDestinationIds.push(dataItem.encryptedId || dataItem.encryptedId || dataItem.encryptedid);
+                            addLinksRequest.encryptedDestinationIds.push(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid);
                         } else {
                             if (addLinksRequest.encryptedDestinationIds.length === 0) {
                                 addLinksRequest.encryptedDestinationIds.push(this.searchItemsWindowSettings.parentId);
                             }
-                            addLinksRequest.encryptedSourceIds.push(dataItem.encryptedId || dataItem.encryptedId || dataItem.encryptedid);
+                            addLinksRequest.encryptedSourceIds.push(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid);
                         }
                     }
                 } else {
@@ -1655,12 +1655,12 @@ export class Windows {
                             if (removeLinksRequest.encryptedSourceIds.length === 0) {
                                 removeLinksRequest.encryptedSourceIds.push(this.searchItemsWindowSettings.parentId);
                             }
-                            removeLinksRequest.encryptedDestinationIds.push(dataItem.encryptedId || dataItem.encryptedId || dataItem.encryptedid);
+                            removeLinksRequest.encryptedDestinationIds.push(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid);
                         } else {
                             if (removeLinksRequest.encryptedDestinationIds.length === 0) {
                                 removeLinksRequest.encryptedDestinationIds.push(this.searchItemsWindowSettings.parentId);
                             }
-                            removeLinksRequest.encryptedSourceIds.push(dataItem.encryptedId || dataItem.encryptedId || dataItem.encryptedid);
+                            removeLinksRequest.encryptedSourceIds.push(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid);
                         }
                     }
                 }

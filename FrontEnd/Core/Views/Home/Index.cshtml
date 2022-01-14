@@ -15,7 +15,7 @@
                             <li v-for="moduleGroup in moduleGroups" :key="moduleGroup.name">
                                 <strong v-if="moduleGroup.name">{{ moduleGroup.name }}</strong>
                                 <ul>
-                                    <li v-for="module in moduleGroup.modules" :key="module.module_id" @@click="openModule(module)">
+                                    <li v-for="module in moduleGroup.modules" :key="module.moduleId" @@click="openModule(module)">
                                         <a href="#" :title="module.name"><ins :class="module.icon"></ins><span>{{ module.name }}</span></a>
                                         <label>
                                             <input type="checkbox" class="hidden" />
@@ -30,7 +30,7 @@
             </li>
 
             <li class="tabs">
-                <div v-for="module in openedModules" :key="module.module_id" :class="{ 'tab-item': true, active: module.module_id === activeModule }" @@click="setActiveModule($event, module.module_id)" :title="module.name">
+                <div v-for="module in openedModules" :key="module.moduleId" :class="{ 'tab-item': true, active: module.moduleId === activeModule }" @@click="setActiveModule($event, module.moduleId)" :title="module.name">
                     <ins :class="module.icon"></ins>
                     <strong>{{ module.name }}</strong>
                     <span class="close-module" title="module sluiten" @@click="closeModule(module)"></span>
@@ -38,7 +38,7 @@
             </li>
 
             <li class="icons">
-                <div class="ico-item" v-if="modules.find(m => m.module_id === 709)">
+                <div class="ico-item" v-if="modules.find(m => m.moduleId === 709)">
                     <ins class="icon-line-search" @@click="openModule(709)"></ins>
                 </div>
                 <div class="ico-item" title="Bug melden!" v-if="markerIoEnabled" @@click="openMarkerIoScreen()">
@@ -77,8 +77,8 @@
         <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
         <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
         <section class="iframe-container">
-            <iframe v-for="module in openedModulesWithBackend" :key="module.module_id" :src="`/Modules/${module.type}${module.fileName}${module.queryString}`" :class="{ active: module.module_id === activeModule }" frameborder="0" scrolling="auto"></iframe>
-            <iframe v-for="module in openedWiser1Modules" :key="module.module_id" :src="`${appSettings.wiser1BaseUrl}?singleModuleId=${module.module_id}&autoLoginCookie=${encodeURIComponent(user.cookieValue)}&autoLoginUserId=${encodeURIComponent(user.encrypted_id)}`" :class="{ active: module.module_id === activeModule }" frameborder="0" scrolling="auto"></iframe>
+            <iframe v-for="module in openedModulesWithBackend" :key="module.moduleId" :src="`/Modules/${module.type}${module.fileName}${module.queryString}`" :class="{ active: module.moduleId === activeModule }" frameborder="0" scrolling="auto"></iframe>
+            <iframe v-for="module in openedWiser1Modules" :key="module.moduleId" :src="`${appSettings.wiser1BaseUrl}?singleModuleId=${module.moduleId}&autoLoginCookie=${encodeURIComponent(user.cookieValue)}&autoLoginUserId=${encodeURIComponent(user.encryptedId)}`" :class="{ active: module.moduleId === activeModule }" frameborder="0" scrolling="auto"></iframe>
         </section>
 
         <keep-alive>
@@ -185,7 +185,7 @@
     <div :class="{ loading: loading, 'form-inline': true, 'new-customer-form': true }">
         <h1>Nieuwe Wiser account toevoegen...</h1>
         <p class="success" v-if="currentStep === 'end'">
-            De klant is successvol aangemaakt en heeft als ID '<em>{{ createCustomerResult.data.id }}</em>' gekregen. De encryption key voor de live is '<em>{{ createCustomerResult.data.wiser2_encryption_key }}</em>' en voor de test/dev is '<em>{{ createCustomerResult.data.wiser2_encryption_key_test }}</em>'.<br />
+            De klant is successvol aangemaakt en heeft als ID '<em>{{ createCustomerResult.data.id }}</em>' gekregen. De encryption key voor de live is '<em>{{ createCustomerResult.data.wiser2EncryptionKey }}</em>' en voor de test/dev is '<em>{{ createCustomerResult.data.wiser2EncryptionKeyTest }}</em>'.<br />
             Zie <a href="https://app.nuclino.com/Juice-BV/Development/Nieuwe-Wiser-20-klant-6a3b885c-1101-430d-885e-5cac0b12551e" target="_blank">Nuclino voor uitleg</a> over waar je die voor nodig hebt.<br />
             De URL voor Wiser Live is geworden: <a :href="'https://' + newCustomerData.subDomain + '.wiser3.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.nl</a>. (Deze werkt pas nadat er een DNS-record is toegevoegd voor dit subdomein.)<br />
             De URL voor Wiser dev is geworden: <a :href="'http://' + newCustomerData.subDomain + '.wiser3.juicedev.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.juicedev.nl</a>. (Deze kan al direct gebruikt worden.)
