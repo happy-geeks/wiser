@@ -9,7 +9,7 @@
   "main": "main.js",
   "dependencies": {
     "@innovastudio/contentbuilder": "^1.0.33",
-    "@marker.io/browser": "^0.10.0",
+    "@marker.io/browser": "^0.11.0",
     "@progress/kendo-licensing": "^1.2.1",
     "@progress/kendo-theme-material": "^3.33.1",
     "@progress/kendo-ui": "^2021.2.511",

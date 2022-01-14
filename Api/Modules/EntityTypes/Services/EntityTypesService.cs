@@ -4,7 +4,6 @@ using System.Data;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.EntityTypes.Interfaces;
