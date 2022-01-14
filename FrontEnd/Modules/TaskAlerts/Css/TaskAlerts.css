@@ -18,6 +18,7 @@ html, body {
     min-height: calc(100% - 80px);
     overflow: hidden;
     padding: 10px;
+    padding-top: 45px;
 }
 
     #taskList > li {
@@ -41,8 +42,7 @@ html, body {
             overflow: hidden;
             position: relative;
             animation-name: removed;
-            animation-duration: 1s;
-            animation-delay: .5s;
+            animation-duration: 500ms;
             animation-timing-function: ease-in;
             animation-fill-mode: forwards;
         }

@@ -722,6 +722,11 @@ ins {
 .item[data-label-style="float"] h4 + * {
     width: 100%;
 }
+.item[data-input-type="checkbox"][data-label-style="float"] h4 {
+    font-size: 14px;
+    padding-left: 25px;
+    margin-bottom: -32px;
+}
 .item[data-label-style="float"] .k-input[type=text],
 .item[data-label-style="float"] .k-input[type=number],
 .item[data-label-style="float"] .k-input[type=search],
