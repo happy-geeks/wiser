@@ -1,4 +1,5 @@
 ﻿import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import "../../Base/Scripts/Processing.js";
 
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
@@ -32,7 +33,7 @@ export class RemoveItems {
 
         this.mainLoader = $("#mainLoader");
 
-        // Setup JJL processing.
+        // Setup processing.
         document.addEventListener("processing.Busy", this.toggleMainLoader.bind(this, true));
         document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
 
@@ -107,7 +108,7 @@ export class RemoveItems {
 
         //Combox
         const process = `loadDropdowns_${Date.now()}`;
-        jjl.processing.addProcess(process);
+        window.processing.addProcess(process);
 
         try {
             const promiseResults = await Promise.all([
@@ -135,7 +136,7 @@ export class RemoveItems {
             kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
         }
 
-        jjl.processing.removeProcess(process);
+        window.processing.removeProcess(process);
 
         //Button
         $(context).find("#deleteItemsButton").kendoButton({
@@ -154,7 +155,7 @@ export class RemoveItems {
         let process = null;
         if (ownProcess) {
             process = `loadEntityProperties_${Date.now()}`;
-            jjl.processing.addProcess(process);
+            window.processing.addProcess(process);
         }
 
         try {
@@ -179,7 +180,7 @@ export class RemoveItems {
         }
 
         if (ownProcess && process) {
-            jjl.processing.removeProcess(process);
+            window.processing.removeProcess(process);
         }
     }
 
