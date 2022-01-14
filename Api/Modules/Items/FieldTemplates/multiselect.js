@@ -6,10 +6,18 @@ var options = $.extend({
 	change: window.dynamicItems.fields.onFieldValueChange.bind(window.dynamicItems.fields),
 	dataSource: {
 		transport: {
-			read: {
-				dataType: "json",
-				url: window.dynamicItems.settings.serviceRoot + "/GET_DATA_FROM_ENTITY_QUERY?propertyid={propertyId}&myItemId={itemId}",
-			}
+            read: (kendoReadOptions) => {
+                Wiser2.api({
+                    url: window.dynamicItems.settings.serviceRoot + "/GET_DATA_FROM_ENTITY_QUERY?propertyid={propertyId}&myItemId={itemId}",
+                    dataType: "json",
+                    method: "GET",
+                    data: kendoReadOptions.data
+                }).then((result) => {
+                    kendoReadOptions.success(result);
+                }).catch((result) => {
+                    kendoReadOptions.error(result);
+                });
+            }
 		}
 	}
 }, {options});
@@ -24,9 +32,17 @@ if (typeof options.dataSource === "string") {
         case "wiserusers":
             options.dataSource = {
                 transport: {
-                    read: {
-                        dataType: "json",
-                        url: window.dynamicItems.settings.wiserApiRoot + "users"
+                    read: (kendoReadOptions) => {
+                        Wiser2.api({
+                            url: window.dynamicItems.settings.wiserApiRoot + "users",
+                            dataType: "json",
+                            method: "GET",
+                            data: kendoReadOptions.data
+                        }).then((result) => {
+                            kendoReadOptions.success(result);
+                        }).catch((result) => {
+                            kendoReadOptions.error(result);
+                        });
                     }
                 }
             }
@@ -43,14 +59,36 @@ if (typeof options.dataSource === "string") {
 	if (!searchEverywhere && !searchModuleId) {
 		searchModuleId = window.dynamicItems.settings.moduleId;
 	}
-	options.dataSource.transport.read.url = window.dynamicItems.settings.serviceRoot + "/SEARCH_ITEMS?id=" + encodeURIComponent("{itemIdEncrypted}") + "&moduleid=" + searchModuleId.toString() +
-                    "&entityType=" + encodeURIComponent(options.entityType) + "&search=&searchInTitle=" + searchInTitle.toString() +
-                    "&searchFields=" + encodeURIComponent(searchFields.join()) + "&searchEverywhere=" + searchEverywhere +
-                    "&skip=0&take=999999";
+    options.dataSource.transport.read = (kendoReadOptions) => {
+        Wiser2.api({
+            url: window.dynamicItems.settings.serviceRoot + "/SEARCH_ITEMS?id=" + encodeURIComponent("{itemIdEncrypted}") + "&moduleid=" + searchModuleId.toString() +
+                "&entityType=" + encodeURIComponent(options.entityType) + "&search=&searchInTitle=" + searchInTitle.toString() +
+                "&searchFields=" + encodeURIComponent(searchFields.join()) + "&searchEverywhere=" + searchEverywhere +
+                "&skip=0&take=999999",
+            dataType: "json",
+            method: "GET",
+            data: kendoReadOptions.data
+        }).then((result) => {
+            kendoReadOptions.success(result);
+        }).catch((result) => {
+            kendoReadOptions.error(result);
+        });
+    };
 	options.filter = "contains";
 	options.filtering = function(event) { window.dynamicItems.fields.onComboBoxFiltering(event, '{itemIdEncrypted}', options); };
 } else if (options.dataSelectorId > 0) {
-    options.dataSource.transport.read.url = window.dynamicItems.settings.getItemsUrl + "?trace=false&encryptedDataSelectorId=" + encodeURIComponent(options.dataSelectorId.toString())
+    options.dataSource.transport.read = (kendoReadOptions) => {
+        Wiser2.api({
+            url: window.dynamicItems.settings.getItemsUrl + "?trace=false&encryptedDataSelectorId=" + encodeURIComponent(options.dataSelectorId.toString()),
+            dataType: "json",
+            method: "GET",
+            data: kendoReadOptions.data
+        }).then((result) => {
+            kendoReadOptions.success(result);
+        }).catch((result) => {
+            kendoReadOptions.error(result);
+        });
+    }
 }
 
 var field = $("#field_{propertyIdWithSuffix}");

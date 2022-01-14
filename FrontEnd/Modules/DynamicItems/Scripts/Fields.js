@@ -1,4 +1,5 @@
 ﻿import { Dates, Wiser2, Misc } from "../../Base/Scripts/Utils.js";
+import "../../Base/Scripts/Processing.js";
 import { DateTime } from "luxon";
 
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -504,7 +505,7 @@ export class Fields {
         }
 
         const process = `initializeDynamicFields_${Date.now()}`;
-        jjl.processing.addProcess(process);
+        window.processing.addProcess(process);
 
         try {
             await this.base.loadKendoScripts(tabFields.script);
@@ -517,7 +518,7 @@ export class Fields {
             kendo.alert("Er is iets fout gegaan tijdens het uitvoeren van scripts voor velden op dit tabblad. Neem a.u.b. contact op met ons.");
         }
 
-        jjl.processing.removeProcess(process);
+        window.processing.removeProcess(process);
     }
 
     /**
@@ -2076,7 +2077,7 @@ export class Fields {
             if (element && element.siblings(".grid-loader").length) {
                 element.siblings(".grid-loader").addClass("loading");
             } else {
-                jjl.processing.addProcess(process);
+                window.processing.addProcess(process);
             }
 
             try {
@@ -2260,7 +2261,7 @@ export class Fields {
                             }
 
                             const process = `convertHtmlToPdf_${Date.now()}`;
-                            jjl.processing.addProcess(process);
+                            window.processing.addProcess(process);
                             const pdfResult = await fetch(`${this.base.settings.wiserApiRoot}pdf/from-html`, {
                                 method: "POST",
                                 headers: {
@@ -2270,7 +2271,7 @@ export class Fields {
                                 body: JSON.stringify(pdfToHtmlData)
                             });
                             await Misc.downloadFile(pdfResult, pdfToHtmlData.file_name || "Pdf.pdf");
-                            jjl.processing.removeProcess(process);
+                            window.processing.removeProcess(process);
                         },
                         icon: "pdf"
                     });
@@ -2530,7 +2531,7 @@ export class Fields {
             if (element && element.siblings(".grid-loader").length) {
                 element.siblings(".grid-loader").removeClass("loading");
             } else {
-                jjl.processing.removeProcess(process);
+                window.processing.removeProcess(process);
             }
         });
     }

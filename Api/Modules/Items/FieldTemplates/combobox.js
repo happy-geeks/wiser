@@ -17,16 +17,16 @@ var options = $.extend({
                 var inputData = window.dynamicItems.fields.getInputData(field.closest(".popup-container, .pane-content")) || [];
                 inputData = inputData.reduce((obj, item) => { obj[item.key] = item.value; return obj; });
                 
-                $.ajax({
+                Wiser2.api({
                     method: "POST",
                     contentType: "application/json",
                     dataType: "json",
                     url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(fieldOptions.queryId || dynamicItems.settings.zeroEncrypted) + "&itemLinkId={itemLinkId}&userType=" + encodeURIComponent(dynamicItems.settings.userType),
                     data: JSON.stringify(inputData)
-                }).done(function(dataResult) {
+                }).then(function(dataResult) {
                     console.log("read success - {title}", dataResult.other_data);
                     kendoOptions.success(dataResult.other_data);
-                }).fail(function(jqXHR, textStatus, errorThrown) {
+                }).catch(function(jqXHR, textStatus, errorThrown) {
                     console.log("read error - {title}", jqXHR, textStatus, errorThrown);
                     kendoOptions.error(jqXHR, textStatus, errorThrown);
                 });
@@ -77,24 +77,31 @@ if (typeof options.dataSource === "string") {
 	if (!searchEverywhere && !searchModuleId) {
 		searchModuleId = window.dynamicItems.settings.moduleId || 0;
 	}
+    
+    options.dataSource.transport.read = (kendoReadOptions) => {
+        var searchAddition = "";
 
-    options.dataSource.transport.read = {};
-	options.dataSource.transport.read.url = function(operation) {
-		var searchAddition = "";
-
-		if (operation.filter && operation.filter.filters && operation.filter.filters.length){
-			searchAddition = "&search=" + encodeURIComponent(operation.filter.filters[0].value);
-		}
+        if (kendoReadOptions.filter && kendoReadOptions.filter.filters && kendoReadOptions.filter.filters.length){
+            searchAddition = "&search=" + encodeURIComponent(kendoReadOptions.filter.filters[0].value);
+        }
         else if (options.minLength <= 0) {
             searchAddition = "&search=";
         }
 
-		return window.dynamicItems.settings.serviceRoot + "/SEARCH_ITEMS?id=" + encodeURIComponent("{itemIdEncrypted}") + "&moduleid=" + searchModuleId.toString() +
-                    "&entityType=" + encodeURIComponent(options.entityType) + "&searchInTitle=" + encodeURIComponent(searchInTitle.toString()) +
-                    "&searchFields=" + encodeURIComponent(searchFields.join()) + "&searchEverywhere=" + searchEverywhere +
-                    "&skip=0&take=999999" + searchAddition;
-	};
-
+        Wiser2.api({
+            url: window.dynamicItems.settings.serviceRoot + "/SEARCH_ITEMS?id=" + encodeURIComponent("{itemIdEncrypted}") + "&moduleid=" + searchModuleId.toString() +
+                "&entityType=" + encodeURIComponent(options.entityType) + "&searchInTitle=" + encodeURIComponent(searchInTitle.toString()) +
+                "&searchFields=" + encodeURIComponent(searchFields.join()) + "&searchEverywhere=" + searchEverywhere +
+                "&skip=0&take=999999" + searchAddition,
+            dataType: "json",
+            method: "GET",
+            data: kendoReadOptions.data
+        }).then((result) => {
+            kendoReadOptions.success(result);
+        }).catch((result) => {
+            kendoReadOptions.error(result);
+        });
+    };
 	
     options.dataSource.pageSize = 80;
     options.dataSource.serverPaging = true;
@@ -128,8 +135,18 @@ if (typeof options.dataSource === "string") {
     }*/
 	//options.filtering = function(event) { window.dynamicItems.fields.onComboBoxFiltering(event, '{itemIdEncrypted}', options); };
 } else if (options.dataSelectorId) {
-    options.dataSource.transport.read = {};
-    options.dataSource.transport.read.url = window.dynamicItems.settings.getItemsUrl + "?trace=false&encryptedDataSelectorId=" + encodeURIComponent(options.dataSelectorId);
+    options.dataSource.transport.read = (kendoReadOptions) => {
+        Wiser2.api({
+            url: window.dynamicItems.settings.getItemsUrl + "?trace=false&encryptedDataSelectorId=" + encodeURIComponent(options.dataSelectorId),
+            dataType: "json",
+            method: "GET",
+            data: kendoReadOptions.data
+        }).then((result) => {
+            kendoReadOptions.success(result);
+        }).catch((result) => {
+            kendoReadOptions.error(result);
+        });
+    }
 }
 
 if (options.cascadeFrom && typeof options.cascadeFrom === "string") {

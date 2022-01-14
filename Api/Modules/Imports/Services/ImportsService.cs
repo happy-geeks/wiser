@@ -608,7 +608,6 @@ namespace Api.Modules.Imports.Services
                 case "secure-input":
                 case "file-upload":
                 case "querybuilder":
-                case "grid":
                 case "button":
                 case "image-upload":
                 case "item-linker":

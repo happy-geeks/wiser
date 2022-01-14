@@ -1,5 +1,6 @@
 ﻿import { TrackJS } from "trackjs";
 import { Wiser2, Misc } from "../../Base/Scripts/Utils.js";
+import "../../Base/Scripts/Processing.js";
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
@@ -64,7 +65,7 @@ const exportModuleSettings = {
 
             this.mainLoader = $("#mainLoader");
 
-            // Setup JJL processing.
+            // Setup processing.
             document.addEventListener("processing.Busy", this.toggleMainLoader.bind(this, true));
             document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
             
@@ -149,7 +150,7 @@ const exportModuleSettings = {
                     const fileName = `${dataItem.name}.xlsx`;
 
                     const process = `exportToExcel_${Date.now()}`;
-                    jjl.processing.addProcess(process);
+                    window.processing.addProcess(process);
                     const result = await fetch(`${this.settings.getItemsUrl}/excel?encryptedDataSelectorId=${encodeURIComponent(dataSelectorId)}&fileName=${encodeURIComponent(fileName)}`, {
                         method: "POST",
                         headers: {
@@ -158,7 +159,7 @@ const exportModuleSettings = {
                         }
                     });
                     await Misc.downloadFile(result, fileName);
-                    jjl.processing.removeProcess(process);
+                    window.processing.removeProcess(process);
                     break;
                 }
                 case "query": {
@@ -168,7 +169,7 @@ const exportModuleSettings = {
                     const fileName = `${dataItem.description}.xlsx`;
 
                     const process = `exportToExcel_${Date.now()}`;
-                    jjl.processing.addProcess(process);
+                    window.processing.addProcess(process);
                     const result = await fetch(`${this.settings.getItemsUrl}/excel?queryid=${encodeURIComponent(queryId)}&fileName=${encodeURIComponent(fileName)}`, {
                         method: "POST",
                         headers: {
@@ -177,7 +178,7 @@ const exportModuleSettings = {
                         }
                     });
                     await Misc.downloadFile(result, fileName);
-                    jjl.processing.removeProcess(process);
+                    window.processing.removeProcess(process);
                     break;
                 }
                 case "module": {
@@ -188,7 +189,7 @@ const exportModuleSettings = {
                     const fileName = `${dataItem.name}.xlsx`;
                     
                     const process = `exportToExcel_${Date.now()}`;
-                    jjl.processing.addProcess(process);
+                    window.processing.addProcess(process);
                     const result = await fetch(`${this.settings.wiserApiRoot}modules/${moduleId}/export?fileName=${encodeURIComponent(fileName)}`, {
                         method: "GET",
                         headers: {
@@ -197,7 +198,7 @@ const exportModuleSettings = {
                         }
                     });
                     await Misc.downloadFile(result, fileName);
-                    jjl.processing.removeProcess(process);
+                    window.processing.removeProcess(process);
                     break;
                 }
                 default:
@@ -233,7 +234,7 @@ const exportModuleSettings = {
 
             //COMBOBOX
             const process = `loadDropdowns_${Date.now()}`;
-            jjl.processing.addProcess(process);
+            window.processing.addProcess(process);
 
             try {
                 const promiseResults = await Promise.all([
@@ -298,7 +299,7 @@ const exportModuleSettings = {
                 kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
             }
 
-            jjl.processing.removeProcess(process);
+            window.processing.removeProcess(process);
 
             //BUTTONS
             $(context).find(".saveButton").kendoButton({

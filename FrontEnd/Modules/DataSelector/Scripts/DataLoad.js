@@ -1,4 +1,6 @@
-﻿(() => {
+﻿import "../../Base/Scripts/Processing.js";
+
+(() => {
     class DataLoad {
         constructor(dataSelector) {
             this.dataSelector = dataSelector || this;
@@ -44,19 +46,19 @@
                                     cancel: "Nee"
                                 }
                             }).result.done(() => {
-                                jjl.processing.addProcess("removeDataSelector");
+                                window.processing.addProcess("removeDataSelector");
                                 try {
                                     this.removeById(chosenDataSelector.id).then(() => {
                                         dataSelectorPicker.select("");
                                         dataSelectorPicker.dataSource.read();
-                                        jjl.processing.removeProcess("removeDataSelector");
+                                        window.processing.removeProcess("removeDataSelector");
                                         Wiser2.showMessage({
                                             title: "Data Selector verwijderd",
                                             content: "De data selector is succesvol verwijderd."
                                         });
                                     });
                                 } catch (e) {
-                                    jjl.processing.removeProcess("removeDataSelector");
+                                    window.processing.removeProcess("removeDataSelector");
                                     Wiser2.alert({
                                         title: "Data Selector verwijderen mislukt",
                                         content: "Er is een fout opgetreden tijdens het verwijderen van de data selector. Probeer het a.u.b. nogmaals."
@@ -108,14 +110,14 @@
             const connectionBlocksContainer = document.getElementById("connectionBlocks");
             const firstConnectionBlock = connectionBlocksContainer.querySelector(".connectionBlock");
 
-            jjl.processing.addProcess("dataSelectorLoad");
+            window.processing.addProcess("dataSelectorLoad");
             const response = await Wiser2.api({ 
                 url: `${this.dataSelector.settings.serviceRoot}/GET_DATA_SELECTOR_BY_ID`,
                 method: "GET",
                 data: { id: id }
             });
             if (!Wiser2.validateArray(response)) {
-                jjl.processing.removeProcess("dataSelectorLoad");
+                window.processing.removeProcess("dataSelectorLoad");
                 return;
             }
 
@@ -168,7 +170,7 @@
 
             // Stop if there's no main entity saved with this data selector.
             if (typeof mainEntityName !== "string" || mainEntityName === "") {
-                jjl.processing.removeProcess("dataSelectorLoad");
+                window.processing.removeProcess("dataSelectorLoad");
                 return;
             }
 
@@ -332,7 +334,7 @@
                 }
 
                 // This is where the data selector will complete loading.
-                jjl.processing.removeProcess("dataSelectorLoad");
+                window.processing.removeProcess("dataSelectorLoad");
             };
 
             // Do connections now.
