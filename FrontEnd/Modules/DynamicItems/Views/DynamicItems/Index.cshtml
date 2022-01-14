@@ -156,8 +156,8 @@
                                 <div class="actions">
                                     @if (!Model.ReadOnly)
                                     {
-                                    <button id="saveBottom" class="k-primary saveButton">@Model.SaveButtonText</button>
-                                    <button id="saveAndCreateNewItemButton" class="k-primary saveButton hidden">Opslaan en nieuw item maken</button>
+                                        <button id="saveBottom" class="k-primary saveButton">@Model.SaveButtonText</button>
+                                        <button id="saveAndCreateNewItemButton" class="k-primary saveButton hidden">Opslaan en nieuw item maken</button>
                                     }
                                 </div>
                             </footer>
@@ -325,6 +325,10 @@
             <textarea class="editor-html"></textarea>
         </div>
     </div>
+
+
+    <!-- Dialog for open URL links. -->
+    <div id="openLinkDialog"></div>
 
     <!-- Images uploader window -->
     <div id="imagesUploaderWindow" class="popup-container">
@@ -738,8 +742,7 @@
             <input type="file" id="fileUploadUserParameter" name="fileUploadUserParameter" />
         </div>
     </script>
-
-    <script src="/scripts/Jjl.min.js"></script>
+    
     <script src="/scripts/Utils.min.js"></script>
     <script src="/scripts/DynamicItems.min.js"></script>
 
