@@ -45,6 +45,7 @@
 	--rgba-action:		rgba(46, 204, 113, 0.1);
     --rgba-loader-bg:   rgba(0, 0, 0, 0.5);
 	--filter-color: 	rgba(0, 0, 0, 0.15);
+	--shadow-color: 	rgba(0, 0, 0, 0.2);
 	
 	--primary-color: 	var(--action-color);
 	--primary-hover: 	var(--action-hover);
@@ -52,4 +53,6 @@
 	--secundary-hover: 	var(--sec-hover);
 	--link-color: 		var(--action-color);
 	--btn-color: 		var(--action-color);
+
+	--drop-shadow:		0 4px 4px 0 var(--shadow-color);
 }

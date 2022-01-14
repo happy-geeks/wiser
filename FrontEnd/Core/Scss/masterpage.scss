@@ -753,7 +753,7 @@ main, div, section {
                     opacity: 1 !important;
 
                     &:before {
-                        content: "\ea3a";
+                        content: "\ea3e";
                     }
                 }
             }
@@ -850,6 +850,7 @@ main, div, section {
             }
 
             label {
+                display: none;
                 pointer-events: none;
             }
         }

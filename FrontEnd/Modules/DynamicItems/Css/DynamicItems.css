@@ -225,10 +225,15 @@ body.gridViewMode {
     right: 5px;
 }
 
-    .item .k-input .open-link span {
-        width: 100%;
-        height: 100%;
-    }
+.item .k-input .open-link span {
+    width: 100%;
+    height: 100%;
+}
+
+
+.item[data-input-type="url"] .k-input input:valid + .open-link {
+    display: block !important;
+}
 
 /* PREVIEW PANE */
 #previewFrame,
@@ -237,29 +242,29 @@ body.gridViewMode {
     overflow: hidden;
 }
 
-    #previewFrame > div {
-        height: calc(100% - 60px);
-        position: relative;
-        width: 100%;
-    }
+#previewFrame > div {
+    height: calc(100% - 60px);
+    position: relative;
+    width: 100%;
+}
 
-    #previewFrame footer {
-        border-top: 1px solid var(--handle-bg-color);
-        display: block;
-        min-height: 60px;
-        position: -webkit-sticky;
-        position: sticky;
-        bottom: 0;
-        background: var(--white-color);
-    }
+#previewFrame footer {
+    border-top: 1px solid var(--handle-bg-color);
+    display: block;
+    min-height: 60px;
+    position: -webkit-sticky;
+    position: sticky;
+    bottom: 0;
+    background: var(--white-color);
+}
 
-        #previewFrame footer .actions {
-            box-sizing: border-box;
-            padding: 11px;
-            position: relative;
-            right: auto;
-            width: 100%;
-        }
+#previewFrame footer .actions {
+    box-sizing: border-box;
+    padding: 11px;
+    position: relative;
+    right: auto;
+    width: 100%;
+}
 
 #previewBlock p {
     margin: 0 0 1em;
@@ -344,6 +349,10 @@ body.iframe .editMenu {
     width: calc(100% - 5px);
 }
 
+#gridView .k-grid-toolbar .full-screen {
+    order: 6;
+}
+
 #gridView .k-grid-toolbar .k-grid-refresh {
     order: 5;
 }
@@ -362,14 +371,18 @@ body.iframe .editMenu {
     justify-content: start;
 }
 
-.k-grid-toolbar .k-grid-excel:hover {
-    max-width: fit-content;
-    text-indent: 30px;
+.k-grid-toolbar .full-screen,
+.k-grid-toolbar .k-grid-refresh,
+.k-grid-toolbar .k-grid-excel,
+.k-grid-toolbar .clear-all-filters {
+    max-height: 40px;
+    max-width: 40px;
+    padding: 12px;
 }
 
 .k-grid-toolbar .k-grid-excel .k-icon {
     position: absolute;
-    margin: 0 5px;
+    margin: 0;
 }
 
 .k-grid-toolbar .counterContainer {
