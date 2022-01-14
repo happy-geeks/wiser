@@ -207,7 +207,7 @@ function generateGrid(data, model, columns) {
         toolbar.push({
             name: "fullScreen",
             text: "",
-            template: `<a class='k-button k-button-icontext full-screen' title='Grid naar fullscreen' href='\\#' onclick=''><span class='k-icon k-i-wiser-maximize'></span></a>`
+            template: `<a class='k-button k-button-icontext full-screen' title='Grid naar fullscreen' href='\\#'><span class='k-icon k-i-wiser-maximize'></span></a>`
         });
     }
 

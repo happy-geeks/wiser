@@ -262,14 +262,6 @@ export class Grids {
 
             const toolbar = [];
 
-            if (!gridViewSettings.toolbar || !gridViewSettings.toolbar.hideFullScreenButton) {
-                toolbar.push({
-                    name: "fullScreen",
-                    text: "",
-                    template: `<a class='k-button k-button-icontext full-screen' title='Grid naar fullscreen' href='\\#' onclick=''><span class='k-icon k-i-wiser-maximize'></span></a>`
-                });
-            }
-
             if (!gridViewSettings.toolbar || !gridViewSettings.toolbar.hideRefreshButton) {
                 toolbar.push({
                     name: "refreshCustom",
