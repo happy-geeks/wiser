@@ -15,8 +15,7 @@ namespace Api.Modules.Babel.Services
     public class BabelService : IBabelService, IScopedService
     {
         private readonly ILogger<BabelService> logger;
-        private string polyFillBabel;
-        private string polyFillCustom;
+        private string polyFills;
 
         /// <summary>
         /// Initializes a new instance of <see cref="BabelService"/>.
@@ -85,22 +84,14 @@ namespace Api.Modules.Babel.Services
                 {
                     var strictTxt = removeStrict ? "" : @"""use strict"";";
 
-                    if (String.IsNullOrWhiteSpace(polyFillBabel))
+                    if (String.IsNullOrWhiteSpace(polyFills))
                     {
-                        polyFillBabel = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Modules.Babel.Scripts.Polyfills.babel.js");
+                        polyFills = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Modules.Babel.Scripts.Polyfills.js");
                     }
 
-                    if (String.IsNullOrWhiteSpace(polyFillCustom))
-                    {
-                        polyFillCustom = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Modules.Babel.Scripts.Polyfills.custom.js");
-                    }
-
-                    // add polyfills
-                    var polyFills = polyFillCustom;
-
-                    polyFills += Environment.NewLine + Environment.NewLine + polyFillBabel;
+                    // Add polyfills.
                     response.Content = $@"/* POLYFILLS */ {Environment.NewLine} {strictTxt} {Environment.NewLine}
-                                       { polyFills} {Environment.NewLine} 
+                                       {polyFills} {Environment.NewLine} 
                                         {Environment.NewLine} 
                                         /* END POLYFILL  */ {Environment.NewLine} 
                                         {Environment.NewLine} 
