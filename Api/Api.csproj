@@ -24,6 +24,7 @@
     <None Remove="Core\Queries\WiserInstallation\InsertInitialData.sql" />
     <None Remove="Core\Queries\WiserInstallation\InsertInitialDataConfigurator.sql" />
     <None Remove="Core\Queries\WiserInstallation\InsertInitialDataEcommerce.sql" />
+    <None Remove="Modules\Babel\Scripts\Polyfills.js" />
     <None Remove="Modules\Items\FieldTemplates\action-button.html" />
     <None Remove="Modules\Items\FieldTemplates\action-button.js" />
     <None Remove="Modules\Items\FieldTemplates\auto-increment.html" />
@@ -82,6 +83,7 @@
     <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialData.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataConfigurator.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataEcommerce.sql" />
+    <EmbeddedResource Include="Modules\Babel\Scripts\Polyfills.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\action-button.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\action-button.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\auto-increment.html" />
@@ -137,12 +139,21 @@
   <ItemGroup>
     <PackageReference Include="GeeksCoreLibrary" Version="1.0.4" />
     <PackageReference Include="IdentityServer4" Version="4.1.2" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.16.0" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.16.0" />
+    <PackageReference Include="JavaScriptEngineSwitcher.Extensions.MsDependencyInjection" Version="3.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.12" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.10" />
+    <PackageReference Include="Microsoft.ChakraCore" Version="1.11.24">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="PusherServer" Version="4.6.1" />
     <PackageReference Include="QRCoder" Version="1.4.3" />
+    <PackageReference Include="React.AspNet" Version="5.2.12" />
+    <PackageReference Include="React.Core" Version="5.2.12" />
     <PackageReference Include="Serilog.AspNetCore" Version="4.1.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.2.3" />
     <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.2.3" />
   </ItemGroup>

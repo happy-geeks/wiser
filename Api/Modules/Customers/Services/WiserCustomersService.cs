@@ -243,10 +243,10 @@ namespace Api.Modules.Customers.Services
                         customer.LiveDatabase.Password = null;
                     }
                     
-                    var createTablesQuery = ReadTextResourceFromAssembly("CreateTables");
-                    var createTriggersQuery = ReadTextResourceFromAssembly("CreateTriggers");
-                    var insertInitialDataQuery = ReadTextResourceFromAssembly("InsertInitialData");
-                    var insertInitialDataEcommerceQuery = !isWebShop ? "" : ReadTextResourceFromAssembly("InsertInitialDataEcommerce");
+                    var createTablesQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTables.sql");
+                    var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
+                    var insertInitialDataQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.InsertInitialData.sql");
+                    var insertInitialDataEcommerceQuery = !isWebShop ? "" : await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.InsertInitialDataEcommerce.sql");
 
                     if (customer.WiserSettings != null)
                     {
@@ -384,23 +384,6 @@ namespace Api.Modules.Customers.Services
             // Set the ID
             var customerId = await wiserDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(ApiTableNames.WiserCustomers, customer.Id);
             customer.Id = customerId;
-        }
-
-        /// <summary>
-        /// Get a query from an SQL file (embedded resource).
-        /// </summary>
-        /// <param name="name">The name of the SQL file (without extension).</param>
-        /// <returns>The contents of the SQL file.</returns>
-        private static string ReadTextResourceFromAssembly(string name)
-        {
-            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"Api.Core.Queries.WiserInstallation.{name}.sql");
-            if (stream == null)
-            {
-                return "";
-            }
-
-            using var streamReader = new StreamReader(stream);
-            return streamReader.ReadToEnd();
         }
         
         #endregion
