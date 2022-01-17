@@ -14,7 +14,6 @@
         HtmlEditor,
         QueryBuilder,
         DateTimePicker,
-        Grid,
         ImageCoordinates,
         ImageUpload,
         GpsLocation,

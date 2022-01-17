@@ -112,6 +112,23 @@ namespace Api.Modules.Customers.Services
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
 
+        /// <inheritdoc />
+        public bool IsMainDatabase(ClaimsIdentity identity)
+        {
+            return IsMainDatabase(IdentityHelpers.GetSubDomain(identity));
+        }
+
+        /// <inheritdoc />
+        public bool IsMainDatabase(string subDomain)
+        {
+            return cache.GetOrAdd($"is_main_database_{subDomain}",
+                cacheEntry =>
+                {
+                    cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
+                    return wiserCustomersService.IsMainDatabase(subDomain);
+                }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
+        }
+
         #endregion
     }
 }

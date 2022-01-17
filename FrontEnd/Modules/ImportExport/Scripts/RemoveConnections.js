@@ -1,4 +1,5 @@
 ﻿import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import "../../Base/Scripts/Processing.js";
 
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
@@ -31,7 +32,7 @@ export class RemoveConnections {
 
         this.mainLoader = $("#mainLoader");
 
-        // Setup JJL processing.
+        // Setup processing.
         document.addEventListener("processing.Busy", this.toggleMainLoader.bind(this, true));
         document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
 
@@ -97,7 +98,7 @@ export class RemoveConnections {
 
         //Dropdown
         const process = `loadDropdowns_${Date.now()}`;
-        jjl.processing.addProcess(process);
+        window.processing.addProcess(process);
 
         try {
             const promiseResults = await Promise.all([
@@ -120,7 +121,7 @@ export class RemoveConnections {
             kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
         }
 
-        jjl.processing.removeProcess(process);
+        window.processing.removeProcess(process);
 
         const promiseResults = await Promise.all([
             Wiser2.api({ url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false` })

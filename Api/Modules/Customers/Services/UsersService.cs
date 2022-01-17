@@ -41,6 +41,9 @@ namespace Api.Modules.Customers.Services
         private const string UserPasswordKey = "password";
         private const string UserUsernameKey = "username";
         private const string EmailAddressKey = "email_address";
+        private const string UserActiveKey = "active";
+        private const string UserLoginAttemptsKey = "attempts";
+        private const string UserBlockedKey = "blocked";
         private const string UserRequirePasswordChangeKey = "require_password_change";
         private const string UserGridSettingsGroupName = "grid_settings";
 
@@ -109,20 +112,10 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string emailAddress, string password, string ipAddress = null)
+        public async Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null)
         {
-            if (await UsernameIsBlockedAsync(emailAddress, wiserDatabaseConnection, apiSettings.MaximumLoginAttemptsForUsers, ApiTableNames.AdminAccountsLoginAttempts))
+            if (String.IsNullOrWhiteSpace(username) || String.IsNullOrWhiteSpace(password))
             {
-                return new ServiceResult<AdminAccountModel>
-                {
-                    ErrorMessage = "Username is blocked due to too many failed login attempts",
-                    StatusCode = HttpStatusCode.Unauthorized
-                };
-            }
-
-            if (String.IsNullOrWhiteSpace(emailAddress) || String.IsNullOrWhiteSpace(password))
-            {
-                await AddFailedLoginAttemptAsync(ipAddress, emailAddress, wiserDatabaseConnection, ApiTableNames.AdminAccountsLoginAttempts);
                 return new ServiceResult<AdminAccountModel>
                 {
                     ErrorMessage = "Invalid credentials",
@@ -131,24 +124,28 @@ namespace Api.Modules.Customers.Services
             }
 
             wiserDatabaseConnection.ClearParameters();
-            wiserDatabaseConnection.AddParameter("email", emailAddress);
-            wiserDatabaseConnection.AddParameter("password", StringHelpers.CreateSha512Hash(password, ""));
+            wiserDatabaseConnection.AddParameter("username", username);
 
             var query = $@"SELECT
-                            id,
-                            login,
-                            employee,
-                            id AS employeeid,
-                            active
-                        FROM {ApiTableNames.WiserAdminAccounts}
-                        WHERE login = ?email
-                        AND pass = ?password
-                        AND active > 0";
+                            account.id,
+                            username.value AS login,
+                            account.title AS name,
+                            password.value AS password,
+                            IF(active.value = '1', TRUE, FALSE) AS active,
+                            attempts.value AS attempts,
+                            blocked.value AS blocked
+                        FROM {WiserTableNames.WiserItem} AS account
+                        JOIN {WiserTableNames.WiserItemDetail} AS username ON username.item_id = account.id AND username.`key` = '{UserUsernameKey}' AND username.value = ?username
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} AS password ON password.item_id = account.id AND password.`key` = '{UserPasswordKey}'
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} AS active ON active.item_id = account.id AND active.`key` = '{UserActiveKey}'
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} AS attempts ON attempts.item_id = account.id AND attempts.`key` = '{UserLoginAttemptsKey}'
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} AS blocked ON blocked.item_id = account.id AND blocked.`key` = '{UserBlockedKey}'
+                        WHERE account.entity_type = '{WiserUserEntityType}'
+                        LIMIT 1";
 
             var dataTable = await wiserDatabaseConnection.GetAsync(query);
             if (dataTable.Rows.Count == 0)
             {
-                await AddFailedLoginAttemptAsync(ipAddress, emailAddress, wiserDatabaseConnection, ApiTableNames.AdminAccountsLoginAttempts);
                 return new ServiceResult<AdminAccountModel>
                 {
                     ErrorMessage = "Invalid credentials",
@@ -156,10 +153,19 @@ namespace Api.Modules.Customers.Services
                 };
             }
 
+            var savedPassword = dataTable.Rows[0].Field<string>("password");
+            if (String.IsNullOrWhiteSpace(savedPassword) || !password.VerifySha512(savedPassword))
+            {
+                return new ServiceResult<AdminAccountModel>
+                {
+                    ErrorMessage = "Invalid credentials",
+                    StatusCode = HttpStatusCode.Unauthorized
+                };
+            }
+            
             var result = AdminAccountModel.FromDataRow(dataTable.Rows[0]);
             result.EncryptedId = result.Id.ToString().EncryptWithAes(apiSettings.AdminUsersEncryptionKey);
-
-            await ResetFailedLoginAttemptAsync(emailAddress, wiserDatabaseConnection, ApiTableNames.AdminAccountsLoginAttempts);
+            
             return new ServiceResult<AdminAccountModel>(result);
         }
 
@@ -177,7 +183,7 @@ namespace Api.Modules.Customers.Services
 
             if (String.IsNullOrWhiteSpace(username) || (String.IsNullOrWhiteSpace(password) && String.IsNullOrWhiteSpace(encryptedAdminAccountId)))
             {
-                await AddFailedLoginAttemptAsync(ipAddress, username, clientDatabaseConnection);
+                await AddFailedLoginAttemptAsync(ipAddress, username);
                 return new ServiceResult<UserModel>
                 {
                     ErrorMessage = "Invalid credentials",
@@ -217,7 +223,7 @@ namespace Api.Modules.Customers.Services
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             if (dataTable.Rows.Count == 0)
             {
-                await AddFailedLoginAttemptAsync(ipAddress, username, clientDatabaseConnection);
+                await AddFailedLoginAttemptAsync(ipAddress, username);
                 return new ServiceResult<UserModel>
                 {
                     ErrorMessage = "Invalid credentials",
@@ -246,7 +252,7 @@ namespace Api.Modules.Customers.Services
 
                 // If an admin account is logging in, we don't want to check the password, so just return the first user. 
                 // Otherwise find a user with the correct password.
-                if (validAdminAccount || password.VerifySha512(user.Password))
+                if (validAdminAccount || (!String.IsNullOrWhiteSpace(password) && password.VerifySha512(user.Password)))
                 {
                     break;
                 }
@@ -258,7 +264,7 @@ namespace Api.Modules.Customers.Services
             // No user has been found, means the client supplied wrong credentials.
             if (user == null)
             {
-                await AddFailedLoginAttemptAsync(ipAddress, username, clientDatabaseConnection);
+                await AddFailedLoginAttemptAsync(ipAddress, username);
                 return new ServiceResult<UserModel>
                 {
                     ErrorMessage = "Invalid credentials",
@@ -277,7 +283,7 @@ namespace Api.Modules.Customers.Services
                 await LogDateAndIpOfLoginAsync(ipAddress, user.Id);
             }
 
-            await ResetFailedLoginAttemptAsync(username, clientDatabaseConnection);
+            await ResetFailedLoginAttemptAsync(username);
 
             return new ServiceResult<UserModel>(user);
         }
@@ -426,7 +432,7 @@ namespace Api.Modules.Customers.Services
 
             user.Password = null;
 
-            await ResetFailedLoginAttemptAsync(user.Username, clientDatabaseConnection);
+            await ResetFailedLoginAttemptAsync(user.Username);
 
             return new ServiceResult<ValidateCookieModel>(new ValidateCookieModel { Success = true, MessageOrValue = userId.ToString().EncryptWithAes(apiSettings.AdminUsersEncryptionKey), UserData = user });
         }
@@ -672,7 +678,7 @@ namespace Api.Modules.Customers.Services
                 return false;
             }
             
-            Int32.TryParse(encryptedAdminAccountId.DecryptWithAes(apiSettings.AdminUsersEncryptionKey), out var decryptedAdminAccountId);
+            UInt64.TryParse(encryptedAdminAccountId.DecryptWithAes(apiSettings.AdminUsersEncryptionKey), out var decryptedAdminAccountId);
 
             return (await ValidateAdminAccountIdAsync(decryptedAdminAccountId, identity)).ModelObject;
         }
@@ -683,7 +689,7 @@ namespace Api.Modules.Customers.Services
         /// <param name="id">The ID of the admin account.</param>
         /// <param name="identity">Optional: The <see cref="ClaimsIdentity"/> of the authenticated user.</param>
         /// <returns>A boolean, indicating whether this admin account is allowed to login or not.</returns>
-        public async Task<ServiceResult<bool>> ValidateAdminAccountIdAsync(int id, ClaimsIdentity identity = null)
+        private async Task<ServiceResult<bool>> ValidateAdminAccountIdAsync(ulong id, ClaimsIdentity identity = null)
         {
             // If the authenticated user is not an administrator, don't return sensitive information.
             if (identity != null && !IdentityHelpers.IsAdministrator(identity))
@@ -699,7 +705,11 @@ namespace Api.Modules.Customers.Services
             wiserDatabaseConnection.ClearParameters();
             wiserDatabaseConnection.AddParameter("id", id);
 
-            var query = $"SELECT NULL FROM {ApiTableNames.WiserAdminAccounts} WHERE id = ?id AND active > 0";
+            var query = $@"SELECT NULL FROM {WiserTableNames.WiserItem} AS account
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} AS active ON active.item_id = account.id AND active.`key` = '{UserActiveKey}'
+                        WHERE account.id = ?id
+                        AND account.entity_type = '{WiserUserEntityType}'
+                        AND (active.value IS NULL OR active.value = '1')";
             var result = await wiserDatabaseConnection.GetAsync(query);
             return new ServiceResult<bool>(result.Rows.Count > 0);
         }
@@ -707,7 +717,6 @@ namespace Api.Modules.Customers.Services
         /// <summary>
         /// Generates a new token for a "remember me" cookie.
         /// </summary>
-        /// <param name="connection">The database connection to use.</param>
         /// <param name="userId">The ID of the user to generate the token for.</param>
         /// <returns>The value that should be saved in the cookie.</returns>
         private async Task<string> GenerateNewCookieTokenAsync(ulong userId)
@@ -780,47 +789,42 @@ namespace Api.Modules.Customers.Services
         /// </summary>
         /// <param name="ipAddress">The IP address that is trying to login.</param>
         /// <param name="username">The username that is trying to login.</param>
-        /// <param name="connection">The connection to the database of the customer.</param>
-        /// <param name="loginAttemptsTableName">Optional: The name of the table that contains the login attempts. Default value is <see cref="WiserTableNames.WiserLoginAttempts"/>.</param>
-        private static async Task AddFailedLoginAttemptAsync(string ipAddress, string username, IDatabaseConnection connection, string loginAttemptsTableName = WiserTableNames.WiserLoginAttempts)
+        private async Task AddFailedLoginAttemptAsync(string ipAddress, string username)
         {
             if (String.IsNullOrWhiteSpace(ipAddress) && String.IsNullOrWhiteSpace(username))
             {
                 // Can't do anything if we have no data.
                 return;
             }
+            
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("ipAddress", ipAddress ?? "");
+            clientDatabaseConnection.AddParameter("username", username);
 
-            var ipAddressColumnName = loginAttemptsTableName == WiserTableNames.WiserLoginAttempts ? "ip_address" : "ipaddress";
-            await connection.EnsureOpenConnectionForReadingAsync();
-            connection.ClearParameters();
-            connection.AddParameter("ipAddress", ipAddress ?? "");
-            connection.AddParameter("username", username);
-
-            var query = $@"INSERT INTO {loginAttemptsTableName} ({ipAddressColumnName}, attempts, username) VALUES (?ipAddress, 1, ?username)
-                        ON DUPLICATE KEY UPDATE attempts = attempts + 1, {ipAddressColumnName} = ?ipAddress";
-            await connection.ExecuteAsync(query);
+            var query = $@"INSERT INTO {WiserTableNames.WiserLoginAttempts} (ip_address, attempts, username) VALUES (?ipAddress, 1, ?username)
+                        ON DUPLICATE KEY UPDATE attempts = attempts + 1, ip_address = ?ipAddress";
+            await clientDatabaseConnection.ExecuteAsync(query);
         }
 
         /// <summary>
         /// Reset the failed login attempts counter for an username in the database.
         /// </summary>
         /// <param name="username">The username that is trying to login.</param>
-        /// <param name="connection">The connection to the database of the customer.</param>
-        /// <param name="loginAttemptsTableName">Optional: The name of the table that contains the login attempts. Default value is <see cref="WiserTableNames.WiserLoginAttempts"/>.</param>
-        private static async Task ResetFailedLoginAttemptAsync(string username, IDatabaseConnection connection, string loginAttemptsTableName = WiserTableNames.WiserLoginAttempts)
+        private async Task ResetFailedLoginAttemptAsync(string username)
         {
             if (String.IsNullOrWhiteSpace(username))
             {
-                // Can't do anything if we have no IP address.
+                // Can't do anything if we have no username.
                 return;
             }
 
-            await connection.EnsureOpenConnectionForReadingAsync();
-            connection.ClearParameters();
-            connection.AddParameter("username", username);
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("username", username);
 
-            var query = $@"UPDATE {loginAttemptsTableName} SET attempts = 0 WHERE username = ?username";
-            await connection.ExecuteAsync(query);
+            var query = $@"UPDATE {WiserTableNames.WiserLoginAttempts} SET attempts = 0 WHERE username = ?username";
+            await clientDatabaseConnection.ExecuteAsync(query);
         }
 
         /// <summary>

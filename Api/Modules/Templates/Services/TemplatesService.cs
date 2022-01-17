@@ -289,6 +289,11 @@ namespace Api.Modules.Templates.Services
                 //and version = (select MAX(version) from easy_templates M where M.name = easy_templates.name and M.deleted = 0)    //M.itemid = easy_templates.itemid => is itemid important here?
 
                 //load all the template queries into the dictionary
+                TemplateQueryStrings.Add("INSERT_ENTITY", @"
+SET @entityName = '{entityName}';
+INSERT INTO `wiser_entity`(name) VALUES(@entityName);
+");
+
                 TemplateQueryStrings.Add("GET_DATA_FOR_RADIO_BUTTONS", @"SET @_itemId = {itemId};
 SET @entityproperty_id = {propertyid};
 SET @querytext = (SELECT data_query FROM wiser_entityproperty WHERE id=@entityproperty_id);
@@ -594,7 +599,7 @@ UPDATE wiser_itemlink
 SET destination_item_id = @destinationId, ordering = @newOrderNumber
 WHERE id = @_linkId;");
                 TemplateQueryStrings.Add("GET_OPTIONS_FOR_DEPENDENCY", @"SELECT DISTINCT entity_name, IF(tab_name = """", ""Gegevens"", tab_name) as tab_name, display_name, property_name FROM wiser_entityproperty
-WHERE entity_name = {entityName}");
+WHERE entity_name = '{entityName}'");
 
                 TemplateQueryStrings.Add("GET_AIS_DASHBOARD_OVERVIEW_DATA", @"SET @totalResults = (SELECT COUNT(*) FROM `ais_dashboard` WHERE DATE(started) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND FIND_IN_SET(color, '{color}'));
 
@@ -624,7 +629,7 @@ LIMIT {skip}, {take}");
                 TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_ADMIN", @"SELECT id, entity_name, tab_name, display_name, ordering FROM wiser_entityproperty
 WHERE tab_name = '{tabName}' AND entity_name = '{entityName}'
 ORDER BY ordering ASC");
-                TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT name AS id, name FROM wiser_entity
+                TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT id , name FROM wiser_entity
 WHERE name != ''
 ORDER BY name ASC;");
                 TemplateQueryStrings.Add("GET_LANGUAGE_CODES", @"SELECT
@@ -693,7 +698,7 @@ WHERE role_id = {role_id}
 )
 ON DUPLICATE KEY UPDATE permissions = {permission_code}");
                 TemplateQueryStrings.Add("GET_GROUPNAME_FOR_SELECTION", @"SELECT DISTINCT group_name FROM `wiser_entityproperty`
-WHERE entity_name = {selectedEntityName} AND tab_name = {selectedTabName}");
+WHERE entity_name = '{selectedEntityName}' AND tab_name = '{selectedTabName}';");
 
                 TemplateQueryStrings.Add("GET_UNDERLYING_ENTITY_TYPES", @"#SET @_entity_type_list = IF('{entity_types}' LIKE '{%}', '', '{entity_types}');
 SET @_entity_name = IF(
@@ -991,12 +996,76 @@ AND (({parentId:decrypt(true)} = 0 AND e.name = '') OR ({parentId:decrypt(true)}
                 TemplateQueryStrings.Add("IMPORTEXPORT_GET_LINK_TYPES", @"SELECT type AS id, `name`
 FROM wiser_link
 ORDER BY `name`");
+                TemplateQueryStrings.Add("SAVE_ENTITY_VALUES", @"
+SET @_id = {id};
+SET @_name = '{name}';
+SET @_module_id = {module_id};
+SET @_accepted_childtypes = '{accepted_childtypes}';
+SET @_icon = '{icon}';
+SET @_icon_add = '{icon_add}';
+SET @_icon_expanded = '{icon_expanded}';
+SET @_show_in_tree_view = '{show_in_tree_view}';
+SET @_query_after_insert = '{query_after_insert}';
+SET @_query_after_update = '{query_after_update}';
+SET @_query_before_update = '{query_before_update}';
+SET @_query_before_delete = '{query_before_delete}';
+SET @_color = '{color}';
+SET @_show_in_search = '{show_in_search}';
+SET @_show_overview_tab = '{show_overview_tab}';
+SET @_save_title_as_seo = '{save_title_as_seo}';
+SET @_api_after_insert = '{api_after_insert}';
+SET @_api_after_update = '{api_after_update}';
+SET @_api_before_update = '{api_before_update}';
+SET @_api_before_delete = '{api_before_delete}';
+SET @_show_title_field = '{show_title_field}';
+SET @_friendly_name = '{friendly_name}';
+SET @_save_history = '{save_history}';
+SET @_default_ordering = '{default_ordering}';
+SET @_template_query = '{template_query}';
+SET @_template_html = '{template_html}';
+
+SET @_show_in_tree_view = IF(@_show_in_tree_view = TRUE OR @_show_in_tree_view = 'true', 1, 0);
+SET @_show_in_search = IF(@_show_in_search = TRUE OR @_show_in_search = 'true', 1, 0);
+SET @_show_overview_tab = IF(@_show_overview_tab = TRUE OR @_show_overview_tab = 'true', 1, 0);
+SET @_save_title_as_seo = IF(@_save_title_as_seo = TRUE OR @_save_title_as_seo = 'true', 1, 0);
+SET @_show_title_field = IF(@_show_title_field = TRUE OR @_show_title_field = 'true', 1, 0);
+SET @_save_history = IF(@_save_history = TRUE OR @_save_history = 'true', 1, 0);
+
+UPDATE wiser_entity SET 
+	 module_id = @_module_id,
+	 name= @_name,
+	 accepted_childtypes = @_accepted_childtypes,
+	 icon = @_icon,
+	 icon_add = @_icon_add,
+	 icon_expanded = @_icon_expanded,
+	 show_in_tree_view = @_show_in_tree_view,
+	 query_after_insert = @_query_after_insert,
+	 query_after_update = @_query_after_update,
+	 query_before_update = @_query_before_update,
+	 query_before_delete = @_query_before_delete,
+	 color = @_color,
+	 show_in_search = @_show_in_search,
+	 show_overview_tab = @_show_overview_tab,
+	 save_title_as_seo = @_save_title_as_seo,
+	 api_after_insert = @_api_after_insert,
+	 api_after_update = @_api_after_update,
+	 api_before_update = @_api_before_update,
+	 api_before_delete = @_api_before_delete,
+	 show_title_field = @_show_title_field,
+	 friendly_name = @_friendly_name,
+	 save_history = @_save_history,
+	 default_ordering = @_default_ordering,
+	 template_query = @_template_query,
+	 template_html = @_template_html
+WHERE id = @_id
+LIMIT 1;
+");
                 TemplateQueryStrings.Add("SAVE_INITIAL_VALUES", @"SET @_entity_name = '{entity_name}';
 SET @_tab_name = '{tab_name}';
 SET @_tab_name = IF( @_tab_name='gegevens', '', @_tab_name);
 SET @_display_name = '{display_name}';
 SET @_property_name = IF('{property_name}' = '', @_display_name, '{property_name}');
-SET @_overviewvisibility = {visible_in_overview};
+SET @_overviewvisibility = '{visible_in_overview}';
 SET @_overviewvisibility = IF(@_overviewvisibility = TRUE OR @_overviewvisibility = 'true', 1, 0);
 SET @_overviewType = '{overview_fieldtype}';
 SET @_overviewWidth = '{overview_width}';
@@ -1009,8 +1078,8 @@ SET @_readOnly = '{readonly}';
 SET @_readOnly = IF(@_readOnly = TRUE OR @_readOnly = 'true', 1, 0);
 SET @_seo = '{also_save_seo_value}';
 SET @_seo = IF(@_seo = TRUE OR @_seo = 'true', 1, 0);
-SET @_width = {width};
-SET @_height = {height};
+SET @_width = '{width}';
+SET @_height = '{height}';
 SET @_langCode = '{language_code}';
 SET @_dependsOnField = '{depends_on_field}';
 SET @_dependsOnOperator = IF('{depends_on_operator}' = '', NULL, '{depends_on_operator}');
@@ -1061,8 +1130,42 @@ grid_update_query = @_grid_update_query
 WHERE entity_name = @_entity_name AND id = @_id
 LIMIT 1; ");
 
+                TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_FOR_SELECTED", @"SELECT 
+`id`, 
+`customer_id`, 
+`name`, 
+`module_id`, 
+`accepted_childtypes`, 
+`icon`, 
+`icon_add`, 
+`show_in_tree_view`, 
+`query_after_insert`, 
+`query_after_update`, 
+`query_before_update`, 
+`query_before_delete`, 
+`color`, 
+`show_in_search`, 
+`show_overview_tab`, 
+`save_title_as_seo` AS save_title, 
+`api_after_insert`, 
+`api_after_update`, 
+`api_before_update`, 
+`api_before_delete`, 
+`show_title_field`, 
+`friendly_name`, 
+`save_history`, 
+`default_ordering`, 
+`template_query`, 
+`template_html`, 
+`enable_multiple_environments`, 
+`icon_expanded`, 
+`use_dedicated_table`, 
+`dedicated_table_prefix`
+FROM wiser_entity 
+WHERE id= {id};
+");
 
-                TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_FOR_SELECTED", @"SELECT
+                TemplateQueryStrings.Add("GET_ENTITY_FIELD_PROPERTIES_FOR_SELECTED", @"SELECT
 id,
 display_name,
 inputtype, 

@@ -1,0 +1,61 @@
+name: Publish live server 1
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+    - v*
+
+jobs:
+  build:
+
+    runs-on: wiser-1
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build
+      run: dotnet build --no-restore
+      
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+      
+    - name: Stop application pool API
+      run: Stop-WebAppPool -Name "${{ secrets.APPLICATION_POOL_API_LIVE }}"
+      
+    - name: Stop application pool front-end
+      run: Stop-WebAppPool -Name "${{ secrets.APPLICATION_POOL_FRONT_END_LIVE }}"
+
+    - name: dotnet publish API
+      run: |
+        dotnet publish API -c Release -o "${{ secrets.PUBLISH_LOCATION_API_LIVE }}" --self-contained true  -r win-x64 /p:EnvironmentName=Live
+
+    - name: Install NPM modules
+      run: npm install
+      working-directory: 'FrontEnd'
+
+    - name: Activate Kendo UI License
+      run: npx kendo-ui-license activate
+      working-directory: 'FrontEnd'
+      env:
+        KENDO_UI_LICENSE: ${{ secrets.KENDO_UI_LICENSE }}
+                
+    - name: Compile scripts and styles with webpack
+      run: node_modules\.bin\webpack --mode=production
+      working-directory: 'FrontEnd'
+
+    - name: dotnet publish front-end
+      run: |
+        dotnet publish FrontEnd -c Release -o "${{ secrets.PUBLISH_LOCATION_FRONT_END_LIVE }}" --self-contained true  -r win-x64 /p:EnvironmentName=Live
+      
+    - name: Start application pool API
+      if: ${{ always() }}
+      run: Start-WebAppPool -Name "${{ secrets.APPLICATION_POOL_API_LIVE }}"
+      
+    - name: Start application pool front-end
+      if: ${{ always() }}
+      run: Start-WebAppPool -Name "${{ secrets.APPLICATION_POOL_FRONT_END_LIVE }}"

@@ -55,9 +55,9 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string emailAddress, string password, string ipAddress = null)
+        public Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null)
         {
-            return usersService.LoginAdminAccountAsync(emailAddress, password, ipAddress);
+            return usersService.LoginAdminAccountAsync(username, password, ipAddress);
         }
 
         /// <inheritdoc />

@@ -212,7 +212,8 @@ namespace Api
                         options.Authority = apiBaseUrl;
                         options.TokenValidationParameters = new TokenValidationParameters
                         {
-                            ValidateAudience = false
+                            ValidateAudience = false,
+                            ClockSkew = webHostEnvironment.IsDevelopment() ? new TimeSpan(0, 0, 0, 5) : new TimeSpan(0, 0, 5, 0)
                         };
                     });
 

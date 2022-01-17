@@ -1,4 +1,5 @@
 ﻿import { DateTime } from "luxon";
+import "./Processing.js";
 window.$ = require("jquery");
 
 /**
@@ -9,6 +10,53 @@ $.expr[":"].contains = $.expr.createPseudo(function (arg) {
         return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
     };
 });
+
+export class Utils {
+    static sleep(sleepTimeInMs = 1000) {
+        return new Promise((resolve) => {
+            setTimeout(resolve, sleepTimeInMs);
+        });
+    }
+
+    /**
+         * Check whether element is an array
+         * @param {element} element
+         * @return boolean
+         */
+    static isArray(element) {
+        if (Array.isArray) {
+            if (Array.isArray(element)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            if (element instanceof Array) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    static toQueryString(obj, prependQuestionMarkOnData = false, arraySeparator = ",") {
+        let returnString = "";
+        let cnt = 0;
+        for (const key in obj) {
+            if (!obj.hasOwnProperty(key) || obj[key] === undefined) continue;
+
+            if (cnt > 0) {
+                returnString += "&";
+            }
+            cnt++;
+
+            const val = obj[key];
+
+            returnString += `${key}=${(Utils.isArray(val) ? val.join(arraySeparator) : val)}`;
+        }
+        return returnString.length === 0 ? "" : `${prependQuestionMarkOnData ? "?" : ""}${returnString}`;
+    }
+}
 
 /**
  * Main class.
@@ -202,6 +250,27 @@ export class Strings {
  */
 export class Wiser2 {
     static async api(settings) {
+        // Find the Window that contains the main vue app of Wiser. We need this for saving the promise of refreshing the auth token.
+        // We do this on that window, because some modules have multiple iframes that all do xhr calls, so we need to make sure they all wait for each other
+        // and use the same refresh token.
+        let wiserMainWindow = window;
+        let previousWindow = null;
+        while (wiserMainWindow && !wiserMainWindow.main && previousWindow !== wiserMainWindow) {
+            previousWindow = wiserMainWindow;
+            wiserMainWindow = wiserMainWindow.parent;
+        }
+        
+        // If another process/request is already requesting a new access token, wait for that to finish first.
+        // This is to prevent multiple access token requests at the same time and to prevent racing conditions.
+        if (wiserMainWindow.wiserApiRefreshTokenPromise) {
+            const newRefreshToken = await wiserMainWindow.wiserApiRefreshTokenPromise;
+            
+            // Add logged in user access token to default authorization headers for all jQuery ajax requests.
+            $.ajaxSetup({
+                headers: { "Authorization": `Bearer ${newRefreshToken.access_token}` }
+            });
+        }
+
         const accessTokenExpires = localStorage.getItem("access_token_expires_on");
         const user = JSON.parse(localStorage.getItem("userData"));
         if (settings.url.indexOf("/connect/token") === -1 && (!accessTokenExpires || new Date(accessTokenExpires) <= new Date())) {
@@ -209,39 +278,47 @@ export class Wiser2 {
                 console.error("No refresh token found!");
 
                 // If we have no refresh token for some reason, logout the user.
-                if (window.parent && window.parent.main && window.parent.main.vueApp) {
-                    window.parent.main.vueApp.logout();
+                if (wiserMainWindow && wiserMainWindow.main && wiserMainWindow.main.vueApp) {
+                    wiserMainWindow.main.vueApp.logout();
                 }
                 
                 return Promise.reject("No refresh token found!");
             }
 
             const wiserSettings = document.body.dataset;
+            
+            // Create a promise for the refresh token, so that other requests know we're already busy getting one. They will then wait for this to finish.
+            wiserMainWindow.wiserApiRefreshTokenPromise = new Promise(async (resolve) => {
+                const refreshTokenResult = await $.ajax({
+                    url: wiserSettings.wiserApiAuthenticationUrl,
+                    method: "POST",
+                    data: {
+                        "grant_type": "refresh_token",
+                        "refresh_token": user.refresh_token,
+                        "subDomain": wiserSettings.subDomain,
+                        "client_id": wiserSettings.apiClientId,
+                        "client_secret": wiserSettings.apiClientSecret,
+                        "isTestEnvironment": wiserSettings.isTestEnvironment
+                    }
+                });
 
-            const refreshTokenResult = await $.ajax({
-                url: wiserSettings.wiserApiAuthenticationUrl,
-                method: "POST",
-                data: {
-                    "grant_type": "refresh_token",
-                    "refresh_token": user.refresh_token,
-                    "subDomain": wiserSettings.subDomain,
-                    "client_id": wiserSettings.apiClientId,
-                    "client_secret": wiserSettings.apiClientSecret,
-                    "isTestEnvironment": wiserSettings.isTestEnvironment
-                }
+                refreshTokenResult.expires_on = new Date(new Date().getTime() + (refreshTokenResult.expires_in * 1000));
+                refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true;
+
+                localStorage.setItem("access_token", refreshTokenResult.access_token);
+                localStorage.setItem("access_token_expires_on", refreshTokenResult.expires_on);
+                localStorage.setItem("userData", JSON.stringify(Object.assign({}, user, refreshTokenResult)));
+
+                // Add logged in user access token to default authorization headers for all jQuery ajax requests.
+                $.ajaxSetup({
+                    headers: { "Authorization": `Bearer ${refreshTokenResult.access_token}` }
+                });
+
+                resolve(refreshTokenResult);
             });
 
-            refreshTokenResult.expires_on = new Date(new Date().getTime() + (refreshTokenResult.expires_in * 1000));
-            refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true;
-
-            localStorage.setItem("access_token", refreshTokenResult.access_token);
-            localStorage.setItem("access_token_expires_on", refreshTokenResult.expires_on);
-            localStorage.setItem("userData", JSON.stringify(Object.assign({}, user, refreshTokenResult)));
-
-            // Add logged in user access token to default authorization headers for all jQuery ajax requests.
-            $.ajaxSetup({
-                headers: { "Authorization": `Bearer ${refreshTokenResult.access_token}` }
-            });
+            // Of course we also need to wait until we have the new auth token, otherwise the code below will be executed too early.
+            await wiserMainWindow.wiserApiRefreshTokenPromise;
         }
 
         return $.ajax(settings).fail((jqXhr, textStatus, errorThrown) => {
@@ -462,13 +539,13 @@ export class Wiser2 {
                     return;
                 }
 
-                jjl.processing.addProcess(process);
+                window.processing.addProcess(process);
 
                 // Get the settings.
                 const apiConnectionData = await Wiser2.api({ url: `${settings.wiserApiRoot}api-connections/${encodeURIComponent(apiConnectionId)}` });
                 if (!apiConnectionData || !apiConnectionData.options) {
                     reject("Er werd geprobeerd om een API aan te roepen, echter zijn er niet genoeg gegevens bekend. Neem a.u.b. contact op met ons.");
-                    jjl.processing.removeProcess(process);
+                    window.processing.removeProcess(process);
                     return;
                 }
 
@@ -484,7 +561,7 @@ export class Wiser2 {
 
                 if (!apiOptions.baseUrl) {
                     reject("Er werd geprobeerd om een API aan te roepen, echter zijn er niet genoeg gegevens bekend. Neem a.u.b. contact op met ons.");
-                    jjl.processing.removeProcess(process);
+                    window.processing.removeProcess(process);
                     return;
                 }
 
@@ -501,7 +578,7 @@ export class Wiser2 {
                             break;
                         default:
                             reject("Geen of onbekend authenticatie-type opgegeven. Neem a.u.b. contact op met ons.");
-                            jjl.processing.removeProcess(process);
+                            window.processing.removeProcess(process);
                             return;
                     }
                 }
@@ -615,12 +692,12 @@ export class Wiser2 {
                 }
 
                 // We're done, handle the promise' success.
-                jjl.processing.removeProcess(process);
+                window.processing.removeProcess(process);
                 success(allActionResults);
 
                 // Do the actual API call, after authentication.
             } catch (exception) {
-                jjl.processing.removeProcess(process);
+                window.processing.removeProcess(process);
                 reject(exception);
             }
         });

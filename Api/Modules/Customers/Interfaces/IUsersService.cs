@@ -23,11 +23,11 @@ namespace Api.Modules.Customers.Interfaces
         /// <summary>
         /// Method for logging in admin accounts.
         /// </summary>
-        /// <param name="emailAddress">The e-mail address of the admin account.</param>
+        /// <param name="username">The e-mail address of the admin account.</param>
         /// <param name="password">The password of the admin account.</param>
         /// <param name="ipAddress">The IP address of the user that is trying to login.</param>
         /// <returns>A populated <see cref="AdminAccountModel"/> if successful, a 401 error if not.</returns>
-        Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string emailAddress, string password, string ipAddress = null);
+        Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null);
         
         /// <summary>
         /// Login a customer to Wiser 2.0. Normal users login with their username and password.
