@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Api.Modules.Babel.Interfaces;
 using Api.Modules.Babel.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Modules.Babel.Controllers
@@ -9,7 +8,7 @@ namespace Api.Modules.Babel.Controllers
     /// <summary>
     /// A controller for Babel actions, such as converting javascript to work with older browsers.
     /// </summary>
-    [Route("api/v3/[controller]"), ApiController, Authorize]
+    [Route("api/v3/[controller]"), ApiController]
     public class BabelController : ControllerBase
     {
         private readonly IBabelService babelService;
