@@ -187,4 +187,28 @@ input[type="date"] {
     .k-searchbar + .k-icon {
         display: none;
     }
+
+    #password {
+        + ins {
+            cursor: pointer;
+            height: 42px;
+            line-height: 42px;
+            width: 42px;
+            display: flex;
+            position: absolute;
+            z-index: 10;
+            right: 0;
+            justify-content: center;
+            top: 0;
+            font-size: 20px;
+        }
+
+        &[type="text"] {
+            + ins {
+                &:before {
+                    content: "\e961";
+                }
+            }
+        }
+    }
 }

@@ -119,6 +119,14 @@ export default {
             });
         },
 
+        togglePassword() {
+            const password = document.querySelector("#password");
+
+            // toggle the type attribute
+            const type = password.getAttribute("type") === "password" ? "text" : "password";
+            password.setAttribute("type", type);
+        },
+
         togglePasswordForgottenScreen(show) {
             this.showForgotPasswordScreen = show;
         },
