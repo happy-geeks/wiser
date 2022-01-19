@@ -340,7 +340,7 @@ namespace Api.Modules.Customers.Services
                     break;
             }
             
-            var mailTemplate = (await templatesService.GetTemplateByName("Wachtwoord vergeten", true)).ModelObject;
+            var mailTemplate = (await templatesService.GetTemplateByNameAsync("Wachtwoord vergeten", true)).ModelObject;
             mailTemplate.Content = mailTemplate.Content.Replace("{username}", resetPasswordRequestModel.Username).Replace("{password}", password).Replace("{subdomain}", resetPasswordRequestModel.SubDomain);
 
             await communicationsService.SendEmailAsync(resetPasswordRequestModel.EmailAddress, mailTemplate.Subject, mailTemplate.Content);
