@@ -1,0 +1,41 @@
+﻿@using System.Reflection
+@model Api.Modules.Templates.Models.DynamicContent.DynamicContentInformationModel
+
+@using GeeksCoreLibrary.Core.Cms.Attributes
+
+<div class="tabstrip">
+    <ul>
+        @foreach (var tab in @Model.propertyAttributes.Value)
+        {
+            <li class="@tab.Key-tab">@tab.Key</li>
+        }
+    </ul>
+    @foreach (var tab in @Model.propertyAttributes.Value)
+    {
+        <div>
+            <div class="formview full @tab.Key.ToString().ToLower()Container">
+                @foreach (var group in @tab.Value)
+                {
+                    <div class="item-group">
+                        <h3>@group.Key</h3>
+                        @foreach (var prop in @group.Value)
+                        {
+
+
+                            var newDict = new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(prop.Value, new KeyValuePair<PropertyInfo, object>(prop.Key, ""));
+                            foreach (KeyValuePair<PropertyInfo, object> propValue in Model.propValues)
+                            {
+                                if (prop.Key.Name == propValue.Key.Name)
+                                {
+                                    newDict = new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(prop.Value, propValue);
+                                }
+                            }
+
+                            <partial name="InputGenerator" model="newDict" />
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

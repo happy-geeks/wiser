@@ -1,0 +1,117 @@
+﻿@model Api.Modules.Templates.Models.DynamicContent.DynamicContentInformationModel
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Wiser 2.1 - Dynamic content</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    @*<link href="https://kendo.cdn.telerik.com/2021.3.914/styles/kendo.common-material.min.css" rel="stylesheet" />
+        <link href="https://kendo.cdn.telerik.com/2021.3.914/styles/kendo.material.min.css" rel="stylesheet" />*@
+
+    <!-- Module CSS -->
+    <link href="~/css/Kendo/kendo.common-material.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/Kendo/kendo.material.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/icomoon.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/kendo.custom.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/kendo-custom.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/kendo.wiser.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/fonts.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/variables.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/masterpage.css" rel="stylesheet" type="text/css" />
+
+
+    <link href="~/css/DynamicContent.css" rel="stylesheet" type="text/css" />
+
+    <script src="https://kendo.cdn.telerik.com/2021.3.914/js/jquery.min.js"></script>
+    <script type="text/javascript" src="https://kendo.cdn.telerik.com/2021.3.914/js/kendo.all.min.js"></script>
+    <script type="module" src="~/js/DynamicContent.js"></script>
+    <!-- Code Mirror-->
+    <link rel="stylesheet" href="~/codemirror/codemirror-5.63.3/lib/codemirror.css">
+    <script src="~/codemirror/codemirror-5.63.3/lib/codemirror.js"></script>
+    <script src="~/codemirror/codemirror-5.63.3/mode/javascript/javascript.js"></script>
+    <script src="~/codemirror/codemirror-5.63.3/mode/xml/xml.js"></script>
+    <script src="~/codemirror/codemirror-5.63.3/mode/css/css.js"></script>
+    <script src="~/codemirror/codemirror-5.63.3/mode/htmlmixed/htmlmixed.js"></script>
+    <script src="~/codemirror/codemirror-5.63.3/hint/show-hint.js"></script>
+    <link rel="stylesheet" href="~/codemirror/codemirror-5.63.3/theme/neo.css">
+    <link rel="stylesheet" href="~/codemirror/codemirror-5.63.3/theme/darcula.css">
+</head>
+<body>
+    <span id="popupNotification"></span>
+    <form id="mainScreenForm" autocomplete="off" novalidate>
+        <div id="wiser" data-dcid="@(ViewContext.RouteData.Values["id"])">
+
+            <div id="window" style="margin: 0 auto; padding: 0;">
+                <div class="window-content">
+                    <div id="panelwithsplitter" style="height: 100%; margin: 0; padding: 0; border: 0;">
+
+                        <div id="horizontal" style="border: 0; height: 100%; width: 100%;">
+
+                            <div id="left-pane" style="background-color: #eee;">
+                                <div class="pane-content">
+
+                                    <div class="input-container">
+                                        <partial name="Partials/DynamicContentComponentInputs" model="Model"/>
+                                    </div>
+
+                                    <div class="k-tabstrip-wrapper" style="">
+                                        <partial name="Partials/DynamicContentTabPane" model="@Model" />
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div id="right-pane" style="background-color: #eee;">
+                                <div class="pane-content" style="border: 0; margin: 0; padding: 0; height: 100%">
+                                    <div class="tabstrip">
+                                        <ul>
+                                            <li class="preview-tab">Preview</li>
+                                            <li class="history-tab k-state-active">History</li>
+                                        </ul>
+                                        <div>
+                                            <div class="formview full previewContainer">
+                                                <button tabindex="0" role="button" class="k-button k-tool k-group-start k-group-end" title="View HTML" aria-label="View HTML" unselectable="on">
+                                                    <span class="k-icon k-i-html"></span>
+                                                    <span class="k-tool-text k-button-text">View HTML</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="formview full historyContainer">
+                                                <div class="row historyHeader">
+                                                    <div class="col col-6">
+                                                        <h3>Oud</h3>
+                                                    </div>
+                                                    <div class="col col-6">
+                                                        <h3>Nieuw</h3>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="window-footer">
+                    <button class="btn btn-secundary btn-right">Opslaan &amp; sluiten</button>
+                    <button class="btn btn-primary btn-right">Opslaan</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!--
+    <div id="mainLoader" class="fullscreen-loader loading">
+        <div class="loader-icon">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+    -->
+</body>
+</html>

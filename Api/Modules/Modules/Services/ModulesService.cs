@@ -337,7 +337,7 @@ namespace Api.Modules.Modules.Services
             clientDatabaseConnection.AddParameter("id", id);
 
             var query = $@"SELECT id, options FROM {WiserTableNames.WiserModule} WHERE id = ?id";
-            DataTable dataTable = await clientDatabaseConnection.GetAsync(query);
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count == 0)
             {
@@ -385,7 +385,7 @@ namespace Api.Modules.Modules.Services
                 newData.Add(newObject);
             }
 
-            byte[] result = excelService.JsonArrayToExcel(newData);
+            var result = excelService.JsonArrayToExcel(newData);
             return new ServiceResult<byte[]>(result);
         }
     }

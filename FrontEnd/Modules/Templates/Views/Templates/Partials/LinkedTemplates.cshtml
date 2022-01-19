@@ -1,0 +1,58 @@
+﻿@using Api.Modules.Templates.Models.Template
+@using Api.Modules.Templates.Enums
+@model LinkedTemplatesModel
+
+<div class="item" style="width: 50%;">
+    <span class="handler">&nbsp;</span>
+    <h4><label for="css-templates">Gekoppelde (S)CSS templates</label></h4>
+    <ul id="scss-checklist" class="checkboxlist ">
+        @foreach (var linkedTemplate in @Model.linkedSCCSTemplates)
+        {
+            <li>
+                <label class="checkbox">
+                    <input type="checkbox" value="1" checked="checked" data-template="@linkedTemplate.templateId">
+                    <span>ParentName >> @linkedTemplate.templateName (SCSS)</span>
+                </label>
+            </li>
+        }
+        @foreach (var linkOption in @Model.linkOptionsTemplates)
+        {
+            if (linkOption.linkType == LinkedTemplatesEnum.scss) {
+            <li>
+                <label class="checkbox">
+                    <input type="checkbox" value="1" data-template="@linkOption.templateId">
+                    <span>ParentName >> @linkOption.templateName (SCSS)</span>
+                </label>
+            </li>
+            }
+        }
+    </ul>
+</div>
+
+<div class="item" style="width: 50%;">
+    <span class="handler">&nbsp;</span>
+    <h4><label for="js-templates">Gekoppelde JS templates</label></h4>
+    <ul id="js-checklist" class="checkboxlist ">
+        @foreach (var linkedTemplate in @Model.linkedJavascript)
+        {
+            <li>
+                <label class="checkbox">
+                    <input type="checkbox" value="1" checked="checked" data-template="@linkedTemplate.templateId">
+                    <span>ParentName >> @linkedTemplate.templateName (JS)</span>
+                </label>
+            </li>
+        }
+        @foreach (var linkOption in @Model.linkOptionsTemplates)
+        {
+            if (linkOption.linkType == LinkedTemplatesEnum.javascript)
+            {
+                <li>
+                    <label class="checkbox">
+                        <input type="checkbox" value="1" data-template="@linkOption.templateId">
+                        <span>ParentName >> @linkOption.templateName (JS)</span>
+                    </label>
+                </li>
+            }
+        }
+    </ul>
+</div>

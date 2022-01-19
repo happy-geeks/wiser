@@ -11,6 +11,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Modules\Templates\DataLayer\**" />
+    <Content Remove="Modules\Templates\DataLayer\**" />
+    <EmbeddedResource Remove="Modules\Templates\DataLayer\**" />
+    <None Remove="Modules\Templates\DataLayer\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Core\Scss\partner\argonaut.scss" />
     <None Remove="Core\Scss\partner\beachlife.scss" />
     <None Remove="Core\Scss\partner\cyell.scss" />
@@ -68,5 +75,9 @@
     <PackageReference Include="GeeksCoreLibrary" Version="1.0.4" />
     <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Api\Api.csproj" />
   </ItemGroup>
 </Project>

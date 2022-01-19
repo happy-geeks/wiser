@@ -1,0 +1,71 @@
+﻿@using Api.Modules.Templates.Models.Preview
+@model List<Api.Modules.Templates.Models.Preview.PreviewProfileModel>
+<div class="formview full previewContainer">
+    <div class="row preview-settings">
+        <div class="col col-6 preview-profile">
+            <div class="row">
+                <div class="col col-12">
+                    <div class="flex-container item">
+                        <div class="dropdown-container">
+                            <select id="preview-combo-select" placeholder="Maak uw keuze...">
+                                @foreach (var profile in Model)
+                                {
+                                    <option value="@profile.id" data-url="@profile.url" data-variables="@profile.variables">@profile.name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="dropdown-button">
+                            <button id="preview-remove-profile" class="k-primary k-button">Verwijder profiel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col col-12">
+                    <div class="item" data-label-style="float" data-label-width="0">
+                        <span class="handler">&nbsp;</span>
+                        <h4><label for="profile-url">URL</label></h4>
+                        <span class="k-widget k-input k-state-default">
+                            <input type="text" id="profile-url" class="textField k-input" autocomplete="off" value="URL" />
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col col-12">
+                    <div class="item">
+                        <div id="preview-results"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col col-6 preview-variables">
+            <div class="row">
+                <div class="col col-12">
+                    <div class="item">
+                        <div id="preview-variables"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col col-12">
+                    <div class="item">
+                        <div class="button-container">
+                            <button id="preview-save-profile-as" class="k-primary k-button">Profiel opslaan als...</button>
+                            <button id="preview-save-profile" class="k-primary k-button">Profiel opslaan</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row preview-window">
+        <div class="col col-12 preview-window-container">
+            <div class="item">
+                preview window
+            </div>
+        </div>
+    </div>
+</div>

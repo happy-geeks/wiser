@@ -1,9 +1,13 @@
-﻿using System.Collections.Specialized;
+﻿using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models;
+using Api.Modules.Templates.Models.DynamicContent;
+using Api.Modules.Templates.Models.Other;
+using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
@@ -64,9 +68,57 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateModel>> GetTemplateByName(string templateName, bool wiserTemplate = false)
+        public async Task<ServiceResult<TemplateModel>> GetTemplateByNameAsync(string templateName, bool wiserTemplate = false)
         {
-            return await templatesService.GetTemplateByName(templateName, wiserTemplate);
+            return await templatesService.GetTemplateByNameAsync(templateName, wiserTemplate);
+        }
+
+        /// <inheritdoc />
+        public async Task<TemplateDataModel> GetLatestTemplateVersionAsync(int templateId)
+        {
+            return await templatesService.GetLatestTemplateVersionAsync(templateId);
+        }
+
+        /// <inheritdoc />
+        public async Task<PublishedEnvironmentModel> GetTemplateEnvironmentsAsync(int templateId)
+        {
+            return await templatesService.GetTemplateEnvironmentsAsync(templateId);
+        }
+
+        /// <inheritdoc />
+        public async Task<LinkedTemplatesModel> GetLinkedTemplatesAsync(int templateId)
+        {
+            return await templatesService.GetLinkedTemplatesAsync(templateId);
+        }
+
+        /// <inheritdoc />
+        public async Task<List<DynamicContentOverviewModel>> GetLinkedDynamicContentAsync(int templateId)
+        {
+            return await templatesService.GetLinkedDynamicContentAsync(templateId);
+        }
+
+        /// <inheritdoc />
+        public async Task<int> PublishEnvironmentOfTemplateAsync(int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
+        {
+            return await templatesService.PublishEnvironmentOfTemplateAsync(templateId, version, environment, currentPublished);
+        }
+
+        /// <inheritdoc />
+        public async Task<int> SaveTemplateVersionAsync(TemplateDataModel template, List<int> scssLinks, List<int> jsLinks)
+        {
+            return await templatesService.SaveTemplateVersionAsync(template, scssLinks, jsLinks);
+        }
+
+        /// <inheritdoc />
+        public async Task<List<TemplateTreeViewModel>> GetTreeViewSectionAsync(int parentId)
+        {
+            return await templatesService.GetTreeViewSectionAsync(parentId);
+        }
+
+        /// <inheritdoc />
+        public async Task<List<SearchResultModel>> GetSearchResultsAsync(SearchSettingsModel searchSettings)
+        {
+            return await templatesService.GetSearchResultsAsync(searchSettings);
         }
     }
 }
