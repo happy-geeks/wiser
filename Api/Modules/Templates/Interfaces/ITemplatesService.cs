@@ -1,7 +1,11 @@
-﻿using System.Security.Claims;
+﻿using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Templates.Models;
+using Api.Modules.Templates.Models.DynamicContent;
+using Api.Modules.Templates.Models.Other;
+using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Modules.Templates.Models;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
@@ -34,6 +38,19 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="templateName">The name of the template.</param>
         /// <param name="wiserTemplate">Optional: If true the template will be tried to be found within Wiser instead of the database of the user.</param>
         /// <returns></returns>
-        Task<ServiceResult<TemplateModel>> GetTemplateByName(string templateName, bool wiserTemplate = false);
+        Task<ServiceResult<TemplateModel>> GetTemplateByNameAsync(string templateName, bool wiserTemplate = false);
+		
+        Task<TemplateDataModel> GetLatestTemplateVersionAsync(int templateId);
+        Task<PublishedEnvironmentModel> GetTemplateEnvironmentsAsync(int templateId);
+
+        Task<LinkedTemplatesModel> GetLinkedTemplatesAsync(int templateId);
+
+        Task<List<DynamicContentOverviewModel>> GetLinkedDynamicContentAsync(int templateId);
+
+        Task<int> PublishEnvironmentOfTemplateAsync(int templateId, int version, string environment, PublishedEnvironmentModel currentPublished);
+
+        Task<int> SaveTemplateVersionAsync(TemplateDataModel template, List<int> scssLinks, List<int> jsLinks);
+        Task<List<TemplateTreeViewModel>> GetTreeViewSectionAsync(int parentId);
+        Task<List<SearchResultModel>> GetSearchResultsAsync(SearchSettingsModel searchSettings);
     }
 }

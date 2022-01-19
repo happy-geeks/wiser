@@ -1,0 +1,18 @@
+﻿@model FrontEnd.Modules.Templates.Models.TemplateOverviewViewModel
+<div class="tabstrip-treeview">
+    <ul>
+        @foreach (var root in Model.TreeView)
+        {
+            <li id="@root.templateId" class="@root.templateName.ToLower()-tab">@root.templateName</li>
+        }
+    </ul>
+
+    @foreach (var root in Model.TreeView)
+    {
+        <div>
+            <ul id="@root.templateId-treeview" class="treeview" data-id="@root.templateId">
+            </ul>
+        </div>
+    }
+    <button id="addButton" class="k-primary k-button-round"></button>
+</div>

@@ -1,0 +1,11 @@
+﻿@model Api.Modules.Templates.Models.Template.DevelopmentTemplateModel
+<div class="formview full developmentContainer">
+
+    <partial name="../Partials/PublishedEnvironments" model="@Model.templateData" />
+
+    <partial name="../Partials/TemplateEditor" model="@Model.templateData.editorValue"/>
+
+    <partial name="../Partials/LinkedTemplates" model="@Model.linkedTemplates" />
+
+    <partial name="../Partials/AdvancedSettings" model="@Model.templateData"/>
+</div>
