@@ -36,6 +36,7 @@
                         <li class="k-state-active">Entiteiten</li>
                         <li style="display:none">Modules</li>
                         <li>Rollen</li>
+                        <li>Queries</li>
                     </ul>
                     <div>
                         <div class="formview full">
@@ -1483,6 +1484,54 @@
                                     <div>
                                         <div id="ModulesGrid" class="multi-check"></div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tabSplit">
+                        <div class="left-pane">
+                            <div class="pane-content">
+                                <div class="item">
+                                    <select id="queryList"></select>
+                                </div>
+                                <div class="buttons">
+                                    <span>
+                                        <button class="k-primary addQueryBtn">Toevoegen</button>
+                                        <button class="k-primary delQueryBtn">Verwijderen</button>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="right-pane">
+                            <div class="pane-content">
+                                <div class="item" style="width: 50%;">
+                                    <span class="handler">&nbsp;</span>
+                                    <h4>
+                                        <label>Beschrijving</label>
+                                    </h4>
+                                    <span class="k-widget k-input k-state-default">
+                                        <input id="queryDescription" type="text" class="textField k-input" autocomplete="off" />
+                                    </span>
+                                </div>
+                                <div class="item" style="width: 25%;">
+                                    <span class="handler">&nbsp;</span>
+                                    <span class="inline titleMargin">
+                                        <label class="checkbox">
+                                            <input id="showInExportModule" type="checkbox" />
+                                            <span>Tonen in export module</span>
+                                        </label>
+                                    </span>
+                                </div>
+                                <div class="item" style="width: 25%;">
+                                    <span class="handler">&nbsp;</span>
+                                </div>
+                                <div class="item" style="width: 100%;">
+                                    <h4>
+                                        <label>Query</label>
+                                    </h4>
+                                    <span class="k-widget k-input k-state-default">
+                                        <textarea id="queryFromWiser"></textarea>
+                                    </span>
                                 </div>
                             </div>
                         </div>

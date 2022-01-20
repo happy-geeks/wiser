@@ -2,9 +2,10 @@
 import { ModuleTab } from "../Scripts/ModuleTab.js";
 import { RoleTab } from "../Scripts/RoleTab.js";
 import { EntityTab } from "../Scripts/EntityTab.js";
-import { EntityFieldTab } from "./EntityFieldTab.js";
-import { EntityPropertyTab } from "./EntityPropertyTab.js";
-import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import { EntityFieldTab } from "../Scripts/EntityFieldTab.js";
+import { EntityPropertyTab } from "../Scripts/EntityPropertyTab.js";
+import { WiserQueryTab } from "../Scripts/WiserQueryTab.js";
+import { Wiser2 } from "../../Base/Scripts/Utils.js"; 
 
 
 require("@progress/kendo-ui/js/kendo.all.js");
@@ -39,6 +40,7 @@ const moduleSettings = {
             this.moduleTab = null;
             this.translations = null;
             this.roleTab = null;
+            this.wiserQueryTab = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -172,12 +174,14 @@ const moduleSettings = {
 
             this.settings.serviceRoot = `${this.settings.wiserVersion >= 210 ? this.settings.wiserApiV21Root : this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserVersion >= 210 ? this.settings.wiserApiV21Root : this.settings.wiserApiRoot}data-selectors`;
+            this.settings.wiserApiRoot = `${this.settings.wiserVersion >= 210 ? this.settings.wiserApiV21Root : this.settings.wiserApiRoot}`;
 
             this.moduleTab = new ModuleTab(this);
             this.entityTab = new EntityTab(this);
             this.entityFieldsTab = new EntityFieldTab(this);
             this.entityPropertyTab = new EntityPropertyTab(this);
             this.roleTab = new RoleTab(this);
+            this.wiserQueryTab = new WiserQueryTab(this);
             this.setupBindings();
             this.initializeKendoComponents();
 
