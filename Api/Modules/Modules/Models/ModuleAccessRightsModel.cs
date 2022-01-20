@@ -81,6 +81,11 @@ namespace Api.Modules.Modules.Models
         public string Group { get; set; }
 
         /// <summary>
+        /// Gets or sets if the module is pinned by the user.
+        /// </summary>
+        public bool Pinned { get; set; }
+
+        /// <summary>
         /// Convert a <see cref="DataRow"/> to an <see cref="ModuleAccessRightsModel"/>.
         /// </summary>
         /// <param name="dataRow">The <see cref="DataRow"/> to convert.</param>

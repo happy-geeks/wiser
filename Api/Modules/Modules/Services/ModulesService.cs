@@ -70,7 +70,24 @@ namespace Api.Modules.Modules.Services
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
 
-            var query = $@"(
+            var query = $@" SELECT pinned.`value` AS pinnedModules
+                            FROM {WiserTableNames.WiserItemDetail} AS pinned
+                            WHERE pinned.item_id = ?userId
+                            AND pinned.`key` = 'pinned'";
+
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            List<int> pinnedModules;
+            if (dataTable.Rows.Count == 0)
+            {
+                pinnedModules = new List<int>();
+            }
+            else
+            {
+                var pinned = dataTable.Rows[0].Field<string>("pinnedModules");
+                pinnedModules = pinned.Split(',').Select(int.Parse).ToList();
+            }
+
+            query = $@"(
                             SELECT
 	                            permission.module_id,
 	                            MAX(permission.permissions) AS permissions,
@@ -110,7 +127,7 @@ namespace Api.Modules.Modules.Services
                         )";
             }
 
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            dataTable = await clientDatabaseConnection.GetAsync(query);
             var results = new SortedList<string, List<ModuleAccessRightsModel>>();
             if (dataTable.Rows.Count == 0)
             {
@@ -147,6 +164,7 @@ namespace Api.Modules.Modules.Services
                 rightsModel.Color = dataRow.Field<string>("color");
                 rightsModel.Type = dataRow.Field<string>("type");
                 rightsModel.Group = groupName;
+                rightsModel.Pinned = pinnedModules.Contains(moduleId);
 
                 results[groupName].Add(rightsModel);
 

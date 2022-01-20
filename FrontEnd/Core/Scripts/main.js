@@ -23,7 +23,7 @@ import WiserDialog from "./components/wiser-dialog";
 import "../scss/main.scss";
 import "../scss/task-alerts.scss";
 
-import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, ACTIVATE_MODULE, LOAD_ENTITY_TYPES_OF_ITEM_ID, GET_CUSTOMER_TITLE } from "./store/mutation-types";
+import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, ACTIVATE_MODULE, LOAD_ENTITY_TYPES_OF_ITEM_ID, GET_CUSTOMER_TITLE, TOGGLE_PIN_MODULE } from "./store/mutation-types";
 
 (() => {
     class Main {
@@ -93,7 +93,8 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         appSettings: this.appSettings,
                         wiserIdPromptValue: null,
                         wiserEntityTypePromptValue: null,
-                        markerWidget: this.markerWidget
+                        markerWidget: this.markerWidget,
+                        modulePins: {}
                     };
                 },
                 created() {
@@ -119,7 +120,15 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         return this.$store.state.modules.allModules;
                     },
                     moduleGroups() {
-                        return this.$store.state.modules.moduleGroups;
+                        let moduleGroups = this.$store.state.modules.moduleGroups;
+
+                        moduleGroups.forEach(group => {
+                            group.modules.forEach(module => {
+                                this.modulePins[module.module_id] = module.pinned;
+                            });
+                        });
+                        
+                        return moduleGroups;
                     },
                     openedModules() {
                         return this.$store.state.modules.openedModules;
@@ -304,6 +313,14 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
 
                     openMarkerIoScreen() {
                         this.markerWidget.capture("fullscreen");
+                    },
+
+                    async togglePin(moduleId) {
+                        this.$store.dispatch(TOGGLE_PIN_MODULE,
+                            {
+                                moduleId: moduleId,
+                                pinned: this.modulePins[moduleId]
+                            });
                     }
                 }
             });

@@ -1,5 +1,5 @@
 ﻿import { createStore } from "vuex";
-import { START_REQUEST, END_REQUEST, AUTH_REQUEST, AUTH_LIST, AUTH_SUCCESS, AUTH_ERROR, AUTH_LOGOUT, MODULES_LOADED, OPEN_MODULE, ACTIVATE_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, MODULES_REQUEST, LOAD_ENTITY_TYPES_OF_ITEM_ID, FORGOT_PASSWORD, RESET_PASSWORD_SUCCESS, RESET_PASSWORD_ERROR, CHANGE_PASSWORD, CHANGE_PASSWORD_SUCCESS, CHANGE_PASSWORD_ERROR, GET_CUSTOMER_TITLE, VALID_SUB_DOMAIN } from "./mutation-types";
+import { START_REQUEST, END_REQUEST, AUTH_REQUEST, AUTH_LIST, AUTH_SUCCESS, AUTH_ERROR, AUTH_LOGOUT, MODULES_LOADED, OPEN_MODULE, ACTIVATE_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, MODULES_REQUEST, LOAD_ENTITY_TYPES_OF_ITEM_ID, FORGOT_PASSWORD, RESET_PASSWORD_SUCCESS, RESET_PASSWORD_ERROR, CHANGE_PASSWORD, CHANGE_PASSWORD_SUCCESS, CHANGE_PASSWORD_ERROR, GET_CUSTOMER_TITLE, VALID_SUB_DOMAIN, TOGGLE_PIN_MODULE } from "./mutation-types";
 
 const baseModule = {
     state: () => ({
@@ -240,6 +240,12 @@ const modulesModule = {
                 return;
             }
 
+            const pinnedModuleGroup = {
+                name: "Pinned",
+                modules: []
+            }
+            state.moduleGroups.push(pinnedModuleGroup);
+
             for (let groupName in modules) {
                 if (!modules.hasOwnProperty(groupName)) {
                     continue;
@@ -258,7 +264,12 @@ const modulesModule = {
                     }
 
                     state.allModules.push(module);
-                    moduleGroup.modules.push(module);
+
+                    if (module.pinned) {
+                        pinnedModuleGroup.modules.push(module);
+                    } else {
+                        moduleGroup.modules.push(module);
+                    }
                 }
             }
         },
@@ -312,6 +323,26 @@ const modulesModule = {
         [CLOSE_ALL_MODULES]: (state) => {
             state.activeModule = null;
             state.openedModules = [];
+        },
+        [TOGGLE_PIN_MODULE]: (state, data) => {
+            const module = state.allModules.filter(m => {
+                return m.module_id === data.moduleId;
+            })[0];
+
+            const removeFrom = data.pinned ? module.group : "Pinned";
+            const addTo = data.pinned ? "Pinned" : module.group;
+
+            const removeFromGroup = state.moduleGroups.filter(g => {
+                return g.name === removeFrom;
+            })[0];
+
+            const addToGroup = state.moduleGroups.filter(g => {
+                return g.name === addTo;
+            })[0];
+
+            module.pinned = data.pinned;
+            removeFromGroup.modules.splice(removeFromGroup.modules.indexOf(module), 1);
+            addToGroup.modules.push(module);
         }
     },
 
@@ -340,6 +371,10 @@ const modulesModule = {
 
         [CLOSE_ALL_MODULES]({ commit }) {
             commit(CLOSE_ALL_MODULES);
+        },
+
+        async [TOGGLE_PIN_MODULE]({ commit }, data = {}) {
+            commit(TOGGLE_PIN_MODULE, data);
         }
     },
 
