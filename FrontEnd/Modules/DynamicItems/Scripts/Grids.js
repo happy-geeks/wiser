@@ -219,11 +219,14 @@ export class Grids {
                     commandColumnWidth += 40;
 
                     const onDeleteClick = async (event) => {
+                        const mainItemDetails = this.mainGrid.dataItem($(event.currentTarget).closest("tr")) || {};
+
                         if (!gridViewSettings || gridViewSettings.showDeleteConformations !== false) {
-                            await kendo.confirm("Weet u zeker dat u dit item wilt verwijderen?");
+                            const itemName = mainItemDetails.title || mainItemDetails.name;
+                            const deleteConfirmationText = itemName ? `het item '${itemName}'` : "het geselecteerde item";
+                            await Wiser2.showConfirmDialog(`Weet u zeker dat u ${deleteConfirmationText} wilt verwijderen?`)
                         }
 
-                        const mainItemDetails = this.mainGrid.dataItem($(event.currentTarget).closest("tr"));
                         await Wiser2.api({
                             method: "POST",
                             url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid || this.base.settings.zeroEncrypted)}/action-button/0?queryId=${encodeURIComponent(gridViewSettings.deleteItemQueryId)}&itemLinkId=${encodeURIComponent(mainItemDetails.link_id || mainItemDetails.linkId || 0)}`,
@@ -1146,6 +1149,7 @@ export class Grids {
         // get the data bound to the current table row
         const dataItem = senderGrid.dataItem(tr);
         let encryptedId = dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid;
+        let selectedItemDetails = {};
 
         if (!encryptedId) {
             // If the clicked column has no field property (such as the command column), use the item ID of the main entity type.
@@ -1156,10 +1160,12 @@ export class Grids {
                 return;
             }
 
-            const itemDetails = (await this.base.getItemDetails(itemId))[0];
-            encryptedId = itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid;
+            selectedItemDetails = (await this.base.getItemDetails(itemId))[0] || {};
+            encryptedId = selectedItemDetails.encryptedId || selectedItemDetails.encrypted_id || selectedItemDetails.encryptedid;
         }
 
+        const itemTitleForDeleteDialog = dataItem.title || dataItem.name || selectedItemDetails.title || dataItem.id || selectedItemDetails.id;
+        let itemDeleteDialogText = itemTitleForDeleteDialog ? `het item '${itemTitleForDeleteDialog}'` : "het geselecteerde item";
         switch (deletionType.toLowerCase()) {
             case "askuser":
                 {
@@ -1169,7 +1175,7 @@ export class Grids {
                         title: "Verwijderen",
                         closable: false,
                         modal: true,
-                        content: "<p>Wilt u het gehele item verwijderen, of alleen de koppeling tussen de 2 items?</p>",
+                        content: `<p>Wilt u ${itemDeleteDialogText} in het geheel verwijderen, of alleen de koppeling tussen de 2 items?</p>`,
                         deactivate: (e) => {
                             // Destroy the dialog on deactivation so that it can be re-initialized again next time.
                             // If we don't do this, deleting multiple items in a row will not work properly.
@@ -1215,7 +1221,7 @@ export class Grids {
             case "deleteitem":
                 {
                     if (!options || options.showDeleteConformations !== false) {
-                        await kendo.confirm("Weet u zeker dat u dit item wilt verwijderen?");
+                        await Wiser2.showConfirmDialog(`Weet u zeker dat u ${itemDeleteDialogText} wilt verwijderen?`);
                     }
 
                     try {
@@ -1235,7 +1241,7 @@ export class Grids {
             case "deletelink":
                 {
                     if (!options || options.showDeleteConformations !== false) {
-                        await kendo.confirm("Weet u zeker dat u de koppeling met dit item wilt verwijderen? Let op dat alleen de koppeling wordt verwijderd, niet het item zelf.");
+                        await Wiser2.showConfirmDialog(`Weet u zeker dat u de koppeling met ${itemDeleteDialogText} wilt verwijderen? Let op dat alleen de koppeling wordt verwijderd, niet het item zelf.`);
                     }
 
                     const destinationItemId = dataItem.encrypted_destination_item_id || senderGrid.element.closest(".item").data("itemIdEncrypted");
@@ -1254,7 +1260,10 @@ export class Grids {
     onItemLinkerSelectAll(treeViewSelector, checkAll) {
         const treeView = $(treeViewSelector);
 
-        kendo.confirm("Weet u zeker dat u alles wilt aan- of uitvinken? Indien dit veel items zijn kan dit lang duren.").then(() => {
+        Wiser2.showConfirmDialog(`Weet u zeker dat u alles wilt ${checkAll ? "aanvinken" : "uitvinken"}? Indien dit veel items zijn kan dit lang duren.`, 
+            checkAll ? "Alles aanvinken" : "Alles uitvinken",
+            "Annuleren",
+            checkAll ? "Alles aanvinken" : "Alles uitvinken").then(() => {
             const allCheckBoxes = treeView.find(".k-checkbox-wrapper input");
             allCheckBoxes.prop("checked", checkAll).trigger("change");
         });
