@@ -441,31 +441,33 @@
     color: var(--white-color);
 }
 .k-window-titlebar .k-window-actions .k-button:not(:last-child):hover:after {
-    color: var(--white-color);
-    content: attr(aria-label);
-    font: 18px/32px "AvantGardeGothic-Bd", sans-serif;
-    opacity: 1;
-    padding-left: 5px;
-    position: relative;
-    text-transform: none;
+	box-shadow: none;
+	color: var(--white-color);
+	content: attr(aria-label);
+	font: 18px/32px "AvantGardeGothic-Bd", sans-serif;
+	opacity: 1;
+	padding-left: 5px;
+	position: relative;
+	text-transform: none;
 }
 /* KENDO - BUTTON ICONS */
 .k-button-icon .k-icon {
-    font-family: 'icomoon' !important;
-    speak: none;
-    font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    text-transform: none;
-    line-height: 1;
-    /* Better Font Rendering =========== */
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    color: #282828;
-    font-size: 24px;
-    height: 24px;
-    overflow: visible !important;
-    width: 24px;
+	font-family: 'icomoon' !important;
+	speak: none;
+	font-style: normal;
+	font-weight: normal;
+	font-variant: normal;
+	text-transform: none;
+	line-height: 1;
+	/* Better Font Rendering =========== */
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	color: #282828;
+	font-size: 24px;
+	height: 24px;
+	overflow: visible !important;
+	width: 24px;
+	min-width: 24px;
 }
 .k-button-icon.k-primary .k-icon {
     color: var(--white-color);

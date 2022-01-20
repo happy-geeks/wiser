@@ -79,7 +79,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
 
             if (this.appSettings.markerIoToken) {
                 const markerSdk = await import("@marker.io/browser");
-                this.markerWidget = await markerSdk.loadWidget({ destination: this.appSettings.markerIoToken });
+                this.markerWidget = await markerSdk.default.loadWidget({ destination: this.appSettings.markerIoToken });
                 this.markerWidget.hide();
             }
 
