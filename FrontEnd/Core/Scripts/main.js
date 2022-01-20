@@ -98,6 +98,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                 },
                 created() {
                     this.$store.dispatch(GET_CUSTOMER_TITLE, this.appSettings.subDomain);
+                    document.addEventListener("keydown", this.onAppKeyDown.bind(this));
                 },
                 computed: {
                     loginStatus() {
@@ -160,6 +161,14 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                     "taskAlerts": taskAlerts
                 },
                 methods: {
+                    onAppKeyDown(event) {
+                        // Open Wiser ID prompt when the user presses CTRL+O.
+                        if (event.ctrlKey && event.key === "o") {
+                            event.preventDefault();
+                            this.openWiserIdPrompt();
+                        }
+                    },
+
                     handleBodyClick(event) {
                         if (event.target.id !== "side-menu" && !event.target.closest("#side-menu")) {
                             this.toggleMenuActive(false);
@@ -213,7 +222,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
 
                     openModule(module) {
                         if (typeof module === "number" || typeof module === "string") {
-                            module = this.modules.find(m => m.id === module);
+                            module = this.modules.find(m => m.module_id === module);
                         }
                         if (typeof(module.queryString) === "undefined") {
                             module.queryString = "";
@@ -300,10 +309,33 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                             this.wiserIdPromptValue = null;
                             this.wiserEntityTypePromptValue = null;
                         }
+
+                        return true;
                     },
 
                     openMarkerIoScreen() {
                         this.markerWidget.capture("fullscreen");
+                    },
+
+                    onWiserIdPromptOpen(sender) {
+                        setTimeout(() => document.getElementById("wiserId").focus(), 500);
+                    },
+
+                    onWiserIdFieldKeyPress(event) {
+                        // Open the item when pressing enter.
+                        if (event.charCode === 13) {
+                            this.openWiserItem();
+                            this.$refs.wiserIdPrompt.close();
+                            return true;
+                        }
+
+                        // Only allow numbers. By default an input with type number still allows 'e' and decimal characters, we don't want that here.
+                        if (event.charCode < 48 || event.charCode > 57) {
+                            event.preventDefault();
+                            return false;
+                        }
+
+                        return true;
                     }
                 }
             });
