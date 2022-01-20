@@ -379,7 +379,7 @@ const moduleSettings = {
                     const inputData = [
                         {
                             key: "agendering_date",
-                            value: kendo.toString(this.taskDatePicker.value(), "yyyy-MM-dd")
+                            value: kendo.toString(this.taskDatePicker.value() || new Date(), "yyyy-MM-dd")
                         },
                         {
                             key: "content",
