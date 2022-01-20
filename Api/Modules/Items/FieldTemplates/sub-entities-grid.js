@@ -203,19 +203,19 @@ function generateGrid(data, model, columns) {
         });
     }
 
-    if (!options.toolbar || !options.toolbar.hideFullScreenButton) {
-        toolbar.push({
-            name: "fullScreen",
-            text: "",
-            template: `<a class='k-button k-button-icontext full-screen' title='Grid naar fullscreen' href='\\#'><span class='k-icon k-i-wiser-maximize'></span></a>`
-        });
-    }
-
     if (window.dynamicItems.grids.onClearAllFiltersClick && (!options.toolbar || !options.toolbar.hideClearFiltersButton)) {
         toolbar.push({
             name: "clearAllFilters",
             text: "",
             template: "<a class='k-button k-button-icontext clear-all-filters' title='Alle filters wissen' href='\\#' onclick='return window.dynamicItems.grids.onClearAllFiltersClick(event)'><span class='k-icon k-i-filter-clear'></span></a>"
+        });
+    }
+
+    if (!options.toolbar || !options.toolbar.hideFullScreenButton) {
+        toolbar.push({
+            name: "fullScreen",
+            text: "",
+            template: `<a class='k-button k-button-icontext full-screen' title='Grid naar fullscreen' href='\\#' onclick='return window.dynamicItems.grids.onMaximizeGridClick(event)'><span class='k-icon k-i-wiser-maximize'></span></a>`
         });
     }
 

@@ -1237,6 +1237,12 @@ k-filter-menu .k-autocomplete,
 .gridViewMode .k-grid-content {
     resize: none;
 }
+.maximize-sub-entities-grid-window .k-toolbar .full-screen {
+    display: none;
+}
+.maximize-sub-entities-grid-window .pane-content {
+    min-height: 100%;
+}
 
 /* filtering */
 .k-filter-menu-container {

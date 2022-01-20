@@ -2813,7 +2813,7 @@ export class Fields {
     }
 
     /**
-     * Event that gets called when the user executes the custom action for viewing / changing the HTML source of the editor.
+     * Event that gets called when the user executes the custom action for maximizing an HTML editor.
      * @param {any} event The event from the execute action.
      * @param {any} editor The HTML editor where the action is executed in.
      * @param {any} itemId The ID of the current item.
