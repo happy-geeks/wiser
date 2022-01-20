@@ -119,6 +119,7 @@
 
                 <div class="form-row">
                     <input type="password" id="password" placeholder="Wachtwoord" autocomplete="off" v-model="loginForm.password" required>
+                    <ins id="password-toggle" class="icon-eye-visible" v-on:click="togglePassword()"></ins>
                 </div>
 
                 <div class="form-row">
