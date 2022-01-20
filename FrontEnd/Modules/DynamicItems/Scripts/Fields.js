@@ -969,7 +969,7 @@ export class Fields {
         console.log("onImageDelete", event)
         // If event.currentTarget is not undefined, it means the user clicked the delete button manually.
         if (event.currentTarget) {
-            await Wiser2.showConfirmDeleteDialog(`Weet u zeker dat u deze afbeelding wilt verwijderen?`);
+            await Wiser2.showConfirmDialog(`Weet u zeker dat u deze afbeelding wilt verwijderen?`);
 
             const imageContainer = $(event.currentTarget).closest(".product");
             const data = imageContainer.data();

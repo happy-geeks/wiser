@@ -57,7 +57,7 @@ if (customQueryGrid) {
                     click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options); }
                 });
             }
-            
+
             if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off") {
                 commandColumnWidth += 80;
                 
@@ -72,7 +72,7 @@ if (customQueryGrid) {
                 
                 commands.push("destroy");
             }
-            
+
             if (commands.length > 0) {
                 customQueryResults.columns.push({
                     title: "&nbsp;",
@@ -144,7 +144,8 @@ if (customQueryGrid) {
             }
         }
         
-        // Add command columns seperately, because of the click event that we can't do properly server-side.
+        // Add command columns separately, because of the click event that we can't do properly server-side.
+        console.log("huh - {title}", options.hideCommandColumn, readonly, options.deletionOfItems);
         if (!options.hideCommandColumn) {
             let commandColumnWidth = 80;
             let commands = [];
@@ -177,6 +178,7 @@ if (customQueryGrid) {
                 });
             }
         }
+        console.log("huh 2 - {title}", gridSettings.columns);
         
         generateGrid(gridSettings.data, gridSettings.schema_model, gridSettings.columns);
     }
