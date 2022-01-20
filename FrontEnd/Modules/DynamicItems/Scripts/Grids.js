@@ -298,23 +298,6 @@ export class Grids {
                 });
             }
 
-            if (!gridViewSettings.toolbar || !gridViewSettings.toolbar.hideButtonGroup) {
-                toolbar.push({
-                    name: "buttonGroup",
-                    text: "",
-                    template: `<div class='k-button-drop'>
-                                <span class='k-button-toggle k-button k-button-icontext'><span class='k-icon k-i-js'></span>Selectie acties</span>
-                                <div>
-                                    <a class='k-button' title='Pakbon maken' href='\\#' onclick=''><span>Pakbon maken</span></a>
-                                    <a class='k-button' title='PostNL Label maken' href='\\#' onclick=''><span>PostNL Label maken</span></a>
-                                    <a class='k-button' title='PostNL Label downloaden' href='\\#' onclick=''><span>PostNL Label downloaden</span></a>
-                                    <a class='k-button' title='PostNL Label (Dev omgeving)' href='\\#' onclick=''><span>PostNL Label (Dev omgeving)</span></a>
-                                    <a class='k-button' title='Verwijderen' href='\\#' onclick=''><span>Verwijderen</span></a>
-                                </div>
-                              </div>`
-                });
-            }
-
             if ((!gridViewSettings.toolbar || !gridViewSettings.toolbar.hideCreateButton) && this.base.settings.permissions.can_create) {
                 toolbar.push({
                     name: "add",
@@ -324,27 +307,7 @@ export class Grids {
             }
 
             if (gridViewSettings.toolbar && gridViewSettings.toolbar.customActions && gridViewSettings.toolbar.customActions.length > 0) {
-                for (let i = 0; i < gridViewSettings.toolbar.customActions.length; i++) {
-                    const customAction = gridViewSettings.toolbar.customActions[i];
-                    const className = !customAction.allowNoSelection ? "hidden hide-when-no-selected-rows" : "";
-
-                    // Check permissions.
-                    if (customAction.doesCreate && !this.base.settings.permissions.can_create) {
-                        continue;
-                    }
-                    if (customAction.doesUpdate && !this.base.settings.permissions.can_write) {
-                        continue;
-                    }
-                    if (customAction.doesDelete && !this.base.settings.permissions.can_delte) {
-                        continue;
-                    }
-
-                    toolbar.push({
-                        name: `customAction${i.toString()}`,
-                        text: customAction.text,
-                        template: `<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("\\#gridView", 0, 0, ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
-                    });
-                }
+                this.addCustomActionsToToolbar(toolbar, gridViewSettings.toolbar.customActions);
             }
 
             let totalResults = gridDataResult.total_results;
@@ -945,6 +908,71 @@ export class Grids {
     }
 
     /**
+     * Adds all custom buttons in the toolbar for a grid, in the correct groups, based on the given settings.
+     * @param {any} toolbar The toolbar array of the grid.
+     * @param {any} customActions The custom actions from the grid settings.
+     */
+    addCustomActionsToToolbar(toolbar, customActions) {
+        const groups = [];
+        const actionsWithoutGroups = [];
+
+        for (let i = 0; i < customActions.length; i++) {
+            const customAction = customActions[i];
+            const className = !customAction.allowNoSelection ? "hidden hide-when-no-selected-rows" : "";
+
+            // Check permissions.
+            if (customAction.doesCreate && !this.base.settings.permissions.can_create) {
+                continue;
+            }
+            if (customAction.doesUpdate && !this.base.settings.permissions.can_write) {
+                continue;
+            }
+            if (customAction.doesDelete && !this.base.settings.permissions.can_delete) {
+                continue;
+            }
+            
+            if (customAction.groupName) {
+                let group = groups.filter(g => g.name === customAction.groupName)[0];
+                if (!group) {
+                    group = { 
+                        name: customAction.groupName,
+                        icon: customAction.icon,
+                        actions: []
+                    };
+
+                    groups.push(group);
+                }
+
+                group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("\\#gridView", 0, 0, ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
+            } else {
+                actionsWithoutGroups.push({
+                    name: `customAction${i.toString()}`,
+                    text: customAction.text,
+                    template: `<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("\\#gridView", 0, 0, ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
+                });
+            }
+        }
+
+        // Always add the groups first.
+        console.log("groups", groups);
+        for (let group of groups) {
+            toolbar.push({
+                name: "buttonGroup",
+                text: "",
+                template: `<div class='k-button-drop'>
+                            <span class='k-button-toggle k-button k-button-icontext'><span class='k-icon k-i-${group.icon}'></span>${group.name}</span>
+                            <div>
+                                ${group.actions.join("")}
+                            </div>
+                            </div>`
+            });
+        }
+
+        // Add actions without groups last.
+        toolbar.push(...actionsWithoutGroups);
+    }
+
+    /**
      * Event to show the details of an item from a sub entities grid.
      * @param {any} event The event.
      * @param {any} grid The grid that executed the event.
@@ -1315,6 +1343,14 @@ export class Grids {
     onGridSelectionChange(event) {
         // Some buttons in the toolbar of a grid require that at least one row is selected. Hide these buttons while no row is selected.
         event.sender.wrapper.find(".hide-when-no-selected-rows").toggleClass("hidden", event.sender.select().length === 0);
+
+        // Show/hide button groups where all buttons are hidden/visible.
+        for (let buttonGroup of event.sender.wrapper.find(".k-button-drop")) {
+            const buttonGroupElement = $(buttonGroup);
+            const amountOfToggleableButtons = buttonGroupElement.find(".hide-when-no-selected-rows").length;
+            const totalAmountOfButtons = buttonGroupElement.find("a.k-button").length;
+            buttonGroupElement.toggleClass("hidden", event.sender.select().length === 0 && amountOfToggleableButtons === totalAmountOfButtons);
+        }
     }
 
     timeEditor(container, options) {

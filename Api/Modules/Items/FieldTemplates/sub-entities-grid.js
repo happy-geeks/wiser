@@ -145,7 +145,6 @@ if (customQueryGrid) {
         }
         
         // Add command columns separately, because of the click event that we can't do properly server-side.
-        console.log("huh - {title}", options.hideCommandColumn, readonly, options.deletionOfItems);
         if (!options.hideCommandColumn) {
             let commandColumnWidth = 80;
             let commands = [];
@@ -178,7 +177,6 @@ if (customQueryGrid) {
                 });
             }
         }
-        console.log("huh 2 - {title}", gridSettings.columns);
         
         generateGrid(gridSettings.data, gridSettings.schema_model, gridSettings.columns);
     }
@@ -249,16 +247,7 @@ function generateGrid(data, model, columns) {
     }
     
     if (options.toolbar && options.toolbar.customActions && options.toolbar.customActions.length > 0) {
-        for (var i = 0; i < options.toolbar.customActions.length; i++) {
-            const customAction = options.toolbar.customActions[i];
-            const className = !customAction.allowNoSelection ? "hidden hide-when-no-selected-rows" : "";
-            
-            toolbar.push({
-                name: "customAction" + i.toString(),
-                text: customAction.text,
-                template: `<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("\\#overviewGrid{propertyIdWithSuffix}", "{itemIdEncrypted}", {propertyId}, ${JSON.stringify(customAction)}, event)' style='${kendo.htmlEncode(customAction.style || "")}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>` 
-            });
-        }
+        dynamicItems.grids.addCustomActionsToToolbar(toolbar, options.toolbar.customActions);
     }
     
     if (columns && columns.length) {
