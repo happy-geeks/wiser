@@ -358,7 +358,8 @@ body.iframe .editMenu {
 }
 
 .k-grid-toolbar .k-grid-excel,
-.k-grid-toolbar .clear-all-filters {
+.k-grid-toolbar .clear-all-filters,
+.k-grid-toolbar .full-screen {
     order: 4;
 }
 
