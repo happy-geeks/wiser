@@ -15,10 +15,12 @@ body.iframe #alert-first,
 #htmlSourceWindow,
 #maximizeEditorWindow,
 #contentBuilderWindow,
+#maximizeEditorWindow,
 #imagesUploaderWindow,
 #filesUploaderWindow,
 #templatesUploaderWindow,
-#infoPanel_template {
+#infoPanel_template,
+#maximizeSubEntitiesGridWindow {
     display: none;
 }
 
@@ -225,14 +227,13 @@ body.gridViewMode {
     right: 5px;
 }
 
+.item[data-label-style="float"] .k-input .open-link {
+    top: 11px;
+}
+
 .item .k-input .open-link span {
     width: 100%;
     height: 100%;
-}
-
-
-.item[data-input-type="url"] .k-input input:valid + .open-link {
-    display: block !important;
 }
 
 /* PREVIEW PANE */

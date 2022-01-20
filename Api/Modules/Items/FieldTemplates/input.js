@@ -2,20 +2,12 @@
     var options = {options};
     var container = $("#container_{propertyIdWithSuffix}");
     var field = $("#field_{propertyIdWithSuffix}").change(window.dynamicItems.fields.onFieldValueChange.bind(window.dynamicItems.fields));
-    var urlMode = options.type === "url";
+    var urlMode = options.type === "url" || (field.val() || "").indexOf("http") === 0;
     var hyperlink = container.find(".open-link").toggle(urlMode);
     if (urlMode) {
         field.addClass("padding-right");
 	
-        hyperlink.click(function(event) {
-            var fieldValue = field.val();
-            if (!fieldValue) {
-                event.preventDefault();
-                return;
-            }
-		
-            hyperlink.attr("href", (options.prefix || "") + fieldValue + (options.suffix || ""));
-        });
+        hyperlink.click(dynamicItems.fields.onInputLinkIconClick.bind(dynamicItems.fields, field, options));
     }
 
     if (options.saveOnEnter) {

@@ -36,9 +36,6 @@ export class Fields {
         // Bind tooltip click events.
         $("#right-pane").on("click", ".item h4.tooltip .info-link", this.onTooltipClick.bind(this, $("#infoPanel_main")));
         $("#right-pane").on("contextmenu", ".item > h4", this.onFieldLabelContextMenu.bind(this));
-
-        // Bind open link click event.
-        $("#right-pane").on("click", ".item .open-link", this.onOpenLinkClick.bind(this));
     }
 
     /**
@@ -523,23 +520,57 @@ export class Fields {
 
     /**
      * Event that gets triggered when the user clicks the link-icon in a field containing an URL.
-     * @param {any} event
+     * @param {any} field The input field.
+     * @param {any} fieldOptions The options/settings of the input field.
+     * @param {any} event The click event.
      */
-    onOpenLinkClick(event) {
-        let openLinkDialog = $("#openLinkDialog").kendoDialog({
+    onInputLinkIconClick(field, fieldOptions, event) {
+        event.preventDefault();
+
+        const fieldValue = field.val();
+        if (!fieldValue) {
+            return;
+        }
+		
+        const urlToOpen = (fieldOptions.prefix || "") + fieldValue + (fieldOptions.suffix || "");
+        if (fieldOptions.skipOpenUrlDialog) {
+            window.open(urlToOpen);
+            return;
+        }
+
+        let openLinkDialog = $("<div />").kendoDialog({
             width: "500px",
             buttonLayout: "normal",
             title: "Deze URL openen?",
             closable: true,
-            modal: false,
-            content: "<p>Wilt u deze URL in een nieuw venster openen of binnen Wiser?<p>",
+            modal: true,
+            content: "<p>Wilt u deze URL in een nieuw venster openen of binnen Wiser (let op, niet alle webistes kunnen geladen worden binnen Wiser)?<p>",
             actions: [
-                { text: 'Cancel' },
-                { text: 'Open in Wiser' },
-                { text: 'Open in een nieuw venster', primary: true }
+                {
+                    text: "Annuleren"
+                },
+                {
+                    text: "Open in Wiser",
+                    action: (kendoEvent) => {
+                        $("#openLinkWindow").kendoWindow({
+                            width: "100%",
+                            height: "100%",
+                            title: "Externe URL",
+                            content: urlToOpen
+                        }).data("kendoWindow").open();
+                    }
+                },
+                {
+                    text: "Open in een nieuw venster", 
+                    primary: true, 
+                    action: (kendoEvent) => {
+                        window.open(urlToOpen);
+                    }
+                }
             ]
         });
-        event.preventDefault();
+
+        openLinkDialog.data("kendoDialog").open();
     }
 
     /**
@@ -966,7 +997,6 @@ export class Fields {
      */
     async onImageDelete(event) {
         event.preventDefault();
-        console.log("onImageDelete", event)
         // If event.currentTarget is not undefined, it means the user clicked the delete button manually.
         if (event.currentTarget) {
             await Wiser2.showConfirmDialog(`Weet u zeker dat u deze afbeelding wilt verwijderen?`);
