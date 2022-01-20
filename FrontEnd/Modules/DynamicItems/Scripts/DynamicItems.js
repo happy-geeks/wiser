@@ -695,7 +695,7 @@ const moduleSettings = {
                         }
                     case "REMOVE_ITEM":
                         {
-                            Wiser2.showConfirmDeleteDialog(`Weet u zeker dat u het item '${this.base.mainTreeView.dataItem(node).title}' wilt verwijderen?`).then(async () => {
+                            Wiser2.showConfirmDialog(`Weet u zeker dat u het item '${this.base.mainTreeView.dataItem(node).title}' wilt verwijderen?`).then(async () => {
                                 try {
                                     await this.base.deleteItem(itemId, entityType);
                                     this.base.mainTreeView.remove(node);
@@ -1323,7 +1323,7 @@ const moduleSettings = {
         async onDeleteItemClick(event, encryptedItemId, entityType) {
             event.preventDefault();
             
-            await Wiser2.showConfirmDeleteDialog(`Weet u zeker dat u het item '${this.base.selectedItem.title}' wilt verwijderen?`);
+            await Wiser2.showConfirmDialog(`Weet u zeker dat u het item '${this.base.selectedItem.title}' wilt verwijderen?`);
 
             try {
                 await this.deleteItem(encryptedItemId, entityType);
@@ -1357,7 +1357,7 @@ const moduleSettings = {
         async onUndeleteItemClick(event, encryptedItemId) {
             event.preventDefault();
             
-            await Wiser2.showConfirmDeleteDialog(`Weet u zeker dat u het verwijderen ongedaan wilt maken voor '${this.base.selectedItem.title}'?`);
+            await Wiser2.showConfirmDialog(`Weet u zeker dat u het verwijderen ongedaan wilt maken voor '${this.base.selectedItem.title}'?`);
 
             const process = `undeleteItem_${Date.now()}`;
             window.processing.addProcess(process);

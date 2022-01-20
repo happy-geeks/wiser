@@ -414,8 +414,10 @@ export class Wiser2 {
      * Shows a dialog that can be used as a confirmation for deleting something.
      * @param {string} text The text to show in the dialog.
      * @param {string} title Optional: The title of the dialog. Default value is "Verwijderen".
+     * @param {string} cancelButtonText Optional: The text to show in the cancel button. Default value is "Annuleren".
+     * @param {string} confirmButtonText TOptional: The text to show in the confirm button. Default value is "Verwijderen".
      */
-    static showConfirmDeleteDialog(text, title = "Verwijderen") {
+    static showConfirmDialog(text, title = "Verwijderen", cancelButtonText = "Annuleren", confirmButtonText = "Verwijderen") {
         return new Promise((resolve, reject) => {
             const dialog = $("<div />").kendoDialog({
                 title: title,
@@ -424,11 +426,11 @@ export class Wiser2 {
                 content: text,
                 actions: [
                     {
-                        text: "Annuleren",
+                        text: cancelButtonText,
                         cssClass: "cancel-button"
                     },
                     {
-                        text: "Verwijderen", 
+                        text: confirmButtonText, 
                         primary: true,
                         cssClass: "delete-button",
                         action: (event) => {
