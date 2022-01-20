@@ -736,7 +736,7 @@ export class Grids {
             toolbar.push({
                 name: "fullScreen",
                 text: "",
-                template: `<a class='k-button k-button-icontext full-screen' title='Grid naar fullscreen' href='\\#' onclick=''><span class='k-icon k-i-wiser-maximize'></span></a>`
+                template: `<a class='k-button k-button-icontext full-screen' title='Grid naar fullscreen' href='\\#' onclick='return window.dynamicItems.grids.onMaximizeGridClick(event)'><span class='k-icon k-i-wiser-maximize'></span></a>`
             });
         }
         if (element.data("kendoGrid")) {
@@ -1334,6 +1334,43 @@ export class Grids {
         }
 
         grid.dataSource.filter({});
+    }
+
+    /**
+     * Event handler for clicking the maximize button in a grid.
+     * @param {any} event The click event.
+     */
+    onMaximizeGridClick(event) {
+        event.preventDefault();
+
+        const grid = $(event.target).closest(".k-grid").data("kendoGrid");
+        if (!grid) {
+            console.error("Grid not found, cannot maximize it.", event, $(event.target).closest(".k-grid"));
+            return;
+        }
+        
+        const originalParent = grid.wrapper.parent();
+        const gridWindow = $("#maximizeSubEntitiesGridWindow").clone(true);
+        const titleElement = originalParent.find("h4");
+
+        // Move the grid to the window.
+        gridWindow.find(".k-content-frame").append(grid.wrapper);
+
+        gridWindow.kendoWindow({
+            width: "100%",
+            height: "100%",
+            title: titleElement.find("label").text(),
+            close: (closeEvent) => {
+                // Move the grid back to it's original position when closing the full screen window.
+                titleElement.after(grid.wrapper);
+
+                // Destroy the window.
+                closeEvent.sender.destroy();
+                gridWindow.remove();
+            }
+        });
+
+        const kendoWindow = gridWindow.data("kendoWindow").center().open();
     }
 
     /**
