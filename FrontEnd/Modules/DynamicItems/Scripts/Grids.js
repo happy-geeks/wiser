@@ -954,7 +954,6 @@ export class Grids {
         }
 
         // Always add the groups first.
-        console.log("groups", groups);
         for (let group of groups) {
             toolbar.push({
                 name: "buttonGroup",
