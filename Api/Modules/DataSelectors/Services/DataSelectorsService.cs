@@ -327,6 +327,12 @@ namespace Api.Modules.DataSelectors.Services
                 };
             }
 
+            if (data.Settings != null)
+            {
+                // Never try to get the query with "insecure" set to true. The GCL will not allow it.
+                data.Settings.Insecure = false;
+            }
+
             var (itemsRequest, statusCode, error) = await gclDataSelectorsService.InitializeItemsRequestAsync(data);
             if (statusCode != HttpStatusCode.OK)
             {
@@ -366,7 +372,7 @@ namespace Api.Modules.DataSelectors.Services
                     ReasonPhrase = error
                 };
             }
-            
+
             var excelFile = excelService.JsonArrayToExcel(jsonResult);
             return new ServiceResult<byte[]>(excelFile);
         }
@@ -429,7 +435,7 @@ namespace Api.Modules.DataSelectors.Services
             // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
-            
+
             var (result, statusCode, error) = await gclDataSelectorsService.ToPdfAsync(data);
             if (statusCode != HttpStatusCode.OK)
             {
@@ -473,7 +479,7 @@ namespace Api.Modules.DataSelectors.Services
             result.ModelObject.FileDownloadName = data.FileName;
             return result.ModelObject;
         }
-        
+
         private async Task<(JArray Result, HttpStatusCode StatusCode, string Error)> GetJsonResponseAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity)
         {
             var httpContext = httpContextAccessor.HttpContext;
@@ -502,6 +508,12 @@ namespace Api.Modules.DataSelectors.Services
             if (data == null || (queryId == 0 && data.Settings == null && dataSelectorId == 0 && String.IsNullOrWhiteSpace(data.ContainsPath) && String.IsNullOrWhiteSpace(data.EntityTypes)))
             {
                 return (null, HttpStatusCode.BadRequest, "No data selector, path AND entity type found! Please make sure you supply either a valid JSON object or an ID of a valid selector, or a path + entity type.");
+            }
+
+            if (data.Settings != null)
+            {
+                // Never try to get the result with "insecure" set to true. The GCL will not allow it.
+                data.Settings.Insecure = false;
             }
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();

@@ -1,6 +1,6 @@
 ﻿import "../../Base/Scripts/Processing.js";
 
-(($) => {
+(() => {
     class DataLoad {
         constructor(dataSelector) {
             this.dataSelector = dataSelector || this;
@@ -837,4 +837,4 @@
     }
 
     window.DataLoad = DataLoad;
-})(window.jQuery);
+})();
