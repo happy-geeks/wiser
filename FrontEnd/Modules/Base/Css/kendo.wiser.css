@@ -329,6 +329,7 @@
 	white-space: nowrap;
 	margin-top: 15px;
 	transition: all 200ms ease-in-out;
+    width: 100%;
 }
 .k-button-drop:hover > span {
 	background-color: var(--white-color);
