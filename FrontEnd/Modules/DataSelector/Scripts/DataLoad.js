@@ -1,6 +1,6 @@
 ﻿import "../../Base/Scripts/Processing.js";
 
-(() => {
+(($) => {
     class DataLoad {
         constructor(dataSelector) {
             this.dataSelector = dataSelector || this;
@@ -665,7 +665,7 @@
                                 if (connectionRow.hasOwnProperty("typeName")) {
                                     matchFound = json.typeNumber === connectionRow.typenr && json.linkTypeName === connectionRow.typeName;
                                 } else {
-                                    matchFound = json.type === connectionRow.entity && json.typeNumber === connectionRow.typenr
+                                    matchFound = json.type === connectionRow.entity && json.typeNumber === connectionRow.typenr;
                                 }
 
                                 if (matchFound) {
@@ -732,9 +732,14 @@
                         } else {
                             existingItem.set("aliasOrValue", fieldValue);
                         }
+
+                        existingItem.set("dataType", field.dataType || "string");
+                        existingItem.set("havingDataType", field.havingDataType || "string");
+
                         if (field.hasOwnProperty("languagecode") && field.languagecode !== "") {
                             existingItem.set("languageCode", field.languagecode);
                         }
+
                         existingItem.set("aggregation", field.aggregationfunction);
                         existingItem.set("formatting", field.formatting);
 
@@ -787,6 +792,10 @@
                 } else {
                     existingItem.set("aliasOrValue", field.fieldName);
                 }
+
+                existingItem.set("dataType", field.dataType || "string");
+                existingItem.set("havingDataType", field.havingDataType || "string");
+
                 if (field.hasOwnProperty("languageCode") && field.languageCode !== "") {
                     existingItem.set("languageCode", field.languageCode);
                 }
@@ -806,6 +815,10 @@
                 } else {
                     existingItem.set("aliasOrValue", field.fieldname);
                 }
+
+                existingItem.set("dataType", field.dataType || "string");
+                existingItem.set("havingDataType", field.havingDataType || "string");
+
                 if (field.hasOwnProperty("languagecode") && field.languagecode !== "") {
                     existingItem.set("languageCode", field.languagecode);
                 }
@@ -824,4 +837,4 @@
     }
 
     window.DataLoad = DataLoad;
-})();
+})(window.jQuery);
