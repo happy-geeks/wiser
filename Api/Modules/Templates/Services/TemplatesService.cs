@@ -1021,16 +1021,14 @@ SET @_color = '{color}';
 SET @_show_in_search = '{show_in_search}';
 SET @_show_overview_tab = '{show_overview_tab}';
 SET @_save_title_as_seo = '{save_title_as_seo}';
-SET @_api_after_insert = '{api_after_insert}';
-SET @_api_after_update = '{api_after_update}';
-SET @_api_before_update = '{api_before_update}';
-SET @_api_before_delete = '{api_before_delete}';
+#SET @_api_after_insert = {api_after_insert};
+#SET @_api_after_update = {api_after_update};
+#SET @_api_before_update = {api_before_update};
+#SET @_api_before_delete = {api_before_delete};
 SET @_show_title_field = '{show_title_field}';
 SET @_friendly_name = '{friendly_name}';
 SET @_save_history = '{save_history}';
 SET @_default_ordering = '{default_ordering}';
-SET @_template_query = '{template_query}';
-SET @_template_html = '{template_html}';
 
 SET @_show_in_tree_view = IF(@_show_in_tree_view = TRUE OR @_show_in_tree_view = 'true', 1, 0);
 SET @_show_in_search = IF(@_show_in_search = TRUE OR @_show_in_search = 'true', 1, 0);
@@ -1055,16 +1053,14 @@ UPDATE wiser_entity SET
 	 show_in_search = @_show_in_search,
 	 show_overview_tab = @_show_overview_tab,
 	 save_title_as_seo = @_save_title_as_seo,
-	 api_after_insert = @_api_after_insert,
-	 api_after_update = @_api_after_update,
-	 api_before_update = @_api_before_update,
-	 api_before_delete = @_api_before_delete,
+	 #api_after_insert = @_api_after_insert,
+	 #api_after_update = @_api_after_update,
+	 #api_before_update = @_api_before_update,
+	 #api_before_delete = @_api_before_delete,
 	 show_title_field = @_show_title_field,
 	 friendly_name = @_friendly_name,
 	 save_history = @_save_history,
-	 default_ordering = @_default_ordering,
-	 template_query = @_template_query,
-	 template_html = @_template_html
+	 default_ordering = @_default_ordering
 WHERE id = @_id
 LIMIT 1;
 ");
@@ -1140,7 +1136,6 @@ LIMIT 1; ");
 
                 TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_FOR_SELECTED", @"SELECT 
 `id`, 
-`customer_id`, 
 `name`, 
 `module_id`, 
 `accepted_childtypes`, 
@@ -1162,12 +1157,9 @@ LIMIT 1; ");
 `show_title_field`, 
 `friendly_name`, 
 `save_history`, 
-`default_ordering`, 
-`template_query`, 
-`template_html`, 
+`default_ordering`,
 `enable_multiple_environments`, 
 `icon_expanded`, 
-`use_dedicated_table`, 
 `dedicated_table_prefix`
 FROM wiser_entity 
 WHERE id= {id};

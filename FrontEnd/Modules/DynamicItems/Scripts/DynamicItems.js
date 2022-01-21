@@ -695,20 +695,21 @@ const moduleSettings = {
                         }
                     case "REMOVE_ITEM":
                         {
-                            await kendo.confirm("Weet u zeker dat u dit item wilt verwijderen?");
-
-                            try {
-                                await this.base.deleteItem(itemId, entityType);
-                                this.base.mainTreeView.remove(node);
-                            } catch (exception) {
-                                console.error(exception);
-                                if (exception.status === 409) {
-                                    const message = exception.responseText || "Het is niet meer mogelijk om dit item te verwijderen.";
-                                    kendo.alert(message);
-                                } else {
-                                    kendo.alert("Er is iets fout gegaan tijdens het verwijderen van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                            Wiser2.showConfirmDialog(`Weet u zeker dat u het item '${this.base.mainTreeView.dataItem(node).title}' wilt verwijderen?`).then(async () => {
+                                try {
+                                    await this.base.deleteItem(itemId, entityType);
+                                    this.base.mainTreeView.remove(node);
+                                } catch (exception) {
+                                    console.error(exception);
+                                    if (exception.status === 409) {
+                                        const message = exception.responseText || "Het is niet meer mogelijk om dit item te verwijderen.";
+                                        kendo.alert(message);
+                                    } else {
+                                        kendo.alert("Er is iets fout gegaan tijdens het verwijderen van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                                    }
                                 }
-                            }
+                            }).catch(() => {});
+
                             break;
                         }
                     case "HIDE_ITEM":
@@ -1315,14 +1316,14 @@ const moduleSettings = {
         }
 
         /**
-         * The click event for the undelete button.
+         * The click event for the delete button.
          * @param {any} event The click event.
          * @param {string} encryptedItemId The encrypted ID of the item to undelete.
          */
         async onDeleteItemClick(event, encryptedItemId, entityType) {
             event.preventDefault();
             
-            await kendo.confirm("Weet u zeker dat u dit item wilt verwijderen?");
+            await Wiser2.showConfirmDialog(`Weet u zeker dat u het item '${this.base.selectedItem.title}' wilt verwijderen?`);
 
             try {
                 await this.deleteItem(encryptedItemId, entityType);
@@ -1355,8 +1356,8 @@ const moduleSettings = {
          */
         async onUndeleteItemClick(event, encryptedItemId) {
             event.preventDefault();
-
-            await kendo.confirm("Weet u zeker dat u het verwijderen ongedaan wilt maken voor dit item?");
+            
+            await Wiser2.showConfirmDialog(`Weet u zeker dat u het verwijderen ongedaan wilt maken voor '${this.base.selectedItem.title}'?`);
 
             const process = `undeleteItem_${Date.now()}`;
             window.processing.addProcess(process);
@@ -2077,9 +2078,7 @@ const moduleSettings = {
             return !result || !result.length ? 0 : result[0].apiConnectionId || 0;
         }
     }
-
-
-
+    
     // Initialize the DynamicItems class and make one instance of it globally available.
     window.dynamicItems = new DynamicItems(settings);
 })(moduleSettings);
