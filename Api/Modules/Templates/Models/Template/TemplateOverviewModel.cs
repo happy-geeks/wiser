@@ -8,9 +8,9 @@ namespace Api.Modules.Templates.Models.Template
 {
     public class TemplateOverviewModel : PageViewModel
     {
-        public DevelopmentTemplateModel development { get; set; }
-        public TemplateHistoryOverviewModel history { get; set; }
-        public List<DynamicContentOverviewModel> linkedDynamicContent { get; set; }
-        public List<PreviewProfileModel> previewProfiles { get; set; }
+        public DevelopmentTemplateModel Development { get; set; }
+        public TemplateHistoryOverviewModel History { get; set; }
+        public List<DynamicContentOverviewModel> LinkedDynamicContent { get; set; }
+        public List<PreviewProfileModel> PreviewProfiles { get; set; }
     }
 }

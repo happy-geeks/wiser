@@ -2,47 +2,47 @@
 
 namespace Api.Modules.Templates.Models.Template
 {
-    public class TemplateTreeViewDAO
+    public class TemplateTreeViewDao
     {
-        int templateId { get; set; }
-        string templateName { get; set; }
-        int templateType { get; set; }
-        int? parentId { get; set; }
+        int TemplateId { get; set; }
+        string TemplateName { get; set; }
+        int TemplateType { get; set; }
+        int? ParentId { get; set; }
 
-        Boolean hasChildren { get; set; }
+        Boolean HasChildren { get; set; }
 
-        public TemplateTreeViewDAO(int templateId, string templateName, int templateType, int? parentId, Boolean hasChildren)
+        public TemplateTreeViewDao(int templateId, string templateName, int templateType, int? parentId, Boolean hasChildren)
         {
-            this.templateId = templateId;
-            this.templateName = templateName;
-            this.templateType = templateType;
-            this.parentId = parentId;
-            this.hasChildren = hasChildren;
+            this.TemplateId = templateId;
+            this.TemplateName = templateName;
+            this.TemplateType = templateType;
+            this.ParentId = parentId;
+            this.HasChildren = hasChildren;
         }
 
         public int GetTemplateId ()
         {
-            return this.templateId;
+            return this.TemplateId;
         }
 
         public string GetTemplateName ()
         {
-            return this.templateName;
+            return this.TemplateName;
         }
 
         public int GetTemplateType ()
         {
-            return this.templateType;
+            return this.TemplateType;
         }
 
         public int? GetParentId ()
         {
-            return this.parentId;
+            return this.ParentId;
         }
 
         public Boolean GetHasChildren ()
         {
-            return this.hasChildren;
+            return this.HasChildren;
         }
     }
 }

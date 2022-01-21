@@ -8,7 +8,7 @@
         <h4><label for="combo-01">Selecteer een module</label></h4>
         <div class="flex-container">
             <select id="combo-01" class="combo-select" placeholder="Maak uw keuze...">
-                @foreach (KeyValuePair<TypeInfo, CmsObjectAttribute> component in Model.components)
+                @foreach (KeyValuePair<TypeInfo, CmsObjectAttribute> component in Model.Components)
                 {
                     if (component.Value != null)
                     {

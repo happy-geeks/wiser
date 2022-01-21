@@ -5,10 +5,10 @@ namespace Api.Modules.Templates.Models.History
 {
     public class PublishHistoryModel
     {
-        public int templateid { get; set; }
-        public DateTime changed_on { get; set; }
-        public string changed_by { get; set; }
+        public int Templateid { get; set; }
+        public DateTime ChangedOn { get; set; }
+        public string ChangedBy { get; set; }
 
-        public PublishLogModel publishLog { get; set; }
+        public PublishLogModel PublishLog { get; set; }
     }
 }

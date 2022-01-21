@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
+using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Modules.Templates.Models;
@@ -12,10 +13,26 @@ using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Templates.Interfaces
 {
+    /// <summary>
+    /// A service for doing things with templates from the templates module in Wiser.
+    /// </summary>
     public interface ITemplatesService
     {
+        /// <summary>
+        /// Gets a template by either name or ID.
+        /// </summary>
+        /// <param name="templateId">Optional: The ID of the template to get.</param>
+        /// <param name="templateName">Optional: The name of the template to get.</param>
+        /// <param name="rootName">Optional: The name of the root directory to look in.</param>
+        /// <returns>A Template.</returns>
         ServiceResult<Template> Get(int templateId = 0, string templateName = null, string rootName = "");
 
+        /// <summary>
+        /// Get a query template by either name or ID.
+        /// </summary>
+        /// <param name="templateId">Optional: The ID of the template to get.</param>
+        /// <param name="templateName">Optional: The name of the template to get.</param>
+        /// <returns>A QueryTemplate</returns>
         Task<ServiceResult<QueryTemplate>> GetQueryAsync(int templateId = 0, string templateName = null);
 
         /// <summary>
@@ -38,19 +55,79 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="templateName">The name of the template.</param>
         /// <param name="wiserTemplate">Optional: If true the template will be tried to be found within Wiser instead of the database of the user.</param>
         /// <returns></returns>
-        Task<ServiceResult<TemplateModel>> GetTemplateByNameAsync(string templateName, bool wiserTemplate = false);
+        Task<ServiceResult<TemplateEntityModel>> GetTemplateByNameAsync(string templateName, bool wiserTemplate = false);
 		
-        Task<TemplateDataModel> GetLatestTemplateVersionAsync(int templateId);
-        Task<PublishedEnvironmentModel> GetTemplateEnvironmentsAsync(int templateId);
+        /// <summary>
+        /// Get the latest version for a given template.
+        /// </summary>
+        /// <param name="templateId">The id of the template.</param>
+        /// <returns>A TemplateDataModel containing the template data of the latest version.</returns>
+        Task<ServiceResult<TemplateDataModel>> GetTemplateSettingsAsync(int templateId);
+        
+        /// <summary>
+        /// Get the template environments. This will retrieve a list of versions and their published environments and convert it to a PublishedEnvironmentModel 
+        /// containing the Live, accept and test versions and the list of other versions that are present in the data.
+        /// </summary>
+        /// <param name="templateId">The id of the template to retrieve the environments of.</param>
+        /// <returns>A model containing the versions that are currently set for the live, accept and test environment.</returns>
+        Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId);
+        
+        /// <summary>
+        /// Get the templates linked to the current template. The templates that are retrieved will be converted into a LinkedTemplatesModel using the LinkedTemplatesEnum to determine its link type.
+        /// </summary>
+        /// <param name="templateId">The id of the template of which to retrieve the linked templates.</param>
+        /// <returns>A LinkedTemplates model that contains several lists of linked templates divided by their link type. (e.g. javascript, css)</returns>
+        Task<ServiceResult<LinkedTemplatesModel>> GetLinkedTemplatesAsync(int templateId);
+        
+        /// <summary>
+        /// Get the dynamic content that is linked to the current template. This method will convert the linked dynamic content data into a dynamic content overview which can be used for displaying a general overview of the dynamic content.
+        /// </summary>
+        /// <param name="templateId">The id of the template to of which to retrieve the linked dynamic content.</param>
+        /// <returns>A list of overviews for dynamic content. All content in the list is linked to the current template.</returns>
+        Task<ServiceResult<List<DynamicContentOverviewModel>>> GetLinkedDynamicContentAsync(int templateId);
+        
+        /// <summary>
+        /// Publish a template version to a new environment using a template id. This requires you to provide a model with the current published state.
+        /// This method will use a generated change log to determine the environments that need to be changed. In some cases publishing an environment will also publish underlaying environments.
+        /// </summary>
+        /// <param name="templateId">The id of the template to publish.</param>
+        /// <param name="version">The version of the template to publish.</param>
+        /// <param name="environment">The environment to publish the template to.</param>
+        /// <param name="currentPublished">A PublishedEnvironmentModel containing the current published templates.</param>
+        /// <returns>A int of the rows affected.</returns>
+        Task<ServiceResult<int>> PublishEnvironmentOfTemplateAsync(int templateId, int version, string environment, PublishedEnvironmentModel currentPublished);
+        
+        /// <summary>
+        /// Save the template as a new version and save the linked templates if necessary. This method will calculate if links are to be added or removed from the current situation.
+        /// </summary>
+        /// <param name="template">A TemplateDataModel containing the data of the template that is to be saved as a new version</param>
+        /// <param name="scssLinks">The sccs templates that should be linked to the template.</param>
+        /// <param name="jsLinks">The javascript templates that should be linked to the template.</param>
+        Task<ServiceResult<bool>> SaveTemplateVersionAsync(TemplateDataModel template, List<int> scssLinks, List<int> jsLinks);
+        
+        /// <summary>
+        /// Retrieve the tree view section underlying the parentId. Transforms the tree view section into a list of TemplateTreeViewModels.
+        /// </summary>
+        /// <param name="parentId">The id of the template whose child nodes are to be retrieved.</param>
+        /// <returns>A List of TemplateTreeViewModels containing the id, names and types of the templates included in the requested section.</returns>
+        Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(int parentId);
 
-        Task<LinkedTemplatesModel> GetLinkedTemplatesAsync(int templateId);
-
-        Task<List<DynamicContentOverviewModel>> GetLinkedDynamicContentAsync(int templateId);
-
-        Task<int> PublishEnvironmentOfTemplateAsync(int templateId, int version, string environment, PublishedEnvironmentModel currentPublished);
-
-        Task<int> SaveTemplateVersionAsync(TemplateDataModel template, List<int> scssLinks, List<int> jsLinks);
-        Task<List<TemplateTreeViewModel>> GetTreeViewSectionAsync(int parentId);
-        Task<List<SearchResultModel>> GetSearchResultsAsync(SearchSettingsModel searchSettings);
+        /// <summary>
+        /// Search for a template.
+        /// </summary>
+        /// <param name="searchSettings">The search parameters.</param>
+        Task<ServiceResult<List<SearchResultModel>>> GetSearchResultsAsync(SearchSettingsModel searchSettings);
+        
+        /// <summary>
+        /// Load The development tab.
+        /// </summary>
+        Task<ServiceResult<DevelopmentTemplateModel>> GetDevelopmentTabDataAsync(int templateId);
+        
+        /// <summary>
+        /// Retrieve the history of the template. This will include changes made to dynamic content between the releases of templates and the publishes to different environments from this template. This data is collected and combined in a TemnplateHistoryOverviewModel
+        /// </summary>
+        /// <param name="templateId">The id of the template to retrieve the history from.</param>
+        /// <returns>A TemplateHistoryOverviewModel containing a list of templatehistorymodels and a list of publishlogmodels. The model contains base info and a list of changes made within the version and its sub components (e.g. dynamic content, publishes).</returns>
+        Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(int templateId);
     }
 }

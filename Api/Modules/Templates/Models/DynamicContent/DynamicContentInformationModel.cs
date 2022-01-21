@@ -9,9 +9,9 @@ namespace Api.Modules.Templates.Models.DynamicContent
 {
     public class DynamicContentInformationModel : PageViewModel
     {
-        public Dictionary<TypeInfo, CmsObjectAttribute> components { get; set; }
-        public Dictionary<object, string> componentModes { get; set; }
-        public KeyValuePair<Type, Dictionary<CmsTabName, Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>>> propertyAttributes { get; set; }
-        public Dictionary<PropertyInfo, object> propValues { get; set; }
+        public Dictionary<TypeInfo, CmsObjectAttribute> Components { get; set; }
+        public Dictionary<object, string> ComponentModes { get; set; }
+        public KeyValuePair<Type, Dictionary<CmsTabName, Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>>> PropertyAttributes { get; set; }
+        public Dictionary<PropertyInfo, object> PropValues { get; set; }
     }
 }

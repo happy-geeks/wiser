@@ -82,31 +82,31 @@ namespace Api.Modules.Templates.Services.DataLayer
             {
                 var templateData = new TemplateDataModel();
 
-                templateData.templateid = row.Field<int>("template_id");
-                templateData.name = row.Field<string>("template_name");
-                templateData.editorValue = row.Field<string>("template_data");
-                templateData.version = row.Field<int>("version");
-                templateData.changed_on = row.Field<DateTime>("changed_on");
-                templateData.changed_by = row.Field<string>("changed_by");
+                templateData.Templateid = row.Field<int>("template_id");
+                templateData.Name = row.Field<string>("template_name");
+                templateData.EditorValue = row.Field<string>("template_data");
+                templateData.Version = row.Field<int>("version");
+                templateData.ChangedOn = row.Field<DateTime>("changed_on");
+                templateData.ChangedBy = row.Field<string>("changed_by");
 
-                templateData.useCache = row.Field<int>("usecache");
-                templateData.cacheMinutes = row.Field<int>("cacheminutes");
-                templateData.handleRequests = Convert.ToBoolean(row.Field<sbyte>("handlerequest"));
-                templateData.handleSession = Convert.ToBoolean(row.Field<sbyte>("handlesession"));
-                templateData.handleStandards = Convert.ToBoolean(row.Field<sbyte>("handlestandards"));
-                templateData.handleObjects = Convert.ToBoolean(row.Field<sbyte>("handleobjects"));
-                templateData.handleTranslations = Convert.ToBoolean(row.Field<sbyte>("handletranslations"));
-                templateData.handleDynamicContent = Convert.ToBoolean(row.Field<sbyte>("handledynamiccontent"));
-                templateData.handleLogicBlocks = Convert.ToBoolean(row.Field<sbyte>("handlelogicblocks"));
-                templateData.handleMutators = Convert.ToBoolean(row.Field<sbyte>("handlemutators"));
-                templateData.loginRequired = Convert.ToBoolean(row.Field<sbyte>("loginrequired"));
-                templateData.loginUserType = row.Field<string>("loginusertype");
-                templateData.loginSessionPrefix = row.Field<string>("loginsessionprefix");
-                templateData.loginRole = row.Field<string>("loginrole");
+                templateData.UseCache = row.Field<int>("usecache");
+                templateData.CacheMinutes = row.Field<int>("cacheminutes");
+                templateData.HandleRequests = Convert.ToBoolean(row.Field<sbyte>("handlerequest"));
+                templateData.HandleSession = Convert.ToBoolean(row.Field<sbyte>("handlesession"));
+                templateData.HandleStandards = Convert.ToBoolean(row.Field<sbyte>("handlestandards"));
+                templateData.HandleObjects = Convert.ToBoolean(row.Field<sbyte>("handleobjects"));
+                templateData.HandleTranslations = Convert.ToBoolean(row.Field<sbyte>("handletranslations"));
+                templateData.HandleDynamicContent = Convert.ToBoolean(row.Field<sbyte>("handledynamiccontent"));
+                templateData.HandleLogicBlocks = Convert.ToBoolean(row.Field<sbyte>("handlelogicblocks"));
+                templateData.HandleMutators = Convert.ToBoolean(row.Field<sbyte>("handlemutators"));
+                templateData.LoginRequired = Convert.ToBoolean(row.Field<sbyte>("loginrequired"));
+                templateData.LoginUserType = row.Field<string>("loginusertype");
+                templateData.LoginSessionPrefix = row.Field<string>("loginsessionprefix");
+                templateData.LoginRole = row.Field<string>("loginrole");
 
                 var linkedTemplates = new LinkedTemplatesModel();
-                linkedTemplates.rawLinkList = row.Field<string>("linkedtemplates");
-                templateData.linkedTemplates = linkedTemplates;
+                linkedTemplates.RawLinkList = row.Field<string>("linkedtemplates");
+                templateData.LinkedTemplates = linkedTemplates;
 
                 resultList.Add(templateData);
             }
@@ -132,10 +132,10 @@ namespace Api.Modules.Templates.Services.DataLayer
             foreach(DataRow row in dataTable.Rows)
             {
                 var publishHistory = new PublishHistoryModel();
-                publishHistory.templateid = (int)row.Field<Int64>("template_id");
-                publishHistory.changed_on = row.Field<DateTime>("changed_on");
-                publishHistory.changed_by = row.Field<string>("changed_by");
-                publishHistory.publishLog = new PublishLogModel(
+                publishHistory.Templateid = (int)row.Field<Int64>("template_id");
+                publishHistory.ChangedOn = row.Field<DateTime>("changed_on");
+                publishHistory.ChangedBy = row.Field<string>("changed_by");
+                publishHistory.PublishLog = new PublishLogModel(
                         row.Field<Int64>("template_id"), 
                         row.Field<Int64>("old_live"), 
                         row.Field<Int64>("old_accept"), 

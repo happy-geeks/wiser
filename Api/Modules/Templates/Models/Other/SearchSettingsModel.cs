@@ -5,28 +5,28 @@ namespace Api.Modules.Templates.Models.Other
 {
     public class SearchSettingsModel
     {
-        public string needle { get; set; }
+        public string Needle { get; set; }
 
         //Basic settings
-        public Environments searchEnvironment { get; set; } = 0;
+        public Environments SearchEnvironment { get; set; } = 0;
 
         //Template settings
-        public Boolean searchTemplateId { get; set; } = true;
-        public Boolean searchTemplateType { get; set; }
-        public Boolean searchTemplateName{ get; set; }
-        public Boolean searchTemplateData { get; set; }
-        public Boolean searchTemplateParent { get; set; }
-        public Boolean searchTemplateLinkedTemplates { get; set; }
+        public Boolean SearchTemplateId { get; set; } = true;
+        public Boolean SearchTemplateType { get; set; }
+        public Boolean SearchTemplateName{ get; set; }
+        public Boolean SearchTemplateData { get; set; }
+        public Boolean SearchTemplateParent { get; set; }
+        public Boolean SearchTemplateLinkedTemplates { get; set; }
 
         //Dynamic content settings
-        public Boolean searchDynamicContentId { get; set; } = true;
-        public Boolean searchDynamicContentFilledVariables { get; set; }
-        public Boolean searchDynamicContentComponentName { get; set; }
-        public Boolean searchDynamicContentComponentMode { get; set; }
+        public Boolean SearchDynamicContentId { get; set; } = true;
+        public Boolean SearchDynamicContentFilledVariables { get; set; }
+        public Boolean SearchDynamicContentComponentName { get; set; }
+        public Boolean SearchDynamicContentComponentMode { get; set; }
 
         public Boolean IsTemplateSearchDisabled ()
         {
-            if (searchTemplateId == false && searchTemplateType == false && searchTemplateName == false && searchTemplateData == false && searchTemplateParent == false && searchTemplateLinkedTemplates == false)
+            if (SearchTemplateId == false && SearchTemplateType == false && SearchTemplateName == false && SearchTemplateData == false && SearchTemplateParent == false && SearchTemplateLinkedTemplates == false)
             {
                 return true;
             } 
@@ -34,7 +34,7 @@ namespace Api.Modules.Templates.Models.Other
         }
         public Boolean IsDynamicContentSearchDisabled()
         {
-            if (searchDynamicContentId == false && searchDynamicContentFilledVariables == false && searchDynamicContentComponentName == false && searchDynamicContentComponentMode == false)
+            if (SearchDynamicContentId == false && SearchDynamicContentFilledVariables == false && SearchDynamicContentComponentName == false && SearchDynamicContentComponentMode == false)
             {
                 return true;
             }

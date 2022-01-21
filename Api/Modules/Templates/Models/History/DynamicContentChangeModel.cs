@@ -5,39 +5,25 @@ namespace Api.Modules.Templates.Models.History
 {
     public class DynamicContentChangeModel
     {
-        PropertyInfo property;
-        object newValue;
-        object oldValue;
+        public PropertyInfo Property { get; set; }
+        public object NewValue { get; set; }
+        public object OldValue { get; set; }
 
         public DynamicContentChangeModel(PropertyInfo property, object newValue, object oldValue)
         {
-            this.property = property;
-            this.newValue = newValue;
-            this.oldValue = oldValue;
-        }
-
-        public PropertyInfo GetPropertyInfo()
-        {
-            return property;
+            this.Property = property;
+            this.NewValue = newValue;
+            this.OldValue = oldValue;
         }
 
         public CmsPropertyAttribute GetPropertyAttribute()
         {
-            return property.GetCustomAttribute<CmsPropertyAttribute>();
+            return Property.GetCustomAttribute<CmsPropertyAttribute>();
         }
 
         public string GetPropertyInfoPrettyName()
         {
-            return property.GetCustomAttribute<CmsPropertyAttribute>().PrettyName;
-        }
-
-        public object GetNewValue()
-        {
-            return newValue;
-        }
-        public object GetOldValue()
-        {
-            return oldValue;
+            return Property.GetCustomAttribute<CmsPropertyAttribute>().PrettyName;
         }
     }
 }

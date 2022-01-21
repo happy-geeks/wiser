@@ -12,7 +12,6 @@ module.exports = {
         Windows: "../../Modules/DynamicItems/Scripts/Windows.js",
         Grids: "../../Modules/DynamicItems/Scripts/Grids.js",
         DragAndDrop: "../../Modules/DynamicItems/Scripts/DragAndDrop.js",
-        DynamicContent: "../../Modules/DynamicContent/Scripts/DynamicContent.js",
         Search: "../../Modules/Search/Scripts/Search.js",
         Import: "../../Modules/ImportExport/Scripts/Import.js",
         Export: "../../Modules/ImportExport/Scripts/Export.js",

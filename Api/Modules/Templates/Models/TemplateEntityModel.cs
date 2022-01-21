@@ -3,7 +3,7 @@
     /// <summary>
     /// A model for a template entity.
     /// </summary>
-    public class TemplateModel
+    public class TemplateEntityModel
     {
         /// <summary>
         /// Gets and sets the ID.

@@ -1,6 +1,4 @@
 ﻿@model List<HistoryVersionModel>
-@using GeeksCoreLibrary.Core.Cms.Attributes
-@using System.Reflection
 @using Api.Modules.Templates.Models.History
 
 <div class="row historyHeader">
@@ -28,12 +26,11 @@
         </div>
         @if (@historyVersion.GetChanges() != null)
         {
-            @foreach (DynamicContentChangeModel historyChange in @historyVersion.GetChanges())
+            @foreach (var historyChange in @historyVersion.GetChanges())
             {
                 var propertyAttribute = historyChange.GetPropertyAttribute();
-
-                <partial name="HistoryInputGenerator" model="new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(propertyAttribute, new KeyValuePair<PropertyInfo, object>(@historyChange.GetPropertyInfo(), historyChange.GetOldValue()))" />
-                <partial name="HistoryInputGenerator" model="new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(propertyAttribute, new KeyValuePair<PropertyInfo, object>(@historyChange.GetPropertyInfo(), historyChange.GetNewValue()))" />
+                <partial name="HistoryInputGenerator" model="new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(@propertyAttribute, new KeyValuePair<PropertyInfo, object>(@historyChange.Property, @historyChange.OldValue))" />
+                <partial name="HistoryInputGenerator" model="new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(@propertyAttribute, new KeyValuePair<PropertyInfo, object>(@historyChange.Property, @historyChange.NewValue))" />
             }
         }
     </div>
