@@ -2,7 +2,7 @@
 {
     public class DevelopmentTemplateModel
     {
-        public TemplateDataModel templateData { get; set; }
-        public LinkedTemplatesModel linkedTemplates { get; set; }
+        public TemplateDataModel TemplateData { get; set; }
+        public LinkedTemplatesModel LinkedTemplates { get; set; }
     }
 }

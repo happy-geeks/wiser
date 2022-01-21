@@ -4,20 +4,20 @@ namespace Api.Modules.Templates.Models.Template
 {
     public class LinkedTemplatesModel
     {
-        public List<LinkedTemplateModel> linkedSCCSTemplates;
-        public List<LinkedTemplateModel> linkedCSSTemplates;
+        public List<LinkedTemplateModel> LinkedSccsTemplates;
+        public List<LinkedTemplateModel> LinkedCssTemplates;
 
-        public List<LinkedTemplateModel> linkedJavascript;
+        public List<LinkedTemplateModel> LinkedJavascript;
 
-        public List<LinkedTemplateModel> linkOptionsTemplates;
+        public List<LinkedTemplateModel> LinkOptionsTemplates;
 
-        public string rawLinkList;
+        public string RawLinkList;
 
         public LinkedTemplatesModel ()
         {
-            this.linkedCSSTemplates = new List<LinkedTemplateModel>();
-            this.linkedJavascript = new List<LinkedTemplateModel>();
-            this.linkedSCCSTemplates = new List<LinkedTemplateModel>();
+            this.LinkedCssTemplates = new List<LinkedTemplateModel>();
+            this.LinkedJavascript = new List<LinkedTemplateModel>();
+            this.LinkedSccsTemplates = new List<LinkedTemplateModel>();
         }
     }
 }

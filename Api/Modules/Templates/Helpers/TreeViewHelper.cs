@@ -10,7 +10,7 @@ namespace Api.Modules.Templates.Helpers
         /// </summary>
         /// <param name="rawTreeView">The raw data in the form of a TemplateTreeViewDAO to convert.</param>
         /// <returns>A TemplateTreeViewModel containing the data provided in the param</returns>
-        public TemplateTreeViewModel ConvertTemplateTreeViewDAOToTemplateTreeViewModel (TemplateTreeViewDAO rawTreeView)
+        public TemplateTreeViewModel ConvertTemplateTreeViewDAOToTemplateTreeViewModel (TemplateTreeViewDao rawTreeView)
         {
             var treeViewModel = new TemplateTreeViewModel(
                 rawTreeView.GetTemplateId(),

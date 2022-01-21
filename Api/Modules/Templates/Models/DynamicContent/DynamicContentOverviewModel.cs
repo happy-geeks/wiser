@@ -6,17 +6,17 @@ namespace Api.Modules.Templates.Models.DynamicContent
 {
     public class DynamicContentOverviewModel
     {
-        public int id { get; set; }
-        public string title { get; set; }
-        public string component { get; set; }
-        public string component_mode { get; set; }
-        public List<string> usages { get; set; }
-        public int renders { get; set; }
-        public int avgRenderTime { get; set; }
-        public DateTime changed_on { get; set; }
-        public string changed_by { get; set; }
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string Component { get; set; }
+        public string ComponentMode { get; set; }
+        public List<string> Usages { get; set; }
+        public int Renders { get; set; }
+        public int AvgRenderTime { get; set; }
+        public DateTime ChangedOn { get; set; }
+        public string ChangedBy { get; set; }
 
-        public PublishedEnvironmentModel versions { get; set; }
+        public PublishedEnvironmentModel Versions { get; set; }
 
     }
 }

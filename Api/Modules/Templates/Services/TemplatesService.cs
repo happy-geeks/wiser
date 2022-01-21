@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
+using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -41,11 +43,12 @@ namespace Api.Modules.Templates.Services
         private readonly IDatabaseConnection wiserDatabaseConnection;
         private readonly IApiReplacementsService apiReplacementsService;
         private readonly ITemplateDataService templateDataService;
+        private readonly IHistoryService historyService;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IWiserCustomersService wiserCustomersService, IHttpContextAccessor httpContextAccessor, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService)
+        public TemplatesService(IWiserCustomersService wiserCustomersService, IHttpContextAccessor httpContextAccessor, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.httpContextAccessor = httpContextAccessor;
@@ -54,6 +57,7 @@ namespace Api.Modules.Templates.Services
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.apiReplacementsService = apiReplacementsService;
             this.templateDataService = templateDataService;
+            this.historyService = historyService;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -68,7 +72,7 @@ namespace Api.Modules.Templates.Services
             {
                 throw new ArgumentException("No template ID or name entered.");
             }
-            
+
             string groupingKey = null;
             string groupingPrefix = null;
             var groupingCreateObjectInsteadOfArray = false;
@@ -76,7 +80,7 @@ namespace Api.Modules.Templates.Services
             var groupingValueColumnName = "";
 
             var content = TryGetTemplateQuery(templateName, ref groupingKey, ref groupingPrefix, ref groupingCreateObjectInsteadOfArray, ref groupingKeyColumnName, ref groupingValueColumnName);
-            
+
             return new ServiceResult<Template>(new Template
             {
                 Id = templateId,
@@ -92,7 +96,7 @@ namespace Api.Modules.Templates.Services
 
             return Task.FromResult(new ServiceResult<QueryTemplate>(result));
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<JToken>> GetAndExecuteQueryAsync(ClaimsIdentity identity, string templateName, IFormCollection requestPostData = null)
         {
@@ -100,15 +104,15 @@ namespace Api.Modules.Templates.Services
 
             // Set the encryption key for the GCL internally. The GCL can't know which key to use otherwise.
             GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
-            
+
             var queryTemplate = GetQueryTemplate(0, templateName);
             queryTemplate.Content = apiReplacementsService.DoIdentityReplacements(queryTemplate.Content, identity, true);
-            
+
             if (requestPostData != null && requestPostData.Keys.Any())
             {
                 queryTemplate.Content = stringReplacementsService.DoReplacements(queryTemplate.Content, requestPostData, true);
             }
-            
+
             var result = await gclTemplatesService.GetJsonResponseFromQueryAsync(queryTemplate, customer.EncryptionKey);
             return new ServiceResult<JToken>(result);
         }
@@ -119,7 +123,7 @@ namespace Api.Modules.Templates.Services
             {
                 throw new ArgumentException("No template ID or name entered.");
             }
-            
+
             string groupingKey = null;
             string groupingPrefix = null;
             var groupingCreateObjectInsteadOfArray = false;
@@ -127,14 +131,15 @@ namespace Api.Modules.Templates.Services
             var groupingValueColumnName = "";
 
             var content = TryGetTemplateQuery(templateName, ref groupingKey, ref groupingPrefix, ref groupingCreateObjectInsteadOfArray, ref groupingKeyColumnName, ref groupingValueColumnName);
-            
+
             var result = new QueryTemplate
             {
                 Id = templateId,
                 Name = templateName,
                 Content = content,
                 Type = TemplateTypes.Query,
-                GroupingSettings = new QueryGroupingSettings {
+                GroupingSettings = new QueryGroupingSettings
+                {
                     GroupingColumn = groupingKey,
                     GroupingFieldsPrefix = groupingPrefix,
                     ObjectInsteadOfArray = groupingCreateObjectInsteadOfArray,
@@ -214,7 +219,7 @@ namespace Api.Modules.Templates.Services
 	                                                                       JOIN easy_items i ON t.itemid = i.id AND i.moduleid = 143 AND i.name IN('shopwarepro', 'wiser')
 	                                                                       GROUP BY i.id
                                                                        ) v ON v.v = t.version AND v.id = t.itemid");
-            
+
             if (dataTable.Rows.Count > 0)
             {
                 foreach (DataRow dataRow in dataTable.Rows)
@@ -225,7 +230,7 @@ namespace Api.Modules.Templates.Services
 
             outputCss = outputCss.Replace("(../", $"({domainName}");
             outputCss = outputCss.Replace("url('fonts", $"url('{domainName}css/fonts");
-            
+
             return new ServiceResult<string>(outputCss.ToString());
         }
 
@@ -2295,7 +2300,7 @@ EXECUTE stmt1;");
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateModel>> GetTemplateByNameAsync(string templateName, bool wiserTemplate = false)
+        public async Task<ServiceResult<TemplateEntityModel>> GetTemplateByNameAsync(string templateName, bool wiserTemplate = false)
         {
             var connectionToUse = clientDatabaseConnection;
 
@@ -2306,7 +2311,7 @@ EXECUTE stmt1;");
 
             if (connectionToUse == null)
             {
-                return new ServiceResult<TemplateModel>(new TemplateModel());
+                return new ServiceResult<TemplateEntityModel>(new TemplateEntityModel());
             }
 
             await connectionToUse.EnsureOpenConnectionForReadingAsync();
@@ -2330,10 +2335,10 @@ LIMIT 1";
 
             if (dataTable.Rows.Count == 0)
             {
-                return new ServiceResult<TemplateModel>(new TemplateModel());
+                return new ServiceResult<TemplateEntityModel>(new TemplateEntityModel());
             }
-            
-            var result = new TemplateModel()
+
+            var result = new TemplateEntityModel()
             {
                 Id = dataTable.Rows[0].Field<ulong>("id"),
                 Name = dataTable.Rows[0].Field<string>("name"),
@@ -2341,116 +2346,82 @@ LIMIT 1";
                 Content = dataTable.Rows[0].Field<string>("content")
             };
 
-            return new ServiceResult<TemplateModel>(result);
+            return new ServiceResult<TemplateEntityModel>(result);
         }
-        /// <summary>
-        /// Get the template environments. This will retrieve a list of versions and their published environments and convert it to a publishedEnvironmentmodel 
-        /// containing the Live, accept and test versions and the list of other versions that are present in the data.
-        /// </summary>
-        /// <param name="templateId">The id of the template to retrieve the environments of.</param>
-        /// <returns>A model containing the versions that are currently set for the live, accept and test environment.</returns>
-        public async Task<PublishedEnvironmentModel> GetTemplateEnvironmentsAsync (int templateId)
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId)
         {
             var versionsAndPublished = await templateDataService.GetPublishedEnvironmentsFromTemplate(templateId);
 
             var helper = new PublishedEnvironmentHelper();
 
-            return helper.CreatePublishedEnvoirementsFromVersionDictionary(versionsAndPublished);
+            return new ServiceResult<PublishedEnvironmentModel>(helper.CreatePublishedEnvoirementsFromVersionDictionary(versionsAndPublished));
         }
 
-        /// <summary>
-        /// Get the templates linked to the current template. The templates that are retrieved will be converted into a linkedtemplatesmodel using the linkedtemplatesenum to determine its linktype.
-        /// </summary>
-        /// <param name="templateId">The id of the template of which to retireve the linked templates.</param>
-        /// <returns>A LinkedTemplates model that contains several lists of linkedtemplates divided by their linktype. (e.g. javascript, css)</returns>
-        public async Task<LinkedTemplatesModel> GetLinkedTemplatesAsync(int templateId) {
+        /// <inheritdoc />
+        public async Task<ServiceResult<LinkedTemplatesModel>> GetLinkedTemplatesAsync(int templateId)
+        {
 
             var rawLinkList = await templateDataService.GetLinkedTemplates(templateId);
 
             var resultLinks = new LinkedTemplatesModel();
             foreach (var linkedTemplate in rawLinkList)
             {
-                if(linkedTemplate.linkType == LinkedTemplatesEnum.javascript)
+                if (linkedTemplate.LinkType == LinkedTemplatesEnum.javascript)
                 {
-                    resultLinks.linkedJavascript.Add(linkedTemplate);
+                    resultLinks.LinkedJavascript.Add(linkedTemplate);
                 }
-                else if (linkedTemplate.linkType == LinkedTemplatesEnum.scss)
+                else if (linkedTemplate.LinkType == LinkedTemplatesEnum.scss)
                 {
-                    resultLinks.linkedSCCSTemplates.Add(linkedTemplate);
+                    resultLinks.LinkedSccsTemplates.Add(linkedTemplate);
                 }
             }
 
-            resultLinks.linkOptionsTemplates = await templateDataService.GetLinkOptionsForTemplate(templateId);
+            resultLinks.LinkOptionsTemplates = await templateDataService.GetLinkOptionsForTemplate(templateId);
 
-            return resultLinks;
+            return new ServiceResult<LinkedTemplatesModel>(resultLinks);
         }
 
-        /// <summary>
-        /// Get the dynamic content that is linked to the current template. This method will convert the linked dynamic content data into a dynamic content overview which can be used for displaying a general overview of the dynamic content.
-        /// </summary>
-        /// <param name="templateId">The id of the template to of which to retrieve the linked dynamic content.</param>
-        /// <returns>A list of overviews for dynamic content. All content in the list is linked to the current template.</returns>
-        public async Task<List<DynamicContentOverviewModel>> GetLinkedDynamicContentAsync(int templateId)
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<DynamicContentOverviewModel>>> GetLinkedDynamicContentAsync(int templateId)
         {
             var resultList = new List<DynamicContentOverviewModel>();
 
-            foreach(var linkedContent in await templateDataService.GetLinkedDynamicContent(templateId))
+            foreach (var linkedContent in await templateDataService.GetLinkedDynamicContent(templateId))
             {
                 resultList.Add(LinkedDynamicContentToDynamicContentOverview(linkedContent));
             }
 
-            return resultList;
+            return new ServiceResult<List<DynamicContentOverviewModel>>(resultList);
         }
 
-        /// <summary>
-        /// Convert LinkedDynamicContentDAO to a DynamicContentOverviewModel.
-        /// </summary>
-        /// <param name="linkedContent">The LinkedDynamicContentDAO that should be converted.</param>
-        /// <returns>A DynamicContentOverviewModel of the linked content given as param.</returns>
-        private DynamicContentOverviewModel LinkedDynamicContentToDynamicContentOverview (LinkedDynamicContentDAO linkedContent)
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateDataModel>> GetTemplateSettingsAsync(int templateId)
         {
-            var overview = new DynamicContentOverviewModel();
-
-            overview.id = linkedContent.id;
-            overview.component = linkedContent.component;
-            overview.component_mode = linkedContent.component_mode;
-            overview.changed_on = linkedContent.changed_on;
-            overview.changed_by = linkedContent.changed_by;
-            overview.title = linkedContent.title;
-
-            if (String.IsNullOrEmpty(linkedContent.usages))
+            if (templateId <= 0)
             {
-                overview.usages = new List<string>();
-            }
-            else {
-                overview.usages = linkedContent.usages.Split(",").ToList<string>();
+                throw new ArgumentException("The Id cannot be zero.");
             }
 
-            return overview;
-        }
-
-        /// <summary>
-        /// Get the latest version for a given template.
-        /// </summary>
-        /// <param name="templateId">The id of the template.</param>
-        /// <returns>A TemplateDataModel containing the template data of the latest version.</returns>
-        public async Task<TemplateDataModel> GetLatestTemplateVersionAsync(int templateId)
-        {
             var templateData = await templateDataService.GetTemplateData(templateId);
-            templateData.publishedEnvironments = await GetTemplateEnvironmentsAsync(templateId);
-            return templateData;
+            var templateEnvironmentsResult = await GetTemplateEnvironmentsAsync(templateId);
+            if (templateEnvironmentsResult.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<TemplateDataModel>
+                {
+                    ReasonPhrase = templateEnvironmentsResult.ReasonPhrase,
+                    ErrorMessage = templateEnvironmentsResult.ErrorMessage,
+                    StatusCode = templateEnvironmentsResult.StatusCode
+                };
+            }
+
+            templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
+            return new ServiceResult<TemplateDataModel>(templateData);
         }
 
-        /// <summary>
-        /// Publish a template version to a new environment using a template id. This requires you to provide a model with the current published state.
-        /// This method will use a generated change log to determine the environments that need to be changed. In some cases publishing an environment will also publish underlaying environments.
-        /// </summary>
-        /// <param name="templateId">The id of the template to publish.</param>
-        /// <param name="version">The version of the template to publish.</param>
-        /// <param name="environment">The environment to publish the template to.</param>
-        /// <param name="currentPublished">A PublishedEnvironmentModel containing the current published templates.</param>
-        /// <returns>A int of the rows affected.</returns>
-        public async Task<int> PublishEnvironmentOfTemplateAsync(int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
+        /// <inheritdoc />
+        public async Task<ServiceResult<int>> PublishEnvironmentOfTemplateAsync(int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
         {
             var helper = new PublishedEnvironmentHelper();
 
@@ -2458,19 +2429,13 @@ LIMIT 1";
 
             var publishLog = helper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
-            return await templateDataService.PublishEnvironmentOfTemplate(templateId, newPublished, publishLog);
+            return new ServiceResult<int>(await templateDataService.PublishEnvironmentOfTemplate(templateId, newPublished, publishLog));
         }
 
-        /// <summary>
-        /// Save the template as a new version and save the linked templates if necessary. This method will calculate if links are to be added or removed from the current situation.
-        /// </summary>
-        /// <param name="template">A TemplateDataModel containing the data of the template that is to be saved as a new version</param>
-        /// <param name="scssLinks">The sccs templates that should be linked to the template.</param>
-        /// <param name="jsLinks">The javascript templates that should be linked to the template.</param>
-        /// <returns>A int of the rows affected.</returns>
-        public async Task<int> SaveTemplateVersionAsync(TemplateDataModel template, List<int> scssLinks, List<int> jsLinks)
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(TemplateDataModel template, List<int> scssLinks, List<int> jsLinks)
         {
-            var linkList = await templateDataService.GetLinkedTemplates(template.templateid);
+            var linkList = await templateDataService.GetLinkedTemplates(template.Templateid);
 
             var linksToAdd = new List<int>();
             var linksToRemove = new List<int>();
@@ -2481,9 +2446,94 @@ LIMIT 1";
             linksToRemove = FillToRemoveList(jsLinks, LinkedTemplatesEnum.javascript, linkList, linksToRemove);
             linksToRemove = FillToRemoveList(scssLinks, LinkedTemplatesEnum.scss, linkList, linksToRemove);
 
-                await templateDataService.SaveTemplateVersion(template, scssLinks, jsLinks);
-            await templateDataService.SaveLinkedTemplates(template.templateid, linksToAdd, linksToRemove);
-            return 1;
+            await templateDataService.SaveTemplateVersion(template, scssLinks, jsLinks);
+            await templateDataService.SaveLinkedTemplates(template.Templateid, linksToAdd, linksToRemove);
+            return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(int parentId)
+        {
+            var rawSection = await templateDataService.GetTreeViewSection(parentId);
+            var helper = new TreeViewHelper();
+            var convertedList = rawSection.Select(treeViewDao => helper.ConvertTemplateTreeViewDAOToTemplateTreeViewModel(treeViewDao)).ToList();
+
+            return new ServiceResult<List<TemplateTreeViewModel>>(convertedList);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<SearchResultModel>>> GetSearchResultsAsync(SearchSettingsModel searchSettings)
+        {
+            return new ServiceResult<List<SearchResultModel>>(await templateDataService.GetSearchResults(searchSettings));
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<DevelopmentTemplateModel>> GetDevelopmentTabDataAsync(int templateId)
+        {
+            var latestTemplateVersion = await GetTemplateSettingsAsync(templateId);
+            if (latestTemplateVersion.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<DevelopmentTemplateModel>
+                {
+                    StatusCode = latestTemplateVersion.StatusCode,
+                    ErrorMessage = latestTemplateVersion.ErrorMessage,
+                    ReasonPhrase = latestTemplateVersion.ReasonPhrase
+                };
+            }
+
+            var linkedTemplates = await GetLinkedTemplatesAsync(templateId);
+            if (linkedTemplates.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<DevelopmentTemplateModel>
+                {
+                    StatusCode = linkedTemplates.StatusCode,
+                    ErrorMessage = linkedTemplates.ErrorMessage,
+                    ReasonPhrase = linkedTemplates.ReasonPhrase
+                };
+            }
+
+            var model = new DevelopmentTemplateModel
+            {
+                TemplateData = latestTemplateVersion.ModelObject,
+                LinkedTemplates = linkedTemplates.ModelObject
+            };
+
+            return new ServiceResult<DevelopmentTemplateModel>(model);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(int templateId)
+        {
+            if (templateId <= 0)
+            {
+                throw new ArgumentException("The Id cannot be zero.");
+            }
+
+            var dynamicContentOverview = await GetLinkedDynamicContentAsync(templateId);
+            if (dynamicContentOverview.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<TemplateHistoryOverviewModel>
+                {
+                    StatusCode = dynamicContentOverview.StatusCode,
+                    ErrorMessage = dynamicContentOverview.ErrorMessage,
+                    ReasonPhrase = dynamicContentOverview.ReasonPhrase
+                };
+            }
+
+            var dynamicContentHistory = new Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>>();
+            foreach (var dc in dynamicContentOverview.ModelObject)
+            {
+                dynamicContentHistory.Add(dc, await historyService.GetChangesInComponent(dc.Id));
+            }
+
+            var overview = new TemplateHistoryOverviewModel {
+                TemplateId = templateId, 
+                TemplateHistory = await historyService.GetVersionHistoryFromTemplate(templateId, dynamicContentHistory), 
+                PublishHistory = await historyService.GetPublishHistoryFromTemplate(templateId),
+                PublishedEnvironment = (await GetTemplateEnvironmentsAsync(templateId)).ModelObject
+            };
+
+            return new ServiceResult<TemplateHistoryOverviewModel>(overview);
         }
 
         /// <summary>
@@ -2498,15 +2548,13 @@ LIMIT 1";
             var found = false;
             foreach (var link in confirmedLinks)
             {
-                foreach (var linkedTemplate in linkedList)
+                if (linkedList.Any(linkedTemplate => linkedTemplate.TemplateId == link))
                 {
-                    if (linkedTemplate.templateId == link)
-                    {
-                        found = true;
-                        break;
-                    }
+                    found = true;
                 }
-                if (!found) {
+
+                if (!found)
+                {
                     linksToAdd.Add(link);
                 }
             }
@@ -2525,36 +2573,33 @@ LIMIT 1";
         {
             foreach (var linkedTemplate in linkedList)
             {
-                if (linkedTemplate.linkType == confirmedLinksType && !confirmedLinks.Contains(linkedTemplate.templateId))
+                if (linkedTemplate.LinkType == confirmedLinksType && !confirmedLinks.Contains(linkedTemplate.TemplateId))
                 {
-                    linksToRemove.Add(linkedTemplate.templateId);
+                    linksToRemove.Add(linkedTemplate.TemplateId);
                 }
             }
             return linksToRemove;
         }
 
         /// <summary>
-        /// Retrieve the treeviewsection underlaying the parentId. Transforms the treeviewsection into a list of TemplateTreeViewModels.
+        /// Convert LinkedDynamicContentDAO to a DynamicContentOverviewModel.
         /// </summary>
-        /// <param name="parentId">The id of the template whose childnodes are to be retrieved.</param>
-        /// <returns>A List of TemplateTreeViewModels containing the id, names and types of the templates included in the requested section.</returns>
-        public async Task<List<TemplateTreeViewModel>> GetTreeViewSectionAsync (int parentId)
+        /// <param name="linkedContent">The LinkedDynamicContentDAO that should be converted.</param>
+        /// <returns>A DynamicContentOverviewModel of the linked content given as param.</returns>
+        private DynamicContentOverviewModel LinkedDynamicContentToDynamicContentOverview(LinkedDynamicContentDao linkedContent)
         {
-            var rawSection = await templateDataService.GetTreeViewSection(parentId);
-            var helper = new TreeViewHelper();
-            var convertedList = new List<TemplateTreeViewModel>();
-
-            foreach(var treeviewDAO in rawSection)
+            var overview = new DynamicContentOverviewModel
             {
-                convertedList.Add(helper.ConvertTemplateTreeViewDAOToTemplateTreeViewModel(treeviewDAO));
-            }
+                Id = linkedContent.Id,
+                Component = linkedContent.Component,
+                ComponentMode = linkedContent.ComponentMode,
+                ChangedOn = linkedContent.ChangedOn,
+                ChangedBy = linkedContent.ChangedBy,
+                Title = linkedContent.Title,
+                Usages = String.IsNullOrEmpty(linkedContent.Usages) ? new List<string>() : linkedContent.Usages.Split(",").ToList()
+            };
 
-            return convertedList;
-        }
-
-        public async Task<List<SearchResultModel>> GetSearchResultsAsync (SearchSettingsModel searchSettings)
-        {
-            return await templateDataService.GetSearchResults(searchSettings); ;
+            return overview;
         }
     }
 }

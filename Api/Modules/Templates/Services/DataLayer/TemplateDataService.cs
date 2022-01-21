@@ -31,14 +31,14 @@ namespace Api.Modules.Templates.Services.DataLayer
         public async Task<TemplateDataModel> GetTemplateData(int templateId)
         {
             connection.ClearParameters();
-            connection.AddParameter("templateid", templateId);
+            connection.AddParameter("templateId", templateId);
             var dataTable = await connection.GetAsync(@"SELECT wtt.template_id, wtt.template_name, wtt.template_data, wtt.version, wtt.changed_on, wtt.changed_by, wtt.usecache, 
                 wtt.cacheminutes, wtt.handlerequest, wtt.handlesession, wtt.handleobjects, wtt.handlestandards, wtt.handletranslations, wtt.handledynamiccontent, wtt.handlelogicblocks, wtt.handlemutators, 
                 wtt.loginrequired, wtt.loginusertype, wtt.loginsessionprefix, wtt.loginrole , GROUP_CONCAT(CONCAT_WS(';',linkedtemplates.template_id, linkedtemplates.template_name, linkedtemplates.template_type)) AS linkedtemplates
                 FROM wiser_template_test wtt 
 				LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM wiser_template_test linkedTemplate GROUP BY template_id) AS linkedtemplates 
 				ON FIND_IN_SET(linkedtemplates.template_id ,wtt.linkedtemplates)
-                WHERE wtt.template_id = 1 AND wtt.version = (SELECT MAX(version) FROM wiser_template_test WHERE template_id = wtt.template_id)
+                WHERE wtt.template_id = ?templateId AND wtt.version = (SELECT MAX(version) FROM wiser_template_test WHERE template_id = wtt.template_id)
 				GROUP BY wtt.template_id
                 ORDER BY wtt.version DESC 
                 LIMIT 1"
@@ -47,27 +47,27 @@ namespace Api.Modules.Templates.Services.DataLayer
             var templateData = new TemplateDataModel();
 
             if (dataTable.Rows.Count == 1) {
-                templateData.templateid = dataTable.Rows[0].Field<int>("template_id");
-                templateData.name = dataTable.Rows[0].Field<string>("template_name");
-                templateData.editorValue = dataTable.Rows[0].Field<string>("template_data");
-                templateData.version = dataTable.Rows[0].Field<int>("version");
-                templateData.changed_on = dataTable.Rows[0].Field<DateTime>("changed_on");
-                templateData.changed_by = dataTable.Rows[0].Field<string>("changed_by");
+                templateData.Templateid = dataTable.Rows[0].Field<int>("template_id");
+                templateData.Name = dataTable.Rows[0].Field<string>("template_name");
+                templateData.EditorValue = dataTable.Rows[0].Field<string>("template_data");
+                templateData.Version = dataTable.Rows[0].Field<int>("version");
+                templateData.ChangedOn = dataTable.Rows[0].Field<DateTime>("changed_on");
+                templateData.ChangedBy = dataTable.Rows[0].Field<string>("changed_by");
 
-                templateData.useCache = dataTable.Rows[0].Field<int>("usecache");
-                templateData.cacheMinutes = dataTable.Rows[0].Field<int>("cacheminutes");
-                templateData.handleRequests = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handlerequest"));
-                templateData.handleSession = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handlesession"));
-                templateData.handleStandards = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handlestandards"));
-                templateData.handleObjects = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handleobjects"));
-                templateData.handleTranslations = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handletranslations"));
-                templateData.handleDynamicContent = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handledynamiccontent"));
-                templateData.handleLogicBlocks = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handlelogicblocks"));
-                templateData.handleMutators = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handlemutators"));
-                templateData.loginRequired = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("loginrequired"));
-                templateData.loginUserType = dataTable.Rows[0].Field<string>("loginusertype");
-                templateData.loginSessionPrefix = dataTable.Rows[0].Field<string>("loginsessionprefix");
-                templateData.loginRole = dataTable.Rows[0].Field<string>("loginrole");
+                templateData.UseCache = dataTable.Rows[0].Field<int>("usecache");
+                templateData.CacheMinutes = dataTable.Rows[0].Field<int>("cacheminutes");
+                templateData.HandleRequests = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handlerequest"));
+                templateData.HandleSession = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handlesession"));
+                templateData.HandleStandards = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handlestandards"));
+                templateData.HandleObjects = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handleobjects"));
+                templateData.HandleTranslations = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handletranslations"));
+                templateData.HandleDynamicContent = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handledynamiccontent"));
+                templateData.HandleLogicBlocks = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handlelogicblocks"));
+                templateData.HandleMutators = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("handlemutators"));
+                templateData.LoginRequired = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("loginrequired"));
+                templateData.LoginUserType = dataTable.Rows[0].Field<string>("loginusertype");
+                templateData.LoginSessionPrefix = dataTable.Rows[0].Field<string>("loginsessionprefix");
+                templateData.LoginRole = dataTable.Rows[0].Field<string>("loginrole");
             }
 
             return templateData;
@@ -121,12 +121,12 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             var query = baseQueryPart + dynamicQueryPart + endQueryPart + dynamicWherePart;
 
-            connection.AddParameter("oldlive", publishLog.oldLive);
-            connection.AddParameter("oldaccept", publishLog.oldAccept);
-            connection.AddParameter("oldtest", publishLog.oldTest);
-            connection.AddParameter("newlive", publishLog.newLive);
-            connection.AddParameter("newaccept", publishLog.newAccept);
-            connection.AddParameter("newtest", publishLog.newTest);
+            connection.AddParameter("oldlive", publishLog.OldLive);
+            connection.AddParameter("oldaccept", publishLog.OldAccept);
+            connection.AddParameter("oldtest", publishLog.OldTest);
+            connection.AddParameter("newlive", publishLog.NewLive);
+            connection.AddParameter("newaccept", publishLog.NewAccept);
+            connection.AddParameter("newtest", publishLog.NewTest);
 
             var logQuery = @"INSERT INTO wiser_template_publish_log_test (template_id, old_live, old_accept, old_test, new_live, new_accept, new_test, changed_on, changed_by) 
             VALUES(
@@ -162,13 +162,13 @@ namespace Api.Modules.Templates.Services.DataLayer
             foreach(DataRow row in dataTable.Rows)
             {
                 var linkedTemplate = new LinkedTemplateModel();
-                linkedTemplate.templateId = row.Field<int>("destination_template_id");
-                linkedTemplate.templateName = row.Field<string>("template_name");
-                linkedTemplate.linkType = row.Field<LinkedTemplatesEnum>("type");
-                linkedTemplate.linkName = row.Field<string>("type_name");
+                linkedTemplate.TemplateId = row.Field<int>("destination_template_id");
+                linkedTemplate.TemplateName = row.Field<string>("template_name");
+                linkedTemplate.LinkType = row.Field<LinkedTemplatesEnum>("type");
+                linkedTemplate.LinkName = row.Field<string>("type_name");
 
-                linkedTemplate.parentId = 0;
-                linkedTemplate.parentName = "TODO";
+                linkedTemplate.ParentId = 0;
+                linkedTemplate.ParentName = "TODO";
 
                 linkList.Add(linkedTemplate);
             }
@@ -195,12 +195,12 @@ namespace Api.Modules.Templates.Services.DataLayer
             foreach (DataRow row in dataTable.Rows)
             {
                 var linkedTemplate = new LinkedTemplateModel();
-                linkedTemplate.templateId = row.Field<int>("template_id");
-                linkedTemplate.templateName = row.Field<string>("template_name");
-                linkedTemplate.linkType = row.Field<LinkedTemplatesEnum>("template_type");
+                linkedTemplate.TemplateId = row.Field<int>("template_id");
+                linkedTemplate.TemplateName = row.Field<string>("template_name");
+                linkedTemplate.LinkType = row.Field<LinkedTemplatesEnum>("template_type");
 
-                linkedTemplate.parentId = 0;
-                linkedTemplate.parentName = "TODO";
+                linkedTemplate.ParentId = 0;
+                linkedTemplate.ParentName = "TODO";
 
                 linkList.Add(linkedTemplate);
             }
@@ -213,7 +213,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         /// </summary>
         /// <param name="templateId">The id of the template of which the linked dynamic content is to be retrieved.</param>
         /// <returns>A list of dynamic content data for all the dynamic content linked to the current template.</returns>
-        public async Task<List<LinkedDynamicContentDAO>> GetLinkedDynamicContent (int templateId)
+        public async Task<List<LinkedDynamicContentDao>> GetLinkedDynamicContent (int templateId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
@@ -235,18 +235,18 @@ namespace Api.Modules.Templates.Services.DataLayer
                 WHERE tdclink.template_id = ?templateid
                 AND wdc.version = (SELECT MAX(dc.version) FROM wiser_dynamiccontent_test dc WHERE dc.templateid = wdc.templateid)
                 GROUP BY wdc.templateid");
-            var resultList = new List<LinkedDynamicContentDAO>();
+            var resultList = new List<LinkedDynamicContentDao>();
 
             foreach (DataRow row in dataTable.Rows) {
-                var resultDao = new LinkedDynamicContentDAO();
+                var resultDao = new LinkedDynamicContentDao();
 
-                resultDao.id = row.Field<int>("templateid");
-                resultDao.component = row.Field<string>("component");
-                resultDao.component_mode = row.Field<string>("component_mode");
-                resultDao.usages = row.Field<string>("usages");
-                resultDao.changed_on = row.Field<DateTime>("changed_on");
-                resultDao.changed_by = row.Field<string>("changed_by");
-                resultDao.title = row.Field<string>("title");
+                resultDao.Id = row.Field<int>("templateid");
+                resultDao.Component = row.Field<string>("component");
+                resultDao.ComponentMode = row.Field<string>("component_mode");
+                resultDao.Usages = row.Field<string>("usages");
+                resultDao.ChangedOn = row.Field<DateTime>("changed_on");
+                resultDao.ChangedBy = row.Field<string>("changed_by");
+                resultDao.Title = row.Field<string>("title");
 
                 resultList.Add(resultDao);
             }
@@ -262,24 +262,24 @@ namespace Api.Modules.Templates.Services.DataLayer
         public Task<int> SaveTemplateVersion(TemplateDataModel templateData, List<int> sccsLinks, List<int>jsLinks)
         {
             connection.ClearParameters();
-            connection.AddParameter("templateid", templateData.templateid);
-            connection.AddParameter("name", templateData.name);
-            connection.AddParameter("editorValue", templateData.editorValue);
+            connection.AddParameter("templateid", templateData.Templateid);
+            connection.AddParameter("name", templateData.Name);
+            connection.AddParameter("editorValue", templateData.EditorValue);
 
-            connection.AddParameter("useCache", templateData.useCache);
-            connection.AddParameter("cacheMinutes", templateData.cacheMinutes);
-            connection.AddParameter("handleRequests", templateData.handleRequests);
-            connection.AddParameter("handleSession", templateData.handleSession);
-            connection.AddParameter("handleObjects", templateData.handleObjects);
-            connection.AddParameter("handleStandards", templateData.handleStandards);
-            connection.AddParameter("handleTranslations", templateData.handleTranslations);
-            connection.AddParameter("handleDynamicContent", templateData.handleDynamicContent);
-            connection.AddParameter("handleLogicBlocks", templateData.handleLogicBlocks);
-            connection.AddParameter("handleMutators", templateData.handleMutators);
-            connection.AddParameter("loginRequired", templateData.loginRequired);
-            connection.AddParameter("loginUserType", templateData.loginUserType);
-            connection.AddParameter("loginSessionPrefix", templateData.loginSessionPrefix);
-            connection.AddParameter("loginRole", templateData.loginRole);
+            connection.AddParameter("useCache", templateData.UseCache);
+            connection.AddParameter("cacheMinutes", templateData.CacheMinutes);
+            connection.AddParameter("handleRequests", templateData.HandleRequests);
+            connection.AddParameter("handleSession", templateData.HandleSession);
+            connection.AddParameter("handleObjects", templateData.HandleObjects);
+            connection.AddParameter("handleStandards", templateData.HandleStandards);
+            connection.AddParameter("handleTranslations", templateData.HandleTranslations);
+            connection.AddParameter("handleDynamicContent", templateData.HandleDynamicContent);
+            connection.AddParameter("handleLogicBlocks", templateData.HandleLogicBlocks);
+            connection.AddParameter("handleMutators", templateData.HandleMutators);
+            connection.AddParameter("loginRequired", templateData.LoginRequired);
+            connection.AddParameter("loginUserType", templateData.LoginUserType);
+            connection.AddParameter("loginSessionPrefix", templateData.LoginSessionPrefix);
+            connection.AddParameter("loginRole", templateData.LoginRole);
 
             var mergeList = new List<int>();
             mergeList.AddRange(sccsLinks);
@@ -390,7 +390,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         /// </summary>
         /// <param name="parentId">The id of the parent element of the treesection that needs to be retrieved</param>
         /// <returns>A list of templatetreeview items that are children of the given id.</returns>
-        public async Task<List<TemplateTreeViewDAO>> GetTreeViewSection(int parentId)
+        public async Task<List<TemplateTreeViewDao>> GetTreeViewSection(int parentId)
         {
             connection.ClearParameters();
             connection.AddParameter("parentid", parentId);
@@ -414,7 +414,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                 ORDER BY wtt.template_type, wtt.template_name");
             }
 
-            var treeviewSection = new List<TemplateTreeViewDAO>();
+            var treeviewSection = new List<TemplateTreeViewDao>();
 
             foreach (DataRow row in dataTable.Rows)
             {
@@ -423,7 +423,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     hasChildren = true;
                 }
 
-                    var treeviewNode = new TemplateTreeViewDAO(
+                    var treeviewNode = new TemplateTreeViewDao(
                         row.Field<int>("template_id"),
                         row.Field<string>("template_name"),
                         row.Field<int>("template_type"),
@@ -439,7 +439,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         public async Task<List<SearchResultModel>> GetSearchResults(SearchSettingsModel searchSettings)
         {
             connection.ClearParameters();
-            connection.AddParameter("needle", searchSettings.needle);
+            connection.AddParameter("needle", searchSettings.Needle);
             var dataTable = await connection.GetAsync(BuildSearchQuery(searchSettings));
 
             var searchResults = new List<SearchResultModel>();
@@ -448,10 +448,10 @@ namespace Api.Modules.Templates.Services.DataLayer
             {
                 var result = new SearchResultModel
                 {
-                    id = row.Field<int>("id"),
-                    name = row.Field<string>("name"),
-                    type = row.Field<string>("type"),
-                    parent = row.Field<string>("parent")
+                    Id = row.Field<int>("id"),
+                    Name = row.Field<string>("name"),
+                    Type = row.Field<string>("type"),
+                    Parent = row.Field<string>("parent")
                 };
                 searchResults.Add(result);
             }
@@ -466,7 +466,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             {
                 searchQuery.Append("SELECT t.template_id AS id, 'template' AS type, t.template_name AS name, (SELECT par.template_name FROM wiser_template_test par WHERE par.template_id=t.parent_id) AS parent FROM wiser_template_test t WHERE ");
 
-                switch (searchSettings.searchEnvironment)
+                switch (searchSettings.SearchEnvironment)
                 {
                     case Environments.Development:
                         searchQuery.Append("t.version = (SELECT MAX(tt.version) FROM wiser_template_test tt WHERE tt.template_id = t.template_id)");
@@ -490,26 +490,26 @@ namespace Api.Modules.Templates.Services.DataLayer
 
                 searchQuery.Append("AND (");
 
-                if (searchSettings.searchTemplateId) {
+                if (searchSettings.SearchTemplateId) {
                     searchQuery.Append("t.template_id = ?needle OR "); 
                 }
-                if (searchSettings.searchTemplateType)
+                if (searchSettings.SearchTemplateType)
                 {
                     searchQuery.Append("t.template_type LIKE CONCAT('%',?needle,'%') OR ");
                 }
-                if (searchSettings.searchTemplateName)
+                if (searchSettings.SearchTemplateName)
                 {
                     searchQuery.Append("t.template_name LIKE CONCAT('%',?needle,'%') OR ");
                 }
-                if (searchSettings.searchTemplateData)
+                if (searchSettings.SearchTemplateData)
                 {
                     searchQuery.Append("t.template_data LIKE CONCAT('%',?needle,'%') OR ");
                 }
-                if (searchSettings.searchTemplateParent)
+                if (searchSettings.SearchTemplateParent)
                 {
                     searchQuery.Append("t.template_name LIKE CONCAT('%',?needle,'%') OR ");
                 }
-                if (searchSettings.searchTemplateLinkedTemplates)
+                if (searchSettings.SearchTemplateLinkedTemplates)
                 {
                     searchQuery.Append("t.linkedtemplates LIKE CONCAT('%',?needle,'%') OR ");
                 }
@@ -525,7 +525,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             {
                 searchQuery.Append("SELECT wdc.templateid AS id, 'dynamiccontent' AS type, wdc.title AS name, (SELECT GROUP_CONCAT(tdc.template_id) FROM wiser_template_dynamiccontent_test tdc WHERE tdc.destination_template_id=wdc.templateid) AS parent FROM wiser_dynamiccontent_test wdc WHERE ");
 
-                switch (searchSettings.searchEnvironment)
+                switch (searchSettings.SearchEnvironment)
                 {
                     case Environments.Development:
                         searchQuery.Append("wdc.version = (SELECT MAX(dc.version) FROM wiser_dynamiccontent_test dc WHERE dc.templateid = wdc.templateid)");
@@ -549,19 +549,19 @@ namespace Api.Modules.Templates.Services.DataLayer
 
                 searchQuery.Append("AND (");
 
-                if (searchSettings.searchDynamicContentId)
+                if (searchSettings.SearchDynamicContentId)
                 {
                     searchQuery.Append("wdc.templateid = ?needle OR ");
                 }
-                if (searchSettings.searchDynamicContentFilledVariables)
+                if (searchSettings.SearchDynamicContentFilledVariables)
                 {
                     searchQuery.Append("wdc.filledvariables LIKE CONCAT('%',?needle,'%') OR ");
                 }
-                if (searchSettings.searchDynamicContentComponentName)
+                if (searchSettings.SearchDynamicContentComponentName)
                 {
                     searchQuery.Append("wdc.component LIKE CONCAT('%',?needle,'%') OR ");
                 }
-                if (searchSettings.searchDynamicContentComponentMode)
+                if (searchSettings.SearchDynamicContentComponentMode)
                 {
                     searchQuery.Append("wdc.component_mode LIKE CONCAT('%',?needle,'%') OR ");
                 }

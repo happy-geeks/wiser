@@ -5,12 +5,12 @@
 
 <div class="tabstrip">
     <ul>
-        @foreach (var tab in @Model.propertyAttributes.Value)
+        @foreach (var tab in @Model.PropertyAttributes.Value)
         {
             <li class="@tab.Key-tab">@tab.Key</li>
         }
     </ul>
-    @foreach (var tab in @Model.propertyAttributes.Value)
+    @foreach (var tab in @Model.PropertyAttributes.Value)
     {
         <div>
             <div class="formview full @tab.Key.ToString().ToLower()Container">
@@ -23,7 +23,7 @@
 
 
                             var newDict = new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(prop.Value, new KeyValuePair<PropertyInfo, object>(prop.Key, ""));
-                            foreach (KeyValuePair<PropertyInfo, object> propValue in Model.propValues)
+                            foreach (KeyValuePair<PropertyInfo, object> propValue in Model.PropValues)
                             {
                                 if (prop.Key.Name == propValue.Key.Name)
                                 {

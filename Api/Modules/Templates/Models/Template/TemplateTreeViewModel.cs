@@ -4,10 +4,10 @@ namespace Api.Modules.Templates.Models.Template
 {
     public class TemplateTreeViewModel
     {
-        public int templateId { get; set; }
-        public string templateName { get; set; }
-        public Boolean isFolder { get; set; }
-        public Boolean hasChildren { get; set; }
+        public int TemplateId { get; set; }
+        public string TemplateName { get; set; }
+        public Boolean IsFolder { get; set; }
+        public Boolean HasChildren { get; set; }
 
         public TemplateTreeViewModel ()
         {
@@ -16,10 +16,10 @@ namespace Api.Modules.Templates.Models.Template
 
         public TemplateTreeViewModel(int templateId, string templateName, Boolean isFolder, Boolean hasChildren)
         {
-            this.templateId = templateId;
-            this.templateName = templateName;
-            this.isFolder = isFolder;
-            this.hasChildren = hasChildren;
+            this.TemplateId = templateId;
+            this.TemplateName = templateName;
+            this.IsFolder = isFolder;
+            this.HasChildren = hasChildren;
         }
     }
 }

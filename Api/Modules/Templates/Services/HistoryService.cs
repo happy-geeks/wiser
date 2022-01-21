@@ -139,7 +139,7 @@ namespace Api.Modules.Templates.Services
 
             foreach (var overview in overviewList)
             {
-                overview.versions = await GetHistoryVersionsOfDynamicContent(overview.id);
+                overview.Versions = await GetHistoryVersionsOfDynamicContent(overview.Id);
                 filledOverviews.Add(overview);
             }
 
@@ -181,9 +181,9 @@ namespace Api.Modules.Templates.Services
                 {
                     foreach (var dynamichistory in historyList)
                     {
-                        if (dynamichistory.GetChangedOn() > rawTemplateModels[i + 1].changed_on && dynamichistory.GetChangedOn() < rawTemplateModels[i].changed_on)
+                        if (dynamichistory.GetChangedOn() > rawTemplateModels[i + 1].ChangedOn && dynamichistory.GetChangedOn() < rawTemplateModels[i].ChangedOn)
                         {
-                            historyModel.dynamicContentChanges.Add(dynamichistory);
+                            historyModel.DynamicContentChanges.Add(dynamichistory);
                         }
                     }
                 }
@@ -191,7 +191,7 @@ namespace Api.Modules.Templates.Services
                 templateHistory.Add(historyModel);
             }
             //Add entry for first version with no changes
-            templateHistory.Add(new TemplateHistoryModel(rawTemplateModels[rawTemplateModels.Count-1].templateid, rawTemplateModels[rawTemplateModels.Count-1].version, rawTemplateModels[rawTemplateModels.Count-1].changed_on, rawTemplateModels[rawTemplateModels.Count-1].changed_by));
+            templateHistory.Add(new TemplateHistoryModel(rawTemplateModels[rawTemplateModels.Count-1].Templateid, rawTemplateModels[rawTemplateModels.Count-1].Version, rawTemplateModels[rawTemplateModels.Count-1].ChangedOn, rawTemplateModels[rawTemplateModels.Count-1].ChangedBy));
             return templateHistory;
         }
 
@@ -203,41 +203,41 @@ namespace Api.Modules.Templates.Services
         /// <returns>A TemplateHistoryModel containing the changes that have been made between the oldversion and the new version</returns>
         private TemplateHistoryModel GenerateHistoryModelForTemplates(TemplateDataModel newVersion, TemplateDataModel oldVersion)
         {
-            var historyModel = new TemplateHistoryModel(newVersion.templateid, newVersion.version, newVersion.changed_on, newVersion.changed_by);
+            var historyModel = new TemplateHistoryModel(newVersion.Templateid, newVersion.Version, newVersion.ChangedOn, newVersion.ChangedBy);
 
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("editorValue", newVersion.editorValue, oldVersion.editorValue, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("useCache", newVersion.useCache, oldVersion.useCache, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheMinutes", newVersion.cacheMinutes, oldVersion.cacheMinutes, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleRequests", newVersion.handleRequests, oldVersion.handleRequests, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleSession", newVersion.handleSession, oldVersion.handleSession, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleObjects", newVersion.handleObjects, oldVersion.handleObjects, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleStandards", newVersion.handleStandards, oldVersion.handleStandards, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleTranslations", newVersion.handleTranslations, oldVersion.handleTranslations, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleDynamicContent", newVersion.handleDynamicContent, oldVersion.handleDynamicContent, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleLogicBlocks", newVersion.handleLogicBlocks, oldVersion.handleLogicBlocks, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleMutators", newVersion.handleMutators, oldVersion.handleMutators, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRequired", newVersion.loginRequired, oldVersion.loginRequired, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginUserType", newVersion.loginUserType, oldVersion.loginUserType, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginSessionPrefix", newVersion.loginSessionPrefix, oldVersion.loginSessionPrefix, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRole", newVersion.loginRole, oldVersion.loginRole, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("editorValue", newVersion.EditorValue, oldVersion.EditorValue, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("useCache", newVersion.UseCache, oldVersion.UseCache, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheMinutes", newVersion.CacheMinutes, oldVersion.CacheMinutes, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleRequests", newVersion.HandleRequests, oldVersion.HandleRequests, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleSession", newVersion.HandleSession, oldVersion.HandleSession, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleObjects", newVersion.HandleObjects, oldVersion.HandleObjects, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleStandards", newVersion.HandleStandards, oldVersion.HandleStandards, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleTranslations", newVersion.HandleTranslations, oldVersion.HandleTranslations, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleDynamicContent", newVersion.HandleDynamicContent, oldVersion.HandleDynamicContent, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleLogicBlocks", newVersion.HandleLogicBlocks, oldVersion.HandleLogicBlocks, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleMutators", newVersion.HandleMutators, oldVersion.HandleMutators, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRequired", newVersion.LoginRequired, oldVersion.LoginRequired, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginUserType", newVersion.LoginUserType, oldVersion.LoginUserType, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginSessionPrefix", newVersion.LoginSessionPrefix, oldVersion.LoginSessionPrefix, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRole", newVersion.LoginRole, oldVersion.LoginRole, historyModel);
 
-            var newList = newVersion.linkedTemplates.rawLinkList.Split(",");
-            var oldList = oldVersion.linkedTemplates.rawLinkList.Split(",");
+            var newList = newVersion.LinkedTemplates.RawLinkList.Split(",");
+            var oldList = oldVersion.LinkedTemplates.RawLinkList.Split(",");
 
-            if (!String.IsNullOrEmpty(newVersion.linkedTemplates.rawLinkList)) {
+            if (!String.IsNullOrEmpty(newVersion.LinkedTemplates.RawLinkList)) {
                 foreach (var item in newList) {
                     if (!oldList.Contains(item))
                     {
-                        historyModel.linkedTemplateChanges.Add(item.Split(";")[1], new KeyValuePair<object, object>(true, false));
+                        historyModel.LinkedTemplateChanges.Add(item.Split(";")[1], new KeyValuePair<object, object>(true, false));
                     }
                 }
             }
-            if (!String.IsNullOrEmpty(oldVersion.linkedTemplates.rawLinkList)) {
+            if (!String.IsNullOrEmpty(oldVersion.LinkedTemplates.RawLinkList)) {
                 foreach (var item in oldList)
                 {
                     if (!newList.Contains(item))
                     {
-                        historyModel.linkedTemplateChanges.Add(item.Split(";")[1], new KeyValuePair<object, object>(false, true));
+                        historyModel.LinkedTemplateChanges.Add(item.Split(";")[1], new KeyValuePair<object, object>(false, true));
                     }
                 }
             }
@@ -256,7 +256,7 @@ namespace Api.Modules.Templates.Services
         {
             if (!Equals(newValue, oldValue))
             {
-                templateModel.templateChanges.Add(propName, new KeyValuePair<object, object>(newValue, oldValue));
+                templateModel.TemplateChanges.Add(propName, new KeyValuePair<object, object>(newValue, oldValue));
             }
         }
 
