@@ -4,12 +4,12 @@ namespace Api.Modules.Templates.Models.Template
 {
     public class LinkedTemplateModel
     {
-        public int templateId { get; set; }
-        public string templateName { get; set; }
-        public int parentId { get; set; }
-        public string parentName { get; set; }
+        public int TemplateId { get; set; }
+        public string TemplateName { get; set; }
+        public int ParentId { get; set; }
+        public string ParentName { get; set; }
 
-        public LinkedTemplatesEnum linkType { get; set; }
-        public string linkName { get; set; }
+        public LinkedTemplatesEnum LinkType { get; set; }
+        public string LinkName { get; set; }
     }
 }

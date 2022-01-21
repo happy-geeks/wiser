@@ -3,14 +3,14 @@
     <ul>
         @foreach (var root in Model.TreeView)
         {
-            <li id="@root.templateId" class="@root.templateName.ToLower()-tab">@root.templateName</li>
+            <li id="@root.TemplateId" class="@root.TemplateName.ToLower()-tab">@root.TemplateName</li>
         }
     </ul>
 
     @foreach (var root in Model.TreeView)
     {
         <div>
-            <ul id="@root.templateId-treeview" class="treeview" data-id="@root.templateId">
+            <ul id="@root.TemplateId-treeview" class="treeview" data-id="@root.TemplateId">
             </ul>
         </div>
     }

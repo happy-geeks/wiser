@@ -4,22 +4,22 @@ namespace Api.Modules.Templates.Models.History
 {
     public class RevertHistoryModel
     {
-        public int version { get; set; }
-        public List<string> revertedProperties { get; set; }
+        public int Version { get; set; }
+        public List<string> RevertedProperties { get; set; }
 
         public int GetVersion()
         {
-            return version;
+            return Version;
         }
 
         public int GetVersionForRevision()
         {
-            return version - 1;
+            return Version - 1;
         }
 
         public List<string> GetRevertedProperties()
         {
-            return revertedProperties;
+            return RevertedProperties;
         }
     }
 }

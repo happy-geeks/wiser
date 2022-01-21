@@ -6,32 +6,32 @@ namespace Api.Modules.Templates.Models.Template
 {
     public class TemplateDataModel
     {
-        public int templateid;
-        public string name;
-        public string editorValue;
-        public int version;
-        public DateTime changed_on;
-        public string changed_by;
+        public int Templateid;
+        public string Name;
+        public string EditorValue;
+        public int Version;
+        public DateTime ChangedOn;
+        public string ChangedBy;
 
         //Advanced settings
-        public int useCache;
-        public int cacheMinutes;
-        public Boolean handleRequests;
-        public Boolean handleSession;
-        public Boolean handleObjects;
-        public Boolean handleStandards;
-        public Boolean handleTranslations;
-        public Boolean handleDynamicContent;
-        public Boolean handleLogicBlocks;
-        public Boolean handleMutators;
-        public Boolean loginRequired;
-        public string loginUserType;
-        public string loginSessionPrefix;
-        public string loginRole;
+        public int UseCache;
+        public int CacheMinutes;
+        public bool HandleRequests;
+        public bool HandleSession;
+        public bool HandleObjects;
+        public bool HandleStandards;
+        public bool HandleTranslations;
+        public bool HandleDynamicContent;
+        public bool HandleLogicBlocks;
+        public bool HandleMutators;
+        public bool LoginRequired;
+        public string LoginUserType;
+        public string LoginSessionPrefix;
+        public string LoginRole;
 
-        public Dictionary<string, object> changes;
+        public Dictionary<string, object> Changes;
 
-        public LinkedTemplatesModel linkedTemplates;
-        public PublishedEnvironmentModel publishedEnvironments { get; set; }
+        public LinkedTemplatesModel LinkedTemplates;
+        public PublishedEnvironmentModel PublishedEnvironments { get; set; }
     }
 }
