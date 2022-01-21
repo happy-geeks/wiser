@@ -424,7 +424,7 @@ WHERE id = @_communication_id;
 SELECT ROW_COUNT() > 0 AS updateSuccessful;");
                 TemplateQueryStrings.Add("GET_ENTITY_TYPES", @"SET @_module_list = IF('{modules}' LIKE '{%}', '', '{modules}');
 
-SELECT DISTINCT `name` AS entity_type
+SELECT DISTINCT `name` AS entityType
 FROM wiser_entity
 WHERE
     `name` <> ''
@@ -480,7 +480,7 @@ ORDER BY i.title");
                 TemplateQueryStrings.Add("GET_PROPERTY_VALUES", @"SELECT wid.`value` AS `text`, wid.`value`
 FROM wiser_item wi
 JOIN wiser_itemdetail wid ON wid.item_id = wi.id
-WHERE wi.entity_type = '{entity_name}' AND wid.`key` = '{property_name}' AND wid.`value` <> ''
+WHERE wi.entity_type = '{entityName}' AND wid.`key` = '{propertyName}' AND wid.`value` <> ''
 GROUP BY wid.`value`
 ORDER BY wid.`value`
 LIMIT 25");
@@ -598,7 +598,7 @@ WHERE il1.id = @_linkId;
 UPDATE wiser_itemlink
 SET destination_item_id = @destinationId, ordering = @newOrderNumber
 WHERE id = @_linkId;");
-                TemplateQueryStrings.Add("GET_OPTIONS_FOR_DEPENDENCY", @"SELECT DISTINCT entity_name, IF(tab_name = """", ""Gegevens"", tab_name) as tab_name, display_name, property_name FROM wiser_entityproperty
+                TemplateQueryStrings.Add("GET_OPTIONS_FOR_DEPENDENCY", @"SELECT DISTINCT entity_name AS entityName, IF(tab_name = """", ""Gegevens"", tab_name) as tabName, display_name AS displayName, property_name AS propertyName FROM wiser_entityproperty
 WHERE entity_name = '{entityName}'");
 
                 TemplateQueryStrings.Add("GET_AIS_DASHBOARD_OVERVIEW_DATA", @"SET @totalResults = (SELECT COUNT(*) FROM `ais_dashboard` WHERE DATE(started) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND FIND_IN_SET(color, '{color}'));
@@ -626,7 +626,7 @@ ORDER BY startedDate DESC, startedTime DESC
 LIMIT {skip}, {take}");
                 TemplateQueryStrings.Add("GET_ALL_INPUT_TYPES", @"SELECT DISTINCT inputtype FROM wiser_entityproperty ORDER BY inputtype");
                 TemplateQueryStrings.Add("DELETE_ENTITYPROPERTY", @"DELETE FROM wiser_entityproperty WHERE tab_name = '{tabName}' AND entity_name = '{entityName}' AND id = '{entityPropertyId}'");
-                TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_ADMIN", @"SELECT id, entity_name, tab_name, display_name, ordering FROM wiser_entityproperty
+                TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_ADMIN", @"SELECT id, entity_name AS entityName, tab_name AS tabName, display_name AS displayName, ordering FROM wiser_entityproperty
 WHERE tab_name = '{tabName}' AND entity_name = '{entityName}'
 ORDER BY ordering ASC");
                 TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT id , name FROM wiser_entity
@@ -670,11 +670,11 @@ WHERE
 	tab_name =  @tab_name AND
 	id <> @id;
 ");
-                TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_TABNAMES", @"SELECT id, IF(tab_name = '', 'Gegevens', tab_name) AS tab_name FROM wiser_entityproperty
+                TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_TABNAMES", @"SELECT id, IF(tab_name = '', 'Gegevens', tab_name) AS tabName FROM wiser_entityproperty
 WHERE entity_name = '{entityName}'
 GROUP BY tab_name
 ORDER BY tab_name ASC");
-                TemplateQueryStrings.Add("GET_ROLES", @"SELECT id AS id, role_name FROM wiser_roles
+                TemplateQueryStrings.Add("GET_ROLES", @"SELECT id AS id, role_name AS roleName FROM wiser_roles
 WHERE role_name != ''
 ORDER BY role_name ASC;");
                 TemplateQueryStrings.Add("INSERT_ROLE", @"INSERT INTO `wiser_roles` (`role_name`) VALUES ('{displayName}');");
@@ -690,24 +690,24 @@ WHERE role_id = {role_id}
     entity_property_id, 
     permissions
 ) VALUES (
-    {role_id},
+    {roleId},
     '',
     0,
-    {entity_id},
-    {permission_code}
+    {entityId},
+    {permissionCode}
 )
-ON DUPLICATE KEY UPDATE permissions = {permission_code}");
-                TemplateQueryStrings.Add("GET_GROUPNAME_FOR_SELECTION", @"SELECT DISTINCT group_name FROM `wiser_entityproperty`
+ON DUPLICATE KEY UPDATE permissions = {permissionCode}");
+                TemplateQueryStrings.Add("GET_GROUPNAME_FOR_SELECTION", @"SELECT DISTINCT group_name AS groupName FROM `wiser_entityproperty`
 WHERE entity_name = '{selectedEntityName}' AND tab_name = '{selectedTabName}';");
 
-                TemplateQueryStrings.Add("GET_UNDERLYING_ENTITY_TYPES", @"#SET @_entity_type_list = IF('{entity_types}' LIKE '{%}', '', '{entity_types}');
+                TemplateQueryStrings.Add("GET_UNDERLYING_ENTITY_TYPES", @"#SET @_entity_type_list = IF('{entityTypes}' LIKE '{%}', '', '{entityTypes}');
 SET @_entity_name = IF(
-    '{entity_name}' NOT LIKE '{%}',
-    '{entity_name}',
+    '{entityName}' NOT LIKE '{%}',
+    '{entityName}',
     # Check for old query string name.
     IF(
-        '{entity_types}' NOT LIKE '{%}',
-        SUBSTRING_INDEX('{entity_types}', ',', 1),
+        '{entityTypes}' NOT LIKE '{%}',
+        SUBSTRING_INDEX('{entityTypes}', ',', 1),
         ''
     )
 );
@@ -847,12 +847,12 @@ ORDER BY `name`");
                 TemplateQueryStrings.Add("UPDATE_FILE_TITLE", @"UPDATE wiser_itemfile SET title = '{value}' WHERE id = {fileId} AND item_id = {itemId:decrypt(true)};");
                 TemplateQueryStrings.Add("UPDATE_FILE_NAME", @"UPDATE wiser_itemfile SET file_name = '{value}' WHERE id = {fileId} AND item_id = {itemId:decrypt(true)};");
                 TemplateQueryStrings.Add("GET_UNDERLYING_LINKED_TYPES", @"SET @_entity_name = IF(
-    '{entity_name}' NOT LIKE '{%}',
-    '{entity_name}',
+    '{entityName}' NOT LIKE '{%}',
+    '{entityName}',
     # Check for old query string name. Takes the first item in a comma-separated list of entity type names.
     IF(
-        '{entity_types}' NOT LIKE '{%}',
-        SUBSTRING_INDEX('{entity_types}', ',', 1),
+        '{entityTypes}' NOT LIKE '{%}',
+        SUBSTRING_INDEX('{entityTypes}', ',', 1),
         ''
     )
 );
@@ -862,12 +862,12 @@ FROM wiser_link
 WHERE destination_entity_type = @_entity_name AND show_in_data_selector = 1
 ORDER BY entityType");
                 TemplateQueryStrings.Add("GET_PARENT_LINKED_TYPES", @"SET @_entity_name = IF(
-    '{entity_name}' NOT LIKE '{%}',
-    '{entity_name}',
+    '{entityName}' NOT LIKE '{%}',
+    '{entityName}',
     # Check for old query string name. Takes the first item in a comma-separated list of entity type names.
     IF(
-        '{entity_types}' NOT LIKE '{%}',
-        SUBSTRING_INDEX('{entity_types}', ',', 1),
+        '{entityTypes}' NOT LIKE '{%}',
+        SUBSTRING_INDEX('{entityTypes}', ',', 1),
         ''
     )
 );
@@ -956,20 +956,20 @@ GROUP BY i.id, p.id");
                 TemplateQueryStrings.Add("GET_TITLE", @"SET @_itemId = {itemId:decrypt(true)};
 SELECT title FROM wiser_item WHERE id = @_itemId;");
                 TemplateQueryStrings.Add("GET_PROPERTIES_OF_ENTITY", @"SELECT
-	IF(tab_name = '', 'Gegevens', tab_name) AS tab_name,
-    display_name,
-    IF(property_name = '', display_name, property_name) AS property_name
+	IF(tab_name = '', 'Gegevens', tab_name) AS tabName,
+    display_name as displayName,
+    IF(property_name = '', display_name, property_name) AS propertyName
 FROM wiser_entityproperty
 WHERE entity_name = '{entityType}'
 AND inputtype NOT IN ('file-upload', 'grid', 'image-upload', 'sub-entities-grid', 'item-linker', 'linked-item', 'action-button')
 
-UNION SELECT 'Algemeen' AS tab_name, 'ID' AS display_name, 'id' AS property_name
-UNION SELECT 'Algemeen' AS tab_name, 'UUID' AS display_name, 'unique_uuid' AS property_name
-UNION SELECT 'Algemeen' AS tab_name, 'Toegevoegd door' AS display_name, 'added_by' AS property_name
-UNION SELECT 'Algemeen' AS tab_name, 'Gewijzigd door' AS display_name, 'changed_by' AS property_name
-UNION SELECT 'Algemeen' AS tab_name, 'Naam' AS display_name, 'title' AS property_name
+UNION SELECT 'Algemeen' AS tabName, 'ID' AS displayName, 'id' AS propertyName
+UNION SELECT 'Algemeen' AS tabName, 'UUID' AS displayName, 'unique_uuid' AS propertyName
+UNION SELECT 'Algemeen' AS tabName, 'Toegevoegd door' AS displayName, 'added_by' AS propertyName
+UNION SELECT 'Algemeen' AS tabName, 'Gewijzigd door' AS displayName, 'changed_by' AS propertyName
+UNION SELECT 'Algemeen' AS tabName, 'Naam' AS displayName, 'title' AS propertyName
 
-ORDER BY tab_name ASC, display_name ASC");
+ORDER BY tabName ASC, displayName ASC");
                 TemplateQueryStrings.Add("GET_ALL_MODULES_INFORMATION", @"SELECT 
 	id,
 	custom_query,
@@ -999,28 +999,28 @@ ORDER BY `name`");
                 TemplateQueryStrings.Add("SAVE_ENTITY_VALUES", @"
 SET @_id = {id};
 SET @_name = '{name}';
-SET @_module_id = {module_id};
-SET @_accepted_childtypes = '{accepted_childtypes}';
+SET @_module_id = {moduleId};
+SET @_accepted_childtypes = '{acceptedChildtypes}';
 SET @_icon = '{icon}';
-SET @_icon_add = '{icon_add}';
-SET @_icon_expanded = '{icon_expanded}';
-SET @_show_in_tree_view = '{show_in_tree_view}';
-SET @_query_after_insert = '{query_after_insert}';
-SET @_query_after_update = '{query_after_update}';
-SET @_query_before_update = '{query_before_update}';
-SET @_query_before_delete = '{query_before_delete}';
+SET @_icon_add = '{iconAdd}';
+SET @_icon_expanded = '{iconExpanded}';
+SET @_show_in_tree_view = '{showInTreeView}';
+SET @_query_after_insert = '{queryAfterInsert}';
+SET @_query_after_update = '{queryAfterUpdate}';
+SET @_query_before_update = '{queryBeforeUpdate}';
+SET @_query_before_delete = '{queryBeforeDelete}';
 SET @_color = '{color}';
-SET @_show_in_search = '{show_in_search}';
-SET @_show_overview_tab = '{show_overview_tab}';
-SET @_save_title_as_seo = '{save_title_as_seo}';
-#SET @_api_after_insert = {api_after_insert};
-#SET @_api_after_update = {api_after_update};
-#SET @_api_before_update = {api_before_update};
-#SET @_api_before_delete = {api_before_delete};
-SET @_show_title_field = '{show_title_field}';
-SET @_friendly_name = '{friendly_name}';
-SET @_save_history = '{save_history}';
-SET @_default_ordering = '{default_ordering}';
+SET @_show_in_search = '{showInSearch}';
+SET @_show_overview_tab = '{showOverviewTab}';
+SET @_save_title_as_seo = '{saveTitleAsSeo}';
+#SET @_api_after_insert = {apiAfterInsert};
+#SET @_api_after_update = {apiAfterUpdate};
+#SET @_api_before_update = {apiBeforeUpdate};
+#SET @_api_before_delete = {apiBeforeDelete};
+SET @_show_title_field = '{showTitleField}';
+SET @_friendly_name = '{friendlyName}';
+SET @_save_history = '{saveHistory}';
+SET @_default_ordering = '{defaultOrdering}';
 
 SET @_show_in_tree_view = IF(@_show_in_tree_view = TRUE OR @_show_in_tree_view = 'true', 1, 0);
 SET @_show_in_search = IF(@_show_in_search = TRUE OR @_show_in_search = 'true', 1, 0);
@@ -1056,40 +1056,40 @@ UPDATE wiser_entity SET
 WHERE id = @_id
 LIMIT 1;
 ");
-                TemplateQueryStrings.Add("SAVE_INITIAL_VALUES", @"SET @_entity_name = '{entity_name}';
-SET @_tab_name = '{tab_name}';
+                TemplateQueryStrings.Add("SAVE_INITIAL_VALUES", @"SET @_entity_name = '{entityName}';
+SET @_tab_name = '{tabName}';
 SET @_tab_name = IF( @_tab_name='gegevens', '', @_tab_name);
-SET @_display_name = '{display_name}';
-SET @_property_name = IF('{property_name}' = '', @_display_name, '{property_name}');
-SET @_overviewvisibility = '{visible_in_overview}';
+SET @_display_name = '{displayName}';
+SET @_property_name = IF('{propertyName}' = '', @_display_name, '{propertyName}');
+SET @_overviewvisibility = '{visibleInOverview}';
 SET @_overviewvisibility = IF(@_overviewvisibility = TRUE OR @_overviewvisibility = 'true', 1, 0);
-SET @_overviewType = '{overview_fieldtype}';
-SET @_overviewWidth = '{overview_width}';
-SET @_groupName = '{group_name}';
+SET @_overviewType = '{overviewFieldtype}';
+SET @_overviewWidth = '{overviewWidth}';
+SET @_groupName = '{groupName}';
 SET @_input_type = '{inputtype}';
 SET @_explanation = '{explanation}';
 SET @_mandatory = '{mandatory}';
 SET @_mandatory = IF(@_mandatory = TRUE OR @_mandatory = 'true', 1, 0);
 SET @_readOnly = '{readonly}';
 SET @_readOnly = IF(@_readOnly = TRUE OR @_readOnly = 'true', 1, 0);
-SET @_seo = '{also_save_seo_value}';
+SET @_seo = '{alsoSaveSeoValue}';
 SET @_seo = IF(@_seo = TRUE OR @_seo = 'true', 1, 0);
 SET @_width = '{width}';
 SET @_height = '{height}';
-SET @_langCode = '{language_code}';
-SET @_dependsOnField = '{depends_on_field}';
-SET @_dependsOnOperator = IF('{depends_on_operator}' = '', NULL, '{depends_on_operator}');
-SET @_dependsOnValue = '{depends_on_value}';
+SET @_langCode = '{languageCode}';
+SET @_dependsOnField = '{dependsOnField}';
+SET @_dependsOnOperator = IF('{dependsOnOperator}' = '', NULL, '{dependsOnOperator}');
+SET @_dependsOnValue = '{dependsOnValue}';
 SET @_css = '{css}';
-SET @_regexValidation = '{regex_validation}';
-SET @_defaultValue = '{default_value}';
+SET @_regexValidation = '{regexValidation}';
+SET @_defaultValue = '{defaultValue}';
 SET @_automation = '{automation}';
-SET @_customScript = '{custom_script}';
+SET @_customScript = '{customScript}';
 SET @_options = '{options}';
-SET @_data_query = '{data_query}';
-SET @_grid_delete_query = '{grid_delete_query}';
-SET @_grid_insert_query = '{grid_insert_query}';
-SET @_grid_update_query = '{grid_update_query}';
+SET @_data_query = '{dataQuery}';
+SET @_grid_delete_query = '{gridDeleteQuery}';
+SET @_grid_insert_query = '{gridInsertQuery}';
+SET @_grid_update_query = '{gridUpdateQuery}';
 
 SET @_id = {id};
 
@@ -1129,64 +1129,64 @@ LIMIT 1; ");
                 TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_FOR_SELECTED", @"SELECT 
 `id`, 
 `name`, 
-`module_id`, 
-`accepted_childtypes`, 
+`module_id` AS `moduleId`, 
+`accepted_childtypes` AS `acceptedChildtypes`, 
 `icon`, 
-`icon_add`, 
-`show_in_tree_view`, 
-`query_after_insert`, 
-`query_after_update`, 
-`query_before_update`, 
-`query_before_delete`, 
+`icon_add` AS `iconAdd`, 
+`show_in_tree_view` AS `showInTreeView`, 
+`query_after_insert` AS `queryAfterInsert`, 
+`query_after_update` AS `queryAfterUpdate`, 
+`query_before_update` AS `queryBeforeUpdate`, 
+`query_before_delete` AS `queryBeforeDelete`, 
 `color`, 
-`show_in_search`, 
-`show_overview_tab`, 
-`save_title_as_seo` AS save_title, 
-`api_after_insert`, 
-`api_after_update`, 
-`api_before_update`, 
-`api_before_delete`, 
-`show_title_field`, 
-`friendly_name`, 
-`save_history`, 
-`default_ordering`,
-`enable_multiple_environments`, 
-`icon_expanded`, 
-`dedicated_table_prefix`
+`show_in_search` AS `showInSearch`, 
+`show_overview_tab` AS `showOverviewTab`, 
+`save_title_as_seo` AS `saveTitle`, 
+`api_after_insert` AS `apiAfterInsert`, 
+`api_after_update` AS `apiAfterUpdate`, 
+`api_before_update` AS `apiBeforeUpdate`, 
+`api_before_delete` AS `apiBeforeDelete`, 
+`show_title_field` AS `showTitleField`, 
+`friendly_name` AS `friendlyName`, 
+`save_history` AS `saveHistory`, 
+`default_ordering` AS `defaultOrdering`,
+`enable_multiple_environments` AS `enableMultipleEnvironments`, 
+`icon_expanded` AS `iconExpanded`, 
+`dedicated_table_prefix` AS `dedicatedTablePrefix`
 FROM wiser_entity 
 WHERE id= {id};
 ");
 
                 TemplateQueryStrings.Add("GET_ENTITY_FIELD_PROPERTIES_FOR_SELECTED", @"SELECT
 id,
-display_name,
+display_name AS displayName,
 inputtype, 
-visible_in_overview, 
-overview_width, 
-overview_fieldtype, 
+visible_in_overview AS visibleInOverview, 
+overview_width AS overviewWidth, 
+overview_fieldtype AS overviewFieldtype, 
 mandatory, 
 readonly, 
-also_save_seo_value,
+also_save_seo_value AS alsoSaveSeoValue,
 width,
 height,
-IF(tab_name = '', 'Gegevens', tab_name) AS tab_name,
-group_name,
-property_name,
+IF(tab_name = '', 'Gegevens', tab_name) AS tabName,
+group_name AS groupName,
+property_name AS propertyName,
 explanation,
-default_value,
+default_value AS defaultValue,
 automation,
 options,
-depends_on_field,
-depends_on_operator,
-depends_on_value,
-IFNULL(data_query,"""") AS data_query,
-IFNULL(grid_delete_query,"""") AS grid_delete_query,
-IFNULL(grid_update_query,"""") AS grid_update_query,
-IFNULL(grid_insert_query,"""") AS grid_insert_query,
-regex_validation,
+depends_on_field AS dependsOnField,
+depends_on_operator AS dependsOnOperator,
+depends_on_value AS dependsOnValue,
+IFNULL(data_query,"""") AS dataQuery,
+IFNULL(grid_delete_query,"""") AS gridDeleteQuery,
+IFNULL(grid_update_query,"""") AS gridUpdateQuery,
+IFNULL(grid_insert_query,"""") AS gridInsertQuery,
+regex_validation AS regexValidation,
 IFNULL(css, '') AS css,
-language_code,
-IFNULL(custom_script, '') AS custom_script,
+language_code AS languageCode,
+IFNULL(custom_script, '') AS customScript,
 (SELECT COUNT(1) FROM wiser_itemdetail INNER JOIN wiser_item ON wiser_itemdetail.item_id = wiser_item.id WHERE wiser_itemdetail.key = wiser_entityproperty.property_name AND wiser_item.entity_type = wiser_entityproperty.entity_name) > 0 as field_in_use
 FROM wiser_entityproperty
 WHERE id = {id} AND entity_name = '{entityName}'
@@ -1250,8 +1250,8 @@ SELECT
         THEN (SELECT CONCAT('Items van type ""', @sourceType, '"" mogen niet toegevoegd worden onder items van type ""', @destinationType, '"".') AS error)
         ELSE ''
     END AS error;");
-                TemplateQueryStrings.Add("GET_CONTEXT_MENU", @"SET @itemid = {item_id:decrypt(true)};
-SET @moduleid = {module_id};
+                TemplateQueryStrings.Add("GET_CONTEXT_MENU", @"SET @itemid = {itemId:decrypt(true)};
+SET @moduleid = {moduleId};
 SET @entity_type = (SELECT entity_type FROM wiser_item WHERE id=@itemid);
 SET @itemname = (SELECT title FROM wiser_item WHERE id=@itemid);
 SET @userId = {encryptedUserId:decrypt(true)};
@@ -1573,7 +1573,7 @@ FROM (
 GROUP BY t.type
 ORDER BY t.type");
 
-                TemplateQueryStrings.Add("GET_MODULES", @"SELECT id, name as module_name
+                TemplateQueryStrings.Add("GET_MODULES", @"SELECT id, name as moduleName
 FROM wiser_module
 ORDER BY name ASC;
 ");
@@ -1617,27 +1617,27 @@ FROM (
     ORDER BY baseOrder, `name`
 ) AS property");
                 TemplateQueryStrings.Add("GET_ROLE_RIGHTS", @"SELECT
-	properties.id AS `property_id`,
-	properties.entity_name,
-	properties.display_name,
+	properties.id AS `propertyId`,
+	properties.entity_name AS `entityName`,
+	properties.display_name as `displayName`,
 	IFNULL(permissions.permissions, 15) AS `permission`,
-    {role_id} AS `role_id`
+    {roleId} AS `roleId`
 FROM `wiser_entityproperty` AS properties
-LEFT JOIN `wiser_permission` AS permissions ON permissions.entity_property_id = properties.id AND permissions.role_id = {role_id}
+LEFT JOIN `wiser_permission` AS permissions ON permissions.entity_property_id = properties.id AND permissions.role_id = {roleId}
 WHERE NULLIF(properties.display_name, '') IS NOT NULL
 	AND NULLIF(properties.entity_name, '') IS NOT NULL
 GROUP BY properties.id
 ORDER BY properties.entity_name, properties.display_name");
                 TemplateQueryStrings.Add("GET_MODULE_PERMISSIONS", @"SELECT
-	role.id AS `role_id`,
-	role.role_name,
-	module.id AS `module_id`,
-	IFNULL(module.name, CONCAT('ModuleID: ',module.id)) AS module_name,
+	role.id AS `roleId`,
+	role.role_name AS `roleName`,
+	module.id AS `moduleId`,
+	IFNULL(module.name, CONCAT('ModuleID: ',module.id)) AS `moduleName`,
 	IFNULL(permission.permissions, 15) AS `permission`
 FROM wiser_module AS module
-JOIN wiser_roles AS role ON role.id = {role_id}
+JOIN wiser_roles AS role ON role.id = {roleId}
 LEFT JOIN wiser_permission AS permission ON role.id = permission.role_id AND permission.module_id = module.id
-ORDER BY module_name ASC
+ORDER BY moduleName ASC
 ");
                 TemplateQueryStrings.Add("UPDATE_MODULE_PERMISSION", @" INSERT INTO `wiser_permission` (
      `role_id`,
@@ -1648,14 +1648,14 @@ ORDER BY module_name ASC
      `module_id`
  ) 
  VALUES (
-     {role_id}, 
+     {roleId}, 
      '',
      0,
      0,
-     {permission_code},
-     {module_id}
+     {permissionCode},
+     {moduleId}
  )
-ON DUPLICATE KEY UPDATE permissions = {permission_code};");
+ON DUPLICATE KEY UPDATE permissions = {permissionCode};");
 
                 TemplateQueryStrings.Add("GET_DATA_SELECTOR_BY_ID", @"SET @_id = {id};
 
@@ -1904,12 +1904,12 @@ FROM wiser_itemlink AS link
 JOIN wiser_item AS item ON item.id = link.item_id AND item.entity_type = '{entity_name}'
 GROUP BY type");
                 TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES", @"SET @_entity_name = IF(
-    '{entity_name}' NOT LIKE '{%}',
-    '{entity_name}',
+    '{entityName}' NOT LIKE '{%}',
+    '{entityName}',
     # Check for old query string name.
     IF(
         '{entity_types}' NOT LIKE '{%}',
-        SUBSTRING_INDEX('{entity_types}', ',', 1),
+        SUBSTRING_INDEX('{entityTypes}', ',', 1),
         ''
     )
 );

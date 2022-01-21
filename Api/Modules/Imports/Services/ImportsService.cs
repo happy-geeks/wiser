@@ -1066,8 +1066,8 @@ AND (itemLink.destination_item_id IN({String.Join(",", fileLines.Select(line => 
                     destinationIndex = 0;
                 }
 
-                var sourceMatchTo = deleteLinksRequest.DeleteSettings[sourceIndex]["match_to"].ToString();
-                var destinationMatchTo = deleteLinksRequest.DeleteSettings[destinationIndex]["match_to"].ToString();
+                var sourceMatchTo = deleteLinksRequest.DeleteSettings[sourceIndex]["matchTo"].ToString();
+                var destinationMatchTo = deleteLinksRequest.DeleteSettings[destinationIndex]["matchTo"].ToString();
 
                 var sourceIsId = sourceMatchTo == "id";
                 var destinationIsId = destinationMatchTo == "id";
