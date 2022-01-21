@@ -57,7 +57,7 @@ if (customQueryGrid) {
                     click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options); }
                 });
             }
-            
+
             if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off") {
                 commandColumnWidth += 80;
                 
@@ -72,7 +72,7 @@ if (customQueryGrid) {
                 
                 commands.push("destroy");
             }
-            
+
             if (commands.length > 0) {
                 customQueryResults.columns.push({
                     title: "&nbsp;",
@@ -144,7 +144,7 @@ if (customQueryGrid) {
             }
         }
         
-        // Add command columns seperately, because of the click event that we can't do properly server-side.
+        // Add command columns separately, because of the click event that we can't do properly server-side.
         if (!options.hideCommandColumn) {
             let commandColumnWidth = 80;
             let commands = [];
@@ -203,19 +203,19 @@ function generateGrid(data, model, columns) {
         });
     }
 
-    if (!options.toolbar || !options.toolbar.hideFullScreenButton) {
-        toolbar.push({
-            name: "fullScreen",
-            text: "",
-            template: `<a class='k-button k-button-icontext full-screen' title='Grid naar fullscreen' href='\\#'><span class='k-icon k-i-wiser-maximize'></span></a>`
-        });
-    }
-
     if (window.dynamicItems.grids.onClearAllFiltersClick && (!options.toolbar || !options.toolbar.hideClearFiltersButton)) {
         toolbar.push({
             name: "clearAllFilters",
             text: "",
             template: "<a class='k-button k-button-icontext clear-all-filters' title='Alle filters wissen' href='\\#' onclick='return window.dynamicItems.grids.onClearAllFiltersClick(event)'><span class='k-icon k-i-filter-clear'></span></a>"
+        });
+    }
+
+    if (!options.toolbar || !options.toolbar.hideFullScreenButton) {
+        toolbar.push({
+            name: "fullScreen",
+            text: "",
+            template: `<a class='k-button k-button-icontext full-screen' title='Grid naar fullscreen' href='\\#' onclick='return window.dynamicItems.grids.onMaximizeGridClick(event)'><span class='k-icon k-i-wiser-maximize'></span></a>`
         });
     }
 
@@ -247,15 +247,7 @@ function generateGrid(data, model, columns) {
     }
     
     if (options.toolbar && options.toolbar.customActions && options.toolbar.customActions.length > 0) {
-        for (var i = 0; i < options.toolbar.customActions.length; i++) {
-            var customAction = options.toolbar.customActions[i];
-            
-            toolbar.push({
-                name: "customAction" + i.toString(),
-                text: customAction.text,
-                template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick(\"\\#overviewGrid{propertyIdWithSuffix}\", \"{itemIdEncrypted}\", {propertyId}, " + JSON.stringify(customAction) + ", event)' style='" + (kendo.htmlEncode(customAction.style || "")) + "'><span class='k-icon k-i-" + customAction.icon + "'></span>" + customAction.text + "</a>" 
-            });
-        }
+        dynamicItems.grids.addCustomActionsToToolbar(toolbar, options.toolbar.customActions);
     }
     
     if (columns && columns.length) {
@@ -689,6 +681,9 @@ function generateGrid(data, model, columns) {
             }
         },
         dataBound: function(event) {
+            // To hide toolbar buttons that require a row to be selected.
+            dynamicItems.grids.onGridSelectionChange(event);
+
             // Setup any progress bars.
             event.sender.tbody.find(".progress").each(function(e) {
                 var row = $(this).closest("tr");

@@ -96,7 +96,7 @@ export class Windows {
             title: "History",
             visible: false,
             modal: true,
-            actions: ["Maximize", "Close"]
+            actions: ["Close"]
         }).data("kendoWindow");
 
         // Window for searching for items to link to another item.
@@ -106,7 +106,7 @@ export class Windows {
             title: "Item zoeken",
             visible: false,
             modal: true,
-            actions: ["Maximize", "Close"]
+            actions: ["Close"]
         }).data("kendoWindow");
 
         // Window for viewing a all generic images and for adding them into an HTML editor.
@@ -116,7 +116,7 @@ export class Windows {
             title: "Afbeeldingen",
             visible: false,
             modal: true,
-            actions: ["Maximize", "Close"],
+            actions: ["Close"],
             open: (event) => {
                 this.imagesUploaderWindowSplitter.resize(true);
 
@@ -440,15 +440,15 @@ export class Windows {
                     switch (selectedAction) {
                         case "delete":
                             if (selectedItem.isDirectory) {
-                                kendo.confirm(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle afbeeldingen in deze map zullen dan ook verwijderd worden.`).then(() => {
+                                Wiser2.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle afbeeldingen in deze map zullen dan ook verwijderd worden.`).then(() => {
                                     this.base.deleteItem(selectedItem.id, "filedirectory").then(() => {
                                         this.imagesUploaderWindowTreeView.remove(this.imagesUploaderWindowTreeViewContextMenuTarget);
                                         this.base.notification.show({ message: "Map succesvol verwijderd" }, "success");
                                         loader.removeClass("loading");
                                     });
-                                }).fail(() => { loader.removeClass("loading"); });
+                                }).catch(() => { loader.removeClass("loading"); });
                             } else {
-                                kendo.confirm(`Weet u zeker dat u de afbeelding '${selectedItem.name}' wilt verwijderen?`).then(() => {
+                                Wiser2.showConfirmDialog(`Weet u zeker dat u de afbeelding '${selectedItem.name}' wilt verwijderen?`).then(() => {
                                     Wiser2.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
                                         method: "DELETE",
@@ -463,7 +463,7 @@ export class Windows {
                                         loader.removeClass("loading");
                                         kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                                     });
-                                }).fail(() => { loader.removeClass("loading"); });
+                                }).catch(() => { loader.removeClass("loading"); });
                             }
                             break;
                         case "rename":
@@ -647,15 +647,15 @@ export class Windows {
                     switch (selectedAction) {
                         case "delete":
                             if (selectedItem.isDirectory) {
-                                kendo.confirm(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle bestanden in deze map zullen dan ook verwijderd worden.`).then(() => {
+                                Wiser2.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle bestanden in deze map zullen dan ook verwijderd worden.`).then(() => {
                                     this.base.deleteItem(selectedItem.id, "filedirectory").then(() => {
                                         this.filesUploaderWindowTreeView.remove(this.filesUploaderWindowTreeViewContextMenuTarget);
                                         this.base.notification.show({ message: "Map succesvol verwijderd" }, "success");
                                         loader.removeClass("loading");
                                     });
-                                }).fail(() => { loader.removeClass("loading"); });
+                                }).catch(() => { loader.removeClass("loading"); });
                             } else {
-                                kendo.confirm(`Weet u zeker dat u het bestand '${selectedItem.name}' wilt verwijderen?`).then(() => {
+                                Wiser2.showConfirmDialog(`Weet u zeker dat u het bestand '${selectedItem.name}' wilt verwijderen?`).then(() => {
                                     Wiser2.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
                                         method: "DELETE",
@@ -670,7 +670,7 @@ export class Windows {
                                         loader.removeClass("loading");
                                         kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                                     });
-                                }).fail(() => { loader.removeClass("loading"); });
+                                }).catch(() => { loader.removeClass("loading"); });
                             }
                             break;
                         case "rename":
@@ -869,15 +869,15 @@ export class Windows {
                     switch (selectedAction) {
                         case "delete":
                             if (selectedItem.isDirectory) {
-                                kendo.confirm(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle templates in deze map zullen dan ook verwijderd worden.`).then(() => {
+                                Wiser2.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle templates in deze map zullen dan ook verwijderd worden.`).then(() => {
                                     this.base.deleteItem(selectedItem.id, "filedirectory").then(() => {
                                         this.templatesUploaderWindowTreeView.remove(this.templatesUploaderWindowTreeViewContextMenuTarget);
                                         this.base.notification.show({ message: "Map succesvol verwijderd" }, "success");
                                         loader.removeClass("loading");
                                     });
-                                }).fail(() => { loader.removeClass("loading"); });
+                                }).catch(() => { loader.removeClass("loading"); });
                             } else {
-                                kendo.confirm(`Weet u zeker dat u de template '${selectedItem.name}' wilt verwijderen?`).then(() => {
+                                Wiser2.showConfirmDialog(`Weet u zeker dat u de template '${selectedItem.name}' wilt verwijderen?`).then(() => {
                                     Wiser2.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
                                         method: "DELETE",
@@ -892,7 +892,7 @@ export class Windows {
                                         loader.removeClass("loading");
                                         kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                                     });
-                                }).fail(() => { loader.removeClass("loading"); });
+                                }).catch(() => { loader.removeClass("loading"); });
                             }
                             break;
                         case "rename":
@@ -1212,7 +1212,7 @@ export class Windows {
                     };
 
                     if (!currentItemWindow.element.data("saving") && !$.isEmptyObject(this.base.fields.unsavedItemValues[windowId])) {
-                        kendo.confirm("Weet u zeker dat u wilt annuleren en gewijzigde of ingevoerde gegevens wilt verwijderen?").then(closeFunction.bind(this));
+                        Wiser2.showConfirmDialog("Weet u zeker dat u wilt annuleren en gewijzigde of ingevoerde gegevens wilt verwijderen?").then(closeFunction.bind(this));
                         closeEvent.preventDefault();
                         return false;
                     }
@@ -1467,7 +1467,7 @@ export class Windows {
     async onDeleteItemPopupClick(event) {
         event.preventDefault();
 
-        await kendo.confirm("Weet u zeker dat u dit item wilt verwijderen?");
+        await Wiser2.showConfirmDialog("Weet u zeker dat u dit item wilt verwijderen?");
 
         const popupWindowContainer = $(event.currentTarget).closest(".k-window").find(".popup-container");
 
@@ -1634,7 +1634,7 @@ export class Windows {
                     if (alreadyLinkedItems.filter((item) => (item.id || item[`ID_${this.searchItemsWindowSettings.entityType}`]) === dataItem.id).length === 0) {
                         if (dataItem.parent_item_id > 0 && dataItem.parent_item_id !== this.searchItemsWindowSettings.plainParentId) {
                             try {
-                                await kendo.confirm(`Let op! Dit item is al gekoppeld aan een ander item (ID ${dataItem.parent_item_id}). Als u op "OK" klikt, zal die koppeling vervangen worden door deze nieuwe koppeling.`);
+                                await Wiser2.showConfirmDialog(`Let op! Dit item is al gekoppeld aan een ander item (ID ${dataItem.parent_item_id}). Als u op "OK" klikt, zal die koppeling vervangen worden door deze nieuwe koppeling.`, "Koppeling vervangen", "Annuleren", "Vervangen");
                             }
                             catch {
                                 row.find("td > input[type=checkbox]").prop("checked", false);

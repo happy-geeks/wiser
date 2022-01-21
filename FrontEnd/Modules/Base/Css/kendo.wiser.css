@@ -329,6 +329,7 @@
 	white-space: nowrap;
 	margin-top: 15px;
 	transition: all 200ms ease-in-out;
+    width: 100%;
 }
 .k-button-drop:hover > span {
 	background-color: var(--white-color);
@@ -1235,6 +1236,12 @@ k-filter-menu .k-autocomplete,
 /* Grid in an iframe / full window */
 .gridViewMode .k-grid-content {
     resize: none;
+}
+.maximize-sub-entities-grid-window .k-toolbar .full-screen {
+    display: none;
+}
+.maximize-sub-entities-grid-window .pane-content {
+    min-height: 100%;
 }
 
 /* filtering */

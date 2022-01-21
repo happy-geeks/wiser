@@ -19,6 +19,7 @@ using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Exports.Interfaces;
+using GeeksCoreLibrary.Modules.Objects.Interfaces;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -35,17 +36,19 @@ namespace Api.Modules.Modules.Services
         private readonly IJsonService jsonService;
         private readonly IGridsService gridsService;
         private readonly IExcelService excelService;
+        private readonly IObjectsService objectsService;
 
         /// <summary>
         /// Creates a new instance of <see cref="ModulesService"/>.
         /// </summary>
-        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IJsonService jsonService, IExcelService excelService)
+        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IJsonService jsonService, IExcelService excelService, IObjectsService objectsService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.gridsService = gridsService;
             this.wiserItemsService = wiserItemsService;
             this.jsonService = jsonService;
             this.excelService = excelService;
+            this.objectsService = objectsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
         }
 
@@ -79,7 +82,8 @@ namespace Api.Modules.Modules.Services
                                 module.icon,
                                 module.color,
                                 module.type,
-                                module.group
+                                module.group,
+                                JSON_EXTRACT(options, '$.onlyOneInstanceAllowed') AS onlyOneInstanceAllowed
                             FROM {WiserTableNames.WiserUserRoles} AS user_role
                             JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
                             JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
@@ -103,7 +107,8 @@ namespace Api.Modules.Modules.Services
                                 module.icon,
                                 module.color,
                                 module.type,
-                                module.group
+                                module.group,
+                                JSON_EXTRACT(options, '$.onlyOneInstanceAllowed') AS onlyOneInstanceAllowed
                             FROM {WiserTableNames.WiserModule} AS module
                             LEFT JOIN {WiserTableNames.WiserOrdering} AS ordering ON ordering.user_id = ?userId AND ordering.module_id = module.id
                             WHERE module.id IN ({String.Join(",", modulesForAdmins)})
@@ -117,6 +122,7 @@ namespace Api.Modules.Modules.Services
                 return new ServiceResult<SortedList<string, List<ModuleAccessRightsModel>>>(results);
             }
 
+            var onlyOneInstanceAllowedGlobal = String.Equals(await objectsService.FindSystemObjectByDomainNameAsync("wiser_modules_OnlyOneInstanceAllowed", "false"), "true", StringComparison.OrdinalIgnoreCase);
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var moduleId = dataRow.Field<int>("module_id");
@@ -148,8 +154,10 @@ namespace Api.Modules.Modules.Services
                 rightsModel.Type = dataRow.Field<string>("type");
                 rightsModel.Group = groupName;
 
-                results[groupName].Add(rightsModel);
+                var onlyOneInstanceAllowed = dataRow.Field<string>("onlyOneInstanceAllowed");
+                rightsModel.OnlyOneInstanceAllowed = (onlyOneInstanceAllowedGlobal && !String.Equals(onlyOneInstanceAllowed, "false", StringComparison.OrdinalIgnoreCase)) || String.Equals(onlyOneInstanceAllowed, "true", StringComparison.OrdinalIgnoreCase) || onlyOneInstanceAllowed == "1";
 
+                results[groupName].Add(rightsModel);
             }
 
             // Make sure that we add certain modules for admins, even if those modules don't exist in wiser_module for this customer.

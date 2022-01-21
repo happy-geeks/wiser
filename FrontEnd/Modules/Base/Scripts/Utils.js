@@ -411,6 +411,45 @@ export class Wiser2 {
     }
 
     /**
+     * Shows a dialog that can be used as a confirmation for deleting something.
+     * @param {string} text The text to show in the dialog.
+     * @param {string} title Optional: The title of the dialog. Default value is "Verwijderen".
+     * @param {string} cancelButtonText Optional: The text to show in the cancel button. Default value is "Annuleren".
+     * @param {string} confirmButtonText TOptional: The text to show in the confirm button. Default value is "Verwijderen".
+     */
+    static showConfirmDialog(text, title = "Verwijderen", cancelButtonText = "Annuleren", confirmButtonText = "Verwijderen") {
+        return new Promise((resolve, reject) => {
+            const dialog = $("<div />").kendoDialog({
+                title: title,
+                closable: true,
+                modal: true,
+                content: text,
+                actions: [
+                    {
+                        text: cancelButtonText,
+                        cssClass: "cancel-button"
+                    },
+                    {
+                        text: confirmButtonText, 
+                        primary: true,
+                        cssClass: "delete-button",
+                        action: (event) => {
+                            resolve(event);
+                        }
+                    }
+                ],
+                close: (event) => {
+                    reject(event);
+                }
+            }).data("kendoDialog");
+
+            dialog.wrapper.addClass("delete-dialog");
+
+            dialog.open();
+        });
+    }
+
+    /**
      * Checks if a given object is an array and, optionally, if it contains at least one item. This can be used to validate the response from HTTP requests.
      * @param {any} obj The response from a request.
      * @param {boolean} allowEmpty Whether the response must contain at least one item.
