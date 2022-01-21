@@ -193,9 +193,7 @@ export default {
                     database_name: this.newCustomerData.databaseSchema,
                     port_number: this.newCustomerData.databasePort
                 },
-                wiser2_data_url: this.newCustomerData.dataUrlLive,
-                wiser2_data_url_test: this.newCustomerData.dataUrlTest,
-                wiser2_sub_domain: this.newCustomerData.subDomain,
+                sub_domain: this.newCustomerData.subDomain,
                 wiser_settings: {
                     hostLive: this.newCustomerData.hostLive,
                     hostTest: this.newCustomerData.hostTest,
@@ -226,13 +224,6 @@ export default {
                     EnableContentBuilder: "true"
                 }
             };
-
-            if (!newCustomer.wiser2_data_url.endsWith("/")) {
-                newCustomer.wiser2_data_url += "/";
-            }
-            if (!newCustomer.wiser2_data_url_test.endsWith("/")) {
-                newCustomer.wiser2_data_url_test += "/";
-            }
 
             this.loading = true;
             this.createCustomerResult = await main.customersService.create(newCustomer, this.newCustomerData.isWebShop);
