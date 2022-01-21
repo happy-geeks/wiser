@@ -36,9 +36,6 @@ export class Fields {
         // Bind tooltip click events.
         $("#right-pane").on("click", ".item h4.tooltip .info-link", this.onTooltipClick.bind(this, $("#infoPanel_main")));
         $("#right-pane").on("contextmenu", ".item > h4", this.onFieldLabelContextMenu.bind(this));
-
-        // Bind open link click event.
-        $("#right-pane").on("click", ".item .open-link", this.onOpenLinkClick.bind(this));
     }
 
     /**
@@ -523,23 +520,57 @@ export class Fields {
 
     /**
      * Event that gets triggered when the user clicks the link-icon in a field containing an URL.
-     * @param {any} event
+     * @param {any} field The input field.
+     * @param {any} fieldOptions The options/settings of the input field.
+     * @param {any} event The click event.
      */
-    onOpenLinkClick(event) {
-        let openLinkDialog = $("#openLinkDialog").kendoDialog({
+    onInputLinkIconClick(field, fieldOptions, event) {
+        event.preventDefault();
+
+        const fieldValue = field.val();
+        if (!fieldValue) {
+            return;
+        }
+		
+        const urlToOpen = (fieldOptions.prefix || "") + fieldValue + (fieldOptions.suffix || "");
+        if (fieldOptions.skipOpenUrlDialog) {
+            window.open(urlToOpen);
+            return;
+        }
+
+        let openLinkDialog = $("<div />").kendoDialog({
             width: "500px",
             buttonLayout: "normal",
             title: "Deze URL openen?",
             closable: true,
-            modal: false,
-            content: "<p>Wilt u deze URL in een nieuw venster openen of binnen Wiser?<p>",
+            modal: true,
+            content: "<p>Wilt u deze URL in een nieuw venster openen of binnen Wiser (let op, niet alle webistes kunnen geladen worden binnen Wiser)?<p>",
             actions: [
-                { text: 'Cancel' },
-                { text: 'Open in Wiser' },
-                { text: 'Open in een nieuw venster', primary: true }
+                {
+                    text: "Annuleren"
+                },
+                {
+                    text: "Open in Wiser",
+                    action: (kendoEvent) => {
+                        $("#openLinkWindow").kendoWindow({
+                            width: "100%",
+                            height: "100%",
+                            title: "Externe URL",
+                            content: urlToOpen
+                        }).data("kendoWindow").open();
+                    }
+                },
+                {
+                    text: "Open in een nieuw venster", 
+                    primary: true, 
+                    action: (kendoEvent) => {
+                        window.open(urlToOpen);
+                    }
+                }
             ]
         });
-        event.preventDefault();
+
+        openLinkDialog.data("kendoDialog").open();
     }
 
     /**
@@ -555,7 +586,15 @@ export class Fields {
         const element = $(event.currentTarget);
         const propertyName = element.closest(".item").data("propertyName");
         element.html(`${element.html()} <span class="property-name">(${propertyName})</span>`);
-        kendo.alert(`Property name: ${propertyName}`);
+
+        // Copy to clip board.
+        const copyText = document.createElement("input");
+        copyText.value = propertyName;
+        document.body.appendChild(copyText);
+        copyText.focus();
+        copyText.select();
+        document.execCommand("copy");
+        document.body.removeChild(copyText);
     }
 
     /**
@@ -958,10 +997,9 @@ export class Fields {
      */
     async onImageDelete(event) {
         event.preventDefault();
-
         // If event.currentTarget is not undefined, it means the user clicked the delete button manually.
         if (event.currentTarget) {
-            await kendo.confirm("Weet u zeker dat u deze afbeelding wilt verwijderen?");
+            await Wiser2.showConfirmDialog(`Weet u zeker dat u deze afbeelding wilt verwijderen?`);
 
             const imageContainer = $(event.currentTarget).closest(".product");
             const data = imageContainer.data();
@@ -2100,7 +2138,7 @@ export class Fields {
                     previewWindow = $("#previewFrame").kendoWindow({
                         width: "90%",
                         height: "90%",
-                        actions: ["Maximize", "Close"],
+                        actions: ["Close"],
                         title: "Preview"
                     }).data("kendoWindow");
                 }
@@ -2805,7 +2843,7 @@ export class Fields {
     }
 
     /**
-     * Event that gets called when the user executes the custom action for viewing / changing the HTML source of the editor.
+     * Event that gets called when the user executes the custom action for maximizing an HTML editor.
      * @param {any} event The event from the execute action.
      * @param {any} editor The HTML editor where the action is executed in.
      * @param {any} itemId The ID of the current item.
