@@ -1,10 +1,10 @@
-﻿using Api.Core.Services;
-using Api.Modules.DataSelectors.Models;
-using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Core.Services;
+using Api.Modules.DataSelectors.Models;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.DataSelectors.Interfaces
 {
@@ -13,6 +13,15 @@ namespace Api.Modules.DataSelectors.Interfaces
     /// </summary>
     public interface IDataSelectorsService
     {
+        /// <summary>
+        /// Retrieves the entity properties belonging to the given entity name.
+        /// </summary>
+        /// <param name="entityName">The name of the entity.</param>
+        /// <param name="forExportMode">Whether the data selector is in export mode.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <returns></returns>
+        Task<ServiceResult<List<DataSelectorEntityPropertyModel>>> GetEntityProperties(string entityName, bool forExportMode, ClaimsIdentity identity);
+
         /// <summary>
         /// Get the saved data selectors.
         /// </summary>
