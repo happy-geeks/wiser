@@ -1,17 +1,17 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Newtonsoft.Json.Linq;
-using Api.Modules.DataSelectors.Models;
 using Api.Modules.DataSelectors.Interfaces;
+using Api.Modules.DataSelectors.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
 namespace Api.Modules.DataSelectors.Controllers
@@ -30,6 +30,17 @@ namespace Api.Modules.DataSelectors.Controllers
         public DataSelectorsController(IDataSelectorsService dataSelectorsService)
         {
             this.dataSelectorsService = dataSelectorsService;
+        }
+
+        /// <summary>
+        /// Retrieves the entity properties belonging to the given entity name.
+        /// </summary>
+        /// <param name="entityName">The name of the entity.</param>
+        /// <param name="forExportMode">Whether the data selector is in export mode.</param>
+        [HttpGet, Route("entity-properties/{entityName}"), ProducesResponseType(typeof(List<DataSelectorEntityPropertyModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetEntityPropertiesAsync(string entityName, [FromQuery] bool forExportMode)
+        {
+            return (await dataSelectorsService.GetEntityProperties(entityName, forExportMode, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
 
         /// <summary>
