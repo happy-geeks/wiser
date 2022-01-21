@@ -66,13 +66,9 @@ export class Modules {
      * Get the settings of a module from the database.
      * @param {string} apiRoot The root URL of the Wiser API.
      * @param {number} moduleId The ID of the module.
-     * @param {string} customerId The encrypted ID of the customer.
-     * @param {string} userId The encrypted ID of the user.
-     * @param {boolean} isTestEnvironment Whether or not we're on a test environment.
-     * @param {string} subDomain The current sub domain, if any.
      * @returns {any} The module settings as an object.
      */
-    static async getModuleSettings(apiRoot, moduleId, customerId, userId, isTestEnvironment, subDomain = "") {
+    static async getModuleSettings(apiRoot, moduleId) {
         try {
             const result = await Wiser2.api({ url: `${apiRoot}modules/${moduleId}/settings` });
             if (!result) {
@@ -341,10 +337,9 @@ export class Wiser2 {
     /**
      * Get the data of the logged in user.
      * @param {string} apiRoot The root URL of the Wiser API.
-     * @param {boolean} isTestEnvironment Whether or not we're on a test environment.
      * @returns {any} The user data as an object.
      */
-    static async getLoggedInUserData(apiRoot, isTestEnvironment) {
+    static async getLoggedInUserData(apiRoot) {
         try {
             let result = sessionStorage.getItem("userSettings");
             if (result) {

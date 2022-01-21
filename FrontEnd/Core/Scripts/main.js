@@ -247,7 +247,8 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                             moduleId: "customerManagement",
                             name: "Klant toevoegen",
                             type: "customerManagement",
-                            javascriptOnly: true
+                            javascriptOnly: true,
+                            onlyOneInstanceAllowed: true
                         });
                     },
 

@@ -94,7 +94,7 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = user.adminAccountName;
             
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot, this.settings.isTestEnvironment);
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
@@ -179,7 +179,7 @@ const moduleSettings = {
                 return null;
             }
 
-            return this.tasks.find((task) => task.idencrypted === encryptedId);
+            return this.tasks.find((task) => task.encryptedId === encryptedId);
         }
 
         async registerPusherAndEventListeners() {
@@ -276,8 +276,8 @@ const moduleSettings = {
         }
 
         openEditForm(task) {
-            this.editTaskDatePicker.value(task.agenderingDate);
-            this.editTaskUserSelect.value(task.userid);
+            this.editTaskDatePicker.value(task.createdOn);
+            this.editTaskUserSelect.value(task.userId);
             this.editTaskStatusSelect.value(task.status);
             document.getElementById("editTaskDescription").value = task.content;
 
@@ -301,7 +301,7 @@ const moduleSettings = {
             }
 
             data.forEach((task) => {
-                const date = new Date(task.agenderingDate);
+                const date = new Date(task.createdOn);
                 task.agenderingDatePretty = kendo.toString(date, "dddd d MMMM yyyy");
 
                 // Check if the task has a linked item.
@@ -310,8 +310,8 @@ const moduleSettings = {
 
             // Gotta re-order the data.
             data.sort((a, b) => {
-                const date1 = new Date(a.agenderingDate).getTime();
-                const date2 = new Date(b.agenderingDate).getTime();
+                const date1 = new Date(a.createdOn).getTime();
+                const date2 = new Date(b.createdOn).getTime();
                 return date1 > date2 ? 1 : -1;
             });
 
@@ -378,7 +378,7 @@ const moduleSettings = {
                     // The input data is the entered information.
                     const inputData = [
                         {
-                            key: "agenderingDate",
+                            key: "agendering_date",
                             value: kendo.toString(this.taskDatePicker.value() || new Date(), "yyyy-MM-dd")
                         },
                         {
@@ -394,11 +394,11 @@ const moduleSettings = {
                             value: username
                         },
                         {
-                            key: "placedBy",
+                            key: "placed_by",
                             value: this.settings.username
                         },
                         {
-                            key: "placedById",
+                            key: "placed_by_id",
                             value: this.settings.wiser2UserId
                         }
                     ];
@@ -438,7 +438,7 @@ const moduleSettings = {
                 // The input data is the entered information.
                 const inputData = [
                     {
-                        key: "agenderingDate",
+                        key: "agendering_date",
                         value: kendo.toString(this.editTaskDatePicker.value(), "yyyy-MM-dd")
                     },
                     {
@@ -458,17 +458,17 @@ const moduleSettings = {
                         value: this.editTaskStatusSelect.value()
                     },
                     {
-                        key: "placedBy",
+                        key: "placed_by",
                         value: this.settings.wiserFullName
                     },
                     {
-                        key: "placedById",
+                        key: "placed_by_id",
                         value: this.settings.wiserUserId
                     }
                 ];
 
                 // And finally update the newly created item.
-                await this.updateItem(this.taskInEdit.idencrypted, inputData);
+                await this.updateItem(this.taskInEdit.encryptedId, inputData);
 
                 // Refresh to reflect changes.
                 this.loadTasks();
