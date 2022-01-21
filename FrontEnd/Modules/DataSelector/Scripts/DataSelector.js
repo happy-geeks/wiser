@@ -72,11 +72,11 @@ const moduleSettings = {
 
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
-                headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
             });
 
             // Show an error if the user is no longer logged in.
-            const accessTokenExpires = localStorage.getItem("access_token_expires_on");
+            const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
                 Wiser2.alert({
                     title: "Niet ingelogd",
@@ -91,11 +91,11 @@ const moduleSettings = {
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
-
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot, this.settings.isTestEnvironment);
-            this.settings.userId = userData.encrypted_id;
-            this.settings.customerId = userData.encrypted_customer_id;
-            this.settings.zeroEncrypted = userData.zero_encrypted;
+          
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            this.settings.userId = userData.encryptedId;
+            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.wiser2UserId = userData.id;
 
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
@@ -118,9 +118,9 @@ const moduleSettings = {
                         continue;
                     }
 
-                    const li = $(`<li data-module-id="${module.module_id}"></li>`).appendTo(ul);
+                    const li = $(`<li data-module-id="${module.moduleId}"></li>`).appendTo(ul);
                     const label = $(`<label />`).appendTo(li);
-                    const input = $(`<input type="checkbox" name="module-picker" class="noForm" value="${module.module_id}" />`).appendTo(label);
+                    const input = $(`<input type="checkbox" name="module-picker" class="noForm" value="${module.moduleId}" />`).appendTo(label);
                     const span = $(`<span/>`).appendTo(label);
                     const icon = $(`<ins class="icon-${module.icon}"></ins>`).appendTo(span);
                     span.append(module.name);
@@ -407,12 +407,12 @@ const moduleSettings = {
 
         async getAllEntityTypes() {
             const response = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=` });
-            this.allEntityTypes = response.map(ce => ce.entity_type);
+            this.allEntityTypes = response.map(ce => ce.entityType);
         }
 
         async updateAvailableEntityTypes() {
             const response = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=${this.selectedModules.join(",")}` });
-            this.availableEntityTypes = response.map(ce => ce.entity_type);
+            this.availableEntityTypes = response.map(ce => ce.entityType);
 
             $("#selectEntity").getKendoDropDownList().setDataSource({
                 data: this.availableEntityTypes.map((entityType) => {
@@ -561,7 +561,7 @@ const moduleSettings = {
                 transport: {
                     read: (options) => {
                         Wiser2.api({
-                            url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entity_name=${dataItem.entityName}&property_name=${dataItem.propertyName}&language_code=${dataItem.languageCode}&use_export_mode=${this.useExportMode ? "1" : "0"}`,
+                            url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entityName=${dataItem.entityName}&propertyName=${dataItem.propertyName}&languageCode=${dataItem.languageCode}&useExportMode=${this.useExportMode ? "1" : "0"}`,
                             dataType: "json"
                         }).then((result) => {
                             const items = [
@@ -1340,7 +1340,7 @@ const moduleSettings = {
                         transport: {
                             read: (options) => {
                                 Wiser2.api({
-                                    url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entity_name=${dataItem.entityName}&property_name=${dataItem.propertyName}&language_code=${dataItem.languageCode}`,
+                                    url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entityName=${dataItem.entityName}&propertyName=${dataItem.propertyName}&languageCode=${dataItem.languageCode}`,
                                     dataType: "json"
                                 }).then((result) => {
                                     const items = [

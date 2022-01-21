@@ -25,7 +25,7 @@ const moduleSettings = {
             
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
-                headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
             });
 
             this.mainGrid = null;
@@ -49,7 +49,7 @@ const moduleSettings = {
             }
             
             // Show an error if the user is no longer logged in.
-            const accessTokenExpires = localStorage.getItem("access_token_expires_on");
+            const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
                 Wiser2.alert({
                     title: "Niet ingelogd",
@@ -65,10 +65,10 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = user.adminAccountName;
             
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot, this.settings.isTestEnvironment);
-            this.settings.userId = userData.encrypted_id;
-            this.settings.customerId = userData.encrypted_customer_id;
-            this.settings.zeroEncrypted = userData.zero_encrypted;
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            this.settings.userId = userData.encryptedId;
+            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.wiserUserId = userData.id;
             
             if (!this.settings.wiserApiRoot.endsWith("/")) {
@@ -145,8 +145,8 @@ const moduleSettings = {
                     data: JSON.stringify(options)
                 });
 
-                if (gridDataResult.extra_javascript) {
-                    jQuery.globalEval(gridDataResult.extra_javascript);
+                if (gridDataResult.extraJavascript) {
+                    jQuery.globalEval(gridDataResult.extraJavascript);
                 }
 
                 for (let column of gridDataResult.columns) {
@@ -180,7 +180,7 @@ const moduleSettings = {
                         serverPaging: true,
                         serverSorting: true,
                         serverFiltering: true,
-                        pageSize: gridDataResult.page_size,
+                        pageSize: gridDataResult.pageSize,
                         filter: [
                             { field: "receiver", operator: "eq", value: this.settings.wiserUserId }
                         ],
@@ -209,8 +209,8 @@ const moduleSettings = {
                         },
                         schema: {
                             data: "data",
-                            total: "total_results",
-                            model: gridDataResult.schema_model
+                            total: "totalResults",
+                            model: gridDataResult.schemaModel
                         }
                     },
                     columns: gridDataResult.columns,

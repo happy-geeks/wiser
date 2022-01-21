@@ -50,10 +50,10 @@ const moduleSettings = {
             };
             Object.assign(this.settings, settings);
             
-            console.log("access token:", localStorage.getItem("access_token"));
+            console.log("access token:", localStorage.getItem("accessToken"));
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
-                headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
             });
 
             // Fire event on page ready for direct actions
@@ -80,10 +80,10 @@ const moduleSettings = {
             
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot, this.settings.isTestEnvironment);
-            this.settings.userId = userData.encrypted_id;
-            this.settings.customerId = userData.encrypted_customer_id;
-            this.settings.zeroEncrypted = userData.zero_encrypted;
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            this.settings.userId = userData.encryptedId;
+            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.zeroEncrypted = userData.zeroEncrypted;
 
             this.searchField = $("#search-field");
             this.searchField.focus();
@@ -120,13 +120,13 @@ const moduleSettings = {
                         }
                     },
                     {
-                        field: "added_on",
+                        field: "addedOn",
                         title: "Aangemaakt op",
                         type: "date",
                         format: "{0:dd MMMM yyyy}"
                     },
                     {
-                        field: "added_by",
+                        field: "addedBy",
                         title: "Aangemaakt door",
                         filterable: {
                             cell: {
@@ -135,7 +135,7 @@ const moduleSettings = {
                         }
                     },
                     {
-                        field: "more_info",
+                        field: "moreInfo",
                         title: "Overige info",
                         filterable: {
                             cell: {
@@ -180,8 +180,8 @@ const moduleSettings = {
             }).data("kendoComboBox");
 
             this.propertyComboBox = $("#propertyComboBox").kendoComboBox({
-                dataTextField: "display_name",
-                dataValueField: "property_name",
+                dataTextField: "displayName",
+                dataValueField: "propertyName",
                 autoWidth: true,
                 filter: "contains",
                 suggest: true,
@@ -310,7 +310,7 @@ const moduleSettings = {
                 });
 
                 container.addClass("search-top");
-                $("#resultsCount").html(searchResults.total_results);
+                $("#resultsCount").html(searchResults.totalResults);
                 this.resultsGrid.setDataSource(searchResults.data);
             } catch (exception) {
                 console.error(exception);
@@ -320,7 +320,7 @@ const moduleSettings = {
         }
 
         selectedPropertyIsId() {
-            return ((this.propertyComboBox.dataItem() || {}).property_name || "").toLowerCase() === "id";
+            return ((this.propertyComboBox.dataItem() || {}).propertyName || "").toLowerCase() === "id";
         }
 
         /**
@@ -370,7 +370,7 @@ const moduleSettings = {
                 const properties = await this.getPropertiesOfEntity(entityType);
                 this.propertyComboBox.setDataSource({
                     group: {
-                        field: "tab_name"
+                        field: "tabName"
                     },
                     data: properties
                 });
@@ -383,7 +383,7 @@ const moduleSettings = {
             const selectedProperty = this.propertyComboBox.dataItem();
             const operator = this.operatorComboBox.value();
 
-            if (!selectedProperty || !selectedProperty.property_name) {
+            if (!selectedProperty || !selectedProperty.propertyName) {
                 this.operatorComboBox.setDataSource(this.nonPropertyOperators);
                 this.operatorComboBox.value(this.nonPropertyOperators[0].value);
             } else {
@@ -392,7 +392,7 @@ const moduleSettings = {
 
             this.searchField.focus();
             const value = this.searchField.val();
-            this.startSearch(value, entityType, selectedProperty.property_name, operator, this.includeDeletedItemsCheckBox.prop("checked"));
+            this.startSearch(value, entityType, selectedProperty.propertyName, operator, this.includeDeletedItemsCheckBox.prop("checked"));
         }
 
         /**
@@ -409,7 +409,7 @@ const moduleSettings = {
          */
         onShowDetailsClick(event) {
             const dataItem = this.resultsGrid.dataItem($(event.currentTarget).closest("tr"));
-            this.openDynamicItem(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid, dataItem.moduleId || dataItem.moduleid || dataItem.module_id, dataItem.entity_type);
+            this.openDynamicItem(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid, dataItem.moduleId || dataItem.moduleid || dataItem.moduleId, dataItem.entityType);
         }
     }
 

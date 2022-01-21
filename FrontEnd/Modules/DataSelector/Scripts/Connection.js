@@ -187,11 +187,11 @@
 
                 entityType = linkedToPropertySelect.dataItem().entityType;
             }
-
+          
             const response = await Wiser2.api({
                 url: `${this.dataSelector.settings.wiserApiRoot}data-selectors/entity-properties/${entityType}/?forExportMode=${this.dataSelector.useExportMode}`
             });
-
+          
             // Create clone of "response" so it doesn't use the reference value, but a completely new object.
             // Although it's also possible to use "[...response]", this JSON trick works better as it also clones deep properties.
             this.availableProperties = JSON.parse(JSON.stringify(response));
@@ -229,7 +229,7 @@
                 linkType = linkedToPropertySelect.dataItem().typeNumber;
             }
 
-            const response = await Wiser2.api({ url: `${this.dataSelector.settings.serviceRoot}/GET_ENTITY_LINK_PROPERTIES?link_type=${linkType}` });
+            const response = await Wiser2.api({ url: `${this.dataSelector.settings.serviceRoot}/GET_ENTITY_LINK_PROPERTIES?linkType=${linkType}` });
 
             // Create clone of "response" so it doesn't use the reference value, but a completely new object.
             // Although it's also possible to use "[...response]", this JSON trick works better as it also clones deep properties.
@@ -397,7 +397,7 @@
                         }
 
                         Wiser2.api({
-                            url: `${this.dataSelector.settings.serviceRoot}/${templateName}?entity_name=${selectedEntityType}`,
+                            url: `${this.dataSelector.settings.serviceRoot}/${templateName}?entityName=${selectedEntityType}`,
                             dataType: "json"
                         }).then((result) => {
                             const dataSource = [];
