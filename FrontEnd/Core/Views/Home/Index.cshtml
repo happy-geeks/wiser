@@ -30,7 +30,7 @@
             </li>
 
             <li class="tabs">
-                <div v-for="module in openedModules" :key="module.moduleId" :class="{ 'tab-item': true, active: module.moduleId === activeModule }" @@click="setActiveModule($event, module.moduleId)" :title="module.name">
+                <div v-for="module in openedModules" :key="module.id" :class="{ 'tab-item': true, active: module.id === activeModule }" @@click="setActiveModule($event, module.id)" :title="module.name">
                     <ins :class="module.icon"></ins>
                     <strong>{{ module.name }}</strong>
                     <span class="close-module" title="module sluiten" @@click="closeModule(module)"></span>
@@ -77,8 +77,8 @@
         <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
         <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
         <section class="iframe-container">
-            <iframe v-for="module in openedModulesWithBackend" :key="module.moduleId" :src="`/Modules/${module.type}${module.fileName}${module.queryString}`" :class="{ active: module.moduleId === activeModule }" frameborder="0" scrolling="auto"></iframe>
-            <iframe v-for="module in openedWiser1Modules" :key="module.moduleId" :src="`${appSettings.wiser1BaseUrl}?singleModuleId=${module.moduleId}&autoLoginCookie=${encodeURIComponent(user.cookieValue)}&autoLoginUserId=${encodeURIComponent(user.encryptedId)}`" :class="{ active: module.moduleId === activeModule }" frameborder="0" scrolling="auto"></iframe>
+            <iframe v-for="module in openedModulesWithBackend" :key="module.id" :src="`/Modules/${module.type}${module.fileName}${module.queryString}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
+            <iframe v-for="module in openedWiser1Modules" :key="module.id" :src="`${appSettings.wiser1BaseUrl}?singleModuleId=${module.moduleId}&autoLoginCookie=${encodeURIComponent(user.cookieValue)}&autoLoginUserId=${encodeURIComponent(user.encryptedId)}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
         </section>
 
         <keep-alive>
@@ -86,9 +86,9 @@
         </keep-alive>
     </main>
 
-    <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een ID in'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
+    <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een ID in'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]" @@open="onWiserIdPromptOpen">
         <div class="form-row">
-            <input type="number" id="wiserId" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" onkeypress="return event.charCode >= 48 && event.charCode <= 57" required>
+            <input type="number" id="wiserId" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" @@keypress="onWiserIdFieldKeyPress" required>
         </div>
     </wiser-dialog>
     <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
@@ -119,6 +119,7 @@
 
                 <div class="form-row">
                     <input type="password" id="password" placeholder="Wachtwoord" autocomplete="off" v-model="loginForm.password" required>
+                    <ins id="password-toggle" class="icon-eye-visible" v-on:click="togglePassword()"></ins>
                 </div>
 
                 <div class="form-row">

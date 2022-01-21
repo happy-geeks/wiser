@@ -1,4 +1,5 @@
-﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+﻿@using System.Globalization
+@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -34,7 +35,7 @@
     <div class="taskForm">
         <div class="item">
             <h4><label>Voeg een taak toe</label></h4>
-            <input id="taskDate" class="datepicker" value="@DateTime.Today.ToString("dd MMMM yyyy")" title="datepicker" />
+            <input id="taskDate" class="datepicker" value="@DateTime.Today.ToString("dd MMMM yyyy", new CultureInfo("nl-NL"))" />
         </div>
         <div class="item">
             <h4><label>Gebruikers toevoegen</label></h4>
@@ -55,7 +56,7 @@
     <div class="editTaskForm">
         <div class="item">
             <h4><label>Taak aanpassen</label></h4>
-            <input id="editTaskDate" class="datepicker" value="@DateTime.Today.ToString("dd MMMM yyyy")" title="datepicker" />
+            <input id="editTaskDate" class="datepicker" value="@DateTime.Today.ToString("dd MMMM yyyy", new CultureInfo("nl-NL"))" />
         </div>
         <div class="item">
             <h4><label>Gebruiker</label></h4>
@@ -111,8 +112,7 @@
             <a role="button" class="k-button k-button-icontext edit-task" data-task-id="{idencrypted}" href="#"><span class="k-icon k-i-edit"></span></a>
         </li>
     </script>
-
-    <script src="/scripts/Jjl.min.js"></script>
+    
     <script src="/scripts/Utils.min.js"></script>
     <script src="/scripts/TaskAlerts.min.js"></script>
 </body>

@@ -19,7 +19,10 @@ using Api.Modules.Templates.Services;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using IdentityServer4.Services;
+using JavaScriptEngineSwitcher.ChakraCore;
+using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
@@ -27,6 +30,8 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
+using React;
+using React.AspNet;
 using Serilog;
 
 namespace Api
@@ -39,7 +44,7 @@ namespace Api
         {
             // First set the base settings for the application.
             var builder = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json",  false, true)
+                .AddJsonFile("appsettings.json", false, true)
                 .AddJsonFile($"appsettings.{webHostEnvironment.EnvironmentName}.json", true, true);
 
             // We need to build here already, so that we can read the base directory for secrets.
@@ -134,6 +139,7 @@ namespace Api
                     config.IncludeXmlComments(xmlPath);
                 }
             });
+
 
             // Services from GCL. Some services are registered because they are required by other GCL services, not because this API uses them.
             services.AddGclServices(Configuration, true, true);
@@ -233,8 +239,15 @@ namespace Api
             services.Decorate<IDatabaseConnection, ClientDatabaseConnection>();
             services.Decorate<ITemplatesService, CachedTemplatesService>();
             services.Decorate<IUsersService, CachedUsersService>();
+
+            // Add JavaScriptEngineSwitcher services to the services container.
+            services.AddJsEngineSwitcher(options => options.DefaultEngineName = ChakraCoreJsEngine.EngineName).AddChakraCore();
+
+            services.AddReact();
+
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         }
-        
+
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
         {
             if (env.IsDevelopment())
@@ -245,6 +258,14 @@ namespace Api
             {
                 app.ConfigureExceptionHandler(logger);
             }
+
+            // Setup React and babel for the /api/v3/babel endpoint (for converting ES6 javascript to ES5).
+            app.UseReact(config =>
+            {
+                // We have to set Babel to version 6, otherwise it won't convert ES6 to ES5 anymore for some reason.
+                config.SetBabelVersion(BabelVersions.Babel6);
+                config.ReuseJavaScriptEngines = true;
+            });
 
             // Configure Swagger for documentation.
             app.UseSwagger(options =>
@@ -282,7 +303,7 @@ namespace Api
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                
+
                 endpoints.MapHealthChecks("/health", new HealthCheckOptions
                 {
                     Predicate = _ => true

@@ -333,6 +333,11 @@ undefined undefined undefined undefined undefined undefined .k-in,
     color: inherit;
 }
 
+.k-window-actions .k-i-window-restore:before,
+.k-window-actions .k-i-window-maximize:before {
+    font-family: WebComponentsIcons !important;
+}
+
 a.k-icon {
     color: var(--dark-txt);
     min-width: 1em;
@@ -1305,13 +1310,10 @@ div.k-filebrowser-dropzone em {
 .k-window {
     border-color: rgba(0, 0, 0, 0);
     background-color: var(--white-color);
-	
-	box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
     border-radius: 6px;
-    height: 100% !important;
     max-height: calc(100% - 30px) !important;
-    max-width: 100% !important;
-    width: 100% !important;
+    max-width: calc(100% - 30px) !important;
 }
 
 .k-window.k-state-focused {
@@ -1319,7 +1321,6 @@ div.k-filebrowser-dropzone em {
 	box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
 }
 
-.k-window.k-widget,
 .k-window.k-window-maximized {
     border-radius: 6px;
 	top: 15px !important;

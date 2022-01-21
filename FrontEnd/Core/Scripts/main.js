@@ -79,7 +79,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
 
             if (this.appSettings.markerIoToken) {
                 const markerSdk = await import("@marker.io/browser");
-                this.markerWidget = await markerSdk.loadWidget({ destination: this.appSettings.markerIoToken });
+                this.markerWidget = await markerSdk.default.loadWidget({ destination: this.appSettings.markerIoToken });
                 this.markerWidget.hide();
             }
 
@@ -98,6 +98,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                 },
                 created() {
                     this.$store.dispatch(GET_CUSTOMER_TITLE, this.appSettings.subDomain);
+                    document.addEventListener("keydown", this.onAppKeyDown.bind(this));
                 },
                 computed: {
                     loginStatus() {
@@ -160,6 +161,14 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                     "taskAlerts": taskAlerts
                 },
                 methods: {
+                    onAppKeyDown(event) {
+                        // Open Wiser ID prompt when the user presses CTRL+O.
+                        if (event.ctrlKey && event.key === "o") {
+                            event.preventDefault();
+                            this.openWiserIdPrompt();
+                        }
+                    },
+
                     handleBodyClick(event) {
                         if (event.target.id !== "side-menu" && !event.target.closest("#side-menu")) {
                             this.toggleMenuActive(false);
@@ -212,7 +221,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                     },
 
                     openModule(module) {
-                        if (typeof module === "number") {
+                        if (typeof module === "number" || typeof module === "string") {
                             module = this.modules.find(m => m.moduleId === module);
                         }
                         if (typeof(module.queryString) === "undefined") {
@@ -274,7 +283,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         } else if (this.listOfEntityTypes.length === 1) {
                             this.openModule({
                                 moduleId: `wiserItem_${this.wiserIdPromptValue}_${this.listOfEntityTypes[0].id}`,
-                                name: `Wiser item #${this.wiserIdPromptValue} (${this.listOfEntityTypes[0].display_name})`,
+                                name: `Wiser item #${this.wiserIdPromptValue} (${this.listOfEntityTypes[0].displayName})`,
                                 type: "dynamicItems",
                                 iframe: true,
                                 itemId: encryptedId,
@@ -300,10 +309,33 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                             this.wiserIdPromptValue = null;
                             this.wiserEntityTypePromptValue = null;
                         }
+
+                        return true;
                     },
 
                     openMarkerIoScreen() {
                         this.markerWidget.capture("fullscreen");
+                    },
+
+                    onWiserIdPromptOpen(sender) {
+                        setTimeout(() => document.getElementById("wiserId").focus(), 500);
+                    },
+
+                    onWiserIdFieldKeyPress(event) {
+                        // Open the item when pressing enter.
+                        if (event.charCode === 13) {
+                            this.openWiserItem();
+                            this.$refs.wiserIdPrompt.close();
+                            return true;
+                        }
+
+                        // Only allow numbers. By default an input with type number still allows 'e' and decimal characters, we don't want that here.
+                        if (event.charCode < 48 || event.charCode > 57) {
+                            event.preventDefault();
+                            return false;
+                        }
+
+                        return true;
                     }
                 }
             });

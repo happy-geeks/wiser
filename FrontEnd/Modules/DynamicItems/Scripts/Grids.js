@@ -1,4 +1,5 @@
 ﻿import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import "../../Base/Scripts/Processing.js";
 
 require("@progress/kendo-ui/js/kendo.tooltip.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -57,7 +58,7 @@ export class Grids {
         const initialProcess = `loadInformationBlock_${Date.now()}`;
 
         try {
-            jjl.processing.addProcess(initialProcess);
+            window.processing.addProcess(initialProcess);
             const mainContainer = $("#wiser").addClass(`with-information-block information-${informationBlockSettings.position || "bottom"}`);
             const informationBlockContainer = $("#informationBlock").removeClass("hidden").addClass(informationBlockSettings.position || "bottom");
             if (informationBlockSettings.height) {
@@ -78,7 +79,7 @@ export class Grids {
 
             this.informationBlockIframe = $(`<iframe />`).appendTo(informationBlockContainer);
             this.informationBlockIframe[0].onload = () => {
-                jjl.processing.removeProcess(initialProcess);
+                window.processing.removeProcess(initialProcess);
 
                 dynamicItems.grids.informationBlockIframe[0].contentDocument.addEventListener("dynamicItems.onSaveButtonClick", () => {
                     if (!this.mainGrid || !this.mainGrid.dataSource) {
@@ -126,7 +127,7 @@ export class Grids {
         } catch (exception) {
             kendo.alert("Er is iets fout gegaan tijdens het laden van de data voor deze module. Sluit a.u.b. de module en probeer het nogmaals, of neem contact op met ons.");
             console.error(exception);
-            jjl.processing.removeProcess(initialProcess);
+            window.processing.removeProcess(initialProcess);
         }
 
         return hideGrid;
@@ -139,7 +140,7 @@ export class Grids {
         const initialProcess = `loadMainGrid_${Date.now()}`;
 
         try {
-            jjl.processing.addProcess(initialProcess);
+            window.processing.addProcess(initialProcess);
             let gridViewSettings = $.extend({}, this.base.settings.gridViewSettings);
             let gridDataResult;
             let previousFilters = null;
@@ -218,11 +219,14 @@ export class Grids {
                     commandColumnWidth += 40;
 
                     const onDeleteClick = async (event) => {
+                        const mainItemDetails = this.mainGrid.dataItem($(event.currentTarget).closest("tr")) || {};
+
                         if (!gridViewSettings || gridViewSettings.showDeleteConformations !== false) {
-                            await kendo.confirm("Weet u zeker dat u dit item wilt verwijderen?");
+                            const itemName = mainItemDetails.title || mainItemDetails.name;
+                            const deleteConfirmationText = itemName ? `het item '${itemName}'` : "het geselecteerde item";
+                            await Wiser2.showConfirmDialog(`Weet u zeker dat u ${deleteConfirmationText} wilt verwijderen?`)
                         }
 
-                        const mainItemDetails = this.mainGrid.dataItem($(event.currentTarget).closest("tr"));
                         await Wiser2.api({
                             method: "POST",
                             url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid || this.base.settings.zeroEncrypted)}/action-button/0?queryId=${encodeURIComponent(gridViewSettings.deleteItemQueryId)}&itemLinkId=${encodeURIComponent(mainItemDetails.linkId || mainItemDetails.linkId || 0)}`,
@@ -293,8 +297,7 @@ export class Grids {
                     name: "excel"
                 });
             }
-
-
+            
             if ((!gridViewSettings.toolbar || !gridViewSettings.toolbar.hideCreateButton) && this.base.settings.permissions.canCreate) {
                 toolbar.push({
                     name: "add",
@@ -304,26 +307,7 @@ export class Grids {
             }
 
             if (gridViewSettings.toolbar && gridViewSettings.toolbar.customActions && gridViewSettings.toolbar.customActions.length > 0) {
-                for (let i = 0; i < gridViewSettings.toolbar.customActions.length; i++) {
-                    const customAction = gridViewSettings.toolbar.customActions[i];
-
-                    // Check permissions.
-                    if (customAction.doesCreate && !this.base.settings.permissions.canCreate) {
-                        continue;
-                    }
-                    if (customAction.doesUpdate && !this.base.settings.permissions.canWrite) {
-                        continue;
-                    }
-                    if (customAction.doesDelete && !this.base.settings.permissions.canDelete) {
-                        continue;
-                    }
-
-                    toolbar.push({
-                        name: `customAction${i.toString()}`,
-                        text: customAction.text,
-                        template: `<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("\\#gridView", 0, 0, ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
-                    });
-                }
+                this.addCustomActionsToToolbar(toolbar, gridViewSettings.toolbar.customActions);
             }
 
             let totalResults = gridDataResult.totalResults;
@@ -400,7 +384,7 @@ export class Grids {
                                 if (this.mainGridFirstLoad) {
                                     transportOptions.success(gridDataResult);
                                     this.mainGridFirstLoad = false;
-                                    jjl.processing.removeProcess(initialProcess);
+                                    window.processing.removeProcess(initialProcess);
                                     return;
                                 }
 
@@ -408,7 +392,7 @@ export class Grids {
                                     transportOptions.data = {};
                                 }
 
-                                jjl.processing.addProcess(process);
+                                window.processing.addProcess(process);
 
                                 // If we're using the same filters as before, we don't need to count the total amount of results again, 
                                 // so we tell the API whether this is the case, so that it can skip the execution of the count query, to make scrolling through the grid faster.
@@ -454,7 +438,7 @@ export class Grids {
                                 kendo.alert("Er is iets fout gegaan tijdens het laden van de data voor deze module. Sluit a.u.b. de module en probeer het nogmaals, of neem contact op met ons.");
                             }
 
-                            jjl.processing.removeProcess(process);
+                            window.processing.removeProcess(process);
                         }
                     },
                     schema: {
@@ -476,7 +460,11 @@ export class Grids {
                     counterContainer.find(".counter").html(kendo.toString(totalCount, "n0"));
                     counterContainer.find(".plural").toggle(totalCount !== 1);
                     counterContainer.find(".singular").toggle(totalCount === 1);
+
+                    // To hide toolbar buttons that require a row to be selected.
+                    this.onGridSelectionChange(event);
                 },
+                change: this.onGridSelectionChange.bind(this),
                 resizable: true,
                 sortable: true,
                 scrollable: usingDataSelector ? true : {
@@ -502,7 +490,7 @@ export class Grids {
         } catch (exception) {
             kendo.alert("Er is iets fout gegaan tijdens het laden van de data voor deze module. Sluit a.u.b. de module en probeer het nogmaals, of neem contact op met ons.");
             console.error(exception);
-            jjl.processing.removeProcess(initialProcess);
+            window.processing.removeProcess(initialProcess);
         }
     }
 
@@ -744,7 +732,13 @@ export class Grids {
                 template: `<a class='k-button k-button-icontext clear-all-filters' title='Alle filters wissen' href='\\#' onclick='return window.dynamicItems.grids.onClearAllFiltersClick(event)'><span class='k-icon k-i-filter-clear'></span></a>`
             });
         }
-
+        if (!options.toolbar || !options.toolbar.hideFullScreenButton) {
+            toolbar.push({
+                name: "fullScreen",
+                text: "",
+                template: `<a class='k-button k-button-icontext full-screen' title='Grid naar fullscreen' href='\\#' onclick='return window.dynamicItems.grids.onMaximizeGridClick(event)'><span class='k-icon k-i-wiser-maximize'></span></a>`
+            });
+        }
         if (element.data("kendoGrid")) {
             element.data("kendoGrid").destroy();
             element.empty();
@@ -911,6 +905,70 @@ export class Grids {
         };
 
         $(gridElement).data("kendoGrid").bind("change", onSelectionChange);
+    }
+
+    /**
+     * Adds all custom buttons in the toolbar for a grid, in the correct groups, based on the given settings.
+     * @param {any} toolbar The toolbar array of the grid.
+     * @param {any} customActions The custom actions from the grid settings.
+     */
+    addCustomActionsToToolbar(toolbar, customActions) {
+        const groups = [];
+        const actionsWithoutGroups = [];
+
+        for (let i = 0; i < customActions.length; i++) {
+            const customAction = customActions[i];
+            const className = !customAction.allowNoSelection ? "hidden hide-when-no-selected-rows" : "";
+
+            // Check permissions.
+            if (customAction.doesCreate && !this.base.settings.permissions.canCreate) {
+                continue;
+            }
+            if (customAction.doesUpdate && !this.base.settings.permissions.canWrite) {
+                continue;
+            }
+            if (customAction.doesDelete && !this.base.settings.permissions.canDelete) {
+                continue;
+            }
+            
+            if (customAction.groupName) {
+                let group = groups.filter(g => g.name === customAction.groupName)[0];
+                if (!group) {
+                    group = { 
+                        name: customAction.groupName,
+                        icon: customAction.icon,
+                        actions: []
+                    };
+
+                    groups.push(group);
+                }
+
+                group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("\\#gridView", 0, 0, ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
+            } else {
+                actionsWithoutGroups.push({
+                    name: `customAction${i.toString()}`,
+                    text: customAction.text,
+                    template: `<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("\\#gridView", 0, 0, ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
+                });
+            }
+        }
+
+        // Always add the groups first.
+        for (let group of groups) {
+            toolbar.push({
+                name: "buttonGroup",
+                text: "",
+                template: `<div class='k-button-drop'>
+                            <span class='k-button-toggle k-button k-button-icontext'><span class='k-icon k-i-${group.icon}'></span>${group.name}</span>
+                            <div>
+                                ${group.actions.join("")}
+                            </div>
+                            </div>`
+            });
+        }
+
+        // Add actions without groups last.
+        toolbar.push(...actionsWithoutGroups);
     }
 
     /**
@@ -1118,6 +1176,7 @@ export class Grids {
         // get the data bound to the current table row
         const dataItem = senderGrid.dataItem(tr);
         let encryptedId = dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid;
+        let selectedItemDetails = {};
 
         if (!encryptedId) {
             // If the clicked column has no field property (such as the command column), use the item ID of the main entity type.
@@ -1128,10 +1187,12 @@ export class Grids {
                 return;
             }
 
-            const itemDetails = (await this.base.getItemDetails(itemId))[0];
-            encryptedId = itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid;
+            selectedItemDetails = (await this.base.getItemDetails(itemId))[0] || {};
+            encryptedId = selectedItemDetails.encryptedId || selectedItemDetails.encrypted_id || selectedItemDetails.encryptedid;
         }
 
+        const itemTitleForDeleteDialog = dataItem.title || dataItem.name || selectedItemDetails.title || dataItem.id || selectedItemDetails.id;
+        let itemDeleteDialogText = itemTitleForDeleteDialog ? `het item '${itemTitleForDeleteDialog}'` : "het geselecteerde item";
         switch (deletionType.toLowerCase()) {
             case "askuser":
                 {
@@ -1141,7 +1202,7 @@ export class Grids {
                         title: "Verwijderen",
                         closable: false,
                         modal: true,
-                        content: "<p>Wilt u het gehele item verwijderen, of alleen de koppeling tussen de 2 items?</p>",
+                        content: `<p>Wilt u ${itemDeleteDialogText} in het geheel verwijderen, of alleen de koppeling tussen de 2 items?</p>`,
                         deactivate: (e) => {
                             // Destroy the dialog on deactivation so that it can be re-initialized again next time.
                             // If we don't do this, deleting multiple items in a row will not work properly.
@@ -1187,7 +1248,7 @@ export class Grids {
             case "deleteitem":
                 {
                     if (!options || options.showDeleteConformations !== false) {
-                        await kendo.confirm("Weet u zeker dat u dit item wilt verwijderen?");
+                        await Wiser2.showConfirmDialog(`Weet u zeker dat u ${itemDeleteDialogText} wilt verwijderen?`);
                     }
 
                     try {
@@ -1207,7 +1268,7 @@ export class Grids {
             case "deletelink":
                 {
                     if (!options || options.showDeleteConformations !== false) {
-                        await kendo.confirm("Weet u zeker dat u de koppeling met dit item wilt verwijderen? Let op dat alleen de koppeling wordt verwijderd, niet het item zelf.");
+                        await Wiser2.showConfirmDialog(`Weet u zeker dat u de koppeling met ${itemDeleteDialogText} wilt verwijderen? Let op dat alleen de koppeling wordt verwijderd, niet het item zelf.`);
                     }
 
                     const destinationItemId = dataItem.encryptedDestinationItemId || senderGrid.element.closest(".item").data("itemIdEncrypted");
@@ -1226,7 +1287,10 @@ export class Grids {
     onItemLinkerSelectAll(treeViewSelector, checkAll) {
         const treeView = $(treeViewSelector);
 
-        kendo.confirm("Weet u zeker dat u alles wilt aan- of uitvinken? Indien dit veel items zijn kan dit lang duren.").then(() => {
+        Wiser2.showConfirmDialog(`Weet u zeker dat u alles wilt ${checkAll ? "aanvinken" : "uitvinken"}? Indien dit veel items zijn kan dit lang duren.`, 
+            checkAll ? "Alles aanvinken" : "Alles uitvinken",
+            "Annuleren",
+            checkAll ? "Alles aanvinken" : "Alles uitvinken").then(() => {
             const allCheckBoxes = treeView.find(".k-checkbox-wrapper input");
             allCheckBoxes.prop("checked", checkAll).trigger("change");
         });
@@ -1272,11 +1336,57 @@ export class Grids {
     }
 
     /**
+     * Event handler for clicking the maximize button in a grid.
+     * @param {any} event The click event.
+     */
+    onMaximizeGridClick(event) {
+        event.preventDefault();
+
+        const grid = $(event.target).closest(".k-grid").data("kendoGrid");
+        if (!grid) {
+            console.error("Grid not found, cannot maximize it.", event, $(event.target).closest(".k-grid"));
+            return;
+        }
+        
+        const originalParent = grid.wrapper.parent();
+        const gridWindow = $("#maximizeSubEntitiesGridWindow").clone(true);
+        const titleElement = originalParent.find("h4");
+
+        // Move the grid to the window.
+        gridWindow.find(".k-content-frame").append(grid.wrapper);
+
+        gridWindow.kendoWindow({
+            width: "100%",
+            height: "100%",
+            title: titleElement.find("label").text(),
+            close: (closeEvent) => {
+                // Move the grid back to it's original position when closing the full screen window.
+                titleElement.after(grid.wrapper);
+
+                // Destroy the window.
+                closeEvent.sender.destroy();
+                gridWindow.remove();
+            }
+        });
+
+        const kendoWindow = gridWindow.data("kendoWindow").center().open();
+    }
+
+    /**
      * Event handler for when a user (de)selects one or more rows in a Kendo UI grid.
      * @param {any} event
      */
     onGridSelectionChange(event) {
-        console.log("onGridSelectionChange", event);
+        // Some buttons in the toolbar of a grid require that at least one row is selected. Hide these buttons while no row is selected.
+        event.sender.wrapper.find(".hide-when-no-selected-rows").toggleClass("hidden", event.sender.select().length === 0);
+
+        // Show/hide button groups where all buttons are hidden/visible.
+        for (let buttonGroup of event.sender.wrapper.find(".k-button-drop")) {
+            const buttonGroupElement = $(buttonGroup);
+            const amountOfToggleableButtons = buttonGroupElement.find(".hide-when-no-selected-rows").length;
+            const totalAmountOfButtons = buttonGroupElement.find("a.k-button").length;
+            buttonGroupElement.toggleClass("hidden", event.sender.select().length === 0 && amountOfToggleableButtons === totalAmountOfButtons);
+        }
     }
 
     timeEditor(container, options) {
