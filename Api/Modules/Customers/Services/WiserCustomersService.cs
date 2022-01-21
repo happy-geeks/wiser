@@ -219,11 +219,10 @@ namespace Api.Modules.Customers.Services
                 try
                 {
                     await wiserDatabaseConnection.BeginTransactionAsync();
-
-
+                    
                     if (!String.IsNullOrWhiteSpace(customer.LiveDatabase?.Password))
                     {
-                        customer.LiveDatabase.Password = customer.LiveDatabase.Password.EncryptWithAes(apiSettings.DatabasePasswordEncryptionKey);
+                        customer.LiveDatabase.Password = customer.LiveDatabase.Password.EncryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey);
                     }
                     
                     if (String.IsNullOrWhiteSpace(customer.EncryptionKey))
@@ -231,7 +230,7 @@ namespace Api.Modules.Customers.Services
                         customer.EncryptionKey = SecurityHelpers.GenerateRandomPassword(20);
                     }
 
-                    await CreateOrUpdateCustomerAsync(customer);
+                    await CreateOrUpdateCustomerAsync(customer, SecurityHelpers.GenerateRandomPassword(20));
 
                     wiserDatabaseConnection.ClearParameters();
                     wiserDatabaseConnection.AddParameter("id", customer.Id);
@@ -362,13 +361,14 @@ namespace Api.Modules.Customers.Services
 
         #endregion
 
-        #region Private functions  
+        #region Private functions
 
         /// <summary>
         /// Inserts or updates a customer in the database, based on <see cref="CustomerModel.Id"/>.
         /// </summary>
         /// <param name="customer">The customer to add or update.</param>
-        private async Task CreateOrUpdateCustomerAsync(CustomerModel customer)
+        /// <param name="encryptionKeyTest">Encryption key for test environment.</param>
+        private async Task CreateOrUpdateCustomerAsync(CustomerModel customer, string encryptionKeyTest)
         {
             // Note: Passwords should be encrypted by Wiser before sending them to the API.
             wiserDatabaseConnection.ClearParameters();
@@ -379,6 +379,7 @@ namespace Api.Modules.Customers.Services
             wiserDatabaseConnection.AddParameter("db_port", customer.LiveDatabase.PortNumber);
             wiserDatabaseConnection.AddParameter("db_dbname", customer.LiveDatabase.DatabaseName);
             wiserDatabaseConnection.AddParameter("encryption_key", customer.EncryptionKey);
+            wiserDatabaseConnection.AddParameter("encryption_key_test", encryptionKeyTest);
             wiserDatabaseConnection.AddParameter("subdomain", customer.SubDomain);
 
             // Set the ID
