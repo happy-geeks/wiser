@@ -186,8 +186,7 @@
     <div :class="{ loading: loading, 'form-inline': true, 'new-customer-form': true }">
         <h1>Nieuwe Wiser account toevoegen...</h1>
         <p class="success" v-if="currentStep === 'end'">
-            De klant is successvol aangemaakt en heeft als ID '<em>{{ createCustomerResult.data.id }}</em>' gekregen. De encryption key voor de live is '<em>{{ createCustomerResult.data.wiser2EncryptionKey }}</em>' en voor de test/dev is '<em>{{ createCustomerResult.data.wiser2EncryptionKeyTest }}</em>'.<br />
-            Zie <a href="https://app.nuclino.com/Juice-BV/Development/Nieuwe-Wiser-20-klant-6a3b885c-1101-430d-885e-5cac0b12551e" target="_blank">Nuclino voor uitleg</a> over waar je die voor nodig hebt.<br />
+            De klant is successvol aangemaakt en heeft als ID '<em>{{ createCustomerResult.data.id }}</em>' gekregen.<br />
             De URL voor Wiser Live is geworden: <a :href="'https://' + newCustomerData.subDomain + '.wiser3.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.nl</a>. (Deze werkt pas nadat er een DNS-record is toegevoegd voor dit subdomein.)<br />
             De URL voor Wiser dev is geworden: <a :href="'http://' + newCustomerData.subDomain + '.wiser3.juicedev.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.juicedev.nl</a>. (Deze kan al direct gebruikt worden.)
         </p>

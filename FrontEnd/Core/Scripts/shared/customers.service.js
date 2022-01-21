@@ -11,7 +11,7 @@ export default class CustomersService extends BaseService {
         const result = {};
 
         try {
-            const response = await this.base.api.get(`/api/v3/wiser-customers/${encodeURIComponent(name)}/exists`);
+            const response = await this.base.api.get(`/api/v3/wiser-customers/${encodeURIComponent(name)}/exists?subDomain=${encodeURIComponent(subDomain)}`);
             result.success = true;
             result.data = response.data;
         } catch (error) {
