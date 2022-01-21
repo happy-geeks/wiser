@@ -134,7 +134,7 @@ const moduleSettings = {
             
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
-                headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
             });
 
             // Fire event on page ready for direct actions
@@ -172,14 +172,14 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
                 
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot, this.settings.isTestEnvironment);
-            this.settings.userId = userData.encrypted_id;
-            this.settings.customerId = userData.encrypted_customer_id;
-            this.settings.zeroEncrypted = userData.zero_encrypted;
-            this.settings.filesRootId = userData.files_root_id;
-            this.settings.imagesRootId = userData.images_root_id;
-            this.settings.templatesRootId = userData.templates_root_id;
-            this.settings.mainDomain = userData.main_domain;
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            this.settings.userId = userData.encryptedId;
+            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.zeroEncrypted = userData.zeroEncrypted;
+            this.settings.filesRootId = userData.filesRootId;
+            this.settings.imagesRootId = userData.imagesRootId;
+            this.settings.templatesRootId = userData.templatesRootId;
+            this.settings.mainDomain = userData.mainDomain;
 
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
@@ -188,7 +188,7 @@ const moduleSettings = {
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.htmlEditorCssUrl = `${this.settings.wiserApiRoot}templates/css-for-html-editors?encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&isTest=${this.base.settings.isTestEnvironment}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&username=${encodeURIComponent(this.base.settings.username)}&userType=${encodeURIComponent(this.base.settings.userType)}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`
 
-            const extraModuleSettings = await Modules.getModuleSettings(this.settings.wiserApiRoot, this.settings.moduleId, this.settings.customerId, this.settings.userId, this.settings.isTestEnvironment, this.settings.subDomain);
+            const extraModuleSettings = await Modules.getModuleSettings(this.settings.wiserApiRoot, this.settings.moduleId);
             Object.assign(this.settings, extraModuleSettings.options);
             let permissions = Object.assign({}, extraModuleSettings);
             delete permissions.options;
@@ -211,7 +211,7 @@ const moduleSettings = {
                 window.processing.addProcess(process);
                 const newItemResult = await this.createItem(this.settings.entityType, this.settings.parentId || this.settings.zeroEncrypted, "", 1, this.settings.newItemData || [], false, this.settings.moduleId);
                 this.settings.initialItemId = newItemResult.itemId;
-                await this.loadItem(newItemResult.itemId, 0, newItemResult.entity_type);
+                await this.loadItem(newItemResult.itemId, 0, newItemResult.entityType);
                 window.processing.removeProcess(process);
             } else if (this.settings.initialItemId) {
                 this.loadItem(this.settings.initialItemId, 0, this.settings.entityType);
@@ -361,11 +361,11 @@ const moduleSettings = {
 
             $("#mainEditMenu .reloadItem").click(async (event) => {
                 const previouslySelectedTab = this.mainTabStrip.select().index();
-                this.loadItem(this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entity_type);
+                this.loadItem(this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
             });
 
             $("#mainEditMenu .deleteItem").click(async (event) => {
-                this.onDeleteItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entity_type);
+                this.onDeleteItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
             });
 
             $("#mainEditMenu .undeleteItem").click(async (event) => {
@@ -374,7 +374,7 @@ const moduleSettings = {
 
             $("#mainEditMenu .copyToEnvironment").click(async (event) => {
                 this.dialogs.copyItemToEnvironmentDialog.element.find("input[type=checkbox]").prop("checked", false);
-                this.dialogs.copyItemToEnvironmentDialog.element.data("id", this.selectedItemMetaData.plain_original_item_id);
+                this.dialogs.copyItemToEnvironmentDialog.element.data("id", this.selectedItemMetaData.plainOriginalItemId);
                 this.dialogs.copyItemToEnvironmentDialog.open();
             });
         }
@@ -503,8 +503,8 @@ const moduleSettings = {
                     },
                     schema: {
                         model: {
-                            id: "encrypted_item_id",
-                            hasChildren: "has_children"
+                            id: "encryptedItemId",
+                            hasChildren: "hasChildren"
                         }
                     }
                 },
@@ -514,9 +514,9 @@ const moduleSettings = {
                 expand: this.onTreeViewExpandItem.bind(this),
                 drop: this.onTreeViewDropItem.bind(this),
                 drag: this.onTreeViewDragItem.bind(this),
-                dataValueField: "encrypted_item_id",
+                dataValueField: "encryptedItemId",
                 dataTextField: "title",
-                dataSpriteCssClassField: "sprite_css_class"
+                dataSpriteCssClassField: "spriteCssClass"
             }).data("kendoTreeView");
 
             this.mainTreeViewContextMenu = $("#menu").kendoContextMenu({
@@ -630,7 +630,7 @@ const moduleSettings = {
         async onContextMenuOpen(event) {
             try {
                 const nodeId = this.mainTreeView.dataItem(event.target).id;
-                let contextMenu = await Wiser2.api({ url: `${this.base.settings.serviceRoot}/GET_CONTEXT_MENU?module_id=${encodeURIComponent(this.base.settings.moduleId)}&item_id=${encodeURIComponent(nodeId)}` });
+                let contextMenu = await Wiser2.api({ url: `${this.base.settings.serviceRoot}/GET_CONTEXT_MENU?moduleId=${encodeURIComponent(this.base.settings.moduleId)}&itemId=${encodeURIComponent(nodeId)}` });
                 //TODO: DIT MOET ANDERS MAAR KOMT ZO VERKEERD UIT WISER
                 contextMenu = JSON.parse(JSON.stringify(contextMenu).replace(/"attr":\[/g, '"attr":').replace(/\}\]\},/g, "}},").replace("}]}]", "}}]"));
                 this.mainTreeViewContextMenu.setOptions({
@@ -655,7 +655,7 @@ const moduleSettings = {
                 // For some reason the JCL already encodes the values, so decode them here, otherwise they will be encoded twice in some cases, which can cause problems.
                 const itemId = decodeURIComponent(dataItem.id);
                 const action = button.attr("action");
-                const entityType = button.attr("entity_type");
+                const entityType = button.attr("entityType");
 
                 switch (action) {
                     case "RENAME_ITEM":
@@ -678,9 +678,9 @@ const moduleSettings = {
                         {
                             // Duplicate the item.
                             // For some reason the JCL already encodes the values, so decode them here, otherwise they will be encoded twice in some cases, which can cause problems.
-                            const parentId = decodeURIComponent(dataItem.destination_item_id || this.base.settings.zeroEncrypted);
+                            const parentId = decodeURIComponent(dataItem.destinationItemId || this.base.settings.zeroEncrypted);
                             const parentItem = treeView.dataItem(this.base.mainTreeView.parent(node));
-                            const duplicateItemResults = await this.base.duplicateItem(itemId, parentId, dataItem.entity_type, parentItem ? parentItem.entity_type : "");
+                            const duplicateItemResults = await this.base.duplicateItem(itemId, parentId, dataItem.entityType, parentItem ? parentItem.entityType : "");
                             this.base.notification.show({ message: `Het item '${dataItem.name || dataItem.title}' is gedupliceerd.` }, "success");
 
                             // Reload the parent item in the tree view, so that the new item becomes visible.
@@ -766,7 +766,7 @@ const moduleSettings = {
                 }
                 if (this.selectedItem || this.settings.initialItemId) {
                     const previouslySelectedTab = this.mainTabStrip.select().index();
-                    this.loadItem(this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entity_type);
+                    this.loadItem(this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
                 }
             }
         }
@@ -790,7 +790,7 @@ const moduleSettings = {
                     return false;
                 }
                 
-                const updateItemResult = await this.base.updateItem(itemId, inputData, $("#right-pane"), false, title, true, true, this.selectedItem && this.selectedItem.entity_type ? this.selectedItem.entity_type : this.selectedItemMetaData.entity_type);
+                const updateItemResult = await this.base.updateItem(itemId, inputData, $("#right-pane"), false, title, true, true, this.selectedItem && this.selectedItem.entityType ? this.selectedItem.entityType : this.selectedItemMetaData.entityType);
                 document.dispatchEvent(new CustomEvent("dynamicItems.onSaveButtonClick", { detail: updateItemResult }));
                 if (window.parent && window.parent.document) {
                     window.parent.document.dispatchEvent(new CustomEvent("dynamicItems.onSaveButtonClick", { detail: updateItemResult }));
@@ -826,11 +826,11 @@ const moduleSettings = {
         onTreeViewDataBound(event) {
             (event.node || event.sender.element).find("li").each((index, element) => {
                 const dataItem = event.sender.dataItem(element);
-                if (!dataItem.node_css_class) {
+                if (!dataItem.nodeCssClass) {
                     return;
                 }
 
-                $(element).addClass(dataItem.node_css_class);
+                $(element).addClass(dataItem.nodeCssClass);
             });
 
             this.base.toggleMainLoader(false);
@@ -853,16 +853,16 @@ const moduleSettings = {
 
             // If we have an original item id, it means this item has multiple version. Then we want to check what the latest version is and open that one.
             // This used to be done in the query that gets the items for the tree view, but that made the query really slow for some customers, so now we do it here.
-            if (dataItem.plain_original_item_id > 0) {
+            if (dataItem.plainOriginalItemId > 0) {
                 let itemToUse = null;
-                const itemEnvironments = await this.getItemEnvironments(dataItem.encrypted_original_item_id);
+                const itemEnvironments = await this.getItemEnvironments(dataItem.encryptedOriginalItemId);
                 if (itemEnvironments && itemEnvironments.length) {
                     for (let itemVersion of itemEnvironments) {
-                        if (itemVersion.changed_on) {
-                            itemVersion.changed_on = new Date(itemVersion.changed_on);
+                        if (itemVersion.changedOn) {
+                            itemVersion.changedOn = new Date(itemVersion.changedOn);
                         }
 
-                        if (!itemToUse || itemVersion.changed_on > itemToUse.changed_on) {
+                        if (!itemToUse || itemVersion.changedOn > itemToUse.changedOn) {
                             itemToUse = itemVersion;
                         }
                     }
@@ -872,7 +872,7 @@ const moduleSettings = {
                     itemId = itemToUse.id;
                     // Change the ID of the selected item, otherwise the save button will overwrite the wrong item.
                     this.base.selectedItem.id = itemId;
-                    this.base.selectedItem.plain_item_id = itemToUse.plainItemId;
+                    this.base.selectedItem.plainItemId = itemToUse.plainItemId;
                 }
             }
 
@@ -915,7 +915,7 @@ const moduleSettings = {
                 $(element).toggle(dataItem.hasChildren);
             });
 
-            await this.base.loadItem(itemId, 0, dataItem.entity_type || dataItem.entityType);
+            await this.base.loadItem(itemId, 0, dataItem.entityType || dataItem.entityType);
 
             // Get available entity types, for creating new sub items.
             this.base.dialogs.loadAvailableEntityTypesInDropDown(itemId);
@@ -927,7 +927,7 @@ const moduleSettings = {
          */
         onTreeViewCollapseItem(event) {
             const dataItem = event.sender.dataItem(event.node);
-            dataItem.sprite_css_class = dataItem.collapsed_sprite_css_class;
+            dataItem.spriteCssClass = dataItem.collapsedSpriteCssClass;
 
             // Changing the text causes kendo to actually update the icon. If we don't change the test, the icon will not change.
             event.sender.text(event.node, event.sender.text(event.node).trim());
@@ -939,7 +939,7 @@ const moduleSettings = {
          */
         onTreeViewExpandItem(event) {
             const dataItem = event.sender.dataItem(event.node);
-            dataItem.sprite_css_class = dataItem.expanded_sprite_css_class || dataItem.collapsed_sprite_css_class;
+            dataItem.spriteCssClass = dataItem.expandedSpriteCssClass || dataItem.collapsedSpriteCssClass;
 
             // Changing the text causes kendo to actually update the icon. If we don't change the test, the icon will not change.
             event.sender.text(event.node, event.sender.text(event.node) + " ");
@@ -980,7 +980,7 @@ const moduleSettings = {
             const sourceDataItem = event.sender.dataItem(event.sourceNode) || {};
             const destinationDataItem = event.sender.dataItem(destinationNode) || {};
 
-            if ((destinationDataItem.accepted_child_types || "").toLowerCase().split(",").indexOf(sourceDataItem.entity_type.toLowerCase()) === -1) {
+            if ((destinationDataItem.acceptedChildTypes || "").toLowerCase().split(",").indexOf(sourceDataItem.entityType.toLowerCase()) === -1) {
                 // Tell the kendo tree view to deny the drag to this item, if the current item is of a type that is not allowed to be linked to the destination.
                 event.setStatusClass("k-i-cancel");
             }
@@ -1005,11 +1005,11 @@ const moduleSettings = {
                     contentType: "application/json",
                     data: JSON.stringify({
                         position: event.dropPosition,
-                        encrypted_source_parent_id: sourceDataItem.destination_item_id,
-                        encrypted_destination_parent_id: destinationDataItem.destination_item_id,
-                        source_entity_type: sourceDataItem.entity_type,
-                        destination_entity_type: destinationDataItem.entity_type,
-                        module_id: this.base.settings.moduleId
+                        encryptedSourceParentId: sourceDataItem.destinationItemId,
+                        encryptedDestinationParentId: destinationDataItem.destinationItemId,
+                        sourceEntityType: sourceDataItem.entityType,
+                        destinationEntityType: destinationDataItem.entityType,
+                        moduleId: this.base.settings.moduleId
                     })
                 });
             } catch (exception) {
@@ -1073,21 +1073,21 @@ const moduleSettings = {
                     data: JSON.stringify(options)
                 });
 
-                if (gridDataResult.extra_javascript) {
-                    $.globalEval(gridDataResult.extra_javascript);
+                if (gridDataResult.extraJavascript) {
+                    $.globalEval(gridDataResult.extraJavascript);
                 }
 
                 this.windows.historyGridFirstLoad = true;
 
                 let previousFilters = null;
-                let totalResults = gridDataResult.total_results;
+                let totalResults = gridDataResult.totalResults;
 
                 this.windows.historyGrid = historyGridElement.kendoGrid({
                     dataSource: {
                         serverPaging: true,
                         serverSorting: true,
                         serverFiltering: true,
-                        pageSize: gridDataResult.page_size,
+                        pageSize: gridDataResult.pageSize,
                         transport: {
                             read: async (transportOptions) => {
                                 try {
@@ -1104,8 +1104,8 @@ const moduleSettings = {
                                         currentFilters = JSON.stringify(transportOptions.data.filter);
                                     }
 
-                                    transportOptions.data.first_load = currentFilters !== previousFilters;
-                                    transportOptions.data.page_size = transportOptions.data.pageSize;
+                                    transportOptions.data.firstLoad = currentFilters !== previousFilters;
+                                    transportOptions.data.pageSize = transportOptions.data.pageSize;
                                     previousFilters = currentFilters;
 
                                     const newGridDataResult = await Wiser2.api({
@@ -1115,10 +1115,10 @@ const moduleSettings = {
                                         data: JSON.stringify(transportOptions.data)
                                     });
 
-                                    if (typeof newGridDataResult.total_results !== "number" || !transportOptions.data.first_load) {
-                                        newGridDataResult.total_results = totalResults;
-                                    } else if (transportOptions.data.first_load) {
-                                        totalResults = newGridDataResult.total_results;
+                                    if (typeof newGridDataResult.totalResults !== "number" || !transportOptions.data.firstLoad) {
+                                        newGridDataResult.totalResults = totalResults;
+                                    } else if (transportOptions.data.firstLoad) {
+                                        totalResults = newGridDataResult.totalResults;
                                     }
 
                                     transportOptions.success(newGridDataResult);
@@ -1130,8 +1130,8 @@ const moduleSettings = {
                         },
                         schema: {
                             data: "data",
-                            total: "total_results",
-                            model: gridDataResult.schema_model
+                            total: "totalResults",
+                            model: gridDataResult.schemaModel
                         }
                     },
                     // height: "500",
@@ -1182,13 +1182,13 @@ const moduleSettings = {
                         id: {
                             type: "number"
                         },
-                        published_environment: {
+                        publishedEnvironment: {
                             type: "string"
                         },
                         title: {
                             type: "string"
                         },
-                        entity_type: {
+                        entityType: {
                             type: "string"
                         },
                         property_: {
@@ -1204,13 +1204,13 @@ const moduleSettings = {
                         width: 55
                     },
                     {
-                        field: "entity_type",
+                        field: "entityType",
                         title: "Type",
                         width: 100
                     },
                     {
-                        template: "<ins title='#: published_environment #' class='icon-#: published_environment #'></ins>",
-                        field: "published_environment",
+                        template: "<ins title='#: publishedEnvironment #' class='icon-#: publishedEnvironment #'></ins>",
+                        field: "publishedEnvironment",
                         title: "Gepubliceerde omgeving",
                         width: 50
                     },
@@ -1420,7 +1420,7 @@ const moduleSettings = {
                     return;
                 }
 
-                let entityTypeSettings = await this.base.getEntityType(itemMetaData.entity_type);
+                let entityTypeSettings = await this.base.getEntityType(itemMetaData.entityType);
                 if (Wiser2.validateArray(entityTypeSettings)) {
                     entityTypeSettings = entityTypeSettings[0];
                 }
@@ -1428,10 +1428,10 @@ const moduleSettings = {
                 this.selectedItemMetaData = itemMetaData;
                 const itemTitleFieldContainer = $("#tabstrip .itemNameFieldContainer");
                 itemTitleFieldContainer.find(".itemNameField").val(itemMetaData.title);
-                itemTitleFieldContainer.toggle(entityTypeSettings.show_title_field && this.base.settings.iframeMode);
+                itemTitleFieldContainer.toggle(entityTypeSettings.showTitleField && this.base.settings.iframeMode);
 
                 // Set the HTML of the fields tab.
-                const itemHtmlResult = await this.getItemHtml(itemId, itemMetaData.entity_type);
+                const itemHtmlResult = await this.getItemHtml(itemId, itemMetaData.entityType);
 
                 this.mainTabStrip.element.find("> ul > li .addedFromDatabase").each((index, element) => {
                     this.mainTabStrip.remove($(element).closest("li.k-item"));
@@ -1445,7 +1445,7 @@ const moduleSettings = {
                 const container = $("#right-pane-content").html("");
 
                 // Handle access rights.
-                itemTitleFieldContainer.prop("readonly", !itemHtmlResult.can_write).prop("disabled", !itemHtmlResult.can_write);
+                itemTitleFieldContainer.prop("readonly", !itemHtmlResult.canWrite).prop("disabled", !itemHtmlResult.canWrite);
                 $("#saveButton, #saveBottom, #saveAndCreateNewItemButton").each((index, element) => {
                     element = $(element);
                     if (itemHtmlResult.tabs.length === 0) {
@@ -1458,9 +1458,9 @@ const moduleSettings = {
                     }
 
                     if (element.attr("id") === "saveAndCreateNewItemButton") {
-                        element.toggleClass("hidden", !itemHtmlResult.can_write || !element.data("shown-via-parent"));
+                        element.toggleClass("hidden", !itemHtmlResult.canWrite || !element.data("shown-via-parent"));
                     } else {
-                        element.toggleClass("hidden", !itemHtmlResult.can_write);
+                        element.toggleClass("hidden", !itemHtmlResult.canWrite);
                     }
                 });
 
@@ -1469,20 +1469,20 @@ const moduleSettings = {
                     const tabData = itemHtmlResult.tabs[i];
                     if (!tabData.name) {
                         genericTabHasFields = true;
-                        container.html(tabData.html_template);
-                        await this.base.loadKendoScripts(tabData.script_template);
-                        $.globalEval(tabData.script_template);
+                        container.html(tabData.htmlTemplate);
+                        await this.base.loadKendoScripts(tabData.scriptTemplate);
+                        $.globalEval(tabData.scriptTemplate);
                     } else {
                         this.mainTabStrip.insertAfter({
                             text: tabData.name,
-                            content: "<div class='dynamicTabContent'>" + tabData.html_template + "</div>",
+                            content: "<div class='dynamicTabContent'>" + tabData.htmlTemplate + "</div>",
                             spriteCssClass: "addedFromDatabase"
                         }, this.mainTabStrip.tabGroup.children().eq(0));
 
                         this.base.fields.fieldInitializers.mainScreen[tabData.name] = {
                             executed: false,
-                            script: tabData.script_template,
-                            entityType: itemMetaData.entity_type
+                            script: tabData.scriptTemplate,
+                            entityType: itemMetaData.entityType
                         };
                     }
                 }
@@ -1491,11 +1491,11 @@ const moduleSettings = {
                 for (let i = itemHtmlResult.tabs.length - 1; i >= 0; i--) {
                     const tabData = itemHtmlResult.tabs[i];
                     const container = this.mainTabStrip.contentHolder(i);
-                    this.base.fields.setupDependencies(container, itemMetaData.entity_type, tabData.name || "Gegevens");
+                    this.base.fields.setupDependencies(container, itemMetaData.entityType, tabData.name || "Gegevens");
                 }
 
                 // Handle dependencies for the first tab, to make sure all the correct fields are hidden/shown on the first tab. The other tabs will be done once they are opened.
-                this.base.fields.handleAllDependenciesOfContainer(this.mainTabStrip.contentHolder(0), itemMetaData.entity_type, "Gegevens", "mainScreen");
+                this.base.fields.handleAllDependenciesOfContainer(this.mainTabStrip.contentHolder(0), itemMetaData.entityType, "Gegevens", "mainScreen");
                 
                 $(this.mainTabStrip.items()[0]).toggle(genericTabHasFields || itemTitleFieldContainer.is(":visible"));
 
@@ -1549,8 +1549,8 @@ const moduleSettings = {
             const updateItemData = {
                 title: title,
                 details: inputData,
-                changed_by: this.settings.username,
-                entity_type: entityType
+                changedBy: this.settings.username,
+                entityType: entityType
             };
 
             if (executeWorkFlow) {
@@ -1593,7 +1593,7 @@ const moduleSettings = {
                 // Check if we need to execute any API action and do that.
                 try {
                     if (executeWorkFlow) {
-                        this.getApiAction("after_update", updateResult.entity_type).then((apiActionId) => {
+                        this.getApiAction("after_update", updateResult.entityType).then((apiActionId) => {
                             if (apiActionId) {
                                 Wiser2.doApiCall(this.settings, apiActionId, updateResult).then(() => {
                                     if (showSuccessMessage) {
@@ -1652,19 +1652,19 @@ const moduleSettings = {
                 const deleteButtons = itemContainer.find(".k-i-verwijderen, .editMenu .deleteItem").parent();
                 const undeleteButtons = editMenu.find(".undeleteItem").closest("li");
                 
-                saveButtons.toggleClass("hidden", !itemMetaData.can_write);
+                saveButtons.toggleClass("hidden", !itemMetaData.canWrite);
 
                 // If there are still options for switching environment, remove them and re-add them, because they are probably left overs of a different item.
                 editMenu.find("li.otherEnvironment").remove();
-                if (itemMetaData.plain_original_item_id) {
-                    const itemEnvironments = await this.getItemEnvironments(itemMetaData.plain_original_item_id);
+                if (itemMetaData.plainOriginalItemId) {
+                    const itemEnvironments = await this.getItemEnvironments(itemMetaData.plainOriginalItemId);
                     if (itemEnvironments && itemEnvironments.length) {
                         for (let otherItem of itemEnvironments) {
                             if (otherItem.plainItemId === itemMetaData.id) {
                                 continue;
                             }
 
-                            const otherItemEnvironmentLabel = this.base.parseEnvironments(otherItem.published_environment);
+                            const otherItemEnvironmentLabel = this.base.parseEnvironments(otherItem.publishedEnvironment);
                             const newElement = $(`<li class="otherEnvironment"><label><span>Wisselen naar versie voor: ${otherItemEnvironmentLabel.join("/")}</span></label></li>`);
                             editMenu.append(newElement);
 
@@ -1672,22 +1672,22 @@ const moduleSettings = {
                                 if (!callerWindow) {
                                     // Change the ID of the selected item to that of the selected version, otherwise the save button will overwrite the wrong item.
                                     this.base.selectedItem.id = otherItem.id;
-                                    this.base.selectedItem.plain_item_id = otherItem.plainId;
+                                    this.base.selectedItem.plainItemId = otherItem.plainId;
 
                                     // Load the selected version.
-                                    this.base.loadItem(otherItem.id, 0, otherItem.entity_type);
+                                    this.base.loadItem(otherItem.id, 0, otherItem.entityType);
                                 } else {
                                     callerWindow.close();
-                                    this.base.windows.loadItemInWindow(false, otherItem.plainItemId, otherItem.id, otherItem.entity_type, otherItem.title, callerWindow.element.data("showTitleField"), null, { hideTitleColumn: false }, callerWindow.element.data("linkId"));
+                                    this.base.windows.loadItemInWindow(false, otherItem.plainItemId, otherItem.id, otherItem.entityType, otherItem.title, callerWindow.element.data("showTitleField"), null, { hideTitleColumn: false }, callerWindow.element.data("linkId"));
                                 }
                             });
                         }
                     }
                 }
 
-                editMenu.find(".copyToEnvironment").closest("li").toggle(itemMetaData.enable_multiple_environments > 0);
-                deleteButtons.toggle(itemMetaData.can_delete && !itemMetaData.removed);
-                undeleteButtons.toggle(itemMetaData.can_delete && !!itemMetaData.removed); // Double exclamation mark, because jQuery expects a true/false, but removed has a 0 or 1 most of the time.
+                editMenu.find(".copyToEnvironment").closest("li").toggle(itemMetaData.enableMultipleEnvironments > 0);
+                deleteButtons.toggle(itemMetaData.canDelete && !itemMetaData.removed);
+                undeleteButtons.toggle(itemMetaData.canDelete && !!itemMetaData.removed); // Double exclamation mark, because jQuery expects a true/false, but removed has a 0 or 1 most of the time.
 
                 $("#alert-first").addClass("hidden");
 
@@ -1695,30 +1695,30 @@ const moduleSettings = {
 
                 if (!isForItemWindow && mainFieldsContainer) {
                     // Setup field dependencies.
-                    mainFieldsContainer.data("entityType", itemMetaData.entity_type);
+                    mainFieldsContainer.data("entityType", itemMetaData.entityType);
 
                     // Setup the overview tab.
                     if (!this.settings.iframeMode) {
-                        const entityTypeDetails = await this.base.getEntityType(itemMetaData.entity_type);
-                        this.base.mainTabStrip.element.find(".overview-tab").toggleClass("hidden", !entityTypeDetails[0].show_overview_tab);
+                        const entityTypeDetails = await this.base.getEntityType(itemMetaData.entityType);
+                        this.base.mainTabStrip.element.find(".overview-tab").toggleClass("hidden", !entityTypeDetails[0].showOverviewTab);
                     }
                 }
 
-                const environmentLabel = this.base.parseEnvironments(itemMetaData.published_environment);
+                const environmentLabel = this.base.parseEnvironments(itemMetaData.publishedEnvironment);
 
                 const metaDataListElement = metaDataContainer.find(".meta-data").removeClass("hidden");
                 metaDataListElement.find(".id").html(itemMetaData.id);
                 metaDataListElement.find(".title").html(itemMetaData.title || "(leeg)");
-                metaDataListElement.find(".entity-type").html(itemMetaData.entity_type);
+                metaDataListElement.find(".entity-type").html(itemMetaData.entityType);
                 metaDataListElement.find(".published-environment").html(environmentLabel.join(", "));
                 metaDataListElement.find(".read-only").html(itemMetaData.readonly);
-                metaDataListElement.find(".added-by").html(itemMetaData.added_by);
+                metaDataListElement.find(".added-by").html(itemMetaData.addedBy);
 
-                let addedOn = DateTime.fromISO(itemMetaData.added_on, { locale: "nl-NL" }).toLocaleString(Dates.LongDateTimeFormat);
+                let addedOn = DateTime.fromISO(itemMetaData.addedOn, { locale: "nl-NL" }).toLocaleString(Dates.LongDateTimeFormat);
                 metaDataListElement.find(".added-on").html(addedOn);
             
-                if (itemMetaData.changed_on) {
-                    let changedOn = DateTime.fromISO(itemMetaData.changed_on, { locale: "nl-NL" }).toLocaleString(Dates.LongDateTimeFormat);
+                if (itemMetaData.changedOn) {
+                    let changedOn = DateTime.fromISO(itemMetaData.changedOn, { locale: "nl-NL" }).toLocaleString(Dates.LongDateTimeFormat);
                         
                     metaDataListElement.find(".changed-on").html(changedOn).closest("li").removeClass("hidden");
 
@@ -1730,14 +1730,14 @@ const moduleSettings = {
                     metaDataListElement.find(".changed-on").html("").closest("li").addClass("hidden");
                 }
 
-                if (itemMetaData.changed_by) {
-                    metaDataListElement.find(".changed-by").html(itemMetaData.changed_by).closest("li").removeClass("hidden");
+                if (itemMetaData.changedBy) {
+                    metaDataListElement.find(".changed-by").html(itemMetaData.changedBy).closest("li").removeClass("hidden");
                 } else {
                     metaDataListElement.find(".changed-by").html("").closest("li").addClass("hidden");
                 }
 
-                if (itemMetaData.unique_uuid) {
-                    metaDataListElement.find(".uuid").html(itemMetaData.unique_uuid).closest("li").removeClass("hidden");
+                if (itemMetaData.uniqueUuid) {
+                    metaDataListElement.find(".uuid").html(itemMetaData.uniqueUuid).closest("li").removeClass("hidden");
                 } else {
                     metaDataListElement.find(".uuid").html("").closest("li").addClass("hidden");
                 }
@@ -1803,9 +1803,9 @@ const moduleSettings = {
         async createItem(entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null) {
             try {
                 const newItem = {
-                    entity_type: entityType,
+                    entityType: entityType,
                     title: name,
-                    module_id: moduleId || this.settings.moduleId
+                    moduleId: moduleId || this.settings.moduleId
                 };
 
                 const parentIdUrlPart = parentId ? `&parentId=${encodeURIComponent(parentId)}` : "";
@@ -1819,10 +1819,10 @@ const moduleSettings = {
 
                 // Call updateItem with only the title, to make sure the SEO value of the title gets saved if needed.
                 let newItemDetails = [];
-                if (!skipUpdate) newItemDetails = await this.base.updateItem(createItemResult.new_item_id, data || [], null, false, name, false, false, entityType);
+                if (!skipUpdate) newItemDetails = await this.base.updateItem(createItemResult.newItemId, data || [], null, false, name, false, false, entityType);
                 
                 const workflowResult = await Wiser2.api({
-                    url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(createItemResult.new_item_id)}/workflow?isNewItem=true`,
+                    url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(createItemResult.newItemId)}/workflow?isNewItem=true`,
                     method: "POST",
                     contentType: "application/json",
                     dataType: "JSON",
@@ -1842,9 +1842,9 @@ const moduleSettings = {
                 }
 
                 return {
-                    itemId: createItemResult.new_item_id,
-                    itemIdPlain: createItemResult.new_item_id_plain,
-                    linkId: createItemResult.new_link_id,
+                    itemId: createItemResult.newItemId,
+                    itemIdPlain: createItemResult.newItemIdPlain,
+                    linkId: createItemResult.newLinkId,
                     icon: createItemResult.icon,
                     workflowResult: workflowResult,
                     apiActionResult: apiActionResult
@@ -1929,14 +1929,14 @@ const moduleSettings = {
                 });
                 const workflowResult = await Wiser2.api({ 
                     method: "POST", 
-                    url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(createItemResult.new_item_id)}/workflow?isNewItem=true`,
+                    url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(createItemResult.newItemId)}/workflow?isNewItem=true`,
                     contentType: "application/json",
                     dataType: "JSON"
                 });
                 return {
-                    itemId: createItemResult.new_item_id,
-                    itemIdPlain: createItemResult.new_item_id_plain,
-                    linkId: createItemResult.new_link_id,
+                    itemId: createItemResult.newItemId,
+                    itemIdPlain: createItemResult.newItemIdPlain,
+                    linkId: createItemResult.newLinkId,
                     icon: createItemResult.icon,
                     workflowResult: workflowResult,
                     title: createItemResult.title
@@ -2056,7 +2056,7 @@ const moduleSettings = {
          * @returns {Promise} A promise with the results.
          */
         async getEntityType(name, moduleId) {
-            const sessionStorageKey = `wiser_entity_type_info_${name}`;
+            const sessionStorageKey = `wiserEntityTypeInfo${name}`;
             let result = sessionStorage.getItem(sessionStorageKey);
             if (result) {
                 return JSON.parse(result);

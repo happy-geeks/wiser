@@ -28,7 +28,7 @@ export default class UsersService extends BaseService {
             const loginResult = await this.base.api.post(`/connect/token`, loginData);
             result.success = true;
             result.data = loginResult.data;
-            result.data.expires_on = new Date(new Date().getTime() + (loginResult.data.expires_in * 1000));
+            result.data.expiresOn = new Date(new Date().getTime() + (loginResult.data.expires_in * 1000));
             result.data.usersList = JSON.parse(result.data.users || "[]").map((user) => {
                 if (!user.Details || !user.Details.length) {
                     return user;
@@ -89,7 +89,7 @@ export default class UsersService extends BaseService {
             const loginResult = await this.base.api.post(`/connect/token`, loginData);
             result.success = true;
             result.data = loginResult.data;
-            result.data.expires_on = new Date(new Date().getTime() + (loginResult.data.expires_in * 1000));
+            result.data.expiresOn = new Date(new Date().getTime() + (loginResult.data.expires_in * 1000));
             result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true;
         } catch (error) {
             result.success = false;
@@ -174,7 +174,7 @@ export default class UsersService extends BaseService {
 
     async forgotPassword(username, email) {
         try {
-            await this.base.api.put(`/api/v3/users/reset-password`, { username: username, email_address: email, sub_domain: this.base.appSettings.subDomain });
+            await this.base.api.put(`/api/v3/users/reset-password`, { username: username, emailAddress: email, subDomain: this.base.appSettings.subDomain });
             return true;
         } catch (error) {
             return false;
@@ -185,7 +185,7 @@ export default class UsersService extends BaseService {
         const result = {};
 
         try {
-            result.response = await this.base.api.put(`/api/v3/users/password`, { old_password: changePasswordModel.oldPassword, new_password: changePasswordModel.newPassword, new_password_repeat: changePasswordModel.newPasswordRepeat });
+            result.response = await this.base.api.put(`/api/v3/users/password`, { oldPassword: changePasswordModel.oldPassword, newPassword: changePasswordModel.newPassword, newPasswordRepeat: changePasswordModel.newPasswordRepeat });
         } catch (error) {
             if (error.response.status !== 400 || error.response.data.error === "server_error") {
                 result.error = "Er is een onbekende fout opgetreden tijdens het wijzigen van uw wachtwoord. Probeer het a.u.b. nogmaals of neem contact op met ons.";

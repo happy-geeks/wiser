@@ -221,9 +221,9 @@ namespace Api.Modules.Items.Controllers
         }
 
         [HttpGet, Route("tree-view"), ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] string encrypted_item_id = null, [FromQuery] string entityType = null, [FromQuery] string orderBy = null, [FromQuery] string checkId = null)
+        public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] string encryptedItemId = null, [FromQuery] string entityType = null, [FromQuery] string orderBy = null, [FromQuery] string checkId = null)
         {
-            return (await itemsService.GetItemsForTreeViewAsync(moduleId, (ClaimsIdentity)User.Identity, entityType, encrypted_item_id, orderBy, checkId)).GetHttpResponseMessage();
+            return (await itemsService.GetItemsForTreeViewAsync(moduleId, (ClaimsIdentity)User.Identity, entityType, encryptedItemId, orderBy, checkId)).GetHttpResponseMessage();
         }
 
         [HttpPut, Route("{encryptedSourceId}/move/{encryptedDestinationId}"), ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]

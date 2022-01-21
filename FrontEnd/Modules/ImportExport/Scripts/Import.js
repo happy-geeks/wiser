@@ -72,7 +72,7 @@ const importModuleSettings = {
 
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
-                headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
             });
 
             const html = await Wiser2.api({ url: "/Modules/ImportExport/Import/Html" });
@@ -92,7 +92,7 @@ const importModuleSettings = {
             }
             
             // Show an error if the user is no longer logged in.
-            const accessTokenExpires = localStorage.getItem("access_token_expires_on");
+            const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
                 Wiser2.alert({
                     title: "Niet ingelogd",
@@ -108,11 +108,11 @@ const importModuleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = user.adminAccountName;
             
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot, this.settings.isTestEnvironment);
-            this.settings.userId = userData.encrypted_id;
-            this.settings.customerId = userData.encrypted_customer_id;
-            this.settings.zeroEncrypted = userData.zero_encrypted;
-            this.settings.hasEmailAddress = !!userData.email_address;
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            this.settings.userId = userData.encryptedId;
+            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.zeroEncrypted = userData.zeroEncrypted;
+            this.settings.hasEmailAddress = !!userData.emailAddress;
             $("#EmailAddressContainer").toggle(!this.settings.hasEmailAddress);
             
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
@@ -450,15 +450,15 @@ const importModuleSettings = {
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify({
-                        file_path: this.importFilename,
-                        images_file_name: this.importImagesFilename,
-                        images_file_path: this.importImagesFilePath,
-                        import_settings: importSettings,
-                        import_link_settings: importLinkSettings,
-                        import_link_detail_settings: importLinkDetailSettings,
-                        email_address: (window.import.settings.hasEmailAddress ? null : document.getElementById("UserEmailAddress").value),
+                        filePath: this.importFilename,
+                        imagesFileName: this.importImagesFilename,
+                        imagesFilePath: this.importImagesFilePath,
+                        importSettings: importSettings,
+                        importLinkSettings: importLinkSettings,
+                        importLinkDetailSettings: importLinkDetailSettings,
+                        emailAddress: (window.import.settings.hasEmailAddress ? null : document.getElementById("UserEmailAddress").value),
                         name: document.getElementById("ImportName").value,
-                        start_date: $("#StartDateTime").data("kendoDateTimePicker").value()
+                        startDate: $("#StartDateTime").data("kendoDateTimePicker").value()
                     })
                 });
 
@@ -471,8 +471,8 @@ const importModuleSettings = {
                     if (results && Wiser2.validateArray(results.userFriendlyErrors)) {
                         userFriendlyErrors = `<br><br><ul><li>${results.userFriendlyErrors.join("</li><li>")}</li></ul>`;
                     }
-                    if (results && Wiser2.validateArray(results.user_friendly_errors)) {
-                        userFriendlyErrors = `<br><br><ul><li>${results.user_friendly_errors.join("</li><li>")}</li></ul>`;
+                    if (results && Wiser2.validateArray(results.userFriendlyErrors)) {
+                        userFriendlyErrors = `<br><br><ul><li>${results.userFriendlyErrors.join("</li><li>")}</li></ul>`;
                     }
 
                     Wiser2.showMessage({

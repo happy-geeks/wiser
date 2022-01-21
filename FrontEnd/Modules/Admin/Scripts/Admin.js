@@ -135,43 +135,39 @@ const moduleSettings = {
          * Event that will be fired when the page is ready.
          */
         async onPageReady() {
-            this.settings.wiserVersion = parseInt(window.wiserVersion.replace(/\./g, ""));
-
             // Setup any settings from the body element data. These settings are added via the Wiser backend and they take preference.
             Object.assign(this.settings, $("body").data());
+            
+            // Add logged in user access token to default authorization headers for all jQuery ajax requests.
+            $.ajaxSetup({
+                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
+            });
 
-            if (this.settings.wiserVersion >= 210) {
-                // Add logged in user access token to default authorization headers for all jQuery ajax requests.
-                $.ajaxSetup({
-                    headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+            // Show an error if the user is no longer logged in.
+            const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
+            if (!accessTokenExpires || accessTokenExpires <= new Date()) {
+                Wiser2.alert({
+                    title: "Niet ingelogd",
+                    content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
 
-                // Show an error if the user is no longer logged in.
-                const accessTokenExpires = localStorage.getItem("access_token_expires_on");
-                if (!accessTokenExpires || accessTokenExpires <= new Date()) {
-                    Wiser2.alert({
-                        title: "Niet ingelogd",
-                        content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
-                    });
-
-                    this.toggleMainLoader(false);
-                    return;
-                }
-
-                const user = JSON.parse(localStorage.getItem("userData"));
-                this.settings.oldStyleUserId = user.oldStyleUserId;
-                this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
-                this.settings.happyEmployeeLoggedIn = user.juiceEmployeeName;
-
-                const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiV21Root, this.settings.isTestEnvironment);
-                this.settings.userId = userData.encrypted_id;
-                this.settings.customerId = userData.encrypted_customer_id;
-                this.settings.zeroEncrypted = userData.zero_encrypted;
-                this.settings.wiser2UserId = userData.wiser2_id;
+                this.toggleMainLoader(false);
+                return;
             }
 
-            this.settings.serviceRoot = `${this.settings.wiserVersion >= 210 ? this.settings.wiserApiV21Root : this.settings.wiserApiRoot}templates/get-and-execute-query`;
-            this.settings.getItemsUrl = `${this.settings.wiserVersion >= 210 ? this.settings.wiserApiV21Root : this.settings.wiserApiRoot}data-selectors`;
+            const user = JSON.parse(localStorage.getItem("userData"));
+            this.settings.oldStyleUserId = user.oldStyleUserId;
+            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.happyEmployeeLoggedIn = user.juiceEmployeeName;
+
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiV21Root);
+            this.settings.userId = userData.encryptedId;
+            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.zeroEncrypted = userData.zeroEncrypted;
+            this.settings.wiser2UserId = userData.wiser2Id;
+
+            this.settings.serviceRoot = `${this.settings.wiserApiV21Root}templates/get-and-execute-query`;
+            this.settings.getItemsUrl = `${this.settings.wiserApiV21Root}data-selectors`;
 
             this.moduleTab = new ModuleTab(this);
             this.entityTab = new EntityTab(this);
