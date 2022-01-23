@@ -38,9 +38,9 @@ namespace Api.Modules.Queries.Interfaces
         /// Create query that can be used in the admin module.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <param name="queryModel">The query settings to create.</param>
+        /// <param name="description">The description of the new query.</param>
         /// <returns></returns>
-        Task<ServiceResult<QueryModel>> CreateAsync(ClaimsIdentity identity, QueryModel queryModel);
+        Task<ServiceResult<QueryModel>> CreateAsync(ClaimsIdentity identity, string description);
 
         /// <summary>
         /// Update query that can be used in the admin module.

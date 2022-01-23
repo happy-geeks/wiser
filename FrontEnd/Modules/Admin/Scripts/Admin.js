@@ -30,9 +30,12 @@ const moduleSettings = {
          */
         constructor(settings) {
             this.base = this;
+
             // Kendo components.
             this.mainWindow = null;
 
+            this.activeMainTab = "entiteiten"; 
+            
             //classes
             this.entityTab = null;
             this.entityFieldTab = null;
@@ -132,7 +135,7 @@ const moduleSettings = {
                 GRID: { text: "Grid", id: "grid" }
             });
         }
-            
+
         /**
          * Event that will be fired when the page is ready.
          */
@@ -236,15 +239,17 @@ const moduleSettings = {
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
          */
         setupBindings() {
-            // footer gets shown when user switches tabs, if footer is allowed to show there.
-            //$("footer").hide();
-
             $(document).on("moduleClosing", (event) => {
                 // You can do anything here that needs to happen before closing the module.
                 event.success();
             });
 
             //BUTTONS
+            $(".saveButton").kendoButton({
+                click: this.saveChanges.bind(this),
+                icon: "save"
+            });
+
             $("#generateStandardEntities").kendoButton({
                 click: () => {
                     const entitiesToGenerate = [], entitiesToGeneratePrettyName = [];
@@ -276,6 +281,27 @@ const moduleSettings = {
                 },
                 icon: "gear"
             });
+        }
+
+        saveChanges(e) {
+            console.log("Save", e);
+            if (!this.activeMainTab || this.activeMainTab === null || this.activeMainTab === "undefined") {
+                console.error("activeMainTab property is not set");
+                return;
+            }
+
+            //Call save function based on active tab
+            switch (this.activeMainTab) {
+                case "entityProperty":
+                    this.entityTab.beforeSave();
+                    break;
+                case "queries":
+                    this.wiserQueryTab.beforeSave();
+                    break;
+                default:
+                    this.entityTab.beforeSave();
+                    break;
+            }
         }
 
         // show a simple notifcation
@@ -355,6 +381,34 @@ const moduleSettings = {
                 visible: true,
                 resizable: false
             }).data("kendoWindow").maximize().open();
+
+            this.mainTabStrip = $("#MainTabStrip").kendoTabStrip({
+                animation: {
+                    open: {
+                        effects: "expand:vertical",
+                        duration: 0
+                    },
+                    close: {
+                        effects: "expand:vertical",
+                        duration: 0
+                    }
+                },
+                select: (event) => {
+                    const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
+                    console.log("mainTabStrip select", tabName);
+
+                    if (tabName === "queries" || tabName === "entiteiten") {
+                        $("footer").show();
+                    } else {
+                        $("footer").hide();
+                    }
+                },
+                activate: (event) => {
+                    const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
+                    admin.activeMainTab = tabName;
+                    console.log("mainTabStrip activate", tabName);
+                }
+            }).data("kendoTabStrip");
         }
 
         // open prompt/dialog winodw

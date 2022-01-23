@@ -59,12 +59,12 @@ namespace Api.Modules.Queries.Controllers
         /// <summary>
         /// Creates new wiser query.
         /// </summary>
-        /// <param name="queryModel">The new query data to create.</param>
-        /// <returns>The newly created query data.</returns>
+        /// <param name="description">The description of the new query.</param>
+        /// <returns>The created query data</returns>
         [HttpPost, ProducesResponseType(typeof(QueryModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> Create(QueryModel queryModel)
+        public async Task<IActionResult> Create([FromBody] string description)
         {
-            return (await queriesService.CreateAsync((ClaimsIdentity)User.Identity, queryModel)).GetHttpResponseMessage();
+            return (await queriesService.CreateAsync((ClaimsIdentity)User.Identity, description)).GetHttpResponseMessage();
         }
 
         /// <summary>

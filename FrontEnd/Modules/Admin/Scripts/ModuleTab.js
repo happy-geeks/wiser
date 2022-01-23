@@ -1,7 +1,6 @@
 ﻿export class ModuleTab {
     constructor(base) {
         this.base = base;
-
         this.setupBindings();
         this.getModules();
     }
@@ -70,33 +69,6 @@
 
     /** Initializes all kendo components for the base class. */
     async initializeKendoComponents() {
-        this.mainTabStrip = $("#MainTabStrip").kendoTabStrip({
-            animation: {
-                open: {
-                    effects: "expand:vertical",
-                    duration: 0
-                },
-                close: {
-                    effects: "expand:vertical",
-                    duration: 0
-                }
-            },
-            select: (event) => {
-                const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
-                console.log("mainTabStrip select", tabName);
-
-                if (tabName === "rollen" || tabName === "modules" || tabName === "entiteiten") {
-                    $("footer").hide();
-                } else {
-                    $("footer").show();
-                }
-            },
-            activate: (event) => {
-                const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
-                console.log("mainTabStrip activate", tabName);
-            }
-        }).data("kendoTabStrip");
-
         this.modeSelect = $(".combo-select").kendoComboBox({
             select: (element) => {
                 var currentValue = element.dataItem.value;

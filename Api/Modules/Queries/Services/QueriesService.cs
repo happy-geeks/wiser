@@ -127,17 +127,24 @@ namespace Api.Modules.Queries.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<QueryModel>> CreateAsync(ClaimsIdentity identity, QueryModel queryModel)
+        public async Task<ServiceResult<QueryModel>> CreateAsync(ClaimsIdentity identity, string description)
         {
-            if (queryModel == null || queryModel.Description == null)
+            if (String.IsNullOrEmpty(description))
             {
                 return new ServiceResult<QueryModel>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Either 'Query' or 'Description' must contain a value.",
-                    ReasonPhrase = "Either 'Query' or 'Description' must contain a value."
+                    ErrorMessage = "'Description' must contain a value.",
+                    ReasonPhrase = "'Description' must contain a value."
                 };
             }
+
+            var queryModel = new QueryModel
+            {
+                Description = description,
+                Query = string.Empty,
+                ShowInExportModule = false
+            };
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
@@ -162,7 +169,6 @@ namespace Api.Modules.Queries.Services
             {
                 var dataTable = await clientDatabaseConnection.GetAsync(query);
                 queryModel.Id = Convert.ToInt32(dataTable.Rows[0][0]);
-                queryModel.EncryptedId = await wiserCustomersService.EncryptValue(queryModel.Id.ToString(), identity);
             }
             catch (MySqlException mySqlException)
             {
@@ -200,7 +206,7 @@ namespace Api.Modules.Queries.Services
             clientDatabaseConnection.AddParameter("id", queryModel.Id);
             clientDatabaseConnection.AddParameter("description", queryModel.Description);
             clientDatabaseConnection.AddParameter("query", queryModel.Query);
-            clientDatabaseConnection.AddParameter("show_in_export_module", queryModel.ShowInExportModule);
+            clientDatabaseConnection.AddParameter("show_in_export_module", queryModel.ShowInExportModule ? 1:0);
 
             var query = $@"UPDATE {WiserTableNames.WiserQuery}
                         SET description = ?description,
@@ -243,10 +249,8 @@ namespace Api.Modules.Queries.Services
 
             var query = $"DELETE FROM {WiserTableNames.WiserQuery} WHERE id = ?id";
             await clientDatabaseConnection.ExecuteAsync(query);
-            return new ServiceResult<bool>(true)
-            {
-                StatusCode = HttpStatusCode.NoContent
-            };
+
+            return new ServiceResult<bool>(true);
         }
     }
 }

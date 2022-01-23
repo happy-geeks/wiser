@@ -1,4 +1,6 @@
-﻿export class WiserQueryTab {
+﻿import { QueryModel } from "../Scripts/QueryModel.js";
+
+export class WiserQueryTab {
     constructor(base) {
         this.base = base;
         this.setupBindings();
@@ -40,16 +42,23 @@
     }
 
     async setupBindings() {
-        // delete an query
+        $(".addQueryBtn").kendoButton({
+            click: (e) => {
+                console.log(e);
+                this.base.openDialog("Nieuwe query toevoegen", "Voer de beschrijving in van query").then((data) => {
+                    this.addQuery(data);
+                });
+            },
+            icon: "file"
+        });
+
         $(".delQueryBtn").kendoButton({
             click: () => {
-                if (!this.checkIfEntityIsSet()) {
+                if (!this.checkIfQueryIsSet()) {
                     return;
                 }
-                const tabNameProp = this.listOfTabProperties;
-                const index = tabNameProp.select().index();
-                const dataItem = tabNameProp.dataSource.view()[index];
-                if (!dataItem) {
+                const dataItemId = this.queryCombobox.dataItem().id;
+                if (!dataItemId) {
                     this.base.showNotification("notification",
                         "Item is niet succesvol verwijderd, probeer het opnieuw",
                         "error");
@@ -57,14 +66,20 @@
                 }
 
                 // ask for user confirmation before deleting
-                this.base.openDialog("Item verwijderen",
-                    "Weet u zeker dat u dit item wil verwijderen?",
-                    this.base.kendoPromptType.CONFIRM).then(() => {
-                    this.addRemoveEntityProperty("", dataItem.id);
+                this.base.openDialog("Query verwijderen", "Weet u zeker dat u deze query wilt verwijderen?", this.base.kendoPromptType.CONFIRM).then(() => {
+                    this.deleteQueryById(dataItemId);
                 });
             },
             icon: "delete"
         });
+    }
+
+    // actions handled before save, such as checks
+    beforeSave() {
+        if (this.checkIfQueryIsSet(true)) {
+            const queryModel = new QueryModel(this.queryCombobox.dataItem().id, document.getElementById("queryDescription").value, this.queryFromWiser.getValue(), document.getElementById("showInExportModule").checked);
+            this.updateQuery(queryModel.id, queryModel);
+        }
     }
 
     async onQueryComboBoxSelect(event) {
@@ -74,30 +89,49 @@
         }
     }
 
-    async getQueries(reloadDataSource = true) {
+    async getQueries(reloadDataSource = true, queryIdToSelect = null) {
         if (reloadDataSource) {
-            this.queryList = new kendo.data.DataSource({
-                transport: {
-                    cache: "inmemory",
-                    read: {
-                           url: `${this.base.settings.wiserApiRoot}/queries/`
-                    }
-                }
+            this.queryList = await $.ajax({
+                url: `${this.base.settings.wiserApiRoot}/queries/`,
+                method: "GET"
             });
+
+            if (!queryList)
+                this.base.showNotification("notification",
+                    "Het ophalen van de queries is mislukt, probeer het opnieuw",
+                    "error");
         }
 
         this.queryCombobox.setDataSource(this.queryList);
+
+        if (queryIdToSelect !== null) {
+            if (queryIdToSelect === 0)
+                this.queryCombobox.select(0);
+            else
+                this.queryCombobox.select((dataItem) => {
+                    return dataItem.id === queryIdToSelect;
+                });
+        }
     }
 
-    async updateQuery(queryModel) {
-        const successful = await $.ajax({
-            url: `${this.base.settings.wiserApiRoot}/queries/`,
-            data: queryModel,
-            method: "PUT"
-        });
+    async updateQuery(id, queryModel) {
+        var x = JSON.stringify(queryModel);
+        debugger;
 
-        if (successful)
+        await $.ajax({
+            url: `${this.base.settings.wiserApiRoot}/queries/${id}`,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify(queryModel),
+            method: "PUT"
+        })
+        .done(() => {
+            this.base.showNotification("notification", `Query is succesvol bijgewerkt`, "success");
             this.getQueries();
+        })
+        .fail(() => {
+            this.base.showNotification("notification", `Het bijwerken van de queries is mislukt, probeer het opnieuw`, "error");
+        });
     }
 
     async getQueryById(id) {
@@ -110,19 +144,43 @@
         this.setQueryProperties(results);
     }
 
-    async deleteQueryById(id) {
-        const successful = await $.ajax({
-            url: `${this.base.settings.wiserApiRoot}/queries/${id}`,
-            method: "DELETE"
-        });
-
-        if (successful)
-            this.setQueryPropertiesToDefault();
-
+    async addQuery(description) {
+        if (description === "") { return; }
+        await $.ajax({
+                url: `${this.base.settings.wiserApiRoot}/queries/`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(description) ,
+                method: "POST"
+            })
+            .done((result) => {
+                this.base.showNotification("notification", `Query succesvol toegevoegd`, "success");
+                this.getQueries(true, result.id);
+                
+            })
+            .fail(() => {
+                this.base.showNotification("notification", `Query is niet succesvol toegevoegd, probeer het opnieuw`, "error");
+            });
     }
 
+    async deleteQueryById(id) {
+        await $.ajax({
+            url: `${this.base.settings.wiserApiRoot}/queries/${id}`,
+            method: "DELETE"
+        })
+            .done(() => {
+            this.getQueries(true, 0);
+            this.setQueryPropertiesToDefault();
+            this.base.showNotification("notification", `Query succesvol verwijdert`, "success");
+        })
+            .fail(() => {
+            this.base.showNotification("notification",
+                "Query is niet succesvol verwijderd, probeer het opnieuw",
+                "error");
+        });
+    }
+    
     async setQueryProperties(resultSet) {
-        console.log(resultSet);
         document.getElementById("queryDescription").value = resultSet.description;
         document.getElementById("showInExportModule").checked = resultSet.show_in_export_module;
         this.setCodeMirrorFields(this.queryFromWiser, resultSet.query);
