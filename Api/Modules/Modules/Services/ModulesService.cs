@@ -83,7 +83,7 @@ namespace Api.Modules.Modules.Services
                                 module.color,
                                 module.type,
                                 module.group,
-                                JSON_EXTRACT(options, '$.onlyOneInstanceAllowed') AS onlyOneInstanceAllowed
+                                IF(NOT JSON_VALID(module.options), 'false', JSON_EXTRACT(module.options, '$.onlyOneInstanceAllowed')) AS onlyOneInstanceAllowed
                             FROM {WiserTableNames.WiserUserRoles} AS user_role
                             JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
                             JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
@@ -108,7 +108,7 @@ namespace Api.Modules.Modules.Services
                                 module.color,
                                 module.type,
                                 module.group,
-                                JSON_EXTRACT(options, '$.onlyOneInstanceAllowed') AS onlyOneInstanceAllowed
+                                IF(NOT JSON_VALID(module.options), 'false', JSON_EXTRACT(module.options, '$.onlyOneInstanceAllowed')) AS onlyOneInstanceAllowed
                             FROM {WiserTableNames.WiserModule} AS module
                             LEFT JOIN {WiserTableNames.WiserOrdering} AS ordering ON ordering.user_id = ?userId AND ordering.module_id = module.id
                             WHERE module.id IN ({String.Join(",", modulesForAdmins)})
