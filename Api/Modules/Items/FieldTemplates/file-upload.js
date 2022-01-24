@@ -15,7 +15,7 @@ var options = $.extend({
         if (xhr) {
             xhr.addEventListener("readystatechange", (e) => {
                 if (xhr.readyState === 1 /* OPENED */) {
-                    xhr.setRequestHeader("authorization", `Bearer ${localStorage.getItem("access_token")}`);
+                    xhr.setRequestHeader("authorization", `Bearer ${localStorage.getItem("accessToken")}`);
                 }
             });
         }
@@ -33,7 +33,7 @@ var addFileUrl = function(event) {
     }
     
     var fileData = {
-        content_url: fileUrl,
+        contentUrl: fileUrl,
         name: event.sender.element.find("#fileName").val(),
         title: event.sender.element.find("#fileTitle").val()
     };
@@ -48,9 +48,9 @@ var addFileUrl = function(event) {
         var newFile = { 
             files: [dataResult],
             name: dataResult.name,
-            fileId: dataResult.file_id,
+            fileId: dataResult.fileId,
             size: 0,
-            added_on: new Date()
+            addedOn: new Date()
         };
         
         var filesList = container.find(".k-upload-files");
@@ -117,7 +117,7 @@ if (!options.queryId) {
         dataType: "json",
         url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(options.queryId) + "&itemLinkId={itemLinkId}"
     }).then(function(dataResult) {
-        files = dataResult.other_data;
+        files = dataResult.otherData;
         initialize();
     }).catch(function(jqXHR, textStatus, errorThrown) {
         console.error("read error - {title}", jqXHR, textStatus, errorThrown);

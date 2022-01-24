@@ -69,20 +69,20 @@ const moduleSettings = {
                     token: this.settings.trackJsToken
                 });
             }
-            
+
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
-                headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
             });
 
             // Show an error if the user is no longer logged in.
-            const accessTokenExpires = localStorage.getItem("access_token_expires_on");
+            const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
                 Wiser2.alert({
                     title: "Niet ingelogd",
                     content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
-                    
+
                 this.toggleMainLoader(false);
                 return;
             }
@@ -91,13 +91,13 @@ const moduleSettings = {
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
-                
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot, this.settings.isTestEnvironment);
-            this.settings.userId = userData.encrypted_id;
-            this.settings.customerId = userData.encrypted_customer_id;
-            this.settings.zeroEncrypted = userData.zero_encrypted;
+          
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            this.settings.userId = userData.encryptedId;
+            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.wiser2UserId = userData.id;
-            
+
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
 
@@ -105,22 +105,22 @@ const moduleSettings = {
             this.connectionBlocksContainer = document.getElementById("connectionBlocks");
             this.havingContainer = $(document.getElementById("havingContainer"));
 
-            // Load modules.            
+            // Load modules.
             const allModules = await Wiser2.api({ url: `${this.settings.wiserApiRoot}modules` });
             const ul = $(`<ul class="hScroll" id="moduleSelect"></ul>`);
             for (let groupName in allModules) {
                 if (!allModules.hasOwnProperty(groupName)) {
                     continue;
                 }
-                    
+
                 for (let module of allModules[groupName]) {
                     if (!module.name) {
                         continue;
                     }
 
-                    const li = $(`<li data-module-id="${module.module_id}"></li>`).appendTo(ul);
+                    const li = $(`<li data-module-id="${module.moduleId}"></li>`).appendTo(ul);
                     const label = $(`<label />`).appendTo(li);
-                    const input = $(`<input type="checkbox" name="module-picker" class="noForm" value="${module.module_id}" />`).appendTo(label);
+                    const input = $(`<input type="checkbox" name="module-picker" class="noForm" value="${module.moduleId}" />`).appendTo(label);
                     const span = $(`<span/>`).appendTo(label);
                     const icon = $(`<ins class="icon-${module.icon}"></ins>`).appendTo(span);
                     span.append(module.name);
@@ -358,6 +358,7 @@ const moduleSettings = {
                 const button = $(e.currentTarget);
                 const propertyDropdown = button.closest(".inputRow").find("select.scope-property-select").getKendoDropDownList();
                 this.openFieldEditor(propertyDropdown.dataItem(), {
+                    includeDataTypeField: true,
                     includeLanguageCodeField: false,
                     includeFieldAliasField: false,
                     includeIsItemIdField: false
@@ -385,7 +386,7 @@ const moduleSettings = {
                     dataItem.set("direction", "ASC");
                 }
             });
-            
+
             this.giveCustomClickLogic(orderByWidget);
 
             document.addEventListener("entitySelectionUpdate", () => {
@@ -406,12 +407,12 @@ const moduleSettings = {
 
         async getAllEntityTypes() {
             const response = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=` });
-            this.allEntityTypes = response.map(ce => ce.entity_type);
+            this.allEntityTypes = response.map(ce => ce.entityType);
         }
 
         async updateAvailableEntityTypes() {
             const response = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=${this.selectedModules.join(",")}` });
-            this.availableEntityTypes = response.map(ce => ce.entity_type);
+            this.availableEntityTypes = response.map(ce => ce.entityType);
 
             $("#selectEntity").getKendoDropDownList().setDataSource({
                 data: this.availableEntityTypes.map((entityType) => {
@@ -560,7 +561,7 @@ const moduleSettings = {
                 transport: {
                     read: (options) => {
                         Wiser2.api({
-                            url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entity_name=${dataItem.entityName}&property_name=${dataItem.value}&language_code=${dataItem.languageCode}&use_export_mode=${this.useExportMode ? "1" : "0"}`,
+                            url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entityName=${dataItem.entityName}&propertyName=${dataItem.propertyName}&languageCode=${dataItem.languageCode}&useExportMode=${this.useExportMode ? "1" : "0"}`,
                             dataType: "json"
                         }).then((result) => {
                             const items = [
@@ -613,7 +614,7 @@ const moduleSettings = {
             if (typeof dataItem.fieldAlias === "string" && dataItem.fieldAlias !== "") {
                 return dataItem.fieldAlias;
             } else {
-                return dataItem.value;
+                return dataItem.propertyName;
             }
         }
 
@@ -699,8 +700,10 @@ const moduleSettings = {
                     const selectDetails = $(item.querySelector("select.select-details")).getKendoMultiSelect();
                     selectDetails.dataItems().forEach((dataItem) => {
                         const newItem = {
-                            fieldname: dataItem.value,
+                            fieldname: dataItem.propertyName,
                             fieldalias: dataItem.fieldAlias,
+                            dataType: dataItem.dataType || "string",
+                            havingDataType: dataItem.havingDataType || "string",
                             languagecode: dataItem.languageCode,
                             aggregationfunction: dataItem.aggregation,
                             formatting: dataItem.formatting
@@ -711,8 +714,10 @@ const moduleSettings = {
 
                             dataItem.subSelection.fields.forEach((subDataItem) => {
                                 subTempArray.push({
-                                    fieldname: subDataItem.value,
+                                    fieldname: subDataItem.propertyName,
                                     fieldalias: subDataItem.fieldAlias,
+                                    dataType: subDataItem.dataType || "string",
+                                    havingDataType: subDataItem.havingDataType || "string",
                                     languagecode: subDataItem.languageCode,
                                     aggregationfunction: subDataItem.aggregation,
                                     formatting: subDataItem.formatting
@@ -760,7 +765,7 @@ const moduleSettings = {
                     } else {
                         groupByFields.push({
                             entityName: field.entityName,
-                            fieldName: field.value,
+                            fieldName: field.propertyName,
                             fieldAlias: field.fieldAlias
                         });
                     }
@@ -786,7 +791,7 @@ const moduleSettings = {
                     } else {
                         orderByFields.push({
                             entityName: field.entityName,
-                            fieldName: field.value,
+                            fieldName: field.propertyName,
                             fieldAlias: field.fieldAlias,
                             direction: field.direction
                         });
@@ -848,7 +853,7 @@ const moduleSettings = {
                     if (forHaving && dataItem.hasOwnProperty("fieldAlias") && dataItem.fieldAlias !== "") {
                         fieldName = dataItem.fieldAlias;
                     } else {
-                        fieldName = dataItem.value;
+                        fieldName = dataItem.propertyName;
                     }
 
                     if (!forSaving) {
@@ -856,6 +861,8 @@ const moduleSettings = {
                             key: {
                                 fieldname: fieldName,
                                 languagecode: dataItem.languageCode,
+                                dataType: dataItem.dataType || "string",
+                                havingDataType: dataItem.havingDataType || "string",
                                 aggregationfunction: forHaving ? dataItem.havingAggregation : dataItem.aggregation,
                                 formatting: forHaving ? dataItem.havingFormatting : dataItem.formatting
                             },
@@ -866,8 +873,10 @@ const moduleSettings = {
                         scopeSection[rowsArrayName].push({
                             key: {
                                 entityName: dataItem.entityName,
-                                fieldName: dataItem.value,
+                                fieldName: dataItem.propertyName,
                                 fieldAlias: dataItem.fieldAlias,
+                                dataType: dataItem.dataType || "string",
+                                havingDataType: dataItem.havingDataType || "string",
                                 languageCode: dataItem.languageCode,
                                 aggregation: forHaving ? dataItem.havingAggregation : dataItem.aggregation,
                                 formatting: forHaving ? dataItem.havingFormatting : dataItem.formatting
@@ -950,8 +959,10 @@ const moduleSettings = {
                                 const selectDetails = $(item.querySelector("select.select-details")).getKendoMultiSelect();
                                 Array.from(selectDetails.dataItems()).forEach((dataItem) => {
                                     const newItem = {
-                                        fieldname: dataItem.value,
+                                        fieldname: dataItem.propertyName,
                                         fieldalias: dataItem.fieldAlias,
+                                        dataType: dataItem.dataType || "string",
+                                        havingDataType: dataItem.havingDataType || "string",
                                         languagecode: dataItem.languageCode,
                                         aggregationfunction: dataItem.aggregation,
                                         formatting: dataItem.formatting
@@ -962,7 +973,10 @@ const moduleSettings = {
 
                                         dataItem.subSelection.fields.forEach((subDataItem) => {
                                             subTempArray.push({
-                                                fieldname: subDataItem.value,
+                                                fieldname: subDataItem.propertyName,
+                                                fieldalias: subDataItem.fieldAlias,
+                                                dataType: subDataItem.dataType || "string",
+                                                havingDataType: subDataItem.havingDataType || "string",
                                                 languagecode: subDataItem.languageCode,
                                                 aggregationfunction: subDataItem.aggregation,
                                                 formatting: subDataItem.formatting
@@ -1017,13 +1031,12 @@ const moduleSettings = {
          */
         async getJsonResult(requestVariables = null) {
             let rootUrl = `${this.settings.getItemsUrl}`;
-            
             let parameters = { settings: this.createJsonRequest() };
 
             if (requestVariables) {
                 parameters = Object.assign({}, requestVariables, parameters);
             }
-            
+
             return Wiser2.api({
                 method: "POST",
                 contentType: "application/json",
@@ -1038,9 +1051,8 @@ const moduleSettings = {
          */
         async getQuery() {
             let rootUrl = `${this.settings.getItemsUrl}/query`;
-
             let parameters = { settings: this.createJsonRequest() };
-            
+
             return Wiser2.api({
                 method: "POST",
                 contentType: "application/json",
@@ -1057,7 +1069,7 @@ const moduleSettings = {
                 savedJson: JSON.stringify(this.createJsonRequest(true)),
                 showInExportModule: document.getElementById("showInExportModule").checked ? 1 : 0
             };
-            const saveResult = await Wiser2.api({ 
+            const saveResult = await Wiser2.api({
                 url: `${this.settings.serviceRoot}/SAVE_DATA_SELECTOR`,
                 method: "POST",
                 data: postData
@@ -1083,12 +1095,19 @@ const moduleSettings = {
         }
 
         saveWithPrompt() {
-            $("<div />").kendoPrompt({
+            const kendoPrompt = $("<div />").kendoPrompt({
                 title: "Opslaan",
                 content: "Geef een naam op voor deze data selector.",
                 value: this.currentName,
                 visible: false
-            }).getKendoPrompt().open().result.done((input) => {
+            }).getKendoPrompt();
+
+            if (kendoPrompt.wrapper && kendoPrompt.wrapper[0]) {
+                const input = kendoPrompt.wrapper[0].querySelector("input[type='text']");
+                input.maxLength = 100;
+            }
+
+            kendoPrompt.open().result.done((input) => {
                 window.processing.addProcess("checkSavedNameExists");
                 Wiser2.api({ url: `${this.settings.serviceRoot}/CHECK_DATA_SELECTOR_NAME_EXISTS?name=${encodeURIComponent(input)}` }).then((existsResult) => {
                     window.processing.removeProcess("checkSavedNameExists");
@@ -1321,7 +1340,7 @@ const moduleSettings = {
                         transport: {
                             read: (options) => {
                                 Wiser2.api({
-                                    url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entity_name=${dataItem.entityName}&property_name=${dataItem.value}&language_code=${dataItem.languageCode}`,
+                                    url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entityName=${dataItem.entityName}&propertyName=${dataItem.propertyName}&languageCode=${dataItem.languageCode}`,
                                     dataType: "json"
                                 }).then((result) => {
                                     const items = [
@@ -1409,12 +1428,20 @@ const moduleSettings = {
 
         createFieldEditor(options) {
             const settings = Object.assign({
+                includeDataTypeField: false,
+                includeHavingDataTypeField: false,
                 includeLanguageCodeField: true,
                 includeFieldAliasField: true,
                 includeIsItemIdField: true
             }, options);
 
             const editor = $($("#fieldEditorTemplate").html());
+            if (!settings.includeDataTypeField) {
+                editor.find(".dataTypeWrapper").remove();
+            }
+            if (!settings.includeHavingDataTypeField) {
+                editor.find(".havingDataTypeWrapper").remove();
+            }
             if (!settings.includeLanguageCodeField) {
                 editor.find(".languageCodeWrapper").remove();
             }
@@ -1454,6 +1481,11 @@ const moduleSettings = {
                 return;
             }
 
+            if (forHaving) {
+                options.includeDataTypeField = false;
+                options.includeHavingDataTypeField = true;
+            }
+
             const itemProperties = this.createFieldEditor(options);
 
             const saveButton = itemProperties.find("button.saveItemProperties").getKendoButton();
@@ -1483,17 +1515,27 @@ const moduleSettings = {
 
             itemProperties.find("h5 span").text(dataItem.displayName);
 
+            const dataTypeField = itemProperties.find("select.dataType").getKendoDropDownList();
+            const havingDataTypeField = itemProperties.find("select.havingDataType").getKendoDropDownList();
             const languageCodeField = itemProperties.find("select.languageCode");
             const aggregation = itemProperties.find("select.aggregation").getKendoDropDownList();
             const formatting = itemProperties.find("select.formatting").getKendoComboBox();
             const fieldAlias = itemProperties.find("input.fieldAlias");
             const isItemId = itemProperties.find("input.isItemId");
 
+            if (dataTypeField) {
+                dataTypeField.value(dataItem.dataType || "string");
+            }
+
+            if (havingDataTypeField) {
+                havingDataTypeField.value(dataItem.havingDataType || "string");
+            }
+
             if (languageCodeField.length > 0) {
                 const languageCode = languageCodeField.getKendoComboBox();
 
                 // Update language codes.
-                Wiser2.api({ url: `${this.settings.serviceRoot}/GET_LANGUAGE_CODES?entityName=${dataItem.entityName || ""}&linkType=${dataItem.linkType || "0"}&propertyName=${dataItem.value}` }).then((response) => {
+                Wiser2.api({ url: `${this.settings.serviceRoot}/GET_LANGUAGE_CODES?entityName=${dataItem.entityName || ""}&linkType=${dataItem.linkType || "0"}&propertyName=${dataItem.propertyName}` }).then((response) => {
                     languageCode.setDataSource({
                         data: [...response]
                     });
@@ -1561,6 +1603,10 @@ const moduleSettings = {
                     } else {
                         dataItem.set("aliasOrValue", dataItem.value);
                     }
+                }
+
+                if (dataTypeField) {
+                    dataItem.set("dataType", dataTypeField.value());
                 }
 
                 if (languageCodeField.length > 0) {
@@ -1634,7 +1680,9 @@ const moduleSettings = {
                 })
             });
             subEntitySelectWidget.bind("cascade", async (e) => {
-                const response = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_PROPERTIES?entity_name=${e.sender.value()}&use_export_mode=${this.useExportMode ? "1" : "0"}` });
+                const response = await Wiser2.api({
+                    url: `${this.settings.wiserApiRoot}data-selectors/entity-properties/${e.sender.value()}/?forExportMode=${this.useExportMode}`
+                });
 
                 // Create clone of "response" so it doesn't use the reference value, but a completely new object.
                 // Although it's also possible to use "[...response]", this JSON trick works better as it also clones deep properties.
@@ -1643,6 +1691,13 @@ const moduleSettings = {
                 // Create a "unique value" for every property, based on the normal value.
                 // The group by select uses this.
                 availableProperties.forEach((property) => {
+                    // Initialize some additional properties.
+                    property.aggregation = "";
+                    property.formatting = "";
+                    property.fieldAlias = "";
+                    property.direction = "ASC";
+
+                    // Initial value of the "alias or value" should just be the value.
                     property.aliasOrValue = property.value;
                 });
 
@@ -1698,7 +1753,7 @@ const moduleSettings = {
                     includeIsItemIdField: false
                 });
             });
-            
+
             this.giveCustomClickLogic(subPropertySelectWidget);
         }
 

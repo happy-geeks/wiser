@@ -25,8 +25,8 @@ if (options.fieldGroupName) {
 
 if (customQueryGrid) {
     Wiser2.api({ url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}" + linkTypeParameter }).then(function(customQueryResults) {
-        if (customQueryResults.extra_javascript) {
-            jQuery.globalEval(customQueryResults.extra_javascript);
+        if (customQueryResults.extraJavascript) {
+            jQuery.globalEval(customQueryResults.extraJavascript);
         }
         
         if (!hideCheckboxColumn) {
@@ -37,9 +37,9 @@ if (customQueryGrid) {
         }
 
         if (!options.disableOpeningOfItems) {
-            if (customQueryResults.schema_model && customQueryResults.schema_model.fields) {
+            if (customQueryResults.schemaModel && customQueryResults.schemaModel.fields) {
                 // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
-                options.disableOpeningOfItems = !(customQueryResults.schema_model.fields.encryptedId || customQueryResults.schema_model.fields.encrypted_id || customQueryResults.schema_model.fields.encryptedid || customQueryResults.schema_model.fields.idencrypted);
+                options.disableOpeningOfItems = !(customQueryResults.schemaModel.fields.encryptedId || customQueryResults.schemaModel.fields.encryptedId || customQueryResults.schemaModel.fields.encryptedid || customQueryResults.schemaModel.fields.idencrypted);
             }
         }
         
@@ -82,7 +82,7 @@ if (customQueryGrid) {
             }
         }
         
-        generateGrid(customQueryResults.data, customQueryResults.schema_model, customQueryResults.columns);
+        generateGrid(customQueryResults.data, customQueryResults.schemaModel, customQueryResults.columns);
     });
 } else {
     var done = function(gridSettings) {
@@ -93,8 +93,8 @@ if (customQueryGrid) {
             };
         }
         
-        if (gridSettings.extra_javascript) {
-            jQuery.globalEval(gridSettings.extra_javascript);
+        if (gridSettings.extraJavascript) {
+            jQuery.globalEval(gridSettings.extraJavascript);
         }
         
         // Add most columns here.
@@ -138,9 +138,9 @@ if (customQueryGrid) {
         }
 
         if (!options.disableOpeningOfItems) {
-            if (gridSettings.schema_model && gridSettings.schema_model.fields) {
+            if (gridSettings.schemaModel && gridSettings.schemaModel.fields) {
                 // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
-                options.disableOpeningOfItems = !(gridSettings.schema_model.fields.encryptedId || gridSettings.schema_model.fields.encrypted_id || gridSettings.schema_model.fields.encryptedid || gridSettings.schema_model.fields.idencrypted);
+                options.disableOpeningOfItems = !(gridSettings.schemaModel.fields.encryptedId || gridSettings.schemaModel.fields.encryptedId || gridSettings.schemaModel.fields.encryptedid || gridSettings.schemaModel.fields.idencrypted);
             }
         }
         
@@ -178,7 +178,7 @@ if (customQueryGrid) {
             }
         }
         
-        generateGrid(gridSettings.data, gridSettings.schema_model, gridSettings.columns);
+        generateGrid(gridSettings.data, gridSettings.schemaModel, gridSettings.columns);
     }
     
     if (usingDataSelector) {
@@ -391,10 +391,10 @@ function generateGrid(data, model, columns) {
                             details: []
                         };
                         
-						var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id;
+						var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encryptedId;
 						if (options.fieldGroupName) {
 							encryptedId = "{itemIdEncrypted}";
-							transportOptions.data.group_name = options.fieldGroupName;
+							transportOptions.data.groupName = options.fieldGroupName;
 							itemModel.details.push(transportOptions.data);
 						} else {
 							var nonFieldProperties = ["id", "published_environment", "encrypted_id", "entity_type", "link_id", "link_type", "link_type_number", "encryptedId", "added_on", "added_by", "changed_on", "changed_by"];
@@ -408,7 +408,7 @@ function generateGrid(data, model, columns) {
 									continue;
 								} else if (key === "__ordering") {
 									if (dynamicItems.fieldTemplateFlags.enableSubEntitiesGridsOrdering) {
-										itemModel.details.push({ "key": key, "value": transportOptions.data[key], "is_link_property": true, "item_link_id": transportOptions.data.link_id });
+										itemModel.details.push({ "key": key, "value": transportOptions.data[key], "is_link_property": true, "item_link_id": transportOptions.data.linkId });
 									}
 									continue;
 								}
@@ -438,12 +438,12 @@ function generateGrid(data, model, columns) {
 											continue;
 										}
 										
-										isLinkProperty = columns[i].is_link_property === true;
+										isLinkProperty = columns[i].isLinkProperty === true;
 										break;
 									}
 								}
 								
-								itemModel.details.push({ "key": key, "value": transportOptions.data[key], "is_link_property": isLinkProperty, "item_link_id": transportOptions.data.link_id });
+								itemModel.details.push({ "key": key, "value": transportOptions.data[key], "is_link_property": isLinkProperty, "item_link_id": transportOptions.data.linkId });
 							}
 						}
                         
@@ -497,7 +497,7 @@ function generateGrid(data, model, columns) {
 								details: []
 							};
 							var encryptedId = "{itemIdEncrypted}";
-							transportOptions.data.group_name = options.fieldGroupName;
+							transportOptions.data.groupName = options.fieldGroupName;
 							itemModel.details.push(transportOptions.data);
 							
 							Wiser2.api({
@@ -566,7 +566,7 @@ function generateGrid(data, model, columns) {
 								details: []
 							};
 							var encryptedId = "{itemIdEncrypted}";
-							transportOptions.data.group_name = options.fieldGroupName;
+							transportOptions.data.groupName = options.fieldGroupName;
 							transportOptions.data.value = null;
 							itemModel.details.push(transportOptions.data);
 							
@@ -696,18 +696,18 @@ function generateGrid(data, model, columns) {
                 var column = columns[columnIndex];
                 var model = event.sender.dataItem(row);
                 var value = parseInt(model[column.field]) || 0;
-                column.progress_bar_settings = column.progress_bar_settings || {};
+                column.progressBarSettings = column.progressBarSettings || {};
 
                 var progressBar = $(this).kendoProgressBar({
-                    max: column.progress_bar_settings.max_progress || 100,
+                    max: column.progressBarSettings.maxProgress || 100,
                     value: value
                 }).data("kendoProgressBar");
                 
-                if (!column.progress_bar_settings.progress_colors || !column.progress_bar_settings.progress_colors.length) {
+                if (!column.progressBarSettings.progressColors || !column.progressBarSettings.progressColors.length) {
                     return;
                 }
                 
-                var progressColors = column.progress_bar_settings.progress_colors.sort(function(a, b) {
+                var progressColors = column.progressBarSettings.progressColors.sort(function(a, b) {
                     return b.max - a.max;
                 });
                                 

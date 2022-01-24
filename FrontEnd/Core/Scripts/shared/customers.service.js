@@ -174,7 +174,7 @@ export default class CustomersService extends BaseService {
         try {
             const response = await this.base.api.post(`/api/v3/digital-ocean/databases`, {
                 database,
-                database_cluster: databaseCluster,
+                databaseCluster: databaseCluster,
                 user
             }, {
                 headers: {
