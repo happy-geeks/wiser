@@ -11,6 +11,9 @@ using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 
 [assembly: AspMvcAreaViewLocationFormat("/Modules/{2}/Views/{1}/{0}.cshtml")]
 [assembly: AspMvcAreaViewLocationFormat("/Modules/{2}/Views/Shared/{0}.cshtml")]
@@ -66,7 +69,19 @@ namespace FrontEnd
             // Use the options pattern for all settings in appSettings.json.
             services.Configure<FrontEndSettings>(Configuration.GetSection("FrontEnd"));
             
-            services.AddControllersWithViews();
+            // Set Newtonsoft as the default JSON serializer and configure it to use camel case.
+            services.AddControllersWithViews(options => { options.AllowEmptyInputInBodyModelBinding = true; }).AddNewtonsoftJson(options =>
+            {
+                options.SerializerSettings.ContractResolver = new DefaultContractResolver()
+                {
+                    NamingStrategy = new CamelCaseNamingStrategy(false, true, false)
+                };
+
+                options.SerializerSettings.Formatting = Formatting.Indented;
+                options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+                options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Local;
+                options.SerializerSettings.Converters.Add(new StringEnumConverter());
+            });
 
             // Setup dependency injection.
             services.AddHttpContextAccessor();

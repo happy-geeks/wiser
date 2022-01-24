@@ -80,15 +80,15 @@
         min-height: calc(100vh - 280px);
     }
 
-    #left-pane .k-tabstrip button,
-    .k-treeview + button {
-        position: -webkit-sticky;
-        position: sticky;
-        left: 100%;
-        bottom: 20px;
-        margin-right: 20px;
-        padding: 0;
-    }
+#left-pane #addButton,
+.k-treeview + button {
+    position: -webkit-sticky;
+    position: sticky;
+    left: 100%;
+    bottom: 20px;
+    margin-right: 20px;
+    padding: 0;
+}
 
 /** TABSTRIP **/
 #left-pane .k-tabstrip-items-wrapper {
@@ -113,7 +113,8 @@
     min-height: calc(100% - 55px);
 }
 
-#right-pane .k-tabstrip .k-tabstrip-items {
+#right-pane .k-tabstrip .k-tabstrip-items,
+#left-pane .k-tabstrip .k-tabstrip-items {
     top: 5px;
 }
 

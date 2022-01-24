@@ -2,41 +2,40 @@
 @using GeeksCoreLibrary.Core.Cms.Attributes
 @model Api.Modules.Templates.Models.DynamicContent.DynamicContentInformationModel
 
-
-    <div class="item" data-label-style="float" data-label-width="0">
-        <span class="handler">&nbsp;</span>
-        <h4><label for="combo-01">Selecteer een module</label></h4>
-        <div class="flex-container">
-            <select id="combo-01" class="combo-select" placeholder="Maak uw keuze...">
-                @foreach (KeyValuePair<TypeInfo, CmsObjectAttribute> component in Model.Components)
+<div class="item" data-label-style="float" data-label-width="0">
+    <span class="handler">&nbsp;</span>
+    <h4><label for="combo-01">Selecteer een module</label></h4>
+    <div class="flex-container">
+        <select id="combo-01" class="combo-select" placeholder="Maak uw keuze...">
+            @foreach (KeyValuePair<TypeInfo, CmsObjectAttribute> component in Model.Components)
+            {
+                if (component.Value != null)
                 {
-                    if (component.Value != null)
-                    {
-                        <option value="@component.Key.Name">@component.Value.PrettyName</option>
-                    }
-                    else
-                    {
-                        <option value="@component.Key.Name">@component.Key.Name</option>
-                    }
+                    <option value="@component.Key.Name">@component.Value.PrettyName</option>
                 }
-            </select>
-        </div>
+                else
+                {
+                    <option value="@component.Key.Name">@component.Key.Name</option>
+                }
+            }
+        </select>
     </div>
+</div>
 
-    <div class="item" data-label-style="float" data-label-width="0">
-        <span class="handler">&nbsp;</span>
-        <h4><label for="combo-02">Componentmodus</label></h4>
-        <div class="flex-container">
-            <select id="combo-02" class="combo-select" placeholder="Maak uw keuze...">
-                <partial name="ComponentModeOptions"  model="Model.componentModes"/>
-            </select>
-        </div>
+<div class="item" data-label-style="float" data-label-width="0">
+    <span class="handler">&nbsp;</span>
+    <h4><label for="combo-02">Componentmodus</label></h4>
+    <div class="flex-container">
+        <select id="combo-02" class="combo-select" placeholder="Maak uw keuze...">
+            <partial name="ComponentModeOptions" model="Model.ComponentModes" />
+        </select>
     </div>
+</div>
 
-    <div class="item" data-label-style="float" data-label-width="0">
-        <span class="handler">&nbsp;</span>
-        <h4><label for="visibleDescription">Visible description</label></h4>
-        <span class="k-widget k-input k-state-default">
-            <input type="text" id="visibleDescription" class="textField k-input" name="visibleDescription" value="Hoofdmenu" autocomplete="off" pattern=".*">
-        </span>
-    </div>
+<div class="item" data-label-style="float" data-label-width="0">
+    <span class="handler">&nbsp;</span>
+    <h4><label for="visibleDescription">Visible description</label></h4>
+    <span class="k-widget k-input k-state-default">
+        <input type="text" id="visibleDescription" class="textField k-input" name="visibleDescription" value="Hoofdmenu" autocomplete="off" pattern=".*">
+    </span>
+</div>

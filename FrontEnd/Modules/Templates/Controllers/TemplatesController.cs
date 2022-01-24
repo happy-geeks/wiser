@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
-using Api.Modules.Templates.Models.Template;
+using Api.Modules.Templates.Models.History;
+using Api.Modules.Templates.Models.Preview;
 using FrontEnd.Core.Interfaces;
+using FrontEnd.Modules.Base.Models;
 using FrontEnd.Modules.Templates.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,9 +20,26 @@ namespace FrontEnd.Modules.Templates.Controllers
 
         public IActionResult Index()
         {
-            var viewModel = baseService.CreateBaseViewModel<TemplateOverviewViewModel>();
-            viewModel.TreeView = new List<TemplateTreeViewModel>();
+            var viewModel = baseService.CreateBaseViewModel<BaseModuleViewModel>();
             return View(viewModel);
+        }
+
+        [HttpPost, Route("DevelopmentTab")]
+        public IActionResult DevelopmentTab([FromBody]DevelopmentTabViewModel tabViewData)
+        {
+            return PartialView("Tabs/DevelopmentTab", tabViewData);
+        }
+
+        [HttpPost, Route("HistoryTab")]
+        public IActionResult HistoryTab([FromBody]TemplateHistoryOverviewModel tabViewData)
+        {
+            return PartialView("Tabs/HistoryTab", tabViewData);
+        }
+
+        [HttpPost, Route("PreviewTab")]
+        public IActionResult PreviewTab([FromBody]List<PreviewProfileModel> tabViewData)
+        {
+            return PartialView("Tabs/PreviewTab", tabViewData);
         }
     }
 }

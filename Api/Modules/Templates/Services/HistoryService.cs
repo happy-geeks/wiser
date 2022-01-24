@@ -15,104 +15,45 @@ using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Templates.Services
 {
+    /// <inheritdoc cref="IHistoryService" />
     public class HistoryService : IHistoryService, IScopedService
     {
         private readonly IDynamicContentDataService dataService;
-        private readonly IHistoryDataService historyService;
+        private readonly IHistoryDataService historyDataService;
 
-        public HistoryService(IDynamicContentDataService dataService, IHistoryDataService historyService)
+        /// <summary>
+        /// Creates a new instance of <see cref="HistoryService"/>.
+        /// </summary>
+        public HistoryService(IDynamicContentDataService dataService, IHistoryDataService historyDataService)
         {
             this.dataService = dataService;
-            this.historyService = historyService;
-        }
-        /// <summary>
-        /// Get the raw list of versions of the component. These historymodels have a rawdatastring and no generated changes.
-        /// </summary>
-        /// <param name="templateId">The id of the content to retrieve the versions of.</param>
-        /// <returns>List of HistoryVersionModels forming</returns>
-        private async Task<List<HistoryVersionModel>> GetHistoryOfComponent(int templateId)
-        {
-            var olderVersions = await historyService.GetDynamicContentHistory(templateId);
-
-            return olderVersions;
+            this.historyDataService = historyDataService;
         }
 
-        /// <summary>
-        /// Generates the changes between 2 versions. This will loop through the vesrions and will take the settings that have changed to add them to a versions changes.
-        /// </summary>
-        /// <param name="newVersion">The raw datastring of the newer version</param>
-        /// <param name="oldVersion">The raw datastring of the older version</param>
-        /// <returns>List of changes that can be added to the changes of the newer versions HistoryVersionModel.</returns>
-        private List<DynamicContentChangeModel> GenerateChangeLogFromDataStrings(string newComponent, string newMode, string newVersion, string oldComponent, string oldMode, string oldVersion)
+        /// <inheritdoc />
+        public async Task<List<HistoryVersionModel>> GetChangesInComponent(int contentId)
         {
-            var helper = new ReflectionHelper();
-            var newCmsSettings = helper.GetCmsSettingsTypeByComponentName(newComponent);
-            var oldCmsSettings = helper.GetCmsSettingsTypeByComponentName(oldComponent);
-
-            var newVersionDict = JsonConvert.DeserializeObject<Dictionary<string, JValue>>(newVersion);
-            var oldVersionDict = JsonConvert.DeserializeObject<Dictionary<string, JValue>>(oldVersion);
-
-            var changeLog = new List<DynamicContentChangeModel>();
-
-            foreach (var dataValue in newVersionDict)
-            {
-                if (oldVersionDict.ContainsKey(dataValue.Key) && !oldVersionDict.GetValueOrDefault(dataValue.Key).Equals(dataValue.Value))
-                {
-                    changeLog.Add(new DynamicContentChangeModel(newCmsSettings.GetProperty(dataValue.Key), dataValue.Value, oldVersionDict.GetValueOrDefault(dataValue.Key)));
-
-                    oldVersionDict.Remove(dataValue.Key);
-                }
-                else if (!oldVersionDict.ContainsKey(dataValue.Key)) {
-                    changeLog.Add(new DynamicContentChangeModel(newCmsSettings.GetProperty(dataValue.Key), dataValue.Value, ""));
-                }
-            }
-
-            //Check if the olderversion contains fields that the newVersion does not
-            foreach (var dataValue in oldVersionDict)
-            {
-                if (newVersionDict.ContainsKey(dataValue.Key) && !newVersionDict.GetValueOrDefault(dataValue.Key).Equals(dataValue.Value))
-                {
-                    changeLog.Add(new DynamicContentChangeModel(oldCmsSettings.GetProperty(dataValue.Key), newVersionDict.GetValueOrDefault(dataValue.Key), dataValue.Value));
-                }
-                else if (!newVersionDict.ContainsKey(dataValue.Key))
-                {
-                    changeLog.Add(new DynamicContentChangeModel(oldCmsSettings.GetProperty(dataValue.Key), "", dataValue.Value));
-                }
-            }
-            return changeLog;
-        }
-
-        /// <summary>
-        /// Retrieve history of the component with generated changes. The versions will be sorted by the HistoryVersion models version(DESC).
-        /// </summary>
-        /// <param name="templateId">The id of the content</param>
-        /// <returns>List of HistoryVersionModels with generated changes. Sorted by descending version.</returns>
-        public async Task<List<HistoryVersionModel>> GetChangesInComponent(int templateId)
-        {
-            var historyList = await GetHistoryOfComponent(templateId);
-            historyList.OrderBy(version => version.GetVersion());
+            var historyList = await GetHistoryOfComponent(contentId);
+            historyList.OrderBy(version => version.Version);
 
             for (var i = 0; i + 1 < historyList.Count; i++)
             {
-                historyList[i].SetChanges(GenerateChangeLogFromDataStrings(historyList[i].GetComponent(), historyList[i].GetComponentMode(), historyList[i].GetRawString(), historyList[i+1].GetComponent(), historyList[i+1].GetComponentMode(), historyList[i + 1].GetRawString()));
+                historyList[i].SetChanges(GenerateChangeLogFromDataStrings(historyList[i].Component, historyList[i].ComponentMode, historyList[i].RawVersionString, historyList[i + 1].Component, historyList[i + 1].ComponentMode, historyList[i + 1].RawVersionString));
             }
 
             return historyList;
         }
 
-        /// <summary>
-        /// Retrieves the current settings and applies the List of changes that should be reverted.
-        /// </summary>
-        /// <param name="changesToRevert">Contains the properties and specific versions that need to be reverted.</param>
-        /// <returns>An int indicating wether the action was succesfull.</returns>
-        public async Task<int> RevertChanges(List<RevertHistoryModel> changesToRevert, int templateId)
+        /// <inheritdoc />
+        public async Task<int> RevertChanges(List<RevertHistoryModel> changesToRevert, int contentId)
         {
-            var currentVersion = await dataService.GetTemplateData(templateId);
+            var currentVersion = await dataService.GetTemplateData(contentId);
 
-            foreach (var RevisedVersion in changesToRevert) {
-                var OldVersion = await dataService.GetVersionData(RevisedVersion.GetVersionForRevision(), templateId);
+            foreach (var RevisedVersion in changesToRevert)
+            {
+                var OldVersion = await dataService.GetVersionData(RevisedVersion.GetVersionForRevision(), contentId);
 
-                foreach (var RevisedProperty in RevisedVersion.GetRevertedProperties())
+                foreach (var RevisedProperty in RevisedVersion.RevertedProperties)
                 {
                     if (currentVersion.Value.ContainsKey(RevisedProperty))
                     {
@@ -122,54 +63,37 @@ namespace Api.Modules.Templates.Services
                     {
                         currentVersion.Value.Add(RevisedProperty, OldVersion.Value.GetValueOrDefault(RevisedProperty));
                     }
-                } 
+                }
             }
-            var componentAndMode = await dataService.GetComponentAndModeFromContentId(templateId);
-            return await dataService.SaveSettingsString(templateId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value);
+            var componentAndMode = await dataService.GetComponentAndModeFromContentId(contentId);
+            return await dataService.SaveSettingsString(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value);
         }
 
-        /// <summary>
-        /// Retrieve the published environments for dynamic content overviews. This method will accept a list of DynamicContentOverviewModel and retrieve the published environments for each dynamic content.
-        /// </summary>
-        /// <param name="overviewList">A list of DynamicContentOverviewModels which are to be supplied with published environments</param>
-        /// <returns>The list of DynamicContentOverviewModels containing the published environemnts for each model</returns>
-        public async Task<List<DynamicContentOverviewModel>> GetPublishedEnvoirementsOfOverviewModels (List<DynamicContentOverviewModel> overviewList)
+        /// <inheritdoc />
+        public async Task<List<DynamicContentOverviewModel>> GetPublishedEnvironmentsOfOverviewModels(List<DynamicContentOverviewModel> overviewList)
         {
-            var filledOverviews = new List<DynamicContentOverviewModel>();
-
             foreach (var overview in overviewList)
             {
                 overview.Versions = await GetHistoryVersionsOfDynamicContent(overview.Id);
-                filledOverviews.Add(overview);
             }
 
-            return filledOverviews;
+            return overviewList;
         }
 
-        /// <summary>
-        /// Retrieves a list of versions for the dynamic content containing their publish status and transforms it to a PublishedEnvironmentModel. 
-        /// </summary>
-        /// <param name="templateId">The id of the content.</param>
-        /// <returns>A PublishedEnvironmentModel containing the published environments of dynamic content</returns>
+        /// <inheritdoc />
         public async Task<PublishedEnvironmentModel> GetHistoryVersionsOfDynamicContent(int templateId)
         {
-            var versionsAndPublished = await historyService.GetPublishedEnvoirementsFromDynamicContent(templateId);
+            var versionsAndPublished = await historyDataService.GetPublishedEnvironmentsFromDynamicContent(templateId);
 
             var helper = new PublishedEnvironmentHelper();
 
             return helper.CreatePublishedEnvoirementsFromVersionDictionary(versionsAndPublished);
         }
-
-        /// <summary>
-        /// Retrieve the history of a template. This will start by retrieving the history of the template. 
-        /// When comparing the setttings for changes the linked dynamic content will be checked for changes during this version. Any changes found in the linked dynamic content will be added to the template history.
-        /// </summary>
-        /// <param name="templateId">The id of the template.</param>
-        /// <param name="dynamicContent">A Dictionary containing the overview of dynamic content and its respective history</param>
-        /// <returns>A list of TemplateHistoryModel containing the history of the template and its linked dynamic content for each version</returns>
+        
+        /// <inheritdoc />
         public async Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent)
         {
-            var rawTemplateModels = await historyService.GetTemplateHistory(templateId);
+            var rawTemplateModels = await historyDataService.GetTemplateHistory(templateId);
 
             var templateHistory = new List<TemplateHistoryModel>();
 
@@ -181,7 +105,7 @@ namespace Api.Modules.Templates.Services
                 {
                     foreach (var dynamichistory in historyList)
                     {
-                        if (dynamichistory.GetChangedOn() > rawTemplateModels[i + 1].ChangedOn && dynamichistory.GetChangedOn() < rawTemplateModels[i].ChangedOn)
+                        if (dynamichistory.ChangedOn > rawTemplateModels[i + 1].ChangedOn && dynamichistory.ChangedOn < rawTemplateModels[i].ChangedOn)
                         {
                             historyModel.DynamicContentChanges.Add(dynamichistory);
                         }
@@ -190,20 +114,27 @@ namespace Api.Modules.Templates.Services
 
                 templateHistory.Add(historyModel);
             }
+
             //Add entry for first version with no changes
-            templateHistory.Add(new TemplateHistoryModel(rawTemplateModels[rawTemplateModels.Count-1].Templateid, rawTemplateModels[rawTemplateModels.Count-1].Version, rawTemplateModels[rawTemplateModels.Count-1].ChangedOn, rawTemplateModels[rawTemplateModels.Count-1].ChangedBy));
+            templateHistory.Add(new TemplateHistoryModel(rawTemplateModels.Last().TemplateId, rawTemplateModels.Last().Version, rawTemplateModels.Last().ChangedOn, rawTemplateModels.Last().ChangedBy));
             return templateHistory;
+        }
+        
+        /// <inheritdoc />
+        public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId)
+        {
+            return await historyDataService.GetPublishHistoryFromTemplate(templateId);
         }
 
         /// <summary>
         /// Compares the standardised settings of a template and generate a TemplateHistoryModel containing the changes made between versions. This will also take changes to linked templates into account.
         /// </summary>
-        /// <param name="newVersion">A TemplateDataModel of the new version</param>
-        /// <param name="oldVersion">A TemplateDataModel of the old version</param>
+        /// <param name="newVersion">A <see cref="TemplateSettingsModel"/> of the new version</param>
+        /// <param name="oldVersion">A <see cref="TemplateSettingsModel"/> of the old version</param>
         /// <returns>A TemplateHistoryModel containing the changes that have been made between the oldversion and the new version</returns>
-        private TemplateHistoryModel GenerateHistoryModelForTemplates(TemplateDataModel newVersion, TemplateDataModel oldVersion)
+        private TemplateHistoryModel GenerateHistoryModelForTemplates(TemplateSettingsModel newVersion, TemplateSettingsModel oldVersion)
         {
-            var historyModel = new TemplateHistoryModel(newVersion.Templateid, newVersion.Version, newVersion.ChangedOn, newVersion.ChangedBy);
+            var historyModel = new TemplateHistoryModel(newVersion.TemplateId, newVersion.Version, newVersion.ChangedOn, newVersion.ChangedBy);
 
             CheckIfValuesMatchAndSaveChangesToHistoryModel("editorValue", newVersion.EditorValue, oldVersion.EditorValue, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("useCache", newVersion.UseCache, oldVersion.UseCache, historyModel);
@@ -224,15 +155,18 @@ namespace Api.Modules.Templates.Services
             var newList = newVersion.LinkedTemplates.RawLinkList.Split(",");
             var oldList = oldVersion.LinkedTemplates.RawLinkList.Split(",");
 
-            if (!String.IsNullOrEmpty(newVersion.LinkedTemplates.RawLinkList)) {
-                foreach (var item in newList) {
+            if (!String.IsNullOrEmpty(newVersion.LinkedTemplates.RawLinkList))
+            {
+                foreach (var item in newList)
+                {
                     if (!oldList.Contains(item))
                     {
                         historyModel.LinkedTemplateChanges.Add(item.Split(";")[1], new KeyValuePair<object, object>(true, false));
                     }
                 }
             }
-            if (!String.IsNullOrEmpty(oldVersion.LinkedTemplates.RawLinkList)) {
+            if (!String.IsNullOrEmpty(oldVersion.LinkedTemplates.RawLinkList))
+            {
                 foreach (var item in oldList)
                 {
                     if (!newList.Contains(item))
@@ -261,13 +195,57 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <summary>
-        /// Retrieves the publish history of a template
+        /// Get the raw list of versions of the component. These historymodels have a rawdatastring and no generated changes.
         /// </summary>
-        /// <param name="templateId">The id of a template</param>
-        /// <returns></returns>
-        public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId)
+        /// <param name="templateId">The id of the content to retrieve the versions of.</param>
+        /// <returns>List of HistoryVersionModels forming</returns>
+        private async Task<List<HistoryVersionModel>> GetHistoryOfComponent(int templateId)
         {
-            return await historyService.GetPublishHistoryFromTemplate(templateId);
+            var olderVersions = await historyDataService.GetDynamicContentHistory(templateId);
+
+            return olderVersions;
+        }
+
+        /// <summary>
+        /// Generates the changes between 2 versions. This will loop through the vesrions and will take the settings that have changed to add them to a versions changes.
+        /// </summary>
+        /// <param name="newVersion">The raw datastring of the newer version</param>
+        /// <param name="oldVersion">The raw datastring of the older version</param>
+        /// <returns>List of changes that can be added to the changes of the newer versions HistoryVersionModel.</returns>
+        private List<DynamicContentChangeModel> GenerateChangeLogFromDataStrings(string newComponent, string newMode, string newVersion, string oldComponent, string oldMode, string oldVersion)
+        {
+            var newVersionDict = JsonConvert.DeserializeObject<Dictionary<string, JValue>>(newVersion);
+            var oldVersionDict = JsonConvert.DeserializeObject<Dictionary<string, JValue>>(oldVersion);
+
+            var changeLog = new List<DynamicContentChangeModel>();
+
+            foreach (var dataValue in newVersionDict)
+            {
+                if (oldVersionDict.ContainsKey(dataValue.Key) && !oldVersionDict.GetValueOrDefault(dataValue.Key).Equals(dataValue.Value))
+                {
+                    changeLog.Add(new DynamicContentChangeModel(newComponent, dataValue.Key, dataValue.Value, oldVersionDict.GetValueOrDefault(dataValue.Key)));
+
+                    oldVersionDict.Remove(dataValue.Key);
+                }
+                else if (!oldVersionDict.ContainsKey(dataValue.Key))
+                {
+                    changeLog.Add(new DynamicContentChangeModel(newComponent, dataValue.Key, dataValue.Value, ""));
+                }
+            }
+
+            //Check if the olderversion contains fields that the newVersion does not
+            foreach (var dataValue in oldVersionDict)
+            {
+                if (newVersionDict.ContainsKey(dataValue.Key) && !newVersionDict.GetValueOrDefault(dataValue.Key).Equals(dataValue.Value))
+                {
+                    changeLog.Add(new DynamicContentChangeModel(oldComponent, dataValue.Key, newVersionDict.GetValueOrDefault(dataValue.Key), dataValue.Value));
+                }
+                else if (!newVersionDict.ContainsKey(dataValue.Key))
+                {
+                    changeLog.Add(new DynamicContentChangeModel(oldComponent, dataValue.Key, "", dataValue.Value));
+                }
+            }
+            return changeLog;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿<div class="item advanced" style="width: 100%;">
+﻿@model Api.Modules.Templates.Models.Template.TemplateSettingsModel
+<div class="item advanced" style="width: 100%;">
     <input type="checkbox" class="hidden" id="advanced" />
     <label for="advanced" class="group-label"><strong>Geavanceerd</strong><ins class="k-icon k-i-arrow-60-down"></ins></label>
 
@@ -22,20 +23,20 @@
                 <span class="handler">&nbsp;</span>
                 <h4><label for="cache-duration">Cache aantal minuten</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="text" id="cache-duration" class="textField k-input" name="cache-duration" value="@Model.cacheMinutes" autocomplete="off" pattern=".*">
+                    <input type="text" id="cache-duration" class="textField k-input" name="cache-duration" value="@Model.CacheMinutes" autocomplete="off" pattern=".*">
                 </span>
             </div>
 
             <ul class="checkColumns">
                 <li>
                     <label class="checkbox">
-                        @if (@Model.handleRequests)
+                        @if (@Model.HandleRequests)
                         {
-                            <input id="handleRequests" name="handleRequests" type="checkbox" value="@Model.handleRequests" checked="checked">
+                            <input id="handleRequests" name="handleRequests" type="checkbox" value="@Model.HandleRequests" checked="checked">
                         }
                         else
                         {
-                            <input id="handleRequests" name="handleRequests" type="checkbox" value="@Model.handleRequests">
+                            <input id="handleRequests" name="handleRequests" type="checkbox" value="@Model.HandleRequests">
                         }
                         <span>
                             Verwerk requestvariabelen
@@ -44,13 +45,13 @@
                 </li>
                 <li>
                     <label class="checkbox">
-                        @if (@Model.handleSession)
+                        @if (@Model.HandleSession)
                         {
-                            <input id="handleSession" name="handleSession" type="checkbox" value="@Model.handleSession" checked="checked">
+                            <input id="handleSession" name="handleSession" type="checkbox" value="@Model.HandleSession" checked="checked">
                         }
                         else
                         {
-                            <input id="handleSession" name="handleSession" type="checkbox" value="@Model.handleSession">
+                            <input id="handleSession" name="handleSession" type="checkbox" value="@Model.HandleSession">
                         }
                         <span>
                             Verwerk sessievariabelen
@@ -59,13 +60,13 @@
                 </li>
                 <li>
                     <label class="checkbox">
-                        @if (@Model.handleObjects)
+                        @if (@Model.HandleObjects)
                         {
-                            <input id="handleObjects" name="handleObjects" type="checkbox" value="@Model.handleObjects" checked="checked">
+                            <input id="handleObjects" name="handleObjects" type="checkbox" value="@Model.HandleObjects" checked="checked">
                         }
                         else
                         {
-                            <input id="handleObjects" name="handleObjects" type="checkbox" value="@Model.handleObjects">
+                            <input id="handleObjects" name="handleObjects" type="checkbox" value="@Model.HandleObjects">
                         }
                         <span>
                             Verwerk objectvariabelen
@@ -74,13 +75,13 @@
                 </li>
                 <li>
                     <label class="checkbox">
-                        @if (@Model.handleStandards)
+                        @if (@Model.HandleStandards)
                         {
-                            <input id="handleStandards" name="handleStandards" type="checkbox" value="@Model.handleStandards" checked="checked">
+                            <input id="handleStandards" name="handleStandards" type="checkbox" value="@Model.HandleStandards" checked="checked">
                         }
                         else
                         {
-                            <input id="handleStandards" name="handleStandards" type="checkbox" value="@Model.handleStandards">
+                            <input id="handleStandards" name="handleStandards" type="checkbox" value="@Model.HandleStandards">
                         }
                         <span>
                             Verwerk standards
@@ -89,13 +90,13 @@
                 </li>
                 <li>
                     <label class="checkbox">
-                        @if (@Model.handleTranslations)
+                        @if (@Model.HandleTranslations)
                         {
-                            <input id="handleTranslations" name="handleTranslations" type="checkbox" value="@Model.handleTranslations" checked="checked">
+                            <input id="handleTranslations" name="handleTranslations" type="checkbox" value="@Model.HandleTranslations" checked="checked">
                         }
                         else
                         {
-                            <input id="handleTranslations" name="handleTranslations" type="checkbox" value="@Model.handleTranslations">
+                            <input id="handleTranslations" name="handleTranslations" type="checkbox" value="@Model.HandleTranslations">
                         }
                         <span>
                             Verwerk vertalingen
@@ -104,13 +105,13 @@
                 </li>
                 <li>
                     <label class="checkbox">
-                        @if (@Model.handleDynamicContent)
+                        @if (@Model.HandleDynamicContent)
                         {
-                            <input id="handleDynamicContent" name="handleDynamicContent" type="checkbox" value="@Model.handleDynamicContent" checked="checked">
+                            <input id="handleDynamicContent" name="handleDynamicContent" type="checkbox" value="@Model.HandleDynamicContent" checked="checked">
                         }
                         else
                         {
-                            <input id="handleDynamicContent" name="handleDynamicContent" type="checkbox" value="@Model.handleDynamicContent">
+                            <input id="handleDynamicContent" name="handleDynamicContent" type="checkbox" value="@Model.HandleDynamicContent">
                         }
                         <span>
                             Verwerk dynamische content
@@ -119,13 +120,13 @@
                 </li>
                 <li>
                     <label class="checkbox">
-                        @if (@Model.handleLogicBlocks)
+                        @if (@Model.HandleLogicBlocks)
                         {
-                            <input id="handleLogicBlocks" name="handleLogicBlocks" type="checkbox" value="@Model.handleLogicBlocks" checked="checked">
+                            <input id="handleLogicBlocks" name="handleLogicBlocks" type="checkbox" value="@Model.HandleLogicBlocks" checked="checked">
                         }
                         else
                         {
-                            <input id="handleLogicBlocks" name="handleLogicBlocks" type="checkbox" value="@Model.handleLogicBlocks">
+                            <input id="handleLogicBlocks" name="handleLogicBlocks" type="checkbox" value="@Model.HandleLogicBlocks">
                         }
                         <span>
                             Verwerk logische blokken
@@ -134,13 +135,13 @@
                 </li>
                 <li>
                     <label class="checkbox">
-                        @if (@Model.handleMutators)
+                        @if (@Model.HandleMutators)
                         {
-                            <input id="handleMutators" name="handleMutators" type="checkbox" value="@Model.handleMutators" checked="checked">
+                            <input id="handleMutators" name="handleMutators" type="checkbox" value="@Model.HandleMutators" checked="checked">
                         }
                         else
                         {
-                            <input id="handleMutators" name="handleMutators" type="checkbox" value="@Model.handleMutators">
+                            <input id="handleMutators" name="handleMutators" type="checkbox" value="@Model.HandleMutators">
                         }
                         <span>
                             Verwerk mutators
@@ -151,13 +152,13 @@
             </ul>
         </div>
         <div class="item item-right" style="width: 40%;">
-            @if (@Model.loginRequired)
+            @if (@Model.LoginRequired)
             {
-                <input id="user-check" name="user-check" type="checkbox" value="@Model.loginRequired" checked="checked" class="hidden">
+                <input id="user-check" name="user-check" type="checkbox" value="@Model.LoginRequired" checked="checked" class="hidden">
             }
             else
             {
-                <input id="user-check" name="user-check" type="checkbox" value="@Model.loginRequired" class="hidden">
+                <input id="user-check" name="user-check" type="checkbox" value="@Model.LoginRequired" class="hidden">
             }
             @*<input type="checkbox" class="hidden" id="user-check" checked />*@
             <label class="checkbox" for="user-check">

@@ -1,5 +1,4 @@
-﻿@using Api.Modules.Templates.Models.Preview
-@model List<Api.Modules.Templates.Models.Preview.PreviewProfileModel>
+﻿@model List<Api.Modules.Templates.Models.Preview.PreviewProfileModel>
 <div class="formview full previewContainer">
     <div class="row preview-settings">
         <div class="col col-6 preview-profile">
@@ -10,7 +9,7 @@
                             <select id="preview-combo-select" placeholder="Maak uw keuze...">
                                 @foreach (var profile in Model)
                                 {
-                                    <option value="@profile.id" data-url="@profile.url" data-variables="@profile.variables">@profile.name</option>
+                                    <option value="@profile.Id" data-url="@profile.Url" data-variables="@profile.Variables">@profile.Name</option>
                                 }
                             </select>
                         </div>

@@ -23,16 +23,16 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<List<PreviewProfileDAO>> GetPreviewProfiles(int templateId)
+        public async Task<List<PreviewProfileDao>> Get(int templateId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
 
             var dataTable = await connection.GetAsync("SELECT ppt.id, ppt.template_name, ppt.url, ppt.previewvariables FROM wiser_previewprofiles_test ppt WHERE ppt.template_id = ?templateid ORDER BY ppt.ordering");
-            var resultList = new List<PreviewProfileDAO>();
+            var resultList = new List<PreviewProfileDao>();
             foreach (DataRow row in dataTable.Rows)
             {
-                resultList.Add(new PreviewProfileDAO(
+                resultList.Add(new PreviewProfileDao(
                         row.Field<long>("id"),
                         row.Field<string>("template_name"),
                         row.Field<string>("url"),
@@ -45,7 +45,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<int> CreatePreviewProfile(PreviewProfileDAO profile, int templateId)
+        public async Task<int> Create(PreviewProfileDao profile, int templateId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
@@ -57,7 +57,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<int> EditPreviewProfile(PreviewProfileDAO profile, int templateId)
+        public async Task<int> Update(PreviewProfileDao profile, int templateId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
@@ -70,7 +70,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<int> RemovePreviewProfile(int templateId, int profileId)
+        public async Task<int> Delete(int templateId, int profileId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);

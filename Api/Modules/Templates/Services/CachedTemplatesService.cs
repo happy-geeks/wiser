@@ -5,6 +5,7 @@ using Api.Core.Services;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
+using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.Enums;
@@ -12,7 +13,6 @@ using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Models;
-using JetBrains.Annotations;
 using LazyCache;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
@@ -20,6 +20,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Templates.Services
 {
+    /// <inheritdoc cref="ITemplatesService" />
     public class CachedTemplatesService : ITemplatesService
     {
         private readonly IAppCache cache;
@@ -28,6 +29,9 @@ namespace Api.Modules.Templates.Services
         private readonly IDatabaseConnection databaseConnection;
         private readonly GclSettings gclSettings;
 
+        /// <summary>
+        /// Creates a new instance of <see cref="CachedTemplatesService"/>.
+        /// </summary>
         public CachedTemplatesService(IAppCache cache, ITemplatesService templatesService, IOptions<GclSettings> gclSettings, ICacheService cacheService, IDatabaseConnection databaseConnection)
         {
             this.cache = cache;
@@ -74,7 +78,7 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateDataModel>> GetTemplateSettingsAsync(int templateId)
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId)
         {
             return await templatesService.GetTemplateSettingsAsync(templateId);
         }
@@ -104,9 +108,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(TemplateDataModel template, List<int> scssLinks, List<int> jsLinks)
+        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(TemplateSettingsModel template)
         {
-            return await templatesService.SaveTemplateVersionAsync(template, scssLinks, jsLinks);
+            return await templatesService.SaveTemplateVersionAsync(template);
         }
 
         /// <inheritdoc />
@@ -116,15 +120,15 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<SearchResultModel>>> GetSearchResultsAsync(SearchSettingsModel searchSettings)
+        public async Task<ServiceResult<List<SearchResultModel>>> Search(SearchSettingsModel searchSettings)
         {
-            return await templatesService.GetSearchResultsAsync(searchSettings);
+            return await templatesService.Search(searchSettings);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<DevelopmentTemplateModel>> GetDevelopmentTabDataAsync(int templateId)
+        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(int templateId)
         {
-            return await templatesService.GetDevelopmentTabDataAsync(templateId);
+            return await templatesService.GetTemplateHistoryAsync(templateId);
         }
     }
 }

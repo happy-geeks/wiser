@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Templates.Helpers;
@@ -23,9 +25,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<PreviewProfileModel>>> GetPreviewProfiles(int templateId)
+        public async Task<ServiceResult<List<PreviewProfileModel>>> Get(int templateId)
         {
-            var dataList = await previewDataService.GetPreviewProfiles(templateId);
+            var dataList = await previewDataService.Get(templateId);
             var modelList = new List<PreviewProfileModel>();
             
             foreach (var previewDao in dataList)
@@ -37,24 +39,74 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<PreviewProfileModel>> CreatePreviewProfile(PreviewProfileModel profile, int templateId)
+        public async Task<ServiceResult<PreviewProfileModel>> Create(PreviewProfileModel profile, int templateId)
         {
-            profile.id = await previewDataService.CreatePreviewProfile(PreviewProfileHelper.ConvertPreviewProfileModelToDAO(profile), templateId);
+            if (templateId <= 0)
+            {
+                return new ServiceResult<PreviewProfileModel>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "The Id cannot be zero."
+                };
+            }
+
+            profile.Id = await previewDataService.Create(PreviewProfileHelper.ConvertPreviewProfileModelToDAO(profile), templateId);
             return new ServiceResult<PreviewProfileModel>(profile);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> EditPreviewProfile(PreviewProfileModel profile, int templateId)
+        public async Task<ServiceResult<bool>> Update(PreviewProfileModel profile, int templateId)
         {
-            await previewDataService.EditPreviewProfile(PreviewProfileHelper.ConvertPreviewProfileModelToDAO(profile), templateId);
-            return new ServiceResult<bool>(true);
+            if (templateId <= 0)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "The Id cannot be zero."
+                };
+            }
+
+            if (profile.Id <= 0)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "The profileId is invalid"
+                };
+            }
+            
+            await previewDataService.Update(PreviewProfileHelper.ConvertPreviewProfileModelToDAO(profile), templateId);
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> RemovePreviewProfile(int templateId, int profileId)
+        public async Task<ServiceResult<bool>> Delete(int templateId, int profileId)
         {
-            await previewDataService.RemovePreviewProfile(templateId, profileId);
-            return new ServiceResult<bool>(true);
+            if (templateId <= 0)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "The Id cannot be zero."
+                };
+            }
+            if (profileId <= 0)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "The profileId is invalid"
+                };
+            }
+
+            await previewDataService.Delete(templateId, profileId);
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
     }
 }

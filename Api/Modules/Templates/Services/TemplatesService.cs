@@ -2352,6 +2352,11 @@ LIMIT 1";
         /// <inheritdoc />
         public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId)
         {
+            if (templateId <= 0)
+            {
+                throw new ArgumentException("The Id cannot be zero.");
+            }
+
             var versionsAndPublished = await templateDataService.GetPublishedEnvironmentsFromTemplate(templateId);
 
             var helper = new PublishedEnvironmentHelper();
@@ -2362,6 +2367,10 @@ LIMIT 1";
         /// <inheritdoc />
         public async Task<ServiceResult<LinkedTemplatesModel>> GetLinkedTemplatesAsync(int templateId)
         {
+            if (templateId <= 0)
+            {
+                throw new ArgumentException("The Id cannot be zero.");
+            }
 
             var rawLinkList = await templateDataService.GetLinkedTemplates(templateId);
 
@@ -2386,6 +2395,11 @@ LIMIT 1";
         /// <inheritdoc />
         public async Task<ServiceResult<List<DynamicContentOverviewModel>>> GetLinkedDynamicContentAsync(int templateId)
         {
+            if (templateId <= 0)
+            {
+                throw new ArgumentException("The Id cannot be zero.");
+            }
+
             var resultList = new List<DynamicContentOverviewModel>();
 
             foreach (var linkedContent in await templateDataService.GetLinkedDynamicContent(templateId))
@@ -2397,7 +2411,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateDataModel>> GetTemplateSettingsAsync(int templateId)
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId)
         {
             if (templateId <= 0)
             {
@@ -2408,7 +2422,7 @@ LIMIT 1";
             var templateEnvironmentsResult = await GetTemplateEnvironmentsAsync(templateId);
             if (templateEnvironmentsResult.StatusCode != HttpStatusCode.OK)
             {
-                return new ServiceResult<TemplateDataModel>
+                return new ServiceResult<TemplateSettingsModel>
                 {
                     ReasonPhrase = templateEnvironmentsResult.ReasonPhrase,
                     ErrorMessage = templateEnvironmentsResult.ErrorMessage,
@@ -2417,12 +2431,22 @@ LIMIT 1";
             }
 
             templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
-            return new ServiceResult<TemplateDataModel>(templateData);
+            return new ServiceResult<TemplateSettingsModel>(templateData);
         }
 
         /// <inheritdoc />
         public async Task<ServiceResult<int>> PublishEnvironmentOfTemplateAsync(int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
         {
+            if (templateId <= 0)
+            {
+                throw new ArgumentException("The Id is invalid");
+            }
+
+            if (version <= 0)
+            {
+                throw new ArgumentException("The version is invalid");
+            }
+
             var helper = new PublishedEnvironmentHelper();
 
             var newPublished = helper.CalculateEnvirontmentsToPublish(currentPublished, version, environment);
@@ -2433,12 +2457,20 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(TemplateDataModel template, List<int> scssLinks, List<int> jsLinks)
+        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(TemplateSettingsModel template)
         {
-            var linkList = await templateDataService.GetLinkedTemplates(template.Templateid);
+            if (template == null)
+            {
+                throw new ArgumentException("TemplateData cannot be empty.");
+            }
+
+            var linkList = await templateDataService.GetLinkedTemplates(template.TemplateId);
 
             var linksToAdd = new List<int>();
             var linksToRemove = new List<int>();
+
+            var jsLinks = template.LinkedTemplates.LinkedJavascript.Select(x => x.TemplateId).ToList();
+            var scssLinks = template.LinkedTemplates.LinkedSccsTemplates.Select(x => x.TemplateId).ToList();
 
             linksToAdd = GetToAddList(jsLinks, linkList, linksToAdd);
             linksToAdd = GetToAddList(scssLinks, linkList, linksToAdd);
@@ -2447,7 +2479,7 @@ LIMIT 1";
             linksToRemove = FillToRemoveList(scssLinks, LinkedTemplatesEnum.scss, linkList, linksToRemove);
 
             await templateDataService.SaveTemplateVersion(template, scssLinks, jsLinks);
-            await templateDataService.SaveLinkedTemplates(template.Templateid, linksToAdd, linksToRemove);
+            await templateDataService.SaveLinkedTemplates(template.TemplateId, linksToAdd, linksToRemove);
             return new ServiceResult<bool>(true);
         }
 
@@ -2462,43 +2494,9 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<SearchResultModel>>> GetSearchResultsAsync(SearchSettingsModel searchSettings)
+        public async Task<ServiceResult<List<SearchResultModel>>> Search(SearchSettingsModel searchSettings)
         {
             return new ServiceResult<List<SearchResultModel>>(await templateDataService.GetSearchResults(searchSettings));
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<DevelopmentTemplateModel>> GetDevelopmentTabDataAsync(int templateId)
-        {
-            var latestTemplateVersion = await GetTemplateSettingsAsync(templateId);
-            if (latestTemplateVersion.StatusCode != HttpStatusCode.OK)
-            {
-                return new ServiceResult<DevelopmentTemplateModel>
-                {
-                    StatusCode = latestTemplateVersion.StatusCode,
-                    ErrorMessage = latestTemplateVersion.ErrorMessage,
-                    ReasonPhrase = latestTemplateVersion.ReasonPhrase
-                };
-            }
-
-            var linkedTemplates = await GetLinkedTemplatesAsync(templateId);
-            if (linkedTemplates.StatusCode != HttpStatusCode.OK)
-            {
-                return new ServiceResult<DevelopmentTemplateModel>
-                {
-                    StatusCode = linkedTemplates.StatusCode,
-                    ErrorMessage = linkedTemplates.ErrorMessage,
-                    ReasonPhrase = linkedTemplates.ReasonPhrase
-                };
-            }
-
-            var model = new DevelopmentTemplateModel
-            {
-                TemplateData = latestTemplateVersion.ModelObject,
-                LinkedTemplates = linkedTemplates.ModelObject
-            };
-
-            return new ServiceResult<DevelopmentTemplateModel>(model);
         }
 
         /// <inheritdoc />
@@ -2526,9 +2524,10 @@ LIMIT 1";
                 dynamicContentHistory.Add(dc, await historyService.GetChangesInComponent(dc.Id));
             }
 
-            var overview = new TemplateHistoryOverviewModel {
-                TemplateId = templateId, 
-                TemplateHistory = await historyService.GetVersionHistoryFromTemplate(templateId, dynamicContentHistory), 
+            var overview = new TemplateHistoryOverviewModel
+            {
+                TemplateId = templateId,
+                TemplateHistory = await historyService.GetVersionHistoryFromTemplate(templateId, dynamicContentHistory),
                 PublishHistory = await historyService.GetPublishHistoryFromTemplate(templateId),
                 PublishedEnvironment = (await GetTemplateEnvironmentsAsync(templateId)).ModelObject
             };
