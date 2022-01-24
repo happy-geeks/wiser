@@ -97,19 +97,19 @@
     </div>
 
     <script type="text/x-wiser-template" id="taskHtmlTemplate">
-        <li data-has-linked-item="{has_linked_item}">
+        <li data-has-linked-item="{hasLinkedItem}">
             <div class="taskListItemDetails">
                 <label>
-                    <input type="checkbox" class="noForm" value="{idencrypted}" />
+                    <input type="checkbox" class="noForm" value="{encryptedId}" />
                     <ins class="icon-check"></ins>
                 </label>
                 <span>{content}</span>
-                <small>{agendering_date_pretty}</small>
+                <small>{agenderingDatePretty}</small>
                 <small>{status}</small>
-                <strong>{placed_by}</strong>
+                <strong>{placedBy}</strong>
             </div>
-            <a role="button" class="k-button k-button-icontext open-task" data-item-id="{linked_item_id}" data-module-id="{linked_item_module_id}" data-entity-type="{linked_item_entity_type}" href="#"><span class="k-icon k-i-hyperlink-open"></span></a>
-            <a role="button" class="k-button k-button-icontext edit-task" data-task-id="{idencrypted}" href="#"><span class="k-icon k-i-edit"></span></a>
+            <a role="button" class="k-button k-button-icontext open-task" data-item-id="{linkedItemId}" data-module-id="{linkedItemModuleId}" data-entity-type="{linkedItemEntityType}" href="#"><span class="k-icon k-i-hyperlink-open"></span></a>
+            <a role="button" class="k-button k-button-icontext edit-task" data-task-id="{encryptedId}" href="#"><span class="k-icon k-i-edit"></span></a>
         </li>
     </script>
     

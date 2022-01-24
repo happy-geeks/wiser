@@ -113,29 +113,29 @@ const loginModule = {
 
             // Check if we have user data in the local storage and if that data is still valid.
             if (!user) {
-                const accessTokenExpires = localStorage.getItem("access_token_expires_on");
+                const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
 
                 // User is still logged in.
                 const user = JSON.parse(localStorage.getItem("userData"));
 
                 if (data.gotUnauthorized || !accessTokenExpires || new Date(accessTokenExpires) <= new Date() || user.requirePasswordChange) {
-                    if (!user || !user.refresh_token || user.requirePasswordChange) {
+                    if (!user || !user.refreshToken || user.requirePasswordChange) {
                         this.dispatch(AUTH_LOGOUT);
                         return;
                     }
 
-                    const loginResult = await main.usersService.refreshToken(user.refresh_token);
+                    const loginResult = await main.usersService.refreshToken(user.refreshToken);
                     if (!loginResult.success) {
                         this.dispatch(AUTH_LOGOUT);
                         return;
                     }
 
-                    localStorage.setItem("access_token", loginResult.data.access_token);
-                    localStorage.setItem("access_token_expires_on", loginResult.data.expires_on);
+                    localStorage.setItem("accessToken", loginResult.data.access_token);
+                    localStorage.setItem("accessTokenExpiresOn", loginResult.data.expiresOn);
                     localStorage.setItem("userData", JSON.stringify(Object.assign({}, user, loginResult.data)));
                 }
 
-                window.main.api.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("access_token")}`;
+                window.main.api.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("accessToken")}`;
 
                 user.loggedIn = true;
 
@@ -163,10 +163,10 @@ const loginModule = {
                 return;
             }
 
-            localStorage.setItem("access_token", loginResult.data.access_token);
-            localStorage.setItem("access_token_expires_on", loginResult.data.expires_on);
+            localStorage.setItem("accessToken", loginResult.data.access_token);
+            localStorage.setItem("accessTokenExpiresOn", loginResult.data.expiresOn);
             localStorage.setItem("userData", JSON.stringify(loginResult.data));
-            window.main.api.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("access_token")}`;
+            window.main.api.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("accessToken")}`;
 
             loginResult.data.loggedIn = true;
 
@@ -183,8 +183,8 @@ const loginModule = {
         },
 
         [AUTH_LOGOUT]({ commit }) {
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("access_token_expires_on");
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("accessTokenExpiresOn");
             localStorage.removeItem("userData");
             sessionStorage.removeItem("userSettings");
             delete window.main.api.defaults.headers.common["Authorization"];
@@ -265,20 +265,20 @@ const modulesModule = {
 
         [OPEN_MODULE]: (state, module) => {
             // Check if this module is already open, if the user is not allowed to have multiple instances of this module open at once.
-            let activeModule = !module.only_one_instance_allowed ? null : state.openedModules.filter(m => m.module_id === module.module_id)[0];
+            let activeModule = !module.onlyOneInstanceAllowed ? null : state.openedModules.filter(m => m.moduleId === module.moduleId)[0];
 
             // Add the module to the list if it isn't open yet, or if the user is allowed to have multiple instanced of the same module open at once.
             if (!activeModule) {
                 activeModule = Object.assign({}, module);
 
-                if (module.only_one_instance_allowed) {
-                    activeModule.id = activeModule.module_id;
+                if (module.onlyOneInstanceAllowed) {
+                    activeModule.id = activeModule.moduleId;
                     activeModule.index = 0;
                 } else {
                     // Set a unique ID and index, to that users can have this module open more than once.
-                    const allInstances = state.openedModules.filter(m => m.module_id === module.module_id);
+                    const allInstances = state.openedModules.filter(m => m.moduleId === module.moduleId);
                     const newModuleIndex = Math.max(...allInstances.map(m => m.index || 0), 0) + 1;
-                    activeModule.id = `${activeModule.module_id}_${newModuleIndex}`;
+                    activeModule.id = `${activeModule.moduleId}_${newModuleIndex}`;
                     activeModule.index = newModuleIndex;
                 }
                 

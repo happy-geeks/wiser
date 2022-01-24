@@ -25,7 +25,7 @@ const moduleSettings = {
             
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
-                headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
             });
 
             this.tasks = [];
@@ -78,7 +78,7 @@ const moduleSettings = {
             }
             
             // Show an error if the user is no longer logged in.
-            const accessTokenExpires = localStorage.getItem("access_token_expires_on");
+            const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
                 Wiser2.alert({
                     title: "Niet ingelogd",
@@ -94,10 +94,10 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = user.adminAccountName;
             
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot, this.settings.isTestEnvironment);
-            this.settings.userId = userData.encrypted_id;
-            this.settings.customerId = userData.encrypted_customer_id;
-            this.settings.zeroEncrypted = userData.zero_encrypted;
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            this.settings.userId = userData.encryptedId;
+            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.wiser2UserId = userData.id;
             
             if (!this.settings.wiserApiRoot.endsWith("/")) {
@@ -179,7 +179,7 @@ const moduleSettings = {
                 return null;
             }
 
-            return this.tasks.find((task) => task.idencrypted === encryptedId);
+            return this.tasks.find((task) => task.encryptedId === encryptedId);
         }
 
         async registerPusherAndEventListeners() {
@@ -276,8 +276,8 @@ const moduleSettings = {
         }
 
         openEditForm(task) {
-            this.editTaskDatePicker.value(task.agendering_date);
-            this.editTaskUserSelect.value(task.userid);
+            this.editTaskDatePicker.value(task.createdOn);
+            this.editTaskUserSelect.value(task.userId);
             this.editTaskStatusSelect.value(task.status);
             document.getElementById("editTaskDescription").value = task.content;
 
@@ -301,17 +301,17 @@ const moduleSettings = {
             }
 
             data.forEach((task) => {
-                const date = new Date(task.agendering_date);
-                task.agendering_date_pretty = kendo.toString(date, "dddd d MMMM yyyy");
+                const date = new Date(task.createdOn);
+                task.agenderingDatePretty = kendo.toString(date, "dddd d MMMM yyyy");
 
                 // Check if the task has a linked item.
-                task.has_linked_item = task.linked_item_id && task.linked_item_module_id > 0;
+                task.hasLinkedItem = task.linkedItemId && task.linkedItemModuleId > 0;
             });
 
             // Gotta re-order the data.
             data.sort((a, b) => {
-                const date1 = new Date(a.agendering_date).getTime();
-                const date2 = new Date(b.agendering_date).getTime();
+                const date1 = new Date(a.createdOn).getTime();
+                const date2 = new Date(b.createdOn).getTime();
                 return date1 > date2 ? 1 : -1;
             });
 
@@ -411,7 +411,7 @@ const moduleSettings = {
                         url: `${this.settings.wiserApiRoot}pusher/message`,
                         method: "POST",
                         contentType: "application/json",
-                        data: JSON.stringify({ user_id: userId })
+                        data: JSON.stringify({ userId: userId })
                     });
 
                     created++;
@@ -468,7 +468,7 @@ const moduleSettings = {
                 ];
 
                 // And finally update the newly created item.
-                await this.updateItem(this.taskInEdit.idencrypted, inputData);
+                await this.updateItem(this.taskInEdit.encryptedId, inputData);
 
                 // Refresh to reflect changes.
                 this.loadTasks();
@@ -478,7 +478,7 @@ const moduleSettings = {
                     url: `${this.settings.wiserApiRoot}pusher/message`,
                     method: "POST",
                     contentType: "application/json",
-                    data: JSON.stringify({ user_id: this.editTaskUserSelect.value() })
+                    data: JSON.stringify({ userId: this.editTaskUserSelect.value() })
                 });
 
                 // After updating the task, immediately close the form.
@@ -532,9 +532,9 @@ const moduleSettings = {
         async createItem(entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null) {
             try {
                 const newItem = {
-                    entity_type: entityType,
+                    entityType: entityType,
                     title: name,
-                    module_id: moduleId || this.settings.moduleId
+                    moduleId: moduleId || this.settings.moduleId
                 };
                 const parentIdUrlPart = parentId ? `&parentId=${encodeURIComponent(parentId)}` : "";
                 const createItemResult = await Wiser2.api({
@@ -543,19 +543,19 @@ const moduleSettings = {
                     contentType: "application/json",
                     data: JSON.stringify(newItem)
                 });
-                if (!skipUpdate) await this.updateItem(createItemResult.new_item_id, data || [], true, entityType);
+                if (!skipUpdate) await this.updateItem(createItemResult.newItemId, data || [], true, entityType);
 
                 const workflowResult = await Wiser2.api({
-                    url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(createItemResult.new_item_id)}/workflow?isNewItem=true`,
+                    url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(createItemResult.newItemId)}/workflow?isNewItem=true`,
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(newItem)
                 });
 
                 return {
-                    itemId: createItemResult.new_item_id,
-                    itemIdPlain: createItemResult.new_item_id_plain,
-                    linkId: createItemResult.new_link_id,
+                    itemId: createItemResult.newItemId,
+                    itemIdPlain: createItemResult.newItemIdPlain,
+                    linkId: createItemResult.newLinkId,
                     icon: createItemResult.icon,
                     workflowResult: workflowResult
                 };
@@ -582,9 +582,9 @@ const moduleSettings = {
         async updateItem(encryptedItemId, inputData, isNewItem, entityType) {
             const updateItemData = {
                 details: inputData,
-                changed_by: this.settings.username,
-                entity_type: entityType,
-                published_environment: "Live"
+                changedBy: this.settings.username,
+                entityType: entityType,
+                publishedEnvironment: "Live"
             };
 
             return Wiser2.api({
@@ -670,11 +670,11 @@ const moduleSettings = {
 
             if (window.parent) {
                 window.parent.main.vueApp.openModule({
-                    module_id: `wiserItem_${properties.itemId}`,
+                    moduleId: `wiserItem_${properties.itemId}`,
                     name: `Wiser item via agendering`,
                     type: "dynamicItems",
                     iframe: true,
-                    item_id: properties.itemId,
+                    itemId: properties.itemId,
                     fileName: "DynamicItems.aspx",
                     queryString: `?moduleId=${encodeURIComponent(properties.moduleId || 0)}&iframe=true&itemId=${encodeURIComponent(properties.itemId)}&entityType=${encodeURIComponent(properties.entityType || "agendering")}`
                 });
@@ -695,7 +695,7 @@ const moduleSettings = {
 
             if (window.parent) {
                 window.parent.main.vueApp.openModule({
-                    module_id: `taskHistory`,
+                    moduleId: `taskHistory`,
                     name: `Agendering historie`,
                     type: "TaskAlerts",
                     iframe: true,

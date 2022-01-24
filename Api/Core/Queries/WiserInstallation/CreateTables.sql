@@ -553,7 +553,7 @@ CREATE TABLE IF NOT EXISTS `wiser_communication_generated`  (
 -- NOTE: When changing columns, make sure to also change the triggers for this table!
 CREATE TABLE IF NOT EXISTS `wiser_data_selector`  (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT 'The name of the data selector item.',
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT 'The name of the data selector item.',
   `removed` tinyint NOT NULL DEFAULT 0,
   `module_selection` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT 'Comma separated list of module IDs.',
   `request_json` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT 'The JSON that was created to be used in the request.',

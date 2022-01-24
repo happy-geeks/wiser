@@ -21,13 +21,13 @@ var options = $.extend(true, {
                     url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.queryId || 0) + "&&itemLinkId={itemLinkId}",
                     contentType: "application/json"
                 }).then(function(queryResults) {
-                    if (!queryResults || !queryResults.other_data) {
+                    if (!queryResults || !queryResults.otherData) {
                         transportOptions.error(queryResults);
                         return;
                     }
                     
-                    for (var dataIndex = 0; dataIndex < queryResults.other_data.length; dataIndex++) {
-                        var dataItem = queryResults.other_data[dataIndex];
+                    for (var dataIndex = 0; dataIndex < queryResults.otherData.length; dataIndex++) {
+                        var dataItem = queryResults.otherData[dataIndex];
                         
                         if (typeof dataItem.resources !== "string") {
                             continue;
@@ -36,7 +36,7 @@ var options = $.extend(true, {
                         dataItem.resources = dataItem.resources.split(",");
                     }
                     
-                    transportOptions.success(queryResults.other_data);
+                    transportOptions.success(queryResults.otherData);
                 }).catcg(function(jqXHR, textStatus, errorThrown) {
                     transportOptions.error(jqXHR, textStatus, errorThrown);
                 });
@@ -76,7 +76,7 @@ if (optionsFromProperty.resourcesQueryId) {
             multiple: true,
             dataSource: {
                 schema: {
-                    data: "other_data"
+                    data: "otherData"
                 },
                 transport: {
                     read: (kendoReadOptions) => {

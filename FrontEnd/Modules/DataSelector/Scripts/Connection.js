@@ -76,18 +76,19 @@
                 const dataItem = selectDetailsWidget.dataSource.view().find((di) => {
                     return di.value === selectedDataItem.value;
                 });
-                
+
                 this.dataSelector.openFieldEditor(dataItem, {
                     includeLanguageCodeField: !this.dataSelector.useExportMode
                 });
             });
-            
+
             this.dataSelector.giveCustomClickLogic(selectDetailsWidget);
 
             containerElement.find(".item.scopesList").on("click", "button.edit-field-button", (e) => {
                 const button = $(e.currentTarget);
                 const propertyDropdown = button.closest(".inputRow").find("select.scope-property-select").getKendoDropDownList();
                 this.dataSelector.openFieldEditor(propertyDropdown.dataItem(), {
+                    includeDataTypeField: true,
                     includeLanguageCodeField: !this.dataSelector.useExportMode,
                     includeFieldAliasField: false,
                     includeIsItemIdField: false
@@ -186,9 +187,11 @@
 
                 entityType = linkedToPropertySelect.dataItem().entityType;
             }
-            
-            const response = await $.get(`${this.dataSelector.settings.serviceRoot}/GET_ENTITY_PROPERTIES?entity_name=${entityType}&use_export_mode=${this.dataSelector.useExportMode ? "1" : "0"}`);
-
+          
+            const response = await Wiser2.api({
+                url: `${this.dataSelector.settings.wiserApiRoot}data-selectors/entity-properties/${entityType}/?forExportMode=${this.dataSelector.useExportMode}`
+            });
+          
             // Create clone of "response" so it doesn't use the reference value, but a completely new object.
             // Although it's also possible to use "[...response]", this JSON trick works better as it also clones deep properties.
             this.availableProperties = JSON.parse(JSON.stringify(response));
@@ -196,6 +199,13 @@
             // Create a "unique value" for every property, based on the normal value.
             // A few inputs use this, like the group by input, order by input, and having inputs.
             this.availableProperties.forEach((property) => {
+                // Initialize some additional properties.
+                property.aggregation = "";
+                property.formatting = "";
+                property.fieldAlias = "";
+                property.direction = "ASC";
+
+                // Initial value of the "alias or value" should just be the value.
                 property.aliasOrValue = property.value;
             });
         }
@@ -219,7 +229,7 @@
                 linkType = linkedToPropertySelect.dataItem().typeNumber;
             }
 
-            const response = await Wiser2.api({ url: `${this.dataSelector.settings.serviceRoot}/GET_ENTITY_LINK_PROPERTIES?link_type=${linkType}` });
+            const response = await Wiser2.api({ url: `${this.dataSelector.settings.serviceRoot}/GET_ENTITY_LINK_PROPERTIES?linkType=${linkType}` });
 
             // Create clone of "response" so it doesn't use the reference value, but a completely new object.
             // Although it's also possible to use "[...response]", this JSON trick works better as it also clones deep properties.
@@ -387,7 +397,7 @@
                         }
 
                         Wiser2.api({
-                            url: `${this.dataSelector.settings.serviceRoot}/${templateName}?entity_name=${selectedEntityType}`,
+                            url: `${this.dataSelector.settings.serviceRoot}/${templateName}?entityName=${selectedEntityType}`,
                             dataType: "json"
                         }).then((result) => {
                             const dataSource = [];

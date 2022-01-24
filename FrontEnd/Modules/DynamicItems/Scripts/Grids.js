@@ -149,7 +149,7 @@ export class Grids {
             if (usingDataSelector) {
                 gridDataResult = {
                     columns: gridViewSettings.columns,
-                    page_size: gridViewSettings.pageSize || 100,
+                    pageSize: gridViewSettings.pageSize || 100,
                     data: await Wiser2.api({
                         url: `${this.base.settings.getItemsUrl}?encryptedDataSelectorId=${encodeURIComponent(gridViewSettings.dataSelectorId)}`,
                         contentType: "application/json"
@@ -170,10 +170,10 @@ export class Grids {
             } else {
                 const options = {
                     page: 1,
-                    page_size: gridViewSettings.pageSize || 100,
+                    pageSize: gridViewSettings.pageSize || 100,
                     skip: 0,
                     take: gridViewSettings.clientSidePaging ? 0 : (gridViewSettings.pageSize || 100),
-                    first_load: true
+                    firstLoad: true
                 };
 
                 if (gridViewSettings.dataSource && gridViewSettings.dataSource.filter) {
@@ -188,16 +188,16 @@ export class Grids {
                     data: JSON.stringify(options)
                 });
 
-                if (gridDataResult.extra_javascript) {
-                    $.globalEval(gridDataResult.extra_javascript);
+                if (gridDataResult.extraJavascript) {
+                    $.globalEval(gridDataResult.extraJavascript);
                 }
             }
-
+            
             let disableOpeningOfItems = gridViewSettings.disableOpeningOfItems;
             if (!disableOpeningOfItems) {
-                if (gridDataResult.schema_model && gridDataResult.schema_model.fields) {
+                if (gridDataResult.schemaModel && gridDataResult.schemaModel.fields) {
                     // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
-                    disableOpeningOfItems = !(gridDataResult.schema_model.fields.encryptedId || gridDataResult.schema_model.fields.encrypted_id || gridDataResult.schema_model.fields.encryptedid || gridDataResult.schema_model.fields.idencrypted);
+                    disableOpeningOfItems = !(gridDataResult.schemaModel.fields.encryptedId || gridDataResult.schemaModel.fields.encrypted_id || gridDataResult.schemaModel.fields.encryptedid || gridDataResult.schemaModel.fields.idencrypted);
                 }
             }
 
@@ -229,7 +229,7 @@ export class Grids {
 
                         await Wiser2.api({
                             method: "POST",
-                            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid || this.base.settings.zeroEncrypted)}/action-button/0?queryId=${encodeURIComponent(gridViewSettings.deleteItemQueryId)}&itemLinkId=${encodeURIComponent(mainItemDetails.link_id || mainItemDetails.linkId || 0)}`,
+                            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid || this.base.settings.zeroEncrypted)}/action-button/0?queryId=${encodeURIComponent(gridViewSettings.deleteItemQueryId)}&itemLinkId=${encodeURIComponent(mainItemDetails.linkId || mainItemDetails.linkId || 0)}`,
                             data: JSON.stringify(mainItemDetails),
                             contentType: "application/json"
                         });
@@ -297,8 +297,8 @@ export class Grids {
                     name: "excel"
                 });
             }
-
-            if ((!gridViewSettings.toolbar || !gridViewSettings.toolbar.hideCreateButton) && this.base.settings.permissions.can_create) {
+            
+            if ((!gridViewSettings.toolbar || !gridViewSettings.toolbar.hideCreateButton) && this.base.settings.permissions.canCreate) {
                 toolbar.push({
                     name: "add",
                     text: "Nieuw",
@@ -310,7 +310,7 @@ export class Grids {
                 this.addCustomActionsToToolbar(toolbar, gridViewSettings.toolbar.customActions);
             }
 
-            let totalResults = gridDataResult.total_results;
+            let totalResults = gridDataResult.totalResults;
 
             // Setup filters. They are turned off by default, but can be turned on with default settings.
             let filterable = false;
@@ -375,7 +375,7 @@ export class Grids {
                     serverPaging: !usingDataSelector && !gridViewSettings.clientSidePaging,
                     serverSorting: !usingDataSelector && !gridViewSettings.clientSideSorting,
                     serverFiltering: !usingDataSelector && !gridViewSettings.clientSideFiltering,
-                    pageSize: gridDataResult.page_size,
+                    pageSize: gridDataResult.pageSize,
                     transport: {
                         read: async (transportOptions) => {
                             const process = `loadMainGrid_${Date.now()}`;
@@ -401,8 +401,8 @@ export class Grids {
                                     currentFilters = JSON.stringify(transportOptions.data.filter);
                                 }
 
-                                transportOptions.data.first_load = this.mainGridForceRecount || currentFilters !== previousFilters;
-                                transportOptions.data.page_size = transportOptions.data.pageSize;
+                                transportOptions.data.firstLoad = this.mainGridForceRecount || currentFilters !== previousFilters;
+                                transportOptions.data.pageSize = transportOptions.data.pageSize;
                                 previousFilters = currentFilters;
                                 this.mainGridForceRecount = false;
 
@@ -410,7 +410,7 @@ export class Grids {
                                 if (usingDataSelector) {
                                     newGridDataResult = {
                                         columns: gridViewSettings.columns,
-                                        page_size: gridViewSettings.pageSize || 100,
+                                        pageSize: gridViewSettings.pageSize || 100,
                                         data: await Wiser2.api({
                                             url: `${this.base.settings.getItemsUrl}?encryptedDataSelectorId=${encodeURIComponent(gridViewSettings.dataSelectorId)}`,
                                             contentType: "application/json"
@@ -425,10 +425,10 @@ export class Grids {
                                     });
                                 }
 
-                                if (typeof newGridDataResult.total_results !== "number" || !transportOptions.data.first_load) {
-                                    newGridDataResult.total_results = totalResults;
-                                } else if (transportOptions.data.first_load) {
-                                    totalResults = newGridDataResult.total_results;
+                                if (typeof newGridDataResult.totalResults !== "number" || !transportOptions.data.firstLoad) {
+                                    newGridDataResult.totalResults = totalResults;
+                                } else if (transportOptions.data.firstLoad) {
+                                    totalResults = newGridDataResult.totalResults;
                                 }
 
                                 transportOptions.success(newGridDataResult);
@@ -443,8 +443,8 @@ export class Grids {
                     },
                     schema: {
                         data: "data",
-                        total: "total_results",
-                        model: gridDataResult.schema_model
+                        total: "totalResults",
+                        model: gridDataResult.schemaModel
                     }
                 },
                 excel: {
@@ -558,10 +558,10 @@ export class Grids {
             const hideCheckboxColumn = !options.checkboxes || options.checkboxes === "false" || options.checkboxes <= 0;
             const gridOptions = {
                 page: 1,
-                page_size: options.pageSize,
+                pageSize: options.pageSize,
                 skip: 0,
                 take: options.pageSize,
-                extra_values_for_query: extraData
+                extraValuesForQuery: extraData
             };
 
             if (customQueryGrid) {
@@ -572,8 +572,8 @@ export class Grids {
                     data: JSON.stringify(gridOptions)
                 });
 
-                if (customQueryResults.extra_javascript) {
-                    $.globalEval(customQueryResults.extra_javascript);
+                if (customQueryResults.extraJavascript) {
+                    $.globalEval(customQueryResults.extraJavascript);
                 }
 
                 if (Wiser2.validateArray(options.columns)) {
@@ -589,9 +589,9 @@ export class Grids {
                 }
 
                 if (!options.disableOpeningOfItems) {
-                    if (customQueryResults.schema_model && customQueryResults.schema_model.fields) {
+                    if (customQueryResults.schemaModel && customQueryResults.schemaModel.fields) {
                         // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
-                        options.disableOpeningOfItems = !(customQueryResults.schema_model.fields.encryptedId || customQueryResults.schema_model.fields.encrypted_id || customQueryResults.schema_model.fields.encryptedid || customQueryResults.schema_model.fields.idencrypted);
+                        options.disableOpeningOfItems = !(customQueryResults.schemaModel.fields.encryptedId || customQueryResults.schemaModel.fields.encrypted_id || customQueryResults.schemaModel.fields.encryptedid || customQueryResults.schemaModel.fields.idencrypted);
                     }
                 }
 
@@ -633,8 +633,8 @@ export class Grids {
                     data: JSON.stringify(gridOptions)
                 });
 
-                if (gridSettings.extra_javascript) {
-                    $.globalEval(gridSettings.extra_javascript);
+                if (gridSettings.extraJavascript) {
+                    $.globalEval(gridSettings.extraJavascript);
                 }
 
                 // Add most columns here.
@@ -669,9 +669,9 @@ export class Grids {
                 }
 
                 if (!options.disableOpeningOfItems) {
-                    if (gridSettings.schema_model && gridSettings.schema_model.fields) {
+                    if (gridSettings.schemaModel && gridSettings.schemaModel.fields) {
                         // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
-                        options.disableOpeningOfItems = !(gridSettings.schema_model.fields.encryptedId || gridSettings.schema_model.fields.encrypted_id || gridSettings.schema_model.fields.encryptedid || gridSettings.schema_model.fields.idencrypted);
+                        options.disableOpeningOfItems = !(gridSettings.schemaModel.fields.encryptedId || gridSettings.schemaModel.fields.encrypted_id || gridSettings.schemaModel.fields.encryptedid || gridSettings.schemModel.fields.idencrypted);
                     }
                 }
 
@@ -765,8 +765,8 @@ export class Grids {
                             if (!transportOptions.data) {
                                 transportOptions.data = {};
                             }
-                            transportOptions.data.extra_values_for_query = extraData;
-                            transportOptions.data.page_size = transportOptions.data.pageSize;
+                            transportOptions.data.extraValuesForQuery = extraData;
+                            transportOptions.data.pageSize = transportOptions.data.pageSize;
 
                             if (customQueryGrid) {
                                 const customQueryResults = await Wiser2.api({
@@ -811,8 +811,8 @@ export class Grids {
                 pageSize: options.pageSize || 10,
                 schema: {
                     data: "data",
-                    total: "total_results",
-                    model: data.schema_model
+                    total: "totalResults",
+                    model: data.schemaModel
                 }
             },
             columns: columns,
@@ -921,13 +921,13 @@ export class Grids {
             const className = !customAction.allowNoSelection ? "hidden hide-when-no-selected-rows" : "";
 
             // Check permissions.
-            if (customAction.doesCreate && !this.base.settings.permissions.can_create) {
+            if (customAction.doesCreate && !this.base.settings.permissions.canCreate) {
                 continue;
             }
-            if (customAction.doesUpdate && !this.base.settings.permissions.can_write) {
+            if (customAction.doesUpdate && !this.base.settings.permissions.canWrite) {
                 continue;
             }
-            if (customAction.doesDelete && !this.base.settings.permissions.can_delete) {
+            if (customAction.doesDelete && !this.base.settings.permissions.canDelete) {
                 continue;
             }
             
@@ -987,9 +987,9 @@ export class Grids {
         let itemId = dataItem.id || dataItem.itemId || dataItem.itemid || dataItem.item_id;
         let encryptedId = dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid || dataItem.idencrypted;
         const originalEncryptedId = encryptedId;
-        let entityType = dataItem.entity_type;
+        let entityType = dataItem.entityType;
         let title = dataItem.title;
-        const linkId = dataItem.link_id;
+        const linkId = dataItem.linkId;
 
         if (options.fromMainGrid && this.base.settings.openGridItemsInBlock) {
             this.base.grids.informationBlockIframe.attr("src", `${"/Modules/DynamicItems"}?itemId=${encryptedId}&moduleId=${this.base.settings.moduleId}&iframe=true`);
@@ -1061,7 +1061,7 @@ export class Grids {
 
                 title = title || itemDetails.title;
                 itemId = itemId || itemDetails.id || itemDetails.itemId || itemDetails.itemId;
-                entityType = entityType || itemDetails.entity_type;
+                entityType = entityType || itemDetails.entityType;
             }
         }
 
@@ -1234,8 +1234,8 @@ export class Grids {
                                 text: "Alleen koppeling",
                                 primary: true,
                                 action: (e) => {
-                                    const destinationItemId = dataItem.encrypted_destination_item_id || senderGrid.element.closest(".item").data("itemIdEncrypted");
-                                    this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.link_type_number).then(() => {
+                                    const destinationItemId = dataItem.encryptedDestinationItemId || senderGrid.element.closest(".item").data("itemIdEncrypted");
+                                    this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.linkTypeNumber).then(() => {
                                         senderGrid.dataSource.read();
                                     });
                                 }
@@ -1271,8 +1271,8 @@ export class Grids {
                         await Wiser2.showConfirmDialog(`Weet u zeker dat u de koppeling met ${itemDeleteDialogText} wilt verwijderen? Let op dat alleen de koppeling wordt verwijderd, niet het item zelf.`);
                     }
 
-                    const destinationItemId = dataItem.encrypted_destination_item_id || senderGrid.element.closest(".item").data("itemIdEncrypted");
-                    await this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.link_type_number);
+                    const destinationItemId = dataItem.encryptedDestinationItemId || senderGrid.element.closest(".item").data("itemIdEncrypted");
+                    await this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.linkTypeNumber);
                     senderGrid.dataSource.read();
                     break;
                 }
