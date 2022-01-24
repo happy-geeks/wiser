@@ -4,9 +4,9 @@ namespace Api.Modules.Templates.Models.Preview
 {
     public class PreviewVariableModel
     {
-        public string type { get; set; }
-        public string key { get; set; }
-        public string value { get; set; }
-        public Boolean encrypt { get; set; }
+        public string Type { get; set; }
+        public string Key { get; set; }
+        public string Value { get; set; }
+        public Boolean Encrypt { get; set; }
     }
 }

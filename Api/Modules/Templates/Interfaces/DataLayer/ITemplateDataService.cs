@@ -8,7 +8,7 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
 {
     public interface ITemplateDataService
     {
-        public Task<TemplateDataModel> GetTemplateData(int templateId);
+        public Task<TemplateSettingsModel> GetTemplateData(int templateId);
         public Task<Dictionary<int, int>> GetPublishedEnvironmentsFromTemplate(int templateId);
 
         public Task<List<LinkedTemplateModel>> GetLinkedTemplates(int templateId);
@@ -16,7 +16,7 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
 
         public Task<List<LinkedDynamicContentDao>> GetLinkedDynamicContent(int templateId);
         public Task<int> PublishEnvironmentOfTemplate(int templateId, Dictionary<int, int> publishModel, PublishLogModel publishLog);
-        public Task<int> SaveTemplateVersion(TemplateDataModel templateData, List<int> linksToAdd, List<int> linksToRemove);
+        public Task<int> SaveTemplateVersion(TemplateSettingsModel templateSettings, List<int> linksToAdd, List<int> linksToRemove);
 
         public Task<int> SaveLinkedTemplates(int templateId, List<int> linksToAdd, List<int> linksToRemove);
 

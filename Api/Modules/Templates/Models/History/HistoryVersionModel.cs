@@ -5,99 +5,59 @@ namespace Api.Modules.Templates.Models.History
 {
     public class HistoryVersionModel
     {
-        int version;
-        DateTime changedOn;
-        string changedBy;
+        /// <summary>
+        /// Get or sets the version number.
+        /// </summary>
+        public int Version { get; set; }
 
-        List<DynamicContentChangeModel> changes;
+        /// <summary>
+        /// Get or sets the Change date.
+        /// </summary>
+        public DateTime ChangedOn { get; set; }
 
-        string rawVersionString;
+        /// <summary>
+        /// Get or sets the Name of the user that made the change.
+        /// </summary>
+        public string ChangedBy { get; set; }
 
-        string component;
-        string componentMode;
+        /// <summary>
+        /// Get the list of changes compared to the previous version. This does not generated the changelist, but retrieves it from the model if set.
+        /// </summary>
+        public List<DynamicContentChangeModel> Changes { get; set; }
+
+        public string RawVersionString { get; set; }
+
+        public string Component { get; set; }
+
+        public string ComponentMode { get; set; }
 
         public HistoryVersionModel(int version, DateTime changedOn, string changedBy, string component, string componentMode, string rawVersionString)
         {
-            this.version = version;
-            this.changedOn = changedOn;
-            this.changedBy = changedBy;
-            this.component = component;
-            this.componentMode = componentMode;
-            this.rawVersionString = rawVersionString;
-            changes = null;
+            this.Version = version;
+            this.ChangedOn = changedOn;
+            this.ChangedBy = changedBy;
+            this.Component = component;
+            this.ComponentMode = componentMode;
+            this.RawVersionString = rawVersionString;
+            Changes = null;
         }
-
-        /// <summary>
-        /// Get the version number.
-        /// </summary>
-        /// <returns>The version as a number.</returns>
-        public int GetVersion()
-        {
-            return version;
-        }
-
-        /// <summary>
-        /// Get the Change date.
-        /// </summary>
-        /// <returns>DateTime of the date when the version was saved.</returns>
-        public DateTime GetChangedOn()
-        {
-            return changedOn;
-        }
-
+        
         /// <summary>
         /// Get the change date in a displayable format(DD-MM-YYYY om HH:MM:SS).
         /// </summary>
         /// <returns>A string containing a displayable date.</returns>
         public string GetDisplayChangedOn()
         {
-            return changedOn.ToShortDateString() + " om " + changedOn.ToLongTimeString();
+            return ChangedOn.ToShortDateString() + " om " + ChangedOn.ToLongTimeString();
         }
-
-        /// <summary>
-        /// Get the Name of the user that made the change.
-        /// </summary>
-        /// <returns>String containing the username.</returns>
-        public string GetChangedBy()
-        {
-            return changedBy;
-        }
-
-        /// <summary>
-        /// Get the list of changes compared to the previous version. This does not generated the changelist, but retrieves it from the model if set.
-        /// </summary>
-        /// <returns>List containing the changes made.</returns>
-        public List<DynamicContentChangeModel> GetChanges()
-        {
-            return changes;
-        }
+        
         /// <summary>
         /// Set the list of changes compared to the previous version.
         /// </summary>
         /// <param name="changes">A List of DynamicContentChangeModel containing the changes to the previous version.</param>
         public void SetChanges(List<DynamicContentChangeModel> changes)
         {
-            this.changes = changes;
+            this.Changes = changes;
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public string GetRawString()
-        {
-            return rawVersionString;
-        }
-
-        public string GetComponent()
-        {
-            return component;
-        }
-
-        public string GetComponentMode()
-        {
-            return componentMode;
-        }
-
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Api.Modules.Templates.Enums;
+using System.Linq;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.Enums;
@@ -42,10 +42,16 @@ namespace Api.Modules.Templates.Helpers
 
             }
 
-            var versionlist = new List<int>(versionsAndPublished.Keys);
-            versionlist.Sort((a, b) => b.CompareTo(a));
+            var versionList = new List<int>(versionsAndPublished.Keys);
+            versionList = versionList.OrderBy(v => v).ToList();
 
-            return new PublishedEnvironmentModel(liveVersion, acceptVersion, testVersion, versionlist);
+            return new PublishedEnvironmentModel
+            {
+                LiveVersion = liveVersion, 
+                AcceptVersion = acceptVersion, 
+                TestVersion = testVersion, 
+                VersionList = versionList
+            };
         }
 
         /// <summary>

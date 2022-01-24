@@ -1,40 +1,12 @@
-﻿@model Api.Modules.Templates.Models.DynamicContent.DynamicContentInformationModel
+﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Wiser 2.1 - Dynamic content</title>
+    <title>Wiser 3 - Dynamic content</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    @*<link href="https://kendo.cdn.telerik.com/2021.3.914/styles/kendo.common-material.min.css" rel="stylesheet" />
-        <link href="https://kendo.cdn.telerik.com/2021.3.914/styles/kendo.material.min.css" rel="stylesheet" />*@
-
-    <!-- Module CSS -->
-    <link href="~/css/Kendo/kendo.common-material.min.css" rel="stylesheet" type="text/css" />
-    <link href="~/css/Kendo/kendo.material.min.css" rel="stylesheet" type="text/css" />
-    <link href="~/css/icomoon.css" rel="stylesheet" type="text/css" />
-    <link href="~/css/kendo.custom.css" rel="stylesheet" type="text/css" />
-    <link href="~/css/kendo-custom.css" rel="stylesheet" type="text/css" />
-    <link href="~/css/kendo.wiser.css" rel="stylesheet" type="text/css" />
-    <link href="~/css/fonts.css" rel="stylesheet" type="text/css" />
-    <link href="~/css/variables.css" rel="stylesheet" type="text/css" />
-    <link href="~/css/masterpage.css" rel="stylesheet" type="text/css" />
-
-
-    <link href="~/css/DynamicContent.css" rel="stylesheet" type="text/css" />
-
-    <script src="https://kendo.cdn.telerik.com/2021.3.914/js/jquery.min.js"></script>
-    <script type="text/javascript" src="https://kendo.cdn.telerik.com/2021.3.914/js/kendo.all.min.js"></script>
-    <script type="module" src="~/js/DynamicContent.js"></script>
-    <!-- Code Mirror-->
-    <link rel="stylesheet" href="~/codemirror/codemirror-5.63.3/lib/codemirror.css">
-    <script src="~/codemirror/codemirror-5.63.3/lib/codemirror.js"></script>
-    <script src="~/codemirror/codemirror-5.63.3/mode/javascript/javascript.js"></script>
-    <script src="~/codemirror/codemirror-5.63.3/mode/xml/xml.js"></script>
-    <script src="~/codemirror/codemirror-5.63.3/mode/css/css.js"></script>
-    <script src="~/codemirror/codemirror-5.63.3/mode/htmlmixed/htmlmixed.js"></script>
-    <script src="~/codemirror/codemirror-5.63.3/hint/show-hint.js"></script>
-    <link rel="stylesheet" href="~/codemirror/codemirror-5.63.3/theme/neo.css">
-    <link rel="stylesheet" href="~/codemirror/codemirror-5.63.3/theme/darcula.css">
+    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.material.min.css" rel="stylesheet" />
 </head>
 <body>
     <span id="popupNotification"></span>
@@ -51,7 +23,7 @@
                                 <div class="pane-content">
 
                                     <div class="input-container">
-                                        <partial name="Partials/DynamicContentComponentInputs" model="Model"/>
+                                        <partial name="Partials/DynamicContentComponentInputs" model="@Model" />
                                     </div>
 
                                     <div class="k-tabstrip-wrapper" style="">

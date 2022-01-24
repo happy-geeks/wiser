@@ -5,9 +5,9 @@ namespace Api.Modules.Templates.Models.Preview
 {
     public class PreviewProfileModel
     {
-        public Int64 id { get; set; }
-        public string name { get; set; }
-        public string url { get; set; }
-        public List<PreviewVariableModel> variables { get; set; }
+        public Int64 Id { get; set; }
+        public string Name { get; set; }
+        public string Url { get; set; }
+        public List<PreviewVariableModel> Variables { get; set; }
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Api.Core.Models;
 using Api.Modules.Customers.Models;
 using Api.Modules.Templates.Interfaces;
-using Api.Modules.Templates.Models.DynamicContent;
+using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Preview;
 using Api.Modules.Templates.Models.Template;
@@ -16,7 +16,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Templates.Controllers
@@ -29,15 +28,17 @@ namespace Api.Modules.Templates.Controllers
     {
         private readonly ITemplatesService templatesService;
         private readonly IPreviewService previewService;
+        private readonly IHistoryService historyService;
         private readonly GclSettings gclSettings;
 
         /// <summary>
         /// Creates a new instance of TemplatesController.
         /// </summary>
-        public TemplatesController(ITemplatesService templatesService, IOptions<GclSettings> gclSettings, IPreviewService previewService)
+        public TemplatesController(ITemplatesService templatesService, IOptions<GclSettings> gclSettings, IPreviewService previewService, IHistoryService historyService)
         {
             this.templatesService = templatesService;
             this.previewService = previewService;
+            this.historyService = historyService;
             this.gclSettings = gclSettings.Value;
         }
         
@@ -83,19 +84,10 @@ namespace Api.Modules.Templates.Controllers
         /// </summary>
         /// <param name="parentId">The id of the template whose child nodes are to be retrieved.</param>
         /// <returns>A List of TemplateTreeViewModels containing the id, names and types of the templates included in the requested section.</returns>
-        [HttpGet, Route("tree-view/{parentId:int}"), ProducesResponseType(typeof(List<TemplateTreeViewModel>), StatusCodes.Status200OK)]
+        [HttpGet, Route("{parentId:int}/tree-view"), ProducesResponseType(typeof(List<TemplateTreeViewModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> TreeViewAsync(int parentId = 0)
         {
             return (await templatesService.GetTreeViewSectionAsync(parentId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Load The development tab.
-        /// </summary>
-        [HttpGet, Route("tabs/development"), ProducesResponseType(typeof(DevelopmentTemplateModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> DevelopmentTabAsync(int templateId)
-        {
-            return (await templatesService.GetDevelopmentTabDataAsync(templateId)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -103,8 +95,8 @@ namespace Api.Modules.Templates.Controllers
         /// </summary>
         /// <param name="templateId">The id of the template to retrieve the history from.</param>
         /// <returns>A TemplateHistoryOverviewModel containing a list of templatehistorymodels and a list of publishlogmodels. The model contains base info and a list of changes made within the version and its sub components (e.g. dynamic content, publishes).</returns>
-        [HttpGet, Route("tabs/history"), ProducesResponseType(typeof(DevelopmentTemplateModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> HistoryTabAsync(int templateId)
+        [HttpGet, Route("{templateId:int}/history"), ProducesResponseType(typeof(TemplateHistoryOverviewModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetTemplateHistoryAsync(int templateId)
         {
             return (await templatesService.GetTemplateHistoryAsync(templateId)).GetHttpResponseMessage();
         }
@@ -114,10 +106,10 @@ namespace Api.Modules.Templates.Controllers
         /// </summary>
         /// <param name="templateId">the id of the item to retrieve the preview items of.</param>
         /// <returns>A list of PreviewProfileModel containing the profiles that are available for the given template</returns>
-        [HttpGet, Route("tabs/preview"), ProducesResponseType(typeof(DevelopmentTemplateModel), StatusCodes.Status200OK)]
+        [HttpGet, Route("{templateId:int}/preview"), ProducesResponseType(typeof(List<PreviewProfileModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> PreviewTabAsync(int templateId)
         {
-            return (await previewService.GetPreviewProfiles(templateId)).GetHttpResponseMessage();
+            return (await previewService.Get(templateId)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -125,7 +117,7 @@ namespace Api.Modules.Templates.Controllers
         /// </summary>
         /// <param name="templateId">The id of the template to retrieve.</param>
         /// <returns>A template model containing the data of the templateversion.</returns>
-        [HttpGet, Route("{templateId:int}/settings"), ProducesResponseType(typeof(DevelopmentTemplateModel), StatusCodes.Status200OK)]
+        [HttpGet, Route("{templateId:int}/settings"), ProducesResponseType(typeof(TemplateSettingsModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetTemplateSettingsAsync(int templateId)
         {
             return (await templatesService.GetTemplateSettingsAsync(templateId)).GetHttpResponseMessage();
@@ -139,10 +131,6 @@ namespace Api.Modules.Templates.Controllers
         [HttpGet, Route("{templateId:int}/published-environments"), ProducesResponseType(typeof(PublishedEnvironmentModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPublishedEnvironments(int templateId)
         {
-            if (templateId <= 0)
-            {
-                throw new ArgumentException("The Id cannot be zero.");
-            }
             return (await templatesService.GetTemplateEnvironmentsAsync(templateId)).GetHttpResponseMessage();
         }
 
@@ -151,14 +139,10 @@ namespace Api.Modules.Templates.Controllers
         /// </summary>
         /// <param name="templateId">The id of the template of which to get the linked templates.</param>
         /// <returns>A Linked Templates model containing lists of linked templates separated into lists of certain types (e.g. scss, javascript).</returns>
-        [HttpGet]
-        public async Task<LinkedTemplatesModel> GetLinkedTemplates(int templateId)
+        [HttpGet, Route("{templateId:int}/linked-templates"), ProducesResponseType(typeof(LinkedTemplatesModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetLinkedTemplates(int templateId)
         {
-            if (templateId <= 0)
-            {
-                throw new ArgumentException("The Id cannot be zero.");
-            }
-            return await templatesService.GetLinkedTemplatesAsync(templateId);
+            return (await templatesService.GetLinkedTemplatesAsync(templateId)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -166,17 +150,13 @@ namespace Api.Modules.Templates.Controllers
         /// </summary>
         /// <param name="templateId">The id of the template of which the linked dynamic content should be retrieved.</param>
         /// <returns>List of dynamic content overview models. This is a condensed version of dynamic content data for creating a overview of linked content.</returns>
-        [HttpGet]
-        public async Task<List<DynamicContentOverviewModel>> GetLinkedDynamicContent(int templateId)
+        [HttpGet, Route("{templateId:int}/linked-dynamic-content"), ProducesResponseType(typeof(LinkedTemplatesModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetLinkedDynamicContent(int templateId)
         {
-            if (templateId <= 0)
-            {
-                throw new ArgumentException("The Id cannot be zero.");
-            }
             var resultOverview = await templatesService.GetLinkedDynamicContentAsync(templateId);
+            resultOverview.ModelObject = await historyService.GetPublishedEnvironmentsOfOverviewModels(resultOverview.ModelObject);
 
-            var resultList = await historyService.GetPublishedEnvoirementsOfOverviewModels(resultOverview);
-            return resultList;
+            return resultOverview.GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -186,39 +166,46 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="version">The version of the template to publish.</param>
         /// <param name="environment">The environment to push the template version to. This will be converted to a PublishedEnvironmentEnum.</param>
         /// <returns>The number of affected rows.</returns>
-        [HttpGet]
-        public async Task<IActionResult> PublishToEnvironment(int templateId, int version, string environment)
+        [HttpPost, Route("{templateId:int}/publish/{environment}/{version:int}"), ProducesResponseType(typeof(LinkedTemplatesModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> PublishToEnvironment(int templateId, string environment, int version)
         {
-            if (templateId <= 0)
-            {
-                throw new ArgumentException("The Id is invalid");
-            }
-            if (version <= 0)
-            {
-                throw new ArgumentException("The version is invalid");
-            }
-
             var currentPublished = await templatesService.GetTemplateEnvironmentsAsync(templateId);
             return currentPublished.StatusCode != HttpStatusCode.OK 
                 ? currentPublished.GetHttpResponseMessage() 
                 : (await templatesService.PublishEnvironmentOfTemplateAsync(templateId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Save the template as a new version and save the linked templates if necessary. This method will calculate if links are to be added or removed from the current situation.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to update.</param>
+        /// <param name="templateData">A <see cref="TemplateSettingsModel"/> containing the data of the template that is to be saved as a new version</param>
+        [HttpPut, Route("{templateId:int}"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SaveTemplate(int templateId, TemplateSettingsModel templateData)
+        {
+            templateData.TemplateId = templateId;
+            return (await templatesService.SaveTemplateVersionAsync(templateData)).GetHttpResponseMessage();
+        }
         
         /// <summary>
-        /// Save the template data. This includes the editor value linked templates and advanced settings.
+        /// Search for a template.
         /// </summary>
-        /// <param name="templateData">A JSON string containing a templatedatamodel with the new data to save.</param>
-        /// <param name="scssLinks"></param>
-        /// <param name="jsLinks"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<int> SaveTemplate(string templateData, List<int> scssLinks, List<int> jsLinks)
+        /// <param name="searchSettings">The search parameters.</param>
+        [HttpPost, Route("search"), ProducesResponseType(typeof(List<SearchResultModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> Search(SearchSettingsModel searchSettings)
         {
-            if (String.IsNullOrEmpty(templateData))
-            {
-                throw new ArgumentException("TemplateData cannot be empty.");
-            }
-            return await templatesService.SaveTemplateVersionAsync(JsonConvert.DeserializeObject<TemplateDataModel>(templateData), scssLinks, jsLinks);
+            return (await templatesService.Search(searchSettings)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Retrieve al the preview profiles for an item.
+        /// </summary>
+        /// <param name="templateId">the id of the item to retrieve the preview items of.</param>
+        /// <returns>A list of PreviewProfileModel containing the profiles that are available for the given template</returns>
+        [HttpGet, Route("{templateId:int}/profiles"), ProducesResponseType(typeof(List<PreviewProfileModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetPreviewProfiles(int templateId)
+        {
+            return (await previewService.Get(templateId)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -227,38 +214,24 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="profile">A Json that meets the standards of a PreviewProfileModel</param>
         /// <param name="templateId">The id of the template that is bound to the profile</param>
         /// <returns>An int confirming the affected rows of the query.</returns>
-        [HttpPost]
-        public async Task<int> SaveNewPreviewProfile(PreviewProfileModel profile, int templateId)
+        [HttpPut, Route("{templateId:int}/profiles"), ProducesResponseType(typeof(PreviewProfileModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CreatePreviewProfile(int templateId, PreviewProfileModel profile)
         {
-            if (templateId <= 0)
-            {
-                throw new ArgumentException("The Id cannot be zero.");
-            }
-            if (profile.id <= 0)
-            {
-                throw new ArgumentException("The profileId is invalid");
-            }
-            return await previewService.SaveNewPreviewProfile(profile, templateId);
+            return (await previewService.Create(profile, templateId)).GetHttpResponseMessage();
         }
 
         /// <summary>
         /// Edit an existing profile. The existing profile with the given Id in the profile will be overwritten.
         /// </summary>
-        /// <param name="profile">A Json that meets the standards of a PreviewProfileModel</param>
         /// <param name="templateId">The id of the template that is bound to the profile</param>
+        /// <param name="profileId">The ID of the profile to update.</param>
+        /// <param name="profile">A Json that meets the standards of a PreviewProfileModel</param>
         /// <returns>An int confirming the affected rows of the query.</returns>
-        [HttpPost]
-        public async Task<int> EditPreviewProfile(PreviewProfileModel profile, int templateId)
+        [HttpPost, Route("{templateId:int}/profiles/{profileId:int}"), ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> EditPreviewProfile(int templateId, int profileId, PreviewProfileModel profile)
         {
-            if (templateId <= 0)
-            {
-                throw new ArgumentException("The Id cannot be zero.");
-            }
-            if (profile.id <= 0)
-            {
-                throw new ArgumentException("The profileId is invalid");
-            }
-            return await previewService.EditPreviewProfile(profile, templateId);
+            profile.Id = profileId;
+            return (await previewService.Update(profile, templateId)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -267,39 +240,10 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="templateId">The id of the template bound to the profile. This is added a an extra security for the deletion.</param>
         /// <param name="profileId">The id of the profile that is to be deleted</param>
         /// <returns>An int confirming the affected rows of the query.</returns>
-        [HttpPost]
-        public async Task<int> DeletePreviewProfiles(int templateId, int profileId)
+        [HttpDelete, Route("{templateId:int}/profiles/{profileId:int}"), ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeletePreviewProfiles(int templateId, int profileId)
         {
-            if (templateId <= 0)
-            {
-                throw new ArgumentException("The Id cannot be zero.");
-            }
-            if (profileId <= 0)
-            {
-                throw new ArgumentException("The profileId is invalid");
-            }
-            return await previewService.RemovePreviewProfile(templateId, profileId);
-        }
-
-        /// <summary>
-        /// This can be used to retrieve a section of the Treeview for the customer's templates. When no templateId (or a template id of 0) is supplied the root will be retrieved.
-        /// </summary>
-        /// <param name="templateId">The id of the folder/template which childElements need to be loaded. When this is left empty or has a value of 0 the root will be retrieved.</param>
-        /// <returns>A list of treeviewtemplates containing the section underlaying the given templateId.</returns>
-        [HttpGet]
-        public async Task<List<TemplateTreeViewModel>> GetTreeviewSection(int templateId)
-        {
-            if (templateId < 0)
-            {
-                throw new ArgumentException("The Id is invalid");
-            }
-            return await templatesService.GetTreeViewSectionAsync(templateId);
-        }
-
-        [HttpGet]
-        public async Task<List<SearchResultModel>> GetSearchResults(SearchSettingsModel searchSettings)
-        {
-            return await templatesService.GetSearchResultsAsync(searchSettings);
+            return (await previewService.Delete(templateId, profileId)).GetHttpResponseMessage();
         }
     }
 }

@@ -2748,7 +2748,7 @@ export class Fields {
                     mode: "text/html"
                 };
                 
-                // In Wiser 2.1, we only load code mirror when we actually need it.
+                // Only load code mirror when we actually need it.
                 await Misc.ensureCodeMirror();
                 codeMirrorInstance = CodeMirror.fromTextArea(textArea[0], codeMirrorSettings);
             },

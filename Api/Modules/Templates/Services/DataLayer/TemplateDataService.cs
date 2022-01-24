@@ -27,8 +27,8 @@ namespace Api.Modules.Templates.Services.DataLayer
         /// Get the template data of a template.
         /// </summary>
         /// <param name="templateId">The id of the template to retrieve the data from.</param>
-        /// <returns>A templatedatamodel containing the current template data of the template with the given id.</returns>
-        public async Task<TemplateDataModel> GetTemplateData(int templateId)
+        /// <returns>A <see cref="TemplateSettingsModel"/> containing the current template data of the template with the given id.</returns>
+        public async Task<TemplateSettingsModel> GetTemplateData(int templateId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateId", templateId);
@@ -44,10 +44,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                 LIMIT 1"
             );
 
-            var templateData = new TemplateDataModel();
+            var templateData = new TemplateSettingsModel();
 
             if (dataTable.Rows.Count == 1) {
-                templateData.Templateid = dataTable.Rows[0].Field<int>("template_id");
+                templateData.TemplateId = dataTable.Rows[0].Field<int>("template_id");
                 templateData.Name = dataTable.Rows[0].Field<string>("template_name");
                 templateData.EditorValue = dataTable.Rows[0].Field<string>("template_data");
                 templateData.Version = dataTable.Rows[0].Field<int>("version");
@@ -257,29 +257,29 @@ namespace Api.Modules.Templates.Services.DataLayer
         /// <summary>
         /// Saves the template data as a new version of the template.
         /// </summary>
-        /// <param name="templateData">A templatedatamodel containing the new data to save as a new template version.</param>
+        /// <param name="templateSettings">A <see cref="TemplateSettingsModel"/> containing the new data to save as a new template version.</param>
         /// <returns>An int confirming the affected rows of the query.</returns>
-        public Task<int> SaveTemplateVersion(TemplateDataModel templateData, List<int> sccsLinks, List<int>jsLinks)
+        public Task<int> SaveTemplateVersion(TemplateSettingsModel templateSettings, List<int> sccsLinks, List<int>jsLinks)
         {
             connection.ClearParameters();
-            connection.AddParameter("templateid", templateData.Templateid);
-            connection.AddParameter("name", templateData.Name);
-            connection.AddParameter("editorValue", templateData.EditorValue);
+            connection.AddParameter("templateid", templateSettings.TemplateId);
+            connection.AddParameter("name", templateSettings.Name);
+            connection.AddParameter("editorValue", templateSettings.EditorValue);
 
-            connection.AddParameter("useCache", templateData.UseCache);
-            connection.AddParameter("cacheMinutes", templateData.CacheMinutes);
-            connection.AddParameter("handleRequests", templateData.HandleRequests);
-            connection.AddParameter("handleSession", templateData.HandleSession);
-            connection.AddParameter("handleObjects", templateData.HandleObjects);
-            connection.AddParameter("handleStandards", templateData.HandleStandards);
-            connection.AddParameter("handleTranslations", templateData.HandleTranslations);
-            connection.AddParameter("handleDynamicContent", templateData.HandleDynamicContent);
-            connection.AddParameter("handleLogicBlocks", templateData.HandleLogicBlocks);
-            connection.AddParameter("handleMutators", templateData.HandleMutators);
-            connection.AddParameter("loginRequired", templateData.LoginRequired);
-            connection.AddParameter("loginUserType", templateData.LoginUserType);
-            connection.AddParameter("loginSessionPrefix", templateData.LoginSessionPrefix);
-            connection.AddParameter("loginRole", templateData.LoginRole);
+            connection.AddParameter("useCache", templateSettings.UseCache);
+            connection.AddParameter("cacheMinutes", templateSettings.CacheMinutes);
+            connection.AddParameter("handleRequests", templateSettings.HandleRequests);
+            connection.AddParameter("handleSession", templateSettings.HandleSession);
+            connection.AddParameter("handleObjects", templateSettings.HandleObjects);
+            connection.AddParameter("handleStandards", templateSettings.HandleStandards);
+            connection.AddParameter("handleTranslations", templateSettings.HandleTranslations);
+            connection.AddParameter("handleDynamicContent", templateSettings.HandleDynamicContent);
+            connection.AddParameter("handleLogicBlocks", templateSettings.HandleLogicBlocks);
+            connection.AddParameter("handleMutators", templateSettings.HandleMutators);
+            connection.AddParameter("loginRequired", templateSettings.LoginRequired);
+            connection.AddParameter("loginUserType", templateSettings.LoginUserType);
+            connection.AddParameter("loginSessionPrefix", templateSettings.LoginSessionPrefix);
+            connection.AddParameter("loginRole", templateSettings.LoginRole);
 
             var mergeList = new List<int>();
             mergeList.AddRange(sccsLinks);
