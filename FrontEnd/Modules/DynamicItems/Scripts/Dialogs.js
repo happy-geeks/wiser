@@ -121,10 +121,10 @@ export class Dialogs {
                 event.sender.element.data("currentItemWindow", null);
                 window.processing.removeProcess(process);
                 if (!currentItemWindow) {
-                    this.base.loadItem(result.encrypted_id, 0, result.entity_type);
+                    this.base.loadItem(result.encryptedId, 0, result.entityType);
                 } else {
                     currentItemWindow.close();
-                    this.base.windows.loadItemInWindow(false, result.id, result.encrypted_id, result.entity_type, result.title, currentItemWindow.element.data("showTitleField"), null, { hideTitleColumn: false }, currentItemWindow.element.data("linkId"));
+                    this.base.windows.loadItemInWindow(false, result.id, result.encryptedId, result.entityType, result.title, currentItemWindow.element.data("showTitleField"), null, { hideTitleColumn: false }, currentItemWindow.element.data("linkId"));
                 }
             }).catch((error) => {
                 kendo.alert("Er is iets fout gegaan. Probeer het nogmaals of neem contact op met ons.");
@@ -227,17 +227,17 @@ export class Dialogs {
             this.base.notification.show({ message: `${entityType} '${kendo.htmlEncode(newName)}' toegevoegd onder '${kendo.htmlEncode(parentName)}'` }, "success");
 
             const dataItem = this.base.mainTreeView.dataItem(node) || {};
-            if (!dataItem.newlyAdded && dataItem.has_children && node.attr("aria-expanded") !== "true") {
+            if (!dataItem.newlyAdded && dataItem.hasChildren && node.attr("aria-expanded") !== "true") {
                 this.base.mainTreeView.expand(node);
             } else {
                 // Add the new item to the main tree view and select it.
                 const newNode = this.base.mainTreeView.append({
-                    encrypted_item_id: createItemResult.itemId,
-                    sprite_css_class: createItemResult.icon,
+                    encryptedItemId: createItemResult.itemId,
+                    spriteCssClass: createItemResult.icon,
                     title: newName,
-                    destination_item_id: parentId,
+                    destinationItemId: parentId,
                     newlyAdded: true,
-                    entity_type: entityType
+                    entityType: entityType
                 }, node);
 
                 this.base.mainTreeView.select(newNode);

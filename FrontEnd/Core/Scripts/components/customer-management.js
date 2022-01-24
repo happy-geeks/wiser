@@ -186,15 +186,15 @@ export default {
 
             const newCustomer = {
                 name: this.newCustomerData.name,
-                live_database: {
+                liveDatabase: {
                     host: this.newCustomerData.databaseHost,
                     username: this.newCustomerData.databaseUsername,
                     password: this.newCustomerData.databasePassword,
-                    database_name: this.newCustomerData.databaseSchema,
-                    port_number: this.newCustomerData.databasePort
+                    databaseName: this.newCustomerData.databaseSchema,
+                    portNumber: this.newCustomerData.databasePort
                 },
-                sub_domain: this.newCustomerData.subDomain,
-                wiser_settings: {
+                subDomain: this.newCustomerData.subDomain,
+                wiserSettings: {
                     hostLive: this.newCustomerData.hostLive,
                     hostTest: this.newCustomerData.hostTest,
                     hostDev: this.newCustomerData.hostDev,
