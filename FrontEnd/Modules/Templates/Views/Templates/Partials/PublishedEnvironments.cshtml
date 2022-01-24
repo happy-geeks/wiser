@@ -1,6 +1,5 @@
-﻿@model Api.Modules.Templates.Models.Template.TemplateDataModel
-@{
-    var versionList = Model.PublishedEnvironments.GetVersionList();
+﻿@{
+    var versionList = Model.PublishedEnvironments.VersionList;
 }
 
 <div id="published-environments" class="item version-block" style="width: 100%">
@@ -12,7 +11,7 @@
                 <select class="combo-select" placeholder="Maak uw keuze...">
                     @foreach (int version in versionList)
                     {
-                        if (version == Model.PublishedEnvironments.GetLive())
+                        if (version == Model.PublishedEnvironments.LiveVersion)
                         {
                             <option value="@version" selected>@version</option>
                         }
@@ -32,7 +31,7 @@
                 <select class="combo-select" placeholder="Maak uw keuze...">
                     @foreach (int version in versionList)
                     {
-                        if (version == Model.PublishedEnvironments.GetAcceptance())
+                        if (version == Model.PublishedEnvironments.AcceptVersion)
                         {
                             <option value="@version" selected>@version</option>
                         }
@@ -52,7 +51,7 @@
                 <select class="combo-select" placeholder="Maak uw keuze...">
                     @foreach (int version in versionList)
                     {
-                        if (version == Model.PublishedEnvironments.GetTest())
+                        if (version == Model.PublishedEnvironments.TestVersion)
                         {
                             <option value="@version" selected>@version</option>
                         }

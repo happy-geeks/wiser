@@ -1,5 +1,15 @@
-﻿import { Modules, Dates, Strings, Wiser2, Misc } from "../../Base/Scripts/Utils.js";
-require("@progress/kendo-ui/js/kendo.all.js");
+﻿import { TrackJS } from "trackjs";
+import { Modules, Dates, Strings, Wiser2, Misc } from "../../Base/Scripts/Utils.js";
+import "../../Base/Scripts/Processing.js";
+//require("@progress/kendo-ui/js/kendo.all.js");
+require("@progress/kendo-ui/js/kendo.notification.js");
+require("@progress/kendo-ui/js/kendo.button.js");
+require("@progress/kendo-ui/js/kendo.combobox.js");
+require("@progress/kendo-ui/js/kendo.editor.js");
+require("@progress/kendo-ui/js/kendo.splitter.js");
+require("@progress/kendo-ui/js/kendo.tabstrip.js");
+require("@progress/kendo-ui/js/kendo.treeview.js");
+require("@progress/kendo-ui/js/kendo.grid.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
@@ -7,7 +17,7 @@ import "../css/Templates.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
-    
+
 };
 
 ((settings) => {
@@ -36,11 +46,26 @@ const moduleSettings = {
             this.mainDatePicker = null;
             this.mainDateTimePicker = null;
 
+            // Default settings
+            this.settings = {
+                moduleId: 0,
+                customerId: 0,
+                username: "Onbekend",
+                userEmailAddress: "",
+                userType: ""
+            };
+            Object.assign(this.settings, settings);
+
             // Other.
             this.mainLoader = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
+
+            // Add logged in user access token to default authorization headers for all jQuery ajax requests.
+            $.ajaxSetup({
+                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
+            });
 
             // Fire event on page ready for direct actions
             $(document).ready(() => {
@@ -53,15 +78,56 @@ const moduleSettings = {
          */
         async onPageReady() {
             this.mainLoader = $("#mainLoader");
-            this.initializeKendoComponents();
+
+            // Setup processing.
+            document.addEventListener("processing.Busy", this.toggleMainLoader.bind(this, true));
+            document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
+
+            const process = `initialize_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            // Fullscreen event for elements that can go fullscreen, such as HTML editors.
+            const classHolder = $(document.documentElement);
+            const fullscreenChange = "webkitfullscreenchange mozfullscreenchange fullscreenchange MSFullscreenChange";
+            $(document).bind(fullscreenChange, $.proxy(classHolder.toggleClass, classHolder, "k-fullscreen"));
+
+            // Setup any settings from the body element data. These settings are added via the Wiser backend and they take preference.
+            Object.assign(this.settings, $("body").data());
+
+            if (this.settings.trackJsToken) {
+                TrackJS.install({
+                    token: this.settings.trackJsToken
+                });
+            }
+
+            const user = JSON.parse(localStorage.getItem("userData"));
+            this.settings.oldStyleUserId = user.oldStyleUserId;
+            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.adminAccountLoggedIn = !!user.adminAccountName;
+
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            this.settings.userId = userData.encryptedId;
+            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.zeroEncrypted = userData.zeroEncrypted;
+            this.settings.filesRootId = userData.filesRootId;
+            this.settings.imagesRootId = userData.imagesRootId;
+            this.settings.templatesRootId = userData.templatesRootId;
+            this.settings.mainDomain = userData.mainDomain;
+
+            if (!this.settings.wiserApiRoot.endsWith("/")) {
+                this.settings.wiserApiRoot += "/";
+            }
+
+            await this.initializeKendoComponents();
             this.bindSaveButton();
             this.bindPreviewButtons();
+            window.processing.removeProcess(process);
         }
 
         /**
          * Initializes all kendo components for the base class.
          */
-        initializeKendoComponents() {
+        async initializeKendoComponents() {
             window.popupNotification = $("#popupNotification").kendoNotification().data("kendoNotification");
 
             // Buttons
@@ -96,225 +162,13 @@ const moduleSettings = {
             }).data("kendoSplitter");
             this.mainSplitter.resize(true);
 
-            // Treeview 
-            this.mainTreeview = [];
-            $(".treeview").each((i, e) => {
-                this.mainTreeview[i] = $(e).kendoTreeView({
-                    dragAndDrop: true,
-                    expand: this.treeViewExpand,
-                    select: function (e) {
-                        var dataItem = window.Templates.mainTreeview[i].dataItem(e.node);
-                        if (!dataItem.isFolder && dataItem.id != window.Templates.selectedId) {
-                            //Development
-                            $.ajax({
-                                type: "GET",
-                                url: "/Template/DevelopmentTab",
-                                data: {
-                                    templateId: dataItem.id
-                                },
-                                success: function (response) {
-                                    document.getElementById("developmentTab").innerHTML = response;
-                                    window.Templates.initKendoDeploymentTab();
-                                    window.Templates.bindDeployButtons(dataItem.id);
-                                    window.Templates.selectedId = dataItem.id;
-                                }
-                            });
-                            //History
-                            $.ajax({
-                                type: "GET",
-                                url: "/Template/HistoryTab",
-                                data: {
-                                    templateId: dataItem.id
-                                },
-                                success: function (response) {
-                                    document.getElementById("historyTab").innerHTML = response;
-                                }
-                            });
-
-                            // Dynamic content Grid
-                            $.ajax({
-                                type: "GET",
-                                url: "/Template/GetLinkedDynamicContent",
-                                data: { templateId: dataItem.id },
-                                success: function (response) {
-                                    $("#dynamic-grid").kendoGrid().data("KendoGrid")
-                                    window.Templates.initDynamicContentDisplayFields(response);
-
-                                    $("#dynamic-grid").kendoGrid({
-                                        dataSource: response,
-                                        scrollable: true,
-                                        resizable: true,
-                                        filterable: {
-                                            extra: false,
-                                            operators: {
-                                                string: {
-                                                    startswith: "Begint met",
-                                                    eq: "Is gelijk aan",
-                                                    neq: "Is ongelijk aan",
-                                                    contains: "Bevat",
-                                                    doesnotcontain: "Bevat niet",
-                                                    endswith: "Eindigt op"
-                                                }
-                                            },
-                                            messages: {
-                                                isTrue: "<span>Ja</span>",
-                                                isFalse: "<span>Nee</span>"
-                                            }
-                                        },
-                                        pageable: true,
-                                        columns: [
-                                            {
-                                                field: "id",
-                                                title: "ID",
-                                                hidden: true
-                                            },
-                                            {
-                                                field: "title",
-                                                title: "Naam",
-                                                width: 150,
-                                                filterable: true
-                                            },
-                                            {
-                                                field: "component",
-                                                title: "Type",
-                                                width: "10%",
-                                                filterable: true
-                                            },
-                                            {
-                                                field: "displayUsages",
-                                                title: "Gebruikt in",
-                                                width: 150,
-                                                filterable: true
-                                            },
-                                            {
-                                                field: "renders",
-                                                title: "Aantal renders",
-                                                filterable: true
-                                            },
-                                            {
-                                                field: "avgRenderTime",
-                                                title: "Gem. rendertijd",
-                                                filterable: false
-                                            },
-                                            {
-                                                field: "displayDate",
-                                                title: "Laatst aangepast op",
-                                                width: 150,
-                                                format: "{0:MM DD yyyy}",
-                                                filterable: {
-                                                    ui: "datepicker"
-                                                }
-                                            },
-                                            {
-                                                title: "Versies",
-                                                width: 225,
-                                                filterable: false,
-                                                template: "<span class='version'>#=Math.max(...versions.versionList)#</span> | <span class='version'><ins class='live'></ins>#=versions.liveVersion#</span> | <span class='version'><ins class='accept'></ins>#=versions.acceptVersion#</span> | <span class='version'><ins class='test'></ins>#=versions.testVersion#</span>"
-                                            },
-                                            {
-                                                field: "changed_by",
-                                                title: "Door",
-                                                width: 120,
-                                                filterable: true
-                                            },
-                                            {
-                                                command: [
-                                                    {
-                                                        name: "duplicate",
-                                                        text: "",
-                                                        iconClass: "k-icon k-i-copy",
-                                                        click: window.Templates.kendoGridCopy
-                                                    },
-                                                    {
-                                                        name: "Open", text: "",
-                                                        iconClass: "k-icon k-i-edit",
-                                                        click: window.Templates.kendoGridOpen
-                                                    },
-                                                    {
-                                                        name: "Preview", text: "",
-                                                        iconClass: "k-icon k-i-preview",
-                                                        click: window.Templates.kendoGridPreview
-                                                    }
-                                                ],
-                                                title: "&nbsp;",
-                                                width: 160,
-                                                filterable: false
-                                            }
-                                        ]
-                                    }).data("kendoGrid");
-                                }
-                            });
-
-
-                            $.ajax({
-                                type: "GET",
-                                url: "/Template/PreviewTab",
-                                data: {
-                                    templateId: dataItem.id
-                                },
-                                success: function (response) {
-                                    document.getElementById("previewTab").innerHTML = response;
-
-                                    $.ajax({
-                                        type: "GET",
-                                        url: "/Template/GetPreviewProfiles",
-                                        data: { templateId: dataItem.id },
-                                        success: function (response) {
-                                            //Combo box
-                                            $("#preview-combo-select").kendoComboBox({
-                                                change: function () {
-                                                    if ($("#preview-combo-select").data('kendoComboBox').dataItem()) {
-                                                        window.Templates.initPreviewProfileInputs(response, $("#preview-combo-select").data('kendoComboBox').select());
-                                                    }
-                                                }
-                                            });
-
-                                            window.Templates.initPreviewProfileInputs(response, 0);
-
-                                        }
-                                    });
-                                }
-                            });                            
-                        }
-                    }
-                }).data("kendoTreeView");
-            });
-
-            //Fill Treeviewroots
-            this.mainTreeview.forEach((e, i) => {
-                $.ajax({
-                    type: "GET",
-                    url: "/Template/GetTreeviewSection",
-                    data: { templateId: e.element[0].dataset.id },
-                    success: function (response) {
-                        response.forEach((folderItem) => {
-                            var toAppendItem = { id: folderItem.templateId, text: folderItem.templateName, hasChildren: folderItem.hasChildren, isFolder: folderItem.isFolder };
-                            if (folderItem.isFolder) {
-                                toAppendItem.spriteCssClass = "folder";
-                            }
-                            window.Templates.mainTreeview[i].append(
-                                toAppendItem
-                            );
-                        });
-                    }
-                });
-            });
-
             // Tabstrip
             this.mainTabStrip = $(".tabstrip").kendoTabStrip({
-                animation: {
-                    open: {
-                        effects: "fadeIn"
-                    }
-                }
-            }).data("kendoTabStrip");
-
-            this.treeviewTabStrip = $(".tabstrip-treeview").kendoTabStrip({
-                select: function (e) {
-                    //Deselect other treeview tabs.
-                    window.Templates.mainTreeview.forEach((e, i) => {
-                        if (window.Templates.treeviewTabStrip.select().index() != i) {
-                            e.select($());
+                select: (event) => {
+                    // Deselect all tree views in other tabs, otherwise they will stay selected even though the user selected a different template.
+                    this.mainTreeview.forEach((index, treeView) => {
+                        if (this.treeviewTabStrip.select().index() !== index) {
+                            treeView.select($());
                         }
                     });
                 },
@@ -324,8 +178,66 @@ const moduleSettings = {
                     }
                 }
             }).data("kendoTabStrip");
-            //select first tab
+
+            this.treeviewTabStrip = $(".tabstrip-treeview").kendoTabStrip({
+                animation: {
+                    open: {
+                        effects: "fadeIn"
+                    }
+                }
+            }).data("kendoTabStrip");
+
+            // Load the tabs via the API.
+            const treeViewTabs = await Wiser2.api({
+                url: `${this.settings.wiserApiRoot}templates/0/tree-view`,
+                dataType: "json",
+                method: "GET"
+            });
+
+            for (let tab of treeViewTabs) {
+                this.treeviewTabStrip.append({
+                    text: tab.templateName,
+                    content: `<ul id="${tab.templateId}-treeview" class="treeview" data-id="${tab.templateId}"></ul>`
+                });
+            }
+
+            // Select first tab.
             this.treeviewTabStrip.select(0);
+
+            // Treeview 
+            this.mainTreeview = [];
+            $(".treeview").each((index, element) => {
+                const treeViewElement = $(element);
+                this.mainTreeview[index] = treeViewElement.kendoTreeView({
+                    dragAndDrop: true,
+                    collapse: this.onTreeViewCollapseItem.bind(this),
+                    expand: this.onTreeViewExpandItem.bind(this),
+                    select: this.onTreeViewSelect.bind(this),
+                    dataSource: {
+                        transport: {
+                            read: (readOptions) => {
+                                Wiser2.api({
+                                    url: `${this.settings.wiserApiRoot}templates/${readOptions.data.templateId || treeViewElement.data("id")}/tree-view`,
+                                    dataType: "json",
+                                    type: "GET"
+                                }).then((result) => {
+                                    readOptions.success(result);
+                                }).catch((result) => {
+                                    readOptions.error(result);
+                                });
+                            }
+                        },
+                        schema: {
+                            model: {
+                                id: "templateId",
+                                hasChildren: "hasChildren"
+                            }
+                        }
+                    },
+                    dataTextField: "templateName",
+                    dataSpriteCssClassField: "spriteCssClass"
+                }).data("kendoTreeView");
+            });
 
             var tempPreviewData = [
                 {
@@ -395,6 +307,14 @@ const moduleSettings = {
             }).data("kendoGrid");
         }
 
+        /**
+         * Shows or hides the main (full screen) loader.
+         * @param {boolean} show True to show the loader, false to hide it.
+         */
+        toggleMainLoader(show) {
+            this.mainLoader.toggleClass("loading", show);
+        }
+
         customBoolEditor(container, options) {
             $('<input class="checkbox" type="checkbox" name="encrypt" data-type="boolean" data-bind="checked:encrypt">').appendTo(container);
         }
@@ -403,12 +323,10 @@ const moduleSettings = {
         }
 
         initPreviewProfileInputs(profiles, index) {
-            console.log(profiles);
-            var tempPreviewVariablesData = null;
-            if (profiles.length!=0) {
+            let tempPreviewVariablesData = null;
+            if (profiles.length !== 0) {
                 tempPreviewVariablesData = profiles[index].variables;
                 document.getElementById("profile-url").value = profiles[index].url;
-                console.log(tempPreviewVariablesData);
             }
 
             $("#preview-variables").kendoGrid({
@@ -490,40 +408,247 @@ const moduleSettings = {
             }).data("kendoGrid");
         }
 
-        treeViewExpand(nodeElement) {
-            var currentTreeview = window.Templates.treeviewTabStrip.select().index();
-            var nodeId = window.Templates.mainTreeview[currentTreeview].dataItem(nodeElement.node).id;
-            var dataNode = window.Templates.mainTreeview[currentTreeview].dataSource.get(nodeId);
-            if (dataNode.hasLoaded != true) {
-                //Display loading element
-                window.Templates.mainTreeview[currentTreeview].append(
-                    {text: "Loading..."},
-                    window.Templates.mainTreeview[currentTreeview].findByUid(dataNode.uid)
-                );
-                $.ajax({
-                    type: "GET",
-                    url: "/Template/GetTreeviewSection",
-                    data: { templateId: nodeId },
-                    success: function (response) {
-                        console.log(response);
-                        //Removes children
-                        $(nodeElement.node).children('.k-group').remove();
-                        //Append the subitems
-                        response.forEach((folderItem) => {
-                            var toAppendItem = { id: folderItem.templateId, text: folderItem.templateName, hasChildren: folderItem.hasChildren };
-                            if (folderItem.isFolder) {
-                                toAppendItem.spriteCssClass = "folder";
-                            }
-                            window.Templates.mainTreeview[currentTreeview].append(
-                                toAppendItem,
-                                window.Templates.mainTreeview[currentTreeview].findByUid(dataNode.uid)
-                            );
-                        });
-                        //Mark element as loaded
-                        dataNode.hasLoaded = true
-                    }
-                });
+        /**
+         * Event for when an item in a kendoTreeView gets collapsed.
+         * @param {any} event The collapsed event of a kendoTreeView.
+         */
+        onTreeViewCollapseItem(event) {
+            const dataItem = event.sender.dataItem(event.node);
+            dataItem.spriteCssClass = dataItem.collapsedSpriteCssClass;
+
+            // Changing the text causes kendo to actually update the icon. If we don't change the test, the icon will not change.
+            event.sender.text(event.node, event.sender.text(event.node).trim());
+        }
+
+        /**
+         * Event for when an item in a kendoTreeView gets expanded.
+         * @param {any} event The expanded event of a kendoTreeView.
+         */
+        onTreeViewExpandItem(event) {
+            const dataItem = event.sender.dataItem(event.node);
+            dataItem.spriteCssClass = dataItem.expandedSpriteCssClass || dataItem.collapsedSpriteCssClass;
+
+            // Changing the text causes kendo to actually update the icon. If we don't change the test, the icon will not change.
+            event.sender.text(event.node, event.sender.text(event.node) + " ");
+        }
+
+        /**
+         * Event for when the user selects an item in a tree view.
+         * @param {any} event The select event of a kendoTreeView.
+         */
+        async onTreeViewSelect(event) {
+            var dataItem = event.sender.dataItem(event.node);
+            if (dataItem.isFolder || dataItem.id === this.selectedId) {
+                return;
             }
+
+            this.selectedId = dataItem.id;
+            const process = `onTreeViewSelect_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                // Get template settings and linked templates.
+                let promises = [
+                    Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}templates/${dataItem.id}/settings`,
+                        dataType: "json",
+                        method: "GET"
+                    }),
+                    Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}templates/${dataItem.id}/linked-templates`,
+                        dataType: "json",
+                        method: "GET"
+                    }),
+                    Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}templates/${dataItem.id}/history`,
+                        dataType: "json",
+                        method: "GET"
+                    }),
+                    Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}templates/${dataItem.id}/profiles`,
+                        dataType: "json",
+                        method: "GET"
+                    })
+                ];
+
+                const [templateSettings, linkedTemplates, templateHistory, previewProfiles] = await Promise.all(promises);
+
+                // Load the different tabs.
+                promises = [];
+
+                // Development
+                promises.push(
+                    Wiser2.api({
+                        method: "POST",
+                        contentType: "application/json",
+                        url: "/Modules/Templates/DevelopmentTab",
+                        data: JSON.stringify({
+                            templateSettings: templateSettings,
+                            linkedTemplates: linkedTemplates
+                        })
+                    }).then((response) => {
+                        document.getElementById("developmentTab").innerHTML = response;
+                        this.initKendoDeploymentTab();
+                        this.bindDeployButtons(dataItem.id);
+                    })
+                );
+
+                // History
+                promises.push(
+                    Wiser2.api({
+                        method: "POST",
+                        contentType: "application/json",
+                        url: "/Modules/Templates/HistoryTab",
+                        data: JSON.stringify(templateHistory)
+                    }).then((response) => {
+                        document.getElementById("historyTab").innerHTML = response;
+                    })
+                );
+
+                // Dynamic content
+                promises.push(
+                    Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}templates/${dataItem.id}/linked-dynamic-content`,
+                        dataType: "json",
+                        method: "GET"
+                    }).then((response) => {
+                        $("#dynamic-grid").kendoGrid().data("KendoGrid");
+                        this.initDynamicContentDisplayFields(response);
+
+                        $("#dynamic-grid").kendoGrid({
+                            dataSource: response,
+                            scrollable: true,
+                            resizable: true,
+                            filterable: {
+                                extra: false,
+                                operators: {
+                                    string: {
+                                        startswith: "Begint met",
+                                        eq: "Is gelijk aan",
+                                        neq: "Is ongelijk aan",
+                                        contains: "Bevat",
+                                        doesnotcontain: "Bevat niet",
+                                        endswith: "Eindigt op"
+                                    }
+                                },
+                                messages: {
+                                    isTrue: "<span>Ja</span>",
+                                    isFalse: "<span>Nee</span>"
+                                }
+                            },
+                            pageable: true,
+                            columns: [
+                                {
+                                    field: "id",
+                                    title: "ID",
+                                    hidden: true
+                                },
+                                {
+                                    field: "title",
+                                    title: "Naam",
+                                    width: 150,
+                                    filterable: true
+                                },
+                                {
+                                    field: "component",
+                                    title: "Type",
+                                    width: "10%",
+                                    filterable: true
+                                },
+                                {
+                                    field: "displayUsages",
+                                    title: "Gebruikt in",
+                                    width: 150,
+                                    filterable: true
+                                },
+                                {
+                                    field: "renders",
+                                    title: "Aantal renders",
+                                    filterable: true
+                                },
+                                {
+                                    field: "avgRenderTime",
+                                    title: "Gem. rendertijd",
+                                    filterable: false
+                                },
+                                {
+                                    field: "displayDate",
+                                    title: "Laatst aangepast op",
+                                    width: 150,
+                                    filterable: {
+                                        ui: "datepicker"
+                                    }
+                                },
+                                {
+                                    title: "Versies",
+                                    width: 225,
+                                    filterable: false,
+                                    template: "<span class='version'>#=Math.max(...versions.versionList)#</span> | <span class='version'><ins class='live'></ins>#=versions.liveVersion#</span> | <span class='version'><ins class='accept'></ins>#=versions.acceptVersion#</span> | <span class='version'><ins class='test'></ins>#=versions.testVersion#</span>"
+                                },
+                                {
+                                    field: "changedBy",
+                                    title: "Door",
+                                    width: 120,
+                                    filterable: true
+                                },
+                                {
+                                    command: [
+                                        {
+                                            name: "duplicate",
+                                            text: "",
+                                            iconClass: "k-icon k-i-copy",
+                                            click: this.kendoGridCopy
+                                        },
+                                        {
+                                            name: "Open",
+                                            text: "",
+                                            iconClass: "k-icon k-i-edit",
+                                            click: this.kendoGridOpen
+                                        },
+                                        {
+                                            name: "Preview",
+                                            text: "",
+                                            iconClass: "k-icon k-i-preview",
+                                            click: this.kendoGridPreview
+                                        }
+                                    ],
+                                    title: "&nbsp;",
+                                    width: 160,
+                                    filterable: false
+                                }
+                            ]
+                        }).data("kendoGrid");
+                    })
+                );
+
+                // Preview
+                promises.push(
+                    Wiser2.api({
+                        method: "POST",
+                        contentType: "application/json",
+                        url: "/Modules/Templates/PreviewTab",
+                        data: JSON.stringify(previewProfiles)
+                    }).then((response) => {
+                        document.getElementById("previewTab").innerHTML = response;
+                        $("#preview-combo-select").kendoComboBox({
+                            change: (event) => {
+                                if (event.sender.dataItem()) {
+                                    window.Templates.initPreviewProfileInputs(previewProfiles, event.sender.select());
+                                }
+                            }
+                        });
+
+                        window.Templates.initPreviewProfileInputs(previewProfiles, 0);
+                    })
+                );
+
+                await Promise.all(promises);
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert(`Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.<br>${exception.responseText || exception}`);
+            }
+
+            window.processing.removeProcess(process);
         }
 
         //Initializes the kendo components on the deployment tab. These are seperated from other components since these can be reloaded by the application.
@@ -573,21 +698,19 @@ const moduleSettings = {
         //Initialize display variable for the fields containing objects and dates within the grid.
         initDynamicContentDisplayFields(datasource) {
             datasource.forEach((row) => {
-                row.displayDate = kendo.format("{0:dd MMMM yyyy}", new Date(row.changed_on));
+                row.displayDate = kendo.format("{0:dd MMMM yyyy}", new Date(row.changedOn));
                 row.displayUsages = row.usages.join(",");
-                row.displayVersions = Math.max(...row.versions.versionList) + " live: " + row.versions.liveVersion + ", Acceptatie: " + row.versions.acceptVersion + ", test: " + row.versions.testVersion
+                row.displayVersions = Math.max(...row.versions.versionList) + " live: " + row.versions.liveVersion + ", Acceptatie: " + row.versions.acceptVersion + ", test: " + row.versions.testVersion;
             });
         }
 
         kendoGridCopy(x) {
             //TODO
-            console.log(x);
         }
 
         kendoGridOpen(e) {
             var tr = $(e.target).closest("tr");
             var data = this.dataItem(tr);
-            console.log(data);
             window.location.pathname = "dynamiccontent/overview/" + data.id;
         }
 
@@ -599,38 +722,41 @@ const moduleSettings = {
         bindDeployButtons(templateId) {
             $("#deployLive").on("click", function () { window.Templates.deployEnvironment("live", templateId) });
             $("#deployAccept").on("click", function () { window.Templates.deployEnvironment("accept", templateId) });
-            $("#deployTest").on("click", function () { window.Templates.deployEnvironment("test", templateId)});
+            $("#deployTest").on("click", function () { window.Templates.deployEnvironment("test", templateId) });
         }
 
         //Deploy a version to an enviorenment
         deployEnvironment(environment, templateId) {
-            console.log("clicked " + environment);
             $.ajax({
                 type: "GET",
                 url: "/Template/PublishToEnvironment",
                 data: { templateId: templateId, version: document.querySelector(".version-" + environment + " select.combo-select").value, environment: environment },
                 success: function (response) {
                     window.popupNotification.show("Template is succesvol naar de " + environment + " omgeving gezet", "info");
-                    setTimeout(function () { console.log(response); window.Templates.reloadTabs(templateId); }, 1000);}
+                    setTimeout(function () { window.Templates.reloadTabs(templateId); }, 1000);
+                }
             });
         }
 
         //Save the template data
         bindSaveButton() {
-            document.getElementById("saveButton").addEventListener("click", this.saveTemplate);
+            document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
         }
-        saveTemplate() {
-            if (!window.Templates.selectedId) {
+
+        async saveTemplate() {
+            if (!this.selectedId) {
                 return;
             }
-            var data = {
-                templateid: window.Templates.selectedId,
+
+            const scssLinks = [];
+            const jsLinks = [];
+            document.querySelectorAll("#scss-checklist input[type=checkbox]:checked").forEach(el => { scssLinks.push({ templateId: el.dataset.template }) });
+            document.querySelectorAll("#js-checklist input[type=checkbox]:checked").forEach(el => { jsLinks.push({ templateId: el.dataset.template }) });
+
+            const data = {
+                templateId: this.selectedId,
                 name: "Test",
                 editorValue: document.querySelector(".editor").value,
-                //version: 0,
-                //changed_on: Now(),
-                //changed_by: "",
-
                 useCache: document.getElementById("combo-cache").value,
                 cacheMinutes: document.getElementById("cache-duration").value,
                 handleRequests: document.getElementById("handleRequests").checked,
@@ -641,31 +767,29 @@ const moduleSettings = {
                 handleDynamicContent: document.getElementById("handleDynamicContent").checked,
                 handleLogicBlocks: document.getElementById("handleLogicBlocks").checked,
                 handleMutators: document.getElementById("handleMutators").checked,
-                loginRequired: document.getElementById("user-check").checked
+                loginRequired: document.getElementById("user-check").checked,
+                linkedTemplates: {
+                    linkedSccsTemplates: scssLinks,
+                    linkedJavascript: jsLinks
+                }
             }
+
             if (document.getElementById("user-check").checked) {
                 data.loginUserType = document.getElementById("combo-user1").value;
                 data.loginSessionPrefix = document.getElementById("combo-user2").value;
                 data.loginRole = document.getElementById("combo-user3").value;
             }
-            var scssLinks = [];
-            document.querySelectorAll("#scss-checklist input[type=checkbox]:checked").forEach(el => { scssLinks.push(el.dataset.template) })
-            var jsLinks = [];
-            document.querySelectorAll("#js-checklist input[type=checkbox]:checked").forEach(el => { jsLinks.push(el.dataset.template) })
 
-            $.ajax({
-                type: "POST",
-                url: "/Template/SaveTemplate",
-                data: {
-                    templateData: JSON.stringify(data),
-                    scssLinks: scssLinks,
-                    jsLinks: jsLinks
-                },
-                success: function (response) {
-                    window.popupNotification.show("Template '"+data.name+"' is succesvol opgeslagen", "info");
-                    setTimeout(function () { window.Templates.reloadTabs(window.Templates.selectedId); }, 1000);
-                }
+            const response = Wiser2.api({
+                url: `${this.settings.wiserApiRoot}templates/${data.templateId}`,
+                dataType: "json",
+                type: "PUT",
+                contentType: "application/json",
+                data: JSON.stringify(data)
             });
+
+            window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
+            setTimeout(() => { this.reloadTabs(this.selectedId); }, 1000);
         }
 
         //Reloads the publishedEnvironments and history of the template.
@@ -707,7 +831,6 @@ const moduleSettings = {
                         data: { templateId: window.Templates.selectedId, profileId: $("#preview-combo-select").data('kendoComboBox').dataItem().value },
                         success: function (response) {
                             window.popupNotification.show("Het profiel '" + document.getElementById("preview-combo-select").innerText + "' is verwijderd", "info");
-                            console.log(response);
                         }
                     });
                 }
@@ -725,8 +848,7 @@ const moduleSettings = {
                             variables: [{ type: "POST", key: "loggedin_user", value: 444, encrypt: false }, { type: "SESSION", key: "product_id", value: 151515, encrypt: false }]
                         },
                         templateId: window.Templates.selectedId
-                    },
-                    success: function (response) { console.log(response); }
+                    }
                 });
             });
 
@@ -748,14 +870,12 @@ const moduleSettings = {
                                 variables: variables
                             },
                             templateId: window.Templates.selectedId
-                        },
-                        success: function (response) { console.log(response); }
+                        }
                     });
                 }
             });
         }
     }
-
 
     // Initialize the DynamicItems class and make one instance of it globally available.
     window.Templates = new Templates(settings);

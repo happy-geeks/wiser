@@ -1,7 +1,6 @@
-﻿@using GeeksCoreLibrary.Core.Cms.Attributes
-@using System.Reflection
-@using Api.Modules.Templates.Models.History
-@model TemplateHistoryOverviewModel
+﻿@using System.Reflection
+@using GeeksCoreLibrary.Core.Cms.Attributes
+@model Api.Modules.Templates.Models.History.TemplateHistoryOverviewModel
 @{
     var publishLogCounter = 0;
 }
@@ -242,18 +241,18 @@
                 @foreach (var dynamicHistory in historyModel.DynamicContentChanges)
                 {
                     <div class="col col-12 historyTagline">
-                        <span><span class="k-icon k-i-edit"></span> Versie @dynamicHistory.GetVersion() |</span>
+                        <span><span class="k-icon k-i-edit"></span> Versie @dynamicHistory.Version |</span>
                         <span><span class="k-icon k-i-calendar"></span> @dynamicHistory.GetDisplayChangedOn() |</span>
-                        <span><span class="k-icon k-i-user"></span> door @dynamicHistory.GetChangedBy() </span>
+                        <span><span class="k-icon k-i-user"></span> door @dynamicHistory.ChangedBy </span>
                     </div>
-                    @if (dynamicHistory.GetChanges() != null)
+                    @if (dynamicHistory.Changes != null)
                     {
-                        @foreach (var historyChange in dynamicHistory.GetChanges())
+                        @foreach (var historyChange in dynamicHistory.Changes)
                         {
                             var propertyAttribute = historyChange.GetPropertyAttribute();
-
-                            <partial name="../Partials/HistoryInputGenerator" model="new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(propertyAttribute, new KeyValuePair<PropertyInfo, object>(@historyChange.GetPropertyInfo(), historyChange.GetOldValue()))" />
-                            <partial name="../Partials/HistoryInputGenerator" model="new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(propertyAttribute, new KeyValuePair<PropertyInfo, object>(@historyChange.GetPropertyInfo(), historyChange.GetNewValue()))" />
+                            var property = historyChange.GetProperty();
+                            <partial name="/Modules/Templates/Views/DynamicContent/Partials/HistoryInputGenerator.cshtml" model="new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(propertyAttribute, new KeyValuePair<PropertyInfo, object>(property, historyChange.OldValue))" />
+                            <partial name="/Modules/Templates/Views/DynamicContent/Partials/HistoryInputGenerator.cshtml" model="new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(propertyAttribute, new KeyValuePair<PropertyInfo, object>(property, historyChange.NewValue))" />
                         }
                     }
                 }

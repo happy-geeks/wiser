@@ -21,6 +21,9 @@ namespace Api.Modules.Templates.Services
     {
         private readonly IDynamicContentDataService dataService;
 
+        /// <summary>
+        /// Creates a new instance of <see cref="DynamicContentService"/>.
+        /// </summary>
         public DynamicContentService (IDynamicContentDataService dataService)
         {
             this.dataService = dataService;

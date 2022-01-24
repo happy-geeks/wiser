@@ -2,14 +2,14 @@
 
 namespace Api.Modules.Templates.Models.Preview
 {
-    public class PreviewProfileDAO
+    public class PreviewProfileDao
     {
         Int64 id;
         string name;
         string url;
         string rawVariables;
 
-        public PreviewProfileDAO (Int64 id, string name, string url, string variables)
+        public PreviewProfileDao (Int64 id, string name, string url, string variables)
         {
             this.id = id;
             this.name = name;

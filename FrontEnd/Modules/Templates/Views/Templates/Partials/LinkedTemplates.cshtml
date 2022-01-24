@@ -1,7 +1,5 @@
-﻿@using Api.Modules.Templates.Models.Template
-@using Api.Modules.Templates.Enums
-@model LinkedTemplatesModel
-
+﻿@using Api.Modules.Templates.Enums
+@model Api.Modules.Templates.Models.Template.LinkedTemplatesModel
 <div class="item" style="width: 50%;">
     <span class="handler">&nbsp;</span>
     <h4><label for="css-templates">Gekoppelde (S)CSS templates</label></h4>
@@ -17,13 +15,14 @@
         }
         @foreach (var linkOption in @Model.LinkOptionsTemplates)
         {
-            if (linkOption.LinkType == LinkedTemplatesEnum.scss) {
-            <li>
-                <label class="checkbox">
-                    <input type="checkbox" value="1" data-template="@linkOption.TemplateId">
-                    <span>ParentName >> @linkOption.TemplateName (SCSS)</span>
-                </label>
-            </li>
+            if (linkOption.LinkType == LinkedTemplatesEnum.scss)
+            {
+                <li>
+                    <label class="checkbox">
+                        <input type="checkbox" value="1" data-template="@linkOption.TemplateId">
+                        <span>ParentName >> @linkOption.TemplateName (SCSS)</span>
+                    </label>
+                </li>
             }
         }
     </ul>

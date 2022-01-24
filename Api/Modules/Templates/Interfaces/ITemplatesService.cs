@@ -61,8 +61,8 @@ namespace Api.Modules.Templates.Interfaces
         /// Get the latest version for a given template.
         /// </summary>
         /// <param name="templateId">The id of the template.</param>
-        /// <returns>A TemplateDataModel containing the template data of the latest version.</returns>
-        Task<ServiceResult<TemplateDataModel>> GetTemplateSettingsAsync(int templateId);
+        /// <returns>A <see cref="TemplateSettingsModel"/> containing the template data of the latest version.</returns>
+        Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId);
         
         /// <summary>
         /// Get the template environments. This will retrieve a list of versions and their published environments and convert it to a PublishedEnvironmentModel 
@@ -100,10 +100,8 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Save the template as a new version and save the linked templates if necessary. This method will calculate if links are to be added or removed from the current situation.
         /// </summary>
-        /// <param name="template">A TemplateDataModel containing the data of the template that is to be saved as a new version</param>
-        /// <param name="scssLinks">The sccs templates that should be linked to the template.</param>
-        /// <param name="jsLinks">The javascript templates that should be linked to the template.</param>
-        Task<ServiceResult<bool>> SaveTemplateVersionAsync(TemplateDataModel template, List<int> scssLinks, List<int> jsLinks);
+        /// <param name="template">A <see cref="TemplateSettingsModel"/> containing the data of the template that is to be saved as a new version</param>
+        Task<ServiceResult<bool>> SaveTemplateVersionAsync(TemplateSettingsModel template);
         
         /// <summary>
         /// Retrieve the tree view section underlying the parentId. Transforms the tree view section into a list of TemplateTreeViewModels.
@@ -116,12 +114,7 @@ namespace Api.Modules.Templates.Interfaces
         /// Search for a template.
         /// </summary>
         /// <param name="searchSettings">The search parameters.</param>
-        Task<ServiceResult<List<SearchResultModel>>> GetSearchResultsAsync(SearchSettingsModel searchSettings);
-        
-        /// <summary>
-        /// Load The development tab.
-        /// </summary>
-        Task<ServiceResult<DevelopmentTemplateModel>> GetDevelopmentTabDataAsync(int templateId);
+        Task<ServiceResult<List<SearchResultModel>>> Search(SearchSettingsModel searchSettings);
         
         /// <summary>
         /// Retrieve the history of the template. This will include changes made to dynamic content between the releases of templates and the publishes to different environments from this template. This data is collected and combined in a TemnplateHistoryOverviewModel

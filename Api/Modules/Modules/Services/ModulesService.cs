@@ -20,7 +20,6 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Exports.Interfaces;
 using GeeksCoreLibrary.Modules.Objects.Interfaces;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Modules.Services

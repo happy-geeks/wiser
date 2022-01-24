@@ -5,11 +5,36 @@ using Api.Modules.Templates.Models.Template;
 
 namespace Api.Modules.Templates.Interfaces.DataLayer
 {
+    /// <summary>
+    /// Data service for all queries that need to do something with the history of Wiser templates.
+    /// </summary>
     public interface IHistoryDataService
     {
+        /// <summary>
+        /// Returns the components history as a dictionary.
+        /// </summary>
+        /// <returns></returns>
         Task<List<HistoryVersionModel>> GetDynamicContentHistory(int templateId);
-        Task<Dictionary<int, int>> GetPublishedEnvoirementsFromDynamicContent(int templateId);
-        Task<List<TemplateDataModel>> GetTemplateHistory(int templateId);
+        
+        /// <summary>
+        /// Get a list of versions and their published environments form a dynamic content.
+        /// </summary>
+        /// <param name="templateId">The id of the dynamic content.</param>
+        /// <returns>List of version numbers and their published environment.</returns>
+        Task<Dictionary<int, int>> GetPublishedEnvironmentsFromDynamicContent(int templateId);
+        
+        /// <summary>
+        /// Get the history of a template. This will retrieve all versions of the template which can be compared for changes.
+        /// </summary>
+        /// <param name="templateId">The id of the template which history should be retrieved.</param>
+        /// <returns>A list of <see cref="TemplateSettingsModel"/> forming the history of the template. The list is ordered by version number (DESC).</returns>
+        Task<List<TemplateSettingsModel>> GetTemplateHistory(int templateId);
+        
+        /// <summary>
+        /// Get the history of a template from the publish log table. The list will be ordered on date desc.
+        /// </summary>
+        /// <param name="templateId">The Id of the template whose history to retrieve</param>
+        /// <returns>A list of <see cref="PublishHistoryModel"/> containing the values of the change from the publish log datatable.</returns>
         Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId);
     }
 }

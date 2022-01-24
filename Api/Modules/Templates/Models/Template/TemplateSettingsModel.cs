@@ -4,9 +4,9 @@ using Api.Modules.Templates.Models.Other;
 
 namespace Api.Modules.Templates.Models.Template
 {
-    public class TemplateDataModel
+    public class TemplateSettingsModel
     {
-        public int Templateid;
+        public int TemplateId;
         public string Name;
         public string EditorValue;
         public int Version;

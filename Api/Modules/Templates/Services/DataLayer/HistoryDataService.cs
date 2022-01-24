@@ -10,19 +10,20 @@ using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
 namespace Api.Modules.Templates.Services.DataLayer
 {
+    /// <inheritdoc cref="IHistoryDataService" />
     public class HistoryDataService : IHistoryDataService, IScopedService
     {
         private readonly IDatabaseConnection connection;
 
+        /// <summary>
+        /// Creates a new instance of <see cref="HistoryDataService"/>.
+        /// </summary>
         public HistoryDataService(IDatabaseConnection connection)
         {
             this.connection = connection;
         }
-
-        /// <summary>
-        /// Returns the components history as a dictionary.
-        /// </summary>
-        /// <returns></returns>
+        
+        /// <inheritdoc />
         public async Task<List<HistoryVersionModel>> GetDynamicContentHistory(int templateId)
         {
             connection.ClearParameters();
@@ -36,13 +37,9 @@ namespace Api.Modules.Templates.Services.DataLayer
             }
             return resultDict;
         }
-
-        /// <summary>
-        /// Get a list of versions and their published environments form a dynamic content.
-        /// </summary>
-        /// <param name="templateId">The id of the dynamic content.</param>
-        /// <returns>List of version numbers and their published environment.</returns>
-        public async Task<Dictionary<int, int>> GetPublishedEnvoirementsFromDynamicContent(int templateId)
+        
+        /// <inheritdoc />
+        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsFromDynamicContent(int templateId)
         {
             var versionList = new Dictionary<int, int>();
 
@@ -55,13 +52,9 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             return versionList;
         }
-
-        /// <summary>
-        /// Get the history of a template. This will retrieve all versions of the template which can be compared for changes.
-        /// </summary>
-        /// <param name="templateId">The id of the template which history should be retrieved.</param>
-        /// <returns>A list of templatedatamodels forming the history of the template. The list is ordered by version number (DESC).</returns>
-        public async Task<List<TemplateDataModel>> GetTemplateHistory(int templateId)
+        
+        /// <inheritdoc />
+        public async Task<List<TemplateSettingsModel>> GetTemplateHistory(int templateId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
@@ -76,49 +69,45 @@ namespace Api.Modules.Templates.Services.DataLayer
                 ORDER BY version DESC"
             );
 
-            var resultList = new List<TemplateDataModel>();
+            var resultList = new List<TemplateSettingsModel>();
 
             foreach(DataRow row in dataTable.Rows)
             {
-                var templateData = new TemplateDataModel();
-
-                templateData.Templateid = row.Field<int>("template_id");
-                templateData.Name = row.Field<string>("template_name");
-                templateData.EditorValue = row.Field<string>("template_data");
-                templateData.Version = row.Field<int>("version");
-                templateData.ChangedOn = row.Field<DateTime>("changed_on");
-                templateData.ChangedBy = row.Field<string>("changed_by");
-
-                templateData.UseCache = row.Field<int>("usecache");
-                templateData.CacheMinutes = row.Field<int>("cacheminutes");
-                templateData.HandleRequests = Convert.ToBoolean(row.Field<sbyte>("handlerequest"));
-                templateData.HandleSession = Convert.ToBoolean(row.Field<sbyte>("handlesession"));
-                templateData.HandleStandards = Convert.ToBoolean(row.Field<sbyte>("handlestandards"));
-                templateData.HandleObjects = Convert.ToBoolean(row.Field<sbyte>("handleobjects"));
-                templateData.HandleTranslations = Convert.ToBoolean(row.Field<sbyte>("handletranslations"));
-                templateData.HandleDynamicContent = Convert.ToBoolean(row.Field<sbyte>("handledynamiccontent"));
-                templateData.HandleLogicBlocks = Convert.ToBoolean(row.Field<sbyte>("handlelogicblocks"));
-                templateData.HandleMutators = Convert.ToBoolean(row.Field<sbyte>("handlemutators"));
-                templateData.LoginRequired = Convert.ToBoolean(row.Field<sbyte>("loginrequired"));
-                templateData.LoginUserType = row.Field<string>("loginusertype");
-                templateData.LoginSessionPrefix = row.Field<string>("loginsessionprefix");
-                templateData.LoginRole = row.Field<string>("loginrole");
-
-                var linkedTemplates = new LinkedTemplatesModel();
-                linkedTemplates.RawLinkList = row.Field<string>("linkedtemplates");
-                templateData.LinkedTemplates = linkedTemplates;
+                var templateData = new TemplateSettingsModel
+                {
+                    TemplateId = row.Field<int>("template_id"),
+                    Name = row.Field<string>("template_name"),
+                    EditorValue = row.Field<string>("template_data"),
+                    Version = row.Field<int>("version"),
+                    ChangedOn = row.Field<DateTime>("changed_on"),
+                    ChangedBy = row.Field<string>("changed_by"),
+                    UseCache = row.Field<int>("usecache"),
+                    CacheMinutes = row.Field<int>("cacheminutes"),
+                    HandleRequests = Convert.ToBoolean(row.Field<sbyte>("handlerequest")),
+                    HandleSession = Convert.ToBoolean(row.Field<sbyte>("handlesession")),
+                    HandleStandards = Convert.ToBoolean(row.Field<sbyte>("handlestandards")),
+                    HandleObjects = Convert.ToBoolean(row.Field<sbyte>("handleobjects")),
+                    HandleTranslations = Convert.ToBoolean(row.Field<sbyte>("handletranslations")),
+                    HandleDynamicContent = Convert.ToBoolean(row.Field<sbyte>("handledynamiccontent")),
+                    HandleLogicBlocks = Convert.ToBoolean(row.Field<sbyte>("handlelogicblocks")),
+                    HandleMutators = Convert.ToBoolean(row.Field<sbyte>("handlemutators")),
+                    LoginRequired = Convert.ToBoolean(row.Field<sbyte>("loginrequired")),
+                    LoginUserType = row.Field<string>("loginusertype"),
+                    LoginSessionPrefix = row.Field<string>("loginsessionprefix"),
+                    LoginRole = row.Field<string>("loginrole"),
+                    LinkedTemplates = new LinkedTemplatesModel
+                    {
+                        RawLinkList = row.Field<string>("linkedtemplates")
+                    }
+                };
 
                 resultList.Add(templateData);
             }
 
             return resultList;
         }
-
-        /// <summary>
-        /// Get the history of a template from the publish log table. The list will be ordered on date desc.
-        /// </summary>
-        /// <param name="templateId">The Id of the template whose history to retrieve</param>
-        /// <returns>A list of publishmodels containing the values of the change from the publish log datatable.</returns>
+        
+        /// <inheritdoc />
         public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId) {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
@@ -131,19 +120,21 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             foreach(DataRow row in dataTable.Rows)
             {
-                var publishHistory = new PublishHistoryModel();
-                publishHistory.Templateid = (int)row.Field<Int64>("template_id");
-                publishHistory.ChangedOn = row.Field<DateTime>("changed_on");
-                publishHistory.ChangedBy = row.Field<string>("changed_by");
-                publishHistory.PublishLog = new PublishLogModel(
-                        row.Field<Int64>("template_id"), 
-                        row.Field<Int64>("old_live"), 
-                        row.Field<Int64>("old_accept"), 
-                        row.Field<Int64>("old_test"), 
-                        row.Field<Int64>("new_live"), 
-                        row.Field<Int64>("new_accept"), 
-                        row.Field<Int64>("new_test")
-                    );
+                var publishHistory = new PublishHistoryModel
+                {
+                    Templateid = (int)row.Field<long>("template_id"),
+                    ChangedOn = row.Field<DateTime>("changed_on"),
+                    ChangedBy = row.Field<string>("changed_by"),
+                    PublishLog = new PublishLogModel(
+                        row.Field<long>("template_id"), 
+                        row.Field<long>("old_live"), 
+                        row.Field<long>("old_accept"), 
+                        row.Field<long>("old_test"), 
+                        row.Field<long>("new_live"), 
+                        row.Field<long>("new_accept"), 
+                        row.Field<long>("new_test")
+                    )
+                };
 
                 resultList.Add(publishHistory);
             }

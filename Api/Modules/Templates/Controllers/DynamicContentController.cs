@@ -1,30 +1,38 @@
-﻿using System.Threading.Tasks;
-using FrontEnd.Core.Interfaces;
-using FrontEnd.Core.Models;
-using FrontEnd.Modules.Base.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Threading.Tasks;
+using Api.Modules.Templates.Helpers;
+using Api.Modules.Templates.Interfaces;
+using Api.Modules.Templates.Models.DynamicContent;
+using Api.Modules.Templates.Models.History;
+using GeeksCoreLibrary.Components.Account;
+using GeeksCoreLibrary.Core.Cms.Attributes;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
-namespace FrontEnd.Modules.Templates.Controllers
+namespace Api.Modules.Templates.Controllers
 {
-    [Area("Templates"), Route("Modules/DynamicContent")]
+    /// <summary>
+    /// Controller for getting or doing things with templates from the templates module in Wiser.
+    /// </summary>
+    [Route("api/v3/dynamic-content"), ApiController, Authorize]
     public class DynamicContentController : Controller
-    {
-        private readonly IBaseService baseService;
-
-        public DynamicContentController(IBaseService baseService)
-        {
-            this.baseService = baseService;
-        }
+    {/*
+        private readonly IDynamicContentService dynamicContentService;
 
         /// <summary>
-        /// The main page on starting the application. TODO: open with the current component as original
+        /// Creates a new instance of <see cref="DynamicContentController"/>.
         /// </summary>
-        /// <returns>
-        /// View containing the attributes of the component to be displayed as fields.
-        /// </returns>
-        public async Task<IActionResult> Index(int id)
+        public DynamicContentController(IDynamicContentService dynamicContentService)
         {
-            /*var propertyAttributes = dynamicContentService.GetAllPropertyAttributes(typeof(Account));
+            this.dynamicContentService = dynamicContentService;
+        }
+
+        public async Task<IActionResult> Get(int id)
+        {
+            var propertyAttributes = dynamicContentService.GetAllPropertyAttributes(typeof(Account));
 
             var dcInformation = new DynamicContentInformationModel
             {
@@ -32,12 +40,11 @@ namespace FrontEnd.Modules.Templates.Controllers
                 ComponentModes = dynamicContentService.GetComponentModes(typeof(Account)),
                 PropertyAttributes = propertyAttributes,
                 PropValues = await dynamicContentService.GetCmsSettingsModel(propertyAttributes.Key, id)
-            };*/
-            
-            var viewModel = baseService.CreateBaseViewModel<BaseModuleViewModel>();
-            return View(viewModel);
+            };
+
+            return View(new DynamicContentInformationModel());
         }
-        /*
+
         /// <summary>
         /// Get The tabwindow containing the component properties.
         /// </summary>
@@ -80,7 +87,7 @@ namespace FrontEnd.Modules.Templates.Controllers
         /// Retrieve properties for the initial load of the coponent tab.
         /// </summary>
         /// <returns>A Keyvalue pair containing the type, tabs, groups and properties of the account component.</returns>
-        public KeyValuePair<Type, Dictionary<CmsTabName, Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>>> GetPropertyAttributes()
+        public KeyValuePair<Type, Dictionary<CmsAttributes.CmsTabName, Dictionary<CmsAttributes.CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>>> GetPropertyAttributes()
         {
             return dynamicContentService.GetAllPropertyAttributes(typeof(Account));
         }
