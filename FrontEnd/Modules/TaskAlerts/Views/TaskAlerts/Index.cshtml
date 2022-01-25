@@ -1,4 +1,5 @@
-﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+﻿@using System.Globalization
+@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -34,7 +35,7 @@
     <div class="taskForm">
         <div class="item">
             <h4><label>Voeg een taak toe</label></h4>
-            <input id="taskDate" class="datepicker" value="@DateTime.Today.ToString("dd MMMM yyyy")" title="datepicker" />
+            <input id="taskDate" class="datepicker" value="@DateTime.Today.ToString("dd MMMM yyyy", new CultureInfo("nl-NL"))" />
         </div>
         <div class="item">
             <h4><label>Gebruikers toevoegen</label></h4>
@@ -55,7 +56,7 @@
     <div class="editTaskForm">
         <div class="item">
             <h4><label>Taak aanpassen</label></h4>
-            <input id="editTaskDate" class="datepicker" value="@DateTime.Today.ToString("dd MMMM yyyy")" title="datepicker" />
+            <input id="editTaskDate" class="datepicker" value="@DateTime.Today.ToString("dd MMMM yyyy", new CultureInfo("nl-NL"))" />
         </div>
         <div class="item">
             <h4><label>Gebruiker</label></h4>
@@ -96,19 +97,19 @@
     </div>
 
     <script type="text/x-wiser-template" id="taskHtmlTemplate">
-        <li data-has-linked-item="{has_linked_item}">
+        <li data-has-linked-item="{hasLinkedItem}">
             <div class="taskListItemDetails">
                 <label>
-                    <input type="checkbox" class="noForm" value="{idencrypted}" />
+                    <input type="checkbox" class="noForm" value="{encryptedId}" />
                     <ins class="icon-check"></ins>
                 </label>
                 <span>{content}</span>
-                <small>{agendering_date_pretty}</small>
+                <small>{agenderingDatePretty}</small>
                 <small>{status}</small>
-                <strong>{placed_by}</strong>
+                <strong>{placedBy}</strong>
             </div>
-            <a role="button" class="k-button k-button-icontext open-task" data-item-id="{linked_item_id}" data-module-id="{linked_item_module_id}" data-entity-type="{linked_item_entity_type}" href="#"><span class="k-icon k-i-hyperlink-open"></span></a>
-            <a role="button" class="k-button k-button-icontext edit-task" data-task-id="{idencrypted}" href="#"><span class="k-icon k-i-edit"></span></a>
+            <a role="button" class="k-button k-button-icontext open-task" data-item-id="{linkedItemId}" data-module-id="{linkedItemModuleId}" data-entity-type="{linkedItemEntityType}" href="#"><span class="k-icon k-i-hyperlink-open"></span></a>
+            <a role="button" class="k-button k-button-icontext edit-task" data-task-id="{encryptedId}" href="#"><span class="k-icon k-i-edit"></span></a>
         </li>
     </script>
     

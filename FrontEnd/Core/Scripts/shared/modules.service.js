@@ -17,7 +17,7 @@ export default class ModulesService extends BaseService {
                 result[groupName].map(x => {
                     x.icon = `icon-${x.icon}`;
 
-                    switch (x.module_id) {
+                    switch (x.moduleId) {
                         case 5004:
                             x.fileName = `/Import`;
                             break;
@@ -30,7 +30,7 @@ export default class ModulesService extends BaseService {
                     }
 
                     if (x.type === "DynamicItems") {
-                        x.queryString = `?moduleId=${!x.item_id ? x.module_id : 0}&iframe=${x.iframe || false}${(!x.item_id ? "" : `&itemId=${encodeURIComponent(x.item_id)}`)}${(!x.entity_type? "" : `&entityType=${encodeURIComponent(x.entityType)}`)}`;
+                        x.queryString = `?moduleId=${!x.itemId ? x.moduleId : 0}&iframe=${x.iframe || false}${(!x.itemId ? "" : `&itemId=${encodeURIComponent(x.itemId)}`)}${(!x.entityType? "" : `&entityType=${encodeURIComponent(x.entityType)}`)}`;
                     } else {
                         x.queryString = "";
                     }

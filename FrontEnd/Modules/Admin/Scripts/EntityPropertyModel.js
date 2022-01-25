@@ -1,37 +1,37 @@
 ﻿export class EntityPropertyModel {
-    constructor(id, entity_name, tab_name, visible_in_overview, overview_fieldtype, overview_width, group_name, inputtype, display_name, property_name,
-        explanation, regex_validation, mandatory, readonly, default_value, automation, css, width, height, depends_on_field, depends_on_operator, depends_on_value,
-        language_code, custom_script, also_save_seo_value, data_query, options = {}, grid_delete_query = null, grid_insert_query = null, grid_update_query = null) {
+    constructor(id, entityName, tabName, visibleInOverview, overviewFieldtype, overviewWidth, groupName, inputtype, displayName, propertyName,
+        explanation, regexValidation, mandatory, readonly, defaultValue, automation, css, width, height, dependsOnField, dependsOnOperator, dependsOnValue,
+        languageCode, customScript, alsoSaveSeoValue, dataQuery, options = {}, gridDeleteQuery = null, gridInsertQuery = null, gridUpdateQuery = null) {
         this.id = id;
-        this.entity_name = entity_name;
-        this.tab_name = tab_name;
-        this.display_name = display_name;
-        this.property_name = property_name;
-        this.visible_in_overview = visible_in_overview;
-        this.overview_fieldtype = overview_fieldtype;
-        this.overview_width = overview_width;
-        this.group_name = group_name;
+        this.entityName = entityName;
+        this.tabName = tabName;
+        this.displayName = displayName;
+        this.propertyName = propertyName;
+        this.visibleInOverview = visibleInOverview;
+        this.overviewFieldtype = overviewFieldtype;
+        this.overviewWidth = overviewWidth;
+        this.groupName = groupName;
         this.inputtype = inputtype;
         this.explanation = explanation;
-        this.regex_validation = regex_validation;
+        this.regexValidation = regexValidation;
         this.mandatory = mandatory;
         this.readonly = readonly;
-        this.default_value = default_value;
+        this.defaultValue = defaultValue;
         this.automation = automation;
         this.css = css;
         this.width = width;
         this.height = height;
-        this.depends_on_field = depends_on_field;
-        this.depends_on_operator = depends_on_operator;
-        this.depends_on_value = depends_on_value;
-        this.language_code = language_code;
-        this.custom_script = custom_script;
-        this.also_save_seo_value = also_save_seo_value;
+        this.dependsOnField = dependsOnField;
+        this.dependsOnOperator = dependsOnOperator;
+        this.dependsOnValue = dependsOnValue;
+        this.languageCode = languageCode;
+        this.customScript = customScript;
+        this.alsoSaveSeoValue = alsoSaveSeoValue;
         this.options = options;
-        this.data_query = data_query;
-        this.grid_delete_query = grid_delete_query;
-        this.grid_insert_query = grid_insert_query;
-        this.grid_update_query = grid_update_query;
+        this.dataQuery = dataQuery;
+        this.gridDeleteQuery = gridDeleteQuery;
+        this.gridInsertQuery = gridInsertQuery;
+        this.gridUpdateQuery = gridUpdateQuery;
     }
 
     createOptionsJson(clean = true) {

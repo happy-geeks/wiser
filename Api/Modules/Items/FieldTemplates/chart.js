@@ -31,7 +31,7 @@
             },
         
             schema: {
-                data: "other_data"
+                data: "otherData"
             }
         },
         dataBound: function(event) {

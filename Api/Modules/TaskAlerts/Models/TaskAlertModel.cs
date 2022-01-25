@@ -19,7 +19,6 @@ namespace Api.Modules.TaskAlerts.Models
         /// <summary>
         /// Gets or sets the encrypted id.
         /// </summary>
-        [JsonProperty("idencrypted")]
         public string EncryptedId { get; set; }
 
         /// <summary>
@@ -30,32 +29,27 @@ namespace Api.Modules.TaskAlerts.Models
         /// <summary>
         /// Gets or sets the date and time the task alert has been created on.
         /// </summary>
-        [JsonProperty("agendering_date")]
         public DateTime CreatedOn { get; set; }
 
         /// <summary>
         /// Gets or sets the date and time the task alert was seen.
         /// </summary>
-        [JsonProperty("checkedon")]
         public DateTime? CheckedOn { get; set; }
 
         /// <summary>
         /// Gets or sets the ID of the module that this task alert belongs to.
         /// </summary>
-        [JsonProperty("moduleid")]
         public int ModuleId { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the user that placed the task alert.
         /// </summary>
-        [JsonProperty("placed_by")]
         public string PlacedBy { get; set; }
 
 
         /// <summary>
         /// Gets or sets the ID of the user that placed the task alert.
         /// </summary>
-        [JsonProperty("placed_by_id")]
         public ulong PlacedById { get; set; }
 
         /// <summary>
@@ -66,25 +60,21 @@ namespace Api.Modules.TaskAlerts.Models
         /// <summary>
         /// Gets or sets the ID of the current user.
         /// </summary>
-        [JsonProperty("userid")]
         public ulong UserId { get; set; }
 
         /// <summary>
         /// Gets or sets the linked item entity type.
         /// </summary>
-        [JsonProperty("linked_item_entity_type")]
         public string LinkedItemEntityType { get; set; }
 
         /// <summary>
         /// Gets or sets the ID of the linked item.
         /// </summary>
-        [JsonProperty("linked_item_id")]
         public string LinkedItemId { get; set; }
 
         /// <summary>
         /// Gets or sets the ID of the module that the linked item belongs to.
         /// </summary>
-        [JsonProperty("linked_item_module_id")]
         public int? LinkedItemModuleId { get; set; }
     }
 }

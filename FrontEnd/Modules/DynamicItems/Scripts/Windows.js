@@ -96,7 +96,7 @@ export class Windows {
             title: "History",
             visible: false,
             modal: true,
-            actions: ["Maximize", "Close"]
+            actions: ["Close"]
         }).data("kendoWindow");
 
         // Window for searching for items to link to another item.
@@ -106,7 +106,7 @@ export class Windows {
             title: "Item zoeken",
             visible: false,
             modal: true,
-            actions: ["Maximize", "Close"]
+            actions: ["Close"]
         }).data("kendoWindow");
 
         // Window for viewing a all generic images and for adding them into an HTML editor.
@@ -116,7 +116,7 @@ export class Windows {
             title: "Afbeeldingen",
             visible: false,
             modal: true,
-            actions: ["Maximize", "Close"],
+            actions: ["Close"],
             open: (event) => {
                 this.imagesUploaderWindowSplitter.resize(true);
 
@@ -402,7 +402,7 @@ export class Windows {
                     const formData = new FormData();
                     formData.append(file.name, file);
 
-                    promises.push(fetch(`${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=global_file&useTinyPng=false`, { method: "POST", body: formData }));
+                    promises.push(fetch(`${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=globalFile&useTinyPng=false`, { method: "POST", body: formData }));
                 }
 
                 Promise.all(promises).then((results) => {
@@ -440,15 +440,15 @@ export class Windows {
                     switch (selectedAction) {
                         case "delete":
                             if (selectedItem.isDirectory) {
-                                kendo.confirm(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle afbeeldingen in deze map zullen dan ook verwijderd worden.`).then(() => {
+                                Wiser2.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle afbeeldingen in deze map zullen dan ook verwijderd worden.`).then(() => {
                                     this.base.deleteItem(selectedItem.id, "filedirectory").then(() => {
                                         this.imagesUploaderWindowTreeView.remove(this.imagesUploaderWindowTreeViewContextMenuTarget);
                                         this.base.notification.show({ message: "Map succesvol verwijderd" }, "success");
                                         loader.removeClass("loading");
                                     });
-                                }).fail(() => { loader.removeClass("loading"); });
+                                }).catch(() => { loader.removeClass("loading"); });
                             } else {
-                                kendo.confirm(`Weet u zeker dat u de afbeelding '${selectedItem.name}' wilt verwijderen?`).then(() => {
+                                Wiser2.showConfirmDialog(`Weet u zeker dat u de afbeelding '${selectedItem.name}' wilt verwijderen?`).then(() => {
                                     Wiser2.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
                                         method: "DELETE",
@@ -463,7 +463,7 @@ export class Windows {
                                         loader.removeClass("loading");
                                         kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                                     });
-                                }).fail(() => { loader.removeClass("loading"); });
+                                }).catch(() => { loader.removeClass("loading"); });
                             }
                             break;
                         case "rename":
@@ -609,7 +609,7 @@ export class Windows {
                     const formData = new FormData();
                     formData.append(file.name, file);
 
-                    promises.push(fetch(`${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=global_file&useTinyPng=false`, { method: "POST", body: formData }));
+                    promises.push(fetch(`${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=globalFile&useTinyPng=false`, { method: "POST", body: formData }));
                 }
 
                 Promise.all(promises).then((results) => {
@@ -647,15 +647,15 @@ export class Windows {
                     switch (selectedAction) {
                         case "delete":
                             if (selectedItem.isDirectory) {
-                                kendo.confirm(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle bestanden in deze map zullen dan ook verwijderd worden.`).then(() => {
+                                Wiser2.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle bestanden in deze map zullen dan ook verwijderd worden.`).then(() => {
                                     this.base.deleteItem(selectedItem.id, "filedirectory").then(() => {
                                         this.filesUploaderWindowTreeView.remove(this.filesUploaderWindowTreeViewContextMenuTarget);
                                         this.base.notification.show({ message: "Map succesvol verwijderd" }, "success");
                                         loader.removeClass("loading");
                                     });
-                                }).fail(() => { loader.removeClass("loading"); });
+                                }).catch(() => { loader.removeClass("loading"); });
                             } else {
-                                kendo.confirm(`Weet u zeker dat u het bestand '${selectedItem.name}' wilt verwijderen?`).then(() => {
+                                Wiser2.showConfirmDialog(`Weet u zeker dat u het bestand '${selectedItem.name}' wilt verwijderen?`).then(() => {
                                     Wiser2.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
                                         method: "DELETE",
@@ -670,7 +670,7 @@ export class Windows {
                                         loader.removeClass("loading");
                                         kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                                     });
-                                }).fail(() => { loader.removeClass("loading"); });
+                                }).catch(() => { loader.removeClass("loading"); });
                             }
                             break;
                         case "rename":
@@ -831,7 +831,7 @@ export class Windows {
                     const formData = new FormData();
                     formData.append(file.name, file);
 
-                    promises.push(fetch(`${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=global_file&useTinyPng=false`, { method: "POST", body: formData }));
+                    promises.push(fetch(`${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=globalFile&useTinyPng=false`, { method: "POST", body: formData }));
                 }
 
                 Promise.all(promises).then((results) => {
@@ -869,15 +869,15 @@ export class Windows {
                     switch (selectedAction) {
                         case "delete":
                             if (selectedItem.isDirectory) {
-                                kendo.confirm(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle templates in deze map zullen dan ook verwijderd worden.`).then(() => {
+                                Wiser2.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle templates in deze map zullen dan ook verwijderd worden.`).then(() => {
                                     this.base.deleteItem(selectedItem.id, "filedirectory").then(() => {
                                         this.templatesUploaderWindowTreeView.remove(this.templatesUploaderWindowTreeViewContextMenuTarget);
                                         this.base.notification.show({ message: "Map succesvol verwijderd" }, "success");
                                         loader.removeClass("loading");
                                     });
-                                }).fail(() => { loader.removeClass("loading"); });
+                                }).catch(() => { loader.removeClass("loading"); });
                             } else {
-                                kendo.confirm(`Weet u zeker dat u de template '${selectedItem.name}' wilt verwijderen?`).then(() => {
+                                Wiser2.showConfirmDialog(`Weet u zeker dat u de template '${selectedItem.name}' wilt verwijderen?`).then(() => {
                                     Wiser2.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
                                         method: "DELETE",
@@ -892,7 +892,7 @@ export class Windows {
                                         loader.removeClass("loading");
                                         kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                                     });
-                                }).fail(() => { loader.removeClass("loading"); });
+                                }).catch(() => { loader.removeClass("loading"); });
                             }
                             break;
                         case "rename":
@@ -1049,8 +1049,7 @@ export class Windows {
 
         const width = this.imagesUploaderWindow.element.find("#preferredWidth").val() || 0;
         const height = this.imagesUploaderWindow.element.find("#preferredHeight").val() || 0;
-
-        return `${this.base.settings.mainDomain}/image/wiser2/${selectedItem.plainId}/direct/${selectedItem.property_name}/${resizeMode}/${width}/${height}/${selectedItem.name}.${ext}`;
+        return `${this.base.settings.mainDomain}/image/wiser2/${selectedItem.plainId}/direct/${selectedItem.propertyName}/${resizeMode}/${width}/${height}/${selectedItem.name}.${ext}`;
     }
 
     /**
@@ -1059,7 +1058,7 @@ export class Windows {
      */
     generateFilePreviewUrl() {
         const selectedItem = this.filesUploaderWindowTreeView.dataItem(this.filesUploaderWindowTreeView.select());
-        let result = `${this.base.settings.mainDomain}/file/wiser2/${selectedItem.plainId}/direct/${selectedItem.property_name}/${selectedItem.name}`;
+        let result = `${this.base.settings.mainDomain}/file/wiser2/${selectedItem.plainId}/direct/${selectedItem.propertyName}/${selectedItem.name}`;
         return result.replace("//file", "/file");
     }
 
@@ -1212,7 +1211,7 @@ export class Windows {
                     };
 
                     if (!currentItemWindow.element.data("saving") && !$.isEmptyObject(this.base.fields.unsavedItemValues[windowId])) {
-                        kendo.confirm("Weet u zeker dat u wilt annuleren en gewijzigde of ingevoerde gegevens wilt verwijderen?").then(closeFunction.bind(this));
+                        Wiser2.showConfirmDialog("Weet u zeker dat u wilt annuleren en gewijzigde of ingevoerde gegevens wilt verwijderen?").then(closeFunction.bind(this));
                         closeEvent.preventDefault();
                         return false;
                     }
@@ -1336,7 +1335,7 @@ export class Windows {
 
                         currentItemWindow.element.find(".editMenu .copyToEnvironment").off("click").click(async (event) => {
                             this.base.dialogs.copyItemToEnvironmentDialog.element.find("input[type=checkbox]").prop("checked", false);
-                            this.base.dialogs.copyItemToEnvironmentDialog.element.data("id", itemMetaData.plain_original_item_id);
+                            this.base.dialogs.copyItemToEnvironmentDialog.element.data("id", itemMetaData.plainOriginalItemId);
                             this.base.dialogs.copyItemToEnvironmentDialog.element.data("currentItemWindow", currentItemWindow);
                             this.base.dialogs.copyItemToEnvironmentDialog.open();
                         });
@@ -1364,18 +1363,18 @@ export class Windows {
                     currentItemWindow.element.data("entityTypeDetails", lastUsedEntityType);
                     currentItemWindow.element.data("entityType", entityType);
                     const nameField = currentItemWindow.element.find(".itemNameField");
-                    currentItemWindow.element.find(".itemNameFieldContainer").toggle(lastUsedEntityType.show_title_field && showTitleField);
+                    currentItemWindow.element.find(".itemNameFieldContainer").toggle(lastUsedEntityType.showTitleField && showTitleField);
 
                     currentItemTabStrip.element.find("> ul > li .addedFromDatabase").each((index, element) => {
                         currentItemTabStrip.remove($(element).closest("li.k-item"));
                     });
 
                     // Handle access rights.
-                    currentItemWindow.wrapper.find(".itemNameField").prop("readonly", !htmlData.can_write).prop("disabled", !htmlData.can_write);
-                    currentItemWindow.wrapper.find(".saveButton").toggleClass("hidden", !htmlData.can_write);
-                    currentItemWindow.wrapper.find(".k-i-verwijderen").parent().toggleClass("hidden", !htmlData.can_delete);
+                    currentItemWindow.wrapper.find(".itemNameField").prop("readonly", !htmlData.canWrite).prop("disabled", !htmlData.canWrite);
+                    currentItemWindow.wrapper.find(".saveButton").toggleClass("hidden", !htmlData.canWrite);
+                    currentItemWindow.wrapper.find(".k-i-verwijderen").parent().toggleClass("hidden", !htmlData.canDelete);
 
-                    currentItemWindow.element.find(".editMenu .undeleteItem").closest("li").toggleClass("hidden", !htmlData.can_delete);
+                    currentItemWindow.element.find(".editMenu .undeleteItem").closest("li").toggleClass("hidden", !htmlData.canDelete);
 
                     // Add all fields and tabs to the window.
                     let genericTabHasFields = false;
@@ -1383,16 +1382,16 @@ export class Windows {
                         const tabData = htmlData.tabs[i];
                         if (!tabData.name) {
                             genericTabHasFields = true;
-                            const container = currentItemWindow.element.find(".right-pane-content-popup").html(tabData.html_template);
-                            await this.base.loadKendoScripts(tabData.script_template);
-                            $.globalEval(tabData.script_template);
+                            const container = currentItemWindow.element.find(".right-pane-content-popup").html(tabData.htmlTemplate);
+                            await this.base.loadKendoScripts(tabData.scriptTemplate);
+                            $.globalEval(tabData.scriptTemplate);
                             
                             await Utils.sleep(150);
                             container.find("input").first().focus();
                         } else {
                             currentItemTabStrip.insertAfter({
                                 text: tabData.name,
-                                content: "<div class='dynamicTabContent'>" + tabData.html_template + "</div>",
+                                content: "<div class='dynamicTabContent'>" + tabData.htmlTemplate + "</div>",
                                 spriteCssClass: "addedFromDatabase"
                             }, currentItemTabStrip.tabGroup.children().eq(0));
 
@@ -1402,7 +1401,7 @@ export class Windows {
 
                             this.base.fields.fieldInitializers[windowId][tabData.name] = {
                                 executed: false,
-                                script: tabData.script_template,
+                                script: tabData.scriptTemplate,
                                 entityType: entityType
                             };
                         }
@@ -1467,7 +1466,7 @@ export class Windows {
     async onDeleteItemPopupClick(event) {
         event.preventDefault();
 
-        await kendo.confirm("Weet u zeker dat u dit item wilt verwijderen?");
+        await Wiser2.showConfirmDialog("Weet u zeker dat u dit item wilt verwijderen?");
 
         const popupWindowContainer = $(event.currentTarget).closest(".k-window").find(".popup-container");
 
@@ -1576,7 +1575,7 @@ export class Windows {
                 const newNode = treeView.append({
                     id: itemId,
                     name: titleToSave,
-                    destination_item_id: data.parentId
+                    destinationItemId: data.parentId
                 }, selectedNode);
             }
         } catch (exception) {
@@ -1611,30 +1610,30 @@ export class Windows {
 
             const promises = [];
             const addLinksRequest = {
-                encrypted_source_ids: [],
-                encrypted_destination_ids: [],
-                link_type: this.searchItemsWindowSettings.linkTypeNumber
+                encryptedSourceIds: [],
+                encryptedDestinationIds: [],
+                linkType: this.searchItemsWindowSettings.linkTypeNumber
             };
             const removeLinksRequest = {
-                encrypted_source_ids: [],
-                encrypted_destination_ids: [],
-                link_type: this.searchItemsWindowSettings.linkTypeNumber
+                encryptedSourceIds: [],
+                encryptedDestinationIds: [],
+                linkType: this.searchItemsWindowSettings.linkTypeNumber
             };
             if (this.searchItemsWindowSettings.currentItemIsSourceId) {
-                addLinksRequest.source_entity_type = this.searchItemsWindowSettings.entityType;
-                removeLinksRequest.source_entity_type = this.searchItemsWindowSettings.entityType;
+                addLinksRequest.sourceEntityType = this.searchItemsWindowSettings.entityType;
+                removeLinksRequest.sourceEntityType = this.searchItemsWindowSettings.entityType;
             }
             kendo.ui.progress(grid.element, true);
             for (let element of allItemsOnCurrentPage) {
                 const row = $(element);
                 const dataItem = grid.dataItem(row);
                 const isChecked = row.find("td > input[type=checkbox]").prop("checked");
-
+                
                 if (isChecked) {
                     if (alreadyLinkedItems.filter((item) => (item.id || item[`ID_${this.searchItemsWindowSettings.entityType}`]) === dataItem.id).length === 0) {
-                        if (dataItem.parent_item_id > 0 && dataItem.parent_item_id !== this.searchItemsWindowSettings.plainParentId) {
+                        if (dataItem.parentItemId > 0 && dataItem.parentItemId !== this.searchItemsWindowSettings.plainParentId) {
                             try {
-                                await kendo.confirm(`Let op! Dit item is al gekoppeld aan een ander item (ID ${dataItem.parent_item_id}). Als u op "OK" klikt, zal die koppeling vervangen worden door deze nieuwe koppeling.`);
+                                await Wiser2.showConfirmDialog(`Let op! Dit item is al gekoppeld aan een ander item (ID ${dataItem.parentItemId}). Als u op "OK" klikt, zal die koppeling vervangen worden door deze nieuwe koppeling.`, "Koppeling vervangen", "Annuleren", "Vervangen");
                             }
                             catch {
                                 row.find("td > input[type=checkbox]").prop("checked", false);
@@ -1644,35 +1643,35 @@ export class Windows {
                         }
 
                         if (this.searchItemsWindowSettings.currentItemIsSourceId) {
-                            if (addLinksRequest.encrypted_source_ids.length === 0) {
-                                addLinksRequest.encrypted_source_ids.push(this.searchItemsWindowSettings.parentId);
+                            if (addLinksRequest.encryptedSourceIds.length === 0) {
+                                addLinksRequest.encryptedSourceIds.push(this.searchItemsWindowSettings.parentId);
                             }
-                            addLinksRequest.encrypted_destination_ids.push(dataItem.encrypted_id || dataItem.encryptedId || dataItem.encryptedid);
+                            addLinksRequest.encryptedDestinationIds.push(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid);
                         } else {
-                            if (addLinksRequest.encrypted_destination_ids.length === 0) {
-                                addLinksRequest.encrypted_destination_ids.push(this.searchItemsWindowSettings.parentId);
+                            if (addLinksRequest.encryptedDestinationIds.length === 0) {
+                                addLinksRequest.encryptedDestinationIds.push(this.searchItemsWindowSettings.parentId);
                             }
-                            addLinksRequest.encrypted_source_ids.push(dataItem.encrypted_id || dataItem.encryptedId || dataItem.encryptedid);
+                            addLinksRequest.encryptedSourceIds.push(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid);
                         }
                     }
                 } else {
                     if (alreadyLinkedItems.filter((item) => (item.id || item[`ID_${this.searchItemsWindowSettings.entityType}`]) === dataItem.id).length > 0) {
                         if (this.searchItemsWindowSettings.currentItemIsSourceId) {
-                            if (removeLinksRequest.encrypted_source_ids.length === 0) {
-                                removeLinksRequest.encrypted_source_ids.push(this.searchItemsWindowSettings.parentId);
+                            if (removeLinksRequest.encryptedSourceIds.length === 0) {
+                                removeLinksRequest.encryptedSourceIds.push(this.searchItemsWindowSettings.parentId);
                             }
-                            removeLinksRequest.encrypted_destination_ids.push(dataItem.encrypted_id || dataItem.encryptedId || dataItem.encryptedid);
+                            removeLinksRequest.encryptedDestinationIds.push(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid);
                         } else {
-                            if (removeLinksRequest.encrypted_destination_ids.length === 0) {
-                                removeLinksRequest.encrypted_destination_ids.push(this.searchItemsWindowSettings.parentId);
+                            if (removeLinksRequest.encryptedDestinationIds.length === 0) {
+                                removeLinksRequest.encryptedDestinationIds.push(this.searchItemsWindowSettings.parentId);
                             }
-                            removeLinksRequest.encrypted_source_ids.push(dataItem.encrypted_id || dataItem.encryptedId || dataItem.encryptedid);
+                            removeLinksRequest.encryptedSourceIds.push(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid);
                         }
                     }
                 }
             }
 
-            if (addLinksRequest.encrypted_source_ids.length > 0 && addLinksRequest.encrypted_destination_ids.length > 0) {
+            if (addLinksRequest.encryptedSourceIds.length > 0 && addLinksRequest.encryptedDestinationIds.length > 0) {
                 promises.push(Wiser2.api({
                     url: `${this.base.settings.wiserApiRoot}items/add-links?moduleId=${this.base.settings.moduleId}`,
                     method: "POST",
@@ -1680,7 +1679,7 @@ export class Windows {
                     data: JSON.stringify(addLinksRequest)
                 }));
             }
-            if (removeLinksRequest.encrypted_source_ids.length > 0 && removeLinksRequest.encrypted_destination_ids.length > 0) {
+            if (removeLinksRequest.encryptedSourceIds.length > 0 && removeLinksRequest.encryptedDestinationIds.length > 0) {
                 promises.push(Wiser2.api({
                     url: `${this.base.settings.wiserApiRoot}items/remove-links?moduleId=${this.base.settings.moduleId}`,
                     method: "DELETE",
@@ -1763,7 +1762,7 @@ export class Windows {
 
             const options = {
                 page: 1,
-                page_size: gridOptions.searchGridSettings.gridViewSettings.pageSize || this.searchGridSettings.pageSize,
+                pageSize: gridOptions.searchGridSettings.gridViewSettings.pageSize || this.searchGridSettings.pageSize,
                 skip: 0,
                 take: gridOptions.searchGridSettings.gridViewSettings.pageSize || this.searchGridSettings.pageSize
             };
@@ -1785,8 +1784,8 @@ export class Windows {
                 data: JSON.stringify(options)
             });
 
-            if (gridDataResult.extra_javascript) {
-                $.globalEval(gridDataResult.extra_javascript);
+            if (gridDataResult.extraJavascript) {
+                $.globalEval(gridDataResult.extraJavascript);
             }
 
             if (gridDataResult.columns && gridDataResult.columns.length) {
@@ -1800,13 +1799,13 @@ export class Windows {
                         case "id":
                             column.hidden = this.searchGridSettings.hideIdColumn || false;
                             break;
-                        case "link_id":
+                        case "linkId":
                             column.hidden = this.searchGridSettings.hideLinkIdColumn || false;
                             break;
-                        case "entity_type":
+                        case "entityType":
                             column.hidden = this.searchGridSettings.hideTypeColumn || false;
                             break;
-                        case "published_environment":
+                        case "publishedEnvironment":
                             column.hidden = this.searchGridSettings.hideEnvironmentColumn || false;
                             break;
                         case "name":
@@ -1814,7 +1813,6 @@ export class Windows {
                             break;
                         case "encryptedId":
                         case "encryptedid":
-                        case "encrypted_id":
                             column.hidden = true;
                             break;
                     }
@@ -1829,14 +1827,14 @@ export class Windows {
             }
 
             let previousFilters = null;
-            let totalResults = gridDataResult.total_results;
+            let totalResults = gridDataResult.totalResults;
             this.searchItemsGridFirstLoad = true;
             const finalGridOptions = $.extend(true, {
                 dataSource: {
                     serverPaging: true,
                     serverSorting: true,
                     serverFiltering: true,
-                    pageSize: gridDataResult.page_size,
+                    pageSize: gridDataResult.pageSize,
                     transport: {
                         read: async (transportOptions) => {
                             try {
@@ -1853,8 +1851,8 @@ export class Windows {
                                     currentFilters = JSON.stringify(transportOptions.data.filter);
                                 }
 
-                                transportOptions.data.first_load = currentFilters !== previousFilters;
-                                transportOptions.data.page_size = transportOptions.data.pageSize;
+                                transportOptions.data.firstLoad = currentFilters !== previousFilters;
+                                transportOptions.data.pageSize = transportOptions.data.pageSize;
                                 transportOptions.data.take = transportOptions.data.pageSize;
                                 previousFilters = currentFilters;
 
@@ -1865,10 +1863,10 @@ export class Windows {
                                     data: JSON.stringify(transportOptions.data)
                                 });
 
-                                if (typeof newGridDataResult.total_results !== "number" || !transportOptions.data.first_load) {
-                                    newGridDataResult.total_results = totalResults;
-                                } else if (transportOptions.data.first_load) {
-                                    totalResults = newGridDataResult.total_results;
+                                if (typeof newGridDataResult.totalResults !== "number" || !transportOptions.data.firstLoad) {
+                                    newGridDataResult.totalResults = totalResults;
+                                } else if (transportOptions.data.firstLoad) {
+                                    totalResults = newGridDataResult.totalResults;
                                 }
 
                                 transportOptions.success(newGridDataResult);
@@ -1881,8 +1879,8 @@ export class Windows {
                     change: this.onSearchGridDataSourceChange.bind(this),
                     schema: {
                         data: "data",
-                        total: "total_results",
-                        model: gridDataResult.schema_model
+                        total: "totalResults",
+                        model: gridDataResult.schemaModel
                     }
                 },
                 persistSelection: true,

@@ -160,6 +160,11 @@ const moduleSettings = {
                 return;
             }
 
+<<<<<<< HEAD
+            this.settings.serviceRoot = `${this.settings.wiserVersion >= 210 ? this.settings.wiserApiV21Root : this.settings.wiserApiRoot}templates/get-and-execute-query`;
+            this.settings.getItemsUrl = `${this.settings.wiserVersion >= 210 ? this.settings.wiserApiV21Root : this.settings.wiserApiRoot}data-selectors`;
+            this.settings.wiserApiRoot = `${this.settings.wiserVersion >= 210 ? this.settings.wiserApiV21Root : this.settings.wiserApiRoot}`;
+=======
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
@@ -173,7 +178,7 @@ const moduleSettings = {
 
             this.settings.serviceRoot = `${this.settings.wiserApiV21Root}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiV21Root}data-selectors`;
-            this.settings.wiserApiRoot = `${this.settings.wiserVersion >= 210 ? this.settings.wiserApiV21Root : this.settings.wiserApiRoot}`;
+>>>>>>> origin/develop
 
             this.moduleTab = new ModuleTab(this);
             this.entityTab = new EntityTab(this);

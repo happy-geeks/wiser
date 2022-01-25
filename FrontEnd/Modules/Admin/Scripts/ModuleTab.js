@@ -37,8 +37,7 @@
 
     async createNewModule(id) {
         const querystring = {
-            moduleId: id,
-            isTest: this.settings.isTestEnvironment
+            moduleId: id
         };
 
         const results = await $.get(`${this.base.settings.serviceRoot}/CHECK_IF_MODULE_EXISTS${jjl.convert.toQueryString(querystring, true)}`);
@@ -49,8 +48,7 @@
         }
 
         const qs = {
-            moduleId: id,
-            isTest: this.base.settings.isTestEnvironment
+            moduleId: id
         };
 
         let notification;
@@ -94,7 +92,7 @@
                 let fieldsJson = {};
 
                 if (moduleType === "gridview") {
-                    const result = await $.get(`${this.base.settings.serviceRoot}/GET_MODULE_FIELDS?module_id=${encodeURIComponent(moduleId)}&isTest=${encodeURIComponent(this.base.settings.isTestEnvironment)}`);
+                    const result = await $.get(`${this.base.settings.serviceRoot}/GET_MODULE_FIELDS?moduleId=${encodeURIComponent(moduleId)}`);
 
                     fieldsJson = JSON.parse(result[0].fields);
                 }
@@ -173,7 +171,7 @@
     }
 
     async deleteModule(moduleId) {
-        const results = await $.get(`${this.base.settings.serviceRoot}/DELETE_MODULE?module_id=${encodeURIComponent(moduleId)}&isTest=${encodeURIComponent(this.base.settings.isTestEnvironment)}`);
+        const results = await $.get(`${this.base.settings.serviceRoot}/DELETE_MODULE?moduleId=${encodeURIComponent(moduleId)}`);
 
         this.getModules();
     }
@@ -203,22 +201,22 @@
                         columns: kendoGridColumns
                     }
                 }),
-                custom_query: customQuery,
-                count_query: countQuery,
-                module_id: module,
-                module_type: moduleType
+                customQuery: customQuery,
+                countQuery: countQuery,
+                moduleId: module,
+                moduleType: moduleType
             };
         } else {
             dataToSend = {
                 options: "",
-                custom_query: customQuery,
-                count_query: countQuery,
-                module_id: module,
-                module_type: moduleType
+                customQuery: customQuery,
+                countQuery: countQuery,
+                moduleId: module,
+                moduleType: moduleType
             };
         }
         const result = await $.ajax({
-            url: `${this.base.settings.serviceRoot}/SAVE_MODULE_SETTINGS?isTest=${encodeURIComponent(this.base.settings.isTestEnvironment)}`,
+            url: `${this.base.settings.serviceRoot}/SAVE_MODULE_SETTINGS`,
             method: "POST",
             data: dataToSend
         });
@@ -232,7 +230,7 @@
 
     /** Get the modules */
     async getModules() {
-        const results = $.get(`${this.base.settings.serviceRoot}/GET_ALL_MODULES_INFORMATION?isTest=${encodeURIComponent(this.base.settings.isTestEnvironment)}`);
+        const results = $.get(`${this.base.settings.serviceRoot}/GET_ALL_MODULES_INFORMATION`);
 
         const templateContent = $("#myTemplate").html();
         const template = kendo.template(templateContent);
