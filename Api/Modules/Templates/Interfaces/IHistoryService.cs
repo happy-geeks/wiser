@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
@@ -21,10 +22,11 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Retrieves the current settings and applies the List of changes that should be reverted.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="changesToRevert">Contains the properties and specific versions that need to be reverted.</param>
         /// <param name="contentId">The id of the content</param>
         /// <returns>An int indicating whether the action was successful.</returns>
-        Task<int> RevertChanges(List<RevertHistoryModel> changesToRevert, int contentId);
+        Task<int> RevertChanges(ClaimsIdentity identity, List<RevertHistoryModel> changesToRevert, int contentId);
         
         /// <summary>
         /// Retrieve the published environments for dynamic content overviews. This method will accept a list of DynamicContentOverviewModel and retrieve the published environments for each dynamic content.

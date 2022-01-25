@@ -56,6 +56,13 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="wiserTemplate">Optional: If true the template will be tried to be found within Wiser instead of the database of the user.</param>
         /// <returns></returns>
         Task<ServiceResult<TemplateEntityModel>> GetTemplateByNameAsync(string templateName, bool wiserTemplate = false);
+
+        /// <summary>
+        /// Get the meta data (name, changedOn, changedBy etc) from a template.
+        /// </summary>
+        /// <param name="templateId">The id of the template to retrieve the data from.</param>
+        /// <returns>A <see cref="TemplateSettingsModel"/> containing the current template data of the template with the given id.</returns>
+        Task<ServiceResult<TemplateSettingsModel>> GetTemplateMetaDataAsync(int templateId);
 		
         /// <summary>
         /// Get the latest version for a given template.
@@ -90,18 +97,20 @@ namespace Api.Modules.Templates.Interfaces
         /// Publish a template version to a new environment using a template id. This requires you to provide a model with the current published state.
         /// This method will use a generated change log to determine the environments that need to be changed. In some cases publishing an environment will also publish underlaying environments.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="templateId">The id of the template to publish.</param>
         /// <param name="version">The version of the template to publish.</param>
         /// <param name="environment">The environment to publish the template to.</param>
         /// <param name="currentPublished">A PublishedEnvironmentModel containing the current published templates.</param>
         /// <returns>A int of the rows affected.</returns>
-        Task<ServiceResult<int>> PublishEnvironmentOfTemplateAsync(int templateId, int version, string environment, PublishedEnvironmentModel currentPublished);
-        
+        Task<ServiceResult<int>> PublishEnvironmentOfTemplateAsync(ClaimsIdentity identity, int templateId, int version, string environment, PublishedEnvironmentModel currentPublished);
+
         /// <summary>
         /// Save the template as a new version and save the linked templates if necessary. This method will calculate if links are to be added or removed from the current situation.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="template">A <see cref="TemplateSettingsModel"/> containing the data of the template that is to be saved as a new version</param>
-        Task<ServiceResult<bool>> SaveTemplateVersionAsync(TemplateSettingsModel template);
+        Task<ServiceResult<bool>> SaveTemplateVersionAsync(ClaimsIdentity identity, TemplateSettingsModel template);
         
         /// <summary>
         /// Retrieve the tree view section underlying the parentId. Transforms the tree view section into a list of TemplateTreeViewModels.

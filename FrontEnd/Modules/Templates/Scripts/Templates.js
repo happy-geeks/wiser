@@ -35,16 +35,20 @@ const moduleSettings = {
 
             // Kendo components.
             this.mainSplitter = null;
-            this.mainTreeview = null;
+            this.mainTreeView = null;
             this.mainTabStrip = null;
             this.treeviewTabStrip = null;
             this.mainWindow = null;
-            this.mainComboBox = null;
             this.mainComboInput = null;
             this.mainMultiSelect = null;
             this.mainNumericTextBox = null;
             this.mainDatePicker = null;
             this.mainDateTimePicker = null;
+            this.selectedId = 0;
+            this.templateSettings = null;
+            this.linkedTemplates = null;
+            this.templateHistory = null;
+            this.previewProfiles = null;
 
             // Default settings
             this.settings = {
@@ -164,14 +168,6 @@ const moduleSettings = {
 
             // Tabstrip
             this.mainTabStrip = $(".tabstrip").kendoTabStrip({
-                select: (event) => {
-                    // Deselect all tree views in other tabs, otherwise they will stay selected even though the user selected a different template.
-                    this.mainTreeview.forEach((index, treeView) => {
-                        if (this.treeviewTabStrip.select().index() !== index) {
-                            treeView.select($());
-                        }
-                    });
-                },
                 animation: {
                     open: {
                         effects: "fadeIn"
@@ -205,10 +201,10 @@ const moduleSettings = {
             this.treeviewTabStrip.select(0);
 
             // Treeview 
-            this.mainTreeview = [];
+            this.mainTreeView = [];
             $(".treeview").each((index, element) => {
                 const treeViewElement = $(element);
-                this.mainTreeview[index] = treeViewElement.kendoTreeView({
+                this.mainTreeView[index] = treeViewElement.kendoTreeView({
                     dragAndDrop: true,
                     collapse: this.onTreeViewCollapseItem.bind(this),
                     expand: this.onTreeViewExpandItem.bind(this),
@@ -442,6 +438,14 @@ const moduleSettings = {
                 return;
             }
 
+            // Deselect all tree views in other tabs, otherwise they will stay selected even though the user selected a different template.
+            for (let index in this.mainTreeView) {
+                const treeView = this.mainTreeView[index];
+                if (this.treeviewTabStrip.select().index() !== index) {
+                    treeView.select($());
+                }
+            };
+
             this.selectedId = dataItem.id;
             const process = `onTreeViewSelect_${Date.now()}`;
             window.processing.addProcess(process);
@@ -472,6 +476,10 @@ const moduleSettings = {
                 ];
 
                 const [templateSettings, linkedTemplates, templateHistory, previewProfiles] = await Promise.all(promises);
+                this.templateSettings = templateSettings;
+                this.linkedTemplates = linkedTemplates;
+                this.templateHistory = templateHistory;
+                this.previewProfiles = previewProfiles;
 
                 // Load the different tabs.
                 promises = [];
@@ -656,7 +664,7 @@ const moduleSettings = {
             $("#deployLive, #deployAccept, #deployTest").kendoButton();
 
             // ComboBox
-            this.mainComboBox = $(".combo-select").kendoComboBox();
+            $(".combo-select").kendoComboBox();
 
             // HTML editor
             this.mainTabStrip = $(".editor").kendoEditor({
@@ -720,22 +728,28 @@ const moduleSettings = {
 
         //Bind the deploybuttons for the template versions
         bindDeployButtons(templateId) {
-            $("#deployLive").on("click", function () { window.Templates.deployEnvironment("live", templateId) });
-            $("#deployAccept").on("click", function () { window.Templates.deployEnvironment("accept", templateId) });
-            $("#deployTest").on("click", function () { window.Templates.deployEnvironment("test", templateId) });
+            $("#deployLive").on("click", this.deployEnvironment.bind(this, "live", templateId));
+            $("#deployAccept").on("click", this.deployEnvironment.bind(this, "accept", templateId));
+            $("#deployTest").on("click", this.deployEnvironment.bind(this, "test", templateId));
         }
 
         //Deploy a version to an enviorenment
-        deployEnvironment(environment, templateId) {
-            $.ajax({
-                type: "GET",
-                url: "/Template/PublishToEnvironment",
-                data: { templateId: templateId, version: document.querySelector(".version-" + environment + " select.combo-select").value, environment: environment },
-                success: function (response) {
-                    window.popupNotification.show("Template is succesvol naar de " + environment + " omgeving gezet", "info");
-                    setTimeout(function () { window.Templates.reloadTabs(templateId); }, 1000);
-                }
+        async deployEnvironment(environment, templateId) {
+            const version = document.querySelector(`.version-${environment} select.combo-select`).value;
+            if (!version) {
+                kendo.alert("U heeft geen geldige versie geselecteerd.");
+                return;
+            }
+
+            await Wiser2.api({
+                url: `${this.settings.wiserApiRoot}templates/${templateId}/publish/${encodeURIComponent(environment)}/${version}`,
+                dataType: "json",
+                type: "POST",
+                contentType: "application/json"
             });
+
+            window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
+            await this.reloadTabs(templateId);
         }
 
         //Save the template data
@@ -755,8 +769,8 @@ const moduleSettings = {
 
             const data = {
                 templateId: this.selectedId,
-                name: "Test",
-                editorValue: document.querySelector(".editor").value,
+                name: this.templateSettings.name || "",
+                editorValue: $(".editor").data("kendoEditor").value(),
                 useCache: document.getElementById("combo-cache").value,
                 cacheMinutes: document.getElementById("cache-duration").value,
                 handleRequests: document.getElementById("handleRequests").checked,
@@ -780,7 +794,7 @@ const moduleSettings = {
                 data.loginRole = document.getElementById("combo-user3").value;
             }
 
-            const response = Wiser2.api({
+            const response = await Wiser2.api({
                 url: `${this.settings.wiserApiRoot}templates/${data.templateId}`,
                 dataType: "json",
                 type: "PUT",
@@ -789,32 +803,53 @@ const moduleSettings = {
             });
 
             window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
-            setTimeout(() => { this.reloadTabs(this.selectedId); }, 1000);
+            await this.reloadTabs(this.selectedId);
         }
 
-        //Reloads the publishedEnvironments and history of the template.
-        reloadTabs(templateId) {
-            $.ajax({
-                type: "GET",
-                url: "/Template/PublishedEnvironments",
-                data: { templateId: templateId },
-                success: function (response) {
+        /**
+         * Reloads the publishedEnvironments and history of the template.
+         * @param {any} templateId The ID of the template.
+         */
+        async reloadTabs(templateId) {
+            let promises = [
+                Wiser2.api({
+                    url: `${this.settings.wiserApiRoot}templates/${templateId}/meta`,
+                    dataType: "json",
+                    type: "GET",
+                    contentType: "application/json"
+                }),
+                Wiser2.api({
+                    url: `${this.settings.wiserApiRoot}templates/${templateId}/history`,
+                    dataType: "json",
+                    method: "GET"
+                })
+            ];
+
+            const [templateMetaData, templateHistory] = await Promise.all(promises);
+
+            promises = [
+                Wiser2.api({
+                    method: "POST",
+                    contentType: "application/json",
+                    url: "/Modules/Templates/PublishedEnvironments",
+                    data: JSON.stringify(templateMetaData)
+                }).then((response) => {
                     document.querySelector("#published-environments").outerHTML = response;
                     $("#deployLive, #deployAccept, #deployTest").kendoButton();
-                    this.mainComboBox = $("#published-environments .combo-select").kendoComboBox();
-                    window.Templates.bindDeployButtons(templateId);
-                }
-            });
-            $.ajax({
-                type: "GET",
-                url: "/Template/HistoryTab",
-                data: {
-                    templateId: templateId
-                },
-                success: function (response) {
+                    $("#published-environments .combo-select").kendoComboBox();
+                    this.bindDeployButtons(templateId);
+                }),
+                Wiser2.api({
+                    method: "POST",
+                    contentType: "application/json",
+                    url: "/Modules/Templates/HistoryTab",
+                    data: JSON.stringify(templateHistory)
+                }).then((response) => {
                     document.getElementById("historyTab").innerHTML = response;
-                }
-            });
+                })
+            ];
+
+            await Promise.all(promises);
         }
 
         //Bind buttons in the preview tab of the template overview

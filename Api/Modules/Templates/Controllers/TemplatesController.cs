@@ -111,6 +111,17 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await previewService.Get(templateId)).GetHttpResponseMessage();
         }
+        
+        /// <summary>
+        /// Get the meta data (name, changedOn, changedBy etc) from a template.
+        /// </summary>
+        /// <param name="templateId">The id of the template to retrieve the data from.</param>
+        /// <returns>A <see cref="TemplateSettingsModel"/> containing the current template data of the template with the given id.</returns>
+        [HttpGet, Route("{templateId:int}/meta"), ProducesResponseType(typeof(TemplateSettingsModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetTemplateMetaDataAsync(int templateId)
+        {
+            return (await templatesService.GetTemplateMetaDataAsync(templateId)).GetHttpResponseMessage();
+        }
 
         /// <summary>
         /// Retrieve the latest version of the template. 
@@ -172,7 +183,7 @@ namespace Api.Modules.Templates.Controllers
             var currentPublished = await templatesService.GetTemplateEnvironmentsAsync(templateId);
             return currentPublished.StatusCode != HttpStatusCode.OK 
                 ? currentPublished.GetHttpResponseMessage() 
-                : (await templatesService.PublishEnvironmentOfTemplateAsync(templateId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
+                : (await templatesService.PublishEnvironmentOfTemplateAsync((ClaimsIdentity)User.Identity, templateId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -184,7 +195,7 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> SaveTemplate(int templateId, TemplateSettingsModel templateData)
         {
             templateData.TemplateId = templateId;
-            return (await templatesService.SaveTemplateVersionAsync(templateData)).GetHttpResponseMessage();
+            return (await templatesService.SaveTemplateVersionAsync((ClaimsIdentity)User.Identity, templateData)).GetHttpResponseMessage();
         }
         
         /// <summary>

@@ -6,6 +6,7 @@ using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
@@ -2361,7 +2362,7 @@ LIMIT 1";
 
             var helper = new PublishedEnvironmentHelper();
 
-            return new ServiceResult<PublishedEnvironmentModel>(helper.CreatePublishedEnvoirementsFromVersionDictionary(versionsAndPublished));
+            return new ServiceResult<PublishedEnvironmentModel>(helper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
         }
 
         /// <inheritdoc />
@@ -2377,11 +2378,11 @@ LIMIT 1";
             var resultLinks = new LinkedTemplatesModel();
             foreach (var linkedTemplate in rawLinkList)
             {
-                if (linkedTemplate.LinkType == LinkedTemplatesEnum.javascript)
+                if (linkedTemplate.LinkType == TemplateTypes.Js)
                 {
                     resultLinks.LinkedJavascript.Add(linkedTemplate);
                 }
-                else if (linkedTemplate.LinkType == LinkedTemplatesEnum.scss)
+                else if (linkedTemplate.LinkType == TemplateTypes.Scss)
                 {
                     resultLinks.LinkedSccsTemplates.Add(linkedTemplate);
                 }
@@ -2411,6 +2412,30 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateMetaDataAsync(int templateId)
+        {
+            if (templateId <= 0)
+            {
+                throw new ArgumentException("The Id cannot be zero.");
+            }
+
+            var templateData = await templateDataService.GetTemplateMetaData(templateId);
+            var templateEnvironmentsResult = await GetTemplateEnvironmentsAsync(templateId);
+            if (templateEnvironmentsResult.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<TemplateSettingsModel>
+                {
+                    ReasonPhrase = templateEnvironmentsResult.ReasonPhrase,
+                    ErrorMessage = templateEnvironmentsResult.ErrorMessage,
+                    StatusCode = templateEnvironmentsResult.StatusCode
+                };
+            }
+
+            templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
+            return new ServiceResult<TemplateSettingsModel>(templateData);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId)
         {
             if (templateId <= 0)
@@ -2435,7 +2460,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<int>> PublishEnvironmentOfTemplateAsync(int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
+        public async Task<ServiceResult<int>> PublishEnvironmentOfTemplateAsync(ClaimsIdentity identity, int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
         {
             if (templateId <= 0)
             {
@@ -2453,11 +2478,11 @@ LIMIT 1";
 
             var publishLog = helper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
-            return new ServiceResult<int>(await templateDataService.PublishEnvironmentOfTemplate(templateId, newPublished, publishLog));
+            return new ServiceResult<int>(await templateDataService.PublishEnvironmentOfTemplate(templateId, newPublished, publishLog, IdentityHelpers.GetUserName(identity)));
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(TemplateSettingsModel template)
+        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(ClaimsIdentity identity, TemplateSettingsModel template)
         {
             if (template == null)
             {
@@ -2475,10 +2500,10 @@ LIMIT 1";
             linksToAdd = GetToAddList(jsLinks, linkList, linksToAdd);
             linksToAdd = GetToAddList(scssLinks, linkList, linksToAdd);
 
-            linksToRemove = FillToRemoveList(jsLinks, LinkedTemplatesEnum.javascript, linkList, linksToRemove);
-            linksToRemove = FillToRemoveList(scssLinks, LinkedTemplatesEnum.scss, linkList, linksToRemove);
+            linksToRemove = FillToRemoveList(jsLinks, TemplateTypes.Js, linkList, linksToRemove);
+            linksToRemove = FillToRemoveList(scssLinks, TemplateTypes.Scss, linkList, linksToRemove);
 
-            await templateDataService.SaveTemplateVersion(template, scssLinks, jsLinks);
+            await templateDataService.SaveTemplateVersion(template, scssLinks, jsLinks, IdentityHelpers.GetUserName(identity));
             await templateDataService.SaveLinkedTemplates(template.TemplateId, linksToAdd, linksToRemove);
             return new ServiceResult<bool>(true);
         }
@@ -2568,7 +2593,7 @@ LIMIT 1";
         /// <param name="linkedList">The links currently saved to the template</param>
         /// <param name="linksToRemove">A list that will be filled with entries that should be removed</param>
         /// <returns>A list of entries that need to be removed in order for the new and old list to match</returns>
-        private List<int> FillToRemoveList(List<int> confirmedLinks, LinkedTemplatesEnum confirmedLinksType, List<LinkedTemplateModel> linkedList, List<int> linksToRemove)
+        private List<int> FillToRemoveList(List<int> confirmedLinks, TemplateTypes confirmedLinksType, List<LinkedTemplateModel> linkedList, List<int> linksToRemove)
         {
             foreach (var linkedTemplate in linkedList)
             {

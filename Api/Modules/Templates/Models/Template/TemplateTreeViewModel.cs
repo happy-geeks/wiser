@@ -31,7 +31,7 @@ namespace Api.Modules.Templates.Models.Template
 
         }
 
-        public TemplateTreeViewModel(int templateId, string templateName, Boolean isFolder, Boolean hasChildren)
+        public TemplateTreeViewModel(int templateId, string templateName, bool isFolder, bool hasChildren)
         {
             this.TemplateId = templateId;
             this.TemplateName = templateName;
