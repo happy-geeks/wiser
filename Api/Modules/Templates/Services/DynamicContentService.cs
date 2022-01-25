@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Core.Helpers;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -13,10 +15,7 @@ using static GeeksCoreLibrary.Core.Cms.Attributes.CmsAttributes;
 
 namespace Api.Modules.Templates.Services
 {
-    /// <summary>
-    /// The service containing the logic needed to use the models in a way the application will be able to process them. 
-    /// This also forms the link with the dataservice for retrieving data from the database.
-    /// </summary>
+    /// <inheritdoc cref="IDynamicContentService" />
     public class DynamicContentService : IDynamicContentService, IScopedService
     {
         private readonly IDynamicContentDataService dataService;
@@ -24,17 +23,12 @@ namespace Api.Modules.Templates.Services
         /// <summary>
         /// Creates a new instance of <see cref="DynamicContentService"/>.
         /// </summary>
-        public DynamicContentService (IDynamicContentDataService dataService)
+        public DynamicContentService(IDynamicContentDataService dataService)
         {
             this.dataService = dataService;
         }
 
-        /// <summary>
-        /// Get all possible components. These components should are retrieved from the assembly and should have the basetype <c>CmsComponent<CmsSettings, Enum></c>
-        /// </summary>
-        /// <returns>
-        /// Dictionary of typeinfo's and object attributes of all the components found in the GCL.
-        /// </returns>
+        /// <inheritdoc />
         public Dictionary<TypeInfo, CmsObjectAttribute> GetComponents()
         {
             var componentType = typeof(CmsComponent<CmsSettings, Enum>);
@@ -56,13 +50,7 @@ namespace Api.Modules.Templates.Services
             return resultDictionary;
         }
 
-        /// <summary>
-        /// Retrieve the component modes of the current CMScomponent.
-        /// </summary>
-        /// <param name="component">The type of the component from which the modes should be retrieved.</param>
-        /// <returns>
-        /// Dictionary containing the Key and (Display)name for each componentmode.
-        /// </returns>
+        /// <inheritdoc />
         public Dictionary<object, string> GetComponentModes(Type component)
         {
             var info = (component.BaseType).GetTypeInfo();
@@ -80,11 +68,7 @@ namespace Api.Modules.Templates.Services
             return returnDict;
         }
 
-        /// <summary>
-        /// Retrieve the properties of the CMSSettingsmodel.
-        /// </summary>
-        /// <param name="CmsSettingsType">The CMSSettingsmodel </param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public List<PropertyInfo> GetPropertiesOfType(Type CmsSettingsType)
         {
             var resultlist = new List<PropertyInfo>();
@@ -98,24 +82,7 @@ namespace Api.Modules.Templates.Services
             return resultlist;
         }
 
-        /// <summary>
-        /// The method retrieves property attributes of a component and will divide the properties into the tabs and groups they belong to.
-        /// </summary>
-        /// <param name="component">The component from which the properties should be retrieved.</param>
-        /// <returns>
-        /// Returns Dictionary with the component, tabs, groupsnames and fieldvalues from the type:  
-        /// component
-        /// (
-        ///     Tabname,
-        ///     (
-        ///         Groupname,
-        ///         (
-        ///             Propertyname,
-        ///             CmsPropertyAttribute
-        ///         )
-        ///     )
-        /// )
-        /// </returns>
+        /// <inheritdoc />
         public KeyValuePair<Type, Dictionary<CmsTabName, Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>>> GetAllPropertyAttributes(Type component)
         {
             var resultList = new Dictionary<CmsTabName, Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>>();
@@ -154,32 +121,7 @@ namespace Api.Modules.Templates.Services
             return new KeyValuePair<Type, Dictionary<CmsTabName, Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>>>(component, resultList); ;
         }
 
-        /// <summary>
-        /// Creates a new dictionary for properties with the same group.
-        /// </summary>
-        /// <param name="propName">The name of the property which will be used as the key for the property within the group.</param>
-        /// <param name="cmsPropertyAttribute">The CmsAttribute belonging to the attribut within the property group.</param>
-        /// <returns>
-        /// Dictionary of a cms group. The key is the cmsgroup name and the value is a propertyattribute dictionary.
-        /// </returns>
-        private Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>> CreateCmsGroupFromPropertyAttribute(PropertyInfo propName, CmsPropertyAttribute cmsPropertyAttribute)
-        {
-            var cmsGroup = new Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>();
-            var propList = new Dictionary<PropertyInfo, CmsPropertyAttribute>();
-
-            propList.Add(propName, cmsPropertyAttribute);
-            cmsGroup.Add(cmsPropertyAttribute.GroupName, propList);
-
-            return cmsGroup;
-        }
-
-        /// <summary>
-        /// Retrieve the settingsmodel with data from the datalayer. This method will couple the data to the corresponding properties.
-        /// </summary>
-        /// <param name="component">The component to retrieve the properties of.</param>
-        /// <returns>
-        /// Dictionary with propertyinfo and the value of that property from the data.
-        /// </returns>
+        /// <inheritdoc />
         public async Task<Dictionary<PropertyInfo, object>> GetCmsSettingsModel(Type component, int templateId)
         {
             var CmsSettingsType = new ReflectionHelper().GetCmsSettingsType(component);
@@ -216,33 +158,40 @@ namespace Api.Modules.Templates.Services
             return accountSettings;
         }
 
-        /// <summary>
-        /// Matches the component using reflection to retrieve its modes and saves the settings.
-        /// </summary>
-        /// <param name="templateid">The id of the content to save</param>
-        /// <param name="component">A string of the component to match using reflection</param>
-        /// <param name="componentMode">An int of the componentMode to match when the modes are retrieved</param>
-        /// <param name="templateName">The name of the template to save</param>
-        /// <param name="settings">A dictionary of settings containing their name and value</param>
-        /// <returns>An int as confirmation of the affected rows</returns>
-        public async Task<int> SaveNewSettings(int templateid, string component, int componentMode, string templateName, Dictionary<string, object> settings)
+        /// <inheritdoc />
+        public async Task<int> SaveNewSettings(ClaimsIdentity identity, int contentId, string component, int componentMode, string title, Dictionary<string, object> settings)
         {
             var helper = new ReflectionHelper();
             var modes = GetComponentModes(helper.GetComponentTypeByName(component));
             modes.TryGetValue(componentMode, out var componentModeName);
-            return await dataService.SaveSettingsString(templateid, component, componentModeName, templateName, settings);
+            return await dataService.SaveSettingsString(contentId, component, componentModeName, title, settings, IdentityHelpers.GetUserName(identity));
         }
 
-        /// <summary>
-        /// Retrieve the component and componentMode of dynamic content with the given id.
-        /// </summary>
-        /// <param name="contentId">The id of the dynamic content</param>
-        /// <returns>A list of strings containing the componentName and Mode.</returns>
-        public async Task<List<string>> GetComponentAndModeForContentId (int contentId)
+        /// <inheritdoc />
+        public async Task<List<string>> GetComponentAndModeForContentId(int contentId)
         {
             var rawComponentAndMode = await dataService.GetComponentAndModeFromContentId(contentId);
 
             return rawComponentAndMode;
+        }
+
+        /// <summary>
+        /// Creates a new dictionary for properties with the same group.
+        /// </summary>
+        /// <param name="propName">The name of the property which will be used as the key for the property within the group.</param>
+        /// <param name="cmsPropertyAttribute">The CmsAttribute belonging to the attribut within the property group.</param>
+        /// <returns>
+        /// Dictionary of a cms group. The key is the cmsgroup name and the value is a propertyattribute dictionary.
+        /// </returns>
+        private Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>> CreateCmsGroupFromPropertyAttribute(PropertyInfo propName, CmsPropertyAttribute cmsPropertyAttribute)
+        {
+            var cmsGroup = new Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>();
+            var propList = new Dictionary<PropertyInfo, CmsPropertyAttribute>();
+
+            propList.Add(propName, cmsPropertyAttribute);
+            cmsGroup.Add(cmsPropertyAttribute.GroupName, propList);
+
+            return cmsGroup;
         }
     }
 }

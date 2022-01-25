@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Core.Helpers;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -45,7 +47,7 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<int> RevertChanges(List<RevertHistoryModel> changesToRevert, int contentId)
+        public async Task<int> RevertChanges(ClaimsIdentity identity, List<RevertHistoryModel> changesToRevert, int contentId)
         {
             var currentVersion = await dataService.GetTemplateData(contentId);
 
@@ -66,7 +68,7 @@ namespace Api.Modules.Templates.Services
                 }
             }
             var componentAndMode = await dataService.GetComponentAndModeFromContentId(contentId);
-            return await dataService.SaveSettingsString(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value);
+            return await dataService.SaveSettingsString(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value, IdentityHelpers.GetUserName(identity));
         }
 
         /// <inheritdoc />
@@ -87,7 +89,7 @@ namespace Api.Modules.Templates.Services
 
             var helper = new PublishedEnvironmentHelper();
 
-            return helper.CreatePublishedEnvoirementsFromVersionDictionary(versionsAndPublished);
+            return helper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished);
         }
         
         /// <inheritdoc />
