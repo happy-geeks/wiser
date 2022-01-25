@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.Preview;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
 namespace Api.Modules.Templates.Services.DataLayer
@@ -28,7 +29,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
 
-            var dataTable = await connection.GetAsync("SELECT ppt.id, ppt.template_name, ppt.url, ppt.previewvariables FROM wiser_previewprofiles_test ppt WHERE ppt.template_id = ?templateid ORDER BY ppt.ordering");
+            var dataTable = await connection.GetAsync($"SELECT ppt.id, ppt.template_name, ppt.url, ppt.previewvariables FROM {WiserTableNames.WiserPreviewProfiles} ppt WHERE ppt.template_id = ?templateid ORDER BY ppt.ordering");
             var resultList = new List<PreviewProfileDao>();
             foreach (DataRow row in dataTable.Rows)
             {
@@ -53,7 +54,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             connection.AddParameter("url", profile.GetUrl());
             connection.AddParameter("variables", profile.GetRawVariables());
 
-            return (int)await connection.InsertRecordAsync("INSERT INTO wiser_previewprofiles_test(template_name, template_id, url, previewvariables, ordering) VALUES(?name, ?templateid, ?url, ?variables, 1)");
+            return (int)await connection.InsertRecordAsync($"INSERT INTO {WiserTableNames.WiserPreviewProfiles}(template_name, template_id, url, previewvariables, ordering) VALUES(?name, ?templateid, ?url, ?variables, 1)");
         }
 
         /// <inheritdoc />
@@ -66,7 +67,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             connection.AddParameter("url", profile.GetUrl());
             connection.AddParameter("variables", profile.GetRawVariables());
 
-            return await connection.ExecuteAsync("UPDATE wiser_previewprofiles_test SET template_name=IF(?name IS NULL OR ?name='', template_name, ?name), url=?url, previewvariables=?variables, ordering=1 WHERE template_id=?templateid AND id=?profileid");
+            return await connection.ExecuteAsync($"UPDATE {WiserTableNames.WiserPreviewProfiles} SET template_name=IF(?name IS NULL OR ?name='', template_name, ?name), url=?url, previewvariables=?variables, ordering=1 WHERE template_id=?templateid AND id=?profileid");
         }
 
         /// <inheritdoc />
@@ -76,7 +77,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             connection.AddParameter("templateid", templateId);
             connection.AddParameter("profileid", profileId);
 
-            return await connection.ExecuteAsync("DELETE FROM wiser_previewprofiles_test ppt WHERE ppt.template_id = ?templateid AND ppt.id = ?profileid");
+            return await connection.ExecuteAsync($"DELETE FROM {WiserTableNames.WiserPreviewProfiles} ppt WHERE ppt.template_id = ?templateid AND ppt.id = ?profileid");
         }
     }
 }

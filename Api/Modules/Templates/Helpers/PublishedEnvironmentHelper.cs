@@ -14,7 +14,7 @@ namespace Api.Modules.Templates.Helpers
         /// </summary>
         /// <param name="versionsAndPublished">A dictionary containing the available versions and their respective publishvalue</param>
         /// <returns>A PublishedEnvironmentModel that will contain the current live, acceptence and test environment as well as a list of versions that are available</returns>
-        public PublishedEnvironmentModel CreatePublishedEnvoirementsFromVersionDictionary(Dictionary<int, int> versionsAndPublished)
+        public PublishedEnvironmentModel CreatePublishedEnvironmentsFromVersionDictionary(Dictionary<int, int> versionsAndPublished)
         {
             var liveVersion = 0;
             var acceptVersion = 0;

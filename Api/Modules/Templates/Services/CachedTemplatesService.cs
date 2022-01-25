@@ -78,6 +78,12 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateMetaDataAsync(int templateId)
+        {
+            return await templatesService.GetTemplateMetaDataAsync(templateId);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId)
         {
             return await templatesService.GetTemplateSettingsAsync(templateId);
@@ -102,15 +108,15 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<int>> PublishEnvironmentOfTemplateAsync(int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
+        public async Task<ServiceResult<int>> PublishEnvironmentOfTemplateAsync(ClaimsIdentity identity, int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
         {
-            return await templatesService.PublishEnvironmentOfTemplateAsync(templateId, version, environment, currentPublished);
+            return await templatesService.PublishEnvironmentOfTemplateAsync(identity, templateId, version, environment, currentPublished);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(TemplateSettingsModel template)
+        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(ClaimsIdentity identity, TemplateSettingsModel template)
         {
-            return await templatesService.SaveTemplateVersionAsync(template);
+            return await templatesService.SaveTemplateVersionAsync(identity, template);
         }
 
         /// <inheritdoc />

@@ -1,9 +1,9 @@
 ﻿@{
     var versionList = Model.PublishedEnvironments.VersionList;
 }
-
+@model Api.Modules.Templates.Models.Template.TemplateSettingsModel
 <div id="published-environments" class="item version-block" style="width: 100%">
-    <h4><label>Versie @Model.Version . Laatst gewijzigd door @Model.ChangedBy op @Model.ChangedOn</label></h4>
+    <h4><label>Versie @Model.Version. Laatst gewijzigd door '@Model.ChangedBy' op @Model.ChangedOn</label></h4>
 
     <div class="formview full">
         <div class="item version-live">

@@ -14,7 +14,7 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// Returns the components history as a dictionary.
         /// </summary>
         /// <returns></returns>
-        Task<List<HistoryVersionModel>> GetDynamicContentHistory(int templateId);
+        Task<List<HistoryVersionModel>> GetDynamicContentHistory(int contentId);
         
         /// <summary>
         /// Get a list of versions and their published environments form a dynamic content.

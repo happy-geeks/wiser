@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Preview;
+using Api.Modules.Templates.Models.Template;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Modules.Base.Models;
 using FrontEnd.Modules.Templates.Models;
@@ -40,6 +41,12 @@ namespace FrontEnd.Modules.Templates.Controllers
         public IActionResult PreviewTab([FromBody]List<PreviewProfileModel> tabViewData)
         {
             return PartialView("Tabs/PreviewTab", tabViewData);
+        }
+
+        [HttpPost, Route("PublishedEnvironments")]
+        public IActionResult PublishedEnvironments([FromBody]TemplateSettingsModel tabViewData)
+        {
+            return PartialView("Partials/PublishedEnvironments", tabViewData);
         }
     }
 }

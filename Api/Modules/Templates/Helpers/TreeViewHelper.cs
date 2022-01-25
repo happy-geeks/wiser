@@ -1,5 +1,6 @@
 ﻿using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Models.Template;
+using GeeksCoreLibrary.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Helpers
 {
@@ -13,10 +14,10 @@ namespace Api.Modules.Templates.Helpers
         public TemplateTreeViewModel ConvertTemplateTreeViewDAOToTemplateTreeViewModel (TemplateTreeViewDao rawTreeView)
         {
             var treeViewModel = new TemplateTreeViewModel(
-                rawTreeView.GetTemplateId(),
-                rawTreeView.GetTemplateName(),
-                (rawTreeView.GetTemplateType() == (int)TreeViewTypeEnum.folder || rawTreeView.GetTemplateType() == (int)TreeViewTypeEnum.root),
-                rawTreeView.GetHasChildren()
+                rawTreeView.TemplateId,
+                rawTreeView.TemplateName,
+                rawTreeView.TemplateType == TemplateTypes.Directory,
+                rawTreeView.HasChildren
             );
 
             return treeViewModel;

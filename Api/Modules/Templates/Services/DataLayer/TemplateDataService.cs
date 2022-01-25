@@ -10,35 +10,63 @@ using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
+using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Services.DataLayer
 {
+    /// <inheritdoc cref="ITemplateDataService" />
     public class TemplateDataService : ITemplateDataService, IScopedService
     {
         private readonly IDatabaseConnection connection;
-        
+
+        /// <summary>
+        /// Creates a new instance of <see cref="TemplateDataService"/>.
+        /// </summary>
         public TemplateDataService(IDatabaseConnection connection)
         {
             this.connection = connection;
         }
 
-        /// <summary>
-        /// Get the template data of a template.
-        /// </summary>
-        /// <param name="templateId">The id of the template to retrieve the data from.</param>
-        /// <returns>A <see cref="TemplateSettingsModel"/> containing the current template data of the template with the given id.</returns>
+        /// <inheritdoc />
+        public async Task<TemplateSettingsModel> GetTemplateMetaData(int templateId)
+        {
+            connection.ClearParameters();
+            connection.AddParameter("templateId", templateId);
+            var dataTable = await connection.GetAsync($@"SELECT 
+                                                                template.template_name, 
+                                                                template.version, 
+                                                                template.changed_on, 
+                                                                template.changed_by
+                                                            FROM {WiserTableNames.WiserTemplate} AS template 
+                                                            LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+                                                            WHERE template.template_id = ?templateId
+                                                            AND otherVersion.id IS NULL
+                                                            LIMIT 1");
+            
+            return dataTable.Rows.Count == 0 ? new TemplateSettingsModel() : new TemplateSettingsModel
+            {
+                TemplateId = templateId,
+                Name = dataTable.Rows[0].Field<string>("template_name"),
+                Version = dataTable.Rows[0].Field<int>("version"),
+                ChangedOn = dataTable.Rows[0].Field<DateTime>("changed_on"),
+                ChangedBy = dataTable.Rows[0].Field<string>("changed_by")
+            };
+        }
+
+        /// <inheritdoc />
         public async Task<TemplateSettingsModel> GetTemplateData(int templateId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateId", templateId);
-            var dataTable = await connection.GetAsync(@"SELECT wtt.template_id, wtt.template_name, wtt.template_data, wtt.version, wtt.changed_on, wtt.changed_by, wtt.usecache, 
+            var dataTable = await connection.GetAsync($@"SELECT wtt.template_id, wtt.template_name, wtt.template_data, wtt.version, wtt.changed_on, wtt.changed_by, wtt.usecache, 
                 wtt.cacheminutes, wtt.handlerequest, wtt.handlesession, wtt.handleobjects, wtt.handlestandards, wtt.handletranslations, wtt.handledynamiccontent, wtt.handlelogicblocks, wtt.handlemutators, 
                 wtt.loginrequired, wtt.loginusertype, wtt.loginsessionprefix, wtt.loginrole , GROUP_CONCAT(CONCAT_WS(';',linkedtemplates.template_id, linkedtemplates.template_name, linkedtemplates.template_type)) AS linkedtemplates
-                FROM wiser_template_test wtt 
-				LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM wiser_template_test linkedTemplate GROUP BY template_id) AS linkedtemplates 
+                FROM {WiserTableNames.WiserTemplate} wtt 
+				LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate GROUP BY template_id) AS linkedtemplates 
 				ON FIND_IN_SET(linkedtemplates.template_id ,wtt.linkedtemplates)
-                WHERE wtt.template_id = ?templateId AND wtt.version = (SELECT MAX(version) FROM wiser_template_test WHERE template_id = wtt.template_id)
+                WHERE wtt.template_id = ?templateId AND wtt.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = wtt.template_id)
 				GROUP BY wtt.template_id
                 ORDER BY wtt.version DESC 
                 LIMIT 1"
@@ -46,7 +74,8 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             var templateData = new TemplateSettingsModel();
 
-            if (dataTable.Rows.Count == 1) {
+            if (dataTable.Rows.Count == 1)
+            {
                 templateData.TemplateId = dataTable.Rows[0].Field<int>("template_id");
                 templateData.Name = dataTable.Rows[0].Field<string>("template_name");
                 templateData.EditorValue = dataTable.Rows[0].Field<string>("template_data");
@@ -73,49 +102,40 @@ namespace Api.Modules.Templates.Services.DataLayer
             return templateData;
         }
 
-        /// <summary>
-        /// Get published environments from a template.
-        /// </summary>
-        /// <param name="templateId">The id of the template which environment should be retrieved.</param>
-        /// <returns>A list of all version and their published environment.</returns>
-        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsFromTemplate (int templateId)
+        /// <inheritdoc />
+        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsFromTemplate(int templateId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
             var versionList = new Dictionary<int, int>();
 
-            var dataTable = await connection.GetAsync("SELECT wtt.version, wtt.published_envoirement FROM `wiser_template_test` wtt WHERE wtt.template_id = ?templateid");
+            var dataTable = await connection.GetAsync($"SELECT wtt.version, wtt.published_environment FROM {WiserTableNames.WiserTemplate} wtt WHERE wtt.template_id = ?templateid");
 
-            foreach (DataRow row in  dataTable.Rows)
+            foreach (DataRow row in dataTable.Rows)
             {
-                versionList.Add(row.Field<int>("version"), row.Field<SByte>("published_envoirement"));
+                versionList.Add(row.Field<int>("version"), row.Field<SByte>("published_environment"));
             }
 
             return versionList;
         }
 
-        /// <summary>
-        /// Publish the template to an environment. This method will execute the publishmodel instructions it recieves, logic for publishing linked environments should be handled in the servicelayer.
-        /// </summary>
-        /// <param name="templateId">The id of the template of which the enviroment should be published.</param>
-        /// <param name="publishModel">A publish model containing the versions that should be altered and their respective values to be altered with.</param>
-        /// <returns>An int confirming the rows altered by the query.</returns>
-        public async Task<int> PublishEnvironmentOfTemplate(int templateId, Dictionary<int,int> publishModel, PublishLogModel publishLog)
+        /// <inheritdoc />
+        public async Task<int> PublishEnvironmentOfTemplate(int templateId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
 
-            var baseQueryPart = @"UPDATE wiser_template_test wtt 
-                SET wtt.published_envoirement = case wtt.version";
+            var baseQueryPart = $@"UPDATE {WiserTableNames.WiserTemplate} wtt 
+                SET wtt.published_environment = case wtt.version";
 
             var dynamicQueryPart = "";
             var dynamicWherePart = " AND wtt.version IN (";
-            foreach(var versionChange in publishModel)
+            foreach (var versionChange in publishModel)
             {
-                dynamicQueryPart += " WHEN " + versionChange.Key + " THEN wtt.published_envoirement+" + versionChange.Value;
-                dynamicWherePart += versionChange.Key+",";
+                dynamicQueryPart += " WHEN " + versionChange.Key + " THEN wtt.published_environment+" + versionChange.Value;
+                dynamicWherePart += versionChange.Key + ",";
             }
-            dynamicWherePart = dynamicWherePart.Substring(0, dynamicWherePart.Length-1) + ")";
+            dynamicWherePart = dynamicWherePart.Substring(0, dynamicWherePart.Length - 1) + ")";
             var endQueryPart = @" end
                 WHERE wtt.template_id = ?templateid";
 
@@ -127,8 +147,10 @@ namespace Api.Modules.Templates.Services.DataLayer
             connection.AddParameter("newlive", publishLog.NewLive);
             connection.AddParameter("newaccept", publishLog.NewAccept);
             connection.AddParameter("newtest", publishLog.NewTest);
+            connection.AddParameter("now", DateTime.Now);
+            connection.AddParameter("username", username);
 
-            var logQuery = @"INSERT INTO wiser_template_publish_log_test (template_id, old_live, old_accept, old_test, new_live, new_accept, new_test, changed_on, changed_by) 
+            var logQuery = $@"INSERT INTO {WiserTableNames.WiserTemplatePublishLog} (template_id, old_live, old_accept, old_test, new_live, new_accept, new_test, changed_on, changed_by) 
             VALUES(
                 ?templateid,
                 ?oldlive,
@@ -137,38 +159,30 @@ namespace Api.Modules.Templates.Services.DataLayer
                 ?newlive,
                 ?newaccept,
                 ?newtest,
-                NOW(),
-                'InsertTest'
+                ?now,
+                ?username
             )";
 
             return await connection.ExecuteAsync(query + ";" + logQuery);
         }
 
-        /// <summary>
-        /// Get the templates linked to the current template and their relation to the current template.
-        /// </summary>
-        /// <param name="templateId">The id of the template which linked templates should be retrieved.</param>
-        /// <returns>Return a list of linked templates in the form of linkedtemplatemodels.</returns>
+        /// <inheritdoc />
         public async Task<List<LinkedTemplateModel>> GetLinkedTemplates(int templateId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
-            var dataTable = await connection.GetAsync($@"SELECT wtt.template_name, ?templateid AS template_id, wtt.template_id AS destination_template_id, wtt.template_type AS type, 'test' AS type_name
-                    FROM wiser_template_test wtt
-					WHERE wtt.template_id !=?templateid AND FIND_IN_SET(wtt.template_id, (SELECT tlink.linkedtemplates FROM `wiser_template_test` tlink WHERE tlink.template_id = ?templateid AND tlink.version = (SELECT MAX(version) FROM wiser_template_test WHERE template_id = tlink.template_id))) GROUP BY wtt.template_id ORDER BY wtt.template_name");
+            var dataTable = await connection.GetAsync($@"SELECT wtt.template_name, ?templateid AS template_id, wtt.template_id AS destination_template_id, wtt.template_type AS type
+                    FROM {WiserTableNames.WiserTemplate} wtt
+					WHERE wtt.template_id !=?templateid AND FIND_IN_SET(wtt.template_id, (SELECT tlink.linkedtemplates FROM {WiserTableNames.WiserTemplate} tlink WHERE tlink.template_id = ?templateid AND tlink.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = tlink.template_id))) GROUP BY wtt.template_id ORDER BY wtt.template_name");
 
             var linkList = new List<LinkedTemplateModel>();
 
-            foreach(DataRow row in dataTable.Rows)
+            foreach (DataRow row in dataTable.Rows)
             {
                 var linkedTemplate = new LinkedTemplateModel();
                 linkedTemplate.TemplateId = row.Field<int>("destination_template_id");
                 linkedTemplate.TemplateName = row.Field<string>("template_name");
-                linkedTemplate.LinkType = row.Field<LinkedTemplatesEnum>("type");
-                linkedTemplate.LinkName = row.Field<string>("type_name");
-
-                linkedTemplate.ParentId = 0;
-                linkedTemplate.ParentName = "TODO";
+                linkedTemplate.LinkType = row.Field<TemplateTypes>("type");
 
                 linkList.Add(linkedTemplate);
             }
@@ -176,18 +190,14 @@ namespace Api.Modules.Templates.Services.DataLayer
             return linkList;
         }
 
-        /// <summary>
-        /// Get templates that can be linked to the current template but aren't linked yet.
-        /// </summary>
-        /// <param name="templateId">The id of the template for which the linkoptions should be retrieved.</param>
-        /// <returns>A list of possible links in the form of linkedtemplatemodels.</returns>
+        /// <inheritdoc />
         public async Task<List<LinkedTemplateModel>> GetLinkOptionsForTemplate(int templateId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
             var dataTable = await connection.GetAsync($@"SELECT wtt.template_name, wtt.template_id, wtt.template_type 
-                    FROM wiser_template_test wtt
-					WHERE wtt.template_id !=?templateid AND FIND_IN_SET(wtt.template_id, (SELECT tlink.linkedtemplates FROM `wiser_template_test` tlink WHERE tlink.template_id = ?templateid AND tlink.version = (SELECT MAX(version) FROM wiser_template_test WHERE template_id = tlink.template_id))) = 0 ORDER BY wtt.template_name"
+                    FROM {WiserTableNames.WiserTemplate} wtt
+					WHERE wtt.template_id !=?templateid AND FIND_IN_SET(wtt.template_id, (SELECT tlink.linkedtemplates FROM {WiserTableNames.WiserTemplate} tlink WHERE tlink.template_id = ?templateid AND tlink.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = tlink.template_id))) = 0 ORDER BY wtt.template_name"
             );
 
             var linkList = new List<LinkedTemplateModel>();
@@ -197,10 +207,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                 var linkedTemplate = new LinkedTemplateModel();
                 linkedTemplate.TemplateId = row.Field<int>("template_id");
                 linkedTemplate.TemplateName = row.Field<string>("template_name");
-                linkedTemplate.LinkType = row.Field<LinkedTemplatesEnum>("template_type");
-
-                linkedTemplate.ParentId = 0;
-                linkedTemplate.ParentName = "TODO";
+                linkedTemplate.LinkType = row.Field<TemplateTypes>("template_type");
 
                 linkList.Add(linkedTemplate);
             }
@@ -208,39 +215,36 @@ namespace Api.Modules.Templates.Services.DataLayer
             return linkList;
         }
 
-        /// <summary>
-        /// Get dynamic content that is linked to the current template.
-        /// </summary>
-        /// <param name="templateId">The id of the template of which the linked dynamic content is to be retrieved.</param>
-        /// <returns>A list of dynamic content data for all the dynamic content linked to the current template.</returns>
-        public async Task<List<LinkedDynamicContentDao>> GetLinkedDynamicContent (int templateId)
+        /// <inheritdoc />
+        public async Task<List<LinkedDynamicContentDao>> GetLinkedDynamicContent(int templateId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
             var dataTable = await connection.GetAsync($@"SELECT 
-                wdc.templateid, 
+                wdc.content_id, 
                 wdc.component, 
                 wdc.component_mode, 
                 GROUP_CONCAT(DISTINCT otherdc.`usages`) AS `usages`,
                 wdc.changed_on,
                 wdc.changed_by,
                 wdc.`title`
-                FROM `wiser_template_dynamiccontent_test` tdclink 
-                LEFT JOIN wiser_dynamiccontent_test wdc ON wdc.templateid = tdclink.destination_template_id 
+                FROM {WiserTableNames.WiserTemplateDynamicContent} tdclink 
+                LEFT JOIN {WiserTableNames.WiserDynamicContent} wdc ON wdc.content_id = tdclink.content_id 
                 LEFT JOIN (
-	                SELECT dcusages.destination_template_id, tt.template_name AS `usages` 
-	                FROM wiser_template_dynamiccontent_test dcusages 
-	                INNER JOIN wiser_template_test tt ON tt.template_id=dcusages.template_id 
-                ) AS otherdc ON otherdc.destination_template_id=tdclink.destination_template_id
-                WHERE tdclink.template_id = ?templateid
-                AND wdc.version = (SELECT MAX(dc.version) FROM wiser_dynamiccontent_test dc WHERE dc.templateid = wdc.templateid)
-                GROUP BY wdc.templateid");
+	                SELECT dcusages.content_id, tt.template_name AS `usages` 
+	                FROM {WiserTableNames.WiserTemplateDynamicContent} dcusages 
+	                INNER JOIN {WiserTableNames.WiserTemplate} tt ON tt.template_id=dcusages.destination_template_id 
+                ) AS otherdc ON otherdc.content_id=tdclink.content_id
+                WHERE tdclink.destination_template_id = ?templateid
+                AND wdc.version = (SELECT MAX(dc.version) FROM {WiserTableNames.WiserDynamicContent} dc WHERE dc.content_id = wdc.content_id)
+                GROUP BY wdc.content_id");
             var resultList = new List<LinkedDynamicContentDao>();
 
-            foreach (DataRow row in dataTable.Rows) {
+            foreach (DataRow row in dataTable.Rows)
+            {
                 var resultDao = new LinkedDynamicContentDao();
 
-                resultDao.Id = row.Field<int>("templateid");
+                resultDao.Id = row.Field<int>("content_id");
                 resultDao.Component = row.Field<string>("component");
                 resultDao.ComponentMode = row.Field<string>("component_mode");
                 resultDao.Usages = row.Field<string>("usages");
@@ -254,12 +258,8 @@ namespace Api.Modules.Templates.Services.DataLayer
             return resultList;
         }
 
-        /// <summary>
-        /// Saves the template data as a new version of the template.
-        /// </summary>
-        /// <param name="templateSettings">A <see cref="TemplateSettingsModel"/> containing the new data to save as a new template version.</param>
-        /// <returns>An int confirming the affected rows of the query.</returns>
-        public Task<int> SaveTemplateVersion(TemplateSettingsModel templateSettings, List<int> sccsLinks, List<int>jsLinks)
+        /// <inheritdoc />
+        public Task<int> SaveTemplateVersion(TemplateSettingsModel templateSettings, List<int> sccsLinks, List<int> jsLinks, string username)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateSettings.TemplateId);
@@ -280,6 +280,8 @@ namespace Api.Modules.Templates.Services.DataLayer
             connection.AddParameter("loginUserType", templateSettings.LoginUserType);
             connection.AddParameter("loginSessionPrefix", templateSettings.LoginSessionPrefix);
             connection.AddParameter("loginRole", templateSettings.LoginRole);
+            connection.AddParameter("now", DateTime.Now);
+            connection.AddParameter("username", username);
 
             var mergeList = new List<int>();
             mergeList.AddRange(sccsLinks);
@@ -287,9 +289,9 @@ namespace Api.Modules.Templates.Services.DataLayer
             var linkedTemplates = String.Join(",", mergeList);
             connection.AddParameter("templatelinks", linkedTemplates);
 
-            return connection.ExecuteAsync(@"
-                SET @VersionNumber = (SELECT MAX(version)+1 FROM `wiser_template_test` WHERE template_id = ?templateid GROUP BY template_id);
-                INSERT INTO wiser_template_test (
+            return connection.ExecuteAsync($@"
+                SET @VersionNumber = (SELECT MAX(version)+1 FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateid GROUP BY template_id);
+                INSERT INTO {WiserTableNames.WiserTemplate} (
                     template_name, 
                     template_data, 
                     template_type, 
@@ -319,8 +321,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                     5052,
                     @VersionNumber,
                     ?templateid,
-                    NOW(),
-                    'InsertTest',
+                    ?now,
+                    ?username,
                     ?useCache,
                     ?cacheMinutes,
                     ?handleRequests,
@@ -340,25 +342,21 @@ namespace Api.Modules.Templates.Services.DataLayer
             ");
         }
 
-        /// <summary>
-        /// Saves the linked templates for a template. This will add new links and remove old links.
-        /// </summary>
-        /// <param name="templateId">The id of the template who's links to save.</param>
-        /// <param name="linksToAdd">The list of template ids to add as a link</param>
-        /// <param name="linksToRemove">The list of template ids to remove as a link</param>
-        /// <returns></returns>
-        public async Task<int> SaveLinkedTemplates(int templateId, List<int> linksToAdd, List<int> linksToRemove) {
+        /// <inheritdoc />
+        public async Task<int> SaveLinkedTemplates(int templateId, List<int> linksToAdd, List<int> linksToRemove)
+        {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
 
-            if (linksToAdd.Count > 0) {
-                var addQueryBase = @"INSERT INTO wiser_templatelink_test (template_id, destination_template_id, ordering, type, type_name, added_on)";
+            if (linksToAdd.Count > 0)
+            {
+                var addQueryBase = $"INSERT INTO {WiserTableNames.WiserTemplateLink} (template_id, destination_template_id, ordering, type, type_name, added_on)";
 
 
                 var dynamicQuery = @"VALUES ";
                 foreach (var link in linksToAdd)
                 {
-                    dynamicQuery += "(?templateid, "+link+ ", 1, (SELECT template_type FROM wiser_template_test WHERE template_id="+link+" ORDER BY version DESC LIMIT 1), 'new type', NOW()),";
+                    dynamicQuery += $"(?templateid, {link}, 1, (SELECT template_type FROM {WiserTableNames.WiserTemplate} WHERE template_id={link} ORDER BY version DESC LIMIT 1), 'new type', NOW()),";
                 }
                 dynamicQuery = dynamicQuery.Substring(0, dynamicQuery.Length - 1);
                 var addQuery = addQueryBase + dynamicQuery;
@@ -368,10 +366,10 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             if (linksToRemove.Count > 0)
             {
-                var removeQueryBase = "DELETE FROM wiser_templatelink_test WHERE template_id=?templateid";
+                var removeQueryBase = $"DELETE FROM {WiserTableNames.WiserTemplateLink} WHERE template_id=?templateid";
 
                 var removeQueryList = " AND destination_template_id IN (";
-                foreach(var link in linksToRemove)
+                foreach (var link in linksToRemove)
                 {
                     removeQueryList += link + ",";
                 }
@@ -385,57 +383,53 @@ namespace Api.Modules.Templates.Services.DataLayer
             return 1;
         }
 
-        /// <summary>
-        /// Retreives a section of the treeview around the given id. In case the id is 0 the root section of the tree will be retrieved.
-        /// </summary>
-        /// <param name="parentId">The id of the parent element of the treesection that needs to be retrieved</param>
-        /// <returns>A list of templatetreeview items that are children of the given id.</returns>
+        /// <inheritdoc />
         public async Task<List<TemplateTreeViewDao>> GetTreeViewSection(int parentId)
         {
             connection.ClearParameters();
             connection.AddParameter("parentid", parentId);
-            var dataTable = new DataTable();
+            DataTable dataTable;
             // Retrieves the Root
             if (parentId == 0)
             {
-                dataTable = await connection.GetAsync(@"
-                SELECT wtt.id, wtt.template_name, wtt.template_type, wtt.template_id, wtt.parent_id FROM `wiser_template_test` wtt 
-                LEFT JOIN wiser_template_test parentTemp ON parentTemp.template_id = wtt.parent_id
-                WHERE wtt.parent_id IS NULL AND wtt.template_type = 1");
+                dataTable = await connection.GetAsync($@"
+                SELECT wtt.id, wtt.template_name, wtt.template_type, wtt.template_id, wtt.parent_id FROM {WiserTableNames.WiserTemplate} wtt 
+                LEFT JOIN {WiserTableNames.WiserTemplate} parentTemp ON parentTemp.template_id = wtt.parent_id
+                WHERE wtt.parent_id IS NULL AND wtt.template_type = 7");
             }
             //Retrieve section under parentId
             else
             {
-                dataTable = await connection.GetAsync(@"
-                SELECT wtt.id, wtt.template_name, wtt.template_type, wtt.template_id, wtt.parent_id, IF((EXISTS (SELECT id FROM wiser_template_test WHERE parent_id=wtt.template_id)), 1,0) AS has_children FROM `wiser_template_test` wtt 
-                LEFT JOIN wiser_template_test parentTemp ON parentTemp.template_id = wtt.parent_id
+                dataTable = await connection.GetAsync($@"
+                SELECT wtt.id, wtt.template_name, wtt.template_type, wtt.template_id, wtt.parent_id, IF((EXISTS (SELECT id FROM {WiserTableNames.WiserTemplate} WHERE parent_id=wtt.template_id)), 1,0) AS has_children FROM {WiserTableNames.WiserTemplate} wtt 
+                LEFT JOIN {WiserTableNames.WiserTemplate} parentTemp ON parentTemp.template_id = wtt.parent_id
                 WHERE parentTemp.template_id = ?parentid
                 GROUP BY wtt.template_id
-                ORDER BY wtt.template_type, wtt.template_name");
+                ORDER BY wtt.template_type DESC, wtt.template_name");
             }
 
             var treeviewSection = new List<TemplateTreeViewDao>();
 
             foreach (DataRow row in dataTable.Rows)
             {
-                var hasChildren = false;
-                if(parentId != 0 && row.Field<int>("has_children")>0) {
-                    hasChildren = true;
-                }
+                bool hasChildren = parentId != 0 && row.Field<int>("has_children") > 0;
 
-                    var treeviewNode = new TemplateTreeViewDao(
-                        row.Field<int>("template_id"),
-                        row.Field<string>("template_name"),
-                        row.Field<int>("template_type"),
-                        row.Field<int?>("parent_id"),
-                        hasChildren
-                    );
+                var treeviewNode = new TemplateTreeViewDao
+                {
+                    HasChildren = hasChildren,
+                    ParentId = row.Field<int?>("parent_id"),
+                    TemplateId = row.Field<int>("template_id"),
+                    TemplateName = row.Field<string>("template_name"),
+                    TemplateType = row.Field<TemplateTypes>("template_type")
+                };
+
                 treeviewSection.Add(treeviewNode);
             }
 
             return treeviewSection;
         }
 
+        /// <inheritdoc />
         public async Task<List<SearchResultModel>> GetSearchResults(SearchSettingsModel searchSettings)
         {
             connection.ClearParameters();
@@ -444,7 +438,7 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             var searchResults = new List<SearchResultModel>();
 
-            foreach(DataRow row in dataTable.Rows)
+            foreach (DataRow row in dataTable.Rows)
             {
                 var result = new SearchResultModel
                 {
@@ -464,34 +458,35 @@ namespace Api.Modules.Templates.Services.DataLayer
             var searchQuery = new StringBuilder();
             if (!searchSettings.IsTemplateSearchDisabled())
             {
-                searchQuery.Append("SELECT t.template_id AS id, 'template' AS type, t.template_name AS name, (SELECT par.template_name FROM wiser_template_test par WHERE par.template_id=t.parent_id) AS parent FROM wiser_template_test t WHERE ");
+                searchQuery.Append($"SELECT t.template_id AS id, 'template' AS type, t.template_name AS name, (SELECT par.template_name FROM {WiserTableNames.WiserTemplate} par WHERE par.template_id=t.parent_id) AS parent FROM {WiserTableNames.WiserTemplate} t WHERE ");
 
                 switch (searchSettings.SearchEnvironment)
                 {
                     case Environments.Development:
-                        searchQuery.Append("t.version = (SELECT MAX(tt.version) FROM wiser_template_test tt WHERE tt.template_id = t.template_id)");
+                        searchQuery.Append($"t.version = (SELECT MAX(tt.version) FROM {WiserTableNames.WiserTemplate} tt WHERE tt.template_id = t.template_id)");
                         break;
                     case Environments.Test:
                         connection.AddParameter("environment", Environments.Test);
-                        searchQuery.Append("t.published_envoirement & ?environment");
+                        searchQuery.Append("t.published_environment & ?environment");
                         break;
                     case Environments.Acceptance:
                         connection.AddParameter("environment", Environments.Acceptance);
-                        searchQuery.Append("t.published_envoirement & ?environment");
+                        searchQuery.Append("t.published_environment & ?environment");
                         break;
                     case Environments.Live:
                         connection.AddParameter("environment", Environments.Live);
-                        searchQuery.Append("t.published_envoirement & ?environment");
+                        searchQuery.Append("t.published_environment & ?environment");
                         break;
                     default:
-                        searchQuery.Append("t.version = (SELECT MAX(tt.version) FROM wiser_template_test tt WHERE tt.template_id = t.template_id)");
+                        searchQuery.Append($"t.version = (SELECT MAX(tt.version) FROM {WiserTableNames.WiserTemplate} tt WHERE tt.template_id = t.template_id)");
                         break;
                 }
 
                 searchQuery.Append("AND (");
 
-                if (searchSettings.SearchTemplateId) {
-                    searchQuery.Append("t.template_id = ?needle OR "); 
+                if (searchSettings.SearchTemplateId)
+                {
+                    searchQuery.Append("t.template_id = ?needle OR ");
                 }
                 if (searchSettings.SearchTemplateType)
                 {
@@ -523,27 +518,27 @@ namespace Api.Modules.Templates.Services.DataLayer
             }
             if (!searchSettings.IsDynamicContentSearchDisabled())
             {
-                searchQuery.Append("SELECT wdc.templateid AS id, 'dynamiccontent' AS type, wdc.title AS name, (SELECT GROUP_CONCAT(tdc.template_id) FROM wiser_template_dynamiccontent_test tdc WHERE tdc.destination_template_id=wdc.templateid) AS parent FROM wiser_dynamiccontent_test wdc WHERE ");
+                searchQuery.Append($"SELECT wdc.content_id AS id, 'dynamiccontent' AS type, wdc.title AS name, (SELECT GROUP_CONCAT(tdc.template_id) FROM {WiserTableNames.WiserTemplateDynamicContent} tdc WHERE tdc.destination_template_id=wdc.content_id) AS parent FROM {WiserTableNames.WiserDynamicContent} wdc WHERE ");
 
                 switch (searchSettings.SearchEnvironment)
                 {
                     case Environments.Development:
-                        searchQuery.Append("wdc.version = (SELECT MAX(dc.version) FROM wiser_dynamiccontent_test dc WHERE dc.templateid = wdc.templateid)");
+                        searchQuery.Append($"wdc.version = (SELECT MAX(dc.version) FROM {WiserTableNames.WiserDynamicContent} dc WHERE dc.content_id = wdc.content_id)");
                         break;
                     case Environments.Test:
                         connection.AddParameter("environment", Environments.Test);
-                        searchQuery.Append("wdc.published_envoirement & ?environment");
+                        searchQuery.Append("wdc.published_environment & ?environment");
                         break;
                     case Environments.Acceptance:
                         connection.AddParameter("environment", Environments.Acceptance);
-                        searchQuery.Append("wdc.published_envoirement & ?environment");
+                        searchQuery.Append("wdc.published_environment & ?environment");
                         break;
                     case Environments.Live:
                         connection.AddParameter("environment", Environments.Live);
-                        searchQuery.Append("wdc.published_envoirement & ?environment");
+                        searchQuery.Append("wdc.published_environment & ?environment");
                         break;
                     default:
-                        searchQuery.Append("wdc.version = (SELECT MAX(dc.version) FROM wiser_dynamiccontent_test dc WHERE dc.templateid = wdc.templateid)");
+                        searchQuery.Append($"wdc.version = (SELECT MAX(dc.version) FROM {WiserTableNames.WiserDynamicContent} dc WHERE dc.content_id = wdc.content_id)");
                         break;
                 }
 
@@ -551,11 +546,11 @@ namespace Api.Modules.Templates.Services.DataLayer
 
                 if (searchSettings.SearchDynamicContentId)
                 {
-                    searchQuery.Append("wdc.templateid = ?needle OR ");
+                    searchQuery.Append("wdc.content_id = ?needle OR ");
                 }
-                if (searchSettings.SearchDynamicContentFilledVariables)
+                if (searchSettings.SearchDynamicContentSettings)
                 {
-                    searchQuery.Append("wdc.filledvariables LIKE CONCAT('%',?needle,'%') OR ");
+                    searchQuery.Append("wdc.settings LIKE CONCAT('%',?needle,'%') OR ");
                 }
                 if (searchSettings.SearchDynamicContentComponentName)
                 {
@@ -567,7 +562,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                 }
 
                 //Remove last 'OR' from query
-                searchQuery.Remove(searchQuery.Length-3, 3);
+                searchQuery.Remove(searchQuery.Length - 3, 3);
 
                 searchQuery.Append(")");
             }

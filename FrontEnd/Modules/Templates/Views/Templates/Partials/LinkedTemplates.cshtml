@@ -1,4 +1,4 @@
-﻿@using Api.Modules.Templates.Enums
+﻿@using GeeksCoreLibrary.Modules.Templates.Enums
 @model Api.Modules.Templates.Models.Template.LinkedTemplatesModel
 <div class="item" style="width: 50%;">
     <span class="handler">&nbsp;</span>
@@ -15,7 +15,7 @@
         }
         @foreach (var linkOption in @Model.LinkOptionsTemplates)
         {
-            if (linkOption.LinkType == LinkedTemplatesEnum.scss)
+            if (linkOption.LinkType == TemplateTypes.Scss)
             {
                 <li>
                     <label class="checkbox">
@@ -43,7 +43,7 @@
         }
         @foreach (var linkOption in @Model.LinkOptionsTemplates)
         {
-            if (linkOption.LinkType == LinkedTemplatesEnum.javascript)
+            if (linkOption.LinkType == TemplateTypes.Js)
             {
                 <li>
                     <label class="checkbox">

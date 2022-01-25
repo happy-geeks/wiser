@@ -20,7 +20,7 @@ namespace Api.Modules.Templates.Models.Other
 
         //Dynamic content settings
         public Boolean SearchDynamicContentId { get; set; } = true;
-        public Boolean SearchDynamicContentFilledVariables { get; set; }
+        public Boolean SearchDynamicContentSettings { get; set; }
         public Boolean SearchDynamicContentComponentName { get; set; }
         public Boolean SearchDynamicContentComponentMode { get; set; }
 
@@ -34,7 +34,7 @@ namespace Api.Modules.Templates.Models.Other
         }
         public Boolean IsDynamicContentSearchDisabled()
         {
-            if (SearchDynamicContentId == false && SearchDynamicContentFilledVariables == false && SearchDynamicContentComponentName == false && SearchDynamicContentComponentMode == false)
+            if (SearchDynamicContentId == false && SearchDynamicContentSettings == false && SearchDynamicContentComponentName == false && SearchDynamicContentComponentMode == false)
             {
                 return true;
             }

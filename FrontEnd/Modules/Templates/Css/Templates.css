@@ -65,6 +65,7 @@
 /** TREEVIEW **/
 #right-pane {
     width: auto !important;
+    right: 0;
 }
 
 .pane-content .k-treeview {
