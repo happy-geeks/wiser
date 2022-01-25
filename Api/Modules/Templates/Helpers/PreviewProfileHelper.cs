@@ -15,10 +15,10 @@ namespace Api.Modules.Templates.Helpers
         {
             var previewModel = new PreviewProfileModel
             {
-                Id = previewDAO.GetId(),
-                Name = previewDAO.GetName(),
-                Url = previewDAO.GetUrl(),
-                Variables = JsonConvert.DeserializeObject<List<PreviewVariableModel>>(previewDAO.GetRawVariables())
+                Id = previewDAO.Id,
+                Name = previewDAO.Name,
+                Url = previewDAO.Url,
+                Variables = JsonConvert.DeserializeObject<List<PreviewVariableModel>>(previewDAO.RawVariables)
             };
 
             return previewModel;

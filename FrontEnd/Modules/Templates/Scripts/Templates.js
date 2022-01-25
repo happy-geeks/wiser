@@ -854,58 +854,54 @@ const moduleSettings = {
 
         //Bind buttons in the preview tab of the template overview
         bindPreviewButtons() {
-            $("#addPreviewRow").on("click", function () {
+            $("#addPreviewRow").on("click", () => {
                 $("#preview-variables").data("kendoGrid").addRow();
             });
 
-            $("#preview-remove-profile").on("click", function () {
+            $("#preview-remove-profile").on("click", () => {
                 if ($("#preview-combo-select").data('kendoComboBox').dataItem()) {
-                    $.ajax({
-                        type: "POST",
-                        url: "/Template/DeletePreviewProfiles",
-                        data: { templateId: window.Templates.selectedId, profileId: $("#preview-combo-select").data('kendoComboBox').dataItem().value },
-                        success: function (response) {
-                            window.popupNotification.show("Het profiel '" + document.getElementById("preview-combo-select").innerText + "' is verwijderd", "info");
-                        }
+                    Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${$("#preview-combo-select").data('kendoComboBox').dataItem().value}`,
+                        type: "DELETE"
+                    }).then((response) => {
+                        window.popupNotification.show(`Het profiel '${document.getElementById("preview-combo-select").innerText}' is verwijderd`, "info");
                     });
                 }
             });
 
-            $("#preview-save-profile-as").on("click", function () {
-                $.ajax({
+            $("#preview-save-profile-as").on("click", async () => {
+                Wiser2.api({
+                    url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${$("#preview-combo-select").data('kendoComboBox').dataItem().value}`,
                     type: "POST",
-                    url: "/Template/EditPreviewProfile",
-                    data: {
-                        profile: {
-                            id: document.getElementById("preview-combo-select").value,
-                            name: prompt("Enter the profile's name"),
-                            url: "https://www.domeinnaam.nl/pad/pagina.html?cat=2",
-                            variables: [{ type: "POST", key: "loggedin_user", value: 444, encrypt: false }, { type: "SESSION", key: "product_id", value: 151515, encrypt: false }]
-                        },
-                        templateId: window.Templates.selectedId
-                    }
+                    data: JSON.stringify({
+                        id: document.getElementById("preview-combo-select").value,
+                        name: await kendo.prompt("Kies een naam"),
+                        url: "https://www.domeinnaam.nl/pad/pagina.html?cat=2",
+                        variables: [{ type: "POST", key: "loggedin_user", value: 444, encrypt: false }, { type: "SESSION", key: "product_id", value: 151515, encrypt: false }]
+                    })
+                }).then((response) => {
+                    window.popupNotification.show(`Het profiel '${document.getElementById("preview-combo-select").innerText}' is opgeslagen`, "info");
                 });
             });
 
-            $("#preview-save-profile").on("click", function () {
+            $("#preview-save-profile").on("click", () => {
                 if ($("#preview-combo-select").data('kendoComboBox').dataItem()) {
                     var variables = [];
                     $("#preview-variables").data("kendoGrid")._data.forEach((e) => {
                         variables.push({ type: e.type, key: e.key, value: e.value, encrypt: e.encrypt })
                     });
-
-                    $.ajax({
+                    
+                    Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${$("#preview-combo-select").data('kendoComboBox').dataItem().value}`,
                         type: "POST",
-                        url: "/Template/EditPreviewProfile",
-                        data: {
-                            profile: {
-                                id: $("#preview-combo-select").data('kendoComboBox').dataItem().value,
-                                name: "",
-                                url: document.getElementById("profile-url").value,
-                                variables: variables
-                            },
-                            templateId: window.Templates.selectedId
-                        }
+                        data: JSON.stringify({
+                            id: document.getElementById("preview-combo-select").value,
+                            name: "",
+                            url: "https://www.domeinnaam.nl/pad/pagina.html?cat=2",
+                            variables: [{ type: "POST", key: "loggedin_user", value: 444, encrypt: false }, { type: "SESSION", key: "product_id", value: 151515, encrypt: false }]
+                        })
+                    }).then((response) => {
+                        window.popupNotification.show(`Het profiel '${document.getElementById("preview-combo-select").innerText}' is opgeslagen`, "info");
                     });
                 }
             });

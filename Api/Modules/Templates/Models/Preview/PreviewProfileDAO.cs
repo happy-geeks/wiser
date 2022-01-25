@@ -4,37 +4,17 @@ namespace Api.Modules.Templates.Models.Preview
 {
     public class PreviewProfileDao
     {
-        Int64 id;
-        string name;
-        string url;
-        string rawVariables;
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Url { get; set; }
+        public string RawVariables { get; set; }
 
-        public PreviewProfileDao (Int64 id, string name, string url, string variables)
+        public PreviewProfileDao (int id, string name, string url, string variables)
         {
-            this.id = id;
-            this.name = name;
-            this.url = url;
-            this.rawVariables = variables;
-        }
-
-        public Int64 GetId()
-        {
-            return this.id;
-        }
-
-        public string GetName()
-        {
-            return this.name;
-        }
-
-        public string GetUrl()
-        {
-            return this.url;
-        }
-
-        public string GetRawVariables()
-        {
-            return this.rawVariables;
+            this.Id = id;
+            this.Name = name;
+            this.Url = url;
+            this.RawVariables = variables;
         }
     }
 }
