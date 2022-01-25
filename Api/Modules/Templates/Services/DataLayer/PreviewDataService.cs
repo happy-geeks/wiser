@@ -34,7 +34,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             foreach (DataRow row in dataTable.Rows)
             {
                 resultList.Add(new PreviewProfileDao(
-                        row.Field<long>("id"),
+                        row.Field<int>("id"),
                         row.Field<string>("template_name"),
                         row.Field<string>("url"),
                         row.Field<string>("previewvariables")
@@ -50,9 +50,9 @@ namespace Api.Modules.Templates.Services.DataLayer
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
-            connection.AddParameter("name", profile.GetName());
-            connection.AddParameter("url", profile.GetUrl());
-            connection.AddParameter("variables", profile.GetRawVariables());
+            connection.AddParameter("name", profile.Name);
+            connection.AddParameter("url", profile.Url);
+            connection.AddParameter("variables", profile.RawVariables);
 
             return (int)await connection.InsertRecordAsync($"INSERT INTO {WiserTableNames.WiserPreviewProfiles}(template_name, template_id, url, previewvariables, ordering) VALUES(?name, ?templateid, ?url, ?variables, 1)");
         }
@@ -62,10 +62,10 @@ namespace Api.Modules.Templates.Services.DataLayer
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
-            connection.AddParameter("profileid", profile.GetId());
-            connection.AddParameter("name", profile.GetName());
-            connection.AddParameter("url", profile.GetUrl());
-            connection.AddParameter("variables", profile.GetRawVariables());
+            connection.AddParameter("profileid", profile.Id);
+            connection.AddParameter("name", profile.Name);
+            connection.AddParameter("url", profile.Url);
+            connection.AddParameter("variables", profile.RawVariables);
 
             return await connection.ExecuteAsync($"UPDATE {WiserTableNames.WiserPreviewProfiles} SET template_name=IF(?name IS NULL OR ?name='', template_name, ?name), url=?url, previewvariables=?variables, ordering=1 WHERE template_id=?templateid AND id=?profileid");
         }
