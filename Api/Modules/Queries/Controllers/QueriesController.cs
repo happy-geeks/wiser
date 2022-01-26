@@ -9,11 +9,18 @@ using Microsoft.AspNetCore.Http;
 
 namespace Api.Modules.Queries.Controllers
 {
+    /// <summary>
+    /// Controller for all CRUD functions for wiser query.
+    /// </summary>
     [Route("api/v3/[controller]"), ApiController, Authorize]
     public class QueriesController : ControllerBase
     {
         private readonly IQueriesService queriesService;
 
+        /// <summary>
+        /// Creates a new instance of <see cref="QueriesController"/>.
+        /// </summary>
+        /// <param name="queriesService"></param>
         public QueriesController(IQueriesService queriesService)
         {
             this.queriesService = queriesService;
@@ -27,6 +34,57 @@ namespace Api.Modules.Queries.Controllers
         public async Task<IActionResult> GetForExportModuleAsync()
         {
             return (await queriesService.GetForExportModuleAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Get all wiser queries.
+        /// </summary>
+        /// <returns>List of queries from wiser_query table</returns>
+        [HttpGet, ProducesResponseType(typeof(List<QueryModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetForAdminModuleAsync()
+        {
+            return (await queriesService.GetAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Gets query data by ID.
+        /// </summary>
+        /// <returns>Query data from wiser_query</returns>
+        [HttpGet, Route("{id}"), ProducesResponseType(typeof(QueryModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetForAdminModuleAsync(int id)
+        {
+            return (await queriesService.GetAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Creates new wiser query.
+        /// </summary>
+        /// <param name="description">The description of the new query.</param>
+        /// <returns>The created query data</returns>
+        [HttpPost, ProducesResponseType(typeof(QueryModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> Create([FromBody] string description)
+        {
+            return (await queriesService.CreateAsync((ClaimsIdentity)User.Identity, description)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Updates existing wiser query by ID.
+        /// </summary>
+        /// <param name="queryModel">The new query data to save.</param>
+        [HttpPut, Route("{id}")]
+        public async Task<IActionResult> Update(QueryModel queryModel)
+        {
+            return (await queriesService.UpdateAsync((ClaimsIdentity)User.Identity,queryModel)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Deletes wiser query by ID.
+        /// </summary>
+        /// <param name="id">The ID from wiser_query.</param>
+        [HttpDelete, Route("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            return (await queriesService.DeleteAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
         }
     }
 }
