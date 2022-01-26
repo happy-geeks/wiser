@@ -32,13 +32,6 @@ export class EntityTab {
     * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
     */
     async setupBindings() {
-
-        //BUTTONS
-        $(".saveButton").kendoButton({
-            click: this.beforeSave.bind(this),
-            icon: "save"
-        });
-
         // add an entity property
         $(".addBtn").kendoButton({
             click: (e) => {
@@ -1822,6 +1815,7 @@ export class EntityTab {
                 }
             }
         }));
+
         // first set all properties to default;
         this.setEntityFieldPropertiesToDefault();
         // then set all the properties accordingly
