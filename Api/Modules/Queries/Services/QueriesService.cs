@@ -214,25 +214,8 @@ namespace Api.Modules.Queries.Services
                             show_in_export_module = ?show_in_export_module
                         WHERE id = ?id";
 
-            try
-            {
-                await clientDatabaseConnection.ExecuteAsync(query);
-            }
-            catch (MySqlException mySqlException)
-            {
-                if (mySqlException.Number == (int)MySqlErrorCode.DuplicateKeyEntry)
-                {
-                    return new ServiceResult<bool>
-                    {
-                        StatusCode = HttpStatusCode.Conflict,
-                        ErrorMessage = $"An entry already exists with {nameof(queryModel.Query)} = '{queryModel.Query}', {nameof(queryModel.Description)} = '{queryModel.Description}' and {nameof(queryModel.ShowInExportModule)} = '{queryModel.ShowInExportModule}'",
-                        ReasonPhrase = "And entry already exists with this data."
-                    };
-                }
-
-                throw;
-            }
-
+            await clientDatabaseConnection.ExecuteAsync(query);
+            
             return new ServiceResult<bool>(true)
             {
                 StatusCode = HttpStatusCode.NoContent

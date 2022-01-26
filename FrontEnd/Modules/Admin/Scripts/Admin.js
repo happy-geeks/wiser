@@ -280,7 +280,6 @@ const moduleSettings = {
         }
 
         saveChanges(e) {
-            console.log("Save", e);
             if (!this.activeMainTab || this.activeMainTab === null || this.activeMainTab === "undefined") {
                 console.error("activeMainTab property is not set");
                 return;
@@ -291,7 +290,7 @@ const moduleSettings = {
                 case "entityProperty":
                     this.entityTab.beforeSave();
                     break;
-                case "queries":
+                case "query's":
                     this.wiserQueryTab.beforeSave();
                     break;
                 default:
@@ -393,7 +392,7 @@ const moduleSettings = {
                     const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
                     console.log("mainTabStrip select", tabName);
 
-                    if (tabName === "queries" || tabName === "entiteiten") {
+                    if (tabName === "query's" || tabName === "entiteiten") {
                         $("footer").show();
                     } else {
                         $("footer").hide();
