@@ -30,7 +30,7 @@ namespace FrontEnd
         {
             // First set the base settings for the application.
             var builder = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json",  false, true)
+                .AddJsonFile("appsettings.json", false, true)
                 .AddJsonFile($"appsettings.{webHostEnvironment.EnvironmentName}.json", true, true);
 
             // We need to build here already, so that we can read the base directory for secrets.
@@ -53,7 +53,7 @@ namespace FrontEnd
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddHealthChecks();
-            
+
             // MVC looks in the directory "Areas" by default, but we use the directory "Modules", so we have to tell MC that.
             services.Configure<RazorViewEngineOptions>(options =>
             {
@@ -68,7 +68,7 @@ namespace FrontEnd
 
             // Use the options pattern for all settings in appSettings.json.
             services.Configure<FrontEndSettings>(Configuration.GetSection("FrontEnd"));
-            
+
             // Set Newtonsoft as the default JSON serializer and configure it to use camel case.
             services.AddControllersWithViews(options => { options.AllowEmptyInputInBodyModelBinding = true; }).AddNewtonsoftJson(options =>
             {
@@ -96,7 +96,7 @@ namespace FrontEnd
             {
                 app.UseDeveloperExceptionPage();
             }
-            
+
             app.UseStaticFiles();
             app.UseRouting();
 

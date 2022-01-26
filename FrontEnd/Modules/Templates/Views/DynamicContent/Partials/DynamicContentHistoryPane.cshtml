@@ -30,9 +30,9 @@
             {
                 var propertyAttribute = historyChange.GetPropertyAttribute();
                 var property = historyChange.GetProperty();
-                <partial name="HistoryInputGenerator" model="new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(propertyAttribute, new KeyValuePair<PropertyInfo, object>(property, historyChange.OldValue))" />
-                <partial name="HistoryInputGenerator" model="new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(propertyAttribute, new KeyValuePair<PropertyInfo, object>(property, historyChange.NewValue))" />
+                <partial name="Partials/HistoryInputGenerator" model="new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(propertyAttribute, new KeyValuePair<PropertyInfo, object>(property, historyChange.OldValue))" />
+                <partial name="Partials/HistoryInputGenerator" model="new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(propertyAttribute, new KeyValuePair<PropertyInfo, object>(property, historyChange.NewValue))" />
             }
         }
     </div>
-}s
+}

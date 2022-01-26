@@ -4,25 +4,23 @@
 
 <div class="tabstrip">
     <ul>
-        @foreach (var tab in @Model.PropertyAttributes.Value)
+        @foreach (var tab in Model.PropertyAttributes.Value)
         {
             <li class="@tab.Key-tab">@tab.Key</li>
         }
     </ul>
-    @foreach (var tab in @Model.PropertyAttributes.Value)
+    @foreach (var tab in Model.PropertyAttributes.Value)
     {
         <div>
             <div class="formview full @tab.Key.ToString().ToLower()Container">
-                @foreach (var group in @tab.Value)
+                @foreach (var group in tab.Value)
                 {
                     <div class="item-group">
                         <h3>@group.Key</h3>
-                        @foreach (var prop in @group.Value)
+                        @foreach (var prop in group.Value)
                         {
-
-
                             var newDict = new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(prop.Value, new KeyValuePair<PropertyInfo, object>(prop.Key, ""));
-                            foreach (KeyValuePair<PropertyInfo, object> propValue in Model.PropValues)
+                            foreach (var propValue in Model.PropValues)
                             {
                                 if (prop.Key.Name == propValue.Key.Name)
                                 {
@@ -30,7 +28,7 @@
                                 }
                             }
 
-                            <partial name="InputGenerator" model="newDict" />
+                            <partial name="Partials/InputGenerator" model="newDict" />
                         }
                     </div>
                 }

@@ -2546,7 +2546,7 @@ LIMIT 1";
             var dynamicContentHistory = new Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>>();
             foreach (var dc in dynamicContentOverview.ModelObject)
             {
-                dynamicContentHistory.Add(dc, await historyService.GetChangesInComponent(dc.Id));
+                dynamicContentHistory.Add(dc, (await historyService.GetChangesInComponent(dc.Id)).ModelObject);
             }
 
             var overview = new TemplateHistoryOverviewModel

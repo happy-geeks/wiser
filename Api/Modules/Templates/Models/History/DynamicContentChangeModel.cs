@@ -21,8 +21,7 @@ namespace Api.Modules.Templates.Models.History
 
         public PropertyInfo GetProperty()
         {
-            var helper = new ReflectionHelper();
-            var newCmsSettings = helper.GetCmsSettingsTypeByComponentName(Component);
+            var newCmsSettings = ReflectionHelper.GetCmsSettingsTypeByComponentName(Component);
             return newCmsSettings.GetProperty(Property);
         }
 

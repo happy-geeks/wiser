@@ -35,6 +35,8 @@ namespace Api.Modules.Templates.Services.DataLayer
             connection.ClearParameters();
             connection.AddParameter("templateId", templateId);
             var dataTable = await connection.GetAsync($@"SELECT 
+                                                                template.parent_id,
+                                                                template.template_type,
                                                                 template.template_name, 
                                                                 template.version, 
                                                                 template.changed_on, 
@@ -48,6 +50,8 @@ namespace Api.Modules.Templates.Services.DataLayer
             return dataTable.Rows.Count == 0 ? new TemplateSettingsModel() : new TemplateSettingsModel
             {
                 TemplateId = templateId,
+                ParentId = dataTable.Rows[0].Field<int?>("parent_id"),
+                Type = dataTable.Rows[0].Field<TemplateTypes>("template_type"),
                 Name = dataTable.Rows[0].Field<string>("template_name"),
                 Version = dataTable.Rows[0].Field<int>("version"),
                 ChangedOn = dataTable.Rows[0].Field<DateTime>("changed_on"),
@@ -60,7 +64,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         {
             connection.ClearParameters();
             connection.AddParameter("templateId", templateId);
-            var dataTable = await connection.GetAsync($@"SELECT wtt.template_id, wtt.template_name, wtt.template_data, wtt.version, wtt.changed_on, wtt.changed_by, wtt.usecache, 
+            var dataTable = await connection.GetAsync($@"SELECT wtt.template_id, wtt.parent_id, wtt.template_type, wtt.template_name, wtt.template_data, wtt.version, wtt.changed_on, wtt.changed_by, wtt.usecache, 
                 wtt.cacheminutes, wtt.handlerequest, wtt.handlesession, wtt.handleobjects, wtt.handlestandards, wtt.handletranslations, wtt.handledynamiccontent, wtt.handlelogicblocks, wtt.handlemutators, 
                 wtt.loginrequired, wtt.loginusertype, wtt.loginsessionprefix, wtt.loginrole , GROUP_CONCAT(CONCAT_WS(';',linkedtemplates.template_id, linkedtemplates.template_name, linkedtemplates.template_type)) AS linkedtemplates
                 FROM {WiserTableNames.WiserTemplate} wtt 
@@ -77,6 +81,8 @@ namespace Api.Modules.Templates.Services.DataLayer
             if (dataTable.Rows.Count == 1)
             {
                 templateData.TemplateId = dataTable.Rows[0].Field<int>("template_id");
+                templateData.ParentId = dataTable.Rows[0].Field<int?>("parent_id");
+                templateData.Type = dataTable.Rows[0].Field<TemplateTypes>("template_type");
                 templateData.Name = dataTable.Rows[0].Field<string>("template_name");
                 templateData.EditorValue = dataTable.Rows[0].Field<string>("template_data");
                 templateData.Version = dataTable.Rows[0].Field<int>("version");
@@ -262,10 +268,11 @@ namespace Api.Modules.Templates.Services.DataLayer
         public Task<int> SaveTemplateVersion(TemplateSettingsModel templateSettings, List<int> sccsLinks, List<int> jsLinks, string username)
         {
             connection.ClearParameters();
-            connection.AddParameter("templateid", templateSettings.TemplateId);
+            connection.AddParameter("templateId", templateSettings.TemplateId);
+            connection.AddParameter("parentId", templateSettings.ParentId);
             connection.AddParameter("name", templateSettings.Name);
             connection.AddParameter("editorValue", templateSettings.EditorValue);
-
+            connection.AddParameter("type", templateSettings.Type);
             connection.AddParameter("useCache", templateSettings.UseCache);
             connection.AddParameter("cacheMinutes", templateSettings.CacheMinutes);
             connection.AddParameter("handleRequests", templateSettings.HandleRequests);
@@ -297,6 +304,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     template_type, 
                     `version`, 
                     template_id, 
+                    parent_id,
                     changed_on, 
                     changed_by, 
                     `usecache`, 
@@ -318,9 +326,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                 VALUES (
                     ?name,
                     ?editorValue,
-                    5052,
+                    ?type,
                     @VersionNumber,
-                    ?templateid,
+                    ?templateId,
+                    ?parentId,
                     ?now,
                     ?username,
                     ?useCache,

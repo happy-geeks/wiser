@@ -1,4 +1,6 @@
-﻿.col-6>.item.selected [data-historyproperty]{
+﻿@import "../../Base/scss/base.scss";
+
+.col-6>.item.selected [data-historyproperty]{
 	border-color: blue;
 }
 
@@ -141,17 +143,6 @@
     padding-top: 10px;
 }
 
-.historyLine .item,
-.historyLine .item .k-widget,
-.historyLine .item .k-widget > textarea {
-    min-height: 100%;
-    height: 100%;
-}
-
-.historyLine .item .k-widget > textarea {
-    min-height: 100px;
-}
-
 .historyLine .checkLine {
     padding-top: 0;
 }
@@ -168,4 +159,23 @@
 
 .checkLine .item .inline {
     margin: 0;
+}
+
+.window-footer {
+    border-top: 1px solid var(--handle-bg-color);
+    display: block;
+    min-height: 60px;
+    position: -webkit-sticky;
+    position: sticky;
+    bottom: 0;
+    background: var(--white-color);
+    text-align: right;
+    padding: 10px;
+}
+
+#panelwithsplitter {
+    height: calc(100% - 63px);
+    margin: 0;
+    padding: 0;
+    border: 0;
 }
