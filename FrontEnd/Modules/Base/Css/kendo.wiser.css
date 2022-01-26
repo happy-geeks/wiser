@@ -670,7 +670,7 @@
 }
 
 /* KENDO - TREEVIEW */
-.k-treeview .k-image, 
+.k-treeview .k-image,
 .k-treeview .k-sprite {
 	vertical-align: text-bottom;
 }
@@ -861,14 +861,14 @@ textarea.k-textbox {
     background-color: transparent;
     border-color: transparent;
 }
-.k-autocomplete.k-state-hover, 
-.k-dropdown-wrap.k-state-hover, 
-.k-numeric-wrap.k-state-hover, 
-.k-overflow-anchor:hover, 
-.k-picker-wrap.k-state-hover, 
+.k-autocomplete.k-state-hover,
+.k-dropdown-wrap.k-state-hover,
+.k-numeric-wrap.k-state-hover,
+.k-overflow-anchor:hover,
+.k-picker-wrap.k-state-hover,
 .k-textbox:hover {
 	background-color: var(--white-color);
-	border: none;
+	border-color: transparent;
 }
 .k-autocomplete.k-state-focused, 
 .k-dropdown-wrap.k-state-focused, 
@@ -952,11 +952,15 @@ span.k-input .k-input:hover {
 }
 
 /* KENDO - MULTISELECT */
+.k-multiselect-wrap {
+	max-height: 42px;
+	overflow-y: auto;
+}
 .k-multiselect-wrap li {
 	font-family: var(--medium-txt);
-    font-size: 14px;
-    line-height: 16px;
-    padding: 8px;
+	font-size: 14px;
+	line-height: 16px;
+	padding: 8px;
 	text-indent: 8px;
 }
 .k-multiselect-wrap li span {
