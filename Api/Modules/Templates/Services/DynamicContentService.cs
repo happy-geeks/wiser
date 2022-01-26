@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
+using Api.Core.Services;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
+using Api.Modules.Templates.Models.DynamicContent;
 using GeeksCoreLibrary.Core.Cms;
 using GeeksCoreLibrary.Core.Cms.Attributes;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -29,43 +32,49 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public Dictionary<TypeInfo, CmsObjectAttribute> GetComponents()
-        {
-            var componentType = typeof(CmsComponent<CmsSettings, Enum>);
-            var assembly = componentType.Assembly;
-
-            var typeInfoList = assembly.DefinedTypes.Where(
-                type => type.BaseType != null
-                && type.BaseType.IsGenericType
-                && componentType.IsGenericType
-                && type.BaseType.GetGenericTypeDefinition() == componentType.GetGenericTypeDefinition()
-            ).OrderBy(type => type.Name).ToList();
-
-            var resultDictionary = new Dictionary<TypeInfo, CmsObjectAttribute>();
-
-            foreach (var typeInfo in typeInfoList)
-            {
-                resultDictionary.Add(typeInfo, typeInfo.GetCustomAttribute<CmsObjectAttribute>());
-            }
-            return resultDictionary;
-        }
-
-        /// <inheritdoc />
-        public Dictionary<object, string> GetComponentModes(Type component)
+        public Dictionary<int, string> GetComponentModes(Type component)
         {
             var info = (component.BaseType).GetTypeInfo();
             var enumtype = info.GetGenericArguments()[1];
             var enumFields = enumtype.GetFields();
 
-            var returnDict = new Dictionary<object, string>();
+            var returnDict = new Dictionary<int, string>();
 
             foreach (var enumField in enumFields)
             {
                 if (enumField.Name.Equals("value__")) continue;
-                returnDict.Add(enumField.GetRawConstantValue(), enumField.Name);
+                returnDict.Add((int)enumField.GetRawConstantValue(), enumField.Name);
             }
 
             return returnDict;
+        }
+        
+        /// <inheritdoc />
+        public ServiceResult<List<ComponentModeModel>> GetComponentModes(string componentType)
+        {
+            if (String.IsNullOrWhiteSpace(componentType))
+            {
+                return new ServiceResult<List<ComponentModeModel>>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Name cannot be empty"
+                };
+            }
+            
+            var type = ReflectionHelper.GetComponentTypeByName(componentType);
+            if (type == null)
+            {
+                return new ServiceResult<List<ComponentModeModel>>
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"Component with type '{componentType}' not found."
+                };
+            }
+
+            var componentModes = GetComponentModes(type);
+            var results = componentModes.Select(componentMode => new ComponentModeModel { Id = componentMode.Key, Name = componentMode.Value }).ToList();
+
+            return new ServiceResult<List<ComponentModeModel>>(results);
         }
 
         /// <inheritdoc />
@@ -83,115 +92,47 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public KeyValuePair<Type, Dictionary<CmsTabName, Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>>> GetAllPropertyAttributes(Type component)
+        public async Task<ServiceResult<Dictionary<string, object>>> GetComponentDataAsync(int contentId)
         {
-            var resultList = new Dictionary<CmsTabName, Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>>();
-            var CmsSettingsType = new ReflectionHelper().GetCmsSettingsType(component);
-            var propInfos = CmsSettingsType.GetProperties().Where(propInfo => propInfo.GetCustomAttribute<CmsPropertyAttribute>() != null).OrderBy(propInfo => propInfo.GetCustomAttribute<CmsPropertyAttribute>().DisplayOrder);
-
-            foreach (var propInfo in propInfos)
-            {
-                var cmsPropertyAttribute = propInfo.GetCustomAttribute<CmsPropertyAttribute>();
-
-                if (cmsPropertyAttribute == null)
-                {
-                    continue;
-                }
-
-                if (resultList.ContainsKey(cmsPropertyAttribute.TabName))
-                {
-                    if (resultList[cmsPropertyAttribute.TabName].ContainsKey(cmsPropertyAttribute.GroupName))
-                    {
-                        resultList[cmsPropertyAttribute.TabName][cmsPropertyAttribute.GroupName].Add(propInfo, cmsPropertyAttribute);
-                    }
-                    else
-                    {
-                        var cmsGroup = CreateCmsGroupFromPropertyAttribute(propInfo, cmsPropertyAttribute);
-                        foreach (var kvp in cmsGroup)
-                        {
-                            resultList[cmsPropertyAttribute.TabName].Add(kvp.Key, kvp.Value);
-                        }
-                    }
-                }
-                else
-                {
-                    resultList.Add(cmsPropertyAttribute.TabName, CreateCmsGroupFromPropertyAttribute(propInfo, cmsPropertyAttribute));
-                }
-            }
-            return new KeyValuePair<Type, Dictionary<CmsTabName, Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>>>(component, resultList); ;
-        }
-
-        /// <inheritdoc />
-        public async Task<Dictionary<PropertyInfo, object>> GetCmsSettingsModel(Type component, int templateId)
-        {
-            var CmsSettingsType = new ReflectionHelper().GetCmsSettingsType(component);
-            var properties = GetPropertiesOfType(CmsSettingsType);
-            var data = (await dataService.GetTemplateData(templateId)).Value;
-
-            var accountSettings = new Dictionary<PropertyInfo, object>();
-
+            var data = (await dataService.GetComponentDataAsync(contentId)).Value;
+            
             if (data == null)
             {
-                return null;
-            }
-
-            foreach (var property in properties)
-            {
-                object value = null;
-
-                //Find matching data
-                foreach (var setting in data)
+                return new ServiceResult<Dictionary<string, object>>
                 {
-                    if (property.Name.Equals(setting.Key, StringComparison.OrdinalIgnoreCase))
-                    {
-                        value = setting.Value;
-                    }
-                }
-
-                accountSettings.Add(property, value);
-
-                if (value == null || value.GetType() == typeof(string) && string.IsNullOrEmpty((string)value))
-                {
-                }
+                    StatusCode = HttpStatusCode.NotFound
+                };
             }
-
-            return accountSettings;
+            
+            return new ServiceResult<Dictionary<string, object>>(data);
         }
 
         /// <inheritdoc />
-        public async Task<int> SaveNewSettings(ClaimsIdentity identity, int contentId, string component, int componentMode, string title, Dictionary<string, object> settings)
+        public async Task<ServiceResult<int>> SaveNewSettingsAsync(ClaimsIdentity identity, int contentId, string component, int componentMode, string title, Dictionary<string, object> settings)
         {
-            var helper = new ReflectionHelper();
-            var modes = GetComponentModes(helper.GetComponentTypeByName(component));
+            var modes = GetComponentModes(ReflectionHelper.GetComponentTypeByName(component));
             modes.TryGetValue(componentMode, out var componentModeName);
-            return await dataService.SaveSettingsString(contentId, component, componentModeName, title, settings, IdentityHelpers.GetUserName(identity));
+            return new ServiceResult<int>(await dataService.SaveSettingsStringAsync(contentId, component, componentModeName, title, settings, IdentityHelpers.GetUserName(identity)));
         }
 
         /// <inheritdoc />
-        public async Task<List<string>> GetComponentAndModeForContentId(int contentId)
+        public async Task<ServiceResult<DynamicContentOverviewModel>> GetMetaDataAsync(int contentId)
         {
-            var rawComponentAndMode = await dataService.GetComponentAndModeFromContentId(contentId);
+            var result = await dataService.GetMetaData(contentId);
+            if (result == null)
+            {
+                return new ServiceResult<DynamicContentOverviewModel>
+                {
+                    StatusCode = HttpStatusCode.NotFound
+                };
+            }
 
-            return rawComponentAndMode;
-        }
-
-        /// <summary>
-        /// Creates a new dictionary for properties with the same group.
-        /// </summary>
-        /// <param name="propName">The name of the property which will be used as the key for the property within the group.</param>
-        /// <param name="cmsPropertyAttribute">The CmsAttribute belonging to the attribut within the property group.</param>
-        /// <returns>
-        /// Dictionary of a cms group. The key is the cmsgroup name and the value is a propertyattribute dictionary.
-        /// </returns>
-        private Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>> CreateCmsGroupFromPropertyAttribute(PropertyInfo propName, CmsPropertyAttribute cmsPropertyAttribute)
-        {
-            var cmsGroup = new Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>();
-            var propList = new Dictionary<PropertyInfo, CmsPropertyAttribute>();
-
-            propList.Add(propName, cmsPropertyAttribute);
-            cmsGroup.Add(cmsPropertyAttribute.GroupName, propList);
-
-            return cmsGroup;
+            result.Data = (await dataService.GetComponentDataAsync(contentId)).Value;
+            return new ServiceResult<DynamicContentOverviewModel>
+            {
+                StatusCode = HttpStatusCode.OK,
+                ModelObject = result
+            };
         }
     }
 }

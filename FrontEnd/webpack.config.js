@@ -25,6 +25,7 @@ module.exports = {
         DataSelectorConnection: "../../Modules/DataSelector/Scripts/Connection.js",
         ContentBuilder: "../../Modules/ContentBuilder/Scripts/main.js",
         Templates: "../../Modules/Templates/Scripts/Templates.js",
+        DynamicContent: "../../Modules/Templates/Scripts/DynamicContent.js",
         Admin: "../../Modules/Admin/Scripts/Admin.js"
     },
     output: {

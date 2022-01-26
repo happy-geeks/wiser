@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
+using Api.Core.Services;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -33,27 +34,27 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<List<HistoryVersionModel>> GetChangesInComponent(int contentId)
+        public async Task<ServiceResult<List<HistoryVersionModel>>> GetChangesInComponent(int contentId)
         {
             var historyList = await GetHistoryOfComponent(contentId);
-            historyList.OrderBy(version => version.Version);
+            historyList = historyList.OrderByDescending(version => version.Version).ToList();
 
             for (var i = 0; i + 1 < historyList.Count; i++)
             {
-                historyList[i].SetChanges(GenerateChangeLogFromDataStrings(historyList[i].Component, historyList[i].ComponentMode, historyList[i].RawVersionString, historyList[i + 1].Component, historyList[i + 1].ComponentMode, historyList[i + 1].RawVersionString));
+                historyList[i].Changes = GenerateChangeLogFromDataStrings(historyList[i].Component, historyList[i].ComponentMode, historyList[i].RawVersionString, historyList[i + 1].Component, historyList[i + 1].ComponentMode, historyList[i + 1].RawVersionString);
             }
 
-            return historyList;
+            return new ServiceResult<List<HistoryVersionModel>>(historyList);
         }
 
         /// <inheritdoc />
-        public async Task<int> RevertChanges(ClaimsIdentity identity, List<RevertHistoryModel> changesToRevert, int contentId)
+        public async Task<ServiceResult<int>> RevertChanges(ClaimsIdentity identity, int contentId, List<RevertHistoryModel> changesToRevert)
         {
-            var currentVersion = await dataService.GetTemplateData(contentId);
+            var currentVersion = await dataService.GetComponentDataAsync(contentId);
 
             foreach (var RevisedVersion in changesToRevert)
             {
-                var OldVersion = await dataService.GetVersionData(RevisedVersion.GetVersionForRevision(), contentId);
+                var OldVersion = await dataService.GetVersionDataAsync(RevisedVersion.GetVersionForRevision(), contentId);
 
                 foreach (var RevisedProperty in RevisedVersion.RevertedProperties)
                 {
@@ -67,8 +68,9 @@ namespace Api.Modules.Templates.Services
                     }
                 }
             }
-            var componentAndMode = await dataService.GetComponentAndModeFromContentId(contentId);
-            return await dataService.SaveSettingsString(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value, IdentityHelpers.GetUserName(identity));
+            var componentAndMode = await dataService.GetComponentAndModeFromContentIdAsync(contentId);
+            var result = await dataService.SaveSettingsStringAsync(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value, IdentityHelpers.GetUserName(identity));
+            return new ServiceResult<int>(result);
         }
 
         /// <inheritdoc />

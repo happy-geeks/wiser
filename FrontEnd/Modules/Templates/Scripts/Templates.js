@@ -1,7 +1,7 @@
 ﻿import { TrackJS } from "trackjs";
 import { Modules, Dates, Strings, Wiser2, Misc } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
-//require("@progress/kendo-ui/js/kendo.all.js");
+
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
 require("@progress/kendo-ui/js/kendo.combobox.js");
@@ -512,122 +512,126 @@ const moduleSettings = {
                         document.getElementById("historyTab").innerHTML = response;
                     })
                 );
-
+                
                 // Dynamic content
-                promises.push(
-                    Wiser2.api({
-                        url: `${this.settings.wiserApiRoot}templates/${dataItem.id}/linked-dynamic-content`,
-                        dataType: "json",
-                        method: "GET"
-                    }).then((response) => {
-                        $("#dynamic-grid").kendoGrid().data("KendoGrid");
-                        this.initDynamicContentDisplayFields(response);
-
-                        $("#dynamic-grid").kendoGrid({
-                            dataSource: response,
-                            scrollable: true,
-                            resizable: true,
+                $("#dynamic-grid").kendoGrid({
+                    dataSource: {
+                        transport: {
+                            read: (readOptions) => {
+                                Wiser2.api({
+                                    url: `${this.settings.wiserApiRoot}templates/${dataItem.id}/linked-dynamic-content`,
+                                    dataType: "json",
+                                    method: "GET"
+                                }).then((response) => {
+                                    readOptions.success(response);
+                                    this.initDynamicContentDisplayFields(response);
+                                }).catch((error) => {
+                                    readOptions.error(error);
+                                });
+                            }
+                        }
+                    },
+                    scrollable: true,
+                    resizable: true,
+                    filterable: {
+                        extra: false,
+                        operators: {
+                            string: {
+                                startswith: "Begint met",
+                                eq: "Is gelijk aan",
+                                neq: "Is ongelijk aan",
+                                contains: "Bevat",
+                                doesnotcontain: "Bevat niet",
+                                endswith: "Eindigt op"
+                            }
+                        },
+                        messages: {
+                            isTrue: "<span>Ja</span>",
+                            isFalse: "<span>Nee</span>"
+                        }
+                    },
+                    pageable: true,
+                    columns: [
+                        {
+                            field: "id",
+                            title: "ID",
+                            hidden: true
+                        },
+                        {
+                            field: "title",
+                            title: "Naam",
+                            width: 150,
+                            filterable: true
+                        },
+                        {
+                            field: "component",
+                            title: "Type",
+                            width: "10%",
+                            filterable: true
+                        },
+                        {
+                            field: "displayUsages",
+                            title: "Gebruikt in",
+                            width: 150,
+                            filterable: true
+                        },
+                        {
+                            field: "renders",
+                            title: "Aantal renders",
+                            filterable: true
+                        },
+                        {
+                            field: "avgRenderTime",
+                            title: "Gem. rendertijd",
+                            filterable: false
+                        },
+                        {
+                            field: "displayDate",
+                            title: "Laatst aangepast op",
+                            width: 150,
                             filterable: {
-                                extra: false,
-                                operators: {
-                                    string: {
-                                        startswith: "Begint met",
-                                        eq: "Is gelijk aan",
-                                        neq: "Is ongelijk aan",
-                                        contains: "Bevat",
-                                        doesnotcontain: "Bevat niet",
-                                        endswith: "Eindigt op"
-                                    }
-                                },
-                                messages: {
-                                    isTrue: "<span>Ja</span>",
-                                    isFalse: "<span>Nee</span>"
-                                }
-                            },
-                            pageable: true,
-                            columns: [
+                                ui: "datepicker"
+                            }
+                        },
+                        {
+                            title: "Versies",
+                            width: 225,
+                            filterable: false,
+                            template: "<span class='version'>#=Math.max(...versions.versionList)#</span> | <span class='version'><ins class='live'></ins>#=versions.liveVersion#</span> | <span class='version'><ins class='accept'></ins>#=versions.acceptVersion#</span> | <span class='version'><ins class='test'></ins>#=versions.testVersion#</span>"
+                        },
+                        {
+                            field: "changedBy",
+                            title: "Door",
+                            width: 120,
+                            filterable: true
+                        },
+                        {
+                            command: [
+                                /*{
+                                    name: "duplicate",
+                                    text: "",
+                                    iconClass: "k-icon k-i-copy",
+                                    click: this.kendoGridCopy.bind(this)
+                                },*/
                                 {
-                                    field: "id",
-                                    title: "ID",
-                                    hidden: true
-                                },
-                                {
-                                    field: "title",
-                                    title: "Naam",
-                                    width: 150,
-                                    filterable: true
-                                },
-                                {
-                                    field: "component",
-                                    title: "Type",
-                                    width: "10%",
-                                    filterable: true
-                                },
-                                {
-                                    field: "displayUsages",
-                                    title: "Gebruikt in",
-                                    width: 150,
-                                    filterable: true
-                                },
-                                {
-                                    field: "renders",
-                                    title: "Aantal renders",
-                                    filterable: true
-                                },
-                                {
-                                    field: "avgRenderTime",
-                                    title: "Gem. rendertijd",
-                                    filterable: false
-                                },
-                                {
-                                    field: "displayDate",
-                                    title: "Laatst aangepast op",
-                                    width: 150,
-                                    filterable: {
-                                        ui: "datepicker"
-                                    }
-                                },
-                                {
-                                    title: "Versies",
-                                    width: 225,
-                                    filterable: false,
-                                    template: "<span class='version'>#=Math.max(...versions.versionList)#</span> | <span class='version'><ins class='live'></ins>#=versions.liveVersion#</span> | <span class='version'><ins class='accept'></ins>#=versions.acceptVersion#</span> | <span class='version'><ins class='test'></ins>#=versions.testVersion#</span>"
-                                },
-                                {
-                                    field: "changedBy",
-                                    title: "Door",
-                                    width: 120,
-                                    filterable: true
-                                },
-                                {
-                                    command: [
-                                        {
-                                            name: "duplicate",
-                                            text: "",
-                                            iconClass: "k-icon k-i-copy",
-                                            click: this.kendoGridCopy
-                                        },
-                                        {
-                                            name: "Open",
-                                            text: "",
-                                            iconClass: "k-icon k-i-edit",
-                                            click: this.kendoGridOpen
-                                        },
+                                    name: "Open",
+                                    text: "",
+                                    iconClass: "k-icon k-i-edit",
+                                    click: this.kendoGridOpen.bind(this)
+                                }/*,
                                         {
                                             name: "Preview",
                                             text: "",
                                             iconClass: "k-icon k-i-preview",
-                                            click: this.kendoGridPreview
-                                        }
-                                    ],
-                                    title: "&nbsp;",
-                                    width: 160,
-                                    filterable: false
-                                }
-                            ]
-                        }).data("kendoGrid");
-                    })
-                );
+                                            click: this.kendoGridPreview.bind(this)
+                                        }*/
+                            ],
+                            title: "&nbsp;",
+                            width: 160,
+                            filterable: false
+                        }
+                    ]
+                }).data("kendoGrid");
 
                 // Preview
                 promises.push(
@@ -716,14 +720,28 @@ const moduleSettings = {
             //TODO
         }
 
-        kendoGridOpen(e) {
-            var tr = $(e.target).closest("tr");
-            var data = this.dataItem(tr);
-            window.location.pathname = "dynamiccontent/overview/" + data.id;
-        }
-
         kendoGridPreview() {
             //TODO
+        }
+
+        kendoGridOpen(event) {
+            const grid = $("#dynamic-grid").data("kendoGrid");
+            const tr = $(event.currentTarget).closest("tr");
+            const data = grid.dataItem(tr);
+
+            $("#DynamicContentWindow").kendoWindow({
+                title: data.title,
+                width: "100%",
+                height: "100%",
+                content: `/Modules/DynamicContent/${data.id}`,
+                actions: ["close"],
+                draggable: false,
+                iframe: true,
+                close: (closeWindowEvent) => {
+                    console.log("close window", grid);
+                    grid.dataSource.read();
+                }
+            }).data("kendoWindow").maximize().open();
         }
 
         //Bind the deploybuttons for the template versions
@@ -770,6 +788,8 @@ const moduleSettings = {
             const data = {
                 templateId: this.selectedId,
                 name: this.templateSettings.name || "",
+                type: this.templateSettings.type,
+                parentId: this.templateSettings.parentId,
                 editorValue: $(".editor").data("kendoEditor").value(),
                 useCache: document.getElementById("combo-cache").value,
                 cacheMinutes: document.getElementById("cache-duration").value,
@@ -890,7 +910,7 @@ const moduleSettings = {
                     $("#preview-variables").data("kendoGrid")._data.forEach((e) => {
                         variables.push({ type: e.type, key: e.key, value: e.value, encrypt: e.encrypt })
                     });
-                    
+
                     Wiser2.api({
                         url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${$("#preview-combo-select").data('kendoComboBox').dataItem().value}`,
                         type: "POST",
