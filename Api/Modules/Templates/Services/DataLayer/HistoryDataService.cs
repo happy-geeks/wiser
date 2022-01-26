@@ -8,6 +8,7 @@ using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Services.DataLayer
 {
@@ -60,7 +61,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
-            var dataTable = await connection.GetAsync($@"SELECT wtt.template_id, wtt.template_name, wtt.template_data, wtt.version, wtt.changed_on, wtt.changed_by, wtt.usecache, 
+            var dataTable = await connection.GetAsync($@"SELECT wtt.template_id, wtt.parent_id, wtt.template_name, wtt.template_type, wtt.template_data, wtt.version, wtt.changed_on, wtt.changed_by, wtt.usecache, 
                 wtt.cacheminutes, wtt.handlerequest, wtt.handlesession, wtt.handleobjects, wtt.handlestandards, wtt.handletranslations, wtt.handledynamiccontent, wtt.handlelogicblocks, wtt.handlemutators, 
                 wtt.loginrequired, wtt.loginusertype, wtt.loginsessionprefix, wtt.loginrole, GROUP_CONCAT(CONCAT_WS(';',linkedtemplates.template_id, linkedtemplates.template_name, linkedtemplates.template_type)) AS linkedtemplates 
                 FROM {WiserTableNames.WiserTemplate} wtt 
@@ -78,6 +79,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                 var templateData = new TemplateSettingsModel
                 {
                     TemplateId = row.Field<int>("template_id"),
+                    ParentId = row.Field<int?>("parent_id"),
+                    Type = row.Field<TemplateTypes>("template_type"),
                     Name = row.Field<string>("template_name"),
                     EditorValue = row.Field<string>("template_data"),
                     Version = row.Field<int>("version"),

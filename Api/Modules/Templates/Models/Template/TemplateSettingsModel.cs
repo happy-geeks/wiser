@@ -1,17 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using Api.Modules.Templates.Models.Other;
+using GeeksCoreLibrary.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Models.Template
 {
     public class TemplateSettingsModel
     {
         public int TemplateId;
+        public int? ParentId;
         public string Name;
         public string EditorValue;
         public int Version;
         public DateTime ChangedOn;
         public string ChangedBy;
+        public TemplateTypes Type;
 
         //Advanced settings
         public int UseCache;

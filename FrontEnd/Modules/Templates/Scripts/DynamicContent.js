@@ -1,5 +1,17 @@
-﻿import { Modules, Dates, Strings, Wiser2, Misc } from "../../Base/Scripts/Utils.js";
-require("@progress/kendo-ui/js/kendo.all.js");
+﻿import { TrackJS } from "trackjs";
+import { Modules, Dates, Strings, Wiser2, Misc } from "../../Base/Scripts/Utils.js";
+import "../../Base/Scripts/Processing.js";
+
+require("@progress/kendo-ui/js/kendo.notification.js");
+require("@progress/kendo-ui/js/kendo.button.js");
+require("@progress/kendo-ui/js/kendo.combobox.js");
+require("@progress/kendo-ui/js/kendo.editor.js");
+require("@progress/kendo-ui/js/kendo.splitter.js");
+require("@progress/kendo-ui/js/kendo.tabstrip.js");
+require("@progress/kendo-ui/js/kendo.treeview.js");
+require("@progress/kendo-ui/js/kendo.grid.js");
+require("@progress/kendo-ui/js/kendo.datetimepicker.js");
+require("@progress/kendo-ui/js/kendo.multiselect.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
@@ -7,7 +19,7 @@ import "../css/DynamicContent.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
-    
+
 };
 
 ((settings) => {
@@ -27,18 +39,35 @@ const moduleSettings = {
             this.mainSplitter = null;
             this.mainTabStrip = null;
             this.mainWindow = null;
-            this.mainComboBox = null;
+            this.componentTypeComboBox = null;
+            this.componentModeComboBox = null;
             this.mainComboInput = null;
             this.mainMultiSelect = null;
             this.mainNumericTextBox = null;
             this.mainDatePicker = null;
             this.mainDateTimePicker = null;
+            this.selectedComponentData = null;
+
+            // Default settings
+            this.settings = {
+                moduleId: 0,
+                customerId: 0,
+                username: "Onbekend",
+                userEmailAddress: "",
+                userType: ""
+            };
+            Object.assign(this.settings, settings);
 
             // Other.
             this.mainLoader = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
-            kendo.culture("nl-NL"); 
+            kendo.culture("nl-NL");
+
+            // Add logged in user access token to default authorization headers for all jQuery ajax requests.
+            $.ajaxSetup({
+                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
+            });
 
             // Fire event on page ready for direct actions
             $(document).ready(() => {
@@ -52,40 +81,70 @@ const moduleSettings = {
         async onPageReady() {
             this.mainLoader = $("#mainLoader");
 
+            // Setup processing.
+            document.addEventListener("processing.Busy", this.toggleMainLoader.bind(this, true));
+            document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
+
+            const process = `initialize_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            // Fullscreen event for elements that can go fullscreen, such as HTML editors.
+            const classHolder = $(document.documentElement);
+            const fullscreenChange = "webkitfullscreenchange mozfullscreenchange fullscreenchange MSFullscreenChange";
+            $(document).bind(fullscreenChange, $.proxy(classHolder.toggleClass, classHolder, "k-fullscreen"));
+
+            // Setup any settings from the body element data. These settings are added via the Wiser backend and they take preference.
+            Object.assign(this.settings, $("body").data());
+
+            if (this.settings.trackJsToken) {
+                TrackJS.install({
+                    token: this.settings.trackJsToken
+                });
+            }
+
+            const user = JSON.parse(localStorage.getItem("userData"));
+            this.settings.oldStyleUserId = user.oldStyleUserId;
+            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.adminAccountLoggedIn = !!user.adminAccountName;
+
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            this.settings.userId = userData.encryptedId;
+            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.zeroEncrypted = userData.zeroEncrypted;
+            this.settings.filesRootId = userData.filesRootId;
+            this.settings.imagesRootId = userData.imagesRootId;
+            this.settings.templatesRootId = userData.templatesRootId;
+            this.settings.mainDomain = userData.mainDomain;
+
+            if (!this.settings.wiserApiRoot.endsWith("/")) {
+                this.settings.wiserApiRoot += "/";
+            }
+
             this.initializeKendoComponents();
 
             await this.initCurrentComponentData();
 
             this.bindSaveButton();
-            this.loadComponentHistory();
-            this.transformCodeMirrorViews();
+            await this.loadComponentHistory();
+            window.processing.removeProcess(process);
         }
 
         async initCurrentComponentData() {
-            $.ajax({
-                type: "GET",
-                url: "/DynamicContent/GetComponentAndModeForContentId",
-                data: { contentId: 1 },
-                success: function (response) {
-                    $(window.DynamicContent.mainComboBox[0]).data("kendoComboBox").value(response[0]);
-                    window.DynamicContent.ChangeComponent(response[0], response[1]);
-                },
+            this.selectedComponentData = await Wiser2.api({
+                url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
+                dataType: "json",
+                method: "GET"
             });
+            
+            this.componentTypeComboBox.value(this.selectedComponentData.component);
+            $("#visibleDescription").val(this.selectedComponentData.title);
+            this.changeComponent(this.selectedComponentData.component, this.selectedComponentData.componentMode);
         }
         /**
          * Initializes all kendo components for the base class.
          */
         initializeKendoComponents() {
             window.popupNotification = $("#popupNotification").kendoNotification().data("kendoNotification");
-            // Main window
-            this.mainWindow = $("#window").kendoWindow({
-                width: "1500",
-                height: "650",
-                title: "Dynamic content",
-                visible: true,
-                actions: ["close"],
-                draggable: false
-            }).data("kendoWindow").maximize().open();
 
             // Splitter
             this.mainSplitter = $("#horizontal").kendoSplitter({
@@ -101,20 +160,11 @@ const moduleSettings = {
 
             // Tabstrip, NUMERIC FIELD, MULTISELECT, Date Picker, DATE & TIME PICKER
             this.intializeDynamicKendoComponents();
-
-            // ComboBox
-            this.mainComboBox = $(".combo-select").kendoComboBox();
-
-                //Components
-                $("#combo-01").data("kendoComboBox").bind("change", function (e) {
-                    window.DynamicContent.ChangeComponent(document.getElementById("combo-01").value);
-                });
-                // ComponentMode
-                $("#combo-02").data("kendoComboBox").bind("change", function (e) {
-                    window.DynamicContent.updateComponentModeVisibility(document.getElementById("combo-02").value);
-                });
-
             
+            //Components
+            this.componentTypeComboBox = $("#componentTypeDropDown").kendoComboBox({
+                change: this.changeComponent.bind(this, document.getElementById("componentTypeDropDown").value)
+            }).data("kendoComboBox");
         }
 
         //Initialize the dynamic kendo components. This method will also be called when reloading component fields.
@@ -203,81 +253,87 @@ const moduleSettings = {
             }
         }
 
-        ChangeComponent(newComponent, newComponentMode) {
-            $.ajax({
-                type: "GET",
-                url: "/DynamicContent/DynamicContentTabPane/" + document.getElementById("wiser").dataset.dcid,
-                data: {
-                    templateId: document.getElementById("wiser").dataset.dcid,
-                    component: newComponent
-                },
-                success: function (response) {
-                    //force reload on component modes
-                    window.componentModus = null;
-
-                    $(".k-tabstrip-wrapper").each(function (i, el) { el.innerHTML = response });
-                    window.DynamicContent.ReloadComponentModes(newComponent, newComponentMode);
-                    window.DynamicContent.intializeDynamicKendoComponents();
-                    window.DynamicContent.transformCodeMirrorViews();
-                },
-                failure: function (response) {
-                    window.DynamicContent.DisplayErrorInDynamicContent(response);
-                },
-                error: function (response) {
-                    window.DynamicContent.DisplayErrorInDynamicContent(response);
-                },
-            });
+        /**
+         * Shows or hides the main (full screen) loader.
+         * @param {boolean} show True to show the loader, false to hide it.
+         */
+        toggleMainLoader(show) {
+            this.mainLoader.toggleClass("loading", show);
         }
 
-        ReloadComponentModes(newComponent, newComponentMode) {
-            $.ajax({
-                type: "GET",
-                url: "/DynamicContent/ReloadComponentModeOptions",
-                data: { component: newComponent },
-                success: function (response) {
-                    //Set HTML
-                    document.getElementById("combo-02").innerHTML = response;
-                    //Reload kendo component
-                    var testlist = [];
-                    var selectVal = $("#combo-02>option")[0].value;
-                    $("#combo-02>option").each(function (i, el) {
-                        testlist.push({ text: el.innerText, value: el.value });
-                        if (el.innerText === newComponentMode) {
-                            selectVal = el.value;
-                        }
-                    });
-                    $("#combo-02").data("kendoComboBox").dataSource.data(testlist);
-                    $("#combo-02").data("kendoComboBox").value(selectVal);
-                    //Update Field display
-                    window.DynamicContent.updateComponentModeVisibility(selectVal);
-                },
-                failure: function (response) {
-                    window.DynamicContent.DisplayErrorInDynamicContent(response);
-                },
-                error: function (response) {
-                    window.DynamicContent.DisplayErrorInDynamicContent(response);
-                },
+        async changeComponent(newComponent, newComponentMode) {
+            const process = `changeComponent_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                const response = await Wiser2.api({
+                    url: `/Modules/DynamicContent/${encodeURIComponent(newComponent)}/DynamicContentTabPane`,
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(this.selectedComponentData)
+                });
+
+                //force reload on component modes
+                this.componentModus = null;
+
+                $("#DynamicContentTabPane").html(response);
+                this.reloadComponentModes(newComponent, newComponentMode);
+                this.intializeDynamicKendoComponents();
+                await this.transformCodeMirrorViews();
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw");
+            }
+
+            window.processing.removeProcess(process);
+        }
+
+        async reloadComponentModes(newComponent, newComponentMode) {
+            const componentModes = await Wiser2.api({
+                url: `${this.settings.wiserApiRoot}dynamic-content/${encodeURIComponent(newComponent)}/component-modes`,
+                dataType: "json",
+                method: "GET"
             });
+
+            if (!this.componentModeComboBox) {
+                this.componentModeComboBox = $("#componentMode").kendoComboBox({
+                    change: this.updateComponentModeVisibility.bind(this),
+                    dataTextField: "name",
+                    dataValueField: "id"
+                }).data("kendoComboBox");
+            }
+
+            this.componentModeComboBox.setDataSource(componentModes);
+            this.componentModeComboBox.value(this.getComponentModeFromKey(newComponentMode));
+            this.updateComponentModeVisibility(newComponentMode);
         }
 
         /**
          * On opening the dynamic content and switching between component modes this method will check which groups and properties should be visible. 
          * @param {number} componentModeKey The key value of the componentMode. This key will be used to retrieve the associated value.
          */
-        async updateComponentModeVisibility(componentModeKey) {
-            var componentMode = await this.getComponentModeFromKey(componentModeKey);
+        updateComponentModeVisibility(componentModeKey) {
+            let componentMode;
+            if (typeof componentModeKey === "string") {
+                componentMode = this.getComponentModeFromKey(componentModeKey);
+            } else if (typeof componentModeKey === "number") {
+                componentMode = componentModeKey;
+            } else {
+                componentMode = this.componentModeComboBox.value();
+            }
+
             //Group visibility
             $(".item-group").hide();
             if (componentMode) {
-                $(".item-group:has(> [data-componentmode*='" + componentMode + "'])").show();
+                $(`.item-group:has(> [data-componentmode*='${componentMode}'])`).show();
                 $(".item-group:has(> [data-componentmode=''])").show();
             }
 
             //Property visibility
-            $('[data-componentmode]').hide();
+            $("[data-componentmode]").hide();
             if (componentMode) {
-                $('[data-componentmode*="' + componentMode + '"]').show();
-                $('[data-componentmode=""]').show();
+                $(`[data-componentmode*="${componentMode}"]`).show();
+                $("[data-componentmode='']").show();
             }
         }
 
@@ -285,47 +341,63 @@ const moduleSettings = {
          * Retrieves the associated value from the given component key.
          * @param {number} componentModeKey The key value for retrieving the componentMode.
          */
-        async getComponentModeFromKey(componentModeKey) {
-            if (!window.componentModus) {
-                return new Promise(res => {
-                    $.ajax({
-                        type: "GET",
-                        url: "/DynamicContent/GetComponentModesAsJsonResult",
-                        data: { component: document.getElementById("combo-01").value },
-                        success: function (response) {
-                            if (response) {
-                                window.componentModus = response;
-                                res(window.componentModus[parseInt(componentModeKey)]);
-                            } else {
-                                res(null);
-                            }
-                        },
-                        failure: function (response) { alert(response.responseText); },
-                        error: function (response) { alert(response.responseText); }
-                    })
-                }); 
-            } else {
-                return window.componentModus[parseInt(componentModeKey)];
+        getComponentModeFromKey(componentModeKey) {
+            if (!componentModeKey) {
+                console.warn("getComponentModeFromKey called with invalid componentModeKey", componentModeKey);
+                return 0;
             }
+
+            const result = this.componentModeComboBox.dataSource.data().filter(c => c.name === componentModeKey || c.id === parseInt(componentModeKey))[0];
+            if (!result) {
+                console.warn("getComponentModeFromKey called with invalid componentModeKey", componentModeKey);
+                return 0;
+            }
+
+            return result.id;
         }
 
         /**
          *  Bind the save button to the event for saving the newly acquired settings.
          * */
         bindSaveButton() {
+            document.getElementsByClassName("btn-primary")[0].addEventListener("click", (event) => {
+                event.preventDefault();
+                this.save();
+            });
 
-            document.getElementsByClassName("btn-primary")[0].onclick = function (el) {
-                $.ajax({
-                    type: "POST",
-                    url: "/DynamicContent/SaveSettings",
-                    dataType: "JSON",
-                    data: {
-                        templateid: parseInt(document.getElementById("wiser").dataset.dcid), component: document.getElementById("combo-01").value, componentMode: document.getElementById("combo-02").value, template_name: document.querySelector('input[name="visibleDescription"]').value, settings: JSON.stringify(window.DynamicContent.getNewSettings()) },
-                    success: function () { window.popupNotification.show("Dynamic content '" + document.querySelector('input[name="visibleDescription"]').value+"' is succesvol opgeslagen.", "info"); window.DynamicContent.loadComponentHistory() },
-                    failure: function (response) { alert(response.responseText); },
-                    error: function (response) { alert(response.responseText); }
-                })
+            document.getElementsByClassName("btn-secondary")[0].addEventListener("click", async (event) => {
+                event.preventDefault();
+                await this.save();
+                window.parent.$("#DynamicContentWindow").data("kendoWindow").close();
+            });
+        }
+
+        async save() {
+            const process = `save_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                await Wiser2.api({
+                    url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
+                    dataType: "json",
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        component: document.getElementById("componentTypeDropDown").value,
+                        componentModeId: document.getElementById("componentMode").value,
+                        title: document.querySelector('input[name="visibleDescription"]').value,
+                        data: this.getNewSettings()
+                    })
+                });
+                
+                window.popupNotification.show(`Dynamic content '${document.querySelector('input[name="visibleDescription"]').value}' is succesvol opgeslagen.`, "info");
+                this.loadComponentHistory();
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met opslaan. Probeer het a.u.b. opnieuw");
             }
+
+            window.processing.removeProcess(process);
         }
 
         /**
@@ -356,37 +428,37 @@ const moduleSettings = {
         /**
          * Loads the History HTML and updates the right panel.
          * */
-        loadComponentHistory() {
-            $.ajax({
-                type: "GET",
-                url: "/DynamicContent/GetHistoryOfComponent",
-                data: { templateid: parseInt(document.getElementById("wiser").dataset.dcid) },
-                success: function (response) { document.getElementsByClassName("historyContainer")[0].innerHTML = response; window.DynamicContent.bindHistoryButtons(); }
+        async loadComponentHistory() {
+            const history = await Wiser2.api({
+                url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}/history`,
+                dataType: "json",
+                method: "GET"
             });
+
+            const historyHtml = await Wiser2.api({
+                url: `/Modules/DynamicContent/History`,
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(history)
+            });
+
+            document.getElementsByClassName("historyContainer")[0].innerHTML = historyHtml; 
+            this.bindHistoryButtons();
         }
 
-        transformCodeMirrorViews() {
+        async transformCodeMirrorViews() {
+            await Misc.ensureCodeMirror();
             $("textarea[data-fieldtype][data-property]").each(function (i, el) {
                 var cmObject = CodeMirror.fromTextArea(el, {
                     lineNumbers: true,
                     styleActiveLine: true,
                     matchBrackets: true,
-                    //theme: "darcula",
                     mode: el.dataset.fieldtype
                 });
 
                 cmObject.on("change", function () {
                     cmObject.getTextArea().value = cmObject.getValue();
                 });
-
-                //$(".item-group").click(function () {
-                //    if (cmObject.getOption("theme") === "darcula") {
-                //        cmObject.setOption("theme", "neo")
-                //    }
-                //    else {
-                //        cmObject.setOption("theme", "darcula")
-                //    };
-                //});
             });
         }
 
@@ -410,42 +482,43 @@ const moduleSettings = {
             });
 
             // Clicking the revert button.
-            $(".historyTagline button").on("click", function () {
-                var changelist = [];
-                $("[data-historyversion]:has(.selected)").each(function (i, versionElement) {
-                    var reverted = [];
-                    $(versionElement).find(".selected [data-historyproperty]").each(function (ii, propertyElement) {
-                        if (!reverted.includes(propertyElement.dataset.historyproperty)) {
-                            reverted.push(propertyElement.dataset.historyproperty)
-                        }
+            $(".historyTagline button").on("click", async () => {
+                const process = `revertChanges_${Date.now()}`;
+                window.processing.addProcess(process);
+
+                try {
+                    const changeList = [];
+                    $("[data-historyversion]:has(.selected)").each((i, versionElement) => {
+                        const reverted = [];
+                        $(versionElement).find(".selected [data-historyproperty]").each((ii, propertyElement) => {
+                            if (!reverted.includes(propertyElement.dataset.historyproperty)) {
+                                reverted.push(propertyElement.dataset.historyproperty);
+                            }
+                        });
+
+                        changeList.push({
+                            version: parseInt(versionElement.dataset.historyversion),
+                            revertedProperties: reverted
+                        });
                     });
 
-                    changelist.push({
-                        version: parseInt(versionElement.dataset.historyversion),
-                        revertedProperties: reverted
+                    await Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}/undo-changes`,
+                        dataType: "json",
+                        method: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify(changeList)
                     });
-                });
+                
+                    window.popupNotification.show(`Dynamic content(${this.settings.selectedId}) wijzigingen zijn succesvol teruggezet`, "info");
+                    await this.loadComponentHistory();
+                    await this.initCurrentComponentData();
+                } catch (exception) {
+                    console.error(exception);
+                    kendo.alert("Er is iets fout gegaan met ongedaan maken van deze wijzigingen. Probeer het a.u.b. opnieuw");
+                }
 
-                $.ajax({
-                    type: "POST",
-                    url: "/DynamicContent/UndoChanges",
-                    data: { changes: JSON.stringify(changelist), templateId: parseInt(document.getElementById("wiser").dataset.dcid) },
-                    success: function (response) {
-                        window.popupNotification.show("Dynamic content(" + document.getElementById("wiser").dataset.dcid+") wijzigingen zijn succesvol teruggezet", "info");
-                        setTimeout(function () {
-                            console.log("Refresh")
-                            window.DynamicContent.loadComponentHistory();
-                            window.DynamicContent.ChangeComponent(document.getElementById("combo-01").value);
-                        },1000);
-                    }
-                });
-            });
-        }
-
-        DisplayErrorInDynamicContent(errorResponse) {
-            console.log(errorResponse);
-            $(".k-tabstrip-wrapper").each(function (i, el) {
-                el.innerHTML = errorResponse.responseText
+                window.processing.removeProcess(process);
             });
         }
     }

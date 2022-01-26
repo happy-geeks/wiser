@@ -1,7 +1,19 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Reflection;
+using System.Threading.Tasks;
+using Api.Core.Services;
+using Api.Modules.Templates.Helpers;
+using Api.Modules.Templates.Interfaces;
+using Api.Modules.Templates.Models.DynamicContent;
+using Api.Modules.Templates.Models.History;
+using Api.Modules.Templates.Models.Template;
 using FrontEnd.Core.Interfaces;
-using FrontEnd.Core.Models;
-using FrontEnd.Modules.Base.Models;
+using FrontEnd.Modules.Templates.Models;
+using GeeksCoreLibrary.Core.Cms;
+using GeeksCoreLibrary.Core.Cms.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FrontEnd.Modules.Templates.Controllers
@@ -22,210 +34,180 @@ namespace FrontEnd.Modules.Templates.Controllers
         /// <returns>
         /// View containing the attributes of the component to be displayed as fields.
         /// </returns>
-        public async Task<IActionResult> Index(int id)
+        [HttpGet, Route("{id:int}")]
+        public IActionResult Index(int id)
         {
-            /*var propertyAttributes = dynamicContentService.GetAllPropertyAttributes(typeof(Account));
-
-            var dcInformation = new DynamicContentInformationModel
-            {
-                Components = dynamicContentService.GetComponents(),
-                ComponentModes = dynamicContentService.GetComponentModes(typeof(Account)),
-                PropertyAttributes = propertyAttributes,
-                PropValues = await dynamicContentService.GetCmsSettingsModel(propertyAttributes.Key, id)
-            };*/
-            
-            var viewModel = baseService.CreateBaseViewModel<BaseModuleViewModel>();
+            var viewModel = baseService.CreateBaseViewModel<DynamicContentViewModel>();
+            viewModel.ContentId = id;
+            viewModel.Components = GetComponents();
             return View(viewModel);
         }
-        /*
+
         /// <summary>
         /// Get The tabwindow containing the component properties.
         /// </summary>
         /// <param name="component">The component which properties should be loaded into the tab window.</param>
+        /// <param name="data">The data of the component.</param>
         /// <returns>The Partial view containing the HTML of the tab window from dynamic content.</returns>
-        [HttpGet]
-        public async Task<IActionResult> DynamicContentTabPane(int templateId, string component)
+        [HttpPost, Route("{component}/DynamicContentTabPane")]
+        public IActionResult DynamicContentTabPane(string component, [FromBody]DynamicContentOverviewModel data)
         {
-            var helper = new ReflectionHelper();
-            var componentType = helper.GetComponentTypeByName(component);
-            var propertyAttributes = dynamicContentService.GetAllPropertyAttributes(componentType);
+            var componentType = ReflectionHelper.GetComponentTypeByName(component);
+            var propertyAttributes = GetAllPropertyAttributes(componentType);
 
-            var dcInformation = new DynamicContentInformationModel
+            var viewModel = new DynamicContentInformationModel
             {
-                Components = dynamicContentService.GetComponents(),
-                ComponentModes = dynamicContentService.GetComponentModes(typeof(Account)),
                 PropertyAttributes = propertyAttributes,
-                PropValues = await dynamicContentService.GetCmsSettingsModel(propertyAttributes.Key, templateId)
+                PropValues = GetCmsSettingsModelAsync(component, data.Data)
             };
 
-            return PartialView("Partials/DynamicContentTabPane", dcInformation);
+            return PartialView("Partials/DynamicContentTabPane", viewModel);
         }
 
-
-        /// <summary>
-        /// Get the componentModeOptions from the given component.
-        /// </summary>
-        /// <param name="component">The component of which the modes need to be retrieved.</param>
-        /// <returns>The Partial view containing the HTML of the component modes.</returns>
-        [HttpGet]
-        public IActionResult ReloadComponentModeOptions(string component)
+        [HttpPost, Route("History")]
+        public IActionResult History([FromBody]List<HistoryVersionModel> viewData)
         {
-            var helper = new ReflectionHelper();
-            var componentType = helper.GetComponentTypeByName(component);
-
-            return PartialView("Partials/ComponentModeOptions", GetComponentModes(componentType));
+            return PartialView("Partials/DynamicContentHistoryPane", viewData);
         }
 
+        
         /// <summary>
-        /// Retrieve properties for the initial load of the coponent tab.
+        /// Get all possible components. These components should are retrieved from the assembly and should have the basetype CmsComponent&lt;CmsSettings, Enum&gt;
         /// </summary>
-        /// <returns>A Keyvalue pair containing the type, tabs, groups and properties of the account component.</returns>
-        public KeyValuePair<Type, Dictionary<CmsTabName, Dictionary<CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>>> GetPropertyAttributes()
+        /// <returns>Dictionary of typeinfos and object attributes of all the components found in the GCL.</returns>
+        private Dictionary<TypeInfo, CmsObjectAttribute> GetComponents()
         {
-            return dynamicContentService.GetAllPropertyAttributes(typeof(Account));
-        }
+            var componentType = typeof(CmsComponent<CmsSettings, Enum>);
+            var assembly = componentType.Assembly;
 
+            var typeInfoList = assembly.DefinedTypes.Where(
+                type => type.BaseType != null
+                        && type.BaseType.IsGenericType
+                        && componentType.IsGenericType
+                        && type.BaseType.GetGenericTypeDefinition() == componentType.GetGenericTypeDefinition()
+            ).OrderBy(type => type.Name).ToList();
+
+            var resultDictionary = new Dictionary<TypeInfo, CmsObjectAttribute>();
+
+            foreach (var typeInfo in typeInfoList)
+            {
+                resultDictionary.Add(typeInfo, typeInfo.GetCustomAttribute<CmsObjectAttribute>());
+            }
+            return resultDictionary;
+        }
+        
+        
         /// <summary>
-        /// Method for retrieving the saved settings from a component.
+        /// The method retrieves property attributes of a component and will divide the properties into the tabs and groups they belong to.
         /// </summary>
+        /// <param name="component">The component from which the properties should be retrieved.</param>
         /// <returns>
-        /// Returns a dictionary with the propertyinfo and value(as object) of each setting.
+        /// Returns Dictionary with the component, tabs, groupsnames and fieldvalues from the type:  
+        /// component
+        /// (
+        ///     Tabname,
+        ///     (
+        ///         Groupname,
+        ///         (
+        ///             Propertyname,
+        ///             CmsPropertyAttribute
+        ///         )
+        ///     )
+        /// )
         /// </returns>
-        public async Task<Dictionary<PropertyInfo, object>> GetPropertyValues(Type component, int templateId)
+        private KeyValuePair<Type, Dictionary<CmsAttributes.CmsTabName, Dictionary<CmsAttributes.CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>>> GetAllPropertyAttributes(Type component)
         {
-            var settingValues = await dynamicContentService.GetCmsSettingsModel(component, templateId);
-            return settingValues;
+            var resultList = new Dictionary<CmsAttributes.CmsTabName, Dictionary<CmsAttributes.CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>>();
+            var CmsSettingsType = ReflectionHelper.GetCmsSettingsType(component);
+            var propInfos = CmsSettingsType.GetProperties().Where(propInfo => propInfo.GetCustomAttribute<CmsPropertyAttribute>() != null).OrderBy(propInfo => propInfo.GetCustomAttribute<CmsPropertyAttribute>().DisplayOrder);
+
+            foreach (var propInfo in propInfos)
+            {
+                var cmsPropertyAttribute = propInfo.GetCustomAttribute<CmsPropertyAttribute>();
+
+                if (cmsPropertyAttribute == null)
+                {
+                    continue;
+                }
+
+                if (resultList.ContainsKey(cmsPropertyAttribute.TabName))
+                {
+                    if (resultList[cmsPropertyAttribute.TabName].ContainsKey(cmsPropertyAttribute.GroupName))
+                    {
+                        resultList[cmsPropertyAttribute.TabName][cmsPropertyAttribute.GroupName].Add(propInfo, cmsPropertyAttribute);
+                    }
+                    else
+                    {
+                        var cmsGroup = CreateCmsGroupFromPropertyAttribute(propInfo, cmsPropertyAttribute);
+                        foreach (var kvp in cmsGroup)
+                        {
+                            resultList[cmsPropertyAttribute.TabName].Add(kvp.Key, kvp.Value);
+                        }
+                    }
+                }
+                else
+                {
+                    resultList.Add(cmsPropertyAttribute.TabName, CreateCmsGroupFromPropertyAttribute(propInfo, cmsPropertyAttribute));
+                }
+            }
+            return new KeyValuePair<Type, Dictionary<CmsAttributes.CmsTabName, Dictionary<CmsAttributes.CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>>>(component, resultList); ;
         }
 
         /// <summary>
-        /// Gets all possible components from the GCL.
+        /// Creates a new dictionary for properties with the same group.
         /// </summary>
-        /// <returns>A Dictionary returning the TypeInfo and CmsAttributeObject of all the components.</returns>
-        public Dictionary<TypeInfo, CmsObjectAttribute> GetComponents()
-        {
-            return dynamicContentService.GetComponents();
-        }
-
-        /// <summary>
-        /// Retrieve the componentmodes of the Component. TODO: make the component variable
-        /// </summary>
+        /// <param name="propName">The name of the property which will be used as the key for the property within the group.</param>
+        /// <param name="cmsPropertyAttribute">The CmsAttribute belonging to the attribut within the property group.</param>
         /// <returns>
-        /// Dictionary containing the component Key and (Display)name.
+        /// Dictionary of a cms group. The key is the cmsgroup name and the value is a propertyattribute dictionary.
         /// </returns>
-        public Dictionary<object, string> GetComponentModes()
+        private Dictionary<CmsAttributes.CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>> CreateCmsGroupFromPropertyAttribute(PropertyInfo propName, CmsPropertyAttribute cmsPropertyAttribute)
         {
-            return dynamicContentService.GetComponentModes(typeof(Account));
+            var cmsGroup = new Dictionary<CmsAttributes.CmsGroupName, Dictionary<PropertyInfo, CmsPropertyAttribute>>();
+            var propList = new Dictionary<PropertyInfo, CmsPropertyAttribute>();
+
+            propList.Add(propName, cmsPropertyAttribute);
+            cmsGroup.Add(cmsPropertyAttribute.GroupName, propList);
+
+            return cmsGroup;
         }
 
-        /// <summary>
-        /// Retrieve the componentmodes of the Component.
-        /// </summary>
-        /// <returns>
-        /// Dictionary containing the component Key and (Display)name.
-        /// </returns>
-        public Dictionary<object, string> GetComponentModes(Type component)
+        private Dictionary<PropertyInfo, object> GetCmsSettingsModelAsync(string componentName, Dictionary<string, object> data)
         {
-            return dynamicContentService.GetComponentModes(component);
+            var component = ReflectionHelper.GetComponentTypeByName(componentName);
+            var cmsSettingsType = ReflectionHelper.GetCmsSettingsType(component);
+            var properties = GetPropertiesOfType(cmsSettingsType);
+
+            var accountSettings = new Dictionary<PropertyInfo, object>();
+
+            if (data == null)
+            {
+                return null;
+            }
+
+            foreach (var property in properties)
+            {
+                //Find matching data
+                var setting = data.FirstOrDefault(setting => property.Name.Equals(setting.Key, StringComparison.OrdinalIgnoreCase));
+                var value = setting.Value;
+
+                accountSettings.Add(property, value);
+            }
+
+            return accountSettings;
         }
 
-        /// <summary>
-        ///  POST endpoint for saving the settings of a component.
-        /// </summary>
-        /// <param name="templateId">The id of the content to save</param>
-        /// <param name="component">A string of the component of the content. This will be checked using reflection.</param>
-        /// <param name="componentMode">An int representing the mode the component is in</param>
-        /// <param name="template_name">The name of the template</param>
-        /// <param name="settings">A json containing a dictionary of the settings of the content.</param>
-        /// <returns>A list of saved settings as confirmation.</returns>
-        [HttpPost]
-        public async Task<string> SaveSettings(int templateId, string component, int componentMode, string template_name, string settings)
+        private List<PropertyInfo> GetPropertiesOfType(Type cmsSettingsType)
         {
-            if (templateId == 0)
-            {
-                throw new ArgumentException("The Id cannot be zero.");
-            }
-            if (String.IsNullOrEmpty(component))
-            {
-                throw new ArgumentException("The component is incorrect.");
-            }
-            if (componentMode == 0)
-            {
-                throw new ArgumentException("The componentMode cannot be zero.");
-            }
-            var list = JsonConvert.DeserializeObject<Dictionary<string, object>>(settings);
-            await dynamicContentService.SaveNewSettings(templateId, component, componentMode, template_name, list);
+            var resultList = new List<PropertyInfo>();
+            var allProperties = cmsSettingsType.GetProperties();
 
-            return JsonConvert.SerializeObject(list);
+            foreach (var property in allProperties)
+            {
+                resultList.Add(property);
+            }
+
+            return resultList;
         }
-
-        /// <summary>
-        /// GET endpoint for getting the component modes of a certain component.
-        /// </summary>
-        /// <param name="component">A string of the component of the content. This will be checked using reflection.</param>
-        /// <returns>
-        /// JSON list of componentmodes. The JSON contains a formatted dictionary containing the key and (Display)name for all components.
-        /// </returns>
-        [HttpGet]
-        public JsonResult GetComponentModesAsJsonResult(string component)
-        {
-            if (String.IsNullOrEmpty(component))
-            {
-                throw new ArgumentException("The component is incorrect.");
-            }
-            var helper = new ReflectionHelper();
-            var componentType = helper.GetComponentTypeByName(component);
-
-            return Json(GetComponentModes(componentType));
-        }
-
-        /// <summary>
-        /// Get the history of the current component.
-        /// </summary>
-        /// <param name="component">The component of the history.</param>
-        /// <returns>History PartialView containing the retrieved history of the component</returns>
-        [HttpGet]
-        public async Task<IActionResult> GetHistoryOfComponent(int templateId)
-        {
-            if (templateId == 0)
-            {
-                throw new ArgumentException("The Id cannot be zero.");
-            }
-            return PartialView("Partials/DynamicContentHistoryPane", await historyService.GetChangesInComponent(templateId));
-        }
-
-
-        /// <summary>
-        /// Undo changes that have been made.
-        /// </summary>
-        /// <param name="changes">A json string of changes that can be converted to a List of RevertHistoryModels</param>
-        /// <returns>An int representing the affected rows as confirmation</returns>
-        [HttpPost]
-        public async Task<int> UndoChanges(string changes, int templateId)
-        {
-            if (templateId == 0)
-            {
-                throw new ArgumentException("The Id cannot be zero.");
-            }
-            if (String.IsNullOrEmpty(changes))
-            {
-                throw new ArgumentException("The content cannot be reverted without changes.");
-            }
-            return await historyService.RevertChanges(JsonConvert.DeserializeObject<List<RevertHistoryModel>>(changes), templateId);
-        }
-
-        /// <summary>
-        /// Retrieves the component and componentMode of a dynamic content item through its id.
-        /// </summary>
-        /// <param name="contentId">The id of the dynamic content</param>
-        /// <returns>A list of strings containing the component and componentMode</returns>
-        [HttpGet]
-        public async Task<List<string>> GetComponentAndModeForContentId(int contentId)
-        {
-            if (contentId == 0)
-            {
-                throw new ArgumentException("The Id cannot be zero.");
-            }
-            return await dynamicContentService.GetComponentAndModeForContentId(contentId);
-        }*/
     }
 }

@@ -50,14 +50,5 @@ namespace Api.Modules.Templates.Models.History
         {
             return ChangedOn.ToShortDateString() + " om " + ChangedOn.ToLongTimeString();
         }
-        
-        /// <summary>
-        /// Set the list of changes compared to the previous version.
-        /// </summary>
-        /// <param name="changes">A List of DynamicContentChangeModel containing the changes to the previous version.</param>
-        public void SetChanges(List<DynamicContentChangeModel> changes)
-        {
-            this.Changes = changes;
-        }
     }
 }
