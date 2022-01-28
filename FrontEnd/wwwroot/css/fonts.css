@@ -1,0 +1,71 @@
+// GOOGLE FONT
+@import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap');
+
+// FONT-FACE
+@font-face {
+    font-family: 'AvantGardeGothic-Bd';
+    src: url("../fonts/2E9188_0_0.eot");
+    src: url("../fonts/2E9188_0_0.eot?#iefix") format("embedded-opentype"), 
+         url("../fonts/2E9188_0_0.woff2") format("woff2"), 
+         url("../fonts/2E9188_0_0.woff") format("woff"), 
+         url("../fonts/2E9188_0_0.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: 'AvantGardeGothic-Bk';
+    src: url("../fonts/2E9188_1_0.eot");
+    src: url("../fonts/2E9188_1_0.eot?#iefix") format("embedded-opentype"), 
+         url("../fonts/2E9188_1_0.woff2") format("woff2"), 
+         url("../fonts/2E9188_1_0.woff") format("woff"), 
+         url("../fonts/2E9188_1_0.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: 'AvantGardeGothic-Dm';
+    src: url("../fonts/2E9188_4_0.eot");
+    src: url("../fonts/2E9188_4_0.eot?#iefix") format("embedded-opentype"), 
+         url("../fonts/2E9188_4_0.woff2") format("woff2"), 
+         url("../fonts/2E9188_4_0.woff") format("woff"), 
+         url("../fonts/2E9188_4_0.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: 'AvantGardeGothic-Md';
+    src: url("../fonts/2E9188_8_0.eot");
+    src: url("../fonts/2E9188_8_0.eot?#iefix") format("embedded-opentype"), 
+         url("../fonts/2E9188_8_0.woff2") format("woff2"), 
+         url("../fonts/2E9188_8_0.woff") format("woff"), 
+         url("../fonts/2E9188_8_0.ttf") format("truetype");
+}
+
+body {
+    font: 400 16px/30px var(--body-txt);
+}
+
+h1 {
+    font: 700 32px/40px var(--body-txt);
+}
+
+h2 {
+    font: 600 24px/32px var(--body-txt);
+}
+
+h3 {
+    font: 600 18px/32px var(--body-txt);
+}
+
+h4 {
+    font: 600 16px/28px var(--body-txt);
+}
+
+strong {
+    font: 18px/22px var(--bold-txt);
+}
+
+.title {
+    font: 18px/32px var(--bold-txt);
+}
+
+.sub-title {
+    font: 18px/22px var(--medium-txt);
+}
