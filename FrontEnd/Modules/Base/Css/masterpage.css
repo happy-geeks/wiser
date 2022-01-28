@@ -582,6 +582,10 @@ ins {
 }
 
 /* TOOLTIPS */
+.item h4 {
+    display: flex;
+    justify-content: space-between;
+}
 .item h4 .property-name {
     background-color: var(--black-color);
     color: var(--white-color);
@@ -837,9 +841,9 @@ ins {
 .checkbox span, 
 .radio span {
     display: block;
-    line-height: 2em;
+    line-height: 1em;
     min-height: 28px;
-    padding: 5px 5px 5px 28px;
+    padding: 12px 5px 12px 28px;
     position: relative;
     user-select: none;
 }
@@ -903,7 +907,7 @@ input:checked + .checkbox span:after,
     padding: 12px;
     position: absolute;
     top: 26px;
-    left: -8px;
+    right: -8px;
     width: 250px;
     z-index: 1001;
 }
@@ -932,10 +936,19 @@ input:checked + .checkbox span:after,
     font-size: 16px;
     margin-left: 10px;
     vertical-align: middle;
+    opacity: 0.35;
 }
 .info-tooltip a {
 	color: var(--white-color);
 	text-decoration: underline;
+}
+.info:hover,
+.info-link:hover {
+    z-index: 100;
+}
+.info:hover ins,
+.info-link:hover ins {
+    opacity: 1;
 }
 
 /* FOOTER / META DATA */
