@@ -7,6 +7,7 @@ using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
+using GeeksCoreLibrary.Modules.Templates.Enums;
 using GeeksCoreLibrary.Modules.Templates.Models;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
@@ -103,7 +104,7 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="environment">The environment to publish the template to.</param>
         /// <param name="currentPublished">A PublishedEnvironmentModel containing the current published templates.</param>
         /// <returns>A int of the rows affected.</returns>
-        Task<ServiceResult<int>> PublishEnvironmentOfTemplateAsync(ClaimsIdentity identity, int templateId, int version, string environment, PublishedEnvironmentModel currentPublished);
+        Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, string environment, PublishedEnvironmentModel currentPublished);
 
         /// <summary>
         /// Save the template as a new version and save the linked templates if necessary. This method will calculate if links are to be added or removed from the current situation.
@@ -131,5 +132,15 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="templateId">The id of the template to retrieve the history from.</param>
         /// <returns>A TemplateHistoryOverviewModel containing a list of templatehistorymodels and a list of publishlogmodels. The model contains base info and a list of changes made within the version and its sub components (e.g. dynamic content, publishes).</returns>
         Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(int templateId);
+
+        /// <summary>
+        /// Creates an empty template with the given name, type and parent template.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="name">The name to give the template that will be created.</param>
+        /// <param name="parent">The id of the parent template of the template that will be created.</param>
+        /// <param name="type">The type of the new template that will be created.</param>
+        /// <returns>The id of the newly created template. This can be used to update the interface accordingly.</returns>
+        Task<ServiceResult<TemplateTreeViewModel>> CreateAsync(ClaimsIdentity identity, string name, int parent, TemplateTypes type);
     }
 }

@@ -1,5 +1,13 @@
 ﻿@import "../../Base/scss/base.scss";
 
+#createNewItemDialog {
+    display: none;
+}
+
+.k-dialog #createNewItemDialog {
+    display: revert;
+}
+
 :root {
     --live-color: #7CBD00;
     --test-color: #FFF300;
