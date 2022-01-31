@@ -61,20 +61,39 @@ namespace Api.Modules.Templates.Services.DataLayer
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
-            var dataTable = await connection.GetAsync($@"SELECT wtt.template_id, wtt.parent_id, wtt.template_name, wtt.template_type, wtt.template_data, wtt.version, wtt.changed_on, wtt.changed_by, wtt.usecache, 
-                wtt.cacheminutes, wtt.handlerequest, wtt.handlesession, wtt.handleobjects, wtt.handlestandards, wtt.handletranslations, wtt.handledynamiccontent, wtt.handlelogicblocks, wtt.handlemutators, 
-                wtt.loginrequired, wtt.loginusertype, wtt.loginsessionprefix, wtt.loginrole, GROUP_CONCAT(CONCAT_WS(';',linkedtemplates.template_id, linkedtemplates.template_name, linkedtemplates.template_type)) AS linkedtemplates 
-                FROM {WiserTableNames.WiserTemplate} wtt 
-				LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate GROUP BY template_id) AS linkedtemplates 
-				ON FIND_IN_SET(linkedtemplates.template_id ,wtt.linkedtemplates)
-                WHERE wtt.template_id = ?templateid
-				GROUP BY wtt.version
-                ORDER BY version DESC"
-            );
+            var dataTable = await connection.GetAsync($@"SELECT 
+                                                                template.template_id, 
+                                                                template.parent_id, 
+                                                                template.template_name, 
+                                                                template.template_type, 
+                                                                template.template_data, 
+                                                                template.version, 
+                                                                template.changed_on, 
+                                                                template.changed_by, 
+                                                                template.use_cache,
+                                                                template.cache_minutes, 
+                                                                template.handle_request, 
+                                                                template.handle_session, 
+                                                                template.handle_objects, 
+                                                                template.handle_standards, 
+                                                                template.handle_translations, 
+                                                                template.handle_dynamic_content, 
+                                                                template.handle_logic_blocks, 
+                                                                template.handle_mutators, 
+                                                                template.login_required, 
+                                                                template.login_user_type, 
+                                                                template.login_session_prefix, 
+                                                                template.login_role, 
+                                                                GROUP_CONCAT(CONCAT_WS(';', linkedTemplates.template_id, linkedTemplates.template_name, linkedTemplates.template_type)) AS linkedTemplates 
+                                                            FROM {WiserTableNames.WiserTemplate} AS template 
+				                                            LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate GROUP BY template_id) AS linkedTemplates ON FIND_IN_SET(linkedTemplates.template_id, template.linked_templates)
+                                                            WHERE template.template_id = ?templateId
+				                                            GROUP BY template.version
+                                                            ORDER BY version DESC");
 
             var resultList = new List<TemplateSettingsModel>();
 
-            foreach(DataRow row in dataTable.Rows)
+            foreach (DataRow row in dataTable.Rows)
             {
                 var templateData = new TemplateSettingsModel
                 {
@@ -86,23 +105,23 @@ namespace Api.Modules.Templates.Services.DataLayer
                     Version = row.Field<int>("version"),
                     ChangedOn = row.Field<DateTime>("changed_on"),
                     ChangedBy = row.Field<string>("changed_by"),
-                    UseCache = row.Field<int>("usecache"),
-                    CacheMinutes = row.Field<int>("cacheminutes"),
-                    HandleRequests = Convert.ToBoolean(row.Field<sbyte>("handlerequest")),
-                    HandleSession = Convert.ToBoolean(row.Field<sbyte>("handlesession")),
-                    HandleStandards = Convert.ToBoolean(row.Field<sbyte>("handlestandards")),
-                    HandleObjects = Convert.ToBoolean(row.Field<sbyte>("handleobjects")),
-                    HandleTranslations = Convert.ToBoolean(row.Field<sbyte>("handletranslations")),
-                    HandleDynamicContent = Convert.ToBoolean(row.Field<sbyte>("handledynamiccontent")),
-                    HandleLogicBlocks = Convert.ToBoolean(row.Field<sbyte>("handlelogicblocks")),
-                    HandleMutators = Convert.ToBoolean(row.Field<sbyte>("handlemutators")),
-                    LoginRequired = Convert.ToBoolean(row.Field<sbyte>("loginrequired")),
-                    LoginUserType = row.Field<string>("loginusertype"),
-                    LoginSessionPrefix = row.Field<string>("loginsessionprefix"),
-                    LoginRole = row.Field<string>("loginrole"),
+                    UseCache = row.Field<int>("use_cache"),
+                    CacheMinutes = row.Field<int>("cache_minutes"),
+                    HandleRequests = Convert.ToBoolean(row.Field<sbyte>("handle_request")),
+                    HandleSession = Convert.ToBoolean(row.Field<sbyte>("handle_session")),
+                    HandleStandards = Convert.ToBoolean(row.Field<sbyte>("handle_standards")),
+                    HandleObjects = Convert.ToBoolean(row.Field<sbyte>("handle_objects")),
+                    HandleTranslations = Convert.ToBoolean(row.Field<sbyte>("handle_translations")),
+                    HandleDynamicContent = Convert.ToBoolean(row.Field<sbyte>("handle_dynamic_content")),
+                    HandleLogicBlocks = Convert.ToBoolean(row.Field<sbyte>("handle_logic_blocks")),
+                    HandleMutators = Convert.ToBoolean(row.Field<sbyte>("handle_mutators")),
+                    LoginRequired = Convert.ToBoolean(row.Field<sbyte>("login_required")),
+                    LoginUserType = row.Field<string>("login_user_type"),
+                    LoginSessionPrefix = row.Field<string>("login_session_prefix"),
+                    LoginRole = row.Field<string>("login_role"),
                     LinkedTemplates = new LinkedTemplatesModel
                     {
-                        RawLinkList = row.Field<string>("linkedtemplates")
+                        RawLinkList = row.Field<string>("linkedTemplates")
                     }
                 };
 
