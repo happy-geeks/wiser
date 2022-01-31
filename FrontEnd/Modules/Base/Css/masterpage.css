@@ -826,6 +826,14 @@ ins {
     padding: 4px 10px;
     pointer-events: none;
 }
+.item[data-label-style="float"] .CodeMirror {
+    padding-top: 25px;
+}
+/* SELECTED */
+.item.selected {
+    background-color: var(--primary-color);
+    padding-top: 16px;
+}
 /* CUSTOM CHECKBOX / RADIOBUTTON */
 .checkbox, .radio {
     cursor: pointer;

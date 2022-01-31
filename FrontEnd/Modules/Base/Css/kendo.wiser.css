@@ -549,6 +549,10 @@
 .btn.btn-left {
     margin-right: 16px;
 }
+.btn[disabled] {
+    cursor: not-allowed;
+    opacity: 0.25;
+}
 
 /* KENDO - TABSTRIP */
 .k-tabstrip {
