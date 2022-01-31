@@ -209,7 +209,7 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> CreateCustomerAsync(CustomerModel customer, bool isWebShop = false)
+        public async Task<ServiceResult<CustomerModel>> CreateCustomerAsync(CustomerModel customer, bool isWebShop = false, bool isConfigurator = false)
         {
             // Create a new connection to the newly created database.
             // TODO: How are we supposed to do this with dependency injection?
@@ -246,6 +246,8 @@ namespace Api.Modules.Customers.Services
                     var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
                     var insertInitialDataQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.InsertInitialData.sql");
                     var insertInitialDataEcommerceQuery = !isWebShop ? "" : await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.InsertInitialDataEcommerce.sql");
+                    var createTablesConfiguratorQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTablesConfigurator.sql");
+                    var insertInitialDataConfiguratorQuery = !isConfigurator ? "" : await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.InsertInitialDataConfigurator.sql");
 
                     if (customer.WiserSettings != null)
                     {
@@ -257,6 +259,12 @@ namespace Api.Modules.Customers.Services
                             if (isWebShop)
                             {
                                 insertInitialDataEcommerceQuery = insertInitialDataEcommerceQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
+                            }
+
+                            if (isConfigurator)
+                            {
+                                createTablesConfiguratorQuery = createTablesConfiguratorQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
+                                insertInitialDataConfiguratorQuery = insertInitialDataConfiguratorQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
                             }
                         }
                     }
@@ -275,6 +283,14 @@ namespace Api.Modules.Customers.Services
                         if (isWebShop)
                         {
                             command.CommandText = insertInitialDataEcommerceQuery;
+                            await command.ExecuteNonQueryAsync();
+                        }
+
+                        if (isConfigurator)
+                        {
+                            command.CommandText = createTablesConfiguratorQuery;
+                            await command.ExecuteNonQueryAsync();
+                            command.CommandText = insertInitialDataConfiguratorQuery;
                             await command.ExecuteNonQueryAsync();
                         }
                     }

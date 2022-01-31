@@ -226,6 +226,13 @@
                     </label>
                     <p class="hint">Zet dit vinkje aan indien de klant ook een webshop krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld verzendmethodes, btw-regels etc.</p>
                 </div>
+                <div class="form-row">
+                    <label>
+                        <input type="checkbox" name="isConfigurator" v-model="newCustomerData.isConfigurator" />
+                        Is configurator
+                    </label>
+                    <p class="hint">Zet dit vinkje aan indien de klant ook een configurator krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld configuration en configurationlines.</p>
+                </div>
             </section>
 
             <section class="step" v-if="currentStep === 2">
