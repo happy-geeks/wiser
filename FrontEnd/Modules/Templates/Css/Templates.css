@@ -1,10 +1,12 @@
 ﻿@import "../../Base/scss/base.scss";
 
-#createNewItemDialog {
+#createNewItemDialog,
+#addDynamicContentToHtmlDialog  {
     display: none;
 }
 
-.k-dialog #createNewItemDialog {
+.k-dialog #createNewItemDialog,
+.k-dialog #addDynamicContentToHtmlDialog {
     display: revert;
 }
 

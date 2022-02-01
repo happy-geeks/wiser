@@ -1,19 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
-using GeeksCoreLibrary.Components.Account;
-using GeeksCoreLibrary.Core.Cms.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 
 namespace Api.Modules.Templates.Controllers
 {
@@ -69,20 +63,11 @@ namespace Api.Modules.Templates.Controllers
         /// </summary>
         /// <param name="contentId">The id of the content to save</param>
         /// <param name="data">The data to save</param>
-        /// <returns>A list of saved settings as confirmation.</returns>
+        /// <returns>The ID of the saved component.</returns>
         [HttpPost, Route("{contentId:int}")]
-        [ProducesResponseType(typeof(List<ComponentModeModel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         public async Task<IActionResult> SaveSettings(int contentId, DynamicContentOverviewModel data)
         {
-            if (contentId == 0)
-            {
-                throw new ArgumentException("The Id cannot be zero.");
-            }
-            if (data.ComponentModeId is null or 0)
-            {
-                throw new ArgumentException("The ComponentModeId cannot be zero.");
-            }
-            
             return (await dynamicContentService.SaveNewSettingsAsync((ClaimsIdentity)User.Identity, contentId, data.Component, data.ComponentModeId.Value, data.Title, data.Data)).GetHttpResponseMessage();
         }
 
@@ -96,7 +81,19 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(List<ComponentModeModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UndoChanges(int contentId, List<RevertHistoryModel> changes)
         {
-            return (await historyService.RevertChanges((ClaimsIdentity)User.Identity, contentId, changes)).GetHttpResponseMessage();
+            return (await historyService.RevertChangesAsync((ClaimsIdentity)User.Identity, contentId, changes)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Links a dynamic content to a template.
+        /// </summary>
+        /// <param name="contentId">The ID of the dynamic content.</param>
+        /// <param name="templateId">The ID of the template.</param>
+        [HttpPut, Route("{contentId:int}/link/{templateId:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> AddLinkToTemplateAsync(int contentId, int templateId)
+        {
+            return (await dynamicContentService.AddLinkToTemplateAsync((ClaimsIdentity)User.Identity, contentId, templateId)).GetHttpResponseMessage();
         }
     }
 }

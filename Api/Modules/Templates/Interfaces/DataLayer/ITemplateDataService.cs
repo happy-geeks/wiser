@@ -69,19 +69,11 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// Saves the template data as a new version of the template.
         /// </summary>
         /// <param name="templateSettings">A <see cref="TemplateSettingsModel"/> containing the new data to save as a new template version.</param>
-        /// <param name="linksToAdd"></param>
-        /// <param name="linksToRemove"></param>
+        /// <param name="scssLinks"></param>
+        /// <param name="jsLinks"></param>
         /// <param name="username">The name of the authenticated user.</param>
         /// <returns>An int confirming the affected rows of the query.</returns>
-        public Task<int> SaveAsync(TemplateSettingsModel templateSettings, List<int> linksToAdd, List<int> linksToRemove, string username);
-        
-        /// <summary>
-        /// Saves the linked templates for a template. This will add new links and remove old links.
-        /// </summary>
-        /// <param name="templateId">The id of the template who's links to save.</param>
-        /// <param name="linksToAdd">The list of template ids to add as a link</param>
-        /// <param name="linksToRemove">The list of template ids to remove as a link</param>
-        public Task<int> UpdateLinkedTemplatesAsync(int templateId, List<int> linksToAdd, List<int> linksToRemove);
+        public Task<int> SaveAsync(TemplateSettingsModel templateSettings, List<int> scssLinks, List<int> jsLinks, string username);
         
         /// <summary>
         /// Retreives a section of the treeview around the given id. In case the id is 0 the root section of the tree will be retrieved.

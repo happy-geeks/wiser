@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Modules, Dates, Strings, Wiser2, Misc } from "../../Base/Scripts/Utils.js";
+import { Wiser2 } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
@@ -50,6 +50,10 @@ const moduleSettings = {
             this.templateHistory = null;
             this.previewProfiles = null;
             this.treeViewContextMenu = null;
+            this.mainHtmlEditor = null;
+            this.dynamicContentGrid = null;
+            this.newContentId = 0;
+            this.newContentTitle = null;
 
             this.templateTypes = Object.freeze({
                 "UNKNOWN": 0,
@@ -440,17 +444,21 @@ const moduleSettings = {
                 const selectedTabContentElement = this.treeViewTabStrip.contentElement(selectedTabIndex);
                 const treeViewElement = selectedTabContentElement.querySelector("ul");
                 const treeView = $(treeViewElement).data("kendoTreeView");
-                const dataItem = selectedNode ? treeView.dataItem(selectedNode) : treeView.dataItem(treeView.select());
+                const dataItem = selectedNode 
+                    ? treeView.dataItem(selectedNode) 
+                    : (this.selectedId === 0 
+                        ? { templateId: treeViewElement.dataset.id, templateName: treeViewElement.dataset.title, isFolder: true } 
+                        : treeView.dataItem(treeView.select()));
                 const parentId = dataItem.templateId || this.selectedId || parseInt(treeViewElement.dataset.id);
                 const newItemIsDirectoryCheckBox = $("#newItemIsDirectoryCheckBox").prop("checked", false);
                 const newItemTitleField = $("#newItemTitleField").val("");
-                const parentIsDirectory = parentId === 0 || dataItem.isFolder;
+                const parentIsDirectory = dataItem.isFolder;
 
                 newItemIsDirectoryCheckBox.toggleClass("hidden", !parentIsDirectory);
 
                 const dialog = $("#createNewItemDialog").kendoDialog({
                     width: "500px",
-                    title: `Nieuw item aanmaken onder '${parentId === 0 ? treeViewElement.dataset.title : dataItem.templateName}'`,
+                    title: `Nieuw item aanmaken onder '${dataItem.templateName}'`,
                     closable: true,
                     modal: true,
                     actions: [
@@ -654,7 +662,7 @@ const moduleSettings = {
                 );
 
                 // Dynamic content
-                $("#dynamic-grid").kendoGrid({
+                this.dynamicContentGrid = $("#dynamic-grid").kendoGrid({
                     dataSource: {
                         transport: {
                             read: (readOptions) => {
@@ -757,7 +765,7 @@ const moduleSettings = {
                                     name: "Open",
                                     text: "",
                                     iconClass: "k-icon k-i-edit",
-                                    click: this.kendoGridOpen.bind(this)
+                                    click: this.onDynamicContentOpenClick.bind(this)
                                 }/* TODO,
                                         {
                                             name: "Preview",
@@ -770,7 +778,12 @@ const moduleSettings = {
                             width: 160,
                             filterable: false
                         }
-                    ]
+                    ],
+                    toolbar: [{
+                        name: "add",
+                        text: "Nieuw",
+                        template: `<a class='k-button k-button-icontext' href='\\#' onclick='return window.Templates.openDynamicContentWindow(0, "Nieuw dynamische content toevoegen")'><span class='k-icon k-i-file-add'></span>Nieuw item toevoegen</a>`
+                    }]
                 }).data("kendoGrid");
 
                 // Preview
@@ -811,9 +824,15 @@ const moduleSettings = {
             $(".combo-select").kendoComboBox();
 
             // HTML editor
-            this.mainTabStrip = $(".editor").kendoEditor({
+            const insertDynamicContentTool = {
+                name: "wiserDynamicContent",
+                tooltip: "Dynamische inhoud toevoegen",
+                exec: this.onHtmlEditorDynamicContentExec.bind(this)
+            };
+            this.mainHtmlEditor = $(".editor").kendoEditor({
                 resizable: true,
                 tools: [
+                    insertDynamicContentTool,
                     "bold",
                     "italic",
                     "underline",
@@ -864,24 +883,95 @@ const moduleSettings = {
             //TODO
         }
 
-        kendoGridOpen(event) {
+        /**
+         * Event that gets called when the user executes the custom action for adding dynamic content from Wiser to the HTML editor.
+         * This will open a dialog where they can select any component that is linked to the current template, or add a new one.
+         * @param {any} event The event from the execute action.
+         */
+        async onHtmlEditorDynamicContentExec(event) {
+            console.log("onHtmlEditorDynamicContentExec", event);
+
+            let dropDown = $("#dynamicContentDropDown").data("kendoDropDownList");
+            if (!dropDown) {
+                dropDown = $("#dynamicContentDropDown").kendoDropDownList({
+                    dataTextField: "title",
+                    dataValueField: "id",
+                    optionLabel: "Nieuw component"
+                }).data("kendoDropDownList");
+            }
+
+            dropDown.setDataSource(this.dynamicContentGrid.dataSource);
+
+            const dialog = $("#addDynamicContentToHtmlDialog").kendoDialog({
+                width: "500px",
+                title: `Dynamische inhoud invoegen`,
+                closable: true,
+                modal: true,
+                actions: [
+                    {
+                        text: "Annuleren"
+                    },
+                    {
+                        text: "Invoegen",
+                        primary: true,
+                        action: async () => {
+                            let id = dropDown.value();
+                            let title = dropDown.dataItem().title;
+
+                            if (!id) {
+                                const newContentData = await this.openDynamicContentWindow(0, "Nieuw dynamische content toevoegen");
+                                if (!newContentData) {
+                                    console.warn("Dynamic content was not (properly) created.");
+                                    return;
+                                }
+
+                                id = newContentData.id;
+                                title = newContentData.title;
+                            }
+                            
+                            if (!id) {
+                                console.warn("Dynamic content was not (properly) created.");
+                                return;
+                            }
+
+                            const html = `<div class="dynamic-content" component-id="${id}"><h2>${title}</h2></div>`;
+                            this.mainHtmlEditor.exec("inserthtml", { value: html });
+                        }
+                    }
+                ]
+            }).data("kendoDialog");
+
+            dialog.open();
+        }
+
+        onDynamicContentOpenClick(event) {
             const grid = $("#dynamic-grid").data("kendoGrid");
             const tr = $(event.currentTarget).closest("tr");
             const data = grid.dataItem(tr);
+            this.openDynamicContentWindow(data.id, data.title);
+        }
 
-            $("#dynamicContentWindow").kendoWindow({
-                title: data.title,
-                width: "100%",
-                height: "100%",
-                content: `/Modules/DynamicContent/${data.id}`,
-                actions: ["close"],
-                draggable: false,
-                iframe: true,
-                close: (closeWindowEvent) => {
-                    console.log("close window", grid);
-                    grid.dataSource.read();
-                }
-            }).data("kendoWindow").maximize().open();
+        openDynamicContentWindow(contentId, title) {
+            return new Promise((resolve) => {
+                const grid = $("#dynamic-grid").data("kendoGrid");
+
+                this.newContentId = 0;
+                this.newContentTitle = null;
+
+                $("#dynamicContentWindow").kendoWindow({
+                    title: title,
+                    width: "100%",
+                    height: "100%",
+                    content: `/Modules/DynamicContent/${contentId || 0}?templateId=${this.selectedId}`,
+                    actions: ["close"],
+                    draggable: false,
+                    iframe: true,
+                    close: (closeWindowEvent) => {
+                        grid.dataSource.read();
+                        resolve({ id: this.newContentId, title: this.newContentTitle });
+                    }
+                }).data("kendoWindow").maximize().open();
+            });
         }
 
         //Bind the deploybuttons for the template versions
@@ -1134,20 +1224,18 @@ const moduleSettings = {
                 });
 
                 const dataItem = treeView.dataItem(parentElement);
-                if (dataItem.hasChildren && parentElement.attr("aria-expanded") !== "true") {
+                if (dataItem && dataItem.hasChildren && parentElement.attr("aria-expanded") !== "true") {
                     treeView.one("dataBound", () => {
                         const node = treeView.findByUid(treeView.dataSource.get(result.templateId).uid);
                         treeView.select(node);
                         treeView.trigger("select", {
                             node: node
                         });
-                        //this.loadTemplate(result.templateId);
                     });
                     treeView.expand(parentElement);
                 } else {
-                    const newTreeViewElement = treeView.append(result, parentElement);
+                    const newTreeViewElement = parentElement.length > 0 ? treeView.append(result, parentElement) : treeView.append(result);
                     treeView.select(newTreeViewElement);
-                    //await this.loadTemplate(result.templateId);
                     treeView.trigger("select", {
                         node: newTreeViewElement
                     });

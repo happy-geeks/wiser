@@ -11,10 +11,8 @@ using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
-using GeeksCoreLibrary.Core.Cms;
-using GeeksCoreLibrary.Core.Cms.Attributes;
+using GeeksCoreLibrary.Components.Account;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using static GeeksCoreLibrary.Core.Cms.Attributes.CmsAttributes;
 
 namespace Api.Modules.Templates.Services
 {
@@ -118,7 +116,17 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public async Task<ServiceResult<DynamicContentOverviewModel>> GetMetaDataAsync(int contentId)
         {
-            var result = await dataService.GetMetaData(contentId);
+            if (contentId <= 0)
+            {
+                return new ServiceResult<DynamicContentOverviewModel>(new DynamicContentOverviewModel
+                {
+                    Data = new Dictionary<string, object>(),
+                    Component = nameof(Account),
+                    ComponentMode = nameof(Account.ComponentModes.LoginSingleStep)
+                });
+            }
+
+            var result = await dataService.GetMetaDataAsync(contentId);
             if (result == null)
             {
                 return new ServiceResult<DynamicContentOverviewModel>
@@ -132,6 +140,16 @@ namespace Api.Modules.Templates.Services
             {
                 StatusCode = HttpStatusCode.OK,
                 ModelObject = result
+            };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> AddLinkToTemplateAsync(ClaimsIdentity identity, int contentId, int templateId)
+        {
+            await dataService.AddLinkToTemplateAsync(contentId, templateId, IdentityHelpers.GetUserName(identity));
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
             };
         }
     }

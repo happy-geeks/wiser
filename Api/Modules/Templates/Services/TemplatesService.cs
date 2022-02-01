@@ -2503,15 +2503,8 @@ LIMIT 1";
 
             var jsLinks = template.LinkedTemplates.LinkedJavascript.Select(x => x.TemplateId).ToList();
             var scssLinks = template.LinkedTemplates.LinkedSccsTemplates.Select(x => x.TemplateId).ToList();
-
-            linksToAdd = GetToAddList(jsLinks, linkList, linksToAdd);
-            linksToAdd = GetToAddList(scssLinks, linkList, linksToAdd);
-
-            linksToRemove = FillToRemoveList(jsLinks, TemplateTypes.Js, linkList, linksToRemove);
-            linksToRemove = FillToRemoveList(scssLinks, TemplateTypes.Scss, linkList, linksToRemove);
-
+            
             await templateDataService.SaveAsync(template, scssLinks, jsLinks, IdentityHelpers.GetUserName(identity));
-            await templateDataService.UpdateLinkedTemplatesAsync(template.TemplateId, linksToAdd, linksToRemove);
             return new ServiceResult<bool>(true);
         }
 
