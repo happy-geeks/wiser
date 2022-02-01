@@ -87,7 +87,7 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public async Task<PublishedEnvironmentModel> GetHistoryVersionsOfDynamicContent(int templateId)
         {
-            var versionsAndPublished = await historyDataService.GetPublishedEnvironmentsFromDynamicContent(templateId);
+            var versionsAndPublished = await historyDataService.GetPublishedEnvironmentsFromDynamicContentAsync(templateId);
 
             var helper = new PublishedEnvironmentHelper();
 
@@ -97,7 +97,7 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public async Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent)
         {
-            var rawTemplateModels = await historyDataService.GetTemplateHistory(templateId);
+            var rawTemplateModels = await historyDataService.GetTemplateHistoryAsync(templateId);
 
             var templateHistory = new List<TemplateHistoryModel>();
 
@@ -127,7 +127,7 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId)
         {
-            return await historyDataService.GetPublishHistoryFromTemplate(templateId);
+            return await historyDataService.GetPublishHistoryFromTemplateAsync(templateId);
         }
 
         /// <summary>
@@ -205,7 +205,7 @@ namespace Api.Modules.Templates.Services
         /// <returns>List of HistoryVersionModels forming</returns>
         private async Task<List<HistoryVersionModel>> GetHistoryOfComponent(int templateId)
         {
-            var olderVersions = await historyDataService.GetDynamicContentHistory(templateId);
+            var olderVersions = await historyDataService.GetDynamicContentHistoryAsync(templateId);
 
             return olderVersions;
         }

@@ -25,9 +25,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<PreviewProfileModel>>> Get(int templateId)
+        public async Task<ServiceResult<List<PreviewProfileModel>>> GetAsync(int templateId)
         {
-            var dataList = await previewDataService.Get(templateId);
+            var dataList = await previewDataService.GetAsync(templateId);
             var modelList = new List<PreviewProfileModel>();
             
             foreach (var previewDao in dataList)
@@ -39,7 +39,7 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<PreviewProfileModel>> Create(PreviewProfileModel profile, int templateId)
+        public async Task<ServiceResult<PreviewProfileModel>> CreateAsync(PreviewProfileModel profile, int templateId)
         {
             if (templateId <= 0)
             {
@@ -50,12 +50,12 @@ namespace Api.Modules.Templates.Services
                 };
             }
 
-            profile.Id = await previewDataService.Create(PreviewProfileHelper.ConvertPreviewProfileModelToDAO(profile), templateId);
+            profile.Id = await previewDataService.CreateAsync(PreviewProfileHelper.ConvertPreviewProfileModelToDAO(profile), templateId);
             return new ServiceResult<PreviewProfileModel>(profile);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> Update(PreviewProfileModel profile, int templateId)
+        public async Task<ServiceResult<bool>> UpdateAsync(PreviewProfileModel profile, int templateId)
         {
             if (templateId <= 0)
             {
@@ -75,7 +75,7 @@ namespace Api.Modules.Templates.Services
                 };
             }
             
-            await previewDataService.Update(PreviewProfileHelper.ConvertPreviewProfileModelToDAO(profile), templateId);
+            await previewDataService.UpdateAsync(PreviewProfileHelper.ConvertPreviewProfileModelToDAO(profile), templateId);
             return new ServiceResult<bool>(true)
             {
                 StatusCode = HttpStatusCode.NoContent
@@ -83,7 +83,7 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> Delete(int templateId, int profileId)
+        public async Task<ServiceResult<bool>> DeleteAsync(int templateId, int profileId)
         {
             if (templateId <= 0)
             {
@@ -102,7 +102,7 @@ namespace Api.Modules.Templates.Services
                 };
             }
 
-            await previewDataService.Delete(templateId, profileId);
+            await previewDataService.DeleteAsync(templateId, profileId);
             return new ServiceResult<bool>(true)
             {
                 StatusCode = HttpStatusCode.NoContent
