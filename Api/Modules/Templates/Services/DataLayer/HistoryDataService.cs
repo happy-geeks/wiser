@@ -84,6 +84,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.login_user_type, 
                                                                 template.login_session_prefix, 
                                                                 template.login_role, 
+                                                                template.ordering, 
                                                                 GROUP_CONCAT(CONCAT_WS(';', linkedTemplates.template_id, linkedTemplates.template_name, linkedTemplates.template_type)) AS linkedTemplates 
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
 				                                            LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate GROUP BY template_id) AS linkedTemplates ON FIND_IN_SET(linkedTemplates.template_id, template.linked_templates)
@@ -119,6 +120,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     LoginUserType = row.Field<string>("login_user_type"),
                     LoginSessionPrefix = row.Field<string>("login_session_prefix"),
                     LoginRole = row.Field<string>("login_role"),
+                    Ordering = row.Field<int>("ordering"),
                     LinkedTemplates = new LinkedTemplatesModel
                     {
                         RawLinkList = row.Field<string>("linkedTemplates")
