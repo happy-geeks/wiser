@@ -47,6 +47,14 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// Gets the meta data (name, component type etc) of a component.
         /// </summary>
         /// <param name="contentId">The ID of the component.</param>
-        Task<DynamicContentOverviewModel> GetMetaData(int contentId);
+        Task<DynamicContentOverviewModel> GetMetaDataAsync(int contentId);
+
+        /// <summary>
+        /// Links a dynamic content to a template.
+        /// </summary>
+        /// <param name="contentId">The ID of the dynamic content.</param>
+        /// <param name="templateId">The ID of the template.</param>
+        /// <param name="username">The name of the user that is adding the link.</param>
+        Task AddLinkToTemplateAsync(int contentId, int templateId, string username);
     }
 }

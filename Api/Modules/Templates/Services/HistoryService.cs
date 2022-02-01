@@ -48,7 +48,7 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<int>> RevertChanges(ClaimsIdentity identity, int contentId, List<RevertHistoryModel> changesToRevert)
+        public async Task<ServiceResult<int>> RevertChangesAsync(ClaimsIdentity identity, int contentId, List<RevertHistoryModel> changesToRevert)
         {
             var currentVersion = await dataService.GetComponentDataAsync(contentId);
 

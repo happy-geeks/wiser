@@ -405,48 +405,6 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<int> UpdateLinkedTemplatesAsync(int templateId, List<int> linksToAdd, List<int> linksToRemove)
-        {
-            connection.ClearParameters();
-            connection.AddParameter("templateId", templateId);
-            connection.AddParameter("now", DateTime.Now);
-
-            if (linksToAdd.Count > 0)
-            {
-                var addQueryBase = $"INSERT INTO {WiserTableNames.WiserTemplateLink} (template_id, destination_template_id, ordering, type, type_name, added_on)";
-
-
-                var dynamicQuery = @"VALUES ";
-                foreach (var link in linksToAdd)
-                {
-                    dynamicQuery += $"(?templateid, {link}, 1, (SELECT template_type FROM {WiserTableNames.WiserTemplate} WHERE template_id={link} ORDER BY version DESC LIMIT 1), 'new type', ?now),";
-                }
-                dynamicQuery = dynamicQuery.Substring(0, dynamicQuery.Length - 1);
-                var addQuery = addQueryBase + dynamicQuery;
-
-                await connection.ExecuteAsync(addQuery);
-            }
-
-            if (linksToRemove.Count > 0)
-            {
-                var removeQueryBase = $"DELETE FROM {WiserTableNames.WiserTemplateLink} WHERE template_id = ?templateId";
-
-                var removeQueryList = " AND destination_template_id IN (";
-                foreach (var link in linksToRemove)
-                {
-                    removeQueryList += link + ",";
-                }
-                removeQueryList = removeQueryList.Substring(0, removeQueryList.Length - 1) + ")";
-
-                var removeQuery = removeQueryBase + removeQueryList;
-
-                await connection.ExecuteAsync(removeQuery);
-            }
-
-            return 1;
-        }
-
-        /// <inheritdoc />
         public async Task<List<TemplateTreeViewDao>> GetTreeViewSectionAsync(int parentId)
         {
             connection.ClearParameters();

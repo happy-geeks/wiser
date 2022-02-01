@@ -49,6 +49,12 @@ namespace Api.Modules.Templates.Services.DataLayer
         /// <inheritdoc />
         public async Task<int> SaveSettingsStringAsync(int contentId, string component, string componentMode, string title, Dictionary<string, object> settings, string username)
         {
+            if (contentId <= 0)
+            {
+                var dataTable = await connection.GetAsync($"SELECT IFNULL(MAX(content_id), 0) AS max_content_id FROM {WiserTableNames.WiserDynamicContent}");
+                contentId = (dataTable.Rows.Count == 0 ? 0 : Convert.ToInt32(dataTable.Rows[0]["max_content_id"])) + 1;
+            }
+
             connection.ClearParameters();
             connection.AddParameter("settings", JsonConvert.SerializeObject(settings));
             connection.AddParameter("component", component);
@@ -58,11 +64,13 @@ namespace Api.Modules.Templates.Services.DataLayer
             connection.AddParameter("now", DateTime.Now);
             connection.AddParameter("username", username);
 
-            return (int)await connection.InsertRecordAsync($@"
-            SET @VersionNumber = (SELECT MAX(version)+1 FROM `{WiserTableNames.WiserDynamicContent}` WHERE content_id = ?contentId GROUP BY content_id);
+            await connection.InsertRecordAsync($@"
+            SET @VersionNumber = IFNULL((SELECT MAX(version)+1 FROM {WiserTableNames.WiserDynamicContent} WHERE content_id = ?contentId GROUP BY content_id), 1);
 
             INSERT INTO {WiserTableNames.WiserDynamicContent} (`version`, `changed_on`, `changed_by`, `settings`, `content_id`, `component`, `component_mode`, `title`) 
             VALUES (@VersionNumber, ?now, ?username, ?settings, ?contentId, ?component, ?componentMode, ?title)");
+
+            return contentId;
         }
         
         /// <inheritdoc />
@@ -82,7 +90,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<DynamicContentOverviewModel> GetMetaData(int contentId)
+        public async Task<DynamicContentOverviewModel> GetMetaDataAsync(int contentId)
         {
             connection.ClearParameters();
             connection.AddParameter("contentId", contentId);
@@ -109,6 +117,18 @@ namespace Api.Modules.Templates.Services.DataLayer
                 ChangedOn = dataTable.Rows[0].Field<DateTime>("changed_on"),
                 ChangedBy = dataTable.Rows[0].Field<string>("changed_by")
             };
+        }
+        
+        /// <inheritdoc />
+        public async Task AddLinkToTemplateAsync(int contentId, int templateId, string username)
+        {
+            connection.ClearParameters();
+            connection.AddParameter("contentId", contentId);
+            connection.AddParameter("templateId", templateId);
+            connection.AddParameter("now", DateTime.Now);
+            connection.AddParameter("username", username);
+            await connection.ExecuteAsync($@"INSERT IGNORE INTO {WiserTableNames.WiserTemplateDynamicContent} (content_id, destination_template_id, added_on, added_by)
+                                                VALUES (?contentId, ?templateId, ?now, ?username)");
         }
 
         private async Task<KeyValuePair<string, string>> GetDatabaseData(int contentId)
