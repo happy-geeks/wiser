@@ -24,9 +24,9 @@ namespace Api.Modules.Templates.Services.DataLayer
         {
             this.connection = connection;
         }
-        
+
         /// <inheritdoc />
-        public async Task<List<HistoryVersionModel>> GetDynamicContentHistory(int contentId)
+        public async Task<List<HistoryVersionModel>> GetDynamicContentHistoryAsync(int contentId)
         {
             connection.ClearParameters();
             connection.AddParameter("contentId", contentId);
@@ -39,9 +39,9 @@ namespace Api.Modules.Templates.Services.DataLayer
             }
             return resultDict;
         }
-        
+
         /// <inheritdoc />
-        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsFromDynamicContent(int templateId)
+        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsFromDynamicContentAsync(int templateId)
         {
             var versionList = new Dictionary<int, int>();
 
@@ -55,12 +55,12 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             return versionList;
         }
-        
+
         /// <inheritdoc />
-        public async Task<List<TemplateSettingsModel>> GetTemplateHistory(int templateId)
+        public async Task<List<TemplateSettingsModel>> GetTemplateHistoryAsync(int templateId)
         {
             connection.ClearParameters();
-            connection.AddParameter("templateid", templateId);
+            connection.AddParameter("templateId", templateId);
             var dataTable = await connection.GetAsync($@"SELECT 
                                                                 template.template_id, 
                                                                 template.parent_id, 
@@ -130,9 +130,10 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             return resultList;
         }
-        
+
         /// <inheritdoc />
-        public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId) {
+        public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplateAsync(int templateId)
+        {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
 
@@ -142,7 +143,7 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             var resultList = new List<PublishHistoryModel>();
 
-            foreach(DataRow row in dataTable.Rows)
+            foreach (DataRow row in dataTable.Rows)
             {
                 var publishHistory = new PublishHistoryModel
                 {
@@ -150,12 +151,12 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ChangedOn = row.Field<DateTime>("changed_on"),
                     ChangedBy = row.Field<string>("changed_by"),
                     PublishLog = new PublishLogModel(
-                        row.Field<long>("template_id"), 
-                        row.Field<long>("old_live"), 
-                        row.Field<long>("old_accept"), 
-                        row.Field<long>("old_test"), 
-                        row.Field<long>("new_live"), 
-                        row.Field<long>("new_accept"), 
+                        row.Field<long>("template_id"),
+                        row.Field<long>("old_live"),
+                        row.Field<long>("old_accept"),
+                        row.Field<long>("old_test"),
+                        row.Field<long>("new_live"),
+                        row.Field<long>("new_accept"),
                         row.Field<long>("new_test")
                     )
                 };
@@ -165,6 +166,5 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             return resultList;
         }
-
     }
 }

@@ -110,7 +110,7 @@ namespace Api.Modules.Templates.Controllers
         [HttpGet, Route("{templateId:int}/preview"), ProducesResponseType(typeof(List<PreviewProfileModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> PreviewTabAsync(int templateId)
         {
-            return (await previewService.Get(templateId)).GetHttpResponseMessage();
+            return (await previewService.GetAsync(templateId)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -206,10 +206,21 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="templateId">The ID of the template to update.</param>
         /// <param name="templateData">A <see cref="TemplateSettingsModel"/> containing the data of the template that is to be saved as a new version</param>
         [HttpPost, Route("{templateId:int}"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        public async Task<IActionResult> SaveTemplate(int templateId, TemplateSettingsModel templateData)
+        public async Task<IActionResult> SaveAsync(int templateId, TemplateSettingsModel templateData)
         {
             templateData.TemplateId = templateId;
             return (await templatesService.SaveTemplateVersionAsync((ClaimsIdentity)User.Identity, templateData)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Renames a template. This will create a new version of the template with the name, so that we can always see in the history that the name has been changed.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to rename.</param>
+        /// <param name="newName">The new name.</param>
+        [HttpPost, Route("{templateId:int}/rename"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        public async Task<IActionResult> RenameAsync(int templateId, [FromQuery]string newName)
+        {
+            return (await templatesService.RenameAsync((ClaimsIdentity)User.Identity, templateId, newName)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -217,9 +228,9 @@ namespace Api.Modules.Templates.Controllers
         /// </summary>
         /// <param name="searchSettings">The search parameters.</param>
         [HttpPost, Route("search"), ProducesResponseType(typeof(List<SearchResultModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> Search(SearchSettingsModel searchSettings)
+        public async Task<IActionResult> SearchAsync(SearchSettingsModel searchSettings)
         {
-            return (await templatesService.Search(searchSettings)).GetHttpResponseMessage();
+            return (await templatesService.SearchAsync(searchSettings)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -228,9 +239,9 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="templateId">the id of the item to retrieve the preview items of.</param>
         /// <returns>A list of PreviewProfileModel containing the profiles that are available for the given template</returns>
         [HttpGet, Route("{templateId:int}/profiles"), ProducesResponseType(typeof(List<PreviewProfileModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetPreviewProfiles(int templateId)
+        public async Task<IActionResult> GetPreviewProfilesAsync(int templateId)
         {
-            return (await previewService.Get(templateId)).GetHttpResponseMessage();
+            return (await previewService.GetAsync(templateId)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -240,9 +251,9 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="templateId">The id of the template that is bound to the profile</param>
         /// <returns>An int confirming the affected rows of the query.</returns>
         [HttpPut, Route("{templateId:int}/profiles"), ProducesResponseType(typeof(PreviewProfileModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> CreatePreviewProfile(int templateId, PreviewProfileModel profile)
+        public async Task<IActionResult> CreatePreviewProfileAsync(int templateId, PreviewProfileModel profile)
         {
-            return (await previewService.Create(profile, templateId)).GetHttpResponseMessage();
+            return (await previewService.CreateAsync(profile, templateId)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -253,10 +264,10 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="profile">A Json that meets the standards of a PreviewProfileModel</param>
         /// <returns>An int confirming the affected rows of the query.</returns>
         [HttpPost, Route("{templateId:int}/profiles/{profileId:int}"), ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> EditPreviewProfile(int templateId, int profileId, PreviewProfileModel profile)
+        public async Task<IActionResult> EditPreviewProfileAsync(int templateId, int profileId, PreviewProfileModel profile)
         {
             profile.Id = profileId;
-            return (await previewService.Update(profile, templateId)).GetHttpResponseMessage();
+            return (await previewService.UpdateAsync(profile, templateId)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -266,9 +277,9 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="profileId">The id of the profile that is to be deleted</param>
         /// <returns>An int confirming the affected rows of the query.</returns>
         [HttpDelete, Route("{templateId:int}/profiles/{profileId:int}"), ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> DeletePreviewProfiles(int templateId, int profileId)
+        public async Task<IActionResult> DeletePreviewProfilesAsync(int templateId, int profileId)
         {
-            return (await previewService.Delete(templateId, profileId)).GetHttpResponseMessage();
+            return (await previewService.DeleteAsync(templateId, profileId)).GetHttpResponseMessage();
         }
     }
 }

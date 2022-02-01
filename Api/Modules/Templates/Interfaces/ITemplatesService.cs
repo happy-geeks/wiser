@@ -124,7 +124,7 @@ namespace Api.Modules.Templates.Interfaces
         /// Search for a template.
         /// </summary>
         /// <param name="searchSettings">The search parameters.</param>
-        Task<ServiceResult<List<SearchResultModel>>> Search(SearchSettingsModel searchSettings);
+        Task<ServiceResult<List<SearchResultModel>>> SearchAsync(SearchSettingsModel searchSettings);
         
         /// <summary>
         /// Retrieve the history of the template. This will include changes made to dynamic content between the releases of templates and the publishes to different environments from this template. This data is collected and combined in a TemnplateHistoryOverviewModel
@@ -142,5 +142,13 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="type">The type of the new template that will be created.</param>
         /// <returns>The id of the newly created template. This can be used to update the interface accordingly.</returns>
         Task<ServiceResult<TemplateTreeViewModel>> CreateAsync(ClaimsIdentity identity, string name, int parent, TemplateTypes type);
+
+        /// <summary>
+        /// Renames a template. This will create a new version of the template with the name, so that we can always see in the history that the name has been changed.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="id">The ID of the template to rename.</param>
+        /// <param name="newName">The new name.</param>
+        Task<ServiceResult<bool>> RenameAsync(ClaimsIdentity identity, int id, string newName);
     }
 }

@@ -450,46 +450,35 @@ namespace Api.Modules.Templates.Services.DataLayer
         public async Task<List<TemplateTreeViewDao>> GetTreeViewSectionAsync(int parentId)
         {
             connection.ClearParameters();
-            connection.AddParameter("parentid", parentId);
-            DataTable dataTable;
-            // Retrieves the Root
-            if (parentId == 0)
+            connection.AddParameter("parentId", parentId);
+
+            // TODO: Order by ordering column (which doesn't exist yet).
+            var query = $@"SELECT
+	                        template.id,
+	                        template.template_name,
+	                        template.template_type,
+	                        template.template_id,
+	                        template.parent_id,
+	                        COUNT(child.id) > 0 AS has_children
+                        FROM {WiserTableNames.WiserTemplate} AS template
+                        LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+                        LEFT JOIN {WiserTableNames.WiserTemplate} AS child ON child.parent_id = template.template_id
+                        WHERE template.parent_id {(parentId == 0 ? "IS NULL AND template.template_type = 7" : "= ?parentId")}
+                        AND otherVersion.id IS NULL
+                        GROUP BY template.template_id
+                        ORDER BY template.template_type DESC, template.template_name ASC";
+
+            var dataTable = await connection.GetAsync(query);
+
+            return (dataTable.Rows.Cast<DataRow>()
+            .Select(row => new TemplateTreeViewDao
             {
-                dataTable = await connection.GetAsync($@"
-                SELECT wtt.id, wtt.template_name, wtt.template_type, wtt.template_id, wtt.parent_id FROM {WiserTableNames.WiserTemplate} wtt 
-                LEFT JOIN {WiserTableNames.WiserTemplate} parentTemp ON parentTemp.template_id = wtt.parent_id
-                WHERE wtt.parent_id IS NULL AND wtt.template_type = 7");
-            }
-            //Retrieve section under parentId
-            else
-            {
-                dataTable = await connection.GetAsync($@"
-                SELECT wtt.id, wtt.template_name, wtt.template_type, wtt.template_id, wtt.parent_id, IF((EXISTS (SELECT id FROM {WiserTableNames.WiserTemplate} WHERE parent_id=wtt.template_id)), 1,0) AS has_children FROM {WiserTableNames.WiserTemplate} wtt 
-                LEFT JOIN {WiserTableNames.WiserTemplate} parentTemp ON parentTemp.template_id = wtt.parent_id
-                WHERE parentTemp.template_id = ?parentid
-                GROUP BY wtt.template_id
-                ORDER BY wtt.template_type DESC, wtt.template_name");
-            }
-
-            var treeviewSection = new List<TemplateTreeViewDao>();
-
-            foreach (DataRow row in dataTable.Rows)
-            {
-                bool hasChildren = parentId != 0 && row.Field<int>("has_children") > 0;
-
-                var treeviewNode = new TemplateTreeViewDao
-                {
-                    HasChildren = hasChildren,
-                    ParentId = row.Field<int?>("parent_id"),
-                    TemplateId = row.Field<int>("template_id"),
-                    TemplateName = row.Field<string>("template_name"),
-                    TemplateType = row.Field<TemplateTypes>("template_type")
-                };
-
-                treeviewSection.Add(treeviewNode);
-            }
-
-            return treeviewSection;
+                HasChildren = Convert.ToBoolean(row["has_children"]),
+                ParentId = row.Field<int?>("parent_id"),
+                TemplateId = row.Field<int>("template_id"),
+                TemplateName = row.Field<string>("template_name"),
+                TemplateType = row.Field<TemplateTypes>("template_type")
+            })).ToList();
         }
 
         /// <inheritdoc />
