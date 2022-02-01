@@ -2511,6 +2511,10 @@ LIMIT 1";
         /// <inheritdoc />
         public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(int parentId)
         {
+            // Make sure the ordering is correct.
+            await templateDataService.FixTreeViewOrderingAsync(parentId);
+
+            // Get templates in correct order.
             var rawSection = await templateDataService.GetTreeViewSectionAsync(parentId);
             var helper = new TreeViewHelper();
             var convertedList = rawSection.Select(treeViewDao => helper.ConvertTemplateTreeViewDAOToTemplateTreeViewModel(treeViewDao)).ToList();
