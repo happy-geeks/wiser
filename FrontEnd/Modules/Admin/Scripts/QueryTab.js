@@ -1,6 +1,6 @@
-﻿import { QueryModel } from "../Scripts/QueryModel.js";
+﻿import { QueryModel } from "./QueryModel.js";
 
-export class WiserQueryTab {
+export class QueryTab {
     constructor(base) {
         this.base = base;
         this.setupBindings();
@@ -26,6 +26,11 @@ export class WiserQueryTab {
 
         this.queryCombobox.one("dataBound", () => { this.queryListInitialized = true; });
 
+        // set query dropdown list
+        this.getQueries();
+    }
+
+    async setupBindings() {
         await Misc.ensureCodeMirror();
 
         this.queryFromWiser = CodeMirror.fromTextArea(document.getElementById("queryFromWiser"), {
@@ -33,11 +38,8 @@ export class WiserQueryTab {
             lineNumbers: true
         });
 
-        // set query dropdown list
-        this.getQueries();
-    }
+        this.queryFromWiser.refresh();
 
-    async setupBindings() {
         $(".addQueryBtn").kendoButton({
             click: (e) => {
                 this.base.openDialog("Nieuwe query toevoegen", "Voer de beschrijving in van query").then((data) => {
@@ -85,12 +87,12 @@ export class WiserQueryTab {
 
     async getQueries(reloadDataSource = true, queryIdToSelect = null) {
         if (reloadDataSource) {
-            this.queryList = await $.ajax({
-                url: `${this.base.settings.wiserApiRoot}/queries/`,
-                method: "GET"
-            });
-
-            if (!queryList) {
+            try {
+                const results = await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}queries/` });
+                this.queryList = results;
+            }
+            catch (exception) {
+                console.error(exception);
                 this.base.showNotification("notification",
                     "Het ophalen van de queries is mislukt, probeer het opnieuw",
                     "error");
@@ -112,7 +114,7 @@ export class WiserQueryTab {
 
     async updateQuery(id, queryModel) {
         await $.ajax({
-            url: `${this.base.settings.wiserApiRoot}/queries/${id}`,
+            url: `${this.base.settings.wiserApiRoot}queries/${id}`,
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             data: JSON.stringify(queryModel),
@@ -120,7 +122,7 @@ export class WiserQueryTab {
         })
             .done(() => {
                 this.base.showNotification("notification", `Query is succesvol bijgewerkt`, "success");
-                this.getQueries();
+                this.getQueries(false, id);
             })
             .fail(() => {
                 this.base.showNotification("notification", `Het bijwerken van de queries is mislukt, probeer het opnieuw`, "error");
@@ -129,7 +131,7 @@ export class WiserQueryTab {
 
     async getQueryById(id) {
         const results = await $.ajax({
-            url: `${this.base.settings.wiserApiRoot}/queries/${id}`,
+            url: `${this.base.settings.wiserApiRoot}queries/${id}`,
             method: "GET"
         });
 
@@ -140,7 +142,7 @@ export class WiserQueryTab {
     async addQuery(description) {
         if (description === "") { return; }
         await $.ajax({
-            url: `${this.base.settings.wiserApiRoot}/queries/`,
+            url: `${this.base.settings.wiserApiRoot}queries/`,
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             data: JSON.stringify(description),
@@ -158,7 +160,7 @@ export class WiserQueryTab {
 
     async deleteQueryById(id) {
         await $.ajax({
-            url: `${this.base.settings.wiserApiRoot}/queries/${id}`,
+            url: `${this.base.settings.wiserApiRoot}queries/${id}`,
             method: "DELETE"
         })
             .done(() => {
@@ -175,7 +177,7 @@ export class WiserQueryTab {
 
     async setQueryProperties(resultSet) {
         document.getElementById("queryDescription").value = resultSet.description;
-        document.getElementById("showInExportModule").checked = resultSet.show_in_export_module;
+        document.getElementById("showInExportModule").checked = resultSet.showInExportModule;
         this.setCodeMirrorFields(this.queryFromWiser, resultSet.query);
     }
 

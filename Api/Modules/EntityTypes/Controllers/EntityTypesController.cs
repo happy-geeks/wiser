@@ -37,7 +37,17 @@ namespace Api.Modules.EntityTypes.Controllers
         {
             return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, onlyEntityTypesWithDisplayName)).GetHttpResponseMessage();
         }
-        
+
+        /// <summary>
+        /// Gets entity type by id and moduleId.
+        /// </summary>
+        /// <returns>A list of all available entity types.</returns>
+        [HttpGet, Route("{id}/{moduleId:int}"), ProducesResponseType(typeof(EntityTypeModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> Get(string id, int moduleId)
+        {
+            return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, id, moduleId)).GetHttpResponseMessage();
+        }
+
         /// <summary>
         /// Gets all available entity types, based on module id and parent id.
         /// </summary>
@@ -48,6 +58,17 @@ namespace Api.Modules.EntityTypes.Controllers
         public async Task<IActionResult> GetAvailableEntityTypesAsync(int moduleId, string parentId = null)
         {
             return (await entityTypesService.GetAvailableEntityTypesAsync((ClaimsIdentity)User.Identity, moduleId, parentId)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Updates existing entity type
+        /// </summary>
+        /// <param name="id">The technical ID of the entity type</param>
+        /// <param name="entityTypeModel">The new entity data to save.</param>
+        [HttpPut, Route("{id}")]
+        public async Task<IActionResult> Update(string id, EntityTypeModel entityTypeModel)
+        {
+            return (await entityTypesService.UpdateAsync((ClaimsIdentity)User.Identity, id, entityTypeModel)).GetHttpResponseMessage();
         }
     }
 }

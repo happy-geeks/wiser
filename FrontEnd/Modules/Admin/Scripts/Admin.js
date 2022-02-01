@@ -1,10 +1,9 @@
 ﻿import { InfoText } from "../Scripts/InfoText";
 import { ModuleTab } from "../Scripts/ModuleTab.js";
 import { RoleTab } from "../Scripts/RoleTab.js";
-import { EntityTab } from "../Scripts/EntityTab.js";
-import { EntityFieldTab } from "../Scripts/EntityFieldTab.js";
+import { EntityTypeTab } from "../Scripts/EntityTypeTab.js";
 import { EntityPropertyTab } from "../Scripts/EntityPropertyTab.js";
-import { WiserQueryTab } from "../Scripts/WiserQueryTab.js";
+import { QueryTab } from "../Scripts/QueryTab.js";
 import { Wiser2 } from "../../Base/Scripts/Utils.js"; 
 
 
@@ -37,13 +36,12 @@ const moduleSettings = {
             this.activeMainTab = "entiteiten"; 
             
             //classes
-            this.entityTab = null;
-            this.entityFieldTab = null;
+            this.entityTypeTab = null;
             this.entityPropertyTab = null;
             this.moduleTab = null;
             this.translations = null;
             this.roleTab = null;
-            this.wiserQueryTab = null;
+            this.queryTab = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -176,11 +174,10 @@ const moduleSettings = {
             this.settings.wiserApiRoot = `${this.settings.wiserVersion >= 210 ? this.settings.wiserApiV21Root : this.settings.wiserApiRoot}`;
 
             this.moduleTab = new ModuleTab(this);
-            this.entityTab = new EntityTab(this);
-            this.entityFieldsTab = new EntityFieldTab(this);
+            this.entityTypeTab = new EntityTypeTab(this);
             this.entityPropertyTab = new EntityPropertyTab(this);
             this.roleTab = new RoleTab(this);
-            this.wiserQueryTab = new WiserQueryTab(this);
+            this.queryTab = new QueryTab(this);
             this.setupBindings();
             this.initializeKendoComponents();
 
@@ -288,13 +285,13 @@ const moduleSettings = {
             //Call save function based on active tab
             switch (this.activeMainTab) {
                 case "entityProperty":
-                    this.entityTab.beforeSave();
+                    this.entityTypeTab.beforeSave();
                     break;
                 case "query's":
-                    this.wiserQueryTab.beforeSave();
+                    this.queryTab.beforeSave();
                     break;
                 default:
-                    this.entityTab.beforeSave();
+                    this.entityTypeTab.beforeSave();
                     break;
             }
         }
