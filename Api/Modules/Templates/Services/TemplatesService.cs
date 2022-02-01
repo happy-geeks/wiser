@@ -2526,7 +2526,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<SearchResultModel>>> Search(SearchSettingsModel searchSettings)
+        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(SearchSettingsModel searchSettings)
         {
             return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchSettings));
         }
@@ -2578,6 +2578,45 @@ LIMIT 1";
                 HasChildren = false,
                 IsFolder = type == TemplateTypes.Directory
             });
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> RenameAsync(ClaimsIdentity identity, int id, string newName)
+        {
+            if (String.IsNullOrWhiteSpace(newName))
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Name cannot be empty."
+                };
+            }
+
+            var templateDataResponse = await GetTemplateSettingsAsync(id);
+            if (templateDataResponse.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = templateDataResponse.StatusCode,
+                    ErrorMessage = templateDataResponse.ErrorMessage,
+                    ReasonPhrase = templateDataResponse.ReasonPhrase
+                };
+            }
+
+            var linkedTemplatesResponse = await GetLinkedTemplatesAsync(id);
+            if (linkedTemplatesResponse.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = linkedTemplatesResponse.StatusCode,
+                    ErrorMessage = linkedTemplatesResponse.ErrorMessage,
+                    ReasonPhrase = linkedTemplatesResponse.ReasonPhrase
+                };
+            }
+
+            templateDataResponse.ModelObject.LinkedTemplates = linkedTemplatesResponse.ModelObject;
+            templateDataResponse.ModelObject.Name = newName;
+            return await SaveTemplateVersionAsync(identity, templateDataResponse.ModelObject);
         }
 
         /// <summary>
