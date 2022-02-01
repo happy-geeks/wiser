@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Modules, Dates, Strings, Wiser2, Misc } from "../../Base/Scripts/Utils.js";
+import { Wiser2 } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
@@ -37,7 +37,7 @@ const moduleSettings = {
             this.mainSplitter = null;
             this.mainTreeView = null;
             this.mainTabStrip = null;
-            this.treeviewTabStrip = null;
+            this.treeViewTabStrip = null;
             this.mainWindow = null;
             this.mainComboInput = null;
             this.mainMultiSelect = null;
@@ -49,6 +49,23 @@ const moduleSettings = {
             this.linkedTemplates = null;
             this.templateHistory = null;
             this.previewProfiles = null;
+            this.treeViewContextMenu = null;
+            this.mainHtmlEditor = null;
+            this.dynamicContentGrid = null;
+            this.newContentId = 0;
+            this.newContentTitle = null;
+
+            this.templateTypes = Object.freeze({
+                "UNKNOWN": 0,
+                "HTML": 1,
+                "CSS": 2,
+                "SCSS": 3,
+                "JS": 4,
+                "SCRIPTS": 4,
+                "QUERY": 5,
+                "NORMAL": 6,
+                "DIRECTORY": 7
+            });
 
             // Default settings
             this.settings = {
@@ -136,7 +153,8 @@ const moduleSettings = {
 
             // Buttons
             $("#addButton").kendoButton({
-                icon: "plus"
+                icon: "plus",
+                click: () => this.openCreateNewItemDialog()
             });
 
             $("#saveButton").kendoButton({
@@ -175,7 +193,7 @@ const moduleSettings = {
                 }
             }).data("kendoTabStrip");
 
-            this.treeviewTabStrip = $(".tabstrip-treeview").kendoTabStrip({
+            this.treeViewTabStrip = $(".tabstrip-treeview").kendoTabStrip({
                 animation: {
                     open: {
                         effects: "fadeIn"
@@ -191,14 +209,14 @@ const moduleSettings = {
             });
 
             for (let tab of treeViewTabs) {
-                this.treeviewTabStrip.append({
+                this.treeViewTabStrip.append({
                     text: tab.templateName,
-                    content: `<ul id="${tab.templateId}-treeview" class="treeview" data-id="${tab.templateId}"></ul>`
+                    content: `<ul id="${tab.templateId}-treeview" class="treeview" data-id="${tab.templateId}" data-title="${tab.templateName}"></ul>`
                 });
             }
 
             // Select first tab.
-            this.treeviewTabStrip.select(0);
+            this.treeViewTabStrip.select(0);
 
             // Treeview 
             this.mainTreeView = [];
@@ -234,6 +252,18 @@ const moduleSettings = {
                     dataSpriteCssClassField: "spriteCssClass"
                 }).data("kendoTreeView");
             });
+
+            this.treeViewContextMenu = $("#treeViewContextMenu").kendoContextMenu({
+                dataSource: [
+                    { text: "Item toevoegen", attr: { action: "addNewItem" } },
+                    { text: "Hernoemen", attr: { action: "rename" } },
+                    { text: "Verwijderen", attr: { action: "delete" } }
+                ],
+                target: ".tabstrip-treeview",
+                filter: ".k-item",
+                open: this.onContextMenuOpen.bind(this),
+                select: this.onContextMenuSelect.bind(this)
+            }).data("kendoContextMenu");
 
             var tempPreviewData = [
                 {
@@ -405,6 +435,68 @@ const moduleSettings = {
         }
 
         /**
+         * Opens the dialog for creating a new item.
+         * @param {any} selectedNode When calling this from context menu, the selected node from the tree view should be entered here.
+         */
+        async openCreateNewItemDialog(selectedNode) {
+            try {
+                const selectedTabIndex = this.treeViewTabStrip.select().index();
+                const selectedTabContentElement = this.treeViewTabStrip.contentElement(selectedTabIndex);
+                const treeViewElement = selectedTabContentElement.querySelector("ul");
+                const treeView = $(treeViewElement).data("kendoTreeView");
+                const dataItem = selectedNode 
+                    ? treeView.dataItem(selectedNode) 
+                    : (this.selectedId === 0 
+                        ? { templateId: treeViewElement.dataset.id, templateName: treeViewElement.dataset.title, isFolder: true } 
+                        : treeView.dataItem(treeView.select()));
+                const parentId = dataItem.templateId || this.selectedId || parseInt(treeViewElement.dataset.id);
+                const newItemIsDirectoryCheckBox = $("#newItemIsDirectoryCheckBox").prop("checked", false);
+                const newItemTitleField = $("#newItemTitleField").val("");
+                const parentIsDirectory = dataItem.isFolder;
+
+                newItemIsDirectoryCheckBox.toggleClass("hidden", !parentIsDirectory);
+
+                const dialog = $("#createNewItemDialog").kendoDialog({
+                    width: "500px",
+                    title: `Nieuw item aanmaken onder '${dataItem.templateName}'`,
+                    closable: true,
+                    modal: true,
+                    actions: [
+                        {
+                            text: "Annuleren"
+                        },
+                        {
+                            text: "Opslaan",
+                            primary: true,
+                            action: () => {
+                                try {
+                                    const isDirectory = parentIsDirectory && newItemIsDirectoryCheckBox.prop("checked");
+                                    const title = newItemTitleField.val();
+                                    if (!title) {
+                                        kendo.alert("Vul a.u.b. een naam in.");
+                                        return;
+                                    }
+
+                                    const type = isDirectory ? this.templateTypes.DIRECTORY : this.templateTypes[treeViewElement.dataset.title.toUpperCase()];
+
+                                    this.createNewTemplate(parentId, title, type, treeView, !parentId ? undefined : selectedNode || treeView.select());
+                                } catch (exception) {
+                                    console.error(exception);
+                                    kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+                                }
+                            }
+                        }
+                    ]
+                }).data("kendoDialog");
+
+                dialog.open();
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+            }
+        }
+
+        /**
          * Event for when an item in a kendoTreeView gets collapsed.
          * @param {any} event The collapsed event of a kendoTreeView.
          */
@@ -433,20 +525,76 @@ const moduleSettings = {
          * @param {any} event The select event of a kendoTreeView.
          */
         async onTreeViewSelect(event) {
-            var dataItem = event.sender.dataItem(event.node);
-            if (dataItem.isFolder || dataItem.id === this.selectedId) {
+            const dataItem = event.sender.dataItem(event.node);
+            if (dataItem.id === this.selectedId) {
                 return;
             }
 
+            $("#addButton").toggleClass("hidden", !dataItem.isFolder);
+
             // Deselect all tree views in other tabs, otherwise they will stay selected even though the user selected a different template.
-            for (let index in this.mainTreeView) {
+            for (let index = 0; index < this.mainTreeView.length; index++) {
                 const treeView = this.mainTreeView[index];
-                if (this.treeviewTabStrip.select().index() !== index) {
+                if (this.treeViewTabStrip.select().index() !== index) {
                     treeView.select($());
                 }
-            };
+            }
 
             this.selectedId = dataItem.id;
+
+            if (dataItem.isFolder) {
+                return;
+            }
+
+            this.loadTemplate(dataItem.id);
+        }
+
+        /**
+         * Event for when the context menu of the tree view gets opened.
+         * @param {any} event The open event of a kendoContextMenu.
+         */
+        onContextMenuOpen(event) {
+            const treeView = this.mainTreeView[this.treeViewTabStrip.select().index()];
+            const selectedItem = treeView.dataItem(event.target);
+            event.item.find("[action='addNewItem']").toggleClass("hidden", !selectedItem.isFolder);
+        }
+
+        /**
+         * Event for when the user selects an option in the context menu of the main tree view.
+         * @param {any} event The select event of a kendoContextMenu.
+         */
+        onContextMenuSelect(event) {
+            const selectedOption = $(event.item);
+            const node = $(event.target);
+            const treeView = this.mainTreeView[this.treeViewTabStrip.select().index()];
+            const dataItem = treeView.dataItem(node);
+            const action = selectedOption.attr("action");
+            
+            switch (action) {
+                case "addNewItem":
+                    this.openCreateNewItemDialog(node);
+                    break;
+                case "rename":
+                    kendo.prompt("Vul een nieuwe naam in", dataItem.templateName).then((newName) => {
+                        this.renameItem(dataItem.templateId, newName).then(() => {
+                            treeView.text(node, newName);
+                        });
+                    });
+                    break;
+                case "delete":
+                    kendo.alert("Functionaliteit voor het verwijderen van templates is nog niet gemaakt.");
+                    break;
+                default:
+                    kendo.alert(`Onbekende actie '${action}'. Probeer het a.u.b. opnieuw op neem contact op.`);
+                    break;
+            }
+        }
+
+        /**
+         * Load a template for editing.
+         * @param {any} id The ID of the template to load.
+         */
+        async loadTemplate(id) {
             const process = `onTreeViewSelect_${Date.now()}`;
             window.processing.addProcess(process);
 
@@ -454,22 +602,22 @@ const moduleSettings = {
                 // Get template settings and linked templates.
                 let promises = [
                     Wiser2.api({
-                        url: `${this.settings.wiserApiRoot}templates/${dataItem.id}/settings`,
+                        url: `${this.settings.wiserApiRoot}templates/${id}/settings`,
                         dataType: "json",
                         method: "GET"
                     }),
                     Wiser2.api({
-                        url: `${this.settings.wiserApiRoot}templates/${dataItem.id}/linked-templates`,
+                        url: `${this.settings.wiserApiRoot}templates/${id}/linked-templates`,
                         dataType: "json",
                         method: "GET"
                     }),
                     Wiser2.api({
-                        url: `${this.settings.wiserApiRoot}templates/${dataItem.id}/history`,
+                        url: `${this.settings.wiserApiRoot}templates/${id}/history`,
                         dataType: "json",
                         method: "GET"
                     }),
                     Wiser2.api({
-                        url: `${this.settings.wiserApiRoot}templates/${dataItem.id}/profiles`,
+                        url: `${this.settings.wiserApiRoot}templates/${id}/profiles`,
                         dataType: "json",
                         method: "GET"
                     })
@@ -497,7 +645,7 @@ const moduleSettings = {
                     }).then((response) => {
                         document.getElementById("developmentTab").innerHTML = response;
                         this.initKendoDeploymentTab();
-                        this.bindDeployButtons(dataItem.id);
+                        this.bindDeployButtons(id);
                     })
                 );
 
@@ -512,14 +660,14 @@ const moduleSettings = {
                         document.getElementById("historyTab").innerHTML = response;
                     })
                 );
-                
+
                 // Dynamic content
-                $("#dynamic-grid").kendoGrid({
+                this.dynamicContentGrid = $("#dynamic-grid").kendoGrid({
                     dataSource: {
                         transport: {
                             read: (readOptions) => {
                                 Wiser2.api({
-                                    url: `${this.settings.wiserApiRoot}templates/${dataItem.id}/linked-dynamic-content`,
+                                    url: `${this.settings.wiserApiRoot}templates/${id}/linked-dynamic-content`,
                                     dataType: "json",
                                     method: "GET"
                                 }).then((response) => {
@@ -607,7 +755,7 @@ const moduleSettings = {
                         },
                         {
                             command: [
-                                /*{
+                                /*TODO {
                                     name: "duplicate",
                                     text: "",
                                     iconClass: "k-icon k-i-copy",
@@ -617,8 +765,8 @@ const moduleSettings = {
                                     name: "Open",
                                     text: "",
                                     iconClass: "k-icon k-i-edit",
-                                    click: this.kendoGridOpen.bind(this)
-                                }/*,
+                                    click: this.onDynamicContentOpenClick.bind(this)
+                                }/* TODO,
                                         {
                                             name: "Preview",
                                             text: "",
@@ -630,7 +778,12 @@ const moduleSettings = {
                             width: 160,
                             filterable: false
                         }
-                    ]
+                    ],
+                    toolbar: [{
+                        name: "add",
+                        text: "Nieuw",
+                        template: `<a class='k-button k-button-icontext' href='\\#' onclick='return window.Templates.openDynamicContentWindow(0, "Nieuw dynamische content toevoegen")'><span class='k-icon k-i-file-add'></span>Nieuw item toevoegen</a>`
+                    }]
                 }).data("kendoGrid");
 
                 // Preview
@@ -671,9 +824,15 @@ const moduleSettings = {
             $(".combo-select").kendoComboBox();
 
             // HTML editor
-            this.mainTabStrip = $(".editor").kendoEditor({
+            const insertDynamicContentTool = {
+                name: "wiserDynamicContent",
+                tooltip: "Dynamische inhoud toevoegen",
+                exec: this.onHtmlEditorDynamicContentExec.bind(this)
+            };
+            this.mainHtmlEditor = $(".editor").kendoEditor({
                 resizable: true,
                 tools: [
+                    insertDynamicContentTool,
                     "bold",
                     "italic",
                     "underline",
@@ -724,24 +883,95 @@ const moduleSettings = {
             //TODO
         }
 
-        kendoGridOpen(event) {
+        /**
+         * Event that gets called when the user executes the custom action for adding dynamic content from Wiser to the HTML editor.
+         * This will open a dialog where they can select any component that is linked to the current template, or add a new one.
+         * @param {any} event The event from the execute action.
+         */
+        async onHtmlEditorDynamicContentExec(event) {
+            console.log("onHtmlEditorDynamicContentExec", event);
+
+            let dropDown = $("#dynamicContentDropDown").data("kendoDropDownList");
+            if (!dropDown) {
+                dropDown = $("#dynamicContentDropDown").kendoDropDownList({
+                    dataTextField: "title",
+                    dataValueField: "id",
+                    optionLabel: "Nieuw component"
+                }).data("kendoDropDownList");
+            }
+
+            dropDown.setDataSource(this.dynamicContentGrid.dataSource);
+
+            const dialog = $("#addDynamicContentToHtmlDialog").kendoDialog({
+                width: "500px",
+                title: `Dynamische inhoud invoegen`,
+                closable: true,
+                modal: true,
+                actions: [
+                    {
+                        text: "Annuleren"
+                    },
+                    {
+                        text: "Invoegen",
+                        primary: true,
+                        action: async () => {
+                            let id = dropDown.value();
+                            let title = dropDown.dataItem().title;
+
+                            if (!id) {
+                                const newContentData = await this.openDynamicContentWindow(0, "Nieuw dynamische content toevoegen");
+                                if (!newContentData) {
+                                    console.warn("Dynamic content was not (properly) created.");
+                                    return;
+                                }
+
+                                id = newContentData.id;
+                                title = newContentData.title;
+                            }
+                            
+                            if (!id) {
+                                console.warn("Dynamic content was not (properly) created.");
+                                return;
+                            }
+
+                            const html = `<div class="dynamic-content" component-id="${id}"><h2>${title}</h2></div>`;
+                            this.mainHtmlEditor.exec("inserthtml", { value: html });
+                        }
+                    }
+                ]
+            }).data("kendoDialog");
+
+            dialog.open();
+        }
+
+        onDynamicContentOpenClick(event) {
             const grid = $("#dynamic-grid").data("kendoGrid");
             const tr = $(event.currentTarget).closest("tr");
             const data = grid.dataItem(tr);
+            this.openDynamicContentWindow(data.id, data.title);
+        }
 
-            $("#DynamicContentWindow").kendoWindow({
-                title: data.title,
-                width: "100%",
-                height: "100%",
-                content: `/Modules/DynamicContent/${data.id}`,
-                actions: ["close"],
-                draggable: false,
-                iframe: true,
-                close: (closeWindowEvent) => {
-                    console.log("close window", grid);
-                    grid.dataSource.read();
-                }
-            }).data("kendoWindow").maximize().open();
+        openDynamicContentWindow(contentId, title) {
+            return new Promise((resolve) => {
+                const grid = $("#dynamic-grid").data("kendoGrid");
+
+                this.newContentId = 0;
+                this.newContentTitle = null;
+
+                $("#dynamicContentWindow").kendoWindow({
+                    title: title,
+                    width: "100%",
+                    height: "100%",
+                    content: `/Modules/DynamicContent/${contentId || 0}?templateId=${this.selectedId}`,
+                    actions: ["close"],
+                    draggable: false,
+                    iframe: true,
+                    close: (closeWindowEvent) => {
+                        grid.dataSource.read();
+                        resolve({ id: this.newContentId, title: this.newContentTitle });
+                    }
+                }).data("kendoWindow").maximize().open();
+            });
         }
 
         //Bind the deploybuttons for the template versions
@@ -775,55 +1005,100 @@ const moduleSettings = {
             document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
         }
 
+        /**
+         * Change the name of a template or directory.
+         * @param {any} id
+         * @param {any} newName
+         */
+        async renameItem(id, newName) {
+            const process = `renameItem_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            let success = true;
+            try {
+                const response = await Wiser2.api({
+                    url: `${this.settings.wiserApiRoot}templates/${id}/rename?newName=${encodeURIComponent(newName)}`,
+                    dataType: "json",
+                    type: "POST",
+                    contentType: "application/json"
+                });
+
+                window.popupNotification.show(`Template '${id}' is succesvol hernoemd naar '${newName}'`, "info");
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
+                success = false;
+            }
+
+            window.processing.removeProcess(process);
+            return success;
+        }
+
+        /**
+         * Save a new version of the selected template.
+         */
         async saveTemplate() {
             if (!this.selectedId) {
-                return;
+                return false;
             }
+            
+            const process = `saveTemplate_${Date.now()}`;
+            window.processing.addProcess(process);
+            let success = true;
 
-            const scssLinks = [];
-            const jsLinks = [];
-            document.querySelectorAll("#scss-checklist input[type=checkbox]:checked").forEach(el => { scssLinks.push({ templateId: el.dataset.template }) });
-            document.querySelectorAll("#js-checklist input[type=checkbox]:checked").forEach(el => { jsLinks.push({ templateId: el.dataset.template }) });
+            try {
+                const scssLinks = [];
+                const jsLinks = [];
+                document.querySelectorAll("#scss-checklist input[type=checkbox]:checked").forEach(el => { scssLinks.push({ templateId: el.dataset.template }) });
+                document.querySelectorAll("#js-checklist input[type=checkbox]:checked").forEach(el => { jsLinks.push({ templateId: el.dataset.template }) });
 
-            const data = {
-                templateId: this.selectedId,
-                name: this.templateSettings.name || "",
-                type: this.templateSettings.type,
-                parentId: this.templateSettings.parentId,
-                editorValue: $(".editor").data("kendoEditor").value(),
-                useCache: document.getElementById("combo-cache").value,
-                cacheMinutes: document.getElementById("cache-duration").value,
-                handleRequests: document.getElementById("handleRequests").checked,
-                handleSession: document.getElementById("handleSession").checked,
-                handleObjects: document.getElementById("handleObjects").checked,
-                handleStandards: document.getElementById("handleStandards").checked,
-                handleTranslations: document.getElementById("handleTranslations").checked,
-                handleDynamicContent: document.getElementById("handleDynamicContent").checked,
-                handleLogicBlocks: document.getElementById("handleLogicBlocks").checked,
-                handleMutators: document.getElementById("handleMutators").checked,
-                loginRequired: document.getElementById("user-check").checked,
-                linkedTemplates: {
-                    linkedSccsTemplates: scssLinks,
-                    linkedJavascript: jsLinks
+                const data = {
+                    templateId: this.selectedId,
+                    name: this.templateSettings.name || "",
+                    type: this.templateSettings.type,
+                    parentId: this.templateSettings.parentId,
+                    editorValue: $(".editor").data("kendoEditor").value(),
+                    useCache: document.getElementById("combo-cache").value,
+                    cacheMinutes: document.getElementById("cache-duration").value,
+                    handleRequests: document.getElementById("handleRequests").checked,
+                    handleSession: document.getElementById("handleSession").checked,
+                    handleObjects: document.getElementById("handleObjects").checked,
+                    handleStandards: document.getElementById("handleStandards").checked,
+                    handleTranslations: document.getElementById("handleTranslations").checked,
+                    handleDynamicContent: document.getElementById("handleDynamicContent").checked,
+                    handleLogicBlocks: document.getElementById("handleLogicBlocks").checked,
+                    handleMutators: document.getElementById("handleMutators").checked,
+                    loginRequired: document.getElementById("user-check").checked,
+                    linkedTemplates: {
+                        linkedSccsTemplates: scssLinks,
+                        linkedJavascript: jsLinks
+                    }
                 }
+
+                if (document.getElementById("user-check").checked) {
+                    data.loginUserType = document.getElementById("combo-user1").value;
+                    data.loginSessionPrefix = document.getElementById("combo-user2").value;
+                    data.loginRole = document.getElementById("combo-user3").value;
+                }
+
+                const response = await Wiser2.api({
+                    url: `${this.settings.wiserApiRoot}templates/${data.templateId}`,
+                    dataType: "json",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(data)
+                });
+
+                window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
+                await this.reloadTabs(this.selectedId);
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
+                success = false;
             }
 
-            if (document.getElementById("user-check").checked) {
-                data.loginUserType = document.getElementById("combo-user1").value;
-                data.loginSessionPrefix = document.getElementById("combo-user2").value;
-                data.loginRole = document.getElementById("combo-user3").value;
-            }
-
-            const response = await Wiser2.api({
-                url: `${this.settings.wiserApiRoot}templates/${data.templateId}`,
-                dataType: "json",
-                type: "PUT",
-                contentType: "application/json",
-                data: JSON.stringify(data)
-            });
-
-            window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
-            await this.reloadTabs(this.selectedId);
+            window.processing.removeProcess(process);
+            return success;
         }
 
         /**
@@ -925,6 +1200,55 @@ const moduleSettings = {
                     });
                 }
             });
+        }
+
+        /**
+         * Creates a new template, adds it to the tree view and finally opens it.
+         * @param {any} parentId The ID of the parent to add the template to.
+         * @param {any} title The name of the template.
+         * @param {any} type The template type.
+         * @param {any} treeView The tree view that the template should be added to.
+         * @param {any} parentElement The parent node in the tree view to add the parent to.
+         */
+        async createNewTemplate(parentId, title, type, treeView, parentElement) {
+            const process = `createNewTemplate_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            let success = true;
+            try {
+                const result = await Wiser2.api({
+                    url: `${this.settings.wiserApiRoot}templates/${parentId}?name=${encodeURIComponent(title)}&type=${type}`,
+                    dataType: "json",
+                    type: "PUT",
+                    contentType: "application/json"
+                });
+
+                const dataItem = treeView.dataItem(parentElement);
+                if (dataItem && dataItem.hasChildren && parentElement.attr("aria-expanded") !== "true") {
+                    treeView.one("dataBound", () => {
+                        const node = treeView.findByUid(treeView.dataSource.get(result.templateId).uid);
+                        treeView.select(node);
+                        treeView.trigger("select", {
+                            node: node
+                        });
+                    });
+                    treeView.expand(parentElement);
+                } else {
+                    const newTreeViewElement = parentElement.length > 0 ? treeView.append(result, parentElement) : treeView.append(result);
+                    treeView.select(newTreeViewElement);
+                    treeView.trigger("select", {
+                        node: newTreeViewElement
+                    });
+                }
+
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op.");
+                success = false;
+            }
+
+            window.processing.removeProcess(process);
+            return success;
         }
     }
 

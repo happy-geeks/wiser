@@ -2358,7 +2358,7 @@ LIMIT 1";
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var versionsAndPublished = await templateDataService.GetPublishedEnvironmentsFromTemplate(templateId);
+            var versionsAndPublished = await templateDataService.GetPublishedEnvironmentsAsync(templateId);
 
             var helper = new PublishedEnvironmentHelper();
 
@@ -2373,22 +2373,29 @@ LIMIT 1";
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var rawLinkList = await templateDataService.GetLinkedTemplates(templateId);
+            var rawLinkList = await templateDataService.GetLinkedTemplatesAsync(templateId);
 
             var resultLinks = new LinkedTemplatesModel();
             foreach (var linkedTemplate in rawLinkList)
             {
-                if (linkedTemplate.LinkType == TemplateTypes.Js)
+                switch (linkedTemplate.LinkType)
                 {
-                    resultLinks.LinkedJavascript.Add(linkedTemplate);
-                }
-                else if (linkedTemplate.LinkType == TemplateTypes.Scss)
-                {
-                    resultLinks.LinkedSccsTemplates.Add(linkedTemplate);
+                    case TemplateTypes.Js:
+                        resultLinks.LinkedJavascript.Add(linkedTemplate);
+                        break;
+                    case TemplateTypes.Css:
+                        resultLinks.LinkedSccsTemplates.Add(linkedTemplate);
+                        break;
+                    case TemplateTypes.Scss:
+                        resultLinks.LinkedSccsTemplates.Add(linkedTemplate);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(linkedTemplate.LinkType), linkedTemplate.LinkType.ToString());
                 }
             }
 
-            resultLinks.LinkOptionsTemplates = await templateDataService.GetLinkOptionsForTemplate(templateId);
+            resultLinks.LinkOptionsTemplates = await templateDataService.GetTemplatesAvailableForLinkingAsync(templateId);
+            resultLinks.LinkOptionsTemplates = resultLinks.LinkOptionsTemplates.Where(t => rawLinkList.All(l => l.TemplateId != t.TemplateId)).ToList();
 
             return new ServiceResult<LinkedTemplatesModel>(resultLinks);
         }
@@ -2403,7 +2410,7 @@ LIMIT 1";
 
             var resultList = new List<DynamicContentOverviewModel>();
 
-            foreach (var linkedContent in await templateDataService.GetLinkedDynamicContent(templateId))
+            foreach (var linkedContent in await templateDataService.GetLinkedDynamicContentAsync(templateId))
             {
                 resultList.Add(LinkedDynamicContentToDynamicContentOverview(linkedContent));
             }
@@ -2419,7 +2426,7 @@ LIMIT 1";
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var templateData = await templateDataService.GetTemplateMetaData(templateId);
+            var templateData = await templateDataService.GetMetaDataAsync(templateId);
             var templateEnvironmentsResult = await GetTemplateEnvironmentsAsync(templateId);
             if (templateEnvironmentsResult.StatusCode != HttpStatusCode.OK)
             {
@@ -2443,7 +2450,7 @@ LIMIT 1";
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var templateData = await templateDataService.GetTemplateData(templateId);
+            var templateData = await templateDataService.GetDataAsync(templateId);
             var templateEnvironmentsResult = await GetTemplateEnvironmentsAsync(templateId);
             if (templateEnvironmentsResult.StatusCode != HttpStatusCode.OK)
             {
@@ -2460,7 +2467,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<int>> PublishEnvironmentOfTemplateAsync(ClaimsIdentity identity, int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
+        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
         {
             if (templateId <= 0)
             {
@@ -2478,7 +2485,7 @@ LIMIT 1";
 
             var publishLog = helper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
-            return new ServiceResult<int>(await templateDataService.PublishEnvironmentOfTemplate(templateId, newPublished, publishLog, IdentityHelpers.GetUserName(identity)));
+            return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, newPublished, publishLog, IdentityHelpers.GetUserName(identity)));
         }
 
         /// <inheritdoc />
@@ -2489,29 +2496,22 @@ LIMIT 1";
                 throw new ArgumentException("TemplateData cannot be empty.");
             }
 
-            var linkList = await templateDataService.GetLinkedTemplates(template.TemplateId);
+            var linkList = await templateDataService.GetLinkedTemplatesAsync(template.TemplateId);
 
             var linksToAdd = new List<int>();
             var linksToRemove = new List<int>();
 
             var jsLinks = template.LinkedTemplates.LinkedJavascript.Select(x => x.TemplateId).ToList();
             var scssLinks = template.LinkedTemplates.LinkedSccsTemplates.Select(x => x.TemplateId).ToList();
-
-            linksToAdd = GetToAddList(jsLinks, linkList, linksToAdd);
-            linksToAdd = GetToAddList(scssLinks, linkList, linksToAdd);
-
-            linksToRemove = FillToRemoveList(jsLinks, TemplateTypes.Js, linkList, linksToRemove);
-            linksToRemove = FillToRemoveList(scssLinks, TemplateTypes.Scss, linkList, linksToRemove);
-
-            await templateDataService.SaveTemplateVersion(template, scssLinks, jsLinks, IdentityHelpers.GetUserName(identity));
-            await templateDataService.SaveLinkedTemplates(template.TemplateId, linksToAdd, linksToRemove);
+            
+            await templateDataService.SaveAsync(template, scssLinks, jsLinks, IdentityHelpers.GetUserName(identity));
             return new ServiceResult<bool>(true);
         }
 
         /// <inheritdoc />
         public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(int parentId)
         {
-            var rawSection = await templateDataService.GetTreeViewSection(parentId);
+            var rawSection = await templateDataService.GetTreeViewSectionAsync(parentId);
             var helper = new TreeViewHelper();
             var convertedList = rawSection.Select(treeViewDao => helper.ConvertTemplateTreeViewDAOToTemplateTreeViewModel(treeViewDao)).ToList();
 
@@ -2519,9 +2519,9 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<SearchResultModel>>> Search(SearchSettingsModel searchSettings)
+        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(SearchSettingsModel searchSettings)
         {
-            return new ServiceResult<List<SearchResultModel>>(await templateDataService.GetSearchResults(searchSettings));
+            return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchSettings));
         }
 
         /// <inheritdoc />
@@ -2558,6 +2558,58 @@ LIMIT 1";
             };
 
             return new ServiceResult<TemplateHistoryOverviewModel>(overview);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateTreeViewModel>> CreateAsync(ClaimsIdentity identity, string name, int parent, TemplateTypes type)
+        {
+            var newId = await templateDataService.CreateAsync(name, parent, type, IdentityHelpers.GetUserName(identity));
+            return new ServiceResult<TemplateTreeViewModel>(new TemplateTreeViewModel
+            {
+                TemplateId = newId,
+                TemplateName = name,
+                HasChildren = false,
+                IsFolder = type == TemplateTypes.Directory
+            });
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> RenameAsync(ClaimsIdentity identity, int id, string newName)
+        {
+            if (String.IsNullOrWhiteSpace(newName))
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Name cannot be empty."
+                };
+            }
+
+            var templateDataResponse = await GetTemplateSettingsAsync(id);
+            if (templateDataResponse.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = templateDataResponse.StatusCode,
+                    ErrorMessage = templateDataResponse.ErrorMessage,
+                    ReasonPhrase = templateDataResponse.ReasonPhrase
+                };
+            }
+
+            var linkedTemplatesResponse = await GetLinkedTemplatesAsync(id);
+            if (linkedTemplatesResponse.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = linkedTemplatesResponse.StatusCode,
+                    ErrorMessage = linkedTemplatesResponse.ErrorMessage,
+                    ReasonPhrase = linkedTemplatesResponse.ReasonPhrase
+                };
+            }
+
+            templateDataResponse.ModelObject.LinkedTemplates = linkedTemplatesResponse.ModelObject;
+            templateDataResponse.ModelObject.Name = newName;
+            return await SaveTemplateVersionAsync(identity, templateDataResponse.ModelObject);
         }
 
         /// <summary>
