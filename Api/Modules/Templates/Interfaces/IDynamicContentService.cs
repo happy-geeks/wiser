@@ -63,8 +63,16 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Gets the meta data (name, component mode etc) for a component.
         /// </summary>
-        /// <param name="contentId"></param>
+        /// <param name="contentId">The ID of the dynamic content.</param>
         /// <returns></returns>
         Task<ServiceResult<DynamicContentOverviewModel>> GetMetaDataAsync(int contentId);
+        
+        /// <summary>
+        /// Links a dynamic content to a template.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="contentId">The ID of the dynamic content.</param>
+        /// <param name="templateId">The ID of the template.</param>
+        Task<ServiceResult<bool>> AddLinkToTemplateAsync(ClaimsIdentity identity, int contentId, int templateId);
     }
 }

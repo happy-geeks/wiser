@@ -1,5 +1,15 @@
 ﻿@import "../../Base/scss/base.scss";
 
+#createNewItemDialog,
+#addDynamicContentToHtmlDialog  {
+    display: none;
+}
+
+.k-dialog #createNewItemDialog,
+.k-dialog #addDynamicContentToHtmlDialog {
+    display: revert;
+}
+
 :root {
     --live-color: #7CBD00;
     --test-color: #FFF300;
@@ -64,7 +74,7 @@
 
 /** TREEVIEW **/
 #right-pane {
-    width: auto !important;
+    width: auto;
     right: 0;
 }
 
@@ -347,70 +357,65 @@
     }
 
 /** preview tab **/
-
-.previewContainer {
-}
-
 .previewContainer {
     padding: 2px;
 }
+.previewContainer * {
+    box-sizing: border-box;
+}
 
-    .previewContainer * {
-        box-sizing: border-box;
-    }
+.previewContainer .row {
+    display: flex;
+    justify-content: space-between;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    max-width: 100%;
+}
 
-    .previewContainer .row {
-        display: flex;
-        justify-content: space-between;
-        flex-basis: 100%;
-        flex-wrap: wrap;
-        max-width: 100%;
-    }
+.previewContainer .item {
+    max-width: 100%;
+}
 
-    .previewContainer .item {
-        max-width: 100%;
-    }
+.previewContainer .col-6 {
+    flex-basis: calc(50% - 1px);
+    max-width: 100%;
+}
 
-    .previewContainer .col-6 {
-        flex-basis: calc(50% - 1px);
-        max-width: 100%;
-    }
+.previewContainer .col-12 {
+    flex-basis: 100%;
+    max-width: 100%;
+}
 
-    .previewContainer .col-12 {
-        flex-basis: 100%;
-        max-width: 100%;
-    }
+.previewContainer .flex-container {
+    display: flex;
+    justify-content: space-between;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+}
 
-    .previewContainer .flex-container {
-        display: flex;
-        justify-content: space-between;
-        flex-basis: 100%;
-        flex-wrap: wrap;
-    }
+.previewContainer .dropdown-container {
+    flex: 1 1 auto;
+    margin-right: 20px;
+}
 
-    .previewContainer .dropdown-container {
-        flex: 1 1 auto;
-        margin-right: 20px;
-    }
+.previewContainer .preview-profile,
+.previewContainer #preview-results,
+.previewContainer #preview-variables {
+    max-width: 100%;
+}
 
-    .previewContainer .preview-profile,
-    .previewContainer #preview-results,
-    .previewContainer #preview-variables {
-        max-width: 100%;
-    }
+.previewContainer .dropdown-button {
+    align-self: center;
+}
 
-    .previewContainer .dropdown-button {
-        align-self: center;
-    }
+.previewContainer .button-container {
+    display: flex;
+    justify-content: end;
+}
 
-    .previewContainer .button-container {
-        display: flex;
-        justify-content: end;
-    }
-
-        .previewContainer .button-container button:nth-last-of-type(1) {
-            margin-right: 0;
-        }
+.previewContainer .button-container button:nth-last-of-type(1) {
+    margin-right: 0;
+}
 
 /** ICONS **/
 .k-sprite {

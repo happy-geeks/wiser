@@ -35,10 +35,11 @@ namespace FrontEnd.Modules.Templates.Controllers
         /// View containing the attributes of the component to be displayed as fields.
         /// </returns>
         [HttpGet, Route("{id:int}")]
-        public IActionResult Index(int id)
+        public IActionResult Index(int id, int templateId)
         {
             var viewModel = baseService.CreateBaseViewModel<DynamicContentViewModel>();
             viewModel.ContentId = id;
+            viewModel.TemplateId = templateId;
             viewModel.Components = GetComponents();
             return View(viewModel);
         }
@@ -125,7 +126,7 @@ namespace FrontEnd.Modules.Templates.Controllers
             {
                 var cmsPropertyAttribute = propInfo.GetCustomAttribute<CmsPropertyAttribute>();
 
-                if (cmsPropertyAttribute == null)
+                if (cmsPropertyAttribute == null || cmsPropertyAttribute.HideInCms)
                 {
                     continue;
                 }
