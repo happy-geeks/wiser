@@ -2,10 +2,10 @@
 @using System.Reflection
 @model KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>
 
-@if (@Model.Key.TextEditorType == 0)
+@if (@Model.Key.TextEditorType == CmsAttributes.CmsTextEditorType.Auto)
 {
-    if (@Model.Value.Key.PropertyType == typeof(System.String) || @Model.Value.Key.PropertyType == typeof(System.Nullable<System.Int32>) || @Model.Value.Key.PropertyType == typeof(System.Int32)
-        ||@Model.Value.Key.PropertyType == typeof(System.UInt32) || @Model.Value.Key.PropertyType == typeof(System.Decimal) || @Model.Value.Key.PropertyType == typeof(System.UInt64))
+    if (@Model.Value.Key.PropertyType == typeof(String) || @Model.Value.Key.PropertyType == typeof(Nullable<Int32>) || @Model.Value.Key.PropertyType == typeof(Int32)
+        ||@Model.Value.Key.PropertyType == typeof(UInt32) || @Model.Value.Key.PropertyType == typeof(Decimal) || @Model.Value.Key.PropertyType == typeof(UInt64))
     {
         <div class="col col-6">
             <div class="item" data-label-style="float" data-label-width="0">
@@ -17,7 +17,7 @@
             </div>
         </div>
     }
-    else if (@Model.Value.Key.PropertyType == typeof(System.Boolean))
+    else if (@Model.Value.Key.PropertyType == typeof(Boolean))
     {
         var checkBox = Model.Value.Value != null && (bool)Model.Value.Value;
         <div class="col col-6 checkLine">
