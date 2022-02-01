@@ -13,6 +13,11 @@ namespace FrontEnd.Modules.Templates.Models
         public int ContentId { get; set; }
 
         /// <summary>
+        /// Gets or sets the ID of the template from which this component was opened.
+        /// </summary>
+        public int TemplateId { get; set; }
+
+        /// <summary>
         /// Gets or sets a list of all available components.
         /// </summary>
         public Dictionary<TypeInfo, CmsObjectAttribute> Components { get; set; }
