@@ -40,7 +40,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.template_name, 
                                                                 template.version, 
                                                                 template.changed_on, 
-                                                                template.changed_by
+                                                                template.changed_by, 
+                                                                template.ordering
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
                                                             LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
                                                             WHERE template.template_id = ?templateId
@@ -55,7 +56,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                 Name = dataTable.Rows[0].Field<string>("template_name"),
                 Version = dataTable.Rows[0].Field<int>("version"),
                 ChangedOn = dataTable.Rows[0].Field<DateTime>("changed_on"),
-                ChangedBy = dataTable.Rows[0].Field<string>("changed_by")
+                ChangedBy = dataTable.Rows[0].Field<string>("changed_by"),
+                Ordering = dataTable.Rows[0].Field<int>("ordering")
             };
         }
 
@@ -87,7 +89,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.login_user_type, 
                                                                 template.login_session_prefix, 
                                                                 template.login_role, 
-                                                                template.linked_templates
+                                                                template.linked_templates, 
+                                                                template.ordering
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
                                                             WHERE template.template_id = ?templateId
                                                             ORDER BY template.version DESC 
@@ -121,7 +124,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                 LoginRequired = Convert.ToBoolean(dataTable.Rows[0].Field<sbyte>("login_required")),
                 LoginUserType = dataTable.Rows[0].Field<string>("login_user_type"),
                 LoginSessionPrefix = dataTable.Rows[0].Field<string>("login_session_prefix"),
-                LoginRole = dataTable.Rows[0].Field<string>("login_role")
+                LoginRole = dataTable.Rows[0].Field<string>("login_role"),
+                Ordering = dataTable.Rows[0].Field<int>("ordering")
             };
 
             return templateData;
@@ -409,8 +413,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         {
             connection.ClearParameters();
             connection.AddParameter("parentId", parentId);
-
-            // TODO: Order by ordering column (which doesn't exist yet).
+            
             var query = $@"SELECT
 	                        template.id,
 	                        template.template_name,
@@ -424,7 +427,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                         WHERE template.parent_id {(parentId == 0 ? "IS NULL AND template.template_type = 7" : "= ?parentId")}
                         AND otherVersion.id IS NULL
                         GROUP BY template.template_id
-                        ORDER BY template.template_type DESC, template.template_name ASC";
+                        ORDER BY template.ordering ASC";
 
             var dataTable = await connection.GetAsync(query);
 
@@ -479,6 +482,29 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                             SELECT @id;");
 
             return Convert.ToInt32(dataTable.Rows[0]["@id"]);
+        }
+
+        /// <inheritdoc />
+        public async Task FixTreeViewOrderingAsync(int parentId)
+        {
+            connection.ClearParameters();
+            connection.AddParameter("parentId", parentId);
+            await connection.ExecuteAsync($@"SET @ordering = 0;
+                                                UPDATE {WiserTableNames.WiserTemplate} AS template
+                                                JOIN (
+	                                                SELECT
+		                                                x.id,
+		                                                @ordering := @ordering + 1 AS newOrdering
+	                                                FROM (
+		                                                SELECT template.id
+		                                                FROM {WiserTableNames.WiserTemplate} AS template
+		                                                LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+		                                                WHERE template.parent_id = 12
+		                                                AND otherVersion.id IS NULL
+		                                                ORDER BY template.ordering ASC, template.template_type DESC, template.template_name ASC
+	                                                ) AS x
+                                                ) AS ordering ON ordering.id = template.id
+                                                SET template.ordering = ordering.newOrdering");
         }
 
         private string BuildSearchQuery(SearchSettingsModel searchSettings)
