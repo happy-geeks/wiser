@@ -934,7 +934,7 @@ const moduleSettings = {
                                 return;
                             }
 
-                            const html = `<div class="dynamic-content" component-id="${id}"><h2>${title}</h2></div>`;
+                            const html = `<div class="dynamic-content" content-id="${id}"><h2>${title}</h2></div>`;
                             this.mainHtmlEditor.exec("inserthtml", { value: html });
                         }
                     }
