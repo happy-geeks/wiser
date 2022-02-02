@@ -50,7 +50,7 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             foreach (DataRow row in dataTable.Rows)
             {
-                versionList.Add(row.Field<int>("version"), row.Field<SByte>("published_environment"));
+                versionList.Add(row.Field<int>("version"), row.Field<sbyte>("published_environment"));
             }
 
             return versionList;
@@ -108,15 +108,15 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ChangedBy = row.Field<string>("changed_by"),
                     UseCache = row.Field<int>("use_cache"),
                     CacheMinutes = row.Field<int>("cache_minutes"),
-                    HandleRequests = Convert.ToBoolean(row.Field<sbyte>("handle_request")),
-                    HandleSession = Convert.ToBoolean(row.Field<sbyte>("handle_session")),
-                    HandleStandards = Convert.ToBoolean(row.Field<sbyte>("handle_standards")),
-                    HandleObjects = Convert.ToBoolean(row.Field<sbyte>("handle_objects")),
-                    HandleTranslations = Convert.ToBoolean(row.Field<sbyte>("handle_translations")),
-                    HandleDynamicContent = Convert.ToBoolean(row.Field<sbyte>("handle_dynamic_content")),
-                    HandleLogicBlocks = Convert.ToBoolean(row.Field<sbyte>("handle_logic_blocks")),
-                    HandleMutators = Convert.ToBoolean(row.Field<sbyte>("handle_mutators")),
-                    LoginRequired = Convert.ToBoolean(row.Field<sbyte>("login_required")),
+                    HandleRequests = Convert.ToBoolean(row["handle_request"]),
+                    HandleSession = Convert.ToBoolean(row["handle_session"]),
+                    HandleStandards = Convert.ToBoolean(row["handle_standards"]),
+                    HandleObjects = Convert.ToBoolean(row["handle_objects"]),
+                    HandleTranslations = Convert.ToBoolean(row["handle_translations"]),
+                    HandleDynamicContent = Convert.ToBoolean(row["handle_dynamic_content"]),
+                    HandleLogicBlocks = Convert.ToBoolean(row["handle_logic_blocks"]),
+                    HandleMutators = Convert.ToBoolean(row["handle_mutators"]),
+                    LoginRequired = Convert.ToBoolean(row["login_required"]),
                     LoginUserType = row.Field<string>("login_user_type"),
                     LoginSessionPrefix = row.Field<string>("login_session_prefix"),
                     LoginRole = row.Field<string>("login_role"),
