@@ -118,8 +118,10 @@
                 </div>
 
                 <div class="form-row">
-                    <input type="password" id="password" placeholder="Wachtwoord" autocomplete="off" v-model="loginForm.password" required>
+                    <input type="password" id="password" placeholder="Wachtwoord" autocomplete="off" v-model="loginForm.password" @@keydown="checkCapslock($event)" required>
                     <ins id="password-toggle" class="icon-eye-visible" v-on:click="togglePassword()"></ins>
+
+                    <div class="pwd-message" v-if="loginForm.capslock">Caps lock staat aan</div>
                 </div>
 
                 <div class="form-row">
@@ -137,7 +139,7 @@
             <div v-if="loginStatus === 'list' || loginStatus === 'list_loading' && !showForgotPasswordScreen">
                 <p>Kies de gebruiker waarmee u wilt inloggen</p>
 
-                <div class="form-row">
+                <div class="form-row"> 
                     <combobox :data-items="listOfUsers" :text-field="'Title'" :data-item-key="'username'" v-model="loginForm.selectedUser" :filterable="true" @@filterchange="userFilterChange"></combobox>
                 </div>
 
