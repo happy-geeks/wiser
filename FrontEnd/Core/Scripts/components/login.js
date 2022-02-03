@@ -11,7 +11,8 @@ export default {
                 username: "",
                 password: "",
                 rememberMe: true,
-                selectedUser: ""
+                selectedUser: "",
+                capslock: false
             },
             users: null,
             showForgotPasswordScreen: false,
@@ -137,6 +138,10 @@ export default {
             }
 
             await this.$store.dispatch(FORGOT_PASSWORD, { user: Object.assign({}, this.forgotPasswordForm) });
+        },
+
+        checkCapslock(e) {
+            this.loginForm.capslock = e.getModifierState('CapsLock');
         }
     }
 };
