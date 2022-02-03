@@ -5,7 +5,7 @@
 }
 
 .module-admin .pane-content {
-    min-height: calc(100% - 61px);
+    min-height: calc(100% - 65px);
     padding: 1px;
 }
 
@@ -329,10 +329,10 @@ li.hint {
     transition: all 200ms ease;
 }
 
-    .loaderWrap.active {
-        opacity: 1;
-        pointer-events: all;
-    }
+.loaderWrap.active {
+    opacity: 1;
+    pointer-events: all;
+}
 
 .lds-ellipsis {
     display: inline-block;
@@ -344,35 +344,47 @@ li.hint {
     transform: translateX(-50%) translateY(-50%);
 }
 
-    .lds-ellipsis div {
-        position: absolute;
-        top: 27px;
-        width: 11px;
-        height: 11px;
-        border-radius: 50%;
-        background: var(--white-color);
-        animation-timing-function: cubic-bezier(0, 1, 1, 0);
-    }
+.lds-ellipsis div {
+    position: absolute;
+    top: 27px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--white-color);
+    animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
 
-        .lds-ellipsis div:nth-child(1) {
-            left: 6px;
-            animation: lds-ellipsis1 0.6s infinite;
-        }
+.lds-ellipsis div:nth-child(1) {
+    left: 6px;
+    animation: lds-ellipsis1 0.6s infinite;
+}
 
-        .lds-ellipsis div:nth-child(2) {
-            left: 6px;
-            animation: lds-ellipsis2 0.6s infinite;
-        }
+.lds-ellipsis div:nth-child(2) {
+    left: 6px;
+    animation: lds-ellipsis2 0.6s infinite;
+}
 
-        .lds-ellipsis div:nth-child(3) {
-            left: 26px;
-            animation: lds-ellipsis2 0.6s infinite;
-        }
+.lds-ellipsis div:nth-child(3) {
+    left: 26px;
+    animation: lds-ellipsis2 0.6s infinite;
+}
 
-        .lds-ellipsis div:nth-child(4) {
-            left: 45px;
-            animation: lds-ellipsis3 0.6s infinite;
-        }
+.lds-ellipsis div:nth-child(4) {
+    left: 45px;
+    animation: lds-ellipsis3 0.6s infinite;
+}
+
+/* EntityView */
+#entityView {
+}
+
+#entityView h4 {
+    padding-right: 30px;
+}
+
+#entityView .flex-container {
+    min-width: 50%;
+}
 
 @keyframes lds-ellipsis1 {
     0% {
