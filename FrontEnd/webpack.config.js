@@ -1,6 +1,6 @@
 ﻿var path = require("path");
 
-const NodePolyfillPlugin = require("node-polyfill-webpack-plugin")
+const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 
 module.exports = {
     context: path.join(__dirname, "Core/Scripts"),
