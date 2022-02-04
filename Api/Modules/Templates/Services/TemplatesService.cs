@@ -658,7 +658,7 @@ GROUP BY language_code
 ORDER BY language_code");
                 TemplateQueryStrings.Add("UPDATE_ORDERING_ENTITY_PROPERTY", @"SET @old_index = {oldIndex} + 1;
 SET @new_index = {newIndex} +1;
-SET @id = {current_id}; 
+SET @id = {currentId}; 
 SET @entity_name = '{entityName}';
 SET @tab_name = '{tabName}';
 
