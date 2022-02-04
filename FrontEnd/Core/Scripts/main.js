@@ -221,7 +221,6 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                     },
 
                     openModule(module) {
-
                         if (typeof module === "number" || typeof module === "string") {
                             module = this.modules.find(m => m.moduleId === module);
                         }

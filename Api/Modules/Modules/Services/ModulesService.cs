@@ -15,12 +15,17 @@ using Api.Modules.Modules.Interfaces;
 using Api.Modules.Modules.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
+using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Exports.Interfaces;
+using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using GeeksCoreLibrary.Modules.Objects.Interfaces;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog.Core;
 
 namespace Api.Modules.Modules.Services
 {
@@ -37,6 +42,8 @@ namespace Api.Modules.Modules.Services
         private readonly IExcelService excelService;
         private readonly IObjectsService objectsService;
         private readonly IUsersService usersService;
+        private readonly IStringReplacementsService stringReplacementsService;
+        private readonly ILogger<ModulesService> logger;
 
         private const string DefaultModulesGroupName = "Overig";
         private const string PinnedModulesGroupName = "Vastgepind";
@@ -44,7 +51,7 @@ namespace Api.Modules.Modules.Services
         /// <summary>
         /// Creates a new instance of <see cref="ModulesService"/>.
         /// </summary>
-        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IJsonService jsonService, IExcelService excelService, IObjectsService objectsService, IUsersService usersService)
+        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IJsonService jsonService, IExcelService excelService, IObjectsService objectsService, IUsersService usersService, IStringReplacementsService stringReplacementsService, ILogger<ModulesService> logger)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.gridsService = gridsService;
@@ -53,6 +60,8 @@ namespace Api.Modules.Modules.Services
             this.excelService = excelService;
             this.objectsService = objectsService;
             this.usersService = usersService;
+            this.stringReplacementsService = stringReplacementsService;
+            this.logger = logger;
             this.clientDatabaseConnection = clientDatabaseConnection;
         }
 
@@ -86,7 +95,8 @@ namespace Api.Modules.Modules.Services
                                 module.icon,
                                 module.type,
                                 module.group,
-                                IF(NOT JSON_VALID(module.options), 'false', JSON_EXTRACT(module.options, '$.onlyOneInstanceAllowed')) AS onlyOneInstanceAllowed
+                                module.options,
+                                module.custom_query
                             FROM {WiserTableNames.WiserUserRoles} AS user_role
                             JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
                             JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
@@ -108,7 +118,8 @@ namespace Api.Modules.Modules.Services
                                 module.icon,
                                 module.type,
                                 module.group,
-                                IF(NOT JSON_VALID(module.options), 'false', JSON_EXTRACT(module.options, '$.onlyOneInstanceAllowed')) AS onlyOneInstanceAllowed
+                                module.options,
+                                module.custom_query
                             FROM {WiserTableNames.WiserModule} AS module
                             WHERE module.id IN ({String.Join(",", modulesForAdmins)})
                         )";
@@ -128,6 +139,7 @@ namespace Api.Modules.Modules.Services
                 var originalGroupName = dataRow.Field<string>("group");
                 var groupName = pinnedModules.Contains(moduleId) ? PinnedModulesGroupName : dataRow.Field<string>("group");
                 var permissionsBitMask = (AccessRights)Convert.ToInt32(dataRow["permissions"]);
+                var options = dataRow.Field<string>("options");
 
                 var canRead = (permissionsBitMask & AccessRights.Read) == AccessRights.Read;
                 var canCreate = (permissionsBitMask & AccessRights.Create) == AccessRights.Create;
@@ -158,8 +170,59 @@ namespace Api.Modules.Modules.Services
                 rightsModel.Pinned = pinnedModules.Contains(moduleId);
                 rightsModel.PinnedGroup = PinnedModulesGroupName;
 
-                var onlyOneInstanceAllowed = dataRow.Field<string>("onlyOneInstanceAllowed");
-                rightsModel.OnlyOneInstanceAllowed = (onlyOneInstanceAllowedGlobal && !String.Equals(onlyOneInstanceAllowed, "false", StringComparison.OrdinalIgnoreCase)) || String.Equals(onlyOneInstanceAllowed, "true", StringComparison.OrdinalIgnoreCase) || onlyOneInstanceAllowed == "1";
+                if (String.IsNullOrWhiteSpace(rightsModel.Icon))
+                {
+                    rightsModel.Icon = "question";
+                }
+
+                if (!String.IsNullOrWhiteSpace(options))
+                {
+                    var optionsObject = new JObject();
+                    try
+                    {
+                        optionsObject = JObject.Parse(options);
+                    }
+                    catch (JsonReaderException exception)
+                    {
+                        logger.LogWarning(exception, $"An error occurred while parsing options JSON of module {rightsModel.ModuleId}");
+                    }
+
+                    var onlyOneInstanceAllowed = optionsObject.Value<bool?>("onlyOneInstanceAllowed");
+                    rightsModel.OnlyOneInstanceAllowed = (onlyOneInstanceAllowedGlobal && (!onlyOneInstanceAllowed.HasValue || onlyOneInstanceAllowed.Value)) || (onlyOneInstanceAllowed.HasValue && onlyOneInstanceAllowed.Value);
+
+                    if (rightsModel.Type.Equals("Iframe", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var url = optionsObject.Value<string>("url");
+                        if (String.IsNullOrWhiteSpace(url))
+                        {
+                            continue;
+                        }
+
+                        try
+                        {
+                            var moduleQuery = dataRow.Field<string>("custom_query");
+                            if (!String.IsNullOrWhiteSpace(moduleQuery))
+                            {
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId}", IdentityHelpers.GetWiserUserId(identity).ToString());
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity) ?? "");
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
+
+                                var moduleDataTable = await clientDatabaseConnection.GetAsync(moduleQuery);
+                                if (moduleDataTable.Rows.Count > 0)
+                                {
+                                    url = stringReplacementsService.DoReplacements(url, moduleDataTable.Rows[0]);
+                                }
+                            }
+                        }
+                        catch (Exception exception)
+                        {
+                            logger.LogWarning(exception, $"An error occurred while executing query of module {rightsModel.ModuleId}");
+                        }
+
+                        rightsModel.IframeUrl = url;
+                    }
+                }
 
                 results[groupName].Add(rightsModel);
             }
@@ -346,14 +409,14 @@ namespace Api.Modules.Modules.Services
             return new ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>(results);
         }
 
-            /// <inheritdoc />
+        /// <inheritdoc />
         public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity)
         {
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
 
             var result = new ModuleSettingsModel { Id = id };
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             var userItemPermissions = await wiserItemsService.GetUserModulePermissions(id, IdentityHelpers.GetWiserUserId(identity));
