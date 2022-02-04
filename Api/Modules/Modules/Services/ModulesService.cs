@@ -82,10 +82,8 @@ namespace Api.Modules.Modules.Services
                             SELECT
 	                            permission.module_id,
 	                            MAX(permission.permissions) AS permissions,
-                                ordering.`order`,
                                 module.name,
                                 module.icon,
-                                module.color,
                                 module.type,
                                 module.group,
                                 IF(NOT JSON_VALID(module.options), 'false', JSON_EXTRACT(module.options, '$.onlyOneInstanceAllowed')) AS onlyOneInstanceAllowed
@@ -93,7 +91,6 @@ namespace Api.Modules.Modules.Services
                             JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
                             JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
                             LEFT JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
-                            LEFT JOIN {WiserTableNames.WiserOrdering} AS ordering ON ordering.user_id = user_role.user_id AND ordering.module_id = permission.module_id
                             WHERE user_role.user_id = ?userId
                             GROUP BY permission.module_id
                             ORDER BY permission.module_id, permission.permissions
@@ -107,15 +104,12 @@ namespace Api.Modules.Modules.Services
                             SELECT
                                 module.id AS module_id,
                                 15 AS permissions,
-                                ordering.`order`,
                                 module.name,
                                 module.icon,
-                                module.color,
                                 module.type,
                                 module.group,
                                 IF(NOT JSON_VALID(module.options), 'false', JSON_EXTRACT(module.options, '$.onlyOneInstanceAllowed')) AS onlyOneInstanceAllowed
                             FROM {WiserTableNames.WiserModule} AS module
-                            LEFT JOIN {WiserTableNames.WiserOrdering} AS ordering ON ordering.user_id = ?userId AND ordering.module_id = module.id
                             WHERE module.id IN ({String.Join(",", modulesForAdmins)})
                         )";
             }
@@ -134,7 +128,6 @@ namespace Api.Modules.Modules.Services
                 var originalGroupName = dataRow.Field<string>("group");
                 var groupName = pinnedModules.Contains(moduleId) ? PinnedModulesGroupName : dataRow.Field<string>("group");
                 var permissionsBitMask = (AccessRights)Convert.ToInt32(dataRow["permissions"]);
-                var ordering = dataRow.Field<int?>("order");
 
                 var canRead = (permissionsBitMask & AccessRights.Read) == AccessRights.Read;
                 var canCreate = (permissionsBitMask & AccessRights.Create) == AccessRights.Create;
@@ -158,11 +151,8 @@ namespace Api.Modules.Modules.Services
                 rightsModel.CanCreate = rightsModel.CanCreate || canCreate;
                 rightsModel.CanWrite = rightsModel.CanWrite || canUpdate;
                 rightsModel.CanDelete = rightsModel.CanDelete || canDelete;
-                rightsModel.Show = rightsModel.Show || (ordering ?? 0) > 0;
-                rightsModel.MetroOrder = rightsModel.MetroOrder <= 0 ? (ordering ?? 0) : rightsModel.MetroOrder;
                 rightsModel.Name = dataRow.Field<string>("name");
                 rightsModel.Icon = dataRow.Field<string>("icon");
-                rightsModel.Color = dataRow.Field<string>("color");
                 rightsModel.Type = dataRow.Field<string>("type");
                 rightsModel.Group = originalGroupName;
                 rightsModel.Pinned = pinnedModules.Contains(moduleId);
@@ -202,7 +192,6 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Stamgegevens",
                                 Type = "DynamicItems",
-                                Show = true,
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
@@ -225,7 +214,6 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Data selector",
                                 Type = "DataSelector",
-                                Show = true,
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
@@ -248,7 +236,6 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Zoeken",
                                 Type = "Search",
-                                Show = true,
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
@@ -271,7 +258,6 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Wiser beheer",
                                 Type = "Admin",
-                                Show = true,
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
@@ -294,7 +280,6 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Import/export",
                                 Type = "ImportExport",
-                                Show = true,
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
@@ -317,7 +302,6 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Wiser beheer",
                                 Type = "DynamicItems",
-                                Show = true,
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
@@ -340,7 +324,6 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Webpagina's 2.0",
                                 Type = "DynamicItems",
-                                Show = true,
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
