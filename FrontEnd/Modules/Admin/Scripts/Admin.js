@@ -2,9 +2,10 @@
 import { ModuleTab } from "../Scripts/ModuleTab.js";
 import { RoleTab } from "../Scripts/RoleTab.js";
 import { EntityTab } from "../Scripts/EntityTab.js";
-import { EntityFieldTab } from "./EntityFieldTab.js";
-import { EntityPropertyTab } from "./EntityPropertyTab.js";
-import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import { EntityFieldTab } from "../Scripts/EntityFieldTab.js";
+import { EntityPropertyTab } from "../Scripts/EntityPropertyTab.js";
+import { WiserQueryTab } from "../Scripts/WiserQueryTab.js";
+import { Wiser2 } from "../../Base/Scripts/Utils.js"; 
 
 
 require("@progress/kendo-ui/js/kendo.all.js");
@@ -29,9 +30,12 @@ const moduleSettings = {
          */
         constructor(settings) {
             this.base = this;
+
             // Kendo components.
             this.mainWindow = null;
 
+            this.activeMainTab = "entiteiten"; 
+            
             //classes
             this.entityTab = null;
             this.entityFieldTab = null;
@@ -39,6 +43,7 @@ const moduleSettings = {
             this.moduleTab = null;
             this.translations = null;
             this.roleTab = null;
+            this.wiserQueryTab = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -130,54 +135,52 @@ const moduleSettings = {
                 GRID: { text: "Grid", id: "grid" }
             });
         }
-            
+
         /**
          * Event that will be fired when the page is ready.
          */
         async onPageReady() {
-            this.settings.wiserVersion = parseInt(window.wiserVersion.replace(/\./g, ""));
-
             // Setup any settings from the body element data. These settings are added via the Wiser backend and they take preference.
             Object.assign(this.settings, $("body").data());
+            
+            // Add logged in user access token to default authorization headers for all jQuery ajax requests.
+            $.ajaxSetup({
+                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
+            });
 
-            if (this.settings.wiserVersion >= 210) {
-                // Add logged in user access token to default authorization headers for all jQuery ajax requests.
-                $.ajaxSetup({
-                    headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+            // Show an error if the user is no longer logged in.
+            const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
+            if (!accessTokenExpires || accessTokenExpires <= new Date()) {
+                Wiser2.alert({
+                    title: "Niet ingelogd",
+                    content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
 
-                // Show an error if the user is no longer logged in.
-                const accessTokenExpires = localStorage.getItem("access_token_expires_on");
-                if (!accessTokenExpires || accessTokenExpires <= new Date()) {
-                    Wiser2.alert({
-                        title: "Niet ingelogd",
-                        content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
-                    });
-
-                    this.toggleMainLoader(false);
-                    return;
-                }
-
-                const user = JSON.parse(localStorage.getItem("userData"));
-                this.settings.oldStyleUserId = user.oldStyleUserId;
-                this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
-                this.settings.happyEmployeeLoggedIn = user.juiceEmployeeName;
-
-                const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiV21Root, this.settings.isTestEnvironment);
-                this.settings.userId = userData.encrypted_id;
-                this.settings.customerId = userData.encrypted_customer_id;
-                this.settings.zeroEncrypted = userData.zero_encrypted;
-                this.settings.wiser2UserId = userData.wiser2_id;
+                this.toggleMainLoader(false);
+                return;
             }
 
-            this.settings.serviceRoot = `${this.settings.wiserVersion >= 210 ? this.settings.wiserApiV21Root : this.settings.wiserApiRoot}templates/get-and-execute-query`;
-            this.settings.getItemsUrl = `${this.settings.wiserVersion >= 210 ? this.settings.wiserApiV21Root : this.settings.wiserApiRoot}data-selectors`;
+            const user = JSON.parse(localStorage.getItem("userData"));
+            this.settings.oldStyleUserId = user.oldStyleUserId;
+            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.happyEmployeeLoggedIn = user.juiceEmployeeName;
+
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiV21Root);
+            this.settings.userId = userData.encryptedId;
+            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.zeroEncrypted = userData.zeroEncrypted;
+            this.settings.wiser2UserId = userData.wiser2Id;
+
+            this.settings.serviceRoot = `${this.settings.wiserApiV21Root}templates/get-and-execute-query`;
+            this.settings.getItemsUrl = `${this.settings.wiserApiV21Root}data-selectors`;
+            this.settings.wiserApiRoot = `${this.settings.wiserVersion >= 210 ? this.settings.wiserApiV21Root : this.settings.wiserApiRoot}`;
 
             this.moduleTab = new ModuleTab(this);
             this.entityTab = new EntityTab(this);
             this.entityFieldsTab = new EntityFieldTab(this);
             this.entityPropertyTab = new EntityPropertyTab(this);
             this.roleTab = new RoleTab(this);
+            this.wiserQueryTab = new WiserQueryTab(this);
             this.setupBindings();
             this.initializeKendoComponents();
 
@@ -232,15 +235,17 @@ const moduleSettings = {
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
          */
         setupBindings() {
-            // footer gets shown when user switches tabs, if footer is allowed to show there.
-            //$("footer").hide();
-
             $(document).on("moduleClosing", (event) => {
                 // You can do anything here that needs to happen before closing the module.
                 event.success();
             });
 
             //BUTTONS
+            $(".saveButton").kendoButton({
+                click: this.saveChanges.bind(this),
+                icon: "save"
+            });
+
             $("#generateStandardEntities").kendoButton({
                 click: () => {
                     const entitiesToGenerate = [], entitiesToGeneratePrettyName = [];
@@ -272,6 +277,26 @@ const moduleSettings = {
                 },
                 icon: "gear"
             });
+        }
+
+        saveChanges(e) {
+            if (!this.activeMainTab || this.activeMainTab === null || this.activeMainTab === "undefined") {
+                console.error("activeMainTab property is not set");
+                return;
+            }
+
+            //Call save function based on active tab
+            switch (this.activeMainTab) {
+                case "entityProperty":
+                    this.entityTab.beforeSave();
+                    break;
+                case "query's":
+                    this.wiserQueryTab.beforeSave();
+                    break;
+                default:
+                    this.entityTab.beforeSave();
+                    break;
+            }
         }
 
         // show a simple notifcation
@@ -351,6 +376,34 @@ const moduleSettings = {
                 visible: true,
                 resizable: false
             }).data("kendoWindow").maximize().open();
+
+            this.mainTabStrip = $("#MainTabStrip").kendoTabStrip({
+                animation: {
+                    open: {
+                        effects: "expand:vertical",
+                        duration: 0
+                    },
+                    close: {
+                        effects: "expand:vertical",
+                        duration: 0
+                    }
+                },
+                select: (event) => {
+                    const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
+                    console.log("mainTabStrip select", tabName);
+
+                    if (tabName === "query's" || tabName === "entiteiten") {
+                        $("footer").show();
+                    } else {
+                        $("footer").hide();
+                    }
+                },
+                activate: (event) => {
+                    const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
+                    admin.activeMainTab = tabName;
+                    console.log("mainTabStrip activate", tabName);
+                }
+            }).data("kendoTabStrip");
         }
 
         // open prompt/dialog winodw

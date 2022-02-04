@@ -24,7 +24,7 @@ options = $.extend({
         if (xhr) {
             xhr.addEventListener("readystatechange", (e) => {
                 if (xhr.readyState === 1 /* OPENED */) {
-                    xhr.setRequestHeader("authorization", `Bearer ${localStorage.getItem("access_token")}`);
+                    xhr.setRequestHeader("authorization", `Bearer ${localStorage.getItem("accessToken")}`);
                 }
             });
         }

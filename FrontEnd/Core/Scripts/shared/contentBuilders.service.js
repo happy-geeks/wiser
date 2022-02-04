@@ -58,8 +58,8 @@ export default class ContentBuildersService extends BaseService {
                 snippet.fromWiser = true;
                 const existingCategory = snippetCategories.filter(c => c[1].toLowerCase() === snippet.category.toLowerCase());
                 if (!existingCategory.length) {
-                    snippetCategories.push([snippet.category_id.toString(), snippet.category]);
-                    snippet.category = snippet.category_id.toString();
+                    snippetCategories.push([snippet.categoryId.toString(), snippet.category]);
+                    snippet.category = snippet.categoryId.toString();
                 } else {
                     snippet.category = existingCategory[0][0].toString();
                 }

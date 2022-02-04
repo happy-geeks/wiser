@@ -28,7 +28,7 @@ export class RemoveItems {
         
         // Add logged in user access token to default authorization headers for all jQuery ajax requests.
         $.ajaxSetup({
-            headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+            headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
         });
 
         this.mainLoader = $("#mainLoader");
@@ -120,7 +120,7 @@ export class RemoveItems {
                 $(context).find("#EntityTypesContainer").hide();
             } else {
                 $(context).find("#EntityTypesContainer").kendoDropDownList({
-                    dataTextField: "display_name",
+                    dataTextField: "displayName",
                     dataValueField: "id",
                     dataSource: entityTypes,
                     change: function (e) {
@@ -168,8 +168,8 @@ export class RemoveItems {
                 $(context).find("#EntityPropertiesContainer").hide();
             } else {
                 $(context).find("#EntityPropertiesContainer").kendoDropDownList({
-                    dataTextField: "display_name",
-                    dataValueField: "property_name",
+                    dataTextField: "displayName",
+                    dataValueField: "propertyName",
                     dataSource: entityProperties,
                     optionLabel: "Maak uw keuze..."
                 });
@@ -224,9 +224,9 @@ export class RemoveItems {
                 method: "POST",
                 contentType: "application/json",
                 data: JSON.stringify({
-                    file_path: this.importFilename,
-                    entity_name: entityName,
-                    property_name: propertyName
+                    filePath: this.importFilename,
+                    entityName: entityName,
+                    propertyName: propertyName
                 })
             });
 
@@ -236,7 +236,7 @@ export class RemoveItems {
             this.messageEventCallbacks["dataSelectorResults"] = async (response) => {
                 this.messageEventCallbacks["dataSelectorEntityType"] = async (entityType) => {
                     var result = {
-                        entity_type: entityType.actionResult,
+                        entityType: entityType.actionResult,
                         ids: []
                     };
 

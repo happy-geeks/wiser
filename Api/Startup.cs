@@ -140,7 +140,6 @@ namespace Api
                 }
             });
 
-
             // Services from GCL. Some services are registered because they are required by other GCL services, not because this API uses them.
             services.AddGclServices(Configuration, true, true);
 
@@ -159,13 +158,12 @@ namespace Api
                     });
             });
 
-            // Set Newtonsoft as the default JSON serializer and configure it to use snake case for backwards compatibility.
+            // Set Newtonsoft as the default JSON serializer and configure it to use camel case.
             services.AddControllers(options => { options.AllowEmptyInputInBodyModelBinding = true; }).AddNewtonsoftJson(options =>
             {
-                // Use the default property (Pascal) casing
                 options.SerializerSettings.ContractResolver = new DefaultContractResolver()
                 {
-                    NamingStrategy = new SnakeCaseNamingStrategy(false, true, false)
+                    NamingStrategy = new CamelCaseNamingStrategy(false, true, false)
                 };
 
                 options.SerializerSettings.Formatting = Formatting.Indented;

@@ -14,7 +14,7 @@ if (options.reversed) {
 }
 
 Wiser2.api({
-    url: window.dynamicItems.settings.serviceRoot + "/" + templateName + "?itemId={itemId}&entity_type=" + encodeURIComponent(options.entityType) + "&linkTypeNumber=" + encodeURIComponent(options.linkType)
+    url: window.dynamicItems.settings.serviceRoot + "/" + templateName + "?itemId={itemId}&entityType=" + encodeURIComponent(options.entityType) + "&linkTypeNumber=" + encodeURIComponent(options.linkType)
 }).then(function(results) {
     var field = $("#field_{propertyIdWithSuffix}").html("");
 
@@ -31,8 +31,8 @@ Wiser2.api({
     $(results).each(function(index, result) {
         var newValue = options.template.replace(/{itemTitle}/gi, result.title);
         newValue = newValue.replace(/{id}/gi, result.id);
-        newValue = newValue.replace(/{environment}/gi, result.published_environment);
-        newValue = newValue.replace(/{entityType}/gi, result.entity_type);
+        newValue = newValue.replace(/{environment}/gi, result.publishedEnvironment);
+        newValue = newValue.replace(/{entityType}/gi, result.entityType);
         
         for (var key in result.property_) {
             if (!result.property_.hasOwnProperty(key)) {
@@ -47,7 +47,7 @@ Wiser2.api({
             $("<span class='openWindow' />").html(newValue).appendTo(field);
         } else {
             $("<a class='openWindow' href='#' />").html(newValue + "&nbsp;<span class='k-icon k-i-hyperlink-open-sm'></span>").appendTo(field).click(function(event) {
-                window.dynamicItems.windows.loadItemInWindow(false, result.id, result.encryptedId, result.entity_type, result.title, true, null, { hideTitleColumn: false }, result.link_id);
+                window.dynamicItems.windows.loadItemInWindow(false, result.id, result.encryptedId, result.entityType, result.title, true, null, { hideTitleColumn: false }, result.linkId);
             });
         }
     });

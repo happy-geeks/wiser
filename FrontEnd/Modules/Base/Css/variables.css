@@ -29,6 +29,9 @@
 	--sec-color: 		#E6E6E6;
 	--sec-hover: 		#D2D2D2;
 	--active-tab: 		#EFF1F2;
+
+    --unchecked-color:	#DFDFDF;
+    --checked-color:	#F3BF33;
 	
 	--color-1: 			#01AEF0;
 	--color-2: 			#F55523;

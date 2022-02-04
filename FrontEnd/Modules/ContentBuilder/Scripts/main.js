@@ -41,7 +41,7 @@ import ContentBuildersService from "../../../Core/Scripts/shared/contentBuilders
                 baseURL: this.appSettings.apiBase
             });
 
-            this.api.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("access_token")}`;
+            this.api.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("accessToken")}`;
 
             this.initVue();
         }

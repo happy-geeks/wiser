@@ -1,13 +1,18 @@
-﻿using System.Collections.Specialized;
+﻿using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models;
+using Api.Modules.Templates.Models.DynamicContent;
+using Api.Modules.Templates.Models.History;
+using Api.Modules.Templates.Models.Other;
+using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Templates.Enums;
 using GeeksCoreLibrary.Modules.Templates.Models;
 using LazyCache;
 using Microsoft.AspNetCore.Http;
@@ -16,6 +21,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Templates.Services
 {
+    /// <inheritdoc cref="ITemplatesService" />
     public class CachedTemplatesService : ITemplatesService
     {
         private readonly IAppCache cache;
@@ -24,6 +30,9 @@ namespace Api.Modules.Templates.Services
         private readonly IDatabaseConnection databaseConnection;
         private readonly GclSettings gclSettings;
 
+        /// <summary>
+        /// Creates a new instance of <see cref="CachedTemplatesService"/>.
+        /// </summary>
         public CachedTemplatesService(IAppCache cache, ITemplatesService templatesService, IOptions<GclSettings> gclSettings, ICacheService cacheService, IDatabaseConnection databaseConnection)
         {
             this.cache = cache;
@@ -64,9 +73,81 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateModel>> GetTemplateByName(string templateName, bool wiserTemplate = false)
+        public async Task<ServiceResult<TemplateEntityModel>> GetTemplateByNameAsync(string templateName, bool wiserTemplate = false)
         {
-            return await templatesService.GetTemplateByName(templateName, wiserTemplate);
+            return await templatesService.GetTemplateByNameAsync(templateName, wiserTemplate);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateMetaDataAsync(int templateId)
+        {
+            return await templatesService.GetTemplateMetaDataAsync(templateId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId)
+        {
+            return await templatesService.GetTemplateSettingsAsync(templateId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId)
+        {
+            return await templatesService.GetTemplateEnvironmentsAsync(templateId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<LinkedTemplatesModel>> GetLinkedTemplatesAsync(int templateId)
+        {
+            return await templatesService.GetLinkedTemplatesAsync(templateId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<DynamicContentOverviewModel>>> GetLinkedDynamicContentAsync(int templateId)
+        {
+            return await templatesService.GetLinkedDynamicContentAsync(templateId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
+        {
+            return await templatesService.PublishToEnvironmentAsync(identity, templateId, version, environment, currentPublished);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(ClaimsIdentity identity, TemplateSettingsModel template)
+        {
+            return await templatesService.SaveTemplateVersionAsync(identity, template);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(int parentId)
+        {
+            return await templatesService.GetTreeViewSectionAsync(parentId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(SearchSettingsModel searchSettings)
+        {
+            return await templatesService.SearchAsync(searchSettings);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(int templateId)
+        {
+            return await templatesService.GetTemplateHistoryAsync(templateId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateTreeViewModel>> CreateAsync(ClaimsIdentity identity, string name, int parent, TemplateTypes type)
+        {
+            return await templatesService.CreateAsync(identity, name, parent, type);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> RenameAsync(ClaimsIdentity identity, int id, string newName)
+        {
+            return await templatesService.RenameAsync(identity, id, newName);
         }
     }
 }

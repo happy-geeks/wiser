@@ -5,22 +5,24 @@ html, body {
     min-height: 100%;
 }
 
-body.iframe #left-pane,
-body.iframe .pane-content > header,
-body.iframe .k-splitbar,
-body.iframe #alert-first,
-#itemWindow_template,
-#previewFrame,
-#sendMailDialog,
-#htmlSourceWindow,
-#maximizeEditorWindow,
-#contentBuilderWindow,
-#imagesUploaderWindow,
-#filesUploaderWindow,
-#templatesUploaderWindow,
-#infoPanel_template {
-    display: none;
-}
+    body.iframe #left-pane,
+    body.iframe .pane-content > header,
+    body.iframe .k-splitbar,
+    body.iframe #alert-first,
+    #itemWindow_template,
+    #previewFrame,
+    #sendMailDialog,
+    #htmlSourceWindow,
+    #maximizeEditorWindow,
+    #contentBuilderWindow,
+    #maximizeEditorWindow,
+    #imagesUploaderWindow,
+    #filesUploaderWindow,
+    #templatesUploaderWindow,
+    #infoPanel_template,
+    #maximizeSubEntitiesGridWindow {
+        display: none;
+    }
 
 dl {
     border-left: 1px solid var(--dark-bd-color);
@@ -225,14 +227,13 @@ body.gridViewMode {
     right: 5px;
 }
 
+.item[data-label-style="float"] .k-input .open-link {
+    top: 11px;
+}
+
 .item .k-input .open-link span {
     width: 100%;
     height: 100%;
-}
-
-
-.item[data-input-type="url"] .k-input input:valid + .open-link {
-    display: block !important;
 }
 
 /* PREVIEW PANE */
@@ -242,29 +243,29 @@ body.gridViewMode {
     overflow: hidden;
 }
 
-#previewFrame > div {
-    height: calc(100% - 60px);
-    position: relative;
-    width: 100%;
-}
+    #previewFrame > div {
+        height: calc(100% - 60px);
+        position: relative;
+        width: 100%;
+    }
 
-#previewFrame footer {
-    border-top: 1px solid var(--handle-bg-color);
-    display: block;
-    min-height: 60px;
-    position: -webkit-sticky;
-    position: sticky;
-    bottom: 0;
-    background: var(--white-color);
-}
+    #previewFrame footer {
+        border-top: 1px solid var(--handle-bg-color);
+        display: block;
+        min-height: 60px;
+        position: -webkit-sticky;
+        position: sticky;
+        bottom: 0;
+        background: var(--white-color);
+    }
 
-#previewFrame footer .actions {
-    box-sizing: border-box;
-    padding: 11px;
-    position: relative;
-    right: auto;
-    width: 100%;
-}
+        #previewFrame footer .actions {
+            box-sizing: border-box;
+            padding: 11px;
+            position: relative;
+            right: auto;
+            width: 100%;
+        }
 
 #previewBlock p {
     margin: 0 0 1em;
@@ -358,7 +359,8 @@ body.iframe .editMenu {
 }
 
 .k-grid-toolbar .k-grid-excel,
-.k-grid-toolbar .clear-all-filters {
+.k-grid-toolbar .clear-all-filters,
+.k-grid-toolbar .full-screen {
     order: 4;
 }
 
@@ -380,10 +382,10 @@ body.iframe .editMenu {
     padding: 12px;
 }
 
-.k-grid-toolbar .k-grid-excel .k-icon {
-    position: absolute;
-    margin: 0;
-}
+    .k-grid-toolbar .k-grid-excel .k-icon {
+        position: absolute;
+        margin: 0;
+    }
 
 .k-grid-toolbar .counterContainer {
     line-height: 38px;
@@ -392,9 +394,9 @@ body.iframe .editMenu {
     order: 2;
 }
 
-.k-grid-toolbar .counterContainer .counter {
-    padding-right: 6px;
-}
+    .k-grid-toolbar .counterContainer .counter {
+        padding-right: 6px;
+    }
 
 .emptyItem {
     border: 0;

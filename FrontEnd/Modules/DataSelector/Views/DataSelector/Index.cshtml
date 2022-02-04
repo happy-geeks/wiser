@@ -4,7 +4,7 @@
 <html>
 <head runat="server">
     <meta charset="utf-8" />
-    <title>Wiser 2.1 - Data selector</title>
+    <title>Wiser 3 - Data selector</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -355,6 +355,23 @@
 
     <script id="fieldEditorTemplate" type="text/x-wiser-template">
         <div class="itemProperties">
+            <div class="dataTypeWrapper">
+                <label>Datatype</label>
+                <select class="drop-down-list dataType" data-placeholder="Kies een datatype...">
+                    <option value="string">Tekst</option>
+                    <option value="decimal">Numeriek</option>
+                    <option value="datetime">Datum en tijd</option>
+                </select>
+            </div>
+
+            <div class="havingDataTypeWrapper">
+                <label>Datatype</label>
+                <select class="drop-down-list havingDataType" data-placeholder="Kies een datatype...">
+                    <option value="string">Tekst</option>
+                    <option value="formula">Formule</option>
+                </select>
+            </div>
+
             <div class="languageCodeWrapper">
                 <label>Gewenste language-code</label>
                 <select class="combo-select languageCode" data-placeholder="Kies een taalcode..." data-data-text-field="text" data-data-value-field="value" data-open-on-focus="true"></select>
@@ -364,6 +381,7 @@
             <select class="drop-down-list aggregation" data-placeholder="Kies een aggregatie...">
                 <option value="">Geen aggregatie</option>
                 <option value="count">Telling resultaten (COUNT)</option>
+                <option value="countdistinct">Telling unieke resultaten (COUNT DISTINCT)</option>
                 <option value="sum">Som van waardes (SUM)</option>
                 <option value="min">Laagste waarde (MIN)</option>
                 <option value="max">Hoogste waarde (MAX)</option>
@@ -395,7 +413,7 @@
             </div>
         </div>
     </script>
-    
+
     <script src="/scripts/Utils.min.js"></script>
     <script src="/scripts/DataSelectorConnection.min.js"></script>
     <script src="/scripts/DataSelectorDataLoad.min.js"></script>

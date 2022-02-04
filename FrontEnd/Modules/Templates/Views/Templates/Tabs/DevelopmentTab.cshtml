@@ -1,0 +1,10 @@
+﻿@model FrontEnd.Modules.Templates.Models.DevelopmentTabViewModel
+<div class="formview full developmentContainer">
+    <partial name="Partials/PublishedEnvironments" model="@Model.TemplateSettings" />
+
+    <partial name="Partials/TemplateEditor" model="@Model.TemplateSettings.EditorValue"/>
+
+    <partial name="Partials/LinkedTemplates" model="@Model.LinkedTemplates" />
+
+    <partial name="Partials/AdvancedSettings" model="@Model.TemplateSettings"/>
+</div>

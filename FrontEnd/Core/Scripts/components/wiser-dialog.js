@@ -22,10 +22,12 @@ export default {
     methods: {
         open() {
             this.mutableVisible = true;
+            this.$emit("open", this);
         },
 
         close() {
             this.mutableVisible = false;
+            this.$emit("close", this);
         }
     },
     template: `<div v-if="mutableVisible" class="w-dialog-container">

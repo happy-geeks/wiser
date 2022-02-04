@@ -5,7 +5,7 @@
 }
 
 .module-admin .pane-content {
-    min-height: calc(100% - 61px);
+    min-height: calc(100% - 65px);
     padding: 1px;
 }
 
@@ -13,10 +13,10 @@
     top: 1px;
 }
 
-    .module-admin .k-tabstrip .k-tabstrip-items:before {
-        height: 1px;
-        top: -1px;
-    }
+.module-admin .k-tabstrip .k-tabstrip-items:before {
+    height: 1px;
+    top: -1px;
+}
 
 .module-admin .pane-content > .k-tabstrip-wrapper > .k-tabstrip > .k-tabstrip-items {
     z-index: 200;
@@ -24,6 +24,10 @@
 /* TABS SPLIT */
 .tabSplit.k-state-active {
     display: flex !important;
+}
+
+.k-tabstrip .tabSplit {
+    min-height: calc(100% + 6px);
 }
 
 .tabSplit .left-pane {
@@ -34,19 +38,19 @@
     position: relative;
 }
 
-    .tabSplit .left-pane:after {
-        content: "";
-        display: block;
-        width: 0;
-        height: 0;
-        border-top: 8px solid transparent;
-        border-bottom: 8px solid transparent;
-        border-left: 8px solid var(--dark-txt);
-        position: absolute;
-        right: 4px;
-        top: 50%;
-        transform: translateY(-50%);
-    }
+.tabSplit .left-pane:after {
+    content: "";
+    display: block;
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 8px solid var(--dark-txt);
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+}
 
 .tabSplit .right-pane {
     width: 80%;
@@ -55,6 +59,7 @@
 .module-admin .sortable-container {
     background: var(--white-color);
     margin-bottom: 5px;
+    margin-top: 5px;
     padding-bottom: 40px;
     width: 100%;
 }
@@ -67,18 +72,18 @@ li.sortable {
     list-style-type: none;
     padding: 6px 8px;
     margin: 0;
-    cursor: move;
+    cursor: pointer;
 }
 
-    .module-admin li.sortable:last-child {
-        border-bottom: 0;
-        border-radius: 0 0 4px 4px;
-    }
+.module-admin li.sortable:last-child {
+    border-bottom: 0;
+    border-radius: 0 0 4px 4px;
+}
 
-    .module-admin li.sortable span {
-        display: block;
-        float: right;
-    }
+.module-admin li.sortable span {
+    display: block;
+    float: right;
+}
 
 .module-admin li.selected {
     background-color: var(--color-1);
@@ -149,26 +154,27 @@ li.hint {
 .flex-container {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
 }
 
-    .flex-container .item {
-        float: left;
-    }
+.flex-container .item {
+    float: left;
+}
 
-    .flex-container:after {
-        clear: both;
-        content: "";
-        display: table;
-    }
+.flex-container:after {
+    clear: both;
+    content: "";
+    display: table;
+}
 
 .inputFlex {
     padding: 0;
 }
 
-    .inputFlex > .k-widget:last-child {
-        margin-right: 0;
-        width: 40%;
-    }
+.inputFlex > .k-widget:last-child {
+    margin-right: 0;
+    width: 40%;
+}
 
 .dynamic section {
     border-bottom: none;
@@ -219,10 +225,10 @@ li.hint {
     color: var(--dark-txt);
 }
 
-    .multi-check tr.k-state-selected > td,
-    .multi-check td.k-state-selected {
-        border-color: var(--border-color);
-    }
+.multi-check tr.k-state-selected > td,
+.multi-check td.k-state-selected {
+    border-color: var(--border-color);
+}
 
 .multi-check input.k-checkbox + label.k-checkbox-label {
     padding: 0;
@@ -234,15 +240,37 @@ li.hint {
     z-index: 10;
 }
 
-    .multi-check input.k-checkbox + label.k-checkbox-label:before {
-        position: absolute;
-        top: calc(50% - 9px);
-        left: calc(50% - 10px);
-    }
+.multi-check input.k-checkbox {
+    display: none !important;
+}
 
-    .multi-check input.k-checkbox + label.k-checkbox-label:after {
-        display: none;
-    }
+.multi-check input.k-checkbox + label.k-checkbox-label:before {
+    content: "";
+    position: absolute;
+    top: calc(50% - 9px);
+    left: calc(50% - 10px);
+    font: 16px WebComponentsIcons,monospace;
+    border-width: 1px;
+    border-style: solid;
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+    line-height: 16px;
+    text-align: center;
+}
+
+.multi-check input.k-checkbox:checked + label.k-checkbox-label:before {
+    content: "\e118";
+}
+
+.multi-check input.k-checkbox + label.k-checkbox-label:after {
+    content: "";
+    display: none;
+}
+
+.multi-check .k-checkbox-label:empty {
+    display: inline-flex;
+}
 
 .multi-check .k-grid-header th.k-header {
     overflow: visible;
@@ -251,6 +279,15 @@ li.hint {
 .multi-check .k-grid-header th,
 .multi-check tbody td {
     position: relative;
+}
+
+.multi-check .k-filter-row th,
+.multi-check .k-state-default > .k-select {
+    background-color: var(--white-color);
+}
+
+.multi-check .k-input[type=text] {
+    border-color: var(--white-color);
 }
 
 .multi-check .checkAll label {
@@ -292,10 +329,10 @@ li.hint {
     transition: all 200ms ease;
 }
 
-    .loaderWrap.active {
-        opacity: 1;
-        pointer-events: all;
-    }
+.loaderWrap.active {
+    opacity: 1;
+    pointer-events: all;
+}
 
 .lds-ellipsis {
     display: inline-block;
@@ -307,35 +344,47 @@ li.hint {
     transform: translateX(-50%) translateY(-50%);
 }
 
-    .lds-ellipsis div {
-        position: absolute;
-        top: 27px;
-        width: 11px;
-        height: 11px;
-        border-radius: 50%;
-        background: var(--white-color);
-        animation-timing-function: cubic-bezier(0, 1, 1, 0);
-    }
+.lds-ellipsis div {
+    position: absolute;
+    top: 27px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--white-color);
+    animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
 
-        .lds-ellipsis div:nth-child(1) {
-            left: 6px;
-            animation: lds-ellipsis1 0.6s infinite;
-        }
+.lds-ellipsis div:nth-child(1) {
+    left: 6px;
+    animation: lds-ellipsis1 0.6s infinite;
+}
 
-        .lds-ellipsis div:nth-child(2) {
-            left: 6px;
-            animation: lds-ellipsis2 0.6s infinite;
-        }
+.lds-ellipsis div:nth-child(2) {
+    left: 6px;
+    animation: lds-ellipsis2 0.6s infinite;
+}
 
-        .lds-ellipsis div:nth-child(3) {
-            left: 26px;
-            animation: lds-ellipsis2 0.6s infinite;
-        }
+.lds-ellipsis div:nth-child(3) {
+    left: 26px;
+    animation: lds-ellipsis2 0.6s infinite;
+}
 
-        .lds-ellipsis div:nth-child(4) {
-            left: 45px;
-            animation: lds-ellipsis3 0.6s infinite;
-        }
+.lds-ellipsis div:nth-child(4) {
+    left: 45px;
+    animation: lds-ellipsis3 0.6s infinite;
+}
+
+/* EntityView */
+#entityView {
+}
+
+#entityView h4 {
+    padding-right: 30px;
+}
+
+#entityView .flex-container {
+    min-width: 50%;
+}
 
 @keyframes lds-ellipsis1 {
     0% {

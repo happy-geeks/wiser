@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace Api.Modules.Modules.Models
 {
+    /// <summary>
+    /// A model for storing what the authenticated user can do with a module.
+    /// </summary>
     public class ModuleAccessRightsModel
     {
         /// <summary>
@@ -79,38 +79,16 @@ namespace Api.Modules.Modules.Models
         /// Gets or sets the group name of the module.
         /// </summary>
         public string Group { get; set; }
-
+        
         /// <summary>
         /// Gets or sets if the module is pinned by the user.
         /// </summary>
         public bool Pinned { get; set; }
 
         /// <summary>
-        /// Convert a <see cref="DataRow"/> to an <see cref="ModuleAccessRightsModel"/>.
+        /// Gets or sets whether the user can only open one instance of this module. If they already have this module opened and they try to open it again, then the previously opened instance will be shown to the user.
+        /// If this is set to <see langword="false"/>, then the user can open as many instances of this module as they want.
         /// </summary>
-        /// <param name="dataRow">The <see cref="DataRow"/> to convert.</param>
-        /// <returns></returns>
-        public static ModuleAccessRightsModel FromDataRow(DataRow dataRow)
-        {
-            var result = new ModuleAccessRightsModel
-            {
-                CanCreate = Convert.ToBoolean(dataRow["create"]),
-                CanDelete = Convert.ToBoolean(dataRow["delete"]),
-                CanRead = Convert.ToBoolean(dataRow["read"]),
-                CanWrite = Convert.ToBoolean(dataRow["write"]),
-                MenuOrder = Convert.ToInt32(dataRow["volgorde"]),
-                MetroOrder = Convert.ToInt32(dataRow["metroorder"]),
-                ModuleId = Convert.ToInt32(dataRow["moduleid"]),
-                Show = Convert.ToBoolean(dataRow["show"])
-            };
-
-            var whiteListString = dataRow.Field<string>("ip_whitelist");
-            if (!String.IsNullOrWhiteSpace(whiteListString))
-            {
-                result.IpWhitelist = whiteListString.Split(',').ToList();
-            }
-
-            return result;
-        }
+        public bool OnlyOneInstanceAllowed { get; set; }
     }
 }

@@ -64,7 +64,7 @@ field.find(".filterText").keyup(function (event) {
 var showStructure = options.showStructure || !options.entityTypes || options.entityTypes.length !== 1;
 
 checkTreeElement.kendoTreeView({
-    dataValueField: !showStructure ? "id" : "encrypted_item_id",
+    dataValueField: !showStructure ? "id" : "encryptedItemId",
     dataTextField: !showStructure ? "name" : "title",
     checkboxes: readonly !== true,
     check: function(event) {
@@ -105,8 +105,8 @@ checkTreeElement.kendoTreeView({
         },
         schema: {
             model: {
-                id: !showStructure ? "id" : "encrypted_item_id",
-                hasChildren: !showStructure ? "haschilds" : "has_children"
+                id: !showStructure ? "id" : "encryptedItemId",
+                hasChildren: !showStructure ? "haschilds" : "hasChildren"
             }
         }
     }
@@ -123,13 +123,13 @@ Wiser2.api({
             id: {
                 type: "number"
             },
-            published_environment: {
+            publishedEnvironment: {
                 type: "string"
             },
             title: {
                 type: "string"
             },
-            entity_type: {
+            entityType: {
                 type: "string"
             },
             property_: {

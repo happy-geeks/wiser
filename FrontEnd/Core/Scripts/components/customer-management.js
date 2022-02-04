@@ -186,17 +186,15 @@ export default {
 
             const newCustomer = {
                 name: this.newCustomerData.name,
-                live_database: {
+                liveDatabase: {
                     host: this.newCustomerData.databaseHost,
                     username: this.newCustomerData.databaseUsername,
                     password: this.newCustomerData.databasePassword,
-                    database_name: this.newCustomerData.databaseSchema,
-                    port_number: this.newCustomerData.databasePort
+                    databaseName: this.newCustomerData.databaseSchema,
+                    portNumber: this.newCustomerData.databasePort
                 },
-                wiser2_data_url: this.newCustomerData.dataUrlLive,
-                wiser2_data_url_test: this.newCustomerData.dataUrlTest,
-                wiser2_sub_domain: this.newCustomerData.subDomain,
-                wiser_settings: {
+                subDomain: this.newCustomerData.subDomain,
+                wiserSettings: {
                     hostLive: this.newCustomerData.hostLive,
                     hostTest: this.newCustomerData.hostTest,
                     hostDev: this.newCustomerData.hostDev,
@@ -226,13 +224,6 @@ export default {
                     EnableContentBuilder: "true"
                 }
             };
-
-            if (!newCustomer.wiser2_data_url.endsWith("/")) {
-                newCustomer.wiser2_data_url += "/";
-            }
-            if (!newCustomer.wiser2_data_url_test.endsWith("/")) {
-                newCustomer.wiser2_data_url_test += "/";
-            }
 
             this.loading = true;
             this.createCustomerResult = await main.customersService.create(newCustomer, this.newCustomerData.isWebShop);
