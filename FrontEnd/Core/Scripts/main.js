@@ -128,7 +128,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                                 this.modulePins[module.module_id] = module.pinned;
                             });
                         });
-                        
+
                         return moduleGroups;
                     },
                     openedModules() {
@@ -233,7 +233,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         if (typeof module === "number" || typeof module === "string") {
                             module = this.modules.find(m => m.moduleId === module);
                         }
-                        if (typeof(module.queryString) === "undefined") {
+                        if (typeof (module.queryString) === "undefined") {
                             module.queryString = "";
                         }
                         this.$store.dispatch(OPEN_MODULE, module);
@@ -273,7 +273,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         if (!this.wiserIdPromptValue || isNaN(parseInt(this.wiserIdPromptValue))) {
                             return false;
                         }
-                        
+
                         await this.$store.dispatch(LOAD_ENTITY_TYPES_OF_ITEM_ID, this.wiserIdPromptValue);
                         const encryptedId = await main.itemsService.encryptId(this.wiserIdPromptValue);
 
@@ -346,7 +346,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         }
 
                         return true;
-                    }
+                    },
 
                     async togglePin(moduleId) {
                         this.$store.dispatch(TOGGLE_PIN_MODULE,
