@@ -74,5 +74,10 @@ namespace Api.Modules.Modules.Models
         /// If this is set to <see langword="false"/>, then the user can open as many instances of this module as they want.
         /// </summary>
         public bool OnlyOneInstanceAllowed { get; set; }
+
+        /// <summary>
+        /// Gets or sets the iframe URL. Only applicable for modules of type "Iframe".
+        /// </summary>
+        public string IframeUrl { get; set; }
     }
 }
