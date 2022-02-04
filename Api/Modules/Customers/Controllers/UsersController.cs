@@ -90,5 +90,24 @@ namespace Api.Modules.Customers.Controllers
         {
             return (await usersService.SaveGridSettingsAsync((ClaimsIdentity)User.Identity, key, settings)).GetHttpResponseMessage();
         }
+        
+        /// <summary>
+        /// Gets the pinned modules for the authenticated user, so that users can keep their state of the pinned modules in Wiser.
+        /// </summary>
+        [HttpGet, Route("pinned-modules")]
+        public async Task<IActionResult> GetPinnedModulesAsync()
+        {
+            return (await usersService.GetPinnedModulesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Save the list of pinned modules to the user details, so that next time the user will see the same pinned modules.
+        /// </summary>
+        /// <param name="moduleIds">The list of module IDs that the user has pinned.</param>
+        [HttpPost, Route("pinned-modules")]
+        public async Task<IActionResult> SavePinnedModulesAsync(List<int> moduleIds)
+        {
+            return (await usersService.SavePinnedModulesAsync((ClaimsIdentity)User.Identity, moduleIds)).GetHttpResponseMessage();
+        }
     }
 }

@@ -81,6 +81,16 @@ namespace Api.Modules.Modules.Models
         public string Group { get; set; }
         
         /// <summary>
+        /// Gets or sets if the module is pinned by the user.
+        /// </summary>
+        public bool Pinned { get; set; }
+
+        /// <summary>
+        /// Gets or sets the group name of the module for when the module is pinned by the user.
+        /// </summary>
+        public string PinnedGroup { get; set; }
+
+        /// <summary>
         /// Gets or sets whether the user can only open one instance of this module. If they already have this module opened and they try to open it again, then the previously opened instance will be shown to the user.
         /// If this is set to <see langword="false"/>, then the user can open as many instances of this module as they want.
         /// </summary>
