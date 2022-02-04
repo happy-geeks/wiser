@@ -35,11 +35,6 @@ namespace Api.Modules.Modules.Models
         public string Type { get; set; }
 
         /// <summary>
-        /// Gets or sets whether the module should be visible.
-        /// </summary>
-        public bool Show { get; set; }
-
-        /// <summary>
         /// Gets or sets whether the user is allowed to read items in the module.
         /// </summary>
         public bool CanRead { get; set; }
@@ -58,22 +53,6 @@ namespace Api.Modules.Modules.Models
         /// Gets or sets whether the user is allowed to delete items in the module.
         /// </summary>
         public bool CanDelete { get; set; }
-
-        /// <summary>
-        /// Gets or sets the order number of the module in the left/main menu.
-        /// </summary>
-        public int MenuOrder { get; set; }
-
-        /// <summary>
-        /// Gets or sets the order number of the module on the homepage.
-        /// </summary>
-        public int MetroOrder { get; set; }
-
-        /// <summary>
-        /// Gets or sets the IP restrictions of this module.
-        /// If one or more IP addresses are entered, this module can only be accessed via those IPs for this user.
-        /// </summary>
-        public List<string> IpWhitelist { get; set; }
 
         /// <summary>
         /// Gets or sets the group name of the module.
