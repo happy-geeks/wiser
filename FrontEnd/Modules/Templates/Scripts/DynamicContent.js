@@ -486,7 +486,7 @@ const moduleSettings = {
         async transformCodeMirrorViews() {
             await Misc.ensureCodeMirror();
             $("textarea[data-fieldtype][data-property]").each(function (i, el) {
-                var cmObject = CodeMirror.fromTextArea(el, {
+                var cmObject = CodeMirror.default.fromTextArea(el, {
                     lineNumbers: true,
                     styleActiveLine: true,
                     matchBrackets: true,

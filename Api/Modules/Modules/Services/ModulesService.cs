@@ -13,6 +13,7 @@ using Api.Modules.Grids.Interfaces;
 using Api.Modules.Grids.Models;
 using Api.Modules.Modules.Interfaces;
 using Api.Modules.Modules.Models;
+using Api.Modules.Queries.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Interfaces;
@@ -323,7 +324,50 @@ namespace Api.Modules.Modules.Services
             return new ServiceResult<SortedList<string, List<ModuleAccessRightsModel>>>(results);
         }
 
-            /// <inheritdoc />
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<ModuleSettingsModel>>> GetSettingsAsync(ClaimsIdentity identity)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync(); 
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+            
+            var results = new List<ModuleSettingsModel>();
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT
+	                                                                            module.id,
+	                                                                            module.name
+                                                                            FROM {WiserTableNames.WiserUserRoles} AS user_role
+                                                                            JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
+                                                                            JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
+                                                                            JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
+                                                                            LEFT JOIN {WiserTableNames.WiserOrdering} AS ordering ON ordering.user_id = user_role.user_id AND ordering.module_id = permission.module_id
+                                                                            WHERE user_role.user_id = ?userId
+                                                                            GROUP BY permission.module_id
+                                                                            ORDER BY permission.module_id, permission.permissions");
+                        
+            if (dataTable.Rows.Count == 0)
+            {
+                return new ServiceResult<List<ModuleSettingsModel>>(results);
+            }
+
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                var id = dataRow.Field<int>("id");
+                var userItemPermissions = await wiserItemsService.GetUserModulePermissions(id, IdentityHelpers.GetWiserUserId(identity));
+                results.Add(new ModuleSettingsModel
+                {
+                    Id = id,
+                    Name = $"{dataTable.Rows[0].Field<string>("name")} ({id})",
+                    CanRead = (userItemPermissions & AccessRights.Read) == AccessRights.Read,
+                    CanCreate = (userItemPermissions & AccessRights.Create) == AccessRights.Create,
+                    CanWrite = (userItemPermissions & AccessRights.Update) == AccessRights.Update,
+                    CanDelete = (userItemPermissions & AccessRights.Delete) == AccessRights.Delete
+                });
+            }
+
+            return new ServiceResult<List<ModuleSettingsModel>>(results);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity)
         {
             var customer = await wiserCustomersService.GetSingleAsync(identity);
@@ -343,7 +387,7 @@ namespace Api.Modules.Modules.Services
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
 
-            var query = $@"SELECT id, options FROM {WiserTableNames.WiserModule} WHERE id = ?id";
+            var query = $@"SELECT id, custom_query, count_query, `options`, `name`, icon, color, type, `group` FROM wiser_module WHERE id = ?id";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count == 0)
@@ -351,9 +395,17 @@ namespace Api.Modules.Modules.Services
                 return new ServiceResult<ModuleSettingsModel>(result);
             }
 
+            result.CustomQuery = dataTable.Rows[0].Field<string>("custom_query");
+            result.CountQuery = dataTable.Rows[0].Field<string>("count_query");
+            result.Name = dataTable.Rows[0].Field<string>("name");
+            result.Icon = dataTable.Rows[0].Field<string>("icon");
+            result.Color = dataTable.Rows[0].Field<string>("color");
+            result.Type = dataTable.Rows[0].Field<string>("type");
+            result.Group = dataTable.Rows[0].Field<string>("group");
+            
             var optionsJson = dataTable.Rows[0].Field<string>("options");
 
-            if (String.IsNullOrWhiteSpace(optionsJson))
+            if (string.IsNullOrWhiteSpace(optionsJson))
             {
                 return new ServiceResult<ModuleSettingsModel>(result);
             }
@@ -362,7 +414,29 @@ namespace Api.Modules.Modules.Services
             jsonService.EncryptValuesInJson(parsedOptionsJson, encryptionKey, new List<string> { "itemId" });
 
             result.Options = parsedOptionsJson;
+
             return new ServiceResult<ModuleSettingsModel>(result);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<int>> CreateAsync(string name, ClaimsIdentity identity)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("name", name);
+            
+            var query = $@"
+                        SET @newID = (SELECT MAX(id)+ 1 FROM wiser_module);
+                        INSERT INTO {WiserTableNames.WiserModule}(id,`name`)
+                        VALUES (@newID, ?name); 
+                        INSERT IGNORE INTO {WiserTableNames.WiserPermission}(role_id,entity_name,item_id,entity_property_id, permissions,module_id)
+                        VALUES (1, '', 0, 0, 15, @newID);
+                        SELECT @newID;";
+            
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            var id = Convert.ToInt32(dataTable.Rows[0][0]);
+
+            return new ServiceResult<int>(id);
         }
 
         /// <inheritdoc />
@@ -394,6 +468,49 @@ namespace Api.Modules.Modules.Services
 
             var result = excelService.JsonArrayToExcel(newData);
             return new ServiceResult<byte[]>(result);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> UpdateSettingsAsync(int id, ClaimsIdentity identity, ModuleSettingsModel moduleSettingsModel)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("id", id);
+            clientDatabaseConnection.AddParameter("custom_query", moduleSettingsModel.CustomQuery);
+            clientDatabaseConnection.AddParameter("count_query", moduleSettingsModel.CountQuery);
+            clientDatabaseConnection.AddParameter("options", moduleSettingsModel.Options.ToString());
+            clientDatabaseConnection.AddParameter("name", moduleSettingsModel.Name);
+            clientDatabaseConnection.AddParameter("icon", moduleSettingsModel.Icon);
+            clientDatabaseConnection.AddParameter("color", moduleSettingsModel.Color);
+            clientDatabaseConnection.AddParameter("type", moduleSettingsModel.Type);
+            clientDatabaseConnection.AddParameter("group", moduleSettingsModel.Group);
+
+            var query = $@"UPDATE {WiserTableNames.WiserModule}
+                            SET `custom_query` = ?custom_query,
+                                `count_query` = ?count_query,
+                                `options` = ?options,
+                                `name` = ?name,
+                                `icon` = ?icon,
+                                `color` = ?color,
+                                `type` = ?type,
+                                `group` = ?group
+                        WHERE id = ?id";
+            try
+            {
+                await clientDatabaseConnection.ExecuteAsync(query);
+                return new ServiceResult<bool>(true)
+                {
+                    StatusCode = HttpStatusCode.NoContent
+                };
+            }
+            catch (Exception e)
+            {
+                return new ServiceResult<bool>(false)
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = e.Message
+                };
+            }
         }
     }
 }

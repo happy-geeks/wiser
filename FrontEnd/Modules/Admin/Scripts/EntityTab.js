@@ -81,67 +81,67 @@ export class EntityTab {
         
         await Misc.ensureCodeMirror();
 
-        this.cssField = CodeMirror.fromTextArea(document.getElementById("cssField"), {
+        this.cssField = CodeMirror.default.fromTextArea(document.getElementById("cssField"), {
             mode: "text/css",
             lineNumbers: true
         });
 
-        this.scriptField = CodeMirror.fromTextArea(document.getElementById("customScriptField"), {
+        this.scriptField = CodeMirror.default.fromTextArea(document.getElementById("customScriptField"), {
             mode: "text/javascript",
             lineNumbers: true
         });
 
-        this.jsonField = CodeMirror.fromTextArea(document.getElementById("jsonField"), {
+        this.jsonField = CodeMirror.default.fromTextArea(document.getElementById("jsonField"), {
             mode: "application/json",
             lineNumbers: true
         });
 
-        this.queryField = CodeMirror.fromTextArea(document.getElementById("queryWindow"), {
+        this.queryField = CodeMirror.default.fromTextArea(document.getElementById("queryWindow"), {
             mode: "text/x-mysql",
             lineNumbers: true
         });
 
-        this.queryFieldSubEntities = CodeMirror.fromTextArea(document.getElementById("queryFieldSubEntities"), {
+        this.queryFieldSubEntities = CodeMirror.default.fromTextArea(document.getElementById("queryFieldSubEntities"), {
             mode: "text/x-mysql",
             lineNumbers: true
         });
 
-        this.queryDeleteField = CodeMirror.fromTextArea(document.getElementById("queryDelete"), {
+        this.queryDeleteField = CodeMirror.default.fromTextArea(document.getElementById("queryDelete"), {
             mode: "text/x-mysql",
             lineNumbers: true
         });
 
-        this.queryInsertField = CodeMirror.fromTextArea(document.getElementById("queryInsert"), {
+        this.queryInsertField = CodeMirror.default.fromTextArea(document.getElementById("queryInsert"), {
             mode: "text/x-mysql",
             lineNumbers: true
         });
 
-        this.queryUpdateField = CodeMirror.fromTextArea(document.getElementById("queryUpdate"), {
+        this.queryUpdateField = CodeMirror.default.fromTextArea(document.getElementById("queryUpdate"), {
             mode: "text/x-mysql",
             lineNumbers: true
         });
 
-        this.queryContentField = CodeMirror.fromTextArea(document.getElementById("queryContent"), {
+        this.queryContentField = CodeMirror.default.fromTextArea(document.getElementById("queryContent"), {
             mode: "text/x-mysql",
             lineNumbers: true
         });
 
-        this.queryAfterInsert = CodeMirror.fromTextArea(document.getElementById("queryAfterInsert"), {
+        this.queryAfterInsert = CodeMirror.default.fromTextArea(document.getElementById("queryAfterInsert"), {
             mode: "text/x-mysql",
             lineNumbers: true
         });
 
-        this.queryAfterUpdate = CodeMirror.fromTextArea(document.getElementById("queryAfterUpdate"), {
+        this.queryAfterUpdate = CodeMirror.default.fromTextArea(document.getElementById("queryAfterUpdate"), {
             mode: "text/x-mysql",
             lineNumbers: true
         });
 
-        this.queryBeforeUpdate = CodeMirror.fromTextArea(document.getElementById("queryBeforeUpdate"), {
+        this.queryBeforeUpdate = CodeMirror.default.fromTextArea(document.getElementById("queryBeforeUpdate"), {
             mode: "text/x-mysql",
             lineNumbers: true
         });
 
-        this.queryBeforeDelete = CodeMirror.fromTextArea(document.getElementById("queryBeforeDelete"), {
+        this.queryBeforeDelete = CodeMirror.default.fromTextArea(document.getElementById("queryBeforeDelete"), {
             mode: "text/x-mysql",
             lineNumbers: true
         });

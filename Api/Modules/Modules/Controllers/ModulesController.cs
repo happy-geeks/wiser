@@ -53,6 +53,16 @@ namespace Api.Modules.Modules.Controllers
         }
 
         /// <summary>
+        /// Get settings from all Wiser 2 modules.
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet, Route("settings"), ProducesResponseType(typeof(List<ModuleSettingsModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetSettingsAsync()
+        {
+            return (await modulesService.GetSettingsAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
         /// Gets settings for a Wiser 2 module.
         /// </summary>
         /// <param name="id"></param>
@@ -63,6 +73,29 @@ namespace Api.Modules.Modules.Controllers
             return (await modulesService.GetSettingsAsync(id, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
 
+        /// <summary>
+        /// Gets settings for a Wiser 2 module.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="moduleSettingsModel"></param>
+        /// <returns></returns>
+        [HttpPut, Route("{id:int}/settings")]
+        public async Task<IActionResult> UpdateSettings(int id, ModuleSettingsModel moduleSettingsModel)
+        {
+            return (await modulesService.UpdateSettingsAsync(id, (ClaimsIdentity) User.Identity, moduleSettingsModel)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Creates a new Wiser 2 module.
+        /// </summary>
+        /// <param name="name">Name of the new module</param>
+        /// <returns>The id of the new module</returns>
+        [HttpPost, Route("settings")]
+        public async Task<IActionResult> CreateAsync([FromBody] string name)
+        {
+            return (await modulesService.CreateAsync(name, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+        
         /// <summary>
         /// Exports the data of a Wiser 2 module to Excel. This only works for grid view modules.
         /// </summary>

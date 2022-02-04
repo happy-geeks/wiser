@@ -1288,7 +1288,7 @@ const moduleSettings = {
                 // We only load code mirror when we actually need it.
                 await Misc.ensureCodeMirror();
 
-                this.jsonCodeMirrorEditor = CodeMirror.fromTextArea(jsonText, {
+                this.jsonCodeMirrorEditor = CodeMirror.default.fromTextArea(jsonText, {
                     mode: "application/json",
                     lineNumbers: true,
                     readOnly: true
@@ -1300,7 +1300,7 @@ const moduleSettings = {
                 // We only load code mirror when we actually need it.
                 await Misc.ensureCodeMirror();
 
-                this.queryCodeMirrorEditor = CodeMirror.fromTextArea(queryText, {
+                this.queryCodeMirrorEditor = CodeMirror.default.fromTextArea(queryText, {
                     mode: "text/x-mysql",
                     lineNumbers: true,
                     readOnly: true
