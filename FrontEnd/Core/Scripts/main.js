@@ -93,8 +93,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         appSettings: this.appSettings,
                         wiserIdPromptValue: null,
                         wiserEntityTypePromptValue: null,
-                        markerWidget: this.markerWidget,
-                        modulePins: {}
+                        markerWidget: this.markerWidget
                     };
                 },
                 created() {
@@ -121,15 +120,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         return this.$store.state.modules.allModules;
                     },
                     moduleGroups() {
-                        let moduleGroups = this.$store.state.modules.moduleGroups;
-
-                        moduleGroups.forEach(group => {
-                            group.modules.forEach(module => {
-                                this.modulePins[module.module_id] = module.pinned;
-                            });
-                        });
-
-                        return moduleGroups;
+                        return this.$store.state.modules.moduleGroups;
                     },
                     openedModules() {
                         return this.$store.state.modules.openedModules;
@@ -230,6 +221,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                     },
 
                     openModule(module) {
+
                         if (typeof module === "number" || typeof module === "string") {
                             module = this.modules.find(m => m.moduleId === module);
                         }
@@ -327,6 +319,11 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         this.markerWidget.capture("fullscreen");
                     },
 
+                    onOpenModuleClick(event, module) {
+                        event.preventDefault();
+                        this.openModule(module);
+                    },
+
                     onWiserIdPromptOpen(sender) {
                         setTimeout(() => document.getElementById("wiserId").focus(), 500);
                     },
@@ -348,12 +345,8 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         return true;
                     },
 
-                    async togglePin(moduleId) {
-                        this.$store.dispatch(TOGGLE_PIN_MODULE,
-                            {
-                                moduleId: moduleId,
-                                pinned: this.modulePins[moduleId]
-                            });
+                    async onTogglePin(moduleId) {
+                        this.$store.dispatch(TOGGLE_PIN_MODULE, moduleId);
                     }
                 }
             });

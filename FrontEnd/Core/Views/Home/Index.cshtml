@@ -13,13 +13,13 @@
                     <div class="menu-scroller">
                         <ul>
                             <li v-for="moduleGroup in moduleGroups" :key="moduleGroup.name">
-                                <strong v-if="moduleGroup.name && moduleGroup.name !== 'Pinned'">{{ moduleGroup.name }}</strong>
+                                <strong v-if="moduleGroup.name">{{ moduleGroup.name }}</strong>
                                 <ul>
-                                    <li v-for="module in moduleGroup.modules" :key="module.moduleId" @@click="openModule(module)">
-                                        <a href="#" :title="module.name"><ins :class="module.icon"></ins><span>{{ module.name }}</span></a>
+                                    <li v-for="module in moduleGroup.modules" :key="module.moduleId">
+                                        <a href="#" :title="module.name" @@click="onOpenModuleClick($event, module)"><ins :class="module.icon"></ins><span>{{ module.name }}</span></a>
                                         <label>
-                                            <input type="checkbox" class="hidden" v-model="modulePins[module.module_id]" @@change="togglePin(module.module_id)"/>
-                                            <ins class="icon-line-pin-empty"></ins>
+                                            <input type="checkbox" class="hidden" :checked="module.pinned" @@change="onTogglePin(module.moduleId)"/>
+                                            <ins :class="{ 'icon-line-pin-empty': !module.pinned, 'icon-line-pin-full': module.pinned }"></ins>
                                         </label>
                                     </li>
                                 </ul>
