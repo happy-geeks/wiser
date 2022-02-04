@@ -910,6 +910,9 @@ export class Misc {
 
             Promise.all(codeMirrorPromises).then((modules) => {
                 window.CodeMirror = modules[0];
+                if (typeof window.CodeMirror.fromTextArea !== "function") {
+                    window.CodeMirror = window.CodeMirror.default;
+                }
                 window.JSHINT = modules[19].JSHINT;
                 window.CSSLint = modules[21].CSSLint;
                 resolve(window.CodeMirror);
