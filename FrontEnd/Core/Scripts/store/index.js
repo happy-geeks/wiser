@@ -399,8 +399,23 @@ const modulesModule = {
     actions: {
         async [MODULES_REQUEST]({ commit }) {
             commit(START_REQUEST);
-            const modules = await main.modulesService.getModules();
-            commit(MODULES_LOADED, modules);
+            const moduleGroups = await main.modulesService.getModules();
+            commit(MODULES_LOADED, moduleGroups);
+
+            // Automatically open pinned modules when the modules are first loaded.
+            for (let group in moduleGroups) {
+                if (!moduleGroups.hasOwnProperty(group)) {
+                    continue;
+                }
+                
+                for (let module of moduleGroups[group]) {
+                    if (!module.pinned) {
+                        continue;
+                    }
+
+                    commit(OPEN_MODULE, module);
+                }
+            }
             commit(END_REQUEST);
         },
 
