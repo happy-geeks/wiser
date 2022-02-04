@@ -23,7 +23,7 @@ import WiserDialog from "./components/wiser-dialog";
 import "../scss/main.scss";
 import "../scss/task-alerts.scss";
 
-import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, ACTIVATE_MODULE, LOAD_ENTITY_TYPES_OF_ITEM_ID, GET_CUSTOMER_TITLE } from "./store/mutation-types";
+import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, ACTIVATE_MODULE, LOAD_ENTITY_TYPES_OF_ITEM_ID, GET_CUSTOMER_TITLE, TOGGLE_PIN_MODULE } from "./store/mutation-types";
 
 (() => {
     class Main {
@@ -221,10 +221,11 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                     },
 
                     openModule(module) {
+
                         if (typeof module === "number" || typeof module === "string") {
                             module = this.modules.find(m => m.moduleId === module);
                         }
-                        if (typeof(module.queryString) === "undefined") {
+                        if (typeof (module.queryString) === "undefined") {
                             module.queryString = "";
                         }
                         this.$store.dispatch(OPEN_MODULE, module);
@@ -264,7 +265,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         if (!this.wiserIdPromptValue || isNaN(parseInt(this.wiserIdPromptValue))) {
                             return false;
                         }
-                        
+
                         await this.$store.dispatch(LOAD_ENTITY_TYPES_OF_ITEM_ID, this.wiserIdPromptValue);
                         const encryptedId = await main.itemsService.encryptId(this.wiserIdPromptValue);
 
@@ -318,6 +319,11 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         this.markerWidget.capture("fullscreen");
                     },
 
+                    onOpenModuleClick(event, module) {
+                        event.preventDefault();
+                        this.openModule(module);
+                    },
+
                     onWiserIdPromptOpen(sender) {
                         setTimeout(() => document.getElementById("wiserId").focus(), 500);
                     },
@@ -337,6 +343,10 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         }
 
                         return true;
+                    },
+
+                    async onTogglePin(moduleId) {
+                        this.$store.dispatch(TOGGLE_PIN_MODULE, moduleId);
                     }
                 }
             });
