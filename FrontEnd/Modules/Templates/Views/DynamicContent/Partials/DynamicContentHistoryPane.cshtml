@@ -18,7 +18,7 @@
 </div>
 @foreach (var historyVersion in Model)
 {
-    <div class="row historyLine" data-historyversion="@historyVersion.Version">
+    <div class="row historyLine" data-history-version="@historyVersion.Version">
         <div class="col col-12 historyTagline">
             <span><span class="k-icon k-i-edit"></span> Versie @historyVersion.Version |</span>
             <span><span class="k-icon k-i-calendar"></span> @historyVersion.GetDisplayChangedOn() |</span>
