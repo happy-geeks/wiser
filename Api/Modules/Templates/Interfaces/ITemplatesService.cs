@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
+using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
@@ -150,5 +151,14 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="id">The ID of the template to rename.</param>
         /// <param name="newName">The new name.</param>
         Task<ServiceResult<bool>> RenameAsync(ClaimsIdentity identity, int id, string newName);
+
+        /// <summary>
+        /// Moves a template to a new position.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="sourceId">The ID of the template that is being moved.</param>
+        /// <param name="destinationId">The ID of the template or directory where it's being moved to.</param>
+        /// <param name="dropPosition">The drop position, can be either <see cref="TreeViewDropPositions.Over"/>, <see cref="TreeViewDropPositions.Before"/> or <see cref="TreeViewDropPositions.After"/>.</param>
+        Task<ServiceResult<bool>> MoveAsync(ClaimsIdentity identity, int sourceId, int destinationId, TreeViewDropPositions dropPosition);
     }
 }

@@ -2002,7 +2002,7 @@ namespace Api.Modules.Items.Services
                 clientDatabaseConnection.AddParameter("position", position);
                 clientDatabaseConnection.AddParameter("sourceEntityType", sourceEntityType);
 
-                // If the position is "over", it means the destinationId itself will become the new parent, for before and after it means the destinationParentId will become the new parent.
+                // If the position is "over", it means the destinationId itself will become the new parent, for "before" and "after" it means the destinationParentId will become the new parent.
                 var positionIsOver = String.Equals(position, "over", StringComparison.OrdinalIgnoreCase);
                 if (!positionIsOver)
                 {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
@@ -104,5 +105,39 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// </summary>
         /// <param name="parentId">The ID of the parent in which to fix the ordering of all it's children.</param>
         Task FixTreeViewOrderingAsync(int parentId);
+
+        /// <summary>
+        /// Gets the parent ID of an item.
+        /// </summary>
+        /// <param name="templateId">The ID of the template.</param>
+        /// <returns>The ID of the parent, or <see langword="null"/> if there is no parent.</returns>
+        Task<int?> GetParentId(int templateId);
+
+        /// <summary>
+        /// Gets the sort order number of a template.
+        /// </summary>
+        /// <param name="templateId">The ID of the template.</param>
+        /// <returns>The order number.</returns>
+        Task<int> GetOrderingAsync(int templateId);
+
+        /// <summary>
+        /// Gets the highest order number of all children of a parent, so that you can calculate a new order number when adding a new child.
+        /// </summary>
+        /// <param name="templateId">The ID of the template.</param>
+        /// <returns>The current highest order number.</returns>
+        Task<int> GetHighestOrderNumberOfChildrenAsync(int templateId);
+
+        /// <summary>
+        /// Moves a template to a new position.
+        /// </summary>
+        /// <param name="sourceId">The ID of the template that is being moved.</param>
+        /// <param name="destinationId">The ID of the template or directory where it's being moved to.</param>
+        /// <param name="sourceParentId">The original parent ID of the source item.</param>
+        /// <param name="destinationParentId">The parent ID of the destination item.</param>
+        /// <param name="oldOrderNumber">The original order number of the item that is being moved.</param>
+        /// <param name="newOrderNumber">The new order number of the item that is being moved.</param>
+        /// <param name="dropPosition">The drop position, can be either <see cref="TreeViewDropPositions.Over"/>, <see cref="TreeViewDropPositions.Before"/> or <see cref="TreeViewDropPositions.After"/>.</param>
+        /// <param name="username">The name of the authenticated user.</param>
+        Task MoveAsync(int sourceId, int destinationId, int sourceParentId, int destinationParentId, int oldOrderNumber, int newOrderNumber, TreeViewDropPositions dropPosition, string username);
     }
 }
