@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
@@ -19,22 +20,22 @@ namespace Api.Modules.Templates.Services.DataLayer
     /// <inheritdoc cref="ITemplateDataService" />
     public class TemplateDataService : ITemplateDataService, IScopedService
     {
-        private readonly IDatabaseConnection connection;
+        private readonly IDatabaseConnection clientDatabaseConnection;
 
         /// <summary>
         /// Creates a new instance of <see cref="TemplateDataService"/>.
         /// </summary>
-        public TemplateDataService(IDatabaseConnection connection)
+        public TemplateDataService(IDatabaseConnection clientDatabaseConnection)
         {
-            this.connection = connection;
+            this.clientDatabaseConnection = clientDatabaseConnection;
         }
 
         /// <inheritdoc />
         public async Task<TemplateSettingsModel> GetMetaDataAsync(int templateId)
         {
-            connection.ClearParameters();
-            connection.AddParameter("templateId", templateId);
-            var dataTable = await connection.GetAsync($@"SELECT 
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("templateId", templateId);
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
                                                                 template.parent_id,
                                                                 template.template_type,
                                                                 template.template_name, 
@@ -64,9 +65,9 @@ namespace Api.Modules.Templates.Services.DataLayer
         /// <inheritdoc />
         public async Task<TemplateSettingsModel> GetDataAsync(int templateId)
         {
-            connection.ClearParameters();
-            connection.AddParameter("templateId", templateId);
-            var dataTable = await connection.GetAsync($@"SELECT 
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("templateId", templateId);
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
                                                                 template.template_id, 
                                                                 template.parent_id, 
                                                                 template.template_type, 
@@ -134,11 +135,11 @@ namespace Api.Modules.Templates.Services.DataLayer
         /// <inheritdoc />
         public async Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int templateId)
         {
-            connection.ClearParameters();
-            connection.AddParameter("templateid", templateId);
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("templateid", templateId);
             var versionList = new Dictionary<int, int>();
 
-            var dataTable = await connection.GetAsync($"SELECT wtt.version, wtt.published_environment FROM {WiserTableNames.WiserTemplate} wtt WHERE wtt.template_id = ?templateid");
+            var dataTable = await clientDatabaseConnection.GetAsync($"SELECT wtt.version, wtt.published_environment FROM {WiserTableNames.WiserTemplate} wtt WHERE wtt.template_id = ?templateid");
 
             foreach (DataRow row in dataTable.Rows)
             {
@@ -151,8 +152,8 @@ namespace Api.Modules.Templates.Services.DataLayer
         /// <inheritdoc />
         public async Task<int> UpdatePublishedEnvironmentAsync(int templateId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username)
         {
-            connection.ClearParameters();
-            connection.AddParameter("templateid", templateId);
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("templateid", templateId);
 
             var baseQueryPart = $@"UPDATE {WiserTableNames.WiserTemplate} wtt 
                 SET wtt.published_environment = case wtt.version";
@@ -170,14 +171,14 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             var query = baseQueryPart + dynamicQueryPart + endQueryPart + dynamicWherePart;
 
-            connection.AddParameter("oldlive", publishLog.OldLive);
-            connection.AddParameter("oldaccept", publishLog.OldAccept);
-            connection.AddParameter("oldtest", publishLog.OldTest);
-            connection.AddParameter("newlive", publishLog.NewLive);
-            connection.AddParameter("newaccept", publishLog.NewAccept);
-            connection.AddParameter("newtest", publishLog.NewTest);
-            connection.AddParameter("now", DateTime.Now);
-            connection.AddParameter("username", username);
+            clientDatabaseConnection.AddParameter("oldlive", publishLog.OldLive);
+            clientDatabaseConnection.AddParameter("oldaccept", publishLog.OldAccept);
+            clientDatabaseConnection.AddParameter("oldtest", publishLog.OldTest);
+            clientDatabaseConnection.AddParameter("newlive", publishLog.NewLive);
+            clientDatabaseConnection.AddParameter("newaccept", publishLog.NewAccept);
+            clientDatabaseConnection.AddParameter("newtest", publishLog.NewTest);
+            clientDatabaseConnection.AddParameter("now", DateTime.Now);
+            clientDatabaseConnection.AddParameter("username", username);
 
             var logQuery = $@"INSERT INTO {WiserTableNames.WiserTemplatePublishLog} (template_id, old_live, old_accept, old_test, new_live, new_accept, new_test, changed_on, changed_by) 
             VALUES(
@@ -192,15 +193,15 @@ namespace Api.Modules.Templates.Services.DataLayer
                 ?username
             )";
 
-            return await connection.ExecuteAsync(query + ";" + logQuery);
+            return await clientDatabaseConnection.ExecuteAsync(query + ";" + logQuery);
         }
 
         /// <inheritdoc />
         public async Task<List<LinkedTemplateModel>> GetLinkedTemplatesAsync(int templateId)
         {
-            connection.ClearParameters();
-            connection.AddParameter("templateId", templateId);
-            var dataTable = await connection.GetAsync($"SELECT linked_templates FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId ORDER BY version DESC LIMIT 1");
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("templateId", templateId);
+            var dataTable = await clientDatabaseConnection.GetAsync($"SELECT linked_templates FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId ORDER BY version DESC LIMIT 1");
             if (dataTable.Rows.Count == 0)
             {
                 return new List<LinkedTemplateModel>();
@@ -215,7 +216,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             // To make sure we don't get bad values in the query below, we split and convert to int.
             var linkedTemplateIds = linkedTemplateValue.Split(",").Select(Int32.Parse);
 
-            dataTable = await connection.GetAsync($@"SELECT
+            dataTable = await clientDatabaseConnection.GetAsync($@"SELECT
                                                             template.template_id,
                                                             template.template_name,
                                                             template.template_type,
@@ -248,9 +249,9 @@ namespace Api.Modules.Templates.Services.DataLayer
         /// <inheritdoc />
         public async Task<List<LinkedTemplateModel>> GetTemplatesAvailableForLinkingAsync(int templateId)
         {
-            connection.ClearParameters();
-            connection.AddParameter("templateId", templateId);
-            var dataTable = await connection.GetAsync($@"SELECT 
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("templateId", templateId);
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
 	                                                            template.template_id,
 	                                                            template.template_name,
 	                                                            template.template_type,
@@ -283,9 +284,9 @@ namespace Api.Modules.Templates.Services.DataLayer
         /// <inheritdoc />
         public async Task<List<LinkedDynamicContentDao>> GetLinkedDynamicContentAsync(int templateId)
         {
-            connection.ClearParameters();
-            connection.AddParameter("templateid", templateId);
-            var dataTable = await connection.GetAsync($@"SELECT 
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("templateId", templateId);
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
                 wdc.content_id, 
                 wdc.component, 
                 wdc.component_mode, 
@@ -324,37 +325,38 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public Task<int> SaveAsync(TemplateSettingsModel templateSettings, List<int> sccsLinks, List<int> jsLinks, string username)
+        public async Task<int> SaveAsync(TemplateSettingsModel templateSettings, List<int> sccsLinks, List<int> jsLinks, string username)
         {
-            connection.ClearParameters();
-            connection.AddParameter("templateId", templateSettings.TemplateId);
-            connection.AddParameter("parentId", templateSettings.ParentId);
-            connection.AddParameter("name", templateSettings.Name);
-            connection.AddParameter("editorValue", templateSettings.EditorValue);
-            connection.AddParameter("type", templateSettings.Type);
-            connection.AddParameter("useCache", templateSettings.UseCache);
-            connection.AddParameter("cacheMinutes", templateSettings.CacheMinutes);
-            connection.AddParameter("handleRequests", templateSettings.HandleRequests);
-            connection.AddParameter("handleSession", templateSettings.HandleSession);
-            connection.AddParameter("handleObjects", templateSettings.HandleObjects);
-            connection.AddParameter("handleStandards", templateSettings.HandleStandards);
-            connection.AddParameter("handleTranslations", templateSettings.HandleTranslations);
-            connection.AddParameter("handleDynamicContent", templateSettings.HandleDynamicContent);
-            connection.AddParameter("handleLogicBlocks", templateSettings.HandleLogicBlocks);
-            connection.AddParameter("handleMutators", templateSettings.HandleMutators);
-            connection.AddParameter("loginRequired", templateSettings.LoginRequired);
-            connection.AddParameter("loginUserType", templateSettings.LoginUserType);
-            connection.AddParameter("loginSessionPrefix", templateSettings.LoginSessionPrefix);
-            connection.AddParameter("loginRole", templateSettings.LoginRole);
-            connection.AddParameter("now", DateTime.Now);
-            connection.AddParameter("username", username);
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("templateId", templateSettings.TemplateId);
+            clientDatabaseConnection.AddParameter("parentId", templateSettings.ParentId);
+            clientDatabaseConnection.AddParameter("name", templateSettings.Name);
+            clientDatabaseConnection.AddParameter("editorValue", templateSettings.EditorValue);
+            clientDatabaseConnection.AddParameter("type", templateSettings.Type);
+            clientDatabaseConnection.AddParameter("useCache", templateSettings.UseCache);
+            clientDatabaseConnection.AddParameter("cacheMinutes", templateSettings.CacheMinutes);
+            clientDatabaseConnection.AddParameter("handleRequests", templateSettings.HandleRequests);
+            clientDatabaseConnection.AddParameter("handleSession", templateSettings.HandleSession);
+            clientDatabaseConnection.AddParameter("handleObjects", templateSettings.HandleObjects);
+            clientDatabaseConnection.AddParameter("handleStandards", templateSettings.HandleStandards);
+            clientDatabaseConnection.AddParameter("handleTranslations", templateSettings.HandleTranslations);
+            clientDatabaseConnection.AddParameter("handleDynamicContent", templateSettings.HandleDynamicContent);
+            clientDatabaseConnection.AddParameter("handleLogicBlocks", templateSettings.HandleLogicBlocks);
+            clientDatabaseConnection.AddParameter("handleMutators", templateSettings.HandleMutators);
+            clientDatabaseConnection.AddParameter("loginRequired", templateSettings.LoginRequired);
+            clientDatabaseConnection.AddParameter("loginUserType", templateSettings.LoginUserType);
+            clientDatabaseConnection.AddParameter("loginSessionPrefix", templateSettings.LoginSessionPrefix);
+            clientDatabaseConnection.AddParameter("loginRole", templateSettings.LoginRole);
+            clientDatabaseConnection.AddParameter("now", DateTime.Now);
+            clientDatabaseConnection.AddParameter("username", username);
+            clientDatabaseConnection.AddParameter("ordering", await GetOrderingAsync(templateSettings.TemplateId));
 
             var mergeList = new List<int>();
             mergeList.AddRange(sccsLinks);
             mergeList.AddRange(jsLinks);
-            connection.AddParameter("templateLinks", String.Join(",", mergeList));
+            clientDatabaseConnection.AddParameter("templateLinks", String.Join(",", mergeList));
 
-            return connection.ExecuteAsync($@"
+            return await clientDatabaseConnection.ExecuteAsync($@"
                 SET @VersionNumber = (SELECT MAX(version)+1 FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId GROUP BY template_id);
                 INSERT INTO {WiserTableNames.WiserTemplate} (
                     template_name, 
@@ -379,7 +381,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                     login_user_type,
                     login_session_prefix,
                     login_role,
-                    linked_templates
+                    linked_templates,
+                    ordering
                 ) 
                 VALUES (
                     ?name,
@@ -404,15 +407,16 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ?loginUserType,
                     ?loginSessionPrefix,
                     ?loginRole,
-                    ?templateLinks
+                    ?templateLinks,
+                    ?ordering
                 )");
         }
 
         /// <inheritdoc />
         public async Task<List<TemplateTreeViewDao>> GetTreeViewSectionAsync(int parentId)
         {
-            connection.ClearParameters();
-            connection.AddParameter("parentId", parentId);
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("parentId", parentId);
             
             var query = $@"SELECT
 	                        template.id,
@@ -429,7 +433,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                         GROUP BY template.template_id
                         ORDER BY template.ordering ASC";
 
-            var dataTable = await connection.GetAsync(query);
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             return (dataTable.Rows.Cast<DataRow>()
             .Select(row => new TemplateTreeViewDao
@@ -445,9 +449,9 @@ namespace Api.Modules.Templates.Services.DataLayer
         /// <inheritdoc />
         public async Task<List<SearchResultModel>> SearchAsync(SearchSettingsModel searchSettings)
         {
-            connection.ClearParameters();
-            connection.AddParameter("needle", searchSettings.Needle);
-            var dataTable = await connection.GetAsync(BuildSearchQuery(searchSettings));
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("needle", searchSettings.Needle);
+            var dataTable = await clientDatabaseConnection.GetAsync(BuildSearchQuery(searchSettings));
 
             var searchResults = new List<SearchResultModel>();
 
@@ -469,16 +473,17 @@ namespace Api.Modules.Templates.Services.DataLayer
         /// <inheritdoc/>
         public async Task<int> CreateAsync(string name, int parent, TemplateTypes type, string username)
         {
-            connection.ClearParameters();
-            connection.AddParameter("name", name);
-            connection.AddParameter("parent", parent);
-            connection.AddParameter("type", type);
-            connection.AddParameter("now", DateTime.Now);
-            connection.AddParameter("username", username);
-
-            var dataTable = await connection.GetAsync(@$"SET @id = (SELECT MAX(template_id)+1 FROM {WiserTableNames.WiserTemplate});
-                                                            INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, changed_on, changed_by, published_environment)
-                                                            VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, 0);
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("name", name);
+            clientDatabaseConnection.AddParameter("parent", parent);
+            clientDatabaseConnection.AddParameter("type", type);
+            clientDatabaseConnection.AddParameter("now", DateTime.Now);
+            clientDatabaseConnection.AddParameter("username", username);
+            clientDatabaseConnection.AddParameter("ordering", await GetHighestOrderNumberOfChildrenAsync(parent) + 1);
+            
+            var dataTable = await clientDatabaseConnection.GetAsync(@$"SET @id = (SELECT MAX(template_id)+1 FROM {WiserTableNames.WiserTemplate});
+                                                            INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, changed_on, changed_by, published_environment, ordering)
+                                                            VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, 1, ?ordering);
                                                             SELECT @id;");
 
             return Convert.ToInt32(dataTable.Rows[0]["@id"]);
@@ -487,24 +492,116 @@ namespace Api.Modules.Templates.Services.DataLayer
         /// <inheritdoc />
         public async Task FixTreeViewOrderingAsync(int parentId)
         {
-            connection.ClearParameters();
-            connection.AddParameter("parentId", parentId);
-            await connection.ExecuteAsync($@"SET @ordering = 0;
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("parentId", parentId);
+            await clientDatabaseConnection.ExecuteAsync($@"SET @ordering = 0;
                                                 UPDATE {WiserTableNames.WiserTemplate} AS template
                                                 JOIN (
 	                                                SELECT
-		                                                x.id,
+		                                                x.template_id,
 		                                                @ordering := @ordering + 1 AS newOrdering
 	                                                FROM (
-		                                                SELECT template.id
+		                                                SELECT template.template_id
 		                                                FROM {WiserTableNames.WiserTemplate} AS template
 		                                                LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-		                                                WHERE template.parent_id = 12
+		                                                WHERE template.parent_id = ?parentId
 		                                                AND otherVersion.id IS NULL
 		                                                ORDER BY template.ordering ASC, template.template_type DESC, template.template_name ASC
 	                                                ) AS x
-                                                ) AS ordering ON ordering.id = template.id
+                                                ) AS ordering ON ordering.template_id = template.template_id
                                                 SET template.ordering = ordering.newOrdering");
+        }
+        
+        /// <inheritdoc />
+        public async Task<int?> GetParentId(int templateId)
+        {
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("id", templateId);
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT parent_id
+                                                            FROM {WiserTableNames.WiserTemplate}
+                                                            WHERE template_id = ?id
+                                                            ORDER BY version DESC
+                                                            LIMIT 1");
+            return dataTable.Rows.Count == 0 ? null : dataTable.Rows[0].Field<int?>("parent_id");
+        }
+
+        /// <inheritdoc />
+        public async Task<int> GetOrderingAsync(int templateId)
+        {
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("id", templateId);
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT ordering
+                                                            FROM {WiserTableNames.WiserTemplate}
+                                                            WHERE template_id = ?id
+                                                            ORDER BY version DESC
+                                                            LIMIT 1");
+            return dataTable.Rows.Count == 0 ? 0 : dataTable.Rows[0].Field<int>("ordering");
+        }
+        
+        /// <inheritdoc />
+        public async Task<int> GetHighestOrderNumberOfChildrenAsync(int templateId)
+        {
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("id", templateId);
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT IFNULL(MAX(template.ordering), 0) AS ordering
+                                                                    FROM {WiserTableNames.WiserTemplate} AS template
+                                                                    LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+                                                                    WHERE template.parent_id = ?id
+                                                                    AND otherVersion.id IS NULL");
+            return dataTable.Rows.Count == 0 ? 0 : Convert.ToInt32(dataTable.Rows[0]["ordering"]);
+        }
+        
+        /// <inheritdoc />
+        public async Task MoveAsync(int sourceId, int destinationId, int sourceParentId, int destinationParentId, int oldOrderNumber, int newOrderNumber, TreeViewDropPositions dropPosition, string username)
+        {
+            try
+            {
+                await clientDatabaseConnection.BeginTransactionAsync();
+
+                string query;
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("sourceId", sourceId);
+                clientDatabaseConnection.AddParameter("destinationId", destinationId);
+                clientDatabaseConnection.AddParameter("sourceParentId", sourceParentId);
+                clientDatabaseConnection.AddParameter("destinationParentId", destinationParentId);
+                clientDatabaseConnection.AddParameter("oldOrderNumber", oldOrderNumber);
+                clientDatabaseConnection.AddParameter("newOrderNumber", newOrderNumber);
+                clientDatabaseConnection.AddParameter("now", DateTime.Now);
+                clientDatabaseConnection.AddParameter("username", username);
+
+                // When drop position is before or after, move other items with the same parent 1 position lower (except when placing an item on top of a directory, then it should be added last).
+                if (dropPosition != TreeViewDropPositions.Over)
+                {
+                    query = $@"UPDATE {WiserTableNames.WiserTemplate}
+                            SET ordering = ordering + 1
+                            WHERE parent_id = ?destinationParentId
+                            AND ordering >= ?newOrderNumber
+                            AND template_id <> ?sourceId";
+
+                    await clientDatabaseConnection.ExecuteAsync(query);
+                }
+
+                // Move the template to it's new position.
+                query = $@"UPDATE {WiserTableNames.WiserTemplate} 
+                        SET parent_id = ?destinationParentId, ordering = ?newOrderNumber, changed_on = ?now, changed_by = ?username
+                        WHERE template_id = ?sourceId
+                        AND parent_id = ?sourceParentId";
+                await clientDatabaseConnection.ExecuteAsync(query);
+
+                // Fill gap in old parent directory (move items one place higher).
+                query = $@"UPDATE {WiserTableNames.WiserTemplate}
+                        SET ordering = ordering - 1
+                        WHERE parent_id = ?sourceParentId
+                        AND ordering > ?oldOrderNumber";
+                await clientDatabaseConnection.ExecuteAsync(query);
+
+                await clientDatabaseConnection.CommitTransactionAsync();
+            }
+            catch
+            {
+                await clientDatabaseConnection.RollbackTransactionAsync();
+                throw;
+            }
         }
 
         private string BuildSearchQuery(SearchSettingsModel searchSettings)
@@ -520,15 +617,15 @@ namespace Api.Modules.Templates.Services.DataLayer
                         searchQuery.Append($"t.version = (SELECT MAX(tt.version) FROM {WiserTableNames.WiserTemplate} tt WHERE tt.template_id = t.template_id)");
                         break;
                     case Environments.Test:
-                        connection.AddParameter("environment", Environments.Test);
+                        clientDatabaseConnection.AddParameter("environment", Environments.Test);
                         searchQuery.Append("t.published_environment & ?environment");
                         break;
                     case Environments.Acceptance:
-                        connection.AddParameter("environment", Environments.Acceptance);
+                        clientDatabaseConnection.AddParameter("environment", Environments.Acceptance);
                         searchQuery.Append("t.published_environment & ?environment");
                         break;
                     case Environments.Live:
-                        connection.AddParameter("environment", Environments.Live);
+                        clientDatabaseConnection.AddParameter("environment", Environments.Live);
                         searchQuery.Append("t.published_environment & ?environment");
                         break;
                     default:
@@ -580,15 +677,15 @@ namespace Api.Modules.Templates.Services.DataLayer
                         searchQuery.Append($"wdc.version = (SELECT MAX(dc.version) FROM {WiserTableNames.WiserDynamicContent} dc WHERE dc.content_id = wdc.content_id)");
                         break;
                     case Environments.Test:
-                        connection.AddParameter("environment", Environments.Test);
+                        clientDatabaseConnection.AddParameter("environment", Environments.Test);
                         searchQuery.Append("wdc.published_environment & ?environment");
                         break;
                     case Environments.Acceptance:
-                        connection.AddParameter("environment", Environments.Acceptance);
+                        clientDatabaseConnection.AddParameter("environment", Environments.Acceptance);
                         searchQuery.Append("wdc.published_environment & ?environment");
                         break;
                     case Environments.Live:
-                        connection.AddParameter("environment", Environments.Live);
+                        clientDatabaseConnection.AddParameter("environment", Environments.Live);
                         searchQuery.Append("wdc.published_environment & ?environment");
                         break;
                     default:

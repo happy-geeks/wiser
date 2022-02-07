@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
+using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
@@ -148,6 +149,12 @@ namespace Api.Modules.Templates.Services
         public async Task<ServiceResult<bool>> RenameAsync(ClaimsIdentity identity, int id, string newName)
         {
             return await templatesService.RenameAsync(identity, id, newName);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> MoveAsync(ClaimsIdentity identity, int sourceId, int destinationId, TreeViewDropPositions dropPosition)
+        {
+            return await templatesService.MoveAsync(identity, sourceId, destinationId, dropPosition);
         }
     }
 }
