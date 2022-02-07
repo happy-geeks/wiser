@@ -15,12 +15,17 @@ using Api.Modules.Modules.Interfaces;
 using Api.Modules.Modules.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
+using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Exports.Interfaces;
+using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using GeeksCoreLibrary.Modules.Objects.Interfaces;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog.Core;
 
 namespace Api.Modules.Modules.Services
 {
@@ -36,11 +41,17 @@ namespace Api.Modules.Modules.Services
         private readonly IGridsService gridsService;
         private readonly IExcelService excelService;
         private readonly IObjectsService objectsService;
+        private readonly IUsersService usersService;
+        private readonly IStringReplacementsService stringReplacementsService;
+        private readonly ILogger<ModulesService> logger;
+
+        private const string DefaultModulesGroupName = "Overig";
+        private const string PinnedModulesGroupName = "Vastgepind";
 
         /// <summary>
         /// Creates a new instance of <see cref="ModulesService"/>.
         /// </summary>
-        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IJsonService jsonService, IExcelService excelService, IObjectsService objectsService)
+        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IJsonService jsonService, IExcelService excelService, IObjectsService objectsService, IUsersService usersService, IStringReplacementsService stringReplacementsService, ILogger<ModulesService> logger)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.gridsService = gridsService;
@@ -48,11 +59,14 @@ namespace Api.Modules.Modules.Services
             this.jsonService = jsonService;
             this.excelService = excelService;
             this.objectsService = objectsService;
+            this.usersService = usersService;
+            this.stringReplacementsService = stringReplacementsService;
+            this.logger = logger;
             this.clientDatabaseConnection = clientDatabaseConnection;
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<SortedList<string, List<ModuleAccessRightsModel>>>> GetAsync(ClaimsIdentity identity)
+        public async Task<ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>> GetAsync(ClaimsIdentity identity)
         {
             var modulesForAdmins = new List<int>
             {
@@ -67,6 +81,7 @@ namespace Api.Modules.Modules.Services
             };
 
             var isAdminAccount = IdentityHelpers.IsAdminAccount(identity);
+            var pinnedModules = (await usersService.GetPinnedModulesAsync(identity)).ModelObject;
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
@@ -76,18 +91,16 @@ namespace Api.Modules.Modules.Services
                             SELECT
 	                            permission.module_id,
 	                            MAX(permission.permissions) AS permissions,
-                                ordering.`order`,
                                 module.name,
                                 module.icon,
-                                module.color,
                                 module.type,
                                 module.group,
-                                IF(NOT JSON_VALID(module.options), 'false', JSON_EXTRACT(module.options, '$.onlyOneInstanceAllowed')) AS onlyOneInstanceAllowed
+                                module.options,
+                                module.custom_query
                             FROM {WiserTableNames.WiserUserRoles} AS user_role
                             JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
                             JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
                             LEFT JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
-                            LEFT JOIN {WiserTableNames.WiserOrdering} AS ordering ON ordering.user_id = user_role.user_id AND ordering.module_id = permission.module_id
                             WHERE user_role.user_id = ?userId
                             GROUP BY permission.module_id
                             ORDER BY permission.module_id, permission.permissions
@@ -101,38 +114,43 @@ namespace Api.Modules.Modules.Services
                             SELECT
                                 module.id AS module_id,
                                 15 AS permissions,
-                                ordering.`order`,
                                 module.name,
                                 module.icon,
-                                module.color,
                                 module.type,
                                 module.group,
-                                IF(NOT JSON_VALID(module.options), 'false', JSON_EXTRACT(module.options, '$.onlyOneInstanceAllowed')) AS onlyOneInstanceAllowed
+                                module.options,
+                                module.custom_query
                             FROM {WiserTableNames.WiserModule} AS module
-                            LEFT JOIN {WiserTableNames.WiserOrdering} AS ordering ON ordering.user_id = ?userId AND ordering.module_id = module.id
                             WHERE module.id IN ({String.Join(",", modulesForAdmins)})
                         )";
             }
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
-            var results = new SortedList<string, List<ModuleAccessRightsModel>>();
+            var results = new Dictionary<string, List<ModuleAccessRightsModel>>();
             if (dataTable.Rows.Count == 0)
             {
-                return new ServiceResult<SortedList<string, List<ModuleAccessRightsModel>>>(results);
+                return new ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>(results);
             }
 
             var onlyOneInstanceAllowedGlobal = String.Equals(await objectsService.FindSystemObjectByDomainNameAsync("wiser_modules_OnlyOneInstanceAllowed", "false"), "true", StringComparison.OrdinalIgnoreCase);
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var moduleId = dataRow.Field<int>("module_id");
-                var groupName = dataRow.Field<string>("group") ?? "";
+                var originalGroupName = dataRow.Field<string>("group");
+                var groupName = pinnedModules.Contains(moduleId) ? PinnedModulesGroupName : dataRow.Field<string>("group");
                 var permissionsBitMask = (AccessRights)Convert.ToInt32(dataRow["permissions"]);
-                var ordering = dataRow.Field<int?>("order");
+                var options = dataRow.Field<string>("options");
 
                 var canRead = (permissionsBitMask & AccessRights.Read) == AccessRights.Read;
                 var canCreate = (permissionsBitMask & AccessRights.Create) == AccessRights.Create;
                 var canUpdate = (permissionsBitMask & AccessRights.Update) == AccessRights.Update;
                 var canDelete = (permissionsBitMask & AccessRights.Delete) == AccessRights.Delete;
+
+                if (String.IsNullOrWhiteSpace(groupName))
+                {
+                    groupName = DefaultModulesGroupName;
+                    originalGroupName = DefaultModulesGroupName;
+                }
 
                 if (!results.ContainsKey(groupName))
                 {
@@ -145,16 +163,66 @@ namespace Api.Modules.Modules.Services
                 rightsModel.CanCreate = rightsModel.CanCreate || canCreate;
                 rightsModel.CanWrite = rightsModel.CanWrite || canUpdate;
                 rightsModel.CanDelete = rightsModel.CanDelete || canDelete;
-                rightsModel.Show = rightsModel.Show || (ordering ?? 0) > 0;
-                rightsModel.MetroOrder = rightsModel.MetroOrder <= 0 ? (ordering ?? 0) : rightsModel.MetroOrder;
                 rightsModel.Name = dataRow.Field<string>("name");
                 rightsModel.Icon = dataRow.Field<string>("icon");
-                rightsModel.Color = dataRow.Field<string>("color");
                 rightsModel.Type = dataRow.Field<string>("type");
-                rightsModel.Group = groupName;
+                rightsModel.Group = originalGroupName;
+                rightsModel.Pinned = pinnedModules.Contains(moduleId);
+                rightsModel.PinnedGroup = PinnedModulesGroupName;
 
-                var onlyOneInstanceAllowed = dataRow.Field<string>("onlyOneInstanceAllowed");
-                rightsModel.OnlyOneInstanceAllowed = (onlyOneInstanceAllowedGlobal && !String.Equals(onlyOneInstanceAllowed, "false", StringComparison.OrdinalIgnoreCase)) || String.Equals(onlyOneInstanceAllowed, "true", StringComparison.OrdinalIgnoreCase) || onlyOneInstanceAllowed == "1";
+                if (String.IsNullOrWhiteSpace(rightsModel.Icon))
+                {
+                    rightsModel.Icon = "question";
+                }
+
+                if (!String.IsNullOrWhiteSpace(options))
+                {
+                    var optionsObject = new JObject();
+                    try
+                    {
+                        optionsObject = JObject.Parse(options);
+                    }
+                    catch (JsonReaderException exception)
+                    {
+                        logger.LogWarning(exception, $"An error occurred while parsing options JSON of module {rightsModel.ModuleId}");
+                    }
+
+                    var onlyOneInstanceAllowed = optionsObject.Value<bool?>("onlyOneInstanceAllowed");
+                    rightsModel.OnlyOneInstanceAllowed = (onlyOneInstanceAllowedGlobal && (!onlyOneInstanceAllowed.HasValue || onlyOneInstanceAllowed.Value)) || (onlyOneInstanceAllowed.HasValue && onlyOneInstanceAllowed.Value);
+
+                    if (rightsModel.Type.Equals("Iframe", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var url = optionsObject.Value<string>("url");
+                        if (String.IsNullOrWhiteSpace(url))
+                        {
+                            continue;
+                        }
+
+                        try
+                        {
+                            var moduleQuery = dataRow.Field<string>("custom_query");
+                            if (!String.IsNullOrWhiteSpace(moduleQuery))
+                            {
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId}", IdentityHelpers.GetWiserUserId(identity).ToString());
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity) ?? "");
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
+
+                                var moduleDataTable = await clientDatabaseConnection.GetAsync(moduleQuery);
+                                if (moduleDataTable.Rows.Count > 0)
+                                {
+                                    url = stringReplacementsService.DoReplacements(url, moduleDataTable.Rows[0]);
+                                }
+                            }
+                        }
+                        catch (Exception exception)
+                        {
+                            logger.LogWarning(exception, $"An error occurred while executing query of module {rightsModel.ModuleId}");
+                        }
+
+                        rightsModel.IframeUrl = url;
+                    }
+                }
 
                 results[groupName].Add(rightsModel);
             }
@@ -164,16 +232,19 @@ namespace Api.Modules.Modules.Services
             {
                 foreach (var moduleId in modulesForAdmins.Where(moduleId => !results.Any(g => g.Value.Any(m => m.ModuleId == moduleId))))
                 {
+                    string groupName;
+                    var isPinned = pinnedModules.Contains(moduleId);
                     // TODO: Add the new settings and templates modules here once they are finished.
                     switch (moduleId)
                     {
                         case 700: // Stamgegevens
-                            if (!results.ContainsKey("Instellingen"))
+                            groupName = isPinned ? PinnedModulesGroupName : "Instellingen";
+                            if (!results.ContainsKey(groupName))
                             {
-                                results.Add("Instellingen", new List<ModuleAccessRightsModel>());
+                                results.Add(groupName, new List<ModuleAccessRightsModel>());
                             }
 
-                            results["Instellingen"].Add(new ModuleAccessRightsModel
+                            results[groupName].Add(new ModuleAccessRightsModel
                             {
                                 Group = "Instellingen",
                                 CanCreate = true,
@@ -184,16 +255,18 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Stamgegevens",
                                 Type = "DynamicItems",
-                                Show = true
+                                Pinned = isPinned,
+                                PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         case 706: // Data selector
-                            if (!results.ContainsKey("Contentbeheer"))
+                            groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
+                            if (!results.ContainsKey(groupName))
                             {
-                                results.Add("Contentbeheer", new List<ModuleAccessRightsModel>());
+                                results.Add(groupName, new List<ModuleAccessRightsModel>());
                             }
 
-                            results["Contentbeheer"].Add(new ModuleAccessRightsModel
+                            results[groupName].Add(new ModuleAccessRightsModel
                             {
                                 Group = "Contentbeheer",
                                 CanCreate = true,
@@ -204,16 +277,18 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Data selector",
                                 Type = "DataSelector",
-                                Show = true
+                                Pinned = isPinned,
+                                PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         case 709: // Search
-                            if (!results.ContainsKey("Contentbeheer"))
+                            groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
+                            if (!results.ContainsKey(groupName))
                             {
-                                results.Add("Contentbeheer", new List<ModuleAccessRightsModel>());
+                                results.Add(groupName, new List<ModuleAccessRightsModel>());
                             }
 
-                            results["Contentbeheer"].Add(new ModuleAccessRightsModel
+                            results[groupName].Add(new ModuleAccessRightsModel
                             {
                                 Group = "Contentbeheer",
                                 CanCreate = true,
@@ -224,18 +299,20 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Zoeken",
                                 Type = "Search",
-                                Show = true
+                                Pinned = isPinned,
+                                PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         case 737: // Admin
-                            if (!results.ContainsKey("Instellingen"))
+                            groupName = isPinned ? PinnedModulesGroupName : "Instellingen";
+                            if (!results.ContainsKey(groupName))
                             {
-                                results.Add("Instellingen", new List<ModuleAccessRightsModel>());
+                                results.Add(groupName, new List<ModuleAccessRightsModel>());
                             }
 
-                            results["Instellingen"].Add(new ModuleAccessRightsModel
+                            results[groupName].Add(new ModuleAccessRightsModel
                             {
-                                Group = "Instellingen",
+                                Group = groupName,
                                 CanCreate = true,
                                 CanDelete = true,
                                 CanRead = true,
@@ -244,16 +321,18 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Wiser beheer",
                                 Type = "Admin",
-                                Show = true
+                                Pinned = isPinned,
+                                PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         case 738: // Import/export
-                            if (!results.ContainsKey("Contentbeheer"))
+                            groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
+                            if (!results.ContainsKey(groupName))
                             {
-                                results.Add("Contentbeheer", new List<ModuleAccessRightsModel>());
+                                results.Add(groupName, new List<ModuleAccessRightsModel>());
                             }
 
-                            results["Contentbeheer"].Add(new ModuleAccessRightsModel
+                            results[groupName].Add(new ModuleAccessRightsModel
                             {
                                 Group = "Contentbeheer",
                                 CanCreate = true,
@@ -264,16 +343,18 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Import/export",
                                 Type = "ImportExport",
-                                Show = true
+                                Pinned = isPinned,
+                                PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         case 806: // Wiser users
-                            if (!results.ContainsKey("Instellingen"))
+                            groupName = isPinned ? PinnedModulesGroupName : "Instellingen";
+                            if (!results.ContainsKey(groupName))
                             {
-                                results.Add("Instellingen", new List<ModuleAccessRightsModel>());
+                                results.Add(groupName, new List<ModuleAccessRightsModel>());
                             }
 
-                            results["Instellingen"].Add(new ModuleAccessRightsModel
+                            results[groupName].Add(new ModuleAccessRightsModel
                             {
                                 Group = "Gebruikers - Wiser",
                                 CanCreate = true,
@@ -284,16 +365,18 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Wiser beheer",
                                 Type = "DynamicItems",
-                                Show = true
+                                Pinned = isPinned,
+                                PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         case 5505: // Webpagina's
-                            if (!results.ContainsKey("Contentbeheer"))
+                            groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
+                            if (!results.ContainsKey(groupName))
                             {
-                                results.Add("Contentbeheer", new List<ModuleAccessRightsModel>());
+                                results.Add(groupName, new List<ModuleAccessRightsModel>());
                             }
 
-                            results["Contentbeheer"].Add(new ModuleAccessRightsModel
+                            results[groupName].Add(new ModuleAccessRightsModel
                             {
                                 Group = "Contentbeheer",
                                 CanCreate = true,
@@ -304,7 +387,8 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Webpagina's 2.0",
                                 Type = "DynamicItems",
-                                Show = true
+                                Pinned = isPinned,
+                                PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         default:
@@ -320,17 +404,19 @@ namespace Api.Modules.Modules.Services
                 results[key] = results[key].OrderBy(m => m.Name).ToList();
             }
 
-            return new ServiceResult<SortedList<string, List<ModuleAccessRightsModel>>>(results);
+            results = results.OrderBy(g => g.Key == PinnedModulesGroupName ? "-" : g.Key).ToDictionary(g => g.Key, g => g.Value);
+
+            return new ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>(results);
         }
 
-            /// <inheritdoc />
+        /// <inheritdoc />
         public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity)
         {
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
 
             var result = new ModuleSettingsModel { Id = id };
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             var userItemPermissions = await wiserItemsService.GetUserModulePermissions(id, IdentityHelpers.GetWiserUserId(identity));

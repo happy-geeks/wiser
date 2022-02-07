@@ -46,6 +46,8 @@ namespace Api.Modules.Customers.Services
         private const string UserBlockedKey = "blocked";
         private const string UserRequirePasswordChangeKey = "require_password_change";
         private const string UserGridSettingsGroupName = "grid_settings";
+        private const string UserModuleSettingsGroupName = "module_settings";
+        private const string UserPinnedModulesKey = "pinnedModules";
 
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IDatabaseConnection wiserDatabaseConnection;
@@ -547,6 +549,33 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<List<int>>> GetPinnedModulesAsync(ClaimsIdentity identity)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+
+            var query = $@" SELECT pinned.`value` AS pinnedModules
+                            FROM {WiserTableNames.WiserItemDetail} AS pinned
+                            WHERE pinned.item_id = ?userId
+                            AND pinned.`key` = '{UserPinnedModulesKey}'";
+
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            List<int> pinnedModules;
+            if (dataTable.Rows.Count == 0)
+            {
+                pinnedModules = new List<int>();
+            }
+            else
+            {
+                var pinned = dataTable.Rows[0].Field<string>("pinnedModules") ?? "";
+                pinnedModules = pinned.Split(',').Select(Int32.Parse).ToList();
+            }
+
+            return new ServiceResult<List<int>>(pinnedModules);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<bool>> SaveGridSettingsAsync(ClaimsIdentity identity, string uniqueKey, JToken settings)
         {
             clientDatabaseConnection.ClearParameters();
@@ -559,7 +588,22 @@ namespace Api.Modules.Customers.Services
                         ON DUPLICATE KEY UPDATE long_value = VALUES(long_value)";
             await clientDatabaseConnection.ExecuteAsync(query);
 
-            return new ServiceResult<bool>();
+            return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SavePinnedModulesAsync(ClaimsIdentity identity, List<int> moduleIds)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+
+            var query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, groupname, value)
+                        VALUES (?userId, '{UserPinnedModulesKey}', '{UserModuleSettingsGroupName}', '{String.Join(",", moduleIds)}')
+                        ON DUPLICATE KEY UPDATE value = VALUES(value)";
+            await clientDatabaseConnection.ExecuteAsync(query);
+            
+            return new ServiceResult<bool>(true);
         }
 
         /// <inheritdoc />
