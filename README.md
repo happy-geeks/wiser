@@ -139,6 +139,7 @@ All roles can be added in the table `wiser_roles`. In `wiser_permission` you can
 - 2 = Create
 - 4 = Update
 - 8 = Delete
+
 So if someone has all permissions, you need to enter the value 1 + 2 + 4 + 8 = 15.
 
 You can link users to one or more roles via `wiser_user_roles`. If a user has multiple roles with different permissions, all permissions of all roles are valid. So if the user has a role that allows them to only see an item and a role that allows them to see and update an item, that user can always see and update that item.
