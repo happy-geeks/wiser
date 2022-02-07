@@ -319,7 +319,7 @@ const moduleSettings = {
             }
 
             this.componentModeComboBox.setDataSource(componentModes);
-            this.componentModeComboBox.value(this.getComponentModeFromKey(newComponentMode));
+            this.componentModeComboBox.value(this.getComponentModeFromKey(newComponentMode).id);
             this.updateComponentModeVisibility(newComponentMode);
         }
 
@@ -330,7 +330,7 @@ const moduleSettings = {
         updateComponentModeVisibility(componentModeKey) {
             let componentMode;
             if (typeof componentModeKey === "string") {
-                componentMode = this.getComponentModeFromKey(componentModeKey);
+                componentMode = this.getComponentModeFromKey(componentModeKey).name;
             } else if (typeof componentModeKey === "number") {
                 componentMode = componentModeKey.toString();
             } else {
@@ -359,16 +359,16 @@ const moduleSettings = {
         getComponentModeFromKey(componentModeKey) {
             if (!componentModeKey) {
                 console.warn("getComponentModeFromKey called with invalid componentModeKey", componentModeKey);
-                return 0;
+                return { id: 0, name: "" };
             }
 
             const result = this.componentModeComboBox.dataSource.data().filter(c => c.name === componentModeKey || c.id === parseInt(componentModeKey))[0];
             if (!result) {
                 console.warn("getComponentModeFromKey called with invalid componentModeKey", componentModeKey);
-                return 0;
+                return { id: 0, name: "" };
             }
 
-            return result.id;
+            return result;
         }
 
         /**
