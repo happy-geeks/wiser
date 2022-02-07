@@ -22,7 +22,8 @@
     z-index: 200;
 }
 /* TABS SPLIT */
-.tabSplit.k-state-active {
+.tabSplit.k-state-active,
+.tabSplit.staticSplit {
     display: flex !important;
 }
 
