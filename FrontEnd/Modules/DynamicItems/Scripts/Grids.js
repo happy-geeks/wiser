@@ -987,7 +987,7 @@ export class Grids {
         let itemId = dataItem.id || dataItem.itemId || dataItem.itemid || dataItem.item_id;
         let encryptedId = dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid || dataItem.idencrypted;
         const originalEncryptedId = encryptedId;
-        let entityType = dataItem.entityType;
+        let entityType = dataItem.entityType || dataItem.entity_type;
         let title = dataItem.title;
         const linkId = dataItem.linkId;
 

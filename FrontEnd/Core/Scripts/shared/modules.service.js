@@ -14,32 +14,31 @@ export default class ModulesService extends BaseService {
                     continue;
                 }
 
-                result[groupName].map(x => {
-                    x.icon = `icon-${x.icon}`;
+                result[groupName].map(module => {
+                    module.icon = `icon-${module.icon}`;
 
-                    switch (x.moduleId) {
+                    switch (module.moduleId) {
                         case 5004:
-                            x.fileName = `/Import`;
+                            module.fileName = `/Import`;
                             break;
                         case 5005:
-                            x.fileName = `/Export`;
+                            module.fileName = `/Export`;
                             break;
                         default:
-                            x.fileName = ``;
+                            module.fileName = ``;
                             break;
                     }
 
-                    if (x.type === "DynamicItems") {
-                        x.queryString = `?moduleId=${!x.itemId ? x.moduleId : 0}&iframe=${x.iframe || false}${(!x.itemId ? "" : `&itemId=${encodeURIComponent(x.itemId)}`)}${(!x.entityType? "" : `&entityType=${encodeURIComponent(x.entityType)}`)}`;
+                    if (module.type === "DynamicItems") {
+                        module.queryString = `?moduleId=${!module.itemId ? module.moduleId : 0}&iframe=${module.iframe || false}${(!module.itemId ? "" : `&itemId=${encodeURIComponent(module.itemId)}`)}${(!module.entityType? "" : `&entityType=${encodeURIComponent(module.entityType)}`)}`;
                     } else {
-                        x.queryString = "";
+                        module.queryString = "";
                     }
 
-                    return x;
+                    return module;
                 });
-
-
             }
+
             return result;
         } catch (error) {
             console.error(error);

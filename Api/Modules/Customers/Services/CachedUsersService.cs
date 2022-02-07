@@ -122,9 +122,21 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
+        public Task<ServiceResult<List<int>>> GetPinnedModulesAsync(ClaimsIdentity identity)
+        {
+            return usersService.GetPinnedModulesAsync(identity);
+        }
+
+        /// <inheritdoc />
         public Task<ServiceResult<bool>> SaveGridSettingsAsync(ClaimsIdentity identity, string uniqueKey, JToken settings)
         {
             return usersService.SaveGridSettingsAsync(identity, uniqueKey, settings);
+        }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<bool>> SavePinnedModulesAsync(ClaimsIdentity identity, List<int> moduleIds)
+        {
+            return usersService.SavePinnedModulesAsync(identity, moduleIds);
         }
 
         /// <inheritdoc />
