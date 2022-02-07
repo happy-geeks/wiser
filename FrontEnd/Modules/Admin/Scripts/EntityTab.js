@@ -520,8 +520,8 @@ export class EntityTab {
             placeholder: "Maak uw keuze...",
             clearButton: false,
             dataSource: [
-                { text: "Koppeling", value: "linkOrdering" },
-                { text: "Titel", value: "itemTitle" }
+                { text: "Koppeling", value: "link_ordering" },
+                { text: "Titel", value: "item_title" }
             ],
             dataTextField: "text",
             dataValueField: "value"

@@ -45,7 +45,7 @@ namespace Api.Modules.Customers.Models
         
         /// <summary>
         /// Gets or sets extra Wiser settings, for easy_objects.
-        /// This is only used for creating a new customer via Wiser 2.1.
+        /// This is only used for creating a new customer via Wiser 3.
         /// </summary>
         public Dictionary<string, string> WiserSettings { get; set; } = new();
 

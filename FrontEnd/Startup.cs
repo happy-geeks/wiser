@@ -11,6 +11,9 @@ using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 
 [assembly: AspMvcAreaViewLocationFormat("/Modules/{2}/Views/{1}/{0}.cshtml")]
 [assembly: AspMvcAreaViewLocationFormat("/Modules/{2}/Views/Shared/{0}.cshtml")]
@@ -27,7 +30,7 @@ namespace FrontEnd
         {
             // First set the base settings for the application.
             var builder = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json",  false, true)
+                .AddJsonFile("appsettings.json", false, true)
                 .AddJsonFile($"appsettings.{webHostEnvironment.EnvironmentName}.json", true, true);
 
             // We need to build here already, so that we can read the base directory for secrets.
@@ -50,7 +53,7 @@ namespace FrontEnd
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddHealthChecks();
-            
+
             // MVC looks in the directory "Areas" by default, but we use the directory "Modules", so we have to tell MC that.
             services.Configure<RazorViewEngineOptions>(options =>
             {
@@ -65,8 +68,20 @@ namespace FrontEnd
 
             // Use the options pattern for all settings in appSettings.json.
             services.Configure<FrontEndSettings>(Configuration.GetSection("FrontEnd"));
-            
-            services.AddControllersWithViews();
+
+            // Set Newtonsoft as the default JSON serializer and configure it to use camel case.
+            services.AddControllersWithViews(options => { options.AllowEmptyInputInBodyModelBinding = true; }).AddNewtonsoftJson(options =>
+            {
+                options.SerializerSettings.ContractResolver = new DefaultContractResolver()
+                {
+                    NamingStrategy = new CamelCaseNamingStrategy(false, true, false)
+                };
+
+                options.SerializerSettings.Formatting = Formatting.Indented;
+                options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+                options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Local;
+                options.SerializerSettings.Converters.Add(new StringEnumConverter());
+            });
 
             // Setup dependency injection.
             services.AddHttpContextAccessor();
@@ -81,7 +96,12 @@ namespace FrontEnd
             {
                 app.UseDeveloperExceptionPage();
             }
-            
+            else
+            {
+                // Force https on non-dev environments.
+                app.UseHttpsRedirection();
+            }
+
             app.UseStaticFiles();
             app.UseRouting();
 

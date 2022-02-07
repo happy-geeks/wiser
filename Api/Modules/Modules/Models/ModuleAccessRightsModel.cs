@@ -35,11 +35,6 @@ namespace Api.Modules.Modules.Models
         public string Type { get; set; }
 
         /// <summary>
-        /// Gets or sets whether the module should be visible.
-        /// </summary>
-        public bool Show { get; set; }
-
-        /// <summary>
         /// Gets or sets whether the user is allowed to read items in the module.
         /// </summary>
         public bool CanRead { get; set; }
@@ -60,30 +55,29 @@ namespace Api.Modules.Modules.Models
         public bool CanDelete { get; set; }
 
         /// <summary>
-        /// Gets or sets the order number of the module in the left/main menu.
-        /// </summary>
-        public int MenuOrder { get; set; }
-
-        /// <summary>
-        /// Gets or sets the order number of the module on the homepage.
-        /// </summary>
-        public int MetroOrder { get; set; }
-
-        /// <summary>
-        /// Gets or sets the IP restrictions of this module.
-        /// If one or more IP addresses are entered, this module can only be accessed via those IPs for this user.
-        /// </summary>
-        public List<string> IpWhitelist { get; set; }
-
-        /// <summary>
         /// Gets or sets the group name of the module.
         /// </summary>
         public string Group { get; set; }
         
         /// <summary>
+        /// Gets or sets if the module is pinned by the user.
+        /// </summary>
+        public bool Pinned { get; set; }
+
+        /// <summary>
+        /// Gets or sets the group name of the module for when the module is pinned by the user.
+        /// </summary>
+        public string PinnedGroup { get; set; }
+
+        /// <summary>
         /// Gets or sets whether the user can only open one instance of this module. If they already have this module opened and they try to open it again, then the previously opened instance will be shown to the user.
         /// If this is set to <see langword="false"/>, then the user can open as many instances of this module as they want.
         /// </summary>
         public bool OnlyOneInstanceAllowed { get; set; }
+
+        /// <summary>
+        /// Gets or sets the iframe URL. Only applicable for modules of type "Iframe".
+        /// </summary>
+        public string IframeUrl { get; set; }
     }
 }

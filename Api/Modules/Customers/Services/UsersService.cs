@@ -46,6 +46,8 @@ namespace Api.Modules.Customers.Services
         private const string UserBlockedKey = "blocked";
         private const string UserRequirePasswordChangeKey = "require_password_change";
         private const string UserGridSettingsGroupName = "grid_settings";
+        private const string UserModuleSettingsGroupName = "module_settings";
+        private const string UserPinnedModulesKey = "pinnedModules";
 
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IDatabaseConnection wiserDatabaseConnection;
@@ -197,6 +199,7 @@ namespace Api.Modules.Customers.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("username", username);
+            clientDatabaseConnection.AddParameter("now", DateTime.Now);
 
             var query = $@"SELECT 
 	                        user.id, 
@@ -204,7 +207,7 @@ namespace Api.Modules.Customers.Services
 	                        username.`value` AS username, 
 	                        password.`value` AS password,
                             last_login_ip.value AS last_login_ip,
-                            IF(last_login_date.value IS NULL, NOW(), STR_TO_DATE(last_login_date.value, '%Y-%m-%d %H:%i:%s')) AS last_login_date,
+                            IF(last_login_date.value IS NULL, ?now, STR_TO_DATE(last_login_date.value, '%Y-%m-%d %H:%i:%s')) AS last_login_date,
                             IFNULL(require_password_change.value, '0') AS require_password_change,
                             IFNULL(role.role_name, '') AS role,
                             email.value AS emailAddress
@@ -340,7 +343,7 @@ namespace Api.Modules.Customers.Services
                     break;
             }
             
-            var mailTemplate = (await templatesService.GetTemplateByName("Wachtwoord vergeten", true)).ModelObject;
+            var mailTemplate = (await templatesService.GetTemplateByNameAsync("Wachtwoord vergeten", true)).ModelObject;
             mailTemplate.Content = mailTemplate.Content.Replace("{username}", resetPasswordRequestModel.Username).Replace("{password}", password).Replace("{subdomain}", resetPasswordRequestModel.SubDomain);
 
             await communicationsService.SendEmailAsync(resetPasswordRequestModel.EmailAddress, mailTemplate.Subject, mailTemplate.Content);
@@ -374,6 +377,7 @@ namespace Api.Modules.Customers.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("selector", cookieValueParts[0]);
+            clientDatabaseConnection.AddParameter("now", DateTime.Now);
 
             var query = $@"SELECT 
                             token.hashed_validator, 
@@ -381,7 +385,7 @@ namespace Api.Modules.Customers.Services
 	                        IFNULL(NULLIF(user.title, ''), username.value) AS name, 
                             username.value AS username,
                             last_login_ip.value AS last_login_ip,
-                            IF(last_login_date.value IS NULL, NOW(), STR_TO_DATE(last_login_date.value, '%Y-%m-%d %H:%i:%s')) AS last_login_date,
+                            IF(last_login_date.value IS NULL, ?now, STR_TO_DATE(last_login_date.value, '%Y-%m-%d %H:%i:%s')) AS last_login_date,
                             IFNULL(require_password_change.value, 0) AS require_password_change,
                             email.value AS emailAddress
                         FROM {WiserTableNames.WiserUsersAuthenticationTokens} token
@@ -392,7 +396,7 @@ namespace Api.Modules.Customers.Services
                         LEFT JOIN {WiserTableNames.WiserItemDetail} require_password_change ON require_password_change.item_id = user.id AND require_password_change.`key` = '{UserRequirePasswordChangeKey}'
                         LEFT JOIN {WiserTableNames.WiserItemDetail} email ON email.item_id = user.id AND email.`key` = '{EmailAddressKey}'
                         WHERE token.selector = ?selector
-                        AND token.expires > NOW()";
+                        AND token.expires > ?now";
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
@@ -545,6 +549,33 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<List<int>>> GetPinnedModulesAsync(ClaimsIdentity identity)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+
+            var query = $@" SELECT pinned.`value` AS pinnedModules
+                            FROM {WiserTableNames.WiserItemDetail} AS pinned
+                            WHERE pinned.item_id = ?userId
+                            AND pinned.`key` = '{UserPinnedModulesKey}'";
+
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            List<int> pinnedModules;
+            if (dataTable.Rows.Count == 0)
+            {
+                pinnedModules = new List<int>();
+            }
+            else
+            {
+                var pinned = dataTable.Rows[0].Field<string>("pinnedModules") ?? "";
+                pinnedModules = pinned.Split(',').Select(Int32.Parse).ToList();
+            }
+
+            return new ServiceResult<List<int>>(pinnedModules);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<bool>> SaveGridSettingsAsync(ClaimsIdentity identity, string uniqueKey, JToken settings)
         {
             clientDatabaseConnection.ClearParameters();
@@ -557,7 +588,22 @@ namespace Api.Modules.Customers.Services
                         ON DUPLICATE KEY UPDATE long_value = VALUES(long_value)";
             await clientDatabaseConnection.ExecuteAsync(query);
 
-            return new ServiceResult<bool>();
+            return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SavePinnedModulesAsync(ClaimsIdentity identity, List<int> moduleIds)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+
+            var query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, groupname, value)
+                        VALUES (?userId, '{UserPinnedModulesKey}', '{UserModuleSettingsGroupName}', '{String.Join(",", moduleIds)}')
+                        ON DUPLICATE KEY UPDATE value = VALUES(value)";
+            await clientDatabaseConnection.ExecuteAsync(query);
+            
+            return new ServiceResult<bool>(true);
         }
 
         /// <inheritdoc />
@@ -837,17 +883,14 @@ namespace Api.Modules.Customers.Services
             try
             {
                 var query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, value)
-                            VALUES (?id, '{UserLastLoginDateKey}', NOW())
-                            ON DUPLICATE KEY UPDATE value = NOW();
-
-                            INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, value)
-                            VALUES (?id, '{UserLastLoginIpKey}', ?ip)
-                            ON DUPLICATE KEY UPDATE value = ?ip;";
+                            VALUES (?id, '{UserLastLoginDateKey}', ?now), (?id, '{UserLastLoginIpKey}', ?ip)
+                            ON DUPLICATE KEY UPDATE value = VALUES(`value`);";
 
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("ip", ipAddress ?? "");
                 clientDatabaseConnection.AddParameter("id", userId);
+                clientDatabaseConnection.AddParameter("now", DateTime.Now);
                 await clientDatabaseConnection.ExecuteAsync(query);
             }
             catch (Exception exception)

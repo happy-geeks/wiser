@@ -177,6 +177,7 @@ export default class UsersService extends BaseService {
             await this.base.api.put(`/api/v3/users/reset-password`, { username: username, emailAddress: email, subDomain: this.base.appSettings.subDomain });
             return true;
         } catch (error) {
+            console.error(error);
             return false;
         }
     }
@@ -195,5 +196,16 @@ export default class UsersService extends BaseService {
         }
 
         return result;
+    }
+
+    async savePinnedModules(moduleIds) {
+        try {
+            console.log("savePinnedModules", moduleIds);
+            await this.base.api.post(`/api/v3/users/pinned-modules`, moduleIds);
+            return true;
+        } catch (error) {
+            console.error(error);
+            return false;
+        }
     }
 }
