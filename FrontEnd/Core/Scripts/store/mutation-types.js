@@ -23,6 +23,7 @@ export const OPEN_MODULE = "openModule";
 export const CLOSE_MODULE = "closeModule";
 export const CLOSE_ALL_MODULES = "closeAllModules";
 export const ACTIVATE_MODULE = "activateModule";
+export const TOGGLE_PIN_MODULE = "togglePinModule";
 
 // Items module.
 export const LOAD_ENTITY_TYPES_OF_ITEM_ID = "loadEntityTypesOfItemId";

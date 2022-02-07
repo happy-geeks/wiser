@@ -1,16 +1,31 @@
 ﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+@{
+    Layout = "";
+}
+
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Wiser 2.1 - Templates module</title>
+    <title>Wiser 3 - Templates module</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
     <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.material.min.css" rel="stylesheet" />
+    <script>
+        window.wiserVersion = "@Model.WiserVersion?.ToString()";
+    </script>
 </head>
-<body>
-
+<body class="@Model.BodyCssClass"
+      data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
+      data-wiser-api-root="@Model.ApiRoot"
+      data-wiser-api-v21-root="@Model.ApiRoot"
+      data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
+      data-sub-domain="@Model.SubDomain"
+      data-track-js-token="@Model.Settings.TrackJsToken"
+      data-api-client-id="@Model.Settings.ApiClientId"
+      data-api-client-secret="@Model.Settings.ApiClientSecret">
+    <span id="popupNotification"></span>
     <form id="templatesForm" autocomplete="off" novalidate>
         <div id="wiser">
             <div id="window" style="margin: 0 auto; padding: 0;">
@@ -34,82 +49,11 @@
 
                             <div id="left-pane" style="background-color: #cccccc;">
                                 <div class="pane-content">
-                                    <ul id="treeview">
-                                        <li data-expanded="true">
-                                            <span class="k-sprite icon-folder"></span>CSS
-                                            <ul>
-                                                <li data-expanded="false">
-                                                    <span class="k-sprite icon-folder"></span>plugins
-                                                    <ul>
-                                                        <li>datepicker</li>
-                                                        <li>swiper</li>
-                                                        <li>sweet-alert</li>
-                                                    </ul>
-                                                </li>
-                                                <li>wiser</li>
-                                            </ul>
-                                        </li>
-                                        <li data-expanded="true">
-                                            <span class="k-sprite icon-folder"></span>SCSS
-                                            <ul>
-                                                <li data-expanded="false">
-                                                    <span class="k-sprite icon-folder"></span>variables
-                                                    <ul>
-                                                        <li>variables</li>
-                                                    </ul>
-                                                </li>
-                                                <li data-expanded="false">
-                                                    <span class="k-sprite icon-folder"></span>mixins
-                                                    <ul>
-                                                        <li>mixins</li>
-                                                    </ul>
-                                                </li>
-                                                <li data-expanded="false">
-                                                    <span class="k-sprite icon-folder"></span>grid
-                                                    <ul>
-                                                        <li>grid</li>
-                                                    </ul>
-                                                </li>
-                                                <li data-expanded="false">
-                                                    <span class="k-sprite icon-folder"></span>masterpage
-                                                    <ul>
-                                                        <li>fonts</li>
-                                                        <li>icons</li>
-                                                        <li>modal</li>
-                                                        <li>form</li>
-                                                        <li>masterpage</li>
-                                                    </ul>
-                                                </li>
-                                                <li data-expanded="false">
-                                                    <span class="k-sprite icon-folder"></span>homepage
-                                                    <ul>
-                                                        <li>homepage</li>
-                                                    </ul>
-                                                </li>
-                                            </ul>
-                                        </li>
-                                        <li data-expanded="true">
-                                            <span class="k-sprite icon-folder"></span>HTML
-                                            <ul>
-                                                <li data-expanded="false">
-                                                    <span class="k-sprite icon-folder"></span>masterpage
-                                                    <ul>
-                                                        <li>header</li>
-                                                        <li>footer</li>
-                                                    </ul>
-                                                </li>
-                                                <li data-expanded="false">
-                                                    <span class="k-sprite icon-folder"></span>homepage
-                                                    <ul>
-                                                        <li>homepage</li>
-                                                    </ul>
-                                                </li>
-                                            </ul>
-                                        </li>
-                                    </ul>
-
+                                    <div class="tabstrip-treeview">
+                                    </div>
                                     <button id="addButton" class="k-primary k-button-round"></button>
                                 </div>
+                                <ul id="treeViewContextMenu"></ul>
                             </div>
 
 
@@ -121,347 +65,17 @@
                                         <li class="dynamic-tab">Dynamische content</li>
                                         <li class="preview-tab">Preview</li>
                                     </ul>
-                                    <div>
-                                        <div class="formview full developmentContainer">
-                                            <div class="item version-block" style="width: 100%">
-                                                <h4><label>Versie 178. Laatst gewijzigd door Pietje op 13 april 2021 om 09:52:11</label></h4>
+                                    <div id="developmentTab">
 
-                                                <div class="formview full">
-                                                    <div class="item version-live">
-                                                        <div class="flex-container">
-                                                            <select class="combo-select" placeholder="Maak uw keuze...">
-                                                                <option value="178">178</option>
-                                                                <option value="177">177</option>
-                                                                <option value="176">176</option>
-                                                                <option value="175">175</option>
-                                                                <option value="174">174</option>
-                                                                <option value="173">173</option>
-                                                                <option value="172">172</option>
-                                                                <option value="171">171</option>
-                                                                <option value="170">170</option>
-                                                                <option value="169">169</option>
-                                                            </select>
+                                    </div>
+                                    <div id="historyTab">
 
-                                                            <button id="deployLive" class="k-primary">Deploy naar live</button>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="item version-accept">
-                                                        <div class="flex-container">
-                                                            <select class="combo-select" placeholder="Maak uw keuze...">
-                                                                <option value="178">178</option>
-                                                                <option value="177">177</option>
-                                                                <option value="176">176</option>
-                                                                <option value="175">175</option>
-                                                                <option value="174">174</option>
-                                                                <option value="173">173</option>
-                                                                <option value="172">172</option>
-                                                                <option value="171">171</option>
-                                                                <option value="170">170</option>
-                                                                <option value="169">169</option>
-                                                            </select>
-
-                                                            <button id="deployAccept" class="k-primary">Deploy naar acceptatie</button>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="item version-test">
-                                                        <div class="flex-container">
-                                                            <select class="combo-select" placeholder="Maak uw keuze...">
-                                                                <option value="178">178</option>
-                                                                <option value="177">177</option>
-                                                                <option value="176">176</option>
-                                                                <option value="175">175</option>
-                                                                <option value="174">174</option>
-                                                                <option value="173">173</option>
-                                                                <option value="172">172</option>
-                                                                <option value="171">171</option>
-                                                                <option value="170">170</option>
-                                                                <option value="169">169</option>
-                                                            </select>
-
-                                                            <button id="deployTest" class="k-primary">Deploy naar test</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="item" style="width: 100%;">
-                                                <span class="handler">&nbsp;</span>
-                                                <h4><label for="editor">HTML</label></h4>
-                                                <textarea class="editor" rows="10" cols="30">
-                                                        &lt;p&gt;&lt;img src=&quot;img/kendo-ui-web.png&quot; alt=&quot;Editor for ASP.NET MVC logo&quot; style=&quot;display:block;margin-left:auto;margin-right:auto;&quot; /&gt;&lt;/p&gt;
-                                                        &lt;p&gt;
-                                                            Kendo UI Editor allows your users to edit HTML in a familiar, user-friendly way.&lt;br /&gt;
-                                                            In this version, the Editor provides the core HTML editing engine, which includes basic text formatting, hyperlinks, lists,
-                                                            and image handling. The widget &lt;strong&gt;outputs identical HTML&lt;/strong&gt; across all major browsers, follows
-                                                            accessibility standards and provides API for content manipulation.
-                                                        &lt;/p&gt;
-                                                        &lt;p&gt;Features include:&lt;/p&gt;
-                                                        &lt;ul&gt;
-                                                            &lt;li&gt;Text formatting &amp; alignment&lt;/li&gt;
-                                                            &lt;li&gt;Bulleted and numbered lists&lt;/li&gt;
-                                                            &lt;li&gt;Hyperlink and image dialogs&lt;/li&gt;
-                                                            &lt;li&gt;Cross-browser support&lt;/li&gt;
-                                                            &lt;li&gt;Identical HTML output across browsers&lt;/li&gt;
-                                                            &lt;li&gt;Gracefully degrades to a &lt;code&gt;textarea&lt;/code&gt; when JavaScript is turned off&lt;/li&gt;
-                                                        &lt;/ul&gt;
-                                                        &lt;p&gt;
-                                                            Read &lt;a href=&quot;http://docs.telerik.com/kendo-ui&quot;&gt;more details&lt;/a&gt; or send us your
-                                                            &lt;a href=&quot;http://www.telerik.com/forums/&quot;&gt;feedback&lt;/a&gt;!
-                                                        &lt;/p&gt;
-                                                </textarea>
-                                                <div class="form-hint"><span></span></div>
-                                            </div>
-
-                                            <div class="item" style="width: 50%;">
-                                                <span class="handler">&nbsp;</span>
-                                                <h4><label for="css-templates">Gekoppelde (S)CSS templates</label></h4>
-                                                <ul class="checkboxlist ">
-                                                    <li>
-                                                        <label class="checkbox">
-                                                            <input type="checkbox" value="1" checked="checked">
-                                                            <span>homepage >> homepage (SCSS)</span>
-                                                        </label>
-                                                    </li>
-                                                    <li>
-                                                        <label class="checkbox">
-                                                            <input type="checkbox" value="1" checked="checked">
-                                                            <span>masterpage >> header (SCSS)</span>
-                                                        </label>
-                                                    </li>
-                                                    <li>
-                                                        <label class="checkbox">
-                                                            <input type="checkbox" value="1" checked="checked">
-                                                            <span>masterpage >> footer (SCSS)</span>
-                                                        </label>
-                                                    </li>
-                                                    <li>
-                                                        <label class="checkbox">
-                                                            <input type="checkbox" value="1">
-                                                            <span>homepage >> homepage (SCSS)</span>
-                                                        </label>
-                                                    </li>
-                                                    <li>
-                                                        <label class="checkbox">
-                                                            <input type="checkbox" value="1">
-                                                            <span>masterpage >> header (SCSS)</span>
-                                                        </label>
-                                                    </li>
-                                                    <li>
-                                                        <label class="checkbox">
-                                                            <input type="checkbox" value="1">
-                                                            <span>masterpage >> footer (SCSS)</span>
-                                                        </label>
-                                                    </li>
-                                                </ul>
-                                            </div>
-
-                                            <div class="item" style="width: 50%;">
-                                                <span class="handler">&nbsp;</span>
-                                                <h4><label for="js-templates">Gekoppelde JS templates</label></h4>
-                                                <ul class="checkboxlist ">
-                                                    <li>
-                                                        <label class="checkbox">
-                                                            <input type="checkbox" value="1" checked="checked">
-                                                            <span>homepage >> homepage (JS)</span>
-                                                        </label>
-                                                    </li>
-                                                    <li>
-                                                        <label class="checkbox">
-                                                            <input type="checkbox" value="1" checked="checked">
-                                                            <span>masterpage >> header (JS)</span>
-                                                        </label>
-                                                    </li>
-                                                    <li>
-                                                        <label class="checkbox">
-                                                            <input type="checkbox" value="1" checked="checked">
-                                                            <span>masterpage >> footer (JS)</span>
-                                                        </label>
-                                                    </li>
-                                                    <li>
-                                                        <label class="checkbox">
-                                                            <input type="checkbox" value="1">
-                                                            <span>homepage >> homepage (JS)</span>
-                                                        </label>
-                                                    </li>
-                                                    <li>
-                                                        <label class="checkbox">
-                                                            <input type="checkbox" value="1">
-                                                            <span>masterpage >> header (JS)</span>
-                                                        </label>
-                                                    </li>
-                                                    <li>
-                                                        <label class="checkbox">
-                                                            <input type="checkbox" value="1">
-                                                            <span>masterpage >> footer (JS)</span>
-                                                        </label>
-                                                    </li>
-                                                </ul>
-                                            </div>
-
-                                            <div class="item advanced" style="width: 100%;">
-                                                <input type="checkbox" class="hidden" id="advanced" />
-                                                <label for="advanced" class="group-label"><strong>Geavanceerd</strong><ins class="k-icon k-i-arrow-60-down"></ins></label>
-
-                                                <div class="advanced-panel">
-                                                    <div class="item item-left" style="width: 60%;">
-                                                        <div class="item" data-label-style="float" data-label-width="0">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <h4><label for="combo-cache">Cache</label></h4>
-                                                            <div class="flex-container">
-                                                                <select id="combo-cache" class="combo-select" placeholder="Maak uw keuze...">
-                                                                    <option value="0">geen caching</option>
-                                                                    <option value="1" selected="selected">app caching (client side)</option>
-                                                                    <option value="2">server caching volledige template (ongeacht URL)</option>
-                                                                    <option value="3">server caching volledige template (per SEO vriendelijke URL verschillend)</option>
-                                                                    <option value="4">server caching volledige template (per SEO vriendelijke URL + querystring combinatie verschillend)</option>
-                                                                </select>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="item" data-label-style="float" data-label-width="0">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <h4><label for="cache-duration">Cache aantal minuten</label></h4>
-                                                            <span class="k-widget k-input k-state-default">
-                                                                <input type="text" id="cache-duration" class="textField k-input" name="cache-duration" value="" autocomplete="off" pattern=".*">
-                                                            </span>
-                                                        </div>
-
-                                                        <ul class="checkColumns">
-                                                            <li>
-                                                                <label class="checkbox">
-                                                                    <input type="checkbox" value="1">
-                                                                    <span>
-                                                                        Verwerk requestvariabelen
-                                                                    </span>
-                                                                </label>
-                                                            </li>
-                                                            <li>
-                                                                <label class="checkbox">
-                                                                    <input type="checkbox" value="1">
-                                                                    <span>
-                                                                        Verwerk sessievariabelen
-                                                                    </span>
-                                                                </label>
-                                                            </li>
-                                                            <li>
-                                                                <label class="checkbox">
-                                                                    <input type="checkbox" value="1">
-                                                                    <span>
-                                                                        Verwerk objectvariabelen
-                                                                    </span>
-                                                                </label>
-                                                            </li>
-                                                            <li>
-                                                                <label class="checkbox">
-                                                                    <input type="checkbox" value="1">
-                                                                    <span>
-                                                                        Verwerk standards
-                                                                    </span>
-                                                                </label>
-                                                            </li>
-                                                            <li>
-                                                                <label class="checkbox">
-                                                                    <input type="checkbox" value="1">
-                                                                    <span>
-                                                                        Verwerk vertalingen
-                                                                    </span>
-                                                                </label>
-                                                            </li>
-                                                            <li>
-                                                                <label class="checkbox">
-                                                                    <input type="checkbox" value="1">
-                                                                    <span>
-                                                                        Verwerk dynamische content
-                                                                    </span>
-                                                                </label>
-                                                            </li>
-                                                            <li>
-                                                                <label class="checkbox">
-                                                                    <input type="checkbox" value="1">
-                                                                    <span>
-                                                                        Verwerk logische blokken
-                                                                    </span>
-                                                                </label>
-                                                            </li>
-                                                            <li>
-                                                                <label class="checkbox">
-                                                                    <input type="checkbox" value="1">
-                                                                    <span>
-                                                                        Verwerk mutators
-                                                                    </span>
-                                                                </label>
-                                                            </li>
-
-                                                        </ul>
-                                                    </div>
-                                                    <div class="item item-right" style="width: 40%;">
-                                                        <input type="checkbox" class="hidden" id="user-check" checked />
-                                                        <label class="checkbox" for="user-check">
-                                                            <span>
-                                                                Gebruiker moet ingelogd zijn om deze template te zien
-                                                            </span>
-                                                        </label>
-
-                                                        <div class="user-check-panel">
-                                                            <div class="item" data-label-style="float" data-label-width="0">
-                                                                <span class="handler">&nbsp;</span>
-                                                                <h4><label for="combo-user1">Type gebruiker</label></h4>
-                                                                <div class="flex-container">
-                                                                    <select id="combo-user1" class="combo-select" placeholder="Maak uw keuze...">
-                                                                        <option value="1">Type gebruiker 1</option>
-                                                                        <option value="2">Type gebruiker 2</option>
-                                                                        <option value="3">Type gebruiker 3</option>
-                                                                        <option value="4">Type gebruiker 4</option>
-                                                                    </select>
-                                                                </div>
-                                                            </div>
-
-                                                            <div class="item" data-label-style="float" data-label-width="0">
-                                                                <span class="handler">&nbsp;</span>
-                                                                <h4><label for="combo-user2">Login session prefix</label></h4>
-                                                                <div class="flex-container">
-                                                                    <select id="combo-user2" class="combo-select" placeholder="Maak uw keuze...">
-                                                                        <option value="1">Login session prefix 1</option>
-                                                                        <option value="2">Login session prefix 2</option>
-                                                                        <option value="3">Login session prefix 3</option>
-                                                                        <option value="4">Login session prefix 4</option>
-                                                                    </select>
-                                                                </div>
-                                                            </div>
-
-                                                            <div class="item" data-label-style="float" data-label-width="0">
-                                                                <span class="handler">&nbsp;</span>
-                                                                <h4><label for="combo-user3">Rol</label></h4>
-                                                                <div class="flex-container">
-                                                                    <select id="combo-user3" class="combo-select" placeholder="Maak uw keuze...">
-                                                                        <option value="1">Rol 1</option>
-                                                                        <option value="2">Rol 2</option>
-                                                                        <option value="3">Rol 3</option>
-                                                                        <option value="4">Rol 4</option>
-                                                                    </select>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>
                                     <div>
-                                        <div class="formview full historyContainer">
-                                            Historie
-                                        </div>
+                                        <partial name="Tabs/DynamicContentTab" />
                                     </div>
-                                    <div>
-                                        <div class="formview full dynamicContainer">
-                                            Dynamische content
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="formview full previewContainer">
-                                            Preview
-                                        </div>
+                                    <div id="previewTab">
+
                                     </div>
                                 </div>
                             </div>
@@ -473,7 +87,35 @@
         </div>
     </form>
 
-    <!--
+    <div id="dynamicContentWindow"></div>
+
+    <div id="createNewItemDialog">
+        <div class="formview full static-fields">
+            <div class="item">
+                <span class="inline">
+                    <label class="checkbox"><input type="checkbox" id="newItemIsDirectoryCheckBox" class="textField k-input" /><span>Is map</span></label>
+                </span>
+            </div>
+            <div class="item">
+                <h4><label for="newItemTitleField">Naam</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="text" id="newItemTitleField" class="textField k-input" autocomplete="off"/>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div id="addDynamicContentToHtmlDialog">
+        <div class="formview full static-fields">
+            <div class="item">
+                <h4><label for="dynamicContentDropDown">Kies een component</label></h4>
+                <div class="flex-container">
+                    <select id="dynamicContentDropDown" class="select" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."></select>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="mainLoader" class="fullscreen-loader loading">
         <div class="loader-icon">
             <div></div>
@@ -482,10 +124,8 @@
             <div></div>
         </div>
     </div>
-    -->
-    
+
     <script src="/scripts/Utils.min.js"></script>
     <script src="/scripts/Templates.min.js"></script>
-
 </body>
 </html>

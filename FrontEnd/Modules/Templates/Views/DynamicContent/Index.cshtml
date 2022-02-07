@@ -1,0 +1,134 @@
+﻿@model FrontEnd.Modules.Templates.Models.DynamicContentViewModel
+@{
+    Layout = "";
+}
+
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Wiser 3 - Dynamic content</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.material.min.css" rel="stylesheet" />
+
+    <script>
+        window.wiserVersion = "@Model.WiserVersion?.ToString()";
+    </script>
+</head>
+<body class="@Model.BodyCssClass"
+      data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
+      data-wiser-api-root="@Model.ApiRoot"
+      data-wiser-api-v21-root="@Model.ApiRoot"
+      data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
+      data-sub-domain="@Model.SubDomain"
+      data-track-js-token="@Model.Settings.TrackJsToken"
+      data-api-client-id="@Model.Settings.ApiClientId"
+      data-api-client-secret="@Model.Settings.ApiClientSecret"
+      data-selected-id="@Model.ContentId"
+      data-template-id="@Model.TemplateId">
+    <span id="popupNotification"></span>
+    <form id="mainScreenForm" autocomplete="off" novalidate>
+        <div id="wiser">
+            <div id="panelwithsplitter">
+                <div id="horizontal" style="border: 0; height: 100%; width: 100%;">
+
+                    <div id="left-pane" style="background-color: #eee;">
+                        <div class="pane-content">
+
+                            <div class="input-container" id="DynamicContentComponentInputs">
+                                <div class="item" data-label-style="float" data-label-width="0">
+                                    <span class="handler">&nbsp;</span>
+                                    <h4><label for="componentTypeDropDown">Selecteer een component</label></h4>
+                                    <div class="flex-container">
+                                        <select id="componentTypeDropDown" class="combo-select" placeholder="Maak uw keuze...">
+                                            @foreach (var (key, value) in Model.Components)
+                                            {
+                                                if (value != null)
+                                                {
+                                                    <option value="@key.Name">@value.PrettyName</option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@key.Name">@key.Name</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="item" data-label-style="float" data-label-width="0">
+                                    <span class="handler">&nbsp;</span>
+                                    <h4><label for="componentMode">Componentmodus</label></h4>
+                                    <div class="flex-container">
+                                        <select id="componentMode" class="combo-select" placeholder="Maak uw keuze..."></select>
+                                    </div>
+                                </div>
+
+                                <div class="item" data-label-style="float" data-label-width="0">
+                                    <span class="handler">&nbsp;</span>
+                                    <h4><label for="visibleDescription">Naam</label></h4>
+                                    <span class="k-widget k-input k-state-default">
+                                        <input type="text" id="visibleDescription" class="textField k-input" name="visibleDescription" autocomplete="off" required>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="k-tabstrip-wrapper" id="DynamicContentTabPane">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="right-pane" style="background-color: #eee;">
+                        <div class="pane-content" style="border: 0; margin: 0; padding: 0; height: 100%">
+                            <div class="tabstrip">
+                                <ul>
+                                    <!--<li class="preview-tab">Preview</li>-->
+                                    <li class="history-tab k-state-active">History</li>
+                                </ul>
+                                <!--<div>
+                                    <div class="formview full previewContainer">
+                                        <button tabindex="0" role="button" class="k-button k-tool k-group-start k-group-end" title="View HTML" aria-label="View HTML" unselectable="on">
+                                            <span class="k-icon k-i-html"></span>
+                                            <span class="k-tool-text k-button-text">View HTML</span>
+                                        </button>
+                                    </div>
+                                </div>-->
+                                <div>
+                                    <div class="formview full historyContainer">
+                                        <div class="row historyHeader">
+                                            <div class="col col-6">
+                                                <h3>Oud</h3>
+                                            </div>
+                                            <div class="col col-6">
+                                                <h3>Nieuw</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="window-footer">
+                <button class="btn btn-secondary btn-right">Opslaan &amp; sluiten</button>
+                <button class="btn btn-primary btn-right">Opslaan</button>
+            </div>
+        </div>
+    </form>
+
+    <div id="mainLoader" class="fullscreen-loader loading">
+        <div class="loader-icon">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+
+    <script src="/scripts/Utils.min.js"></script>
+    <script src="/scripts/DynamicContent.min.js"></script>
+</body>
+</html>

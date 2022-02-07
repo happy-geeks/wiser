@@ -15,11 +15,11 @@
                             <li v-for="moduleGroup in moduleGroups" :key="moduleGroup.name">
                                 <strong v-if="moduleGroup.name">{{ moduleGroup.name }}</strong>
                                 <ul>
-                                    <li v-for="module in moduleGroup.modules" :key="module.moduleId" @@click="openModule(module)">
-                                        <a href="#" :title="module.name"><ins :class="module.icon"></ins><span>{{ module.name }}</span></a>
+                                    <li v-for="module in moduleGroup.modules" :key="module.moduleId">
+                                        <a href="#" :title="module.name" @@click="onOpenModuleClick($event, module)"><ins :class="module.icon"></ins><span>{{ module.name }}</span></a>
                                         <label>
-                                            <input type="checkbox" class="hidden" />
-                                            <ins class="icon-line-pin-empty"></ins>
+                                            <input type="checkbox" class="hidden" :checked="module.pinned" @@change="onTogglePin(module.moduleId)"/>
+                                            <ins :class="{ 'icon-line-pin-empty': !module.pinned, 'icon-line-pin-full': module.pinned }"></ins>
                                         </label>
                                     </li>
                                 </ul>
@@ -77,7 +77,7 @@
         <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
         <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
         <section class="iframe-container">
-            <iframe v-for="module in openedModulesWithBackend" :key="module.id" :src="`/Modules/${module.type}${module.fileName}${module.queryString}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
+            <iframe v-for="module in openedModulesWithBackend" :key="module.id" :src="module.iframeUrl || `/Modules/${module.type}${module.fileName}${module.queryString}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
             <iframe v-for="module in openedWiser1Modules" :key="module.id" :src="`${appSettings.wiser1BaseUrl}?singleModuleId=${module.moduleId}&autoLoginCookie=${encodeURIComponent(user.cookieValue)}&autoLoginUserId=${encodeURIComponent(user.encryptedId)}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
         </section>
 
@@ -118,8 +118,10 @@
                 </div>
 
                 <div class="form-row">
-                    <input type="password" id="password" placeholder="Wachtwoord" autocomplete="off" v-model="loginForm.password" required>
+                    <input type="password" id="password" placeholder="Wachtwoord" autocomplete="off" v-model="loginForm.password" @@keydown="checkCapslock($event)" required>
                     <ins id="password-toggle" class="icon-eye-visible" v-on:click="togglePassword()"></ins>
+
+                    <div class="pwd-message" v-if="loginForm.capslock">Caps lock staat aan</div>
                 </div>
 
                 <div class="form-row">
@@ -137,7 +139,7 @@
             <div v-if="loginStatus === 'list' || loginStatus === 'list_loading' && !showForgotPasswordScreen">
                 <p>Kies de gebruiker waarmee u wilt inloggen</p>
 
-                <div class="form-row">
+                <div class="form-row"> 
                     <combobox :data-items="listOfUsers" :text-field="'Title'" :data-item-key="'username'" v-model="loginForm.selectedUser" :filterable="true" @@filterchange="userFilterChange"></combobox>
                 </div>
 

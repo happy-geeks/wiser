@@ -1,0 +1,177 @@
+﻿@import "../../Base/scss/base.scss";
+
+#left-pane .pane-content {
+    height: 100% !important;
+    min-height: inherit;
+    overflow: hidden;
+}
+
+#left-pane .input-container {
+    background-color: var(--white-color);
+    display: flex;
+    min-height: 60px;
+    margin: 0 !important;
+    padding: 12px 6px 0 6px;
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+#left-pane .input-container .item {
+    background-color: var(--white-color);
+    width: calc(100% / 3);
+}
+
+#left-pane .k-tabstrip-wrapper {
+    height: calc(100% - 75px);
+    overflow-y: auto;
+}
+
+#left-pane .k-tabstrip .k-tabstrip-items {
+    top: 0;
+}
+
+#right-pane .k-tabstrip .k-tabstrip-items {
+    top: 5px;
+}
+
+#right-pane .previewContainer {
+    background-color: var(--white-color);
+    border-radius: 3px;
+    border: 1px solid var(--border-color);
+    min-height: calc(100vh - 250px);
+    position: relative;
+    margin-top: 4px;
+}
+
+#right-pane .previewContainer .k-button  {
+    font-family: var(--regular-txt);
+    font-size: 13px;
+    font-weight: 400;
+    margin-right: 0;
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+}
+
+#right-pane .previewContainer .k-button .k-button-text {
+    padding-left: 5px;
+}
+
+#left-pane .k-tabstrip .k-content.k-state-active {
+    padding: 12px;
+}
+
+#right-pane .k-tabstrip .k-content.k-state-active {
+    padding: 5px 2px;
+}
+
+.k-window .window-content {
+    padding: 0;
+}
+
+.historyContainer {
+    padding: 2px;
+}
+
+.historyContainer * {
+    box-sizing: border-box;
+}
+
+.historyContainer .row {
+    display: flex;
+    justify-content: space-between;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+}
+
+.historyContainer .col-6 {
+    flex-basis: calc(50% - 1px);
+}
+
+.historyContainer .col-12 {
+    flex-basis: 100%;
+}
+
+.historyHeader .col {
+    background-color: var(--body-color);
+    display: flex;
+    padding: 5px 12px;
+    height: 40px;
+    line-height: 40px;
+}
+
+.historyHeader h3 {
+    height: 30px;
+    line-height: 30px;
+}
+
+.historyTagline {
+    border-bottom: 1px solid var(--body-color);
+    padding-top: 10px;
+    padding-bottom: 10px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.historyTagline span {
+    white-space: nowrap;
+    display: inline-block;
+    line-height: 16px;
+    height: 16px;
+}
+
+.historyTagline .k-icon {
+    margin: 0 2px;
+}
+
+.historyTagline .k-button {
+    font-family: var(--regular-txt);
+    font-size: 13px;
+    font-weight: 400;
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.historyLine .col-6 {
+    padding-top: 10px;
+}
+
+.historyLine .checkLine {
+    padding-top: 0;
+}
+
+.historyDynamic {
+    border-top: 1px solid var(--body-color);
+    padding-top: 15px;
+    margin-top: 15px;
+}
+
+.checkLine .item {
+    padding: 0 6px;
+}
+
+.checkLine .item .inline {
+    margin: 0;
+}
+
+.window-footer {
+    border-top: 1px solid var(--handle-bg-color);
+    display: block;
+    min-height: 60px;
+    position: -webkit-sticky;
+    position: sticky;
+    bottom: 0;
+    background: var(--white-color);
+    text-align: right;
+    padding: 10px;
+}
+
+#panelwithsplitter {
+    height: calc(100% - 63px);
+    margin: 0;
+    padding: 0;
+    border: 0;
+}

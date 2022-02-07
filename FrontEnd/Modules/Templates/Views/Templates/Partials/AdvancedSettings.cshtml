@@ -1,0 +1,212 @@
+﻿@model Api.Modules.Templates.Models.Template.TemplateSettingsModel
+<div class="item advanced" style="width: 100%;">
+    <input type="checkbox" class="hidden" id="advanced" />
+    <label for="advanced" class="group-label"><strong>Geavanceerd</strong><ins class="k-icon k-i-arrow-60-down"></ins></label>
+
+    <div class="advanced-panel">
+        <div class="item item-left" style="width: 60%;">
+            <div class="item" data-label-style="float" data-label-width="0">
+                <span class="handler">&nbsp;</span>
+                <h4><label for="combo-cache">Cache</label></h4>
+                <div class="flex-container">
+                    <select id="combo-cache" class="combo-select" placeholder="Maak uw keuze...">
+                        <option value="0">geen caching</option>
+                        <option value="1" selected="selected">app caching (client side)</option>
+                        <option value="2">server caching volledige template (ongeacht URL)</option>
+                        <option value="3">server caching volledige template (per SEO vriendelijke URL verschillend)</option>
+                        <option value="4">server caching volledige template (per SEO vriendelijke URL + querystring combinatie verschillend)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="item" data-label-style="float" data-label-width="0">
+                <span class="handler">&nbsp;</span>
+                <h4><label for="cache-duration">Cache aantal minuten</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="text" id="cache-duration" class="textField k-input" name="cache-duration" value="@Model.CacheMinutes" autocomplete="off" pattern=".*">
+                </span>
+            </div>
+
+            <ul class="checkColumns">
+                <li>
+                    <label class="checkbox">
+                        @if (@Model.HandleRequests)
+                        {
+                            <input id="handleRequests" name="handleRequests" type="checkbox" value="@Model.HandleRequests" checked="checked">
+                        }
+                        else
+                        {
+                            <input id="handleRequests" name="handleRequests" type="checkbox" value="@Model.HandleRequests">
+                        }
+                        <span>
+                            Verwerk requestvariabelen
+                        </span>
+                    </label>
+                </li>
+                <li>
+                    <label class="checkbox">
+                        @if (@Model.HandleSession)
+                        {
+                            <input id="handleSession" name="handleSession" type="checkbox" value="@Model.HandleSession" checked="checked">
+                        }
+                        else
+                        {
+                            <input id="handleSession" name="handleSession" type="checkbox" value="@Model.HandleSession">
+                        }
+                        <span>
+                            Verwerk sessievariabelen
+                        </span>
+                    </label>
+                </li>
+                <li>
+                    <label class="checkbox">
+                        @if (@Model.HandleObjects)
+                        {
+                            <input id="handleObjects" name="handleObjects" type="checkbox" value="@Model.HandleObjects" checked="checked">
+                        }
+                        else
+                        {
+                            <input id="handleObjects" name="handleObjects" type="checkbox" value="@Model.HandleObjects">
+                        }
+                        <span>
+                            Verwerk objectvariabelen
+                        </span>
+                    </label>
+                </li>
+                <li>
+                    <label class="checkbox">
+                        @if (@Model.HandleStandards)
+                        {
+                            <input id="handleStandards" name="handleStandards" type="checkbox" value="@Model.HandleStandards" checked="checked">
+                        }
+                        else
+                        {
+                            <input id="handleStandards" name="handleStandards" type="checkbox" value="@Model.HandleStandards">
+                        }
+                        <span>
+                            Verwerk standards
+                        </span>
+                    </label>
+                </li>
+                <li>
+                    <label class="checkbox">
+                        @if (@Model.HandleTranslations)
+                        {
+                            <input id="handleTranslations" name="handleTranslations" type="checkbox" value="@Model.HandleTranslations" checked="checked">
+                        }
+                        else
+                        {
+                            <input id="handleTranslations" name="handleTranslations" type="checkbox" value="@Model.HandleTranslations">
+                        }
+                        <span>
+                            Verwerk vertalingen
+                        </span>
+                    </label>
+                </li>
+                <li>
+                    <label class="checkbox">
+                        @if (@Model.HandleDynamicContent)
+                        {
+                            <input id="handleDynamicContent" name="handleDynamicContent" type="checkbox" value="@Model.HandleDynamicContent" checked="checked">
+                        }
+                        else
+                        {
+                            <input id="handleDynamicContent" name="handleDynamicContent" type="checkbox" value="@Model.HandleDynamicContent">
+                        }
+                        <span>
+                            Verwerk dynamische content
+                        </span>
+                    </label>
+                </li>
+                <li>
+                    <label class="checkbox">
+                        @if (@Model.HandleLogicBlocks)
+                        {
+                            <input id="handleLogicBlocks" name="handleLogicBlocks" type="checkbox" value="@Model.HandleLogicBlocks" checked="checked">
+                        }
+                        else
+                        {
+                            <input id="handleLogicBlocks" name="handleLogicBlocks" type="checkbox" value="@Model.HandleLogicBlocks">
+                        }
+                        <span>
+                            Verwerk logische blokken
+                        </span>
+                    </label>
+                </li>
+                <li>
+                    <label class="checkbox">
+                        @if (@Model.HandleMutators)
+                        {
+                            <input id="handleMutators" name="handleMutators" type="checkbox" value="@Model.HandleMutators" checked="checked">
+                        }
+                        else
+                        {
+                            <input id="handleMutators" name="handleMutators" type="checkbox" value="@Model.HandleMutators">
+                        }
+                        <span>
+                            Verwerk mutators
+                        </span>
+                    </label>
+                </li>
+
+            </ul>
+        </div>
+        <div class="item item-right" style="width: 40%;">
+            @if (@Model.LoginRequired)
+            {
+                <input id="user-check" name="user-check" type="checkbox" value="@Model.LoginRequired" checked="checked" class="hidden">
+            }
+            else
+            {
+                <input id="user-check" name="user-check" type="checkbox" value="@Model.LoginRequired" class="hidden">
+            }
+            @*<input type="checkbox" class="hidden" id="user-check" checked />*@
+            <label class="checkbox" for="user-check">
+                <span>
+                    Gebruiker moet ingelogd zijn om deze template te zien
+                </span>
+            </label>
+
+            <div class="user-check-panel">
+                <div class="item" data-label-style="float" data-label-width="0">
+                    <span class="handler">&nbsp;</span>
+                    <h4><label for="combo-user1">Type gebruiker</label></h4>
+                    <div class="flex-container">
+                        <select id="combo-user1" class="combo-select" placeholder="Maak uw keuze...">
+                            <option value="1">Type gebruiker 1</option>
+                            <option value="2">Type gebruiker 2</option>
+                            <option value="3">Type gebruiker 3</option>
+                            <option value="4">Type gebruiker 4</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="item" data-label-style="float" data-label-width="0">
+                    <span class="handler">&nbsp;</span>
+                    <h4><label for="combo-user2">Login session prefix</label></h4>
+                    <div class="flex-container">
+                        <select id="combo-user2" class="combo-select" placeholder="Maak uw keuze...">
+                            <option value="1">Login session prefix 1</option>
+                            <option value="2">Login session prefix 2</option>
+                            <option value="3">Login session prefix 3</option>
+                            <option value="4">Login session prefix 4</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="item" data-label-style="float" data-label-width="0">
+                    <span class="handler">&nbsp;</span>
+                    <h4><label for="combo-user3">Rol</label></h4>
+                    <div class="flex-container">
+                        <select id="combo-user3" class="combo-select" placeholder="Maak uw keuze...">
+                            <option value="1">Rol 1</option>
+                            <option value="2">Rol 2</option>
+                            <option value="3">Rol 3</option>
+                            <option value="4">Rol 4</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
