@@ -227,6 +227,7 @@ const moduleSettings = {
                     collapse: this.onTreeViewCollapseItem.bind(this),
                     expand: this.onTreeViewExpandItem.bind(this),
                     select: this.onTreeViewSelect.bind(this),
+                    drop: this.onTreeViewDropItem.bind(this),
                     dataSource: {
                         transport: {
                             read: (readOptions) => {
@@ -547,6 +548,34 @@ const moduleSettings = {
             }
 
             this.loadTemplate(dataItem.id);
+        }
+
+        /**
+         * Event for when the user finished dragging an item in the tree view.
+         * @param {any} event The drop event of a kendoTreeView.
+         */
+        async onTreeViewDropItem(event) {
+            if (!event.valid) {
+                return;
+            }
+
+            try {
+                const sourceDataItem = event.sender.dataItem(event.sourceNode);
+                const destinationDataItem = event.sender.dataItem(event.destinationNode);
+
+                console.log("sourceDataItem", sourceDataItem);
+                console.log("destinationDataItem", destinationDataItem);
+                
+                await Wiser2.api({
+                    url: `${this.base.settings.wiserApiRoot}templates/${encodeURIComponent(sourceDataItem.templateId)}/move/${encodeURIComponent(destinationDataItem.templateId)}?dropPosition=${encodeURIComponent(event.dropPosition)}`,
+                    method: "PUT",
+                    contentType: "application/json"
+                });
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert(`Er is iets fout gegaan met het verplaatsen van dit item. De fout was:<br>${exception.responseText || exception.statusText}`);
+                event.setValid(false);
+            }
         }
 
         /**

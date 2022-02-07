@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
 using Api.Modules.Customers.Models;
+using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
@@ -231,6 +232,18 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> SearchAsync(SearchSettingsModel searchSettings)
         {
             return (await templatesService.SearchAsync(searchSettings)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Moves a template to a new position.
+        /// </summary>
+        /// <param name="sourceId">The ID of the template that is being moved.</param>
+        /// <param name="destinationId">The ID of the template or directory where it's being moved to.</param>
+        /// <param name="dropPosition">The drop position, can be either <see cref="TreeViewDropPositions.Over"/>, <see cref="TreeViewDropPositions.Before"/> or <see cref="TreeViewDropPositions.After"/>.</param>
+        [HttpPut, Route("{sourceId:int}/move/{destinationId:int}"), ProducesResponseType(typeof(List<SearchResultModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> MoveAsync(int sourceId, int destinationId, [FromQuery]TreeViewDropPositions dropPosition)
+        {
+            return (await templatesService.MoveAsync((ClaimsIdentity)User.Identity, sourceId, destinationId, dropPosition)).GetHttpResponseMessage();
         }
         
         /// <summary>
