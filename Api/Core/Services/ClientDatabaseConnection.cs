@@ -503,7 +503,8 @@ namespace Api.Core.Services
                 {
                     subDomain = IdentityHelpers.GetSubDomain(identity);
                 }
-                else
+
+                if (String.IsNullOrWhiteSpace(subDomain))
                 {
                     subDomain = (string)httpContextAccessor.HttpContext.Items[HttpContextConstants.SubDomainKey];
                 }
