@@ -37,15 +37,9 @@ const moduleSettings = {
 
             // Kendo components.
             this.mainSplitter = null;
-            this.mainTabStrip = null;
             this.mainWindow = null;
             this.componentTypeComboBox = null;
             this.componentModeComboBox = null;
-            this.mainComboInput = null;
-            this.mainMultiSelect = null;
-            this.mainNumericTextBox = null;
-            this.mainDatePicker = null;
-            this.mainDateTimePicker = null;
             this.selectedComponentData = null;
 
             // Default settings
@@ -165,7 +159,7 @@ const moduleSettings = {
             this.mainSplitter.resize(true);
 
             // Tabstrip, NUMERIC FIELD, MULTISELECT, Date Picker, DATE & TIME PICKER
-            this.intializeDynamicKendoComponents();
+            this.initializeDynamicKendoComponents();
 
             //Components
             this.componentTypeComboBox = $("#componentTypeDropDown").kendoComboBox({
@@ -174,9 +168,10 @@ const moduleSettings = {
         }
 
         //Initialize the dynamic kendo components. This method will also be called when reloading component fields.
-        intializeDynamicKendoComponents() {
+        initializeDynamicKendoComponents() {
             // Tabstrip
-            this.mainTabStrip = $(".tabstrip").kendoTabStrip({
+            $(".tabstrip").kendoTabStrip({
+                activate: this.onTabStripActivate.bind(this),
                 animation: {
                     open: {
                         effects: "fadeIn"
@@ -185,78 +180,14 @@ const moduleSettings = {
             }).data("kendoTabStrip").select(0);
 
             //NUMERIC FIELD
-            this.mainNumericTextBox = $(".numeric").kendoNumericTextBox();
-
-            this.mainComboInput = $(".combo-input").kendoComboBox({
-                dataTextField: "text",
-                dataValueField: "value",
-                dataSource: [{
-                    text: "Netherlands",
-                    value: "1"
-                }, {
-                    text: "Belgium",
-                    value: "2"
-                }, {
-                    text: "Germany",
-                    value: "3"
-                }, {
-                    text: "France",
-                    value: "4"
-                }, {
-                    text: "Spain",
-                    value: "5"
-                }, {
-                    text: "United Kingdom",
-                    value: "6"
-                }, {
-                    text: "Italy",
-                    value: "7"
-                }, {
-                    text: "Luxembourg",
-                    value: "8"
-                }],
-                filter: "contains",
-                suggest: true,
-                index: 3
+            $(".numeric").kendoNumericTextBox();
+            
+            //MULTISELECT
+            $(".multi-select").kendoMultiSelect({
+                autoClose: false
             });
 
-            //MULTISELECT
-            this.mainMultiSelect = $(".multi-select").kendoMultiSelect({
-                autoClose: false
-            }).data("kendoMultiSelect");
-
-            //DATE PICKER
-            if ($(".datepicker").length) {
-                this.mainDatePicker = $(".datepicker").kendoDatePicker({
-                    format: "dd MMMM yyyy",
-                    culture: "nl-NL"
-                }).data("kendoDatePicker");
-
-                $(".datepicker").click(function () {
-                    this.mainDatePicker.open();
-                });
-            }
-
-            //DATE & TIME PICKER
-            if ($(".datetimepicker").length) {
-                this.mainDateTimePicker = $(".datetimepicker").kendoDateTimePicker({
-                    value: new Date(),
-                    dateInput: true,
-                    format: "dd MMMM yyyy HH:mm",
-                    culture: "nl-NL"
-                }).data("kendoDateTimePicker");
-
-                $("input.datetimepicker").click(function () {
-                    this.mainDateTimePicker.close("time");
-                    this.mainDateTimePicker.open("date");
-                });
-
-                this.mainDateTimePicker.dateView.options.change = function () {
-                    this.mainDateTimePicker._change(this.value());
-                    this.mainDateTimePicker.close("date");
-                    this.mainDateTimePicker.open("time");
-                };
-            }
+            $(".select").kendoDropDownList();
         }
 
         /**
@@ -289,7 +220,7 @@ const moduleSettings = {
 
                 $("#DynamicContentTabPane").html(response);
                 this.reloadComponentModes(newComponent, newComponentMode);
-                this.intializeDynamicKendoComponents();
+                this.initializeDynamicKendoComponents();
                 await this.transformCodeMirrorViews();
             } catch (exception) {
                 console.error(exception);
@@ -297,6 +228,18 @@ const moduleSettings = {
             }
 
             window.processing.removeProcess(process);
+        }
+
+        onTabStripActivate(event) {
+            // Refresh all code mirror instances after switching tab, otherwise they won't work properly.
+            $(event.contentElement).find("textarea[data-field-type][data-property]").each((index, element) => {
+                const codeMirrorInstance = $(element).data("CodeMirrorInstance");
+                if (!codeMirrorInstance) {
+                    return;
+                }
+
+                codeMirrorInstance.refresh();
+            });
         }
 
         async reloadComponentModes(newComponent, newComponentMode) {
@@ -442,21 +385,50 @@ const moduleSettings = {
          * */
         getNewSettings() {
             var settingsList = {};
-
-            $("[data-property]").each(function (i, el) {
-                var val;
-                if (el.type === "checkbox") {
-                    val = el.checked;
-                } else if (el.title === "numeric") {
-                    val = parseFloat(el.value)
-                    if (!val) {
-                        val = null;
+            
+            $("[data-property]").each((index, element) => {
+                const field = $(element);
+                const propertyName = field.data("property");
+                const kendoControlName = field.data("kendoControl");
+                
+                if (kendoControlName) {
+                    const kendoControl = field.data(kendoControlName);
+                    
+                    if (kendoControl) {
+                        settingsList[propertyName] = kendoControl.value();
+                        return;
+                    } else {
+                        console.warn(`Kendo control found for '${propertyName}', but it's not initialized, so skipping this property.`, kendoControlName, data);
+                        return;
                     }
-                } else {
-                    val = el.value;
                 }
 
-                settingsList[el.dataset.property] = val;
+                const codeMirrorInstance = field.data("CodeMirrorInstance");
+                if (codeMirrorInstance) {
+                    settingsList[propertyName] = codeMirrorInstance.getValue();
+                    return;
+                }
+
+                // If we reach this point in the code, this element is not a Kendo control, so just get the normal value.
+                switch (field.prop("tagName")) {
+                    case "SELECT":
+                        settingsList[propertyName] = field.val();
+                        break;
+                    case "INPUT":
+                    case "TEXTAREA":
+                        switch ((field.attr("type") || "").toUpperCase()) {
+                            case "CHECKBOX":
+                                settingsList[propertyName] = field.prop("checked");
+                                break;
+                            default:
+                                settingsList[propertyName] = field.val();
+                                break;
+                        }
+                        break;
+                    default:
+                        console.error("TODO: Unsupported tag name:", field.prop("tagName"));
+                        return;
+                }
             });
 
             return settingsList;
@@ -485,17 +457,15 @@ const moduleSettings = {
 
         async transformCodeMirrorViews() {
             await Misc.ensureCodeMirror();
-            $("textarea[data-fieldtype][data-property]").each(function (i, el) {
-                var cmObject = CodeMirror.fromTextArea(el, {
+            $("textarea[data-field-type][data-property]").each((index, element) => {
+                const codeMirrorInstance = CodeMirror.fromTextArea(element, {
                     lineNumbers: true,
                     styleActiveLine: true,
                     matchBrackets: true,
-                    mode: el.dataset.fieldtype
+                    mode: element.dataset.fieldType
                 });
 
-                cmObject.on("change", function () {
-                    cmObject.getTextArea().value = cmObject.getValue();
-                });
+                $(element).data("CodeMirrorInstance", codeMirrorInstance);
             });
         }
 
@@ -506,8 +476,8 @@ const moduleSettings = {
             $("#revertChanges").hide();
             // Select history changes and change revert button visibility
             $(".col-6>.item").on("click", function (el) {
-                var currentProperty = $(el.currentTarget).find("[data-historyproperty]").data("historyproperty");
-                $(el.currentTarget.closest(".historyLine")).find(".col-6>.item").has("[data-historyproperty='" + currentProperty + "']").toggleClass("selected");
+                const currentProperty = $(el.currentTarget).find("[data-history-property]").data("historyProperty");
+                $(el.currentTarget.closest(".historyLine")).find(".col-6>.item").has("[data-history-property='" + currentProperty + "']").toggleClass("selected");
 
                 if (document.querySelectorAll(".col-6>.item.selected").length) {
                     $("#revertChanges").show();
@@ -525,16 +495,16 @@ const moduleSettings = {
 
                 try {
                     const changeList = [];
-                    $("[data-historyversion]:has(.selected)").each((i, versionElement) => {
+                    $("[data-history-version]:has(.selected)").each((i, versionElement) => {
                         const reverted = [];
-                        $(versionElement).find(".selected [data-historyproperty]").each((ii, propertyElement) => {
-                            if (!reverted.includes(propertyElement.dataset.historyproperty)) {
-                                reverted.push(propertyElement.dataset.historyproperty);
+                        $(versionElement).find(".selected [data-history-property]").each((ii, propertyElement) => {
+                            if (!reverted.includes(propertyElement.dataset.historyProperty)) {
+                                reverted.push(propertyElement.dataset.historyProperty);
                             }
                         });
 
                         changeList.push({
-                            version: parseInt(versionElement.dataset.historyversion),
+                            version: parseInt(versionElement.dataset.historyVersion),
                             revertedProperties: reverted
                         });
                     });
