@@ -96,6 +96,11 @@ namespace FrontEnd
             {
                 app.UseDeveloperExceptionPage();
             }
+            else
+            {
+                // Force https on non-dev environments.
+                app.UseHttpsRedirection();
+            }
 
             app.UseStaticFiles();
             app.UseRouting();
