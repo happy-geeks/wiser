@@ -204,6 +204,7 @@ ins {
 }
 .k-window-content > .pane-content .k-tabstrip .k-content.k-state-active {
     height: calc(100% - 50px);
+    overflow: visible;
 }
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent {
     align-content: flex-start;
@@ -299,6 +300,10 @@ ins {
 	font-family: var(--regular-txt);
 	font-weight: normal;
 	padding-left: 3px;
+}
+.item h4:hover {
+    position: relative;
+    z-index: 1000;
 }
 .item.error {
     background-color: var(--error-bg-color);
@@ -582,6 +587,10 @@ ins {
 }
 
 /* TOOLTIPS */
+.item h4 {
+    display: flex;
+    justify-content: space-between;
+}
 .item h4 .property-name {
     background-color: var(--black-color);
     color: var(--white-color);
@@ -822,6 +831,14 @@ ins {
     padding: 4px 10px;
     pointer-events: none;
 }
+.item[data-label-style="float"] .CodeMirror {
+    padding-top: 25px;
+}
+/* SELECTED */
+.item.selected {
+    background-color: var(--primary-color);
+    padding-top: 16px;
+}
 /* CUSTOM CHECKBOX / RADIOBUTTON */
 .checkbox, .radio {
     cursor: pointer;
@@ -837,9 +854,9 @@ ins {
 .checkbox span, 
 .radio span {
     display: block;
-    line-height: 2em;
+    line-height: 1em;
     min-height: 28px;
-    padding: 5px 5px 5px 28px;
+    padding: 12px 5px 12px 28px;
     position: relative;
     user-select: none;
 }
@@ -903,7 +920,7 @@ input:checked + .checkbox span:after,
     padding: 12px;
     position: absolute;
     top: 26px;
-    left: -8px;
+    right: -8px;
     width: 250px;
     z-index: 1001;
 }
@@ -932,10 +949,19 @@ input:checked + .checkbox span:after,
     font-size: 16px;
     margin-left: 10px;
     vertical-align: middle;
+    opacity: 0.35;
 }
 .info-tooltip a {
 	color: var(--white-color);
 	text-decoration: underline;
+}
+.info:hover,
+.info-link:hover {
+    z-index: 100;
+}
+.info:hover ins,
+.info-link:hover ins {
+    opacity: 1;
 }
 
 /* FOOTER / META DATA */

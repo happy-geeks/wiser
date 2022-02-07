@@ -1,5 +1,7 @@
 ﻿var path = require("path");
 
+const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
+
 module.exports = {
     context: path.join(__dirname, "Core/Scripts"),
     entry: {
@@ -12,7 +14,6 @@ module.exports = {
         Windows: "../../Modules/DynamicItems/Scripts/Windows.js",
         Grids: "../../Modules/DynamicItems/Scripts/Grids.js",
         DragAndDrop: "../../Modules/DynamicItems/Scripts/DragAndDrop.js",
-        DynamicContent: "../../Modules/DynamicContent/Scripts/DynamicContent.js",
         Search: "../../Modules/Search/Scripts/Search.js",
         Import: "../../Modules/ImportExport/Scripts/Import.js",
         Export: "../../Modules/ImportExport/Scripts/Export.js",
@@ -26,6 +27,7 @@ module.exports = {
         DataSelectorConnection: "../../Modules/DataSelector/Scripts/Connection.js",
         ContentBuilder: "../../Modules/ContentBuilder/Scripts/main.js",
         Templates: "../../Modules/Templates/Scripts/Templates.js",
+        DynamicContent: "../../Modules/Templates/Scripts/DynamicContent.js",
         Admin: "../../Modules/Admin/Scripts/Admin.js"
     },
     output: {
@@ -34,7 +36,9 @@ module.exports = {
         chunkFilename: "[name].min.js",
         publicPath: "/scripts/"
     },
-
+    plugins: [
+        new NodePolyfillPlugin()
+    ],
     resolve: {
         alias: {
             vue$: "vue/dist/vue.esm-bundler.js",

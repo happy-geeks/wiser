@@ -210,5 +210,17 @@ input[type="date"] {
                 }
             }
         }
+
+        &[style*="background-image"] {
+            + ins {
+                right: -45px;
+            }
+        }
+    }
+
+    .pwd-message {
+        color: $alert-color;
+        font: 16px/24px $font-medium;
+        padding: 10px;
     }
 }
