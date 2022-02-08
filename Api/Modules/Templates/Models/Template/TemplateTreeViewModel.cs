@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Api.Modules.Templates.Models.Template
 {
@@ -25,6 +26,10 @@ namespace Api.Modules.Templates.Models.Template
         public string CollapsedSpriteCssClass { get; set; }
         public string ExpandedSpriteCssClass { get; set; }
         public string SpriteCssClass { get; set; }
+
+        public TemplateSettingsModel TemplateSettings { get; set; }
+
+        public List<TemplateTreeViewModel> ChildNodes { get; set; }
 
         public TemplateTreeViewModel()
         {

@@ -156,5 +156,11 @@ namespace Api.Modules.Templates.Services
         {
             return await templatesService.MoveAsync(identity, sourceId, destinationId, dropPosition);
         }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom)
+        {
+            return templatesService.GetEntireTreeViewStructureAsync(parentId, startFrom);
+        }
     }
 }

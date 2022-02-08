@@ -43,7 +43,7 @@ namespace Api.Modules.Templates.Controllers
             this.historyService = historyService;
             this.gclSettings = gclSettings.Value;
         }
-        
+
         /// <summary>
         /// Gets the CSS that should be used for HTML editors, so that their content will look more like how it would look on the customer's website.
         /// </summary>
@@ -293,6 +293,17 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> DeletePreviewProfilesAsync(int templateId, int profileId)
         {
             return (await previewService.DeleteAsync(templateId, profileId)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Gets the tree view including template settings of all templates.
+        /// </summary>
+        /// <param name="startFrom">Set the place from which to start the tree view, folders separated by comma.</param>
+        /// <returns></returns>
+        [HttpGet, Route("entire-tree-view"), ProducesResponseType(typeof(List<TemplateTreeViewModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetEntireTreeViewStructureAsync(string startFrom = "")
+        {
+            return (await templatesService.GetEntireTreeViewStructureAsync(0, startFrom)).GetHttpResponseMessage();
         }
     }
 }
