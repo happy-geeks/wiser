@@ -473,13 +473,14 @@ namespace Api.Modules.Templates.Services.DataLayer
         /// <inheritdoc/>
         public async Task<int> CreateAsync(string name, int parent, TemplateTypes type, string username)
         {
+            var ordering = await GetHighestOrderNumberOfChildrenAsync(parent) + 1;
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("name", name);
             clientDatabaseConnection.AddParameter("parent", parent);
             clientDatabaseConnection.AddParameter("type", type);
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
             clientDatabaseConnection.AddParameter("username", username);
-            clientDatabaseConnection.AddParameter("ordering", await GetHighestOrderNumberOfChildrenAsync(parent) + 1);
+            clientDatabaseConnection.AddParameter("ordering", ordering);
             
             var dataTable = await clientDatabaseConnection.GetAsync(@$"SET @id = (SELECT MAX(template_id)+1 FROM {WiserTableNames.WiserTemplate});
                                                             INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, changed_on, changed_by, published_environment, ordering)
