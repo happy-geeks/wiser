@@ -381,10 +381,10 @@ const moduleSettings = {
         }
 
         /**
-         * Retrieve the new values entered by the user and their properties.
+         * Retrieve the new values entered by the user.
          * */
         getNewSettings() {
-            var settingsList = {};
+            const settingsList = {};
             
             $("[data-property]").each((index, element) => {
                 const field = $(element);
@@ -460,8 +460,23 @@ const moduleSettings = {
             $("textarea[data-field-type][data-property]").each((index, element) => {
                 const codeMirrorInstance = CodeMirror.fromTextArea(element, {
                     lineNumbers: true,
-                    styleActiveLine: true,
-                    matchBrackets: true,
+                    indentUnit: 4,
+                    lineWrapping: true,
+                    foldGutter: true,
+                    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
+                    lint: true,
+                    extraKeys: {
+                        "Ctrl-Q": (sender) => {
+                            sender.foldCode(sender.getCursor());
+                        },
+                        "F11": (sender) => {
+                            sender.setOption("fullScreen", !sender.getOption("fullScreen"));
+                        },
+                        "Esc": (sender) => {
+                            if (sender.getOption("fullScreen")) sender.setOption("fullScreen", false);
+                        },
+                        "Ctrl-Space": "autocomplete"
+                    },
                     mode: element.dataset.fieldType
                 });
 

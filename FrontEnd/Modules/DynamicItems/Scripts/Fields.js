@@ -2694,7 +2694,7 @@ export class Fields {
             return;
         }
 
-        window.parent.$.core.loadCoreMirror(() => {
+        window.parent.$.core.loadCodeMirror(() => {
             new window.parent.$.dynamicHandler(this, 0, null, null, { id: this.base.settings.moduleId }, itemId, null, (dynamicContentData) => {
                 if (kendoEditor) {
                     const originalOptions = kendoEditor.options.pasteCleanup;
@@ -2958,7 +2958,7 @@ export class Fields {
         range.setEnd(clickedElement[0], clickedElement[0].childNodes.length);
         editor.selectRange(range);
 
-        window.parent.$.core.loadCoreMirror(() => {
+        window.parent.$.core.loadCodeMirror(() => {
             new window.parent.$.dynamicHandler(this, contentId, null, null, { id: this.base.settings.moduleId }, itemId, null, (dynamicContentData) => {
                 const originalOptions = editor.options.pasteCleanup;
                 editor.options.pasteCleanup.none = true;

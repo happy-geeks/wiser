@@ -65,7 +65,9 @@ const moduleSettings = {
                 "SCRIPTS": 4,
                 "QUERY": 5,
                 "NORMAL": 6,
-                "DIRECTORY": 7
+                "DIRECTORY": 7,
+                "XML": 8,
+                "AIS": 8
             });
 
             // Default settings
@@ -161,8 +163,6 @@ const moduleSettings = {
             $("#saveButton").kendoButton({
                 icon: "save"
             });
-
-            this.initKendoDeploymentTab();
 
             // Main window
             this.mainWindow = $("#window").kendoWindow({
@@ -859,7 +859,7 @@ const moduleSettings = {
                         data: JSON.stringify(previewProfiles)
                     }).then((response) => {
                         document.getElementById("previewTab").innerHTML = response;
-                        $("#preview-combo-select").kendoComboBox({
+                        $("#preview-combo-select").kendoDropDownList({
                             change: (event) => {
                                 if (event.sender.dataItem()) {
                                     this.initPreviewProfileInputs(previewProfiles, event.sender.select());
@@ -878,53 +878,99 @@ const moduleSettings = {
         }
 
         //Initializes the kendo components on the deployment tab. These are seperated from other components since these can be reloaded by the application.
-        initKendoDeploymentTab() {
+        async initKendoDeploymentTab() {
             $("#deployLive, #deployAccept, #deployTest").kendoButton();
 
             // ComboBox
-            $(".combo-select").kendoComboBox();
+            $(".combo-select").kendoDropDownList();
 
-            // HTML editor
-            const insertDynamicContentTool = {
-                name: "wiserDynamicContent",
-                tooltip: "Dynamische inhoud toevoegen",
-                exec: this.onHtmlEditorDynamicContentExec.bind(this)
-            };
-            this.mainHtmlEditor = $(".editor").kendoEditor({
-                resizable: true,
-                tools: [
-                    insertDynamicContentTool,
-                    "bold",
-                    "italic",
-                    "underline",
-                    "strikethrough",
-                    "justifyLeft",
-                    "justifyCenter",
-                    "justifyRight",
-                    "justifyFull",
-                    "insertUnorderedList",
-                    "insertOrderedList",
-                    "indent",
-                    "outdent",
-                    "createLink",
-                    "unlink",
-                    "insertImage",
-                    "insertFile",
-                    "subscript",
-                    "superscript",
-                    "tableWizard",
-                    "createTable",
-                    "addRowAbove",
-                    "addRowBelow",
-                    "addColumnLeft",
-                    "addColumnRight",
-                    "deleteRow",
-                    "deleteColumn",
-                    "viewHtml",
-                    "formatting",
-                    "cleanFormatting"
-                ]
-            }).data("kendoEditor");
+            const editorElement = $(".editor");
+            const editorType = editorElement.data("editorType");
+            if (editorType === "text/html") {
+                // HTML editor
+                const insertDynamicContentTool = {
+                    name: "wiserDynamicContent",
+                    tooltip: "Dynamische inhoud toevoegen",
+                    exec: this.onHtmlEditorDynamicContentExec.bind(this)
+                };
+                this.mainHtmlEditor = $(".editor").kendoEditor({
+                    resizable: true,
+                    tools: [
+                        insertDynamicContentTool,
+                        "bold",
+                        "italic",
+                        "underline",
+                        "strikethrough",
+                        "justifyLeft",
+                        "justifyCenter",
+                        "justifyRight",
+                        "justifyFull",
+                        "insertUnorderedList",
+                        "insertOrderedList",
+                        "indent",
+                        "outdent",
+                        "createLink",
+                        "unlink",
+                        "insertImage",
+                        "insertFile",
+                        "subscript",
+                        "superscript",
+                        "tableWizard",
+                        "createTable",
+                        "addRowAbove",
+                        "addRowBelow",
+                        "addColumnLeft",
+                        "addColumnRight",
+                        "deleteRow",
+                        "deleteColumn",
+                        "viewHtml",
+                        "formatting",
+                        "cleanFormatting"
+                    ]
+                }).data("kendoEditor");
+            } else {
+                // Initialize Code Mirror.
+                await Misc.ensureCodeMirror();
+                const codeMirrorInstance = CodeMirror.fromTextArea(editorElement[0], {
+                    lineNumbers: true,
+                    indentUnit: 4,
+                    lineWrapping: true,
+                    foldGutter: true,
+                    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
+                    lint: true,
+                    extraKeys: {
+                        "Ctrl-Q": (sender) => {
+                            sender.foldCode(sender.getCursor());
+                        },
+                        "F11": (sender) => {
+                            sender.setOption("fullScreen", !sender.getOption("fullScreen"));
+                        },
+                        "Esc": (sender) => {
+                            if (sender.getOption("fullScreen")) sender.setOption("fullScreen", false);
+                        },
+                        "Ctrl-Space": "autocomplete"
+                    },
+                    mode: editorType
+                });
+
+                editorElement.data("CodeMirrorInstance", codeMirrorInstance);
+            }
+
+            const dataSource = (this.templateSettings.externalFiles || []).map(url => { return { url: url } })
+            const externalFilesGridElement = $("#externalFiles");
+            if (externalFilesGridElement.length > 0) {
+                externalFilesGridElement.kendoGrid({
+                    height: 500,
+                    editable: true,
+                    batch: true,
+                    toolbar: ["create"],
+                    columns: [
+                        { field: "url" },
+                        { command: "destroy", width: 140 }
+                    ],
+                    dataSource: dataSource
+                });
+            }
         }
 
         //Initialize display variable for the fields containing objects and dates within the grid.
@@ -1110,34 +1156,26 @@ const moduleSettings = {
                 const jsLinks = [];
                 document.querySelectorAll("#scss-checklist input[type=checkbox]:checked").forEach(el => { scssLinks.push({ templateId: el.dataset.template }) });
                 document.querySelectorAll("#js-checklist input[type=checkbox]:checked").forEach(el => { jsLinks.push({ templateId: el.dataset.template }) });
+                const editorElement = $(".editor");
+                const kendoEditor = editorElement.data("kendoEditor");
+                const codeMirror = editorElement.data("CodeMirrorInstance");
+                const editorValue = kendoEditor ? kendoEditor.value() : codeMirror.getValue();
 
-                const data = {
+                const data = Object.assign({
                     templateId: this.selectedId,
                     name: this.templateSettings.name || "",
                     type: this.templateSettings.type,
                     parentId: this.templateSettings.parentId,
-                    editorValue: $(".editor").data("kendoEditor").value(),
-                    useCache: document.getElementById("combo-cache").value,
-                    cacheMinutes: document.getElementById("cache-duration").value,
-                    handleRequests: document.getElementById("handleRequests").checked,
-                    handleSession: document.getElementById("handleSession").checked,
-                    handleObjects: document.getElementById("handleObjects").checked,
-                    handleStandards: document.getElementById("handleStandards").checked,
-                    handleTranslations: document.getElementById("handleTranslations").checked,
-                    handleDynamicContent: document.getElementById("handleDynamicContent").checked,
-                    handleLogicBlocks: document.getElementById("handleLogicBlocks").checked,
-                    handleMutators: document.getElementById("handleMutators").checked,
-                    loginRequired: document.getElementById("user-check").checked,
+                    editorValue: editorValue,
                     linkedTemplates: {
                         linkedSccsTemplates: scssLinks,
                         linkedJavascript: jsLinks
                     }
-                }
-
-                if (document.getElementById("user-check").checked) {
-                    data.loginUserType = document.getElementById("combo-user1").value;
-                    data.loginSessionPrefix = document.getElementById("combo-user2").value;
-                    data.loginRole = document.getElementById("combo-user3").value;
+                }, this.getNewSettings());
+                
+                const externalFilesGrid = $("#externalFiles").data("kendoGrid");
+                if (externalFilesGrid) {
+                    data.externalFiles = externalFilesGrid.dataSource.data().map(d => d.url);
                 }
 
                 const response = await Wiser2.api({
@@ -1190,7 +1228,7 @@ const moduleSettings = {
                 }).then((response) => {
                     document.querySelector("#published-environments").outerHTML = response;
                     $("#deployLive, #deployAccept, #deployTest").kendoButton();
-                    $("#published-environments .combo-select").kendoComboBox();
+                    $("#published-environments .combo-select").kendoDropDownList();
                     this.bindDeployButtons(templateId);
                 }),
                 Wiser2.api({
@@ -1213,9 +1251,9 @@ const moduleSettings = {
             });
 
             $("#preview-remove-profile").on("click", () => {
-                if ($("#preview-combo-select").data('kendoComboBox').dataItem()) {
+                if ($("#preview-combo-select").data("kendoDropDownList").dataItem()) {
                     Wiser2.api({
-                        url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${$("#preview-combo-select").data('kendoComboBox').dataItem().value}`,
+                        url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${$("#preview-combo-select").data("kendoDropDownList").dataItem().value}`,
                         type: "DELETE"
                     }).then((response) => {
                         window.popupNotification.show(`Het profiel '${document.getElementById("preview-combo-select").innerText}' is verwijderd`, "info");
@@ -1225,7 +1263,7 @@ const moduleSettings = {
 
             $("#preview-save-profile-as").on("click", async () => {
                 Wiser2.api({
-                    url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${$("#preview-combo-select").data('kendoComboBox').dataItem().value}`,
+                    url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${$("#preview-combo-select").data("kendoDropDownList").dataItem().value}`,
                     type: "POST",
                     data: JSON.stringify({
                         id: document.getElementById("preview-combo-select").value,
@@ -1239,14 +1277,14 @@ const moduleSettings = {
             });
 
             $("#preview-save-profile").on("click", () => {
-                if ($("#preview-combo-select").data('kendoComboBox').dataItem()) {
+                if ($("#preview-combo-select").data("kendoDropDownList").dataItem()) {
                     var variables = [];
                     $("#preview-variables").data("kendoGrid")._data.forEach((e) => {
                         variables.push({ type: e.type, key: e.key, value: e.value, encrypt: e.encrypt })
                     });
 
                     Wiser2.api({
-                        url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${$("#preview-combo-select").data('kendoComboBox').dataItem().value}`,
+                        url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${$("#preview-combo-select").data("kendoDropDownList").dataItem().value}`,
                         type: "POST",
                         data: JSON.stringify({
                             id: document.getElementById("preview-combo-select").value,
@@ -1308,6 +1346,59 @@ const moduleSettings = {
 
             window.processing.removeProcess(process);
             return success;
+        }
+        
+        /**
+         * Retrieve the new values entered by the user.
+         * */
+        getNewSettings() {
+            const settingsList = {};
+            
+            $(".advanced input, .advanced select").each((index, element) => {
+                const field = $(element);
+                const propertyName = field.attr("name");
+                if (!propertyName) {
+                    console.warn("No property name found for field", field);
+                    return;
+                }
+
+                const kendoControlName = field.data("kendoControl");
+                
+                if (kendoControlName) {
+                    const kendoControl = field.data(kendoControlName);
+                    
+                    if (kendoControl) {
+                        settingsList[propertyName] = kendoControl.value();
+                        return;
+                    } else {
+                        console.warn(`Kendo control found for '${propertyName}', but it's not initialized, so skipping this property.`, kendoControlName, data);
+                        return;
+                    }
+                }
+
+                // If we reach this point in the code, this element is not a Kendo control, so just get the normal value.
+                switch (field.prop("tagName")) {
+                    case "SELECT":
+                        settingsList[propertyName] = field.val();
+                        break;
+                    case "INPUT":
+                    case "TEXTAREA":
+                        switch ((field.attr("type") || "").toUpperCase()) {
+                            case "CHECKBOX":
+                                settingsList[propertyName] = field.prop("checked");
+                                break;
+                            default:
+                                settingsList[propertyName] = field.val();
+                                break;
+                        }
+                        break;
+                    default:
+                        console.error("TODO: Unsupported tag name:", field.prop("tagName"));
+                        return;
+                }
+            });
+
+            return settingsList;
         }
     }
 

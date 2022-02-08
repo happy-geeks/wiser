@@ -6,5 +6,8 @@ namespace FrontEnd.Modules.Templates.Models
     {
         public TemplateSettingsModel TemplateSettings { get; set; }
         public LinkedTemplatesModel LinkedTemplates { get; set; }
+
+        public string EditorType { get; set; }
+        public string SettingsPartial { get; set; }
     }
 }

@@ -1,0 +1,118 @@
+﻿@model Api.Modules.Templates.Models.Template.TemplateSettingsModel
+<div class="item item-left" style="width: 60%;">
+    <div class="item" data-label-style="float" data-label-width="0">
+        <h4><label for="combo-cache">Cache</label></h4>
+        <div class="flex-container">
+            <select id="combo-cache" class="combo-select" data-kendo-control="kendoDropDownList">
+                <!option value="0" @(Model.UseCache == 0 ? "selected" : "")>geen caching</!option>
+                <!option value="1" @(Model.UseCache == 1 ? "selected" : "")>app caching (client side)</!option>
+                <!option value="2" @(Model.UseCache == 2 ? "selected" : "")>server caching volledige template (ongeacht URL)</!option>
+                <!option value="3" @(Model.UseCache == 3 ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL verschillend)</!option>
+                <!option value="4" @(Model.UseCache == 4 ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL + querystring combinatie verschillend)</!option>
+                <!option value="5" @(Model.UseCache == 5 ? "selected" : "")>server caching volledige template (obv volledige URL, inclusief domein en querystring)</!option>
+            </select>
+        </div>
+    </div>
+
+    <div class="item" data-label-style="float" data-label-width="0">
+        <h4><label for="cacheMinutes">Cache aantal minuten</label></h4>
+        <span class="k-widget k-input k-state-default">
+            <input type="number" id="cacheMinutes" class="textField k-input" name="cacheMinutes" value="@Model.CacheMinutes" autocomplete="off">
+        </span>
+    </div>
+
+    <ul class="checkColumns">
+        <li>
+            <label class="checkbox">
+                <input id="handleRequests" name="handleRequests" type="checkbox" @(Model.HandleRequests ? "checked" : "")>
+                <span>Verwerk requestvariabelen</span>
+            </label>
+        </li>
+        <li>
+            <label class="checkbox">
+                <input id="handleSession" name="handleSession" type="checkbox" @(Model.HandleSession ? "checked" : "")>
+                <span>Verwerk sessievariabelen</span>
+            </label>
+        </li>
+        <li>
+            <label class="checkbox">
+                <input id="handleObjects" name="handleObjects" type="checkbox" @(Model.HandleObjects ? "checked" : "")>
+                <span>Verwerk objectvariabelen</span>
+            </label>
+        </li>
+        <li>
+            <label class="checkbox">
+                <input id="handleStandards" name="handleStandards" type="checkbox" @(Model.HandleStandards ? "checked" : "")>
+                <span>Verwerk standards</span>
+            </label>
+        </li>
+        <li>
+            <label class="checkbox">
+                <input id="handleTranslations" name="handleTranslations" type="checkbox" @(Model.HandleTranslations ? "checked" : "")>
+                <span>Verwerk vertalingen</span>
+            </label>
+        </li>
+        <li>
+            <label class="checkbox">
+                <input id="handleDynamicContent" name="handleDynamicContent" type="checkbox" @(Model.HandleDynamicContent ? "checked" : "")>
+                <span>Verwerk dynamische content</span>
+            </label>
+        </li>
+        <li>
+            <label class="checkbox">
+                <input id="handleLogicBlocks" name="handleLogicBlocks" type="checkbox" @(Model.HandleLogicBlocks ? "checked" : "")>
+                <span>Verwerk logische blokken</span>
+            </label>
+        </li>
+        <li>
+            <label class="checkbox">
+                <input id="handleMutators" name="handleMutators" type="checkbox" @(Model.HandleMutators ? "checked" : "")>
+                <span>Verwerk mutators</span>
+            </label>
+        </li>
+    </ul>
+</div>
+<div class="item item-right" style="width: 40%;">
+    <input id="loginRequired" name="loginRequired" type="checkbox" @(Model.LoginRequired ? "checked": "") class="hidden">
+    <label class="checkbox" for="loginRequired">
+        <span>Gebruiker moet ingelogd zijn om deze template te zien</span>
+    </label>
+
+    <div class="user-check-panel">
+        <div class="item" data-label-style="float" data-label-width="0">
+            <h4><label for="loginUserType">Type gebruiker</label></h4>
+            <div class="flex-container">
+                <select id="loginUserType" class="combo-select" placeholder="Maak uw keuze..." data-kendo-control="kendoDropDownList">
+                    <option value="1">Type gebruiker 1</option>
+                    <option value="2">Type gebruiker 2</option>
+                    <option value="3">Type gebruiker 3</option>
+                    <option value="4">Type gebruiker 4</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="item" data-label-style="float" data-label-width="0">
+            <h4><label for="loginSessionPrefix">Login session prefix</label></h4>
+            <div class="flex-container">
+                <select id="loginSessionPrefix" class="combo-select" placeholder="Maak uw keuze..." data-kendo-control="kendoDropDownList">
+                    <option value="1">Login session prefix 1</option>
+                    <option value="2">Login session prefix 2</option>
+                    <option value="3">Login session prefix 3</option>
+                    <option value="4">Login session prefix 4</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="item" data-label-style="float" data-label-width="0">
+            <h4><label for="loginRole">Rol</label></h4>
+            <div class="flex-container">
+                <select id="loginRole" class="combo-select" placeholder="Maak uw keuze..." data-kendo-control="kendoDropDownList">
+                    <option value="1">Rol 1</option>
+                    <option value="2">Rol 2</option>
+                    <option value="3">Rol 3</option>
+                    <option value="4">Rol 4</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
