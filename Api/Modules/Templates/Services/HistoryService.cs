@@ -139,7 +139,8 @@ namespace Api.Modules.Templates.Services
         private TemplateHistoryModel GenerateHistoryModelForTemplates(TemplateSettingsModel newVersion, TemplateSettingsModel oldVersion)
         {
             var historyModel = new TemplateHistoryModel(newVersion.TemplateId, newVersion.Version, newVersion.ChangedOn, newVersion.ChangedBy);
-
+            
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("name", newVersion.Name, oldVersion.Name, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("editorValue", newVersion.EditorValue, oldVersion.EditorValue, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("useCache", newVersion.UseCache, oldVersion.UseCache, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheMinutes", newVersion.CacheMinutes, oldVersion.CacheMinutes, historyModel);
@@ -155,15 +156,26 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loginUserType", newVersion.LoginUserType, oldVersion.LoginUserType, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loginSessionPrefix", newVersion.LoginSessionPrefix, oldVersion.LoginSessionPrefix, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRole", newVersion.LoginRole, oldVersion.LoginRole, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("insertMode", newVersion.InsertMode, oldVersion.InsertMode, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("loadAlways", newVersion.LoadAlways, oldVersion.LoadAlways, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("urlRegex", newVersion.UrlRegex, oldVersion.UrlRegex, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("externalFiles", String.Join(", ", newVersion.ExternalFiles ?? new List<string>()), String.Join(", ", oldVersion.ExternalFiles ?? new List<string>()), historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingCreateObjectInsteadOfArray", newVersion.GroupingCreateObjectInsteadOfArray, oldVersion.GroupingCreateObjectInsteadOfArray, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingPrefix", newVersion.GroupingPrefix, oldVersion.GroupingPrefix, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingKey", newVersion.GroupingKey, oldVersion.GroupingKey, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingKeyColumnName", newVersion.GroupingKeyColumnName, oldVersion.GroupingKeyColumnName, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingValueColumnName", newVersion.GroupingValueColumnName, oldVersion.GroupingValueColumnName, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("isScssIncludeTemplate", newVersion.IsScssIncludeTemplate, oldVersion.IsScssIncludeTemplate, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("useInWiserHtmlEditors", newVersion.UseInWiserHtmlEditors, oldVersion.UseInWiserHtmlEditors, historyModel);
 
-            var newList = newVersion.LinkedTemplates.RawLinkList.Split(",");
-            var oldList = oldVersion.LinkedTemplates.RawLinkList.Split(",");
+            var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(",");
+            var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(",");
 
             if (!String.IsNullOrEmpty(newVersion.LinkedTemplates.RawLinkList))
             {
-                foreach (var item in newList)
+                foreach (var item in oldLinkedTemplates)
                 {
-                    if (!oldList.Contains(item))
+                    if (!newLinkedTemplates.Contains(item))
                     {
                         historyModel.LinkedTemplateChanges.Add(item.Split(";")[1], new KeyValuePair<object, object>(true, false));
                     }
@@ -171,9 +183,9 @@ namespace Api.Modules.Templates.Services
             }
             if (!String.IsNullOrEmpty(oldVersion.LinkedTemplates.RawLinkList))
             {
-                foreach (var item in oldList)
+                foreach (var item in newLinkedTemplates)
                 {
-                    if (!newList.Contains(item))
+                    if (!oldLinkedTemplates.Contains(item))
                     {
                         historyModel.LinkedTemplateChanges.Add(item.Split(";")[1], new KeyValuePair<object, object>(false, true));
                     }
@@ -192,10 +204,18 @@ namespace Api.Modules.Templates.Services
         /// <param name="templateModel">The TemplateHistoryModel to which differences will be saved</param>
         private void CheckIfValuesMatchAndSaveChangesToHistoryModel(string propName, object newValue, object oldValue, TemplateHistoryModel templateModel)
         {
-            if (!Equals(newValue, oldValue))
+            if (Equals(newValue, oldValue))
             {
-                templateModel.TemplateChanges.Add(propName, new KeyValuePair<object, object>(newValue, oldValue));
+                return;
             }
+            
+            if ((newValue == null || (newValue is string stringValue && String.IsNullOrWhiteSpace(stringValue))) 
+                && (oldValue == null || (oldValue is string oldStringValue && String.IsNullOrWhiteSpace(oldStringValue))))
+            {
+                return;
+            }
+
+            templateModel.TemplateChanges.Add(propName, new KeyValuePair<object, object>(newValue, oldValue));
         }
 
         /// <summary>

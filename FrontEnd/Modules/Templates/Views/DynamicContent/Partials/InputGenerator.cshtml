@@ -37,14 +37,7 @@
                 <select id="@Model.Value.Key.Name" class="select" data-property="@Model.Value.Key.Name" data-kendo-control="kendoDropDownList">
                     @foreach (var value in Enum.GetValues(Model.Value.Key.PropertyType))
                     {
-                        if (Convert.ToInt32(Model.Value.Value) == (int)value)
-                        {
-                            <option value="@((int)value)" selected>@value.ToString()</option>
-                        }
-                        else
-                        {
-                            <option value="@((int)value)">@value.ToString()</option>
-                        }
+                        <!option value="@((int)value)" @(Convert.ToInt32(Model.Value.Value) == (int)value ? "selected" : "")>@value.ToString()</!option>
                     }
                 </select>
                 <div class="form-hint"><span>@Model.Key.Description</span></div>
