@@ -10,7 +10,7 @@
         <partial name="Partials/LinkedTemplates" model="@Model.LinkedTemplates"/>
     }
     
-    @if (!String.IsNullOrWhiteSpace(Model.EditorType))
+    @if (!String.IsNullOrWhiteSpace(Model.SettingsPartial))
     {
         <partial name="Partials/AdvancedSettings" model="@Model"/>
     }
