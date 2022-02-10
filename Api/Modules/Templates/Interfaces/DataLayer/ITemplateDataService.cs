@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Models.DynamicContent;
@@ -110,8 +111,8 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// Gets the parent ID of an item.
         /// </summary>
         /// <param name="templateId">The ID of the template.</param>
-        /// <returns>The ID of the parent, or <see langword="null"/> if there is no parent.</returns>
-        Task<int?> GetParentId(int templateId);
+        /// <returns>The ID and name of the parent, or <see langword="null"/> if there is no parent.</returns>
+        Task<TemplateSettingsModel> GetParentAsync(int templateId);
 
         /// <summary>
         /// Gets the sort order number of a template.
@@ -139,5 +140,12 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="dropPosition">The drop position, can be either <see cref="TreeViewDropPositions.Over"/>, <see cref="TreeViewDropPositions.Before"/> or <see cref="TreeViewDropPositions.After"/>.</param>
         /// <param name="username">The name of the authenticated user.</param>
         Task MoveAsync(int sourceId, int destinationId, int sourceParentId, int destinationParentId, int oldOrderNumber, int newOrderNumber, TreeViewDropPositions dropPosition, string username);
+
+        /// <summary>
+        /// Get all extra SCSS that should be included with a SCSS template that needs to be compiled.
+        /// </summary>
+        /// <param name="templateId">The ID of the SCSS template to get the includes/imports for.</param>
+        /// <returns>A <see cref="StringBuilder"/> with the contents of all SCSS in the correct order.</returns>
+        Task<StringBuilder> GetScssIncludesForScssTemplateAsync(int templateId);
     }
 }

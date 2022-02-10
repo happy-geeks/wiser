@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Api.Modules.Templates.Models.Other;
 using GeeksCoreLibrary.Modules.Templates.Enums;
+using Newtonsoft.Json;
 
 namespace Api.Modules.Templates.Models.Template
 {
@@ -14,6 +15,8 @@ namespace Api.Modules.Templates.Models.Template
         public int? ParentId { get; set; }
         public string Name { get; set; }
         public string EditorValue { get; set; }
+        [JsonIgnore]
+        public string MinifiedValue { get; set; }
         public int Version { get; set; }
         public DateTime ChangedOn { get; set; }
         public string ChangedBy { get; set; }
