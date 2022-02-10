@@ -293,6 +293,9 @@ const moduleSettings = {
                 case "query's":
                     this.wiserQueryTab.beforeSave();
                     break;
+                case "modules":
+                    this.moduleTab.beforeSave();
+                    break;
                 default:
                     this.entityTab.beforeSave();
                     break;
@@ -392,7 +395,7 @@ const moduleSettings = {
                     const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
                     console.log("mainTabStrip select", tabName);
 
-                    if (tabName === "query's" || tabName === "entiteiten") {
+                    if (tabName === "query's" || tabName === "entiteiten" || tabName === "modules") {
                         $("footer").show();
                     } else {
                         $("footer").hide();
