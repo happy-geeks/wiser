@@ -28,7 +28,7 @@ export class WiserQueryTab {
 
         await Misc.ensureCodeMirror();
 
-        this.queryFromWiser = CodeMirror.default.fromTextArea(document.getElementById("queryFromWiser"), {
+        this.queryFromWiser = CodeMirror.fromTextArea(document.getElementById("queryFromWiser"), {
             mode: "text/x-mysql",
             lineNumbers: true
         });

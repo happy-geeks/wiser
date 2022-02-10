@@ -2750,7 +2750,7 @@ export class Fields {
                 
                 // Only load code mirror when we actually need it.
                 await Misc.ensureCodeMirror();
-                codeMirrorInstance = CodeMirror.default.fromTextArea(textArea[0], codeMirrorSettings);
+                codeMirrorInstance = CodeMirror.fromTextArea(textArea[0], codeMirrorSettings);
             },
             resize: (resizeEvent) => {
                 codeMirrorInstance.refresh();

@@ -67,17 +67,17 @@ export class ModuleTab {
 
         await Misc.ensureCodeMirror();
 
-        this.moduleCustomQuery = window.CodeMirror.default.fromTextArea(document.getElementById("moduleCustomQuery"), {
+        this.moduleCustomQuery = window.CodeMirror.fromTextArea(document.getElementById("moduleCustomQuery"), {
             mode: "text/x-mysql",
             lineNumbers: true
         });
 
-        this.moduleCountQuery = window.CodeMirror.default.fromTextArea(document.getElementById("moduleCountQuery"), {
+        this.moduleCountQuery = window.CodeMirror.fromTextArea(document.getElementById("moduleCountQuery"), {
             mode: "text/x-mysql",
             lineNumbers: true
         });
 
-        this.moduleOptions = window.CodeMirror.default.fromTextArea(document.getElementById("moduleOptions"), {
+        this.moduleOptions = window.CodeMirror.fromTextArea(document.getElementById("moduleOptions"), {
             mode: "application/x-json",
             lineNumbers: true,
             lineWrapping: true
