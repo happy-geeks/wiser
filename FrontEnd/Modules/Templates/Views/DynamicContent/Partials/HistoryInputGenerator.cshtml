@@ -10,7 +10,6 @@
         case CmsAttributes.CmsTextEditorType.Auto when Model.Value.Key.PropertyType.IsEnum:
             <div class="col col-6">
                 <div class="item" data-label-style="float" data-label-width="0">
-                    <span class="handler">&nbsp;</span>
                     <h4><label>@Model.Value.Key.Name</label></h4>
                     <span class="k-widget k-input k-state-default">
                         @{
@@ -30,7 +29,6 @@
         case CmsAttributes.CmsTextEditorType.TextField:
             <div class="col col-6">
                 <div class="item" data-label-style="float" data-label-width="0">
-                    <span class="handler">&nbsp;</span>
                     <h4><label>@Model.Value.Key.Name</label></h4>
                     <span class="k-widget k-input k-state-default">
                         <input type="text" class="textField k-input" autocomplete="off" value="@Model.Value.Value" data-history-property="@Model.Value.Key.Name" disabled>
@@ -42,7 +40,6 @@
         case CmsAttributes.CmsTextEditorType.Auto when Model.Value.Key.PropertyType == typeof(bool):
             <div class="col col-6 checkLine">
                 <div class="item" data-label-style="normal" data-label-width="0">
-                    <span class="handler">&nbsp;</span>
                     <span class="inline">
                         <label class="checkbox">
                             <input type="checkbox" value="@Model.Value.Key.Name" @(Model.Value.Value != null && (bool)Model.Value.Value ? "checked" : "") data-history-property="@Model.Value.Key.Name" disabled>
@@ -64,7 +61,6 @@
         case CmsAttributes.CmsTextEditorType.TextBox:
             <div class="col col-6">
                 <div class="item" data-label-style="float" data-label-width="0">
-                    <span class="handler">&nbsp;</span>
                     <h4><label>@Model.Value.Key.Name</label></h4>
                     <span class="k-widget k-input k-state-default">
                         <textarea class="textField k-input" autocomplete="off" data-history-property="@Model.Value.Key.Name" disabled>@Model.Value.Value</textarea>
@@ -76,7 +72,6 @@
         case CmsAttributes.CmsTextEditorType.QueryEditor:
             <div class="col col-6">
                 <div class="item" data-label-style="float" data-label-width="0">
-                    <span class="handler">&nbsp;</span>
                     <h4><label>@Model.Key.PrettyName</label></h4>
                     <span class="k-widget k-input k-state-default">
                         <textarea data-history-property="@Model.Value.Key.Name" value="@Model.Value.Value" data-field-type="text/x-mysql" disabled>@Model.Value.Value</textarea>
@@ -88,7 +83,6 @@
         case CmsAttributes.CmsTextEditorType.HtmlEditor:
             <div class="col col-6">
                 <div class="item" data-label-style="float" data-label-width="0">
-                    <span class="handler">&nbsp;</span>
                     <h4><label>@Model.Key.PrettyName</label></h4>
                     <span class="k-widget k-input k-state-default">
                         <textarea data-history-property="@Model.Value.Key.Name" value="@Model.Value.Value" data-field-type="text/html" disabled>@Model.Value.Value</textarea>
@@ -100,7 +94,6 @@
         case CmsAttributes.CmsTextEditorType.XmlEditor:
             <div class="col col-6">
                 <div class="item" data-label-style="float" data-label-width="0">
-                    <span class="handler">&nbsp;</span>
                     <h4><label>@Model.Key.PrettyName</label></h4>
                     <span class="k-widget k-input k-state-default">
                         <textarea data-history-property="@Model.Value.Key.Name" value="@Model.Value.Value" data-field-type="application/xml" disabled>@Model.Value.Value</textarea>
@@ -112,7 +105,6 @@
         case CmsAttributes.CmsTextEditorType.JsEditor:
             <div class="col col-6">
                 <div class="item" data-label-style="float" data-label-width="0">
-                    <span class="handler">&nbsp;</span>
                     <h4><label>@Model.Key.PrettyName</label></h4>
                     <span class="k-widget k-input k-state-default">
                         <textarea data-history-property="@Model.Value.Key.Name" value="@Model.Value.Value" data-field-type="text/javascript" disabled>@Model.Value.Value</textarea>
@@ -124,7 +116,6 @@
         case CmsAttributes.CmsTextEditorType.JsonEditor:
             <div class="col col-6">
                 <div class="item" data-label-style="float" data-label-width="0">
-                    <span class="handler">&nbsp;</span>
                     <h4><label>@Model.Key.PrettyName</label></h4>
                     <span class="k-widget k-input k-state-default">
                         <textarea data-history-property="@Model.Value.Key.Name" value="@Model.Value.Value" data-field-type="application/json" disabled>@Model.Value.Value</textarea>
@@ -136,7 +127,6 @@
         case CmsAttributes.CmsTextEditorType.TextEditor:
             <div class="col col-6">
                 <div class="item" data-label-style="float" data-label-width="0">
-                    <span class="handler">&nbsp;</span>
                     <h4><label>@Model.Key.PrettyName</label></h4>
                     <span class="k-widget k-input k-state-default">
                         <textarea data-history-property="@Model.Value.Key.Name" value="@Model.Value.Value" data-field-type="text" disabled>@Model.Value.Value</textarea>
