@@ -53,16 +53,45 @@ namespace Api.Modules.Modules.Controllers
         }
 
         /// <summary>
+        /// Get settings from all Wiser 2 modules.
+        /// </summary>
+        [HttpGet, Route("settings"), ProducesResponseType(typeof(List<ModuleSettingsModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetSettingsAsync()
+        {
+            return (await modulesService.GetSettingsAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
         /// Gets settings for a Wiser 2 module.
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
+        /// <param name="id">The ID of the module.</param>
         [HttpGet, Route("{id:int}/settings"), ProducesResponseType(typeof(ModuleSettingsModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSettingsAsync(int id)
         {
             return (await modulesService.GetSettingsAsync(id, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
 
+        /// <summary>
+        /// Update settings for a Wiser 2 module.
+        /// </summary>
+        /// <param name="id">The ID of the module.</param>
+        /// <param name="moduleSettingsModel">Module settings data</param>
+        [HttpPut, Route("{id:int}/settings")]
+        public async Task<IActionResult> UpdateSettings(int id, ModuleSettingsModel moduleSettingsModel)
+        {
+            return (await modulesService.UpdateSettingsAsync(id, (ClaimsIdentity) User.Identity, moduleSettingsModel)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Creates a new Wiser 2 module.
+        /// </summary>
+        /// <param name="name">Name of the new module</param>
+        [HttpPost, Route("settings")]
+        public async Task<IActionResult> CreateAsync([FromBody] string name)
+        {
+            return (await modulesService.CreateAsync(name, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+        
         /// <summary>
         /// Exports the data of a Wiser 2 module to Excel. This only works for grid view modules.
         /// </summary>

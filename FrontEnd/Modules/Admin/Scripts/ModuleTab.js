@@ -1,7 +1,11 @@
-﻿export class ModuleTab {
+﻿import { ModuleSettingsModel } from "../Scripts/ModuleSettingsModel.js";
+
+export class ModuleTab {
     constructor(base) {
         this.base = base;
         this.setupBindings();
+        this.initializeKendoComponents();
+        // set query dropdown list
         this.getModules();
     }
 
@@ -10,235 +14,311 @@
     * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
     */
     setupBindings() {
-        $("#addModuleButton").kendoButton({
+        $(".addModuleBtn").kendoButton({
             click: () => {
-                this.base.openDialog("Module toevoegen", "Voer het nummer van de module in").then((data) => {
-                    this.createNewModule(data);
+                this.base.openDialog("Module toevoegen", "Voer de naam in van nieuwe module").then((data) => {
+                    this.addModule(data);
                 });
 
             },
-            icon: "plus"
+            icon: "file"
         });
-    }
 
-    hideShowComponents(itemClassname, targetElement) {
-        let topElement;
-
-        topElement = targetElement.sender.input.closest(".modulebar");
-
-        if (itemClassname === "gridview") {
-            const items = topElement[0].querySelectorAll(".gridview");
-            $(items).show();
-        } else {
-            const items = topElement[0].querySelectorAll(".gridview");
-            $(items).hide();
-        }
-    }
-
-    async createNewModule(id) {
-        const querystring = {
-            moduleId: id
-        };
-
-        const results = await $.get(`${this.base.settings.serviceRoot}/CHECK_IF_MODULE_EXISTS${jjl.convert.toQueryString(querystring, true)}`);
-
-        if (results.length > 0) {
-            kendo.alert(`De ingevoerde module is al toegevoegd`);
-            return;
-        }
-
-        const qs = {
-            moduleId: id
-        };
-
-        let notification;
-        qs.add = true;
-        notification = "toegevoegd";
-
-        try {
-            await $.get(`${this.base.settings.serviceRoot}/INSERT_NEW_MODULE${jjl.convert.toQueryString(qs, true)}`);
-
-            this.base.showNotification("notification", `De nieuwe module is toegevoegd`, "success");
-            this.getModules();
-        } catch (exception) {
-            this.base.showNotification("notification", `De nieuwe module is niet succesvol ${notification}, probeer het opnieuw`, "error");
-        }
-    }
-
-    /** Initializes all kendo components for the base class. */
-    async initializeKendoComponents() {
-        this.modeSelect = $(".combo-select").kendoComboBox({
-            select: (element) => {
-                var currentValue = element.dataItem.value;
-
-                this.hideShowComponents(currentValue, element);
-            }
-        }).data("kendoComboBox");
-
-        $(".recordsPerPage").kendoNumericTextBox({
-            decimals: 0,
-            format: "#",
-            min: 0,
-            step: 1
-        }).data("kendoNumericTextBox");
-        var me = this;
-        this.panelbar = $(".panelbar").kendoPanelBar({
-            expandMode: "single",
-            activate: async (element) => {
-                const targetElement = element.item;
-                const moduleId = targetElement.dataset.moduleId;
-                const moduleType = targetElement.dataset.moduleType;
-
-                let fieldsJson = {};
-
-                if (moduleType === "gridview") {
-                    const result = await $.get(`${this.base.settings.serviceRoot}/GET_MODULE_FIELDS?moduleId=${encodeURIComponent(moduleId)}`);
-
-                    fieldsJson = JSON.parse(result[0].fields);
-                }
-
-                this.fieldsGrid = $(targetElement.querySelector(".fieldsGrid")).kendoGrid({
-                    columns: [{
-                        field: "field",
-                        title: "Veld"
-                    }, {
-                        field: "title",
-                        title: "Titel"
-                    }, {
-                        field: "width",
-                        title: "Breedte"
-                    }, {
-                        field: "filterable",
-                        title: "Filterable"
-                    }],
-                    dataSource: fieldsJson,
-                    toolbar: [{ name: "create", text: "Veld toevoegen" }],
-                    resizable: false,
-                    editable: {
-                        createAt: "bottom"
-                    }
-                });
-
-                $(targetElement).find(".CodeMirror").remove();
-                this.codeMirrorCustomQuery = CodeMirror.fromTextArea(targetElement.querySelector("textarea.customQueryBuilder"), {
-                    mode: "text/x-mysql",
-                    lineNumbers: true
-                });
-                this.codeMirrorCountUQuery = CodeMirror.fromTextArea(targetElement.querySelector("textarea.countQueryBuilder"), {
-                    mode: "text/x-mysql",
-                    lineNumbers: true
-                });
-            },
-            expand: function (e) {
-                const targetElement = e.item;
-                if (targetElement.dataset.isValidJson === "0" && targetElement.dataset.moduleType === "gridview") {
-                    e.preventDefault();
-                    me.panelbar.enable(targetElement, false);
-                    me.base.showNotification("notification", `Het lijkt er op dat de module niet correct is ingericht, neem contact op met ons.`, "error");
+        $(".delModuleBtn").kendoButton({
+            click: () => {
+                if (!this.checkIfModuleIsSet()) {
                     return;
                 }
-            }
-        }).data("kendoPanelBar");
+                const dataItemId = this.moduleCombobox.dataItem().id;
+                if (!dataItemId) {
+                    this.base.showNotification("notification",
+                        "Item is niet succesvol verwijderd, probeer het opnieuw",
+                        "error");
+                    return;
+                }
 
-        $(".modulebar").each((index, element) => {
-            const moduleType = element.dataset.moduleType;
-            const items = element.querySelectorAll(".gridview");
-
-            $(items).toggle(moduleType === "gridview")
-        });
-
-        $(".saveModuleSettings").kendoButton({
-            click: (element) => {
-                const moduleElement = element.sender.element.closest(".modulebar")[0];
-                const moduleId = moduleElement.dataset.moduleId;
-
-                this.saveModuleSettings(moduleId, moduleElement);
-            },
-            icon: "save"
-        });
-
-        $(".deleteModule").kendoButton({
-            click: (element) => {
-                const moduleElement = element.sender.element.closest(".modulebar")[0];
-                const moduleId = moduleElement.dataset.moduleId;
-
-                this.base.openDialog("Module verwijderen", "Weet u zeker dat u de module wilt verwijderen?", this.base.kendoPromptType.CONFIRM).then(() => {
-                    this.deleteModule(moduleId);
+                // ask for user confirmation before deleting
+                this.base.openDialog("Module verwijderen", "Weet u zeker dat u deze query wilt verwijderen?", this.base.kendoPromptType.CONFIRM).then(() => {
+                    this.deleteQueryById(dataItemId);
                 });
             },
             icon: "delete"
         });
     }
 
-    async deleteModule(moduleId) {
-        const results = await $.get(`${this.base.settings.serviceRoot}/DELETE_MODULE?moduleId=${encodeURIComponent(moduleId)}`);
+    async initializeKendoComponents() {
+        this.moduleCombobox = $("#moduleList").kendoDropDownList({
+            placeholder: "Select een module...",
+            clearButton: false,
+            height: 400,
+            dataTextField: "description",
+            dataValueField: "id",
+            filter: "contains",
+            optionLabel: {
+                id: "",
+                description: "Maak uw keuze..."
+            },
+            minLength: 1,
+            dataSource: {},
+            cascade: this.onModuleComboBoxSelect.bind(this)
+        }).data("kendoDropDownList");
 
-        this.getModules();
-    }
+        this.moduleCombobox.one("dataBound", () => { this.moduleListInitialized = true; });
 
-    async saveModuleSettings(module, moduleElement) {
-        const customQuery = this.codeMirrorCustomQuery.getValue();
-        const countQuery = this.codeMirrorCountUQuery.getValue();
-        const moduleType = moduleElement.querySelector("input.combo-select").value.toLowerCase();
+        await Misc.ensureCodeMirror();
 
-        let dataToSend = "";
-        if (moduleType === "gridview") {
-            const pageSize = moduleElement.querySelector("input.recordsPerPage").value;
-            const hideCommandColumn = $(moduleElement.querySelector("input.clickOption")).is(":checked");
-            const hideCreateButton = $(moduleElement.querySelector("input.addNewItemOption")).is(":checked");
-            const kendoGridColumns = $(this.fieldsGrid[0]).data("kendoGrid").dataSource.view();
-
-            dataToSend = {
-                trace: false,
-                options: JSON.stringify({
-                    gridViewMode: true,
-                    gridViewSettings: {
-                        pageSize: parseInt(pageSize),
-                        hideCommandColumn: hideCommandColumn,
-                        toolbar: {
-                            hideCreateButton: hideCreateButton
-                        },
-                        columns: kendoGridColumns
-                    }
-                }),
-                customQuery: customQuery,
-                countQuery: countQuery,
-                moduleId: module,
-                moduleType: moduleType
-            };
-        } else {
-            dataToSend = {
-                options: "",
-                customQuery: customQuery,
-                countQuery: countQuery,
-                moduleId: module,
-                moduleType: moduleType
-            };
-        }
-        const result = await $.ajax({
-            url: `${this.base.settings.serviceRoot}/SAVE_MODULE_SETTINGS`,
-            method: "POST",
-            data: dataToSend
+        this.moduleCustomQuery = window.CodeMirror.fromTextArea(document.getElementById("moduleCustomQuery"), {
+            mode: "text/x-mysql",
+            lineNumbers: true
         });
 
-        if (result.success) {
-            this.base.showNotification("notification", `De module instellingen zijn successvol opgeslagen`, "success");
-        } else {
-            this.base.showNotification("notification", `De instellingen kunnen niet worden opgeslagen, probeer het nogmaals`, "error");
+        this.moduleCountQuery = window.CodeMirror.fromTextArea(document.getElementById("moduleCountQuery"), {
+            mode: "text/x-mysql",
+            lineNumbers: true
+        });
+
+        this.moduleOptions = window.CodeMirror.fromTextArea(document.getElementById("moduleOptions"), {
+            mode: "application/x-json",
+            lineNumbers: true,
+            lineWrapping: true
+        });
+
+        this.moduleIcon = $("#moduleIcon").kendoComboBox({
+            placeholder: "Maak uw keuze...",
+            clearButton: false,
+            dataSource: [
+                { text: "Zakenman", value: "icon-business-man" },
+                { text: "Wolk", value: "icon-cloud-up" },
+                { text: "Bureaublad", value: "icon-desktop" },
+                { text: "Document", value: "icon-doc" },
+                { text: "Document toevoegen", value: "icon-doc-add" },
+                { text: "Document", value: "icon-document" },
+                { text: "Document toevoegen", value: "icon-document-add" },
+                { text: "Document onderzoeken", value: "icon-document-exam" },
+                { text: "Document web", value: "icon-document-web" },
+                { text: "Map", value: "icon-folder" },
+                { text: "Map toevoegen", value: "icon-folder-add" },
+                { text: "Map gesloten", value: "icon-folder-closed" },
+                { text: "Gebruiker", value: "icon-user" },
+                { text: "Reset", value: "reset" }
+            ],
+            dataTextField: "text",
+            dataValueField: "value",
+            optionLabel: {
+                value: "",
+                text: "Maak uw keuze..."
+            }
+        }).data("kendoComboBox");
+
+        this.moduleColor = $("#moduleColor").kendoComboBox({
+            placeholder: "Maak uw keuze...",
+            clearButton: false,
+            dataSource: [
+                { text: "Blauw", value: "blue" },
+                { text: "Oranje", value: "orange" },
+                { text: "Geel", value: "yellow" },
+                { text: "Groen", value: "green" },
+                { text: "Rood", value: "red" }
+            ],
+            dataTextField: "text",
+            dataValueField: "value"
+        }).data("kendoComboBox");
+
+        this.moduleType = $("#moduleType").kendoComboBox({
+            placeholder: "Maak uw keuze...",
+            clearButton: false,
+            dataSource: [
+                { text: "DynamicItems", value: "DynamicItems" },
+                { text: "DataSelector", value: "DataSelector" },
+                { text: "Admin", value: "Admin" },
+                { text: "Templates", value: "Templates" },
+                { text: "Scheduler", value: "Scheduler" },
+                { text: "Search", value: "Search" },
+                { text: "ImportExport", value: "ImportExport" }
+            ],
+            dataTextField: "text",
+            dataValueField: "value"
+        }).data("kendoComboBox");
+
+        this.moduleCustomQuery.setValue("");
+        this.moduleCountQuery.setValue("");
+        this.moduleOptions.setValue("");
+    }
+
+    async addModule(name) {
+        if (name === "") { return; }
+        await Wiser2.api({
+            url: `${this.base.settings.wiserApiRoot}modules/settings`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(name),
+                method: "POST"
+            })
+            .then((result) => {
+                this.base.showNotification("notification", `Module succesvol toegevoegd`, "success");
+                this.getModules(true, result);
+
+            })
+            .catch(() => {
+                this.base.showNotification("notification", `Module is niet succesvol toegevoegd, probeer het opnieuw`, "error");
+            });
+    }
+
+    async onModuleComboBoxSelect(event) {
+        if (this.checkIfModuleIsSet((event.userTriggered === true))) {
+           this.getModuleById(this.moduleCombobox.dataItem().id);
         }
     }
 
-    /** Get the modules */
-    async getModules() {
-        const results = $.get(`${this.base.settings.serviceRoot}/GET_ALL_MODULES_INFORMATION`);
+    async getModules(reloadDataSource = true, moduleIdToSelect = null) {
+        if (reloadDataSource) {
+            this.moduleList = await Wiser2.api({
+                url: `${this.base.settings.wiserApiRoot}modules/settings`,
+                method: "GET"
+            });
 
-        const templateContent = $("#myTemplate").html();
-        const template = kendo.template(templateContent);
-        const templateResult = kendo.render(template, results);
+            if (!this.moduleList) {
+                this.base.showNotification("notification",
+                    "Het ophalen van de queries is mislukt, probeer het opnieuw",
+                    "error");
+            }
+        }
 
-        $("#moduleList").html(templateResult);
+        this.moduleCombobox.setDataSource(this.moduleList);
+        if (moduleIdToSelect !== null) {
+            if (moduleIdToSelect === 0) {
+                this.moduleCombobox.select(0);
+            } else {
+                this.moduleCombobox.select((dataItem) => {
+                    return dataItem.id === moduleIdToSelect;
+                });
+            }
+        }
+    }
 
-        this.initializeKendoComponents();
+    async getModuleById(id) {
+        const results = await Wiser2.api({
+            url: `${this.base.settings.wiserApiRoot}modules/${id}/settings`,
+            method: "GET"
+        });
+        this.setModulePropertiesToDefault();
+        this.setModuleProperties(results);
+    }
+
+    async setModulePropertiesToDefault() {
+        document.getElementById("moduleId").value = "";
+        document.getElementById("moduleName").value = "";
+        document.getElementById("moduleIcon").value = "";
+        document.getElementById("moduleColor").value = "";
+        document.getElementById("moduleType").value = "";
+        document.getElementById("moduleGroup").value = "";
+        document.getElementById("moduleCustomQuery").value = "";
+        document.getElementById("moduleCountQuery").value = "";
+        document.getElementById("moduleOptions").value = "";
+
+        this.moduleType.select("");
+        this.moduleColor.select("");
+        this.moduleIcon.select("");
+
+        this.moduleCustomQuery.setValue("");
+        this.moduleCountQuery.setValue("");
+        this.moduleOptions.setValue("");
+    }
+
+    async setModuleProperties(resultSet) {
+        document.getElementById("moduleId").value = resultSet.id;
+        document.getElementById("moduleName").value = typeof (resultSet.name) === "undefined" ? "" : resultSet.name;
+
+        this.moduleIcon.select((dataItem) => {
+            return dataItem.value === resultSet.icon;
+        });
+        
+        this.moduleColor.select((dataItem) => {
+            return dataItem.value === resultSet.color;
+        });
+        
+        this.moduleType.select((dataItem) => {
+            return dataItem.value === resultSet.type;
+        });
+
+        document.getElementById("moduleType").value = typeof (resultSet.type) === "undefined" ? "" : resultSet.type;
+        document.getElementById("moduleGroup").value = typeof (resultSet.group) === "undefined" ? "" : resultSet.group;
+        document.getElementById("moduleOptions").value = typeof (resultSet.options) === "undefined" ? "" : resultSet.options;
+
+        this.setCodeMirrorFields(this.moduleCustomQuery, typeof (resultSet.customQuery) === "undefined" ? "" : resultSet.customQuery);
+        this.setCodeMirrorFields(this.moduleCountQuery, typeof (resultSet.countQuery) === "undefined" ? "" : resultSet.countQuery);
+        this.setCodeMirrorFields(this.moduleOptions, JSON.stringify(resultSet.options, null, ' '));
+    }
+
+    // actions handled before save, such as checks
+    beforeSave() {
+        if (this.checkIfModuleIsSet(true)) {
+            const moduleIdElement = document.getElementById("moduleId");
+
+            if (moduleIdElement != null) {
+                if (!isNaN(moduleIdElement.value)) {
+                    const moduleId = parseInt(moduleIdElement.value);
+                    const moduleSettingsModel = new ModuleSettingsModel(
+                        moduleId,
+                        this.moduleCustomQuery.getValue(),
+                        this.moduleCountQuery.getValue(),
+                        this.moduleOptions.getValue(),
+                        document.getElementById("moduleName").value,
+                        (this.moduleIcon.dataItem()) ? this.moduleIcon.dataItem().value : "",
+                        (this.moduleColor.dataItem()) ? this.moduleColor.dataItem().value : "",
+                        (this.moduleType.dataItem()) ? this.moduleType.dataItem().value : "",
+                        document.getElementById("moduleGroup").value
+                    );
+
+                    this.updateModule(this.moduleCombobox.dataItem().id, moduleSettingsModel);
+                } else {
+                    this.base.showNotification("notification", `ID van de module moet een nummerieke waarde zijn!`, "error");
+                }
+            }
+        }
+    }
+
+    async updateModule(id, moduleSettingsModel) {
+        try {
+            await Wiser2.api({
+                url: `${this.base.settings.wiserApiRoot}modules/${id}/settings`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(moduleSettingsModel),
+                method: "PUT"
+            }).then(() => {
+                this.base.showNotification("notification", `Module is succesvol bijgewerkt`, "success");
+                this.getModules(true, moduleSettingsModel.id);
+            });
+        } catch(result){
+            console.log(result);
+            if (result.responseText.includes("Duplicate entry")) {
+                this.base.showNotification("notification", `Het bijwerken van de module is mislukt, de ID van de module bestaat al.`, "error");
+            } else {
+                this.base.showNotification("notification", `Het bijwerken van de module is mislukt, probeer het opnieuw`, "error");
+            }
+        };
+    }
+
+    async setCodeMirrorFields(field, value) {
+        if (field != null && field) {
+            field.setValue((value != null && value) ? value : "");
+            field.refresh();
+        }
+    }
+
+    checkIfModuleIsSet(showNotification = true) {
+        if (this.moduleCombobox &&
+            this.moduleCombobox.dataItem() &&
+            this.moduleCombobox.dataItem().id !== "" &&
+            this.moduleListInitialized === true) {
+            return true;
+        } else {
+            if (showNotification)
+                this.base.showNotification("notification", `Selecteer eerst een module!`, "error");
+
+            return false;
+        }
 
     }
 }
