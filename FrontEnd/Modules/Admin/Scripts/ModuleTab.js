@@ -51,7 +51,7 @@ export class ModuleTab {
             placeholder: "Select een module...",
             clearButton: false,
             height: 400,
-            dataTextField: "name",
+            dataTextField: "description",
             dataValueField: "id",
             filter: "contains",
             optionLabel: {
@@ -185,7 +185,6 @@ export class ModuleTab {
         }
 
         this.moduleCombobox.setDataSource(this.moduleList);
-        console.log("moduleIdToSelect",moduleIdToSelect);
         if (moduleIdToSelect !== null) {
             if (moduleIdToSelect === 0) {
                 this.moduleCombobox.select(0);
@@ -207,6 +206,7 @@ export class ModuleTab {
     }
 
     async setModulePropertiesToDefault() {
+        document.getElementById("moduleId").value = "";
         document.getElementById("moduleName").value = "";
         document.getElementById("moduleIcon").value = "";
         document.getElementById("moduleColor").value = "";
@@ -226,7 +226,8 @@ export class ModuleTab {
     }
 
     async setModuleProperties(resultSet) {
-        document.getElementById("moduleName").value = resultSet.name;
+        document.getElementById("moduleId").value = resultSet.id;
+        document.getElementById("moduleName").value = typeof (resultSet.name) === "undefined" ? "" : resultSet.name;
 
         this.moduleIcon.select((dataItem) => {
             return dataItem.value === resultSet.icon;
@@ -240,54 +241,68 @@ export class ModuleTab {
             return dataItem.value === resultSet.type;
         });
 
-        document.getElementById("moduleType").value = resultSet.type
-        document.getElementById("moduleGroup").value = resultSet.group;
-        document.getElementById("moduleCustomQuery").value = resultSet.customQuery;
-        document.getElementById("moduleCountQuery").value = resultSet.countQuery;
-        document.getElementById("moduleOptions").value = resultSet.options;
+        document.getElementById("moduleType").value = typeof (resultSet.type) === "undefined" ? "" : resultSet.type;
+        document.getElementById("moduleGroup").value = typeof (resultSet.group) === "undefined" ? "" : resultSet.group;
+        document.getElementById("moduleOptions").value = typeof (resultSet.options) === "undefined" ? "" : resultSet.options;
 
-        this.setCodeMirrorFields(this.moduleCustomQuery, resultSet.customQuery);
-        this.setCodeMirrorFields(this.moduleCountQuery, resultSet.countQuery);
+        this.setCodeMirrorFields(this.moduleCustomQuery, typeof (resultSet.customQuery) === "undefined" ? "" : resultSet.customQuery);
+        this.setCodeMirrorFields(this.moduleCountQuery, typeof (resultSet.countQuery) === "undefined" ? "" : resultSet.countQuery);
         this.setCodeMirrorFields(this.moduleOptions, JSON.stringify(resultSet.options, null, ' '));
     }
 
     // actions handled before save, such as checks
     beforeSave() {
         if (this.checkIfModuleIsSet(true)) {
-            const moduleSettingsModel = new ModuleSettingsModel(
-                this.moduleCombobox.dataItem().id,
-                this.moduleCustomQuery.getValue(),
-                this.moduleCountQuery.getValue(),
-                this.moduleOptions.getValue(),
-                document.getElementById("moduleName").value,
-                (this.moduleIcon.dataItem()) ? this.moduleIcon.dataItem().value : null,
-                (this.moduleColor.dataItem()) ? this.moduleColor.dataItem().value : null,
-                (this.moduleType.dataItem()) ? this.moduleType.dataItem().value : null,
-                document.getElementById("moduleGroup").value
-            );
+            const moduleIdElement = document.getElementById("moduleId");
 
-            this.updateModule(moduleSettingsModel);
+            if (moduleIdElement != null) {
+                if (!isNaN(moduleIdElement.value)) {
+                    const moduleId = parseInt(moduleIdElement.value);
+                    const moduleSettingsModel = new ModuleSettingsModel(
+                        moduleId,
+                        this.moduleCustomQuery.getValue(),
+                        this.moduleCountQuery.getValue(),
+                        this.moduleOptions.getValue(),
+                        document.getElementById("moduleName").value,
+                        (this.moduleIcon.dataItem()) ? this.moduleIcon.dataItem().value : "",
+                        (this.moduleColor.dataItem()) ? this.moduleColor.dataItem().value : "",
+                        (this.moduleType.dataItem()) ? this.moduleType.dataItem().value : "",
+                        document.getElementById("moduleGroup").value
+                    );
+
+                    this.updateModule(this.moduleCombobox.dataItem().id, moduleSettingsModel);
+                } else {
+                    this.base.showNotification("notification", `ID van de module moet een nummerieke waarde zijn!`, "error");
+                }
+            }
         }
     }
 
-    async updateModule(moduleSettingsModel) {
-        await Wiser2.api({
-            url: `${this.base.settings.wiserApiRoot}modules/${moduleSettingsModel.id}/settings`,
-            contentType: "application/json; charset=utf-8",
-            dataType: "json",
-            data: JSON.stringify(moduleSettingsModel),
-            method: "PUT"
-        }).then(() => {
-            this.base.showNotification("notification", `Module is succesvol bijgewerkt`, "success");
-            this.getModules();
-        }).catch(() => {
-            this.base.showNotification("notification", `Het bijwerken van de module is mislukt, probeer het opnieuw`, "error");
-        });
+    async updateModule(id, moduleSettingsModel) {
+        try {
+            await Wiser2.api({
+                url: `${this.base.settings.wiserApiRoot}modules/${id}/settings`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(moduleSettingsModel),
+                method: "PUT"
+            }).then(() => {
+                this.base.showNotification("notification", `Module is succesvol bijgewerkt`, "success");
+                this.getModules(true, moduleSettingsModel.id);
+            });
+        } catch(result){
+            console.log(result);
+            if (result.responseText.includes("Duplicate entry")) {
+                this.base.showNotification("notification", `Het bijwerken van de module is mislukt, de ID van de module bestaat al.`, "error");
+            } else {
+                this.base.showNotification("notification", `Het bijwerken van de module is mislukt, probeer het opnieuw`, "error");
+            }
+        };
     }
 
     async setCodeMirrorFields(field, value) {
-        if (value && value !== "null" && field != null) {
-            field.setValue(value);
+        if (field != null && field) {
+            field.setValue((value != null && value) ? value : "");
             field.refresh();
         }
     }

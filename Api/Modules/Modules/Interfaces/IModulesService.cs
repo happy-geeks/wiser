@@ -58,6 +58,5 @@ namespace Api.Modules.Modules.Interfaces
         /// <returns></returns>
         Task<ServiceResult<byte[]>> ExportAsync(int id, ClaimsIdentity identity);
 
-        
     }
 }

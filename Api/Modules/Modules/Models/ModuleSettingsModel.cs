@@ -76,5 +76,11 @@ namespace Api.Modules.Modules.Models
         /// Gets or sets whether the user is allowed to delete items in this module.
         /// </summary>
         public bool CanDelete { get; set; }
+
+        /// <summary>
+        /// Gets the description of the module.
+        /// </summary>
+        public string Description => (string.IsNullOrEmpty(Name)) ? $"n.a. ({Id})" : $"{Name} ({Id})";
+
     }
 }

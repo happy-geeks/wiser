@@ -330,19 +330,28 @@ namespace Api.Modules.Modules.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync(); 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
-            
+
+            var isAdminAccount = IdentityHelpers.IsAdminAccount(identity);
+            var query = isAdminAccount ? 
+                        $@"SELECT
+	                        module.id,
+	                        module.name
+                        FROM {WiserTableNames.WiserModule} AS module
+                        ORDER BY module.id ASC;" : 
+                        $@"SELECT
+	                        module.id,
+	                        module.name
+                        FROM {WiserTableNames.WiserUserRoles} AS user_role
+                        JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
+                        JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
+                        JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
+                        LEFT JOIN {WiserTableNames.WiserOrdering} AS ordering ON ordering.user_id = user_role.user_id AND ordering.module_id = permission.module_id
+                        WHERE user_role.user_id = ?userId
+                        GROUP BY permission.module_id
+                        ORDER BY permission.module_id, permission.permissions;";
+
             var results = new List<ModuleSettingsModel>();
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT
-	                                                                            module.id,
-	                                                                            module.name
-                                                                            FROM {WiserTableNames.WiserUserRoles} AS user_role
-                                                                            JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
-                                                                            JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
-                                                                            JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
-                                                                            LEFT JOIN {WiserTableNames.WiserOrdering} AS ordering ON ordering.user_id = user_role.user_id AND ordering.module_id = permission.module_id
-                                                                            WHERE user_role.user_id = ?userId
-                                                                            GROUP BY permission.module_id
-                                                                            ORDER BY permission.module_id, permission.permissions");
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
                         
             if (dataTable.Rows.Count == 0)
             {
@@ -351,12 +360,13 @@ namespace Api.Modules.Modules.Services
 
             foreach (DataRow dataRow in dataTable.Rows)
             {
-                var id = dataRow.Field<int>("id");
-                var userItemPermissions = await wiserItemsService.GetUserModulePermissions(id, IdentityHelpers.GetWiserUserId(identity));
+                var moduleId = dataRow.Field<int>("id");
+                var userItemPermissions = await wiserItemsService.GetUserModulePermissions(moduleId, IdentityHelpers.GetWiserUserId(identity));
+
                 results.Add(new ModuleSettingsModel
                 {
-                    Id = id,
-                    Name = $"{dataTable.Rows[0].Field<string>("name")} ({id})",
+                    Id = moduleId,
+                    Name = dataRow.Field<string>("name"),
                     CanRead = (userItemPermissions & AccessRights.Read) == AccessRights.Read,
                     CanCreate = (userItemPermissions & AccessRights.Create) == AccessRights.Create,
                     CanWrite = (userItemPermissions & AccessRights.Update) == AccessRights.Update,
@@ -463,6 +473,7 @@ namespace Api.Modules.Modules.Services
                 {
                     newObject.Add(new JProperty(column.Title, item[column.Field]));
                 }
+
                 newData.Add(newObject);
             }
 
@@ -476,6 +487,7 @@ namespace Api.Modules.Modules.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
+            clientDatabaseConnection.AddParameter("new_id", moduleSettingsModel.Id);
             clientDatabaseConnection.AddParameter("custom_query", moduleSettingsModel.CustomQuery);
             clientDatabaseConnection.AddParameter("count_query", moduleSettingsModel.CountQuery);
             clientDatabaseConnection.AddParameter("options", moduleSettingsModel.Options.ToString());
@@ -486,7 +498,8 @@ namespace Api.Modules.Modules.Services
             clientDatabaseConnection.AddParameter("group", moduleSettingsModel.Group);
 
             var query = $@"UPDATE {WiserTableNames.WiserModule}
-                            SET `custom_query` = ?custom_query,
+                            SET `id` = ?new_id,
+                                `custom_query` = ?custom_query,
                                 `count_query` = ?count_query,
                                 `options` = ?options,
                                 `name` = ?name,
