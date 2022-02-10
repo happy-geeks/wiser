@@ -19,6 +19,13 @@ namespace Api.Modules.Modules.Interfaces
         Task<ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>> GetAsync(ClaimsIdentity identity);
 
         /// <summary>
+        /// Gets the settings for all modules.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <returns></returns>
+        Task<ServiceResult<List<ModuleSettingsModel>>> GetSettingsAsync(ClaimsIdentity identity);
+
+        /// <summary>
         /// Gets the settings for a single module.
         /// </summary>
         /// <param name="id">The ID of the module.</param>
@@ -27,11 +34,29 @@ namespace Api.Modules.Modules.Interfaces
         Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity);
 
         /// <summary>
+        /// Creates a new module
+        /// </summary>
+        /// <param name="name">The name of the module</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <returns>The id of new module</returns>
+        Task<ServiceResult<int>> CreateAsync(string name, ClaimsIdentity identity);
+
+        /// <summary>
+        /// Update the settings for a single module.
+        /// </summary>
+        /// <param name="id">The ID of the module.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="moduleSettingsModel">Module setting</param>
+        /// <returns></returns>
+        Task<ServiceResult<bool>> UpdateSettingsAsync(int id, ClaimsIdentity identity, ModuleSettingsModel moduleSettingsModel);
+
+        /// <summary>
         /// Exports a module to Excel. Only works for grid view modules.
         /// </summary>
         /// <param name="id">The ID of the module.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns></returns>
         Task<ServiceResult<byte[]>> ExportAsync(int id, ClaimsIdentity identity);
+
     }
 }

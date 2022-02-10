@@ -86,7 +86,7 @@ export class WiserQueryTab {
     async getQueries(reloadDataSource = true, queryIdToSelect = null) {
         if (reloadDataSource) {
             this.queryList = await $.ajax({
-                url: `${this.base.settings.wiserApiRoot}/queries/`,
+                url: `${this.base.settings.wiserApiRoot}queries/`,
                 method: "GET"
             });
 
@@ -112,7 +112,7 @@ export class WiserQueryTab {
 
     async updateQuery(id, queryModel) {
         await $.ajax({
-            url: `${this.base.settings.wiserApiRoot}/queries/${id}`,
+            url: `${this.base.settings.wiserApiRoot}queries/${id}`,
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             data: JSON.stringify(queryModel),
@@ -129,7 +129,7 @@ export class WiserQueryTab {
 
     async getQueryById(id) {
         const results = await $.ajax({
-            url: `${this.base.settings.wiserApiRoot}/queries/${id}`,
+            url: `${this.base.settings.wiserApiRoot}queries/${id}`,
             method: "GET"
         });
 
@@ -140,7 +140,7 @@ export class WiserQueryTab {
     async addQuery(description) {
         if (description === "") { return; }
         await $.ajax({
-            url: `${this.base.settings.wiserApiRoot}/queries/`,
+            url: `${this.base.settings.wiserApiRoot}queries/`,
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             data: JSON.stringify(description),
@@ -158,7 +158,7 @@ export class WiserQueryTab {
 
     async deleteQueryById(id) {
         await $.ajax({
-            url: `${this.base.settings.wiserApiRoot}/queries/${id}`,
+            url: `${this.base.settings.wiserApiRoot}queries/${id}`,
             method: "DELETE"
         })
             .done(() => {
