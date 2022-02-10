@@ -5,7 +5,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Templates.Models.DynamicContent;
-using GeeksCoreLibrary.Core.Cms.Attributes;
 
 namespace Api.Modules.Templates.Interfaces
 {

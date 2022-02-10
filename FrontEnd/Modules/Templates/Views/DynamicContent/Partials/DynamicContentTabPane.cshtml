@@ -1,34 +1,23 @@
-﻿@using System.Reflection
-@using GeeksCoreLibrary.Core.Cms.Attributes
-@model Api.Modules.Templates.Models.DynamicContent.DynamicContentInformationModel
+﻿@model FrontEnd.Modules.Templates.Models.DynamicContentInformationViewModel
 
 <div class="tabstrip">
     <ul>
-        @foreach (var tab in Model.PropertyAttributes.Value)
+        @foreach (var tab in Model.Tabs)
         {
-            <li class="@tab.Key-tab">@tab.Key</li>
+            <li class="@tab.Name-tab">@tab.PrettyName</li>
         }
     </ul>
-    @foreach (var tab in Model.PropertyAttributes.Value)
+    @foreach (var tab in Model.Tabs)
     {
         <div>
-            <div class="formview full @tab.Key.ToString().ToLower()Container">
-                @foreach (var group in tab.Value)
+            <div class="formview full @tab.Name.ToString().ToLower()Container">
+                @foreach (var group in tab.Groups)
                 {
-                    <div class="item-group">
-                        <h3>@group.Key</h3>
-                        @foreach (var prop in group.Value)
+                    <div class="item-group @group.Name-group">
+                        <h3>@group.PrettyName</h3>
+                        @foreach (var field in group.Fields)
                         {
-                            var newDict = new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(prop.Value, new KeyValuePair<PropertyInfo, object>(prop.Key, ""));
-                            foreach (var propValue in Model.PropValues)
-                            {
-                                if (prop.Key.Name == propValue.Key.Name)
-                                {
-                                    newDict = new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(prop.Value, propValue);
-                                }
-                            }
-
-                            <partial name="Partials/InputGenerator" model="newDict" />
+                            <partial name="Partials/InputGenerator" model="field" />
                         }
                     </div>
                 }
