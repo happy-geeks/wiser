@@ -1,88 +1,144 @@
 ﻿@using GeeksCoreLibrary.Core.Cms.Attributes
 @using System.Reflection
+@using Api.Core.Helpers
 @model KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>
 
-@if (Model.Key.TextEditorType == 0)
+@try
 {
-    if (Model.Value.Key.PropertyType == typeof(System.String))
+    @switch (Model.Key.TextEditorType)
     {
-        <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
-            <span class="handler">&nbsp;</span>
-            <h4><label for="textField">@Model.Key.PrettyName</label></h4>
-            <span class="k-widget k-input k-state-default">
-                <input type="text" id="textField" class="textField k-input" autocomplete="off" value="@Model.Value.Value" data-property="@Model.Value.Key.Name">
-            </span>
-            <div class="form-hint"><span>@Model.Key.Description</span></div>
-        </div>
-    }
-    else if (Model.Value.Key.PropertyType == typeof(Boolean))
-    {
-        var checkBox = Model.Value.Value != null && (bool)Model.Value.Value;
-        <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
-            <span class="handler">&nbsp;</span>
-            <span class="inline">
-                <label class="checkbox">
-                    @if (checkBox)
-                    {
-                        <input type="checkbox" value="@Model.Value.Key.Name" checked="checked" data-property="@Model.Value.Key.Name">
-                    }
-                    else
-                    {
-                        <input type="checkbox" value="@Model.Value.Key.Name" data-property="@Model.Value.Key.Name">
-                    }
-                    <span>@Model.Key.PrettyName</span>
-                </label>
-            </span>
-        </div>
-    }
-    else if (Model.Value.Key.PropertyType == typeof(Int32?) || Model.Value.Key.PropertyType == typeof(Int32) || Model.Value.Key.PropertyType == typeof(UInt32)
-        || Model.Value.Key.PropertyType == typeof(Decimal) || Model.Value.Key.PropertyType == typeof(UInt64))
-    {
-        <div class="item" style="width: 50%;" data-label-style="normal" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
-            <span class="handler">&nbsp;</span>
-            <h4><label for="numeric">@Model.Value.Key.Name</label></h4>
-            <input id="numeric" type="number" title="numeric" class="numeric" value="@Model.Value.Value" min="0" max="100" step="1" autocomplete="off" data-property="@Model.Value.Key.Name" />
-            <div class="form-hint"><span>@Model.Key.Description</span></div>
-        </div>
-    }
-    else
-    {
-        <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
-            <span>No HTML Generated for: @Model.Key.PrettyName . The type: @Model.Value.Key.PropertyType was unknown to generator.</span>
-        </div>
-    }
-}
-else if (Model.Key.TextEditorType == CmsAttributes.CmsTextEditorType.TextBox)
-{
+        case CmsAttributes.CmsTextEditorType.Auto when Model.Value.Key.PropertyType == typeof(String):
+        case CmsAttributes.CmsTextEditorType.TextField:
+            <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
+                <span class="handler">&nbsp;</span>
+                <h4><label for="@Model.Value.Key.Name">@Model.Key.PrettyName</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="text" id="@Model.Value.Key.Name" class="textField k-input" autocomplete="off" value="@Model.Value.Value" data-property="@Model.Value.Key.Name">
+                </span>
+                <div class="form-hint"><span>@Model.Key.Description</span></div>
+            </div>
+            break;
 
+        case CmsAttributes.CmsTextEditorType.Auto when Model.Value.Key.PropertyType == typeof(Boolean):
+            <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
+                <span class="handler">&nbsp;</span>
+                <span class="inline">
+                    <label class="checkbox">
+                        <input type="checkbox" value="@Model.Value.Key.Name" @(Model.Value.Value != null && (bool)Model.Value.Value ? "checked" : "") data-property="@Model.Value.Key.Name">
+                    </label>
+                </span>
+            </div>
+            break;
+
+        case CmsAttributes.CmsTextEditorType.Auto when Model.Value.Key.PropertyType.IsEnum:
+            <div class="item" style="width: 50%;" data-label-style="normal" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
+                <span class="handler">&nbsp;</span>
+                <h4><label for="@Model.Value.Key.Name">@Model.Value.Key.Name</label></h4>
+                <select id="@Model.Value.Key.Name" class="select" data-property="@Model.Value.Key.Name" data-kendo-control="kendoDropDownList">
+                    @foreach (var value in Enum.GetValues(Model.Value.Key.PropertyType))
+                    {
+                        <!option value="@((int)value)" @(Convert.ToInt32(Model.Value.Value) == (int)value ? "selected" : "")>@value.ToString()</!option>
+                    }
+                </select>
+                <div class="form-hint"><span>@Model.Key.Description</span></div>
+            </div>
+            break;
+
+        case CmsAttributes.CmsTextEditorType.Auto when TypeHelpers.IsNumericType(Model.Value.Key.PropertyType):
+            <div class="item" style="width: 50%;" data-label-style="normal" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
+                <span class="handler">&nbsp;</span>
+                <h4><label for="@Model.Value.Key.Name">@Model.Value.Key.Name</label></h4>
+                <input id="@Model.Value.Key.Name" type="number" title="numeric" class="numeric" value="@Model.Value.Value" min="0" max="100" step="1" autocomplete="off" data-property="@Model.Value.Key.Name" data-kendo-control="kendoNumericTextBox"/>
+                <div class="form-hint"><span>@Model.Key.Description</span></div>
+            </div>
+            break;
+
+        case CmsAttributes.CmsTextEditorType.Auto:
+            <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
+                <span>No HTML Generated for "@Model.Key.PrettyName". The type "@Model.Value.Key.PropertyType" was unknown to generator.</span>
+            </div>
+            break;
+
+        case CmsAttributes.CmsTextEditorType.TextBox:
+            <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
+                <span class="handler">&nbsp;</span>
+                <h4><label for="@Model.Value.Key.Name">@Model.Key.PrettyName</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <textarea id="@Model.Value.Key.Name" value="@Model.Value.Value" data-property="@Model.Value.Key.Name">@Model.Value.Value</textarea>
+                </span>
+            </div>
+            break;
+
+        case CmsAttributes.CmsTextEditorType.QueryEditor:
+            <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
+                <span class="handler">&nbsp;</span>
+                <h4><label for="@Model.Value.Key.Name">@Model.Key.PrettyName</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <textarea id="@Model.Value.Key.Name" value="@Model.Value.Value" data-property="@Model.Value.Key.Name" data-field-type="text/x-mysql">@Model.Value.Value</textarea>
+                </span>
+            </div>
+            break;
+
+        case CmsAttributes.CmsTextEditorType.HtmlEditor:
+            <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
+                <span class="handler">&nbsp;</span>
+                <h4><label for="@Model.Value.Key.Name">@Model.Key.PrettyName</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <textarea id="@Model.Value.Key.Name" value="@Model.Value.Value" data-property="@Model.Value.Key.Name" data-field-type="text/html">@Model.Value.Value</textarea>
+                </span>
+            </div>
+            break;
+
+        case CmsAttributes.CmsTextEditorType.XmlEditor:
+            <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
+                <span class="handler">&nbsp;</span>
+                <h4><label for="@Model.Value.Key.Name">@Model.Key.PrettyName</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <textarea id="@Model.Value.Key.Name" value="@Model.Value.Value" data-property="@Model.Value.Key.Name" data-field-type="application/xml">@Model.Value.Value</textarea>
+                </span>
+            </div>
+            break;
+
+        case CmsAttributes.CmsTextEditorType.JsEditor:
+            <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
+                <span class="handler">&nbsp;</span>
+                <h4><label for="@Model.Value.Key.Name">@Model.Key.PrettyName</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <textarea id="@Model.Value.Key.Name" value="@Model.Value.Value" data-property="@Model.Value.Key.Name" data-field-type="text/javascript">@Model.Value.Value</textarea>
+                </span>
+            </div>
+            break;
+
+        case CmsAttributes.CmsTextEditorType.JsonEditor:
+            <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
+                <span class="handler">&nbsp;</span>
+                <h4><label for="@Model.Value.Key.Name">@Model.Key.PrettyName</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <textarea id="@Model.Value.Key.Name" value="@Model.Value.Value" data-property="@Model.Value.Key.Name" data-field-type="application/json">@Model.Value.Value</textarea>
+                </span>
+            </div>
+            break;
+
+        case CmsAttributes.CmsTextEditorType.TextEditor:
+            <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
+                <span class="handler">&nbsp;</span>
+                <h4><label for="@Model.Value.Key.Name">@Model.Key.PrettyName</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <textarea id="@Model.Value.Key.Name" value="@Model.Value.Value" data-property="@Model.Value.Key.Name" data-field-type="text">@Model.Value.Value</textarea>
+                </span>
+            </div>
+            break;
+
+        default:
+            <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
+                <span>No HTML Generated for "@Model.Key.PrettyName". The text editor type "@Model.Key.TextEditorType" was unknown to generator.</span>
+            </div>
+            break;
+    }
 }
-else if (Model.Key.TextEditorType == CmsAttributes.CmsTextEditorType.HtmlEditor)
+catch (Exception exception)
 {
     <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
-        <span class="handler">&nbsp;</span>
-        <h4><label for="textArea_103">@Model.Key.PrettyName</label></h4>
-        <span class="k-widget k-input k-state-default">
-            <textarea id="textArea_103" value="@Model.Value.Value" data-property="@Model.Value.Key.Name" data-fieldtype="htmlmixed">@Model.Value.Value</textarea>
-        </span>
-    </div>
-}
-else if (Model.Key.TextEditorType == CmsAttributes.CmsTextEditorType.QueryEditor)
-{
-    <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
-        <span class="handler">&nbsp;</span>
-        <h4><label for="textArea_103">@Model.Key.PrettyName</label></h4>
-        <span class="k-widget k-input k-state-default">
-            <textarea id="textArea_103" value="@Model.Value.Value" data-property="@Model.Value.Key.Name" data-fieldtype="query">@Model.Value.Value</textarea>
-        </span>
-    </div>
-}
-else if (Model.Key.TextEditorType == CmsAttributes.CmsTextEditorType.JsEditor)
-{
-    <div class="item" style="width: 50%;" data-label-style="float" data-label-width="0" data-componentmode="@Model.Key.ComponentMode">
-        <span class="handler">&nbsp;</span>
-        <h4><label for="textArea_103">@Model.Key.PrettyName</label></h4>
-        <span class="k-widget k-input k-state-default">
-            <textarea id="textArea_103" value="@Model.Value.Value" data-property="@Model.Value.Key.Name" data-fieldtype="javascript">@Model.Value.Value</textarea>
-        </span>
+        <span>@exception</span>
     </div>
 }

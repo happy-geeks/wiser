@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.History;
@@ -50,7 +51,7 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             foreach (DataRow row in dataTable.Rows)
             {
-                versionList.Add(row.Field<int>("version"), row.Field<SByte>("published_environment"));
+                versionList.Add(row.Field<int>("version"), row.Field<sbyte>("published_environment"));
             }
 
             return versionList;
@@ -85,10 +86,22 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.login_session_prefix, 
                                                                 template.login_role, 
                                                                 template.ordering, 
-                                                                GROUP_CONCAT(CONCAT_WS(';', linkedTemplates.template_id, linkedTemplates.template_name, linkedTemplates.template_type)) AS linkedTemplates 
+                                                                GROUP_CONCAT(CONCAT_WS(';', linkedTemplates.template_id, linkedTemplates.template_name, linkedTemplates.template_type)) AS linkedTemplates,
+                                                                template.insert_mode,
+                                                                template.load_always,
+                                                                template.url_regex,
+                                                                template.external_files,
+                                                                template.grouping_create_object_instead_of_array,
+                                                                template.grouping_prefix,
+                                                                template.grouping_key,
+                                                                template.grouping_key_column_name,
+                                                                template.grouping_value_column_name,
+                                                                template.is_scss_include_template,
+                                                                template.use_in_wiser_html_editors
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
-				                                            LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate GROUP BY template_id) AS linkedTemplates ON FIND_IN_SET(linkedTemplates.template_id, template.linked_templates)
+				                                            LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate WHERE linkedTemplate.removed = 0 GROUP BY template_id) AS linkedTemplates ON FIND_IN_SET(linkedTemplates.template_id, template.linked_templates)
                                                             WHERE template.template_id = ?templateId
+                                                            AND template.removed = 0
 				                                            GROUP BY template.version
                                                             ORDER BY version DESC");
 
@@ -108,15 +121,15 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ChangedBy = row.Field<string>("changed_by"),
                     UseCache = row.Field<int>("use_cache"),
                     CacheMinutes = row.Field<int>("cache_minutes"),
-                    HandleRequests = Convert.ToBoolean(row.Field<sbyte>("handle_request")),
-                    HandleSession = Convert.ToBoolean(row.Field<sbyte>("handle_session")),
-                    HandleStandards = Convert.ToBoolean(row.Field<sbyte>("handle_standards")),
-                    HandleObjects = Convert.ToBoolean(row.Field<sbyte>("handle_objects")),
-                    HandleTranslations = Convert.ToBoolean(row.Field<sbyte>("handle_translations")),
-                    HandleDynamicContent = Convert.ToBoolean(row.Field<sbyte>("handle_dynamic_content")),
-                    HandleLogicBlocks = Convert.ToBoolean(row.Field<sbyte>("handle_logic_blocks")),
-                    HandleMutators = Convert.ToBoolean(row.Field<sbyte>("handle_mutators")),
-                    LoginRequired = Convert.ToBoolean(row.Field<sbyte>("login_required")),
+                    HandleRequests = Convert.ToBoolean(row["handle_request"]),
+                    HandleSession = Convert.ToBoolean(row["handle_session"]),
+                    HandleStandards = Convert.ToBoolean(row["handle_standards"]),
+                    HandleObjects = Convert.ToBoolean(row["handle_objects"]),
+                    HandleTranslations = Convert.ToBoolean(row["handle_translations"]),
+                    HandleDynamicContent = Convert.ToBoolean(row["handle_dynamic_content"]),
+                    HandleLogicBlocks = Convert.ToBoolean(row["handle_logic_blocks"]),
+                    HandleMutators = Convert.ToBoolean(row["handle_mutators"]),
+                    LoginRequired = Convert.ToBoolean(row["login_required"]),
                     LoginUserType = row.Field<string>("login_user_type"),
                     LoginSessionPrefix = row.Field<string>("login_session_prefix"),
                     LoginRole = row.Field<string>("login_role"),
@@ -124,7 +137,18 @@ namespace Api.Modules.Templates.Services.DataLayer
                     LinkedTemplates = new LinkedTemplatesModel
                     {
                         RawLinkList = row.Field<string>("linkedTemplates")
-                    }
+                    },
+                    InsertMode = row.Field<ResourceInsertModes>("insert_mode"),
+                    LoadAlways = Convert.ToBoolean(row["load_always"]),
+                    UrlRegex = row.Field<string>("url_regex"),
+                    ExternalFiles = row.Field<string>("external_files")?.Split(",")?.ToList() ?? new List<string>(),
+                    GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(row["grouping_create_object_instead_of_array"]),
+                    GroupingPrefix = row.Field<string>("grouping_prefix"),
+                    GroupingKey = row.Field<string>("grouping_key"),
+                    GroupingKeyColumnName = row.Field<string>("grouping_key_column_name"),
+                    GroupingValueColumnName = row.Field<string>("grouping_value_column_name"),
+                    IsScssIncludeTemplate = Convert.ToBoolean(row["is_scss_include_template"]),
+                    UseInWiserHtmlEditors = Convert.ToBoolean(row["use_in_wiser_html_editors"])
                 };
 
                 resultList.Add(templateData);

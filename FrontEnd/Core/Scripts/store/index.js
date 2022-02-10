@@ -1,5 +1,5 @@
 ﻿import { createStore } from "vuex";
-import { START_REQUEST, END_REQUEST, AUTH_REQUEST, AUTH_LIST, AUTH_SUCCESS, AUTH_ERROR, AUTH_LOGOUT, MODULES_LOADED, OPEN_MODULE, ACTIVATE_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, MODULES_REQUEST, LOAD_ENTITY_TYPES_OF_ITEM_ID, FORGOT_PASSWORD, RESET_PASSWORD_SUCCESS, RESET_PASSWORD_ERROR, CHANGE_PASSWORD, CHANGE_PASSWORD_SUCCESS, CHANGE_PASSWORD_ERROR, GET_CUSTOMER_TITLE, VALID_SUB_DOMAIN } from "./mutation-types";
+import { START_REQUEST, END_REQUEST, AUTH_REQUEST, AUTH_LIST, AUTH_SUCCESS, AUTH_ERROR, AUTH_LOGOUT, MODULES_LOADED, OPEN_MODULE, ACTIVATE_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, MODULES_REQUEST, LOAD_ENTITY_TYPES_OF_ITEM_ID, FORGOT_PASSWORD, RESET_PASSWORD_SUCCESS, RESET_PASSWORD_ERROR, CHANGE_PASSWORD, CHANGE_PASSWORD_SUCCESS, CHANGE_PASSWORD_ERROR, GET_CUSTOMER_TITLE, VALID_SUB_DOMAIN, TOGGLE_PIN_MODULE } from "./mutation-types";
 
 const baseModule = {
     state: () => ({
@@ -194,7 +194,7 @@ const loginModule = {
 
         async [FORGOT_PASSWORD]({ commit }, data = {}) {
             commit(FORGOT_PASSWORD);
-            let result = await main.usersService.forgotPassword(data.user.username, data.user.email);
+            const result = await main.usersService.forgotPassword(data.user.username, data.user.email);
 
             if (result) {
                 commit(RESET_PASSWORD_SUCCESS);
@@ -206,7 +206,7 @@ const loginModule = {
         async [CHANGE_PASSWORD]({ commit }, data = {}) {
             commit(CHANGE_PASSWORD);
 
-            var result = await main.usersService.changePassword(data.user);
+            const result = await main.usersService.changePassword(data.user);
 
             if (result.response) {
                 if (result.response) {
@@ -239,7 +239,7 @@ const modulesModule = {
             if (!modules) {
                 return;
             }
-
+            
             for (let groupName in modules) {
                 if (!modules.hasOwnProperty(groupName)) {
                     continue;
@@ -326,14 +326,96 @@ const modulesModule = {
         [CLOSE_ALL_MODULES]: (state) => {
             state.activeModule = null;
             state.openedModules = [];
+        },
+        [TOGGLE_PIN_MODULE]: (state, moduleId) => {
+            const module = state.allModules.filter(m => m.moduleId === moduleId)[0];
+
+            // Toggle the pin status.
+            module.pinned = !module.pinned;
+
+            const removeFrom = module.pinned ? module.group : module.pinnedGroup;
+            const addTo = module.pinned ? module.pinnedGroup : module.group;
+
+            const removeFromGroup = state.moduleGroups.filter(g => g.name === removeFrom)[0];
+            let addToGroup = state.moduleGroups.filter(g => g.name === addTo)[0];
+
+            // It's possible that these groups don't exist yet, so create them if they don't.
+            if (!addToGroup) {
+                addToGroup = {
+                    name: addTo,
+                    modules: []
+                };
+                state.moduleGroups.push(addToGroup);
+            }
+
+            removeFromGroup.modules.splice(removeFromGroup.modules.indexOf(module), 1);
+            addToGroup.modules.push(module);
+
+            // If we just removed the last module from a group, remove the entire group.
+            if (removeFromGroup.modules.length === 0) {
+                state.moduleGroups.splice(state.moduleGroups.indexOf(removeFromGroup), 1);
+            }
+
+            // Order the groups.
+            state.moduleGroups = state.moduleGroups.sort((groupA, groupB) => {
+                // Make sure the pinned group is always first.
+                if (groupA.name === module.pinnedGroup) {
+                    return -1;
+                }
+
+                if (groupB.name === module.pinnedGroup) {
+                    return 1;
+                }
+
+                // Then sort the rest alphabetically.
+                if (groupA.name < groupB.name) {
+                    return -1;
+                }
+
+                if (groupA.name > groupB.name) {
+                    return 1;
+                }
+                
+                return 0;
+            });
+            
+            // Order the modules in each group.
+            for (let group of state.moduleGroups) {
+                group.modules = group.modules.sort((moduleA, moduleB) => {
+                    if (moduleA.name < moduleB.name) {
+                        return -1;
+                    }
+
+                    if (moduleA.name > moduleB.name) {
+                        return 1;
+                    }
+                
+                    return 0;
+                });
+            }
         }
     },
 
     actions: {
         async [MODULES_REQUEST]({ commit }) {
             commit(START_REQUEST);
-            const modules = await main.modulesService.getModules();
-            commit(MODULES_LOADED, modules);
+            const moduleGroups = await main.modulesService.getModules();
+            commit(MODULES_LOADED, moduleGroups);
+
+            // Automatically open pinned modules when the modules are first loaded.
+            for (let group in moduleGroups) {
+                if (!moduleGroups.hasOwnProperty(group)) {
+                    continue;
+                }
+                
+                for (let module of moduleGroups[group]) {
+                    if (!module.pinned) {
+                        continue;
+                    }
+
+                    commit(OPEN_MODULE, module);
+                }
+            }
             commit(END_REQUEST);
         },
 
@@ -351,6 +433,12 @@ const modulesModule = {
 
         [CLOSE_ALL_MODULES]({ commit }) {
             commit(CLOSE_ALL_MODULES);
+        },
+
+        async [TOGGLE_PIN_MODULE]({ commit, state }, moduleId) {
+            commit(TOGGLE_PIN_MODULE, moduleId);
+            const pinnedModuleIds = state.allModules.filter(m => m.pinned).map(m => m.moduleId);
+            await main.usersService.savePinnedModules(pinnedModuleIds);
         }
     },
 

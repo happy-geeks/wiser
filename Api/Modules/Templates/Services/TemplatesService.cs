@@ -10,7 +10,7 @@ using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
-using Api.Modules.Templates.Enums;
+using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -658,7 +658,7 @@ GROUP BY language_code
 ORDER BY language_code");
                 TemplateQueryStrings.Add("UPDATE_ORDERING_ENTITY_PROPERTY", @"SET @old_index = {oldIndex} + 1;
 SET @new_index = {newIndex} +1;
-SET @id = {current_id}; 
+SET @id = {currentId}; 
 SET @entity_name = '{entityName}';
 SET @tab_name = '{tabName}';
 
@@ -2616,49 +2616,23 @@ LIMIT 1";
             return await SaveTemplateVersionAsync(identity, templateDataResponse.ModelObject);
         }
 
-        /// <summary>
-        /// Compares the links on the template with the newly saved links to determine any new entries to the links.
-        /// </summary>
-        /// <param name="confirmedLinks">The links that should be saved on the new version</param>
-        /// <param name="linkedList">The links currently saved to the template</param>
-        /// <param name="linksToAdd">A list that will be filled with new entries</param>
-        /// <returns>A list of entries that need to be added in order for the new and old list to match</returns>
-        private List<int> GetToAddList(List<int> confirmedLinks, List<LinkedTemplateModel> linkedList, List<int> linksToAdd)
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> MoveAsync(ClaimsIdentity identity, int sourceId, int destinationId, TreeViewDropPositions dropPosition)
         {
-            var found = false;
-            foreach (var link in confirmedLinks)
+            // If the position is "over", it means the destinationId itself will become the new parent, for "before" and "after" it means the parent of the destinationId will become the new parent.
+            var destinationParentId = dropPosition == TreeViewDropPositions.Over ? destinationId : await templateDataService.GetParentId(destinationId) ?? 0;
+            var sourceParentId = await templateDataService.GetParentId(sourceId) ?? 0;
+            var oldOrderNumber = await templateDataService.GetOrderingAsync(sourceId);
+            var newOrderNumber = dropPosition switch
             {
-                if (linkedList.Any(linkedTemplate => linkedTemplate.TemplateId == link))
-                {
-                    found = true;
-                }
+                TreeViewDropPositions.Over => await templateDataService.GetHighestOrderNumberOfChildrenAsync(destinationParentId),
+                TreeViewDropPositions.Before => await templateDataService.GetOrderingAsync(destinationId),
+                TreeViewDropPositions.After => await templateDataService.GetOrderingAsync(destinationId) + 1,
+                _ => throw new ArgumentOutOfRangeException(nameof(dropPosition), dropPosition, null)
+            };
 
-                if (!found)
-                {
-                    linksToAdd.Add(link);
-                }
-            }
-            return linksToAdd;
-        }
-
-        /// <summary>
-        /// Compares the links on the template with the newly saved links to determine any entries that should be removed
-        /// </summary>
-        /// <param name="confirmedLinks">The links that should be saved on the new version</param>
-        /// <param name="confirmedLinksType">The enum off the linktype</param>
-        /// <param name="linkedList">The links currently saved to the template</param>
-        /// <param name="linksToRemove">A list that will be filled with entries that should be removed</param>
-        /// <returns>A list of entries that need to be removed in order for the new and old list to match</returns>
-        private List<int> FillToRemoveList(List<int> confirmedLinks, TemplateTypes confirmedLinksType, List<LinkedTemplateModel> linkedList, List<int> linksToRemove)
-        {
-            foreach (var linkedTemplate in linkedList)
-            {
-                if (linkedTemplate.LinkType == confirmedLinksType && !confirmedLinks.Contains(linkedTemplate.TemplateId))
-                {
-                    linksToRemove.Add(linkedTemplate.TemplateId);
-                }
-            }
-            return linksToRemove;
+            await templateDataService.MoveAsync(sourceId, destinationId, sourceParentId, destinationParentId, oldOrderNumber, newOrderNumber, dropPosition, IdentityHelpers.GetUserName(identity));
+            return new ServiceResult<bool>(true);
         }
 
         /// <summary>

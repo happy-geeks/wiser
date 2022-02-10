@@ -16,7 +16,7 @@ namespace Api.Modules.Modules.Interfaces
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns></returns>
-        Task<ServiceResult<SortedList<string, List<ModuleAccessRightsModel>>>> GetAsync(ClaimsIdentity identity);
+        Task<ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>> GetAsync(ClaimsIdentity identity);
 
         /// <summary>
         /// Gets the settings for all modules.

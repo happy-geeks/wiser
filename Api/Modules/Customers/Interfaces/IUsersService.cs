@@ -92,6 +92,12 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         /// <param name="uniqueKey">The unique key for the grid settings. This should be unique for each grid in Wiser, so that no 2 grids use the same settings.</param>
         Task<ServiceResult<string>> GetGridSettingsAsync(ClaimsIdentity identity, string uniqueKey);
+        
+        /// <summary>
+        /// Gets the pinned modules for the authenticated user, so that users can keep their state of the pinned modules in Wiser.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        Task<ServiceResult<List<int>>> GetPinnedModulesAsync(ClaimsIdentity identity);
 
         /// <summary>
         /// Saves settings for a grid for the authenticated user, so that the next time the grid is loaded, the user keeps those settings.
@@ -101,6 +107,12 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="settings">A JSON object with the settings to save.</param>
         Task<ServiceResult<bool>> SaveGridSettingsAsync(ClaimsIdentity identity, string uniqueKey, JToken settings);
 
+        /// <summary>
+        /// Save the list of pinned modules to the user details, so that next time the user will see the same pinned modules.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <param name="moduleIds">The list of module IDs that the user has pinned.</param>
+        Task<ServiceResult<bool>> SavePinnedModulesAsync(ClaimsIdentity identity, List<int> moduleIds);
 
         /// <summary>
         /// Get the e-mail address of the user.
