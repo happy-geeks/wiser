@@ -162,32 +162,39 @@ const moduleSettings = {
             this.initializeDynamicKendoComponents();
 
             //Components
-            this.componentTypeComboBox = $("#componentTypeDropDown").kendoComboBox({
+            this.componentTypeComboBox = $("#componentTypeDropDown").kendoDropDownList({
                 change: this.onComponentTypeDropDownChange.bind(this)
-            }).data("kendoComboBox");
+            }).data("kendoDropDownList");
         }
 
         //Initialize the dynamic kendo components. This method will also be called when reloading component fields.
-        initializeDynamicKendoComponents() {
+        initializeDynamicKendoComponents(container = null) {
+            container = container || $("body");
             // Tabstrip
-            $(".tabstrip").kendoTabStrip({
-                activate: this.onTabStripActivate.bind(this),
-                animation: {
-                    open: {
-                        effects: "fadeIn"
+            const tabStripElements = container.find(".tabstrip");
+            if (tabStripElements.length > 0) {
+                tabStripElements.kendoTabStrip({
+                    activate: this.onTabStripActivate.bind(this),
+                    animation: {
+                        open: {
+                            effects: "fadeIn"
+                        }
                     }
-                }
-            }).data("kendoTabStrip").select(0);
+                }).data("kendoTabStrip").select(0);
+            }
 
             //NUMERIC FIELD
-            $(".numeric").kendoNumericTextBox();
+            container.find(".numeric").kendoNumericTextBox();
             
             //MULTISELECT
-            $(".multi-select").kendoMultiSelect({
+            container.find(".multi-select").kendoMultiSelect({
                 autoClose: false
             });
 
-            $(".select").kendoDropDownList();
+            container.find(".select").kendoDropDownList();
+            
+            container.find(".add-subgroup-button").off("click").click(this.onAddSubGroupButtonClick.bind(this));
+            container.find(".remove-subgroup-button").off("click").click(this.onRemoveSubGroupButtonClick.bind(this));
         }
 
         /**
@@ -254,11 +261,11 @@ const moduleSettings = {
             }
 
             if (!this.componentModeComboBox) {
-                this.componentModeComboBox = $("#componentMode").kendoComboBox({
+                this.componentModeComboBox = $("#componentMode").kendoDropDownList({
                     change: this.updateComponentModeVisibility.bind(this),
                     dataTextField: "name",
                     dataValueField: "id"
-                }).data("kendoComboBox");
+                }).data("kendoDropDownList");
             }
 
             this.componentModeComboBox.setDataSource(componentModes);
@@ -283,16 +290,16 @@ const moduleSettings = {
             //Group visibility
             $(".item-group").hide();
             if (componentMode) {
-                $(`.item-group:has(> [data-componentmode*='${componentMode}'])`).show();
+                $(`.item-group:has(> [data-component-mode*='${componentMode}'])`).show();
             }
-            $(".item-group:has(> [data-componentmode=''])").show();
+            $(".item-group:has(> [data-component-mode=''])").show();
 
             //Property visibility
-            $("[data-componentmode]").hide();
+            $("[data-component-mode]").hide();
             if (componentMode) {
-                $(`[data-componentmode*="${componentMode}"]`).show();
+                $(`[data-component-mode*="${componentMode}"]`).show();
             }
-            $("[data-componentmode='']").show();
+            $("[data-component-mode='']").show();
         }
 
         /**
@@ -318,12 +325,12 @@ const moduleSettings = {
          *  Bind the save button to the event for saving the newly acquired settings.
          * */
         bindSaveButton() {
-            document.getElementsByClassName("btn-primary")[0].addEventListener("click", (event) => {
+            $("#saveButton").click((event) => {
                 event.preventDefault();
                 this.save();
             });
 
-            document.getElementsByClassName("btn-secondary")[0].addEventListener("click", async (event) => {
+            $("#saveAndCloseButton").click(async (event) => {
                 event.preventDefault();
                 await this.save();
                 if (!window.parent || !window.parent.Templates) {
@@ -381,21 +388,36 @@ const moduleSettings = {
         }
 
         /**
-         * Retrieve the new values entered by the user and their properties.
+         * Retrieve the new values entered by the user.
          * */
-        getNewSettings() {
-            var settingsList = {};
+        getNewSettings(fields = null) {
+            const settingsList = {};
+            fields = fields || $("[data-property]").not(".sub-groups [data-property]");
             
-            $("[data-property]").each((index, element) => {
+            fields.each((index, element) => {
                 const field = $(element);
                 const propertyName = field.data("property");
                 const kendoControlName = field.data("kendoControl");
-                
+                const subFieldsGroupName = field.closest(".sub-group").data("key");
+                let settingsListToUse = settingsList;
+                if (typeof(subFieldsGroupName) !== "undefined" && subFieldsGroupName !== null) {
+                    if (subFieldsGroupName === "_template") {
+                        // A fieldset with this name is only used as a template for adding groups via javascript, don't save these.
+                        return;
+                    }
+
+                    if (!settingsListToUse[subFieldsGroupName]) {
+                        settingsListToUse[subFieldsGroupName] = {};
+                    }
+
+                    settingsListToUse = settingsListToUse[subFieldsGroupName];
+                }
+
                 if (kendoControlName) {
                     const kendoControl = field.data(kendoControlName);
                     
                     if (kendoControl) {
-                        settingsList[propertyName] = kendoControl.value();
+                        settingsListToUse[propertyName] = kendoControl.value();
                         return;
                     } else {
                         console.warn(`Kendo control found for '${propertyName}', but it's not initialized, so skipping this property.`, kendoControlName, data);
@@ -405,25 +427,29 @@ const moduleSettings = {
 
                 const codeMirrorInstance = field.data("CodeMirrorInstance");
                 if (codeMirrorInstance) {
-                    settingsList[propertyName] = codeMirrorInstance.getValue();
+                    settingsListToUse[propertyName] = codeMirrorInstance.getValue();
                     return;
                 }
 
                 // If we reach this point in the code, this element is not a Kendo control, so just get the normal value.
                 switch (field.prop("tagName")) {
                     case "SELECT":
-                        settingsList[propertyName] = field.val();
+                        settingsListToUse[propertyName] = field.val();
                         break;
                     case "INPUT":
                     case "TEXTAREA":
                         switch ((field.attr("type") || "").toUpperCase()) {
                             case "CHECKBOX":
-                                settingsList[propertyName] = field.prop("checked");
+                                settingsListToUse[propertyName] = field.prop("checked");
                                 break;
                             default:
-                                settingsList[propertyName] = field.val();
+                                settingsListToUse[propertyName] = field.val();
                                 break;
                         }
+                        break;
+                    case "DIV":
+                        // This means it's a container with sub fields.
+                        settingsListToUse[propertyName] = this.getNewSettings(field.find("[data-property]"));
                         break;
                     default:
                         console.error("TODO: Unsupported tag name:", field.prop("tagName"));
@@ -455,13 +481,33 @@ const moduleSettings = {
             this.bindHistoryButtons();
         }
 
-        async transformCodeMirrorViews() {
+        async transformCodeMirrorViews(container = null) {
             await Misc.ensureCodeMirror();
-            $("textarea[data-field-type][data-property]").each((index, element) => {
+            container = container || $("body");
+            container.find("textarea[data-field-type][data-property]").not("fieldset.hidden textarea[data-field-type][data-property]").each((index, element) => {
+                if ($(element).data("CodeMirrorInstance")) {
+                    return;
+                }
+
                 const codeMirrorInstance = CodeMirror.fromTextArea(element, {
                     lineNumbers: true,
-                    styleActiveLine: true,
-                    matchBrackets: true,
+                    indentUnit: 4,
+                    lineWrapping: true,
+                    foldGutter: true,
+                    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
+                    lint: true,
+                    extraKeys: {
+                        "Ctrl-Q": (sender) => {
+                            sender.foldCode(sender.getCursor());
+                        },
+                        "F11": (sender) => {
+                            sender.setOption("fullScreen", !sender.getOption("fullScreen"));
+                        },
+                        "Esc": (sender) => {
+                            if (sender.getOption("fullScreen")) sender.setOption("fullScreen", false);
+                        },
+                        "Ctrl-Space": "autocomplete"
+                    },
                     mode: element.dataset.fieldType
                 });
 
@@ -527,6 +573,46 @@ const moduleSettings = {
 
                 window.processing.removeProcess(process);
             });
+        }
+
+        async onAddSubGroupButtonClick(event) {
+            event.preventDefault();
+
+            const buttonElement = $(event.currentTarget);
+            const mainContainer = buttonElement.closest(".item");
+            const subGroupsContainer = mainContainer.find(".sub-groups");
+            const templateFieldSet = subGroupsContainer.find("#subGroup__template");
+            if (templateFieldSet.length === 0) {
+                kendo.alert("Er zijn geen subvelden gevonden voor dit veld. Sluit a.u.b. dit component en probeer het opnieuw, of neem contact op.");
+                console.error("No sub fields template found for container", subGroupsContainer);
+                return;
+            }
+
+            const newIndex = (parseInt(subGroupsContainer.find("fieldset").last().data("index")) || 0) + 1;
+            const cloneFieldSet = templateFieldSet.clone(true);
+            cloneFieldSet.removeClass("hidden");
+            cloneFieldSet.data("index", newIndex);
+            cloneFieldSet.attr("id", `subGroup_id${newIndex - 1}`);
+            cloneFieldSet.data("key", `id${newIndex-1}`);
+            cloneFieldSet.find("legend .index").html(newIndex-1);
+            subGroupsContainer.append(cloneFieldSet);
+            
+            this.initializeDynamicKendoComponents(cloneFieldSet);
+            this.transformCodeMirrorViews(cloneFieldSet);
+        }
+
+        async onRemoveSubGroupButtonClick(event) {
+            event.preventDefault();
+            
+            const buttonElement = $(event.currentTarget);
+            const container = buttonElement.closest(".sub-group");
+            if (container.data("key") === "_template") {
+                // Don't allow the template to be deleted if the user was somehow able to click the button there.
+                return;
+            }
+
+            await Wiser2.showConfirmDialog(`Are you sure you want to delete layer ${container.find(".index").text()}?`);
+            container.remove();
         }
     }
 

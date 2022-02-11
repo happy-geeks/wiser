@@ -20,13 +20,17 @@ using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 using GeeksCoreLibrary.Modules.Templates.Models;
+using LibSassHost;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
+using NUglify;
+using NUglify.JavaScript;
 
 namespace Api.Modules.Templates.Services
 {
@@ -45,11 +49,12 @@ namespace Api.Modules.Templates.Services
         private readonly IApiReplacementsService apiReplacementsService;
         private readonly ITemplateDataService templateDataService;
         private readonly IHistoryService historyService;
+        private readonly IWiserItemsService wiserItemsService;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IWiserCustomersService wiserCustomersService, IHttpContextAccessor httpContextAccessor, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService)
+        public TemplatesService(IWiserCustomersService wiserCustomersService, IHttpContextAccessor httpContextAccessor, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.httpContextAccessor = httpContextAccessor;
@@ -59,6 +64,7 @@ namespace Api.Modules.Templates.Services
             this.apiReplacementsService = apiReplacementsService;
             this.templateDataService = templateDataService;
             this.historyService = historyService;
+            this.wiserItemsService = wiserItemsService;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -2496,15 +2502,66 @@ LIMIT 1";
                 throw new ArgumentException("TemplateData cannot be empty.");
             }
 
-            var linkList = await templateDataService.GetLinkedTemplatesAsync(template.TemplateId);
-
-            var linksToAdd = new List<int>();
-            var linksToRemove = new List<int>();
-
             var jsLinks = template.LinkedTemplates.LinkedJavascript.Select(x => x.TemplateId).ToList();
             var scssLinks = template.LinkedTemplates.LinkedSccsTemplates.Select(x => x.TemplateId).ToList();
             
+            // Compile / minify (S)CSS, javascript and HTML.
+            switch (template.Type)
+            {
+                case TemplateTypes.Css:
+                    if (template.DisableMinifier || String.IsNullOrWhiteSpace(template.EditorValue))
+                    {
+                        break;
+                    }
+
+                    template.MinifiedValue = Uglify.Css(template.EditorValue).Code;
+
+                    break;
+                case TemplateTypes.Scss:
+                    // If the current template is a base SCSS include, it is meant to be only used for compiling other SCSS templates.
+                    // Therefor we make the minified value empty and don't compile it by itself.
+                    if (template.IsScssIncludeTemplate)
+                    {
+                        break;
+                    }
+
+                    var stringBuilder = await templateDataService.GetScssIncludesForScssTemplateAsync(template.TemplateId);
+
+                    // Add the current template value last, so it will have access to everything from the base templates.
+                    stringBuilder.AppendLine(template.EditorValue);
+
+                    // Compile to CSS and minify.
+                    var compileResult = SassCompiler.Compile(stringBuilder.ToString());
+                    template.MinifiedValue = Uglify.Css(compileResult.CompiledContent).Code;
+
+                    break;
+                case TemplateTypes.Js:
+                    if (template.DisableMinifier || String.IsNullOrWhiteSpace(template.EditorValue))
+                    {
+                        break;
+                    }
+
+                    var codeSettings = new CodeSettings
+                    {
+                        EvalTreatment = EvalTreatment.Ignore
+                    };
+
+                    template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
+
+                    break;
+                case TemplateTypes.Html:
+                    template.EditorValue = await wiserItemsService.ReplaceHtmlForSavingAsync(template.EditorValue);
+                    template.MinifiedValue = Uglify.Html(template.EditorValue).Code;
+                    break;
+            }
+
             await templateDataService.SaveAsync(template, scssLinks, jsLinks, IdentityHelpers.GetUserName(identity));
+
+            if (template.Type == TemplateTypes.Scss && template.IsScssIncludeTemplate)
+            {
+                // TODO: Get all SCSS templates that are not include templates and re-compile them, to make sure they have the updated version of this template.
+            }
+
             return new ServiceResult<bool>(true);
         }
 
@@ -2620,8 +2677,8 @@ LIMIT 1";
         public async Task<ServiceResult<bool>> MoveAsync(ClaimsIdentity identity, int sourceId, int destinationId, TreeViewDropPositions dropPosition)
         {
             // If the position is "over", it means the destinationId itself will become the new parent, for "before" and "after" it means the parent of the destinationId will become the new parent.
-            var destinationParentId = dropPosition == TreeViewDropPositions.Over ? destinationId : await templateDataService.GetParentId(destinationId) ?? 0;
-            var sourceParentId = await templateDataService.GetParentId(sourceId) ?? 0;
+            var destinationParentId = dropPosition == TreeViewDropPositions.Over ? destinationId : (await templateDataService.GetParentAsync(destinationId) ?? new TemplateSettingsModel()).TemplateId;
+            var sourceParentId = (await templateDataService.GetParentAsync(sourceId) ?? new TemplateSettingsModel()).TemplateId;
             var oldOrderNumber = await templateDataService.GetOrderingAsync(sourceId);
             var newOrderNumber = dropPosition switch
             {

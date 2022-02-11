@@ -189,14 +189,16 @@
     padding-top: 15px;
 }
 
-.user-check-panel {
+.user-check-panel,
+.object-grouping-panel {
     transition: 200ms ease-in-out;
     max-height: 0;
     padding: 0 0 0 22px;
     overflow: hidden;
 }
 
-#user-check:checked ~ .user-check-panel {
+#loginRequired:checked ~ .user-check-panel,
+#groupingCreateObjectInsteadOfArray:checked ~ .object-grouping-panel {
     max-height: 2000px;
     padding: 0 0 0 22px;
 }
@@ -417,6 +419,10 @@
     margin-right: 0;
 }
 
+#published-environments .item .flex-container .k-dropdown {
+    width: 100%;
+}
+
 /** ICONS **/
 .k-sprite {
     color: var(--dark-txt);
@@ -485,4 +491,17 @@
 
 .k-editor-toolbar .k-button {
     padding: 0;
+}
+
+/********************** 
+* CodeMirror
+**********************/
+.k-window-content .CodeMirror-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: auto;
+    z-index: 2000;
 }

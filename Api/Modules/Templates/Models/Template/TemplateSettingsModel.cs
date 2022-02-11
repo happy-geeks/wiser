@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Api.Modules.Templates.Models.Other;
 using GeeksCoreLibrary.Modules.Templates.Enums;
+using Newtonsoft.Json;
 
 namespace Api.Modules.Templates.Models.Template
 {
@@ -14,13 +15,17 @@ namespace Api.Modules.Templates.Models.Template
         public int? ParentId { get; set; }
         public string Name { get; set; }
         public string EditorValue { get; set; }
+        [JsonIgnore]
+        public string MinifiedValue { get; set; }
         public int Version { get; set; }
         public DateTime ChangedOn { get; set; }
         public string ChangedBy { get; set; }
         public TemplateTypes Type { get; set; }
         public int Ordering { get; set; }
+        public LinkedTemplatesModel LinkedTemplates { get; set; }
+        public PublishedEnvironmentModel PublishedEnvironments { get; set; }
 
-        //Advanced settings
+        // HTML settings
         public int UseCache { get; set; }
         public int CacheMinutes { get; set; }
         public bool HandleRequests { get; set; }
@@ -36,9 +41,24 @@ namespace Api.Modules.Templates.Models.Template
         public string LoginSessionPrefix { get; set; }
         public string LoginRole { get; set; }
 
-        public Dictionary<string, object> Changes { get; set; }
+        // Css/Scss/Js settings.
+        public ResourceInsertModes InsertMode { get; set; }
+        public bool LoadAlways { get; set; }
+        public string UrlRegex { get; set; }
+        public List<string> ExternalFiles { get; set; } = new();
+        public bool IsScssIncludeTemplate { get; set; }
+        public bool UseInWiserHtmlEditors { get; set; }
 
-        public LinkedTemplatesModel LinkedTemplates { get; set; }
-        public PublishedEnvironmentModel PublishedEnvironments { get; set; }
+        // Js only settings.
+        public bool DisableMinifier { get; set; }
+        
+        // Query settings,
+        public bool GroupingCreateObjectInsteadOfArray { get; set; }
+        public string GroupingPrefix { get; set; }
+        public string GroupingKey { get; set; }
+        public string GroupingKeyColumnName { get; set; }
+        public string GroupingValueColumnName { get; set; }
+
+        public Dictionary<string, object> Changes { get; set; }
     }
 }
