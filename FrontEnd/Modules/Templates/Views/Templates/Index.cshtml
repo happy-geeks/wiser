@@ -89,6 +89,20 @@
 
     <div id="dynamicContentWindow"></div>
 
+    <!-- Window for previewing and editing the HTML source of a kendo HTML editor. -->
+    <div id="htmlSourceWindow" class="html-source-window">
+        <div class="k-content-frame pane-content">
+            <textarea class="editor-html"></textarea>
+        </div>
+        <footer class="fixed clear">
+            <div class="actions">
+                <button class="k-primary" name="save">Update</button>
+                <button class="k-secondary" name="cancel">Annuleren</button>
+                <button class="addDynamicContent"></button>
+            </div>
+        </footer>
+    </div>
+
     <div id="createNewItemDialog">
         <div class="formview full static-fields">
             <div class="item">
