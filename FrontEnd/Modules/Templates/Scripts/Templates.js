@@ -893,6 +893,12 @@ const moduleSettings = {
                     tooltip: "Dynamische inhoud toevoegen",
                     exec: this.onHtmlEditorDynamicContentExec.bind(this)
                 };
+                const htmlSourceTool = {
+	                name: "wiserHtmlSource",
+	                tooltip: "HTML bekijken/aanpassen",
+	                exec: this.onHtmlEditorHtmlSourceExec.bind(this)
+                };
+
                 this.mainHtmlEditor = $(".editor").kendoEditor({
                     resizable: true,
                     tools: [
@@ -923,7 +929,7 @@ const moduleSettings = {
                         "addColumnRight",
                         "deleteRow",
                         "deleteColumn",
-                        "viewHtml",
+                        htmlSourceTool,
                         "formatting",
                         "cleanFormatting"
                     ]
@@ -994,8 +1000,9 @@ const moduleSettings = {
          * Event that gets called when the user executes the custom action for adding dynamic content from Wiser to the HTML editor.
          * This will open a dialog where they can select any component that is linked to the current template, or add a new one.
          * @param {any} event The event from the execute action.
+         * @param {any} codeMirror Optional: The CodeMirror editor where the action is executed in.
          */
-        async onHtmlEditorDynamicContentExec(event) {
+        async onHtmlEditorDynamicContentExec(event, codeMirror = null) {
             let dropDown = $("#dynamicContentDropDown").data("kendoDropDownList");
             if (!dropDown) {
                 dropDown = $("#dynamicContentDropDown").kendoDropDownList({
@@ -1040,13 +1047,92 @@ const moduleSettings = {
                             }
 
                             const html = `<div class="dynamic-content" content-id="${id}"><h2>${title}</h2></div>`;
-                            this.mainHtmlEditor.exec("inserthtml", { value: html });
+
+                            if (codeMirror) {
+                                const doc = codeMirror.getDoc();
+                                const cursor = doc.getCursor();
+                                doc.replaceRange(html, cursor);
+                            } else {
+                                this.mainHtmlEditor.exec("inserthtml", { value: html });
+                            }
                         }
                     }
                 ]
             }).data("kendoDialog");
 
             dialog.open();
+        }
+
+        /**
+         * Event that gets called when the user executes the custom action for viewing / changing the HTML source of the editor.
+         * @param {any} event The event from the execute action.
+         * @param {any} editor The HTML editor where the action is executed in.
+         * @param {any} itemId The ID of the current item.
+         */
+        async onHtmlEditorHtmlSourceExec(event, editor) {
+            const htmlWindow = $("#htmlSourceWindow").clone(true);
+            const textArea = htmlWindow.find("textarea").val(this.mainHtmlEditor.value());
+            // Prettify code from minified text.
+            const pretty = await require('pretty');
+            textArea[0].value = pretty(textArea[0].value, { ocd: false });
+            let codeMirrorInstance;
+
+            htmlWindow.kendoWindow({
+                width: "100%",
+                height: "100%",
+                title: "HTML van editor",
+                activate: async (activateEvent) => {
+                    const codeMirrorSettings = {
+                        lineNumbers: true,
+                        indentUnit: 4,
+                        lineWrapping: true,
+                        foldGutter: true,
+                        gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
+                        lint: true,
+                        extraKeys: {
+                            "Ctrl-Q": function (cm) {
+                                cm.foldCode(cm.getCursor());
+                            },
+                            "Ctrl-Space": "autocomplete"
+                        },
+                        mode: "text/html"
+                    };
+
+                    // Only load code mirror when we actually need it.
+                    await Misc.ensureCodeMirror();
+                    codeMirrorInstance = CodeMirror.fromTextArea(textArea[0], codeMirrorSettings);
+                },
+                resize: (resizeEvent) => {
+                    codeMirrorInstance.refresh();
+                },
+                close: (closeEvent) => {
+                    closeEvent.sender.destroy();
+                    htmlWindow.remove();
+                }
+            });
+
+            const kendoWindow = htmlWindow.data("kendoWindow").maximize().open();
+
+            htmlWindow.find(".addDynamicContent").kendoButton({
+                click: () => {
+                    this.onHtmlEditorDynamicContentExec(event, codeMirrorInstance);
+                },
+                icon: "css"
+            });
+
+            htmlWindow.find(".k-primary").kendoButton({
+                click: () => {
+                    this.mainHtmlEditor.value(codeMirrorInstance.getValue());
+                    kendoWindow.close();
+                },
+                icon: "save"
+            });
+            htmlWindow.find(".k-secondary").kendoButton({
+                click: () => {
+                    kendoWindow.close();
+                },
+                icon: "cancel"
+            });
         }
 
         onDynamicContentOpenClick(event) {
@@ -1172,7 +1258,7 @@ const moduleSettings = {
                         linkedJavascript: jsLinks
                     }
                 }, this.getNewSettings());
-                
+
                 const externalFilesGrid = $("#externalFiles").data("kendoGrid");
                 if (externalFilesGrid) {
                     data.externalFiles = externalFilesGrid.dataSource.data().map(d => d.url);
@@ -1347,13 +1433,13 @@ const moduleSettings = {
             window.processing.removeProcess(process);
             return success;
         }
-        
+
         /**
          * Retrieve the new values entered by the user.
          * */
         getNewSettings() {
             const settingsList = {};
-            
+
             $(".advanced input, .advanced select").each((index, element) => {
                 const field = $(element);
                 const propertyName = field.attr("name");
@@ -1363,10 +1449,10 @@ const moduleSettings = {
                 }
 
                 const kendoControlName = field.data("kendoControl");
-                
+
                 if (kendoControlName) {
                     const kendoControl = field.data(kendoControlName);
-                    
+
                     if (kendoControl) {
                         settingsList[propertyName] = kendoControl.value();
                         return;
