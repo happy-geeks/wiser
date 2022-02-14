@@ -112,7 +112,8 @@ namespace Api.Modules.Templates.Interfaces
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="template">A <see cref="TemplateSettingsModel"/> containing the data of the template that is to be saved as a new version</param>
-        Task<ServiceResult<bool>> SaveTemplateVersionAsync(ClaimsIdentity identity, TemplateSettingsModel template);
+        /// <param name="skipCompilation">Optional: Whether or not to skip the compilations of SCSS templates. Default value is <see langword="false" />.</param>
+        Task<ServiceResult<bool>> SaveTemplateVersionAsync(ClaimsIdentity identity, TemplateSettingsModel template, bool skipCompilation = false);
         
         /// <summary>
         /// Retrieve the tree view section underlying the parentId. Transforms the tree view section into a list of TemplateTreeViewModels.
