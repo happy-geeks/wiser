@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using Api.Modules.Templates.Helpers;
@@ -12,6 +13,7 @@ using GeeksCoreLibrary.Core.Cms.Attributes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Extensions;
 using Newtonsoft.Json.Linq;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace FrontEnd.Modules.Templates.Controllers
 {
@@ -51,7 +53,7 @@ namespace FrontEnd.Modules.Templates.Controllers
         public IActionResult DynamicContentTabPane(string component, [FromBody]DynamicContentOverviewModel data)
         {
             var componentType = ReflectionHelper.GetComponentTypeByName(component);
-            var viewModel = GenerateDynamicContentInformationViewModel(componentType, data.Data);
+            var viewModel = GenerateDynamicContentInformationViewModel(componentType, data.Data, data.ComponentMode);
 
             return PartialView("Partials/DynamicContentTabPane", viewModel);
         }
@@ -87,30 +89,33 @@ namespace FrontEnd.Modules.Templates.Controllers
             }
             return resultDictionary;
         }
-        
+
         /// <summary>
         /// The method retrieves property attributes of a component and will divide the properties into the tabs and groups they belong to.
         /// </summary>
         /// <param name="component">The component from which the properties should be retrieved.</param>
         /// <param name="data">The data from database for this component.</param>
+        /// <param name="componentMode">The selected mode of the component.</param>
         /// <returns>
         /// A list of <see cref="TabViewModel"/>.
         /// </returns>
-        private static DynamicContentInformationViewModel GenerateDynamicContentInformationViewModel(Type component, Dictionary<string, object> data)
+        private static DynamicContentInformationViewModel GenerateDynamicContentInformationViewModel(Type component, Dictionary<string, object> data, string componentMode)
         {
             var cmsSettingsType = ReflectionHelper.GetCmsSettingsType(component);
-            return GenerateDynamicContentInformationViewModel(cmsSettingsType.GetProperties(), data);
+            return GenerateDynamicContentInformationViewModel(component, cmsSettingsType.GetProperties(), data, componentMode);
         }
-        
+
         /// <summary>
         /// The method retrieves property attributes of a component and will divide the properties into the tabs and groups they belong to.
         /// </summary>
+        /// <param name="component">The component type.</param>
         /// <param name="properties">The properties of the component.</param>
         /// <param name="data">The data from database for this component.</param>
+        /// <param name="componentMode">The selected mode of the component.</param>
         /// <returns>
         /// A list of <see cref="TabViewModel"/>.
         /// </returns>
-        private static DynamicContentInformationViewModel GenerateDynamicContentInformationViewModel(IEnumerable<PropertyInfo> properties, Dictionary<string, object> data)
+        private static DynamicContentInformationViewModel GenerateDynamicContentInformationViewModel(Type component, IEnumerable<PropertyInfo> properties, Dictionary<string, object> data, string componentMode)
         {
             var result = new DynamicContentInformationViewModel { Tabs = new List<TabViewModel>() };
             var orderedProperties = properties.Where(propInfo => propInfo.GetCustomAttribute<CmsPropertyAttribute>() != null).OrderBy(propInfo => propInfo.GetCustomAttribute<CmsPropertyAttribute>()?.DisplayOrder ?? 999);
@@ -118,7 +123,7 @@ namespace FrontEnd.Modules.Templates.Controllers
             foreach (var property in orderedProperties)
             {
                 var cmsPropertyAttribute = property.GetCustomAttribute<CmsPropertyAttribute>();
-
+                
                 if (cmsPropertyAttribute == null || cmsPropertyAttribute.HideInCms)
                 {
                     continue;
@@ -151,22 +156,41 @@ namespace FrontEnd.Modules.Templates.Controllers
 
                     tab.Groups.Add(group);
                 }
-                
+
+                var isDefaultValue = false;
                 var value = data.FirstOrDefault(setting => property.Name.Equals(setting.Key, StringComparison.OrdinalIgnoreCase)).Value;
+
+                // If we have no value, get the default value.
+                if (component != null && (value == property.PropertyType.GetDefaultValue() || (value is string stringValue && String.IsNullOrEmpty(stringValue))))
+                {
+                    var assembly = Assembly.GetAssembly(component);
+                    var fullTypeName = $"{component.Namespace}.Models.{component.Name}{componentMode}SettingsModel";
+                    var type = assembly?.GetType(fullTypeName);
+                    var defaultValueProperty = type?.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).FirstOrDefault(p => p.Name == property.Name);
+                    var defaultValueAttribute = defaultValueProperty?.GetCustomAttribute<DefaultValueAttribute>();
+                    if (defaultValueAttribute != null)
+                    {
+                        value = defaultValueAttribute.Value;
+                        isDefaultValue = true;
+                    }
+                }
+
                 var field = new FieldViewModel
                 {
                     Name = property.Name,
                     CmsPropertyAttribute = cmsPropertyAttribute,
                     PropertyInfo = property,
-                    Value = value
+                    Value = value,
+                    IsDefaultValue = isDefaultValue
                 };
                 group.Fields.Add(field);
 
+                // Get sub values if we have any. (For example, a Repeater component has a dynamic amount of layers, this code handles that functionality.)
                 if (property.PropertyType.IsGenericType && (property.PropertyType.GetGenericTypeDefinition() == typeof(SortedList<,>) || property.PropertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>)) && property.PropertyType.GetGenericArguments().First() == typeof(string))
                 {
                     var subSettingsType = property.PropertyType.GetGenericArguments().Last();
 
-                    var subData = GenerateDynamicContentInformationViewModel(subSettingsType.GetProperties(), new Dictionary<string, object>());
+                    var subData = GenerateDynamicContentInformationViewModel(component, subSettingsType.GetProperties(), new Dictionary<string, object>(), componentMode);
                     field.SubFields = new Dictionary<string, List<FieldViewModel>>
                     {
                         { "_template", subData.Tabs.SelectMany(t => t.Groups.SelectMany(g => g.Fields)).ToList() }
@@ -176,14 +200,14 @@ namespace FrontEnd.Modules.Templates.Controllers
                     {
                         foreach (var item in jsonObject.Properties())
                         {
-                            subData = GenerateDynamicContentInformationViewModel(subSettingsType.GetProperties(), item.Value.ToObject<Dictionary<string, object>>());
+                            subData = GenerateDynamicContentInformationViewModel(component, subSettingsType.GetProperties(), item.Value.ToObject<Dictionary<string, object>>(), componentMode);
                             field.SubFields ??= new Dictionary<string, List<FieldViewModel>>();
                             field.SubFields.Add(item.Name, subData.Tabs.SelectMany(t => t.Groups.SelectMany(g => g.Fields)).ToList());
                         }
                     }
                     else
                     {
-                        subData = GenerateDynamicContentInformationViewModel(subSettingsType.GetProperties(), new Dictionary<string, object>());
+                        subData = GenerateDynamicContentInformationViewModel(component, subSettingsType.GetProperties(), new Dictionary<string, object>(), componentMode);
                         field.SubFields.Add("", subData.Tabs.SelectMany(t => t.Groups.SelectMany(g => g.Fields)).ToList());
                     }
                 }
