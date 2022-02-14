@@ -10,6 +10,8 @@ namespace FrontEnd.Modules.Templates.Models
 
         public object Value { get; set; }
 
+        public bool IsDefaultValue { get; set; }
+
         public Dictionary<string, List<FieldViewModel>> SubFields { get; set; }
 
         public PropertyInfo PropertyInfo { get; set; }

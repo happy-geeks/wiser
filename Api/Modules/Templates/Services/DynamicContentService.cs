@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -110,8 +111,43 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public async Task<ServiceResult<int>> SaveNewSettingsAsync(ClaimsIdentity identity, int contentId, string component, int componentMode, string title, Dictionary<string, object> settings)
         {
-            var modes = GetComponentModes(ReflectionHelper.GetComponentTypeByName(component));
+            var componentType = ReflectionHelper.GetComponentTypeByName(component);
+            var modes = GetComponentModes(componentType);
             modes.TryGetValue(componentMode, out var componentModeName);
+
+            // Remove default values so that they won't be saved in the database.
+            var assembly = Assembly.GetAssembly(componentType);
+            var fullTypeName = $"{componentType.Namespace}.Models.{componentType.Name}{componentModeName}SettingsModel";
+            var type = assembly?.GetType(fullTypeName);
+            var defaultValueProperties = type?.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            if (defaultValueProperties != null)
+            {
+                var settingsToRemove = new List<string>();
+                foreach (var setting in settings)
+                {
+                    var defaultValueProperty = defaultValueProperties.FirstOrDefault(p => p.Name == setting.Key);
+                    var defaultValueAttribute = defaultValueProperty?.GetCustomAttribute<DefaultValueAttribute>();
+                    if (defaultValueAttribute == null)
+                    {
+                        continue;
+                    }
+
+                    var itemValue = setting.Value == null ? "" : setting.Value.ToString().Replace("\r", "").Replace("\n", "");
+                    var defaultValue = defaultValueAttribute.Value == null ? "" : defaultValueAttribute.Value.ToString().Replace("\r", "").Replace("\n", "");
+                    if (itemValue != defaultValue)
+                    {
+                        continue;
+                    }
+
+                    settingsToRemove.Add(setting.Key);
+                }
+
+                foreach (var propertyName in settingsToRemove)
+                {
+                    settings.Remove(propertyName);
+                }
+            }
+
             return new ServiceResult<int>(await dataService.SaveSettingsStringAsync(contentId, component, componentModeName, title, settings, IdentityHelpers.GetUserName(identity)));
         }
 
