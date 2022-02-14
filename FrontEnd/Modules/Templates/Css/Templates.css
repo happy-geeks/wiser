@@ -497,7 +497,8 @@
 /********************** 
 * CodeMirror
 **********************/
-.k-window-content .CodeMirror-fullscreen {
+.k-window-content .CodeMirror-fullscreen,
+.k-content .CodeMirror-fullscreen {
     position: fixed;
     top: 0;
     left: 0;

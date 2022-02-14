@@ -501,7 +501,9 @@ const moduleSettings = {
                             sender.foldCode(sender.getCursor());
                         },
                         "F11": (sender) => {
-                            sender.setOption("fullScreen", !sender.getOption("fullScreen"));
+                            const isFullScreen = sender.getOption("fullScreen");
+                            sender.setOption("fullScreen", !isFullScreen);
+                            $(sender.getTextArea()).closest(".item.has-default-value").css("opacity", isFullScreen ? "" : "1");
                         },
                         "Esc": (sender) => {
                             if (sender.getOption("fullScreen")) sender.setOption("fullScreen", false);
