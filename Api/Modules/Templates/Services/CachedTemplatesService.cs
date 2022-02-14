@@ -116,9 +116,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(ClaimsIdentity identity, TemplateSettingsModel template)
+        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(ClaimsIdentity identity, TemplateSettingsModel template, bool skipCompilation = false)
         {
-            return await templatesService.SaveTemplateVersionAsync(identity, template);
+            return await templatesService.SaveTemplateVersionAsync(identity, template, skipCompilation);
         }
 
         /// <inheritdoc />

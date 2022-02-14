@@ -150,7 +150,11 @@ namespace Api.Modules.Templates.Services.DataLayer
                 GroupingKeyColumnName = dataTable.Rows[0].Field<string>("grouping_key_column_name"),
                 GroupingValueColumnName = dataTable.Rows[0].Field<string>("grouping_value_column_name"),
                 IsScssIncludeTemplate = Convert.ToBoolean(dataTable.Rows[0]["is_scss_include_template"]),
-                UseInWiserHtmlEditors = Convert.ToBoolean(dataTable.Rows[0]["use_in_wiser_html_editors"])
+                UseInWiserHtmlEditors = Convert.ToBoolean(dataTable.Rows[0]["use_in_wiser_html_editors"]),
+                LinkedTemplates = new LinkedTemplatesModel
+                {
+                    RawLinkList = dataTable.Rows[0].Field<string>("linked_templates")
+                }
             };
 
             return templateData;
@@ -351,7 +355,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<int> SaveAsync(TemplateSettingsModel templateSettings, List<int> sccsLinks, List<int> jsLinks, string username)
+        public async Task<int> SaveAsync(TemplateSettingsModel templateSettings, string templateLinks, string username)
         {
             var ordering = await GetOrderingAsync(templateSettings.TemplateId);
             clientDatabaseConnection.ClearParameters();
@@ -389,11 +393,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("groupingValueColumnName", templateSettings.GroupingValueColumnName);
             clientDatabaseConnection.AddParameter("isScssIncludeTemplate", templateSettings.IsScssIncludeTemplate);
             clientDatabaseConnection.AddParameter("useInWiserHtmlEditors", templateSettings.UseInWiserHtmlEditors);
-
-            var mergeList = new List<int>();
-            mergeList.AddRange(sccsLinks);
-            mergeList.AddRange(jsLinks);
-            clientDatabaseConnection.AddParameter("templateLinks", String.Join(",", mergeList));
+            clientDatabaseConnection.AddParameter("templateLinks", templateLinks);
 
             return await clientDatabaseConnection.ExecuteAsync($@"
                 SET @VersionNumber = (SELECT MAX(version)+1 FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId GROUP BY template_id);
@@ -480,7 +480,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("parentId", parentId);
-            
+
             var query = $@"SELECT
 	                        template.id,
 	                        template.template_name,
@@ -545,7 +545,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
             clientDatabaseConnection.AddParameter("username", username);
             clientDatabaseConnection.AddParameter("ordering", ordering);
-            
+
             var dataTable = await clientDatabaseConnection.GetAsync(@$"SET @id = (SELECT MAX(template_id)+1 FROM {WiserTableNames.WiserTemplate});
                                                             INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, changed_on, changed_by, published_environment, ordering)
                                                             VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, 1, ?ordering);
@@ -577,7 +577,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                 ) AS ordering ON ordering.template_id = template.template_id
                                                 SET template.ordering = ordering.newOrdering");
         }
-        
+
         /// <inheritdoc />
         public async Task<TemplateSettingsModel> GetParentAsync(int templateId)
         {
@@ -624,7 +624,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                             LIMIT 1");
             return dataTable.Rows.Count == 0 ? 0 : dataTable.Rows[0].Field<int>("ordering");
         }
-        
+
         /// <inheritdoc />
         public async Task<int> GetHighestOrderNumberOfChildrenAsync(int templateId)
         {
@@ -638,7 +638,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                     AND otherVersion.id IS NULL");
             return dataTable.Rows.Count == 0 ? 0 : Convert.ToInt32(dataTable.Rows[0]["ordering"]);
         }
-        
+
         /// <inheritdoc />
         public async Task MoveAsync(int sourceId, int destinationId, int sourceParentId, int destinationParentId, int oldOrderNumber, int newOrderNumber, TreeViewDropPositions dropPosition, string username)
         {
@@ -717,7 +717,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             } while (scssRootId > 0 && !String.IsNullOrWhiteSpace(name) && !name.Equals("SCSS", StringComparison.OrdinalIgnoreCase));
 
             var result = new StringBuilder();
-            
+
             clientDatabaseConnection.AddParameter("rootId", scssRootId);
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT template.template_data
                                                                         FROM {WiserTableNames.WiserTemplate} AS template
@@ -730,7 +730,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                         LEFT JOIN {WiserTableNames.WiserTemplate} AS parent6 ON parent6.template_id = parent5.parent_id AND parent6.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent5.parent_id)
                                                                         LEFT JOIN {WiserTableNames.WiserTemplate} AS parent7 ON parent7.template_id = parent6.parent_id AND parent7.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent6.parent_id)
                                                                         LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = parent7.parent_id AND parent8.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent7.parent_id)
-                                                                        WHERE template.type = {(int)TemplateTypes.Scss}
+                                                                        WHERE template.template_type = {(int)TemplateTypes.Scss}
+                                                                        AND template.is_scss_include_template = 1
                                                                         AND template.removed = 0
                                                                         AND otherVersion.id IS NULL
                                                                         AND template.template_data IS NOT NULL
@@ -740,6 +741,132 @@ namespace Api.Modules.Templates.Services.DataLayer
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 result.AppendLine(dataRow.Field<string>("template_data"));
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc />
+        public async Task<List<TemplateSettingsModel>> GetScssTemplatesThatAreNotIncludesAsync(int templateId)
+        {
+            // First we need to find the root ID.
+            // Some customers have multiple websites in the same Wiser instance and can therefor have multiple SCSS root directories.
+            // We need to find the root directory for the given template, so that we don't include SCSS from a different website.
+            string name;
+            var scssRootId = templateId;
+
+            do
+            {
+                var parent = await GetParentAsync(templateId);
+                if (parent == null)
+                {
+                    break;
+                }
+
+                name = parent.Name;
+                scssRootId = parent.TemplateId;
+            } while (scssRootId > 0 && !String.IsNullOrWhiteSpace(name) && !name.Equals("SCSS", StringComparison.OrdinalIgnoreCase));
+
+            var result = new List<TemplateSettingsModel>();
+
+            clientDatabaseConnection.AddParameter("rootId", scssRootId);
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT
+                                                                            template.template_id, 
+                                                                            template.parent_id, 
+                                                                            template.template_type, 
+                                                                            template.template_name, 
+                                                                            template.template_data, 
+                                                                            template.version, 
+                                                                            template.changed_on, 
+                                                                            template.changed_by, 
+                                                                            template.use_cache,   
+                                                                            template.cache_minutes, 
+                                                                            template.handle_request, 
+                                                                            template.handle_session, 
+                                                                            template.handle_objects, 
+                                                                            template.handle_standards, 
+                                                                            template.handle_translations, 
+                                                                            template.handle_dynamic_content, 
+                                                                            template.handle_logic_blocks, 
+                                                                            template.handle_mutators, 
+                                                                            template.login_required, 
+                                                                            template.login_user_type, 
+                                                                            template.login_session_prefix, 
+                                                                            template.login_role, 
+                                                                            template.linked_templates, 
+                                                                            template.ordering,
+                                                                            template.insert_mode,
+                                                                            template.load_always,
+                                                                            template.url_regex,
+                                                                            template.external_files,
+                                                                            template.grouping_create_object_instead_of_array,
+                                                                            template.grouping_prefix,
+                                                                            template.grouping_key,
+                                                                            template.grouping_key_column_name,
+                                                                            template.grouping_value_column_name,
+                                                                            template.is_scss_include_template,
+                                                                            template.use_in_wiser_html_editors
+                                                                        FROM {WiserTableNames.WiserTemplate} AS template
+                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
+                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent2 ON parent2.template_id = parent1.parent_id AND parent2.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent1.parent_id)
+                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent3 ON parent3.template_id = parent2.parent_id AND parent3.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent2.parent_id)
+                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent4 ON parent4.template_id = parent3.parent_id AND parent4.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent3.parent_id)
+                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent5 ON parent5.template_id = parent4.parent_id AND parent5.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent4.parent_id)
+                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent6 ON parent6.template_id = parent5.parent_id AND parent6.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent5.parent_id)
+                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent7 ON parent7.template_id = parent6.parent_id AND parent7.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent6.parent_id)
+                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = parent7.parent_id AND parent8.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent7.parent_id)
+                                                                        WHERE template.template_type = {(int)TemplateTypes.Scss}
+                                                                        AND template.is_scss_include_template = 0
+                                                                        AND template.removed = 0
+                                                                        AND otherVersion.id IS NULL
+                                                                        AND template.template_data IS NOT NULL
+                                                                        AND (?rootId = 0 OR ?rootId IN (parent8.template_id, parent7.template_id, parent6.template_id, parent5.template_id, parent4.template_id, parent3.template_id, parent2.template_id, parent1.template_id))
+                                                                        ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering, parent4.ordering, parent3.ordering, parent2.ordering, parent1.ordering, template.ordering");
+
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                result.Add(new TemplateSettingsModel
+                {
+                    TemplateId = dataRow.Field<int>("template_id"),
+                    ParentId = dataRow.Field<int?>("parent_id"),
+                    Type = dataRow.Field<TemplateTypes>("template_type"),
+                    Name = dataRow.Field<string>("template_name"),
+                    EditorValue = dataRow.Field<string>("template_data"),
+                    Version = dataRow.Field<int>("version"),
+                    ChangedOn = dataRow.Field<DateTime>("changed_on"),
+                    ChangedBy = dataRow.Field<string>("changed_by"),
+                    UseCache = dataRow.Field<int>("use_cache"),
+                    CacheMinutes = dataRow.Field<int>("cache_minutes"),
+                    HandleRequests = Convert.ToBoolean(dataRow["handle_request"]),
+                    HandleSession = Convert.ToBoolean(dataRow["handle_session"]),
+                    HandleStandards = Convert.ToBoolean(dataRow["handle_standards"]),
+                    HandleObjects = Convert.ToBoolean(dataRow["handle_objects"]),
+                    HandleTranslations = Convert.ToBoolean(dataRow["handle_translations"]),
+                    HandleDynamicContent = Convert.ToBoolean(dataRow["handle_dynamic_content"]),
+                    HandleLogicBlocks = Convert.ToBoolean(dataRow["handle_logic_blocks"]),
+                    HandleMutators = Convert.ToBoolean(dataRow["handle_mutators"]),
+                    LoginRequired = Convert.ToBoolean(dataRow["login_required"]),
+                    LoginUserType = dataRow.Field<string>("login_user_type"),
+                    LoginSessionPrefix = dataRow.Field<string>("login_session_prefix"),
+                    LoginRole = dataRow.Field<string>("login_role"),
+                    Ordering = dataRow.Field<int>("ordering"),
+                    InsertMode = dataRow.Field<ResourceInsertModes>("insert_mode"),
+                    LoadAlways = Convert.ToBoolean(dataRow["load_always"]),
+                    UrlRegex = dataRow.Field<string>("url_regex"),
+                    ExternalFiles = dataRow.Field<string>("external_files")?.Split(",")?.ToList() ?? new List<string>(),
+                    GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(dataRow["grouping_create_object_instead_of_array"]),
+                    GroupingPrefix = dataRow.Field<string>("grouping_prefix"),
+                    GroupingKey = dataRow.Field<string>("grouping_key"),
+                    GroupingKeyColumnName = dataRow.Field<string>("grouping_key_column_name"),
+                    GroupingValueColumnName = dataRow.Field<string>("grouping_value_column_name"),
+                    IsScssIncludeTemplate = Convert.ToBoolean(dataRow["is_scss_include_template"]),
+                    UseInWiserHtmlEditors = Convert.ToBoolean(dataRow["use_in_wiser_html_editors"]),
+                    LinkedTemplates = new LinkedTemplatesModel
+                    {
+                        RawLinkList = dataRow.Field<string>("linked_templates")
+                    }
+                });
             }
 
             return result;

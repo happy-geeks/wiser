@@ -206,11 +206,12 @@ namespace Api.Modules.Templates.Controllers
         /// </summary>
         /// <param name="templateId">The ID of the template to update.</param>
         /// <param name="templateData">A <see cref="TemplateSettingsModel"/> containing the data of the template that is to be saved as a new version</param>
+        /// <param name="skipCompilation">Optional: Whether or not to skip the compilations of SCSS templates. Default value is false.</param>
         [HttpPost, Route("{templateId:int}"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        public async Task<IActionResult> SaveAsync(int templateId, TemplateSettingsModel templateData)
+        public async Task<IActionResult> SaveAsync(int templateId, TemplateSettingsModel templateData, bool skipCompilation = false)
         {
             templateData.TemplateId = templateId;
-            return (await templatesService.SaveTemplateVersionAsync((ClaimsIdentity)User.Identity, templateData)).GetHttpResponseMessage();
+            return (await templatesService.SaveTemplateVersionAsync((ClaimsIdentity)User.Identity, templateData, skipCompilation)).GetHttpResponseMessage();
         }
         
         /// <summary>
