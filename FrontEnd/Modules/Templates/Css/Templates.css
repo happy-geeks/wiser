@@ -1,7 +1,8 @@
 ﻿@import "../../Base/scss/base.scss";
 
 #createNewItemDialog,
-#addDynamicContentToHtmlDialog  {
+#addDynamicContentToHtmlDialog,
+#htmlSourceWindow {
     display: none;
 }
 
