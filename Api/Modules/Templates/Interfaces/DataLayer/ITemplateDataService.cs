@@ -71,11 +71,10 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// Saves the template data as a new version of the template.
         /// </summary>
         /// <param name="templateSettings">A <see cref="TemplateSettingsModel"/> containing the new data to save as a new template version.</param>
-        /// <param name="scssLinks"></param>
-        /// <param name="jsLinks"></param>
+        /// <param name="templateLinks">A comma separated list of all linked javascript/scss/css templates.</param>
         /// <param name="username">The name of the authenticated user.</param>
         /// <returns>An int confirming the affected rows of the query.</returns>
-        Task<int> SaveAsync(TemplateSettingsModel templateSettings, List<int> scssLinks, List<int> jsLinks, string username);
+        Task<int> SaveAsync(TemplateSettingsModel templateSettings, string templateLinks, string username);
         
         /// <summary>
         /// Retreives a section of the treeview around the given id. In case the id is 0 the root section of the tree will be retrieved.
@@ -147,5 +146,12 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="templateId">The ID of the SCSS template to get the includes/imports for.</param>
         /// <returns>A <see cref="StringBuilder"/> with the contents of all SCSS in the correct order.</returns>
         Task<StringBuilder> GetScssIncludesForScssTemplateAsync(int templateId);
+        
+        /// <summary>
+        /// Get all SCSS templates that are not include templates. These templates need to be recompiled when someone changes an include template.
+        /// </summary>
+        /// <param name="templateId">The ID of the SCSS template to get the includes/imports for.</param>
+        /// <returns>A <see cref="StringBuilder"/> with the contents of all SCSS in the correct order.</returns>
+        Task<List<TemplateSettingsModel>> GetScssTemplatesThatAreNotIncludesAsync(int templateId);
     }
 }

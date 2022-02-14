@@ -30,6 +30,7 @@ using LibSassHost;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
 using NUglify;
+using NUglify.Html;
 using NUglify.JavaScript;
 
 namespace Api.Modules.Templates.Services
@@ -2495,15 +2496,12 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(ClaimsIdentity identity, TemplateSettingsModel template)
+        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(ClaimsIdentity identity, TemplateSettingsModel template, bool skipCompilation = false)
         {
             if (template == null)
             {
                 throw new ArgumentException("TemplateData cannot be empty.");
             }
-
-            var jsLinks = template.LinkedTemplates.LinkedJavascript.Select(x => x.TemplateId).ToList();
-            var scssLinks = template.LinkedTemplates.LinkedSccsTemplates.Select(x => x.TemplateId).ToList();
             
             // Compile / minify (S)CSS, javascript and HTML.
             switch (template.Type)
@@ -2520,7 +2518,7 @@ LIMIT 1";
                 case TemplateTypes.Scss:
                     // If the current template is a base SCSS include, it is meant to be only used for compiling other SCSS templates.
                     // Therefor we make the minified value empty and don't compile it by itself.
-                    if (template.IsScssIncludeTemplate)
+                    if (template.IsScssIncludeTemplate || skipCompilation)
                     {
                         break;
                     }
@@ -2551,15 +2549,36 @@ LIMIT 1";
                     break;
                 case TemplateTypes.Html:
                     template.EditorValue = await wiserItemsService.ReplaceHtmlForSavingAsync(template.EditorValue);
-                    template.MinifiedValue = Uglify.Html(template.EditorValue).Code;
+                    template.MinifiedValue = Uglify.Html(template.EditorValue, new HtmlSettings { RemoveAttributeQuotes = false }).Code;
                     break;
             }
-
-            await templateDataService.SaveAsync(template, scssLinks, jsLinks, IdentityHelpers.GetUserName(identity));
-
-            if (template.Type == TemplateTypes.Scss && template.IsScssIncludeTemplate)
+            
+            var jsLinks = template.LinkedTemplates?.LinkedJavascript?.Select(x => x.TemplateId).ToList();
+            var scssLinks = template.LinkedTemplates?.LinkedSccsTemplates?.Select(x => x.TemplateId).ToList();
+            var allLinkedTemplates = new List<int>(jsLinks ?? new List<int>());
+            if (scssLinks != null)
             {
-                // TODO: Get all SCSS templates that are not include templates and re-compile them, to make sure they have the updated version of this template.
+                allLinkedTemplates.AddRange(scssLinks);
+            }
+
+            var templateLinks = String.Join(",", allLinkedTemplates);
+            if (templateLinks == "" && !String.IsNullOrWhiteSpace(template.LinkedTemplates?.RawLinkList))
+            {
+                templateLinks = template.LinkedTemplates.RawLinkList;
+            }
+
+            await templateDataService.SaveAsync(template, templateLinks, IdentityHelpers.GetUserName(identity));
+
+            if (template.Type != TemplateTypes.Scss || !template.IsScssIncludeTemplate || skipCompilation)
+            {
+                return new ServiceResult<bool>(true);
+            }
+
+            // Get all SCSS templates that might use the current template and re-compile them, to make sure they will include the latest version of this template.
+            var templates = await templateDataService.GetScssTemplatesThatAreNotIncludesAsync(template.TemplateId);
+            foreach (var otherTemplate in templates)
+            {
+                await SaveTemplateVersionAsync(identity, otherTemplate);
             }
 
             return new ServiceResult<bool>(true);
