@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Preview;
 using Api.Modules.Templates.Models.Template;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Modules.Base.Models;
+using FrontEnd.Modules.Templates.Interfaces;
 using FrontEnd.Modules.Templates.Models;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 using Microsoft.AspNetCore.Mvc;
@@ -15,10 +15,12 @@ namespace FrontEnd.Modules.Templates.Controllers
     public class TemplatesController : Controller
     {
         private readonly IBaseService baseService;
+        private readonly IFrontEndDynamicContentService dynamicContentService;
 
-        public TemplatesController(IBaseService baseService)
+        public TemplatesController(IBaseService baseService, IFrontEndDynamicContentService dynamicContentService)
         {
             this.baseService = baseService;
+            this.dynamicContentService = dynamicContentService;
         }
 
         public IActionResult Index()
@@ -57,8 +59,16 @@ namespace FrontEnd.Modules.Templates.Controllers
         }
 
         [HttpPost, Route("HistoryTab")]
-        public IActionResult HistoryTab([FromBody]TemplateHistoryOverviewModel tabViewData)
+        public IActionResult HistoryTab([FromBody]HistoryTabViewModel tabViewData)
         {
+            foreach (var templateHistory in tabViewData.TemplateHistory)
+            {
+                foreach (var history in templateHistory.DynamicContentChanges)
+                {
+                    history.ChangedFields = dynamicContentService.GenerateChangesListForHistory(history.Changes);
+                }
+            }
+
             return PartialView("Tabs/HistoryTab", tabViewData);
         }
 

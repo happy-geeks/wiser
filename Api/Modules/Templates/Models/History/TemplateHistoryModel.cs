@@ -5,14 +5,18 @@ namespace Api.Modules.Templates.Models.History
 {
     public class TemplateHistoryModel
     {
-        public int Id;
-        public int Version;
-        public DateTime ChangedOn;
-        public string ChangedBy;
+        public int Id { get; set; }
+        public int Version { get; set; }
+        public DateTime ChangedOn { get; set; }
+        public string ChangedBy { get; set; }
 
-        public Dictionary<string, KeyValuePair<object, object>> TemplateChanges;
-        public Dictionary<string, KeyValuePair<object, object>> LinkedTemplateChanges;
-        public List<HistoryVersionModel> DynamicContentChanges;
+        public Dictionary<string, KeyValuePair<object, object>> TemplateChanges { get; set; }
+        public Dictionary<string, KeyValuePair<object, object>> LinkedTemplateChanges { get; set; }
+        public List<HistoryVersionModel> DynamicContentChanges { get; set; }
+
+        public TemplateHistoryModel()
+        {
+        }
 
         public TemplateHistoryModel (int id, int version, DateTime changedOn, string changedBy)
         {

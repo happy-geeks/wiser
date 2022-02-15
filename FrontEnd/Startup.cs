@@ -3,6 +3,8 @@ using FrontEnd.Core.Models;
 using FrontEnd.Core.Services;
 using FrontEnd.Modules.ImportExport.Interfaces;
 using FrontEnd.Modules.ImportExport.Services;
+using FrontEnd.Modules.Templates.Interfaces;
+using FrontEnd.Modules.Templates.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -87,6 +89,7 @@ namespace FrontEnd
             services.AddHttpContextAccessor();
             services.AddTransient<IBaseService, BaseService>();
             services.AddTransient<IImportsService, ImportsService>();
+            services.AddTransient<IFrontEndDynamicContentService, FrontEndDynamicContentService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
