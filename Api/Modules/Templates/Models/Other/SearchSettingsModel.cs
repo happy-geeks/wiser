@@ -11,20 +11,20 @@ namespace Api.Modules.Templates.Models.Other
         public Environments SearchEnvironment { get; set; } = 0;
 
         //Template settings
-        public Boolean SearchTemplateId { get; set; } = true;
-        public Boolean SearchTemplateType { get; set; }
-        public Boolean SearchTemplateName{ get; set; }
-        public Boolean SearchTemplateData { get; set; }
-        public Boolean SearchTemplateParent { get; set; }
-        public Boolean SearchTemplateLinkedTemplates { get; set; }
+        public bool SearchTemplateId { get; set; } = true;
+        public bool SearchTemplateType { get; set; }
+        public bool SearchTemplateName { get; set; }
+        public bool SearchTemplateData { get; set; }
+        public bool SearchTemplateParent { get; set; }
+        public bool SearchTemplateLinkedTemplates { get; set; }
 
         //Dynamic content settings
-        public Boolean SearchDynamicContentId { get; set; } = true;
-        public Boolean SearchDynamicContentSettings { get; set; }
-        public Boolean SearchDynamicContentComponentName { get; set; }
-        public Boolean SearchDynamicContentComponentMode { get; set; }
+        public bool SearchDynamicContentId { get; set; } = true;
+        public bool SearchDynamicContentSettings { get; set; }
+        public bool SearchDynamicContentComponentName { get; set; }
+        public bool SearchDynamicContentComponentMode { get; set; }
 
-        public Boolean IsTemplateSearchDisabled ()
+        public bool IsTemplateSearchDisabled ()
         {
             if (SearchTemplateId == false && SearchTemplateType == false && SearchTemplateName == false && SearchTemplateData == false && SearchTemplateParent == false && SearchTemplateLinkedTemplates == false)
             {
@@ -32,7 +32,7 @@ namespace Api.Modules.Templates.Models.Other
             } 
             return false;
         }
-        public Boolean IsDynamicContentSearchDisabled()
+        public bool IsDynamicContentSearchDisabled()
         {
             if (SearchDynamicContentId == false && SearchDynamicContentSettings == false && SearchDynamicContentComponentName == false && SearchDynamicContentComponentMode == false)
             {
