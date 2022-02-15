@@ -41,6 +41,7 @@ const moduleSettings = {
             this.componentTypeComboBox = null;
             this.componentModeComboBox = null;
             this.selectedComponentData = null;
+            this.saving = false;
 
             // Default settings
             this.settings = {
@@ -325,6 +326,14 @@ const moduleSettings = {
          *  Bind the save button to the event for saving the newly acquired settings.
          * */
         bindSaveButton() {
+            document.body.addEventListener("keydown", (event) => {
+                if ((event.ctrlKey || event.metaKey) && event.keyCode === 83) {
+                    console.log("ctrl+s dynamic content", event);
+                    event.preventDefault();
+                    this.save();
+                }
+            });
+
             $("#saveButton").click((event) => {
                 event.preventDefault();
                 this.save();
@@ -344,10 +353,15 @@ const moduleSettings = {
         }
 
         async save() {
+            if (this.saving) {
+                return;
+            }
+
             const process = `save_${Date.now()}`;
             window.processing.addProcess(process);
 
             try {
+                this.saving = true;
                 const title = document.querySelector('input[name="visibleDescription"]').value;
                 const contentId = await Wiser2.api({
                     url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
@@ -375,6 +389,7 @@ const moduleSettings = {
                 kendo.alert("Er is iets fout gegaan met opslaan. Probeer het a.u.b. opnieuw");
             }
 
+            this.saving = false;
             window.processing.removeProcess(process);
         }
 

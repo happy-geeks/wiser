@@ -55,6 +55,7 @@ const moduleSettings = {
             this.dynamicContentGrid = null;
             this.newContentId = 0;
             this.newContentTitle = null;
+            this.saving = false;
 
             this.templateTypes = Object.freeze({
                 "UNKNOWN": 0,
@@ -1165,6 +1166,10 @@ const moduleSettings = {
             });
         }
 
+        dynamicContentWindowIsOpen() {
+            return $("#dynamicContentWindow").data("kendoWindow") && $("#dynamicContentWindow").is(":visible");
+        }
+
         //Bind the deploybuttons for the template versions
         bindDeployButtons(templateId) {
             $("#deployLive").on("click", this.deployEnvironment.bind(this, "live", templateId));
@@ -1193,6 +1198,24 @@ const moduleSettings = {
 
         //Save the template data
         bindSaveButton() {
+            document.body.addEventListener("keydown", (event) => {
+                if ((event.ctrlKey || event.metaKey) && event.keyCode === 83) {
+                    console.log("ctrl+s template", event);
+                    event.preventDefault();
+
+                    if (!this.dynamicContentWindowIsOpen()) {
+                        this.saveTemplate();
+                    } else {
+                        const dynamicContentIframe = document.querySelector("#dynamicContentWindow iframe");
+                        if (!dynamicContentIframe || !dynamicContentIframe.contentWindow || !dynamicContentIframe.contentWindow.DynamicContent) {
+                            return;
+                        }
+
+                        dynamicContentIframe.contentWindow.DynamicContent.save();
+                    }
+                }
+            });
+
             document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
         }
 
@@ -1229,7 +1252,7 @@ const moduleSettings = {
          * Save a new version of the selected template.
          */
         async saveTemplate() {
-            if (!this.selectedId) {
+            if (!this.selectedId || this.saving) {
                 return false;
             }
 
@@ -1238,6 +1261,7 @@ const moduleSettings = {
             let success = true;
 
             try {
+                this.saving = true;
                 const scssLinks = [];
                 const jsLinks = [];
                 document.querySelectorAll("#scss-checklist input[type=checkbox]:checked").forEach(el => { scssLinks.push({ templateId: el.dataset.template }) });
@@ -1279,7 +1303,8 @@ const moduleSettings = {
                 kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
                 success = false;
             }
-
+            
+            this.saving = false;
             window.processing.removeProcess(process);
             return success;
         }
