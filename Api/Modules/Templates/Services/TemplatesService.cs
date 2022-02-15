@@ -2731,5 +2731,39 @@ LIMIT 1";
 
             return overview;
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom)
+        {
+            var templates = new List<TemplateTreeViewModel>();
+            var path = startFrom.Split(',');
+            var remainingStartFrom = startFrom.Substring(path[0].Length + (path.Length > 1 ? 1 : 0));
+
+            var templateTrees = (await GetTreeViewSectionAsync(parentId)).ModelObject;
+            foreach (var templateTree in templateTrees)
+            {
+                if (!string.IsNullOrWhiteSpace(startFrom) && !path[0].Equals(templateTree.TemplateName, StringComparison.InvariantCultureIgnoreCase)) continue;
+
+                if (templateTree.HasChildren)
+                {
+                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(templateTree.TemplateId, remainingStartFrom)).ModelObject;
+                }
+                else
+                {
+                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(templateTree.TemplateId)).ModelObject;
+                }
+
+                if (string.IsNullOrWhiteSpace(startFrom))
+                {
+                    templates.Add(templateTree);
+                }
+                else
+                {
+                    templates = templateTree.ChildNodes;
+                }
+            }
+
+            return new ServiceResult<List<TemplateTreeViewModel>>(templates);
+        }
     }
 }

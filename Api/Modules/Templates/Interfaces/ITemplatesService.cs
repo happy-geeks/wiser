@@ -161,5 +161,12 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="destinationId">The ID of the template or directory where it's being moved to.</param>
         /// <param name="dropPosition">The drop position, can be either <see cref="TreeViewDropPositions.Over"/>, <see cref="TreeViewDropPositions.Before"/> or <see cref="TreeViewDropPositions.After"/>.</param>
         Task<ServiceResult<bool>> MoveAsync(ClaimsIdentity identity, int sourceId, int destinationId, TreeViewDropPositions dropPosition);
+
+        /// <summary>
+        /// Gets the tree view including template settings of all templates.
+        /// </summary>
+        /// <param name="startFrom">Set the place from which to start the tree view, folders separated by comma.</param>
+        /// <returns></returns>
+        Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom);
     }
 }
