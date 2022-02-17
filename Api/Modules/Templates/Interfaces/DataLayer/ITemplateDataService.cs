@@ -153,5 +153,13 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="templateId">The ID of the SCSS template to get the includes/imports for.</param>
         /// <returns>A <see cref="StringBuilder"/> with the contents of all SCSS in the correct order.</returns>
         Task<List<TemplateSettingsModel>> GetScssTemplatesThatAreNotIncludesAsync(int templateId);
+
+        /// <summary>
+        /// Deletes a template.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to delete.</param>
+        /// <param name="username">The name of the authenticated user.</param>
+        /// <param name="alsoDeleteChildren">Optional: Whether or not to also delete all children of this template. Default value is <see langword="true"/>.</param>
+        Task<bool> DeleteAsync(int templateId, string username, bool alsoDeleteChildren = true);
     }
 }

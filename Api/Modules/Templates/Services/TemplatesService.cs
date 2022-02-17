@@ -2711,6 +2711,52 @@ LIMIT 1";
             return new ServiceResult<bool>(true);
         }
 
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom)
+        {
+            var templates = new List<TemplateTreeViewModel>();
+            var path = startFrom.Split(',');
+            var remainingStartFrom = startFrom[(path[0].Length + (path.Length > 1 ? 1 : 0))..];
+
+            var templateTrees = (await GetTreeViewSectionAsync(parentId)).ModelObject;
+            foreach (var templateTree in templateTrees)
+            {
+                if (!String.IsNullOrWhiteSpace(startFrom) && !path[0].Equals(templateTree.TemplateName, StringComparison.InvariantCultureIgnoreCase)) continue;
+
+                if (templateTree.HasChildren)
+                {
+                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(templateTree.TemplateId, remainingStartFrom)).ModelObject;
+                }
+                else
+                {
+                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(templateTree.TemplateId)).ModelObject;
+                }
+
+                if (String.IsNullOrWhiteSpace(startFrom))
+                {
+                    templates.Add(templateTree);
+                }
+                else
+                {
+                    templates = templateTree.ChildNodes;
+                }
+            }
+
+            return new ServiceResult<List<TemplateTreeViewModel>>(templates);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int templateId, bool alsoDeleteChildren = true)
+        {
+            var result = await templateDataService.DeleteAsync(templateId, IdentityHelpers.GetUserName(identity), alsoDeleteChildren);
+            return new ServiceResult<bool>
+            {
+                ModelObject = result,
+                StatusCode = !result ? HttpStatusCode.NotFound : HttpStatusCode.OK,
+                ErrorMessage = !result ? $"Template with ID '{templateId}' not found." : null
+            };
+        }
+
         /// <summary>
         /// Convert LinkedDynamicContentDAO to a DynamicContentOverviewModel.
         /// </summary>
@@ -2730,40 +2776,6 @@ LIMIT 1";
             };
 
             return overview;
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom)
-        {
-            var templates = new List<TemplateTreeViewModel>();
-            var path = startFrom.Split(',');
-            var remainingStartFrom = startFrom.Substring(path[0].Length + (path.Length > 1 ? 1 : 0));
-
-            var templateTrees = (await GetTreeViewSectionAsync(parentId)).ModelObject;
-            foreach (var templateTree in templateTrees)
-            {
-                if (!string.IsNullOrWhiteSpace(startFrom) && !path[0].Equals(templateTree.TemplateName, StringComparison.InvariantCultureIgnoreCase)) continue;
-
-                if (templateTree.HasChildren)
-                {
-                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(templateTree.TemplateId, remainingStartFrom)).ModelObject;
-                }
-                else
-                {
-                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(templateTree.TemplateId)).ModelObject;
-                }
-
-                if (string.IsNullOrWhiteSpace(startFrom))
-                {
-                    templates.Add(templateTree);
-                }
-                else
-                {
-                    templates = templateTree.ChildNodes;
-                }
-            }
-
-            return new ServiceResult<List<TemplateTreeViewModel>>(templates);
         }
     }
 }

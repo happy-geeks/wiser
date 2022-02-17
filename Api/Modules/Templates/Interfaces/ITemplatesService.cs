@@ -165,8 +165,17 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Gets the tree view including template settings of all templates.
         /// </summary>
+        /// <param name="parentId">The ID of the parent item.</param>
         /// <param name="startFrom">Set the place from which to start the tree view, folders separated by comma.</param>
         /// <returns></returns>
         Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom);
+
+        /// <summary>
+        /// Deletes a template. This will not actually delete it from the database, but add a new version with removed = 1 instead.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="templateId">The ID of the template to delete.</param>
+        /// <param name="alsoDeleteChildren">Optional: Whether or not to also delete all children of this template. Default value is <see langword="true"/>.</param>
+        Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int templateId, bool alsoDeleteChildren = true);
     }
 }

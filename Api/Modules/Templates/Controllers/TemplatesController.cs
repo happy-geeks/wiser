@@ -226,6 +226,17 @@ namespace Api.Modules.Templates.Controllers
         }
         
         /// <summary>
+        /// Deletes a template. This will not actually delete it from the database, but add a new version with removed = 1 instead.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to delete.</param>
+        /// <param name="alsoDeleteChildren">Optional: Whether or not to also delete all children of this template. Default value is <see langword="true"/>.</param>
+        [HttpDelete, Route("{templateId:int}"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteAsync(int templateId, [FromQuery]bool alsoDeleteChildren = true)
+        {
+            return (await templatesService.DeleteAsync((ClaimsIdentity)User.Identity, templateId, alsoDeleteChildren)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
         /// Search for a template.
         /// </summary>
         /// <param name="searchSettings">The search parameters.</param>

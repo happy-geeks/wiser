@@ -624,7 +624,11 @@ const moduleSettings = {
                     });
                     break;
                 case "delete":
-                    kendo.alert("Functionaliteit voor het verwijderen van templates is nog niet gemaakt.");
+                    Wiser2.showConfirmDialog(`Weet u zeker dat u het item "${selectedItem.templateName}" en alle onderliggende items wilt verwijderen?`).then(() => {
+                        this.deleteItem(selectedItem.templateId).then(() => {
+                            treeView.remove(node);
+                        });
+                    });
                     break;
                 default:
                     kendo.alert(`Onbekende actie '${action}'. Probeer het a.u.b. opnieuw op neem contact op.`);
@@ -1238,6 +1242,34 @@ const moduleSettings = {
                 });
 
                 window.popupNotification.show(`Template '${id}' is succesvol hernoemd naar '${newName}'`, "info");
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
+                success = false;
+            }
+
+            window.processing.removeProcess(process);
+            return success;
+        }
+
+        /**
+         * Deletes a template or directory.
+         * @param {any} id
+         */
+        async deleteItem(id) {
+            const process = `deleteItem_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            let success = true;
+            try {
+                const response = await Wiser2.api({
+                    url: `${this.settings.wiserApiRoot}templates/${id}`,
+                    dataType: "json",
+                    type: "DELETE",
+                    contentType: "application/json"
+                });
+
+                window.popupNotification.show(`Template '${id}' is succesvol verwijderd`, "info");
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");

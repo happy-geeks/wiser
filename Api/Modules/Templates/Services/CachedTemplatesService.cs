@@ -162,5 +162,11 @@ namespace Api.Modules.Templates.Services
         {
             return templatesService.GetEntireTreeViewStructureAsync(parentId, startFrom);
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int templateId, bool alsoDeleteChildren = true)
+        {
+            return await templatesService.DeleteAsync(identity, templateId, alsoDeleteChildren);
+        }
     }
 }
