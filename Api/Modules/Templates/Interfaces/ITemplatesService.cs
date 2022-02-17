@@ -7,6 +7,7 @@ using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
+using Api.Modules.Templates.Models.Preview;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 using GeeksCoreLibrary.Modules.Templates.Models;
@@ -177,5 +178,13 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="templateId">The ID of the template to delete.</param>
         /// <param name="alsoDeleteChildren">Optional: Whether or not to also delete all children of this template. Default value is <see langword="true"/>.</param>
         Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int templateId, bool alsoDeleteChildren = true);
+
+        /// <summary>
+        /// Generates a preview for a HTML template.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
+        /// <returns>The HTML of the template as it would look on the website.</returns>
+        Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel);
     }
 }

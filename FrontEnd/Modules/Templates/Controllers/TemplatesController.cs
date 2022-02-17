@@ -72,10 +72,10 @@ namespace FrontEnd.Modules.Templates.Controllers
             return PartialView("Tabs/HistoryTab", tabViewData);
         }
 
-        [HttpPost, Route("PreviewTab")]
-        public IActionResult PreviewTab([FromBody]List<PreviewProfileModel> tabViewData)
+        [HttpGet, Route("PreviewTab")]
+        public IActionResult PreviewTab()
         {
-            return PartialView("Tabs/PreviewTab", tabViewData);
+            return PartialView("Tabs/PreviewTab");
         }
 
         [HttpPost, Route("PublishedEnvironments")]

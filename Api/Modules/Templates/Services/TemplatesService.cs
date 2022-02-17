@@ -20,6 +20,7 @@ using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
@@ -41,8 +42,8 @@ namespace Api.Modules.Templates.Services
         //The list of hardcodes query-strings
         private static readonly Dictionary<string, string> TemplateQueryStrings = new();
 
-        private readonly IWiserCustomersService wiserCustomersService;
         private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly IWiserCustomersService wiserCustomersService;
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService;
         private readonly IDatabaseConnection clientDatabaseConnection;
@@ -55,10 +56,10 @@ namespace Api.Modules.Templates.Services
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IWiserCustomersService wiserCustomersService, IHttpContextAccessor httpContextAccessor, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService)
         {
-            this.wiserCustomersService = wiserCustomersService;
             this.httpContextAccessor = httpContextAccessor;
+            this.wiserCustomersService = wiserCustomersService;
             this.stringReplacementsService = stringReplacementsService;
             this.gclTemplatesService = gclTemplatesService;
             this.clientDatabaseConnection = clientDatabaseConnection;
@@ -2755,6 +2756,75 @@ LIMIT 1";
                 StatusCode = !result ? HttpStatusCode.NotFound : HttpStatusCode.OK,
                 ErrorMessage = !result ? $"Template with ID '{templateId}' not found." : null
             };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel)
+        {
+            var outputHtml = requestModel?.TemplateSettings?.EditorValue;
+            if (String.IsNullOrWhiteSpace(outputHtml) || requestModel.TemplateSettings.Type != TemplateTypes.Html)
+            {
+                return new ServiceResult<string>(outputHtml);
+            }
+            
+            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
+            if (requestModel.PreviewVariables != null && httpContextAccessor.HttpContext != null)
+            {
+                foreach (var previewVariable in requestModel.PreviewVariables)
+                {
+                    switch (previewVariable.Type.ToUpperInvariant())
+                    {
+                        case "POST":
+                            if (!requestModel.TemplateSettings.HandleRequests)
+                            {
+                                break;
+                            }
+
+                            if (previewVariable.Encrypt)
+                            {
+                                previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(customer.EncryptionKey);
+                            }
+
+                            httpContextAccessor.HttpContext.Items.Add(previewVariable.Key, previewVariable.Value);
+                            break;
+                        case "SESSION":
+                            if (!requestModel.TemplateSettings.HandleSession)
+                            {
+                                break;
+                            }
+
+                            if (previewVariable.Encrypt)
+                            {
+                                previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(customer.EncryptionKey);
+                            }
+
+                            httpContextAccessor.HttpContext.Items.Add(previewVariable.Key, previewVariable.Value);
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(previewVariable.Type), previewVariable.Type);
+                    }
+                }
+            }
+
+            // TODO: Make something in the GCL so that we can use the URL parameter here to make the GCL think a user is opening that URL, to get the correct settings from easy_objects and such.
+            if (requestModel.TemplateSettings.HandleStandards)
+            {
+                outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, requestModel.TemplateSettings.HandleRequests, false, true, false);
+                outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
+                outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
+            }
+            
+            if (requestModel.TemplateSettings.HandleDynamicContent)
+            {
+                outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml);
+            }
+            
+            if (requestModel.TemplateSettings.HandleLogicBlocks)
+            {
+                outputHtml = stringReplacementsService.EvaluateTemplate(outputHtml);
+            }
+
+            return new ServiceResult<string>(outputHtml);
         }
 
         /// <summary>

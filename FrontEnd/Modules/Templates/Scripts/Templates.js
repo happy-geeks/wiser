@@ -56,6 +56,8 @@ const moduleSettings = {
             this.newContentId = 0;
             this.newContentTitle = null;
             this.saving = false;
+            this.filterVariablesGrid = null;
+            this.previewProfilesDropDown = null;
 
             this.templateTypes = Object.freeze({
                 "UNKNOWN": 0,
@@ -145,7 +147,6 @@ const moduleSettings = {
 
             await this.initializeKendoComponents();
             this.bindSaveButton();
-            this.bindPreviewButtons();
             window.processing.removeProcess(process);
         }
 
@@ -267,73 +268,6 @@ const moduleSettings = {
                 open: this.onContextMenuOpen.bind(this),
                 select: this.onContextMenuSelect.bind(this)
             }).data("kendoContextMenu");
-
-            var tempPreviewData = [
-                {
-                    "id": 1,
-                    "component": "MLSimplemenu",
-                    "naam": "naam 1",
-                    "size": "10kb",
-                    "laadtijd": "450ms"
-                },
-                {
-                    "id": 2,
-                    "component": "Basket",
-                    "naam": "naam 2",
-                    "size": "35kb",
-                    "laadtijd": "6450ms"
-                }
-            ]
-
-            $("#preview-results").kendoGrid({
-                dataSource: tempPreviewData,
-                scrollable: true,
-                resizable: true,
-                filterable: {
-                    extra: false,
-                    operators: {
-                        string: {
-                            startswith: "Begint met",
-                            eq: "Is gelijk aan",
-                            neq: "Is ongelijk aan",
-                            contains: "Bevat",
-                            doesnotcontain: "Bevat niet",
-                            endswith: "Eindigt op"
-                        }
-                    },
-                    messages: {
-                        isTrue: "<span>Ja</span>",
-                        isFalse: "<span>Nee</span>"
-                    }
-                },
-                pageable: true,
-                columns: [
-                    {
-                        field: "component",
-                        title: "Component",
-                        width: "40%",
-                        filterable: true
-                    },
-                    {
-                        field: "naam",
-                        title: "naam",
-                        width: "20%",
-                        filterable: true
-                    },
-                    {
-                        field: "size",
-                        title: "size",
-                        width: "20%",
-                        filterable: true
-                    },
-                    {
-                        field: "laadtijd",
-                        title: "laadtijd",
-                        width: "40%",
-                        filterable: true
-                    },
-                ]
-            }).data("kendoGrid");
         }
 
         /**
@@ -351,90 +285,86 @@ const moduleSettings = {
             $("<select name='type' data-type='string' data-bind='type'><option value='POST'>POST</option><option value='SESSION'>SESSION</option></select>").appendTo(container);
         }
 
-        initPreviewProfileInputs(profiles, index) {
-            let tempPreviewVariablesData = null;
-            if (profiles.length !== 0) {
-                tempPreviewVariablesData = profiles[index].variables;
-                document.getElementById("profile-url").value = profiles[index].url;
+        initPreviewProfileInputs(force = false) {
+            if (!this.previewProfilesDropDown || force) {
+                this.previewProfilesDropDown = $("#preview-combo-select").kendoDropDownList({
+                    dataSource: this.previewProfiles,
+                    dataTextField: "name",
+                    dataValueField: "id",
+                    optionLabel: "Nieuw profiel",
+                    change: (event) => {
+                        this.initPreviewProfileInputs();
+                    }
+                }).data("kendoDropDownList");
             }
 
-            $("#preview-variables").kendoGrid({
-                dataSource: {
-                    data: tempPreviewVariablesData,
-                    schema: {
-                        model: {
-                            fields: {
-                                id: { type: "int" },
-                                type: { type: "string", defaultValue: "POST" },
-                                key: { type: "string" },
-                                value: { type: "string" },
-                                encrypt: { type: "boolean" }
-                            }
-                        }
-                    }
-                },
-                scrollable: true,
-                resizable: true,
-                filterable: {
-                    extra: false,
-                    operators: {
-                        string: {
-                            startswith: "Begint met",
-                            eq: "Is gelijk aan",
-                            neq: "Is ongelijk aan",
-                            contains: "Bevat",
-                            doesnotcontain: "Bevat niet",
-                            endswith: "Eindigt op"
-                        }
-                    },
-                    messages: {
-                        isTrue: "<span>Ja</span>",
-                        isFalse: "<span>Nee</span>"
-                    }
-                },
-                pageable: true,
-                toolbar: [{ name: "create", text: "Add variable" }],
-                columns: [
-                    {
-                        field: "type",
-                        title: "Type",
-                        width: "20%",
-                        filterable: true,
-                        editor: window.Templates.customDopdownEditor
-                    },
-                    {
-                        field: "key",
-                        title: "Key",
-                        width: "20%",
-                        filterable: true
-                    },
-                    {
-                        field: "value",
-                        title: "Value",
-                        width: "20%",
-                        filterable: true
-                    },
-                    {
-                        field: "encrypt",
-                        width: "calc(40% - 150px)",
-                        filterable: true,
-                        editor: window.Templates.customBoolEditor
+            const selectedProfileId = this.previewProfilesDropDown.value();
+            let tempPreviewVariablesData = [];
+            if (this.previewProfiles && this.previewProfiles.length > 0) {
+                const selectedProfile = this.previewProfiles.find(p => p.id == selectedProfileId);
+                if (selectedProfile) {
+                    tempPreviewVariablesData = selectedProfile.variables || [];
+                    document.getElementById("profile-url").value = selectedProfile.url || "";
+                } else {
+                    document.getElementById("profile-url").value = "";
+                }
+            }
 
-                    },
-                    {
-                        command: ["edit",
-                            {
-                                name: "delete", text: "",
-                                iconClass: "k-icon k-i-trash"
-                            }
-                        ],
-                        title: "&nbsp;",
-                        width: 150,
-                        filterable: false
+            if (!this.filterVariablesGrid || force) {
+                this.filterVariablesGrid = $("#preview-variables").kendoGrid({
+                    scrollable: true,
+                    resizable: false,
+                    filterable: false,
+                    pageable: false,
+                    toolbar: [{ name: "create", text: "Add variable" }],
+                    columns: [
+                        {
+                            field: "type",
+                            title: "Type",
+                            editor: window.Templates.customDopdownEditor
+                        },
+                        {
+                            field: "key",
+                            title: "Key"
+                        },
+                        {
+                            field: "value",
+                            title: "Value"
+                        },
+                        {
+                            field: "encrypt",
+                            width: 50,
+                            editor: window.Templates.customBoolEditor
+
+                        },
+                        {
+                            command: ["edit",
+                                {
+                                    name: "delete", text: "",
+                                    iconClass: "k-icon k-i-trash"
+                                }
+                            ],
+                            title: "&nbsp;",
+                            width: 230
+                        }
+                    ],
+                    editable: "inline",
+                    edit: (editEvent) => {
+                        this.generatePreview();
                     }
-                ],
-                editable: "inline"
-            }).data("kendoGrid");
+                }).data("kendoGrid");
+            }
+
+            this.filterVariablesGrid.setDataSource({
+                data: tempPreviewVariablesData,
+                schema: {
+                    model: {
+                        id: "key"
+                    }
+                }
+            });
+            
+            this.generatePreview();
         }
 
         /**
@@ -850,35 +780,33 @@ const moduleSettings = {
                 }).data("kendoGrid");
 
                 // Preview
-                Wiser2.api({
-                    url: `${this.settings.wiserApiRoot}templates/${id}/profiles`,
-                    dataType: "json",
-                    method: "GET"
-                }).then((previewProfiles) => {
-                    this.previewProfiles = previewProfiles;
-
+                this.loadProfiles().then(() => {
                     Wiser2.api({
-                        method: "POST",
-                        contentType: "application/json",
-                        url: "/Modules/Templates/PreviewTab",
-                        data: JSON.stringify(previewProfiles)
+                        method: "GET",
+                        url: "/Modules/Templates/PreviewTab"
                     }).then((response) => {
                         document.getElementById("previewTab").innerHTML = response;
-                        $("#preview-combo-select").kendoDropDownList({
-                            change: (event) => {
-                                if (event.sender.dataItem()) {
-                                    this.initPreviewProfileInputs(previewProfiles, event.sender.select());
-                                }
-                            }
-                        });
 
-                        this.initPreviewProfileInputs(previewProfiles, 0);
+                        this.initPreviewProfileInputs(true);
+                        this.bindPreviewButtons();
                     })
                 });
             } catch (exception) {
                 console.error(exception);
                 kendo.alert(`Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.<br>${exception.responseText || exception}`);
                 window.processing.removeProcess(process);
+            }
+        }
+
+        async loadProfiles() {
+            this.previewProfiles = await Wiser2.api({
+                url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles`,
+                dataType: "json",
+                method: "GET"
+            });
+
+            if (this.previewProfilesDropDown) {
+                this.previewProfilesDropDown.setDataSource(this.previewProfiles);
             }
         }
 
@@ -899,9 +827,9 @@ const moduleSettings = {
                     exec: this.onHtmlEditorDynamicContentExec.bind(this)
                 };
                 const htmlSourceTool = {
-	                name: "wiserHtmlSource",
-	                tooltip: "HTML bekijken/aanpassen",
-	                exec: this.onHtmlEditorHtmlSourceExec.bind(this)
+                    name: "wiserHtmlSource",
+                    tooltip: "HTML bekijken/aanpassen",
+                    exec: this.onHtmlEditorHtmlSourceExec.bind(this)
                 };
 
                 this.mainHtmlEditor = $(".editor").kendoEditor({
@@ -1281,6 +1209,39 @@ const moduleSettings = {
         }
 
         /**
+         * Gets all settings of the currently opened template, this object can be used for saving the template or for generating a preview of it.
+         */
+        getCurrentTemplateSettings() {
+            const scssLinks = [];
+            const jsLinks = [];
+            document.querySelectorAll("#scss-checklist input[type=checkbox]:checked").forEach(el => { scssLinks.push({ templateId: el.dataset.template }) });
+            document.querySelectorAll("#js-checklist input[type=checkbox]:checked").forEach(el => { jsLinks.push({ templateId: el.dataset.template }) });
+            const editorElement = $(".editor");
+            const kendoEditor = editorElement.data("kendoEditor");
+            const codeMirror = editorElement.data("CodeMirrorInstance");
+            const editorValue = kendoEditor ? kendoEditor.value() : codeMirror.getValue();
+
+            const settings = Object.assign({
+                templateId: this.selectedId,
+                name: this.templateSettings.name || "",
+                type: this.templateSettings.type,
+                parentId: this.templateSettings.parentId,
+                editorValue: editorValue,
+                linkedTemplates: {
+                    linkedSccsTemplates: scssLinks,
+                    linkedJavascript: jsLinks
+                }
+            }, this.getNewSettings());
+
+            const externalFilesGrid = $("#externalFiles").data("kendoGrid");
+            if (externalFilesGrid) {
+                settings.externalFiles = externalFilesGrid.dataSource.data().map(d => d.url);
+            }
+
+            return settings;
+        }
+
+        /**
          * Save a new version of the selected template.
          */
         async saveTemplate() {
@@ -1294,38 +1255,13 @@ const moduleSettings = {
 
             try {
                 this.saving = true;
-                const scssLinks = [];
-                const jsLinks = [];
-                document.querySelectorAll("#scss-checklist input[type=checkbox]:checked").forEach(el => { scssLinks.push({ templateId: el.dataset.template }) });
-                document.querySelectorAll("#js-checklist input[type=checkbox]:checked").forEach(el => { jsLinks.push({ templateId: el.dataset.template }) });
-                const editorElement = $(".editor");
-                const kendoEditor = editorElement.data("kendoEditor");
-                const codeMirror = editorElement.data("CodeMirrorInstance");
-                const editorValue = kendoEditor ? kendoEditor.value() : codeMirror.getValue();
-
-                const data = Object.assign({
-                    templateId: this.selectedId,
-                    name: this.templateSettings.name || "",
-                    type: this.templateSettings.type,
-                    parentId: this.templateSettings.parentId,
-                    editorValue: editorValue,
-                    linkedTemplates: {
-                        linkedSccsTemplates: scssLinks,
-                        linkedJavascript: jsLinks
-                    }
-                }, this.getNewSettings());
-
-                const externalFilesGrid = $("#externalFiles").data("kendoGrid");
-                if (externalFilesGrid) {
-                    data.externalFiles = externalFilesGrid.dataSource.data().map(d => d.url);
-                }
 
                 const response = await Wiser2.api({
                     url: `${this.settings.wiserApiRoot}templates/${data.templateId}`,
                     dataType: "json",
                     type: "POST",
                     contentType: "application/json",
-                    data: JSON.stringify(data)
+                    data: JSON.stringify(this.getCurrentTemplateSettings())
                 });
 
                 window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
@@ -1335,7 +1271,7 @@ const moduleSettings = {
                 kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
                 success = false;
             }
-            
+
             this.saving = false;
             window.processing.removeProcess(process);
             return success;
@@ -1389,57 +1325,114 @@ const moduleSettings = {
 
         //Bind buttons in the preview tab of the template overview
         bindPreviewButtons() {
-            $("#addPreviewRow").on("click", () => {
-                $("#preview-variables").data("kendoGrid").addRow();
-            });
+            $("#preview-remove-profile").on("click", this.onDeletePreviewProfileButtonClick.bind(this));
+            $("#preview-save-profile-as").on("click", this.onSavePreviewProfileButtonClick.bind(this, true));
+            $("#preview-save-profile").on("click", this.onSavePreviewProfileButtonClick.bind(this, false));
+        }
+        
+        /**
+         * Generates a preview for the current HTML template, this will call the API to generate the HTML and put that HTML in an iframe.
+         */
+        async generatePreview() {
+            const process = `deleteProfile_${Date.now()}`;
+            window.processing.addProcess(process);
 
-            $("#preview-remove-profile").on("click", () => {
-                if ($("#preview-combo-select").data("kendoDropDownList").dataItem()) {
-                    Wiser2.api({
-                        url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${$("#preview-combo-select").data("kendoDropDownList").dataItem().value}`,
-                        type: "DELETE"
-                    }).then((response) => {
-                        window.popupNotification.show(`Het profiel '${document.getElementById("preview-combo-select").innerText}' is verwijderd`, "info");
-                    });
-                }
-            });
+            try {
+                const data = {
+                    templateSettings: this.getCurrentTemplateSettings(),
+                    url: $("#profile-url").val(),
+                    previewVariables: this.filterVariablesGrid.dataSource.data()
+                };
 
-            $("#preview-save-profile-as").on("click", async () => {
-                Wiser2.api({
-                    url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${$("#preview-combo-select").data("kendoDropDownList").dataItem().value}`,
+                const generatedHtml = await Wiser2.api({
+                    url: `${this.settings.wiserApiRoot}templates/preview`,
+                    contentType: "application/json",
                     type: "POST",
-                    data: JSON.stringify({
-                        id: document.getElementById("preview-combo-select").value,
-                        name: await kendo.prompt("Kies een naam"),
-                        url: "https://www.domeinnaam.nl/pad/pagina.html?cat=2",
-                        variables: [{ type: "POST", key: "loggedin_user", value: 444, encrypt: false }, { type: "SESSION", key: "product_id", value: 151515, encrypt: false }]
-                    })
-                }).then((response) => {
-                    window.popupNotification.show(`Het profiel '${document.getElementById("preview-combo-select").innerText}' is opgeslagen`, "info");
+                    data: JSON.stringify(data)
                 });
-            });
+                
+                const iframeElement = $("#previewIframe");
+                let iframe = iframeElement[0];
+                iframe = iframe.contentWindow || (iframe.contentDocument.document || iframe.contentDocument);
 
-            $("#preview-save-profile").on("click", () => {
-                if ($("#preview-combo-select").data("kendoDropDownList").dataItem()) {
-                    var variables = [];
-                    $("#preview-variables").data("kendoGrid")._data.forEach((e) => {
-                        variables.push({ type: e.type, key: e.key, value: e.value, encrypt: e.encrypt })
-                    });
+                iframe.document.open();
+                iframe.document.write(generatedHtml);
+                iframe.document.close();
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het genereren van de preciew. Probeer het a.u.b. opnieuw of neem contact op.")
+            }
 
-                    Wiser2.api({
-                        url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${$("#preview-combo-select").data("kendoDropDownList").dataItem().value}`,
-                        type: "POST",
-                        data: JSON.stringify({
-                            id: document.getElementById("preview-combo-select").value,
-                            name: "",
-                            url: "https://www.domeinnaam.nl/pad/pagina.html?cat=2",
-                            variables: [{ type: "POST", key: "loggedin_user", value: 444, encrypt: false }, { type: "SESSION", key: "product_id", value: 151515, encrypt: false }]
-                        })
-                    }).then((response) => {
-                        window.popupNotification.show(`Het profiel '${document.getElementById("preview-combo-select").innerText}' is opgeslagen`, "info");
-                    });
-                }
-            });
+            window.processing.removeProcess(process);
+        }
+
+        async onDeletePreviewProfileButtonClick(event) {
+            if (event) event.preventDefault();
+
+            const selectedPreviewProfile = this.previewProfilesDropDown.value();
+            if (!selectedPreviewProfile) {
+                kendo.alert("U heeft geen bestaand profiel geselecteerd.");
+                return;
+            }
+
+            await Wiser2.showConfirmDialog(`Weet u zeker dat u het profiel "${this.previewProfilesDropDown.text()}" wilt verwijderen?`);
+
+            const process = `deleteProfile_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                await Wiser2.api({
+                    url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${selectedPreviewProfile}`,
+                    dataType: "json",
+                    contentType: "application/json",
+                    type: "DELETE"
+                });
+
+                window.popupNotification.show(`Het profiel '${this.previewProfilesDropDown.text()}' is verwijderd`, "info");
+            } catch (exception) {
+                logger.error(exception);
+                kendo.alert("Er is iets fout gegaan met verwijderen. Probeer het a.u.b. nogmaals of neem contact op.");
+            }
+
+            window.processing.removeProcess(process);
+        }
+
+        async onSavePreviewProfileButtonClick(saveAsNewProfile, event) {
+            if (event) event.preventDefault();
+
+            const selectedPreviewProfile = parseInt(this.previewProfilesDropDown.value()) || 0;
+            if (selectedPreviewProfile === 0) {
+                saveAsNewProfile = true;
+            }
+
+            const name = saveAsNewProfile ? await kendo.prompt("Kies een naam") : this.previewProfilesDropDown.text();
+            const process = `saveProfile_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                const newProfile = await Wiser2.api({
+                    url: saveAsNewProfile ? `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles` : `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${selectedPreviewProfile}`,
+                    dataType: "json",
+                    contentType: "application/json",
+                    type: saveAsNewProfile ? "POST" : "PUT",
+                    data: JSON.stringify({
+                        name: name,
+                        url: $("#profile-url").val(),
+                        variables: this.filterVariablesGrid.dataSource.data()
+                    })
+                });
+
+                await this.loadProfiles();
+                this.previewProfilesDropDown.value(newProfile.id);
+                this.initPreviewProfileInputs();
+
+                window.popupNotification.show(`Het profiel '${this.previewProfilesDropDown.text()}' is opgeslagen`, "info");
+            } catch (exception) {
+                logger.error(exception);
+                kendo.alert("Er is iets fout gegaan met opslaan. Probeer het a.u.b. nogmaals of neem contact op.");
+            }
+
+            window.processing.removeProcess(process);
         }
 
         /**

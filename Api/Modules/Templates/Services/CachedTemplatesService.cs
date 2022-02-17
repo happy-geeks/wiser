@@ -168,5 +168,11 @@ namespace Api.Modules.Templates.Services
         {
             return await templatesService.DeleteAsync(identity, templateId, alsoDeleteChildren);
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel)
+        {
+            return await templatesService.GeneratePreviewAsync(identity, requestModel);
+        }
     }
 }
