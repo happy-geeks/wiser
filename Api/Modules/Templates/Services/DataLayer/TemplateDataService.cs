@@ -706,7 +706,7 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             do
             {
-                var parent = await GetParentAsync(templateId);
+                var parent = await GetParentAsync(scssRootId);
                 if (parent == null)
                 {
                     break;
