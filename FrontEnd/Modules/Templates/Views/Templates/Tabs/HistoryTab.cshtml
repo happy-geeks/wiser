@@ -1,6 +1,6 @@
-﻿@using System.Reflection
-@using GeeksCoreLibrary.Core.Cms.Attributes
-@model Api.Modules.Templates.Models.History.TemplateHistoryOverviewModel
+﻿@using FrontEnd.Modules.Templates.Models
+@using Newtonsoft.Json.Linq
+@model HistoryTabViewModel
 @{
     var publishLogCounter = 0;
 }
@@ -119,14 +119,14 @@
             </div>
             @foreach (var change in historyModel.TemplateChanges)
             {
-                if (change.Value.Key is bool)
+                if (change.Value.Key is bool booleanValue)
                 {
                     <div class="col col-6 checkLine">
                         <div class="item" data-label-style="normal" data-label-width="0">
                             <span class="handler">&nbsp;</span>
                             <span class="inline">
                                 <label class="checkbox">
-                                    @if ((Boolean)change.Value.Value)
+                                    @if (booleanValue)
                                     {
                                         <input id="change.Key" name="change.Key" type="checkbox" value="(Boolean)change.Value.Value" checked="checked" disabled>
                                     }
@@ -144,7 +144,7 @@
                             <span class="handler">&nbsp;</span>
                             <span class="inline">
                                 <label class="checkbox">
-                                    @if ((Boolean)change.Value.Key)
+                                    @if (booleanValue)
                                     {
                                         <input id="change.Key" name="change.Key" type="checkbox" value="(Boolean)change.Value.Key" checked="checked" disabled>
                                     }
@@ -163,20 +163,33 @@
                     <div class="col col-6">
                         <div class="item" data-label-style="float" data-label-width="0">
                             <span class="handler">&nbsp;</span>
-                            <h4><label for="text_101">@change.Key</label></h4>
+                            <h4><label for="@change.Key">@change.Key</label></h4>
                             <span class="k-widget k-input k-state-default">
-                                <input type="text" id="text_101" class="textField k-input" autocomplete="off" value="@change.Value.Value" disabled />
+                                @if (String.Equals(change.Key, "editorValue"))
+                                {
+                                    <textarea id="text_101" autocomplete="off" disabled>@change.Value.Value</textarea>
+                                }
+                                else
+                                {
+                                    <input type="text" id="text_101" class="textField k-input" autocomplete="off" value="@change.Value.Value" disabled/>
+                                }
                             </span>
                         </div>
                     </div>
-
-
+                    
                     <div class="col col-6">
                         <div class="item" data-label-style="float" data-label-width="0">
                             <span class="handler">&nbsp;</span>
                             <h4><label for="text_102">@change.Key</label></h4>
                             <span class="k-widget k-input k-state-default">
-                                <input type="text" id="text_102" class="textField k-input" autocomplete="off" value="@change.Value.Key" disabled />
+                                @if (String.Equals(change.Key, "editorValue"))
+                                {
+                                    <textarea id="text_102" autocomplete="off" disabled>@change.Value.Value</textarea>
+                                }
+                                else
+                                {
+                                    <input type="text" id="text_102" class="textField k-input" autocomplete="off" value="@change.Value.Key" disabled />
+                                }
                             </span>
                         </div>
                     </div>
@@ -190,7 +203,7 @@
                     </div>
                 </div>
 
-                @foreach (KeyValuePair<string, KeyValuePair<object, object>> change in historyModel.LinkedTemplateChanges)
+                @foreach (var change in historyModel.LinkedTemplateChanges)
                 {
                     <div class="col col-6 checkLine">
                         <div class="item" data-label-style="normal" data-label-width="0">
@@ -245,14 +258,12 @@
                         <span><span class="k-icon k-i-calendar"></span> @dynamicHistory.GetDisplayChangedOn() |</span>
                         <span><span class="k-icon k-i-user"></span> door @dynamicHistory.ChangedBy </span>
                     </div>
-                    @if (dynamicHistory.Changes != null)
+                    @if (dynamicHistory.ChangedFields != null)
                     {
-                        @foreach (var historyChange in dynamicHistory.Changes)
+                        @foreach (var (oldVersion, newVersion) in dynamicHistory.ChangedFields)
                         {
-                            var propertyAttribute = historyChange.GetPropertyAttribute();
-                            var property = historyChange.GetProperty();
-                            <partial name="/Modules/Templates/Views/DynamicContent/Partials/HistoryInputGenerator.cshtml" model="new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(propertyAttribute, new KeyValuePair<PropertyInfo, object>(property, historyChange.OldValue))" />
-                            <partial name="/Modules/Templates/Views/DynamicContent/Partials/HistoryInputGenerator.cshtml" model="new KeyValuePair<CmsPropertyAttribute, KeyValuePair<PropertyInfo, object>>(propertyAttribute, new KeyValuePair<PropertyInfo, object>(property, historyChange.NewValue))" />
+                            <partial name="/Modules/Templates/Views/DynamicContent/Partials/HistoryInputGenerator.cshtml" model="oldVersion" />
+                            <partial name="/Modules/Templates/Views/DynamicContent/Partials/HistoryInputGenerator.cshtml" model="newVersion" />
                         }
                     }
                 }

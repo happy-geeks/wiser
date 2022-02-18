@@ -1,17 +1,11 @@
-﻿@model List<Api.Modules.Templates.Models.Preview.PreviewProfileModel>
-<div class="formview full previewContainer">
+﻿<div class="formview full previewContainer">
     <div class="row preview-settings">
         <div class="col col-6 preview-profile">
             <div class="row">
                 <div class="col col-12">
                     <div class="flex-container item">
                         <div class="dropdown-container">
-                            <select id="preview-combo-select" placeholder="Maak uw keuze...">
-                                @foreach (var profile in Model)
-                                {
-                                    <option value="@profile.Id" data-url="@profile.Url" data-variables="@profile.Variables">@profile.Name</option>
-                                }
-                            </select>
+                            <select id="preview-combo-select"></select>
                         </div>
                         <div class="dropdown-button">
                             <button id="preview-remove-profile" class="k-primary k-button">Verwijder profiel</button>
@@ -25,16 +19,8 @@
                         <span class="handler">&nbsp;</span>
                         <h4><label for="profile-url">URL</label></h4>
                         <span class="k-widget k-input k-state-default">
-                            <input type="text" id="profile-url" class="textField k-input" autocomplete="off" value="URL" />
+                            <input type="url" id="profile-url" class="textField k-input" autocomplete="off" />
                         </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col col-12">
-                    <div class="item">
-                        <div id="preview-results"></div>
                     </div>
                 </div>
             </div>
@@ -63,7 +49,7 @@
     <div class="row preview-window">
         <div class="col col-12 preview-window-container">
             <div class="item">
-                preview window
+                <iframe id="previewIframe" src="about:blank"></iframe>
             </div>
         </div>
     </div>

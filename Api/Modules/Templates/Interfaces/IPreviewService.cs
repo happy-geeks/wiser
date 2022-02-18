@@ -18,7 +18,7 @@ namespace Api.Modules.Templates.Interfaces
         public Task<ServiceResult<List<PreviewProfileModel>>> GetAsync(int templateId);
         
         /// <summary>
-        /// Creates a new instance of a preview profile with the given data
+        /// Creates a new instance of a preview profile with the given data.
         /// </summary>
         /// <param name="profile">A PreviewProfileModel containing the data of the profile to create</param>
         /// <param name="templateId"></param>

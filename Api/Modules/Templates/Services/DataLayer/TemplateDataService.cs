@@ -872,6 +872,70 @@ namespace Api.Modules.Templates.Services.DataLayer
             return result;
         }
 
+        /// <inheritdoc />
+        public async Task<bool> DeleteAsync(int templateId, string username, bool alsoDeleteChildren = true)
+        {
+            clientDatabaseConnection.AddParameter("templateId", templateId);
+            clientDatabaseConnection.AddParameter("username", username);
+            clientDatabaseConnection.AddParameter("now", DateTime.Now);
+
+            // First get some information that we need.
+            var query = $@"SELECT
+                            parent_id,
+                            template_name,
+                            template_type,
+                            ordering,
+                            version,
+                            removed
+                        FROM {WiserTableNames.WiserTemplate}
+                        WHERE template_id = ?templateId
+                        ORDER BY version DESC
+                        LIMIT 1";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count == 0 || Convert.ToBoolean(dataTable.Rows[0]["removed"]))
+            {
+                // Don't do anything if the template doesn't exist or is already deleted.
+                return false;
+            }
+
+            // Add a new row/version of this template where all settings/data are empty and removed is set to 1.
+            clientDatabaseConnection.AddParameter("parentId", dataTable.Rows[0].Field<int>("parent_id"));
+            clientDatabaseConnection.AddParameter("name", dataTable.Rows[0].Field<string>("template_name"));
+            clientDatabaseConnection.AddParameter("type", dataTable.Rows[0].Field<int>("template_type"));
+            clientDatabaseConnection.AddParameter("ordering", dataTable.Rows[0].Field<int>("ordering"));
+            clientDatabaseConnection.AddParameter("version", dataTable.Rows[0].Field<int>("version") + 1);
+
+            query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, changed_on, changed_by)
+                    VALUES (?templateId, ?parentId, ?name, ?type, ?ordering, ?version, 1, ?now, ?username)";
+            await clientDatabaseConnection.ExecuteAsync(query);
+
+            if (!alsoDeleteChildren)
+            {
+                return true;
+            }
+
+            // Delete all children of the template by also adding new versions with removed = 1 for them.
+            query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, changed_on, changed_by)
+                    SELECT 
+                        template.template_id,
+	                    template.parent_id,
+	                    template.template_name,
+	                    template.template_type,
+	                    template.ordering,
+	                    template.version + 1,
+                        1,
+                        ?now,
+                        ?username
+                    FROM wiser_template AS template
+                    LEFT JOIN wiser_template AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+                    WHERE template.parent_id = ?templateId
+                    AND template.removed = 0
+                    AND otherVersion.id IS NULL";
+            await clientDatabaseConnection.ExecuteAsync(query);
+
+            return true;
+        }
+
         private string BuildSearchQuery(SearchSettingsModel searchSettings)
         {
             var searchQuery = new StringBuilder();

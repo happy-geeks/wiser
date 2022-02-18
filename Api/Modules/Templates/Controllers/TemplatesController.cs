@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
+using ITemplatesService = Api.Modules.Templates.Interfaces.ITemplatesService;
 
 namespace Api.Modules.Templates.Controllers
 {
@@ -226,6 +227,17 @@ namespace Api.Modules.Templates.Controllers
         }
         
         /// <summary>
+        /// Deletes a template. This will not actually delete it from the database, but add a new version with removed = 1 instead.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to delete.</param>
+        /// <param name="alsoDeleteChildren">Optional: Whether or not to also delete all children of this template. Default value is <see langword="true"/>.</param>
+        [HttpDelete, Route("{templateId:int}"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteAsync(int templateId, [FromQuery]bool alsoDeleteChildren = true)
+        {
+            return (await templatesService.DeleteAsync((ClaimsIdentity)User.Identity, templateId, alsoDeleteChildren)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
         /// Search for a template.
         /// </summary>
         /// <param name="searchSettings">The search parameters.</param>
@@ -259,12 +271,11 @@ namespace Api.Modules.Templates.Controllers
         }
         
         /// <summary>
-        /// Save a preview profile bound to the current template.
+        /// Creates a new instance of a preview profile with the given data.
         /// </summary>
-        /// <param name="profile">A Json that meets the standards of a PreviewProfileModel</param>
-        /// <param name="templateId">The id of the template that is bound to the profile</param>
-        /// <returns>An int confirming the affected rows of the query.</returns>
-        [HttpPut, Route("{templateId:int}/profiles"), ProducesResponseType(typeof(PreviewProfileModel), StatusCodes.Status200OK)]
+        /// <param name="profile">A PreviewProfileModel containing the data of the profile to create</param>
+        /// <param name="templateId"></param>
+        [HttpPost, Route("{templateId:int}/profiles"), ProducesResponseType(typeof(PreviewProfileModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreatePreviewProfileAsync(int templateId, PreviewProfileModel profile)
         {
             return (await previewService.CreateAsync(profile, templateId)).GetHttpResponseMessage();
@@ -277,7 +288,7 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="profileId">The ID of the profile to update.</param>
         /// <param name="profile">A Json that meets the standards of a PreviewProfileModel</param>
         /// <returns>An int confirming the affected rows of the query.</returns>
-        [HttpPost, Route("{templateId:int}/profiles/{profileId:int}"), ProducesResponseType(StatusCodes.Status204NoContent)]
+        [HttpPut, Route("{templateId:int}/profiles/{profileId:int}"), ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> EditPreviewProfileAsync(int templateId, int profileId, PreviewProfileModel profile)
         {
             profile.Id = profileId;
@@ -305,6 +316,17 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> GetEntireTreeViewStructureAsync(string startFrom = "")
         {
             return (await templatesService.GetEntireTreeViewStructureAsync(0, startFrom)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Generates a preview for a HTML template.
+        /// </summary>
+        /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
+        /// <returns>The HTML of the template as it would look on the website.</returns>
+        [HttpPost, Route("preview"), ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GeneratePreviewAsync(GenerateTemplatePreviewRequestModel requestModel)
+        {
+            return (await templatesService.GeneratePreviewAsync((ClaimsIdentity)User.Identity, requestModel)).GetHttpResponseMessage();
         }
     }
 }

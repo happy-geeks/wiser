@@ -238,35 +238,35 @@ namespace Api.Modules.Templates.Services
         /// <returns>List of changes that can be added to the changes of the newer versions HistoryVersionModel.</returns>
         private List<DynamicContentChangeModel> GenerateChangeLogFromDataStrings(string newComponent, string newMode, string newVersion, string oldComponent, string oldMode, string oldVersion)
         {
-            var newVersionDict = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(newVersion);
-            var oldVersionDict = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(oldVersion);
+            var newVersionDict = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(newVersion) ?? new Dictionary<string, JToken>();
+            var oldVersionDict = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(oldVersion) ?? new Dictionary<string, JToken>();
 
             var changeLog = new List<DynamicContentChangeModel>();
 
             foreach (var dataValue in newVersionDict)
             {
-                if (oldVersionDict.ContainsKey(dataValue.Key) && !oldVersionDict.GetValueOrDefault(dataValue.Key).Equals(dataValue.Value))
+                if (oldVersionDict.ContainsKey(dataValue.Key) && !oldVersionDict[dataValue.Key].Equals(dataValue.Value))
                 {
-                    changeLog.Add(new DynamicContentChangeModel(newComponent, dataValue.Key, dataValue.Value, oldVersionDict.GetValueOrDefault(dataValue.Key)));
+                    changeLog.Add(new DynamicContentChangeModel(newComponent, dataValue.Key, dataValue.Value, oldVersionDict.GetValueOrDefault(dataValue.Key), newMode));
 
                     oldVersionDict.Remove(dataValue.Key);
                 }
-                else if (!oldVersionDict.ContainsKey(dataValue.Key))
+                else if (!oldVersionDict.ContainsKey(dataValue.Key) && !String.IsNullOrEmpty(dataValue.Value.ToString()))
                 {
-                    changeLog.Add(new DynamicContentChangeModel(newComponent, dataValue.Key, dataValue.Value, ""));
+                    changeLog.Add(new DynamicContentChangeModel(newComponent, dataValue.Key, dataValue.Value, "", newMode));
                 }
             }
 
             //Check if the olderversion contains fields that the newVersion does not
             foreach (var dataValue in oldVersionDict)
             {
-                if (newVersionDict.ContainsKey(dataValue.Key) && !newVersionDict.GetValueOrDefault(dataValue.Key).Equals(dataValue.Value))
+                if (newVersionDict.ContainsKey(dataValue.Key) && !newVersionDict[dataValue.Key].Equals(dataValue.Value))
                 {
-                    changeLog.Add(new DynamicContentChangeModel(oldComponent, dataValue.Key, newVersionDict.GetValueOrDefault(dataValue.Key), dataValue.Value));
+                    changeLog.Add(new DynamicContentChangeModel(oldComponent, dataValue.Key, newVersionDict.GetValueOrDefault(dataValue.Key), dataValue.Value, oldMode));
                 }
-                else if (!newVersionDict.ContainsKey(dataValue.Key))
+                else if (!newVersionDict.ContainsKey(dataValue.Key) && !String.IsNullOrEmpty(dataValue.Value.ToString()))
                 {
-                    changeLog.Add(new DynamicContentChangeModel(oldComponent, dataValue.Key, "", dataValue.Value));
+                    changeLog.Add(new DynamicContentChangeModel(oldComponent, dataValue.Key, "", dataValue.Value, oldMode));
                 }
             }
             return changeLog;
