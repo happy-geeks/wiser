@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
@@ -20,29 +21,42 @@ using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Extensions;
+using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
+using GeeksCoreLibrary.Modules.Objects.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Enums;
+using GeeksCoreLibrary.Modules.Templates.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Models;
 using LibSassHost;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.Razor;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.WebUtilities;
 using Newtonsoft.Json.Linq;
 using NUglify;
 using NUglify.Html;
 using NUglify.JavaScript;
+using ITemplatesService = Api.Modules.Templates.Interfaces.ITemplatesService;
 
 namespace Api.Modules.Templates.Services
 {
-    /// <inheritdoc cref="ITemplatesService" />
+    /// <inheritdoc cref="Interfaces.ITemplatesService" />
     public class TemplatesService : ITemplatesService, IScopedService
     {
         //The list of hardcodes query-strings
         private static readonly Dictionary<string, string> TemplateQueryStrings = new();
 
-        private readonly IWiserCustomersService wiserCustomersService;
         private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly IWiserCustomersService wiserCustomersService;
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService;
         private readonly IDatabaseConnection clientDatabaseConnection;
@@ -51,14 +65,18 @@ namespace Api.Modules.Templates.Services
         private readonly ITemplateDataService templateDataService;
         private readonly IHistoryService historyService;
         private readonly IWiserItemsService wiserItemsService;
+        private readonly IPagesService pagesService;
+        private readonly IRazorViewEngine razorViewEngine;
+        private readonly ITempDataProvider tempDataProvider;
+        private readonly IObjectsService objectsService;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IWiserCustomersService wiserCustomersService, IHttpContextAccessor httpContextAccessor, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService)
         {
-            this.wiserCustomersService = wiserCustomersService;
             this.httpContextAccessor = httpContextAccessor;
+            this.wiserCustomersService = wiserCustomersService;
             this.stringReplacementsService = stringReplacementsService;
             this.gclTemplatesService = gclTemplatesService;
             this.clientDatabaseConnection = clientDatabaseConnection;
@@ -66,6 +84,10 @@ namespace Api.Modules.Templates.Services
             this.templateDataService = templateDataService;
             this.historyService = historyService;
             this.wiserItemsService = wiserItemsService;
+            this.pagesService = pagesService;
+            this.razorViewEngine = razorViewEngine;
+            this.tempDataProvider = tempDataProvider;
+            this.objectsService = objectsService;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -2391,10 +2413,10 @@ LIMIT 1";
                         resultLinks.LinkedJavascript.Add(linkedTemplate);
                         break;
                     case TemplateTypes.Css:
-                        resultLinks.LinkedSccsTemplates.Add(linkedTemplate);
+                        resultLinks.LinkedScssTemplates.Add(linkedTemplate);
                         break;
                     case TemplateTypes.Scss:
-                        resultLinks.LinkedSccsTemplates.Add(linkedTemplate);
+                        resultLinks.LinkedScssTemplates.Add(linkedTemplate);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(linkedTemplate.LinkType), linkedTemplate.LinkType.ToString());
@@ -2488,7 +2510,7 @@ LIMIT 1";
 
             var helper = new PublishedEnvironmentHelper();
 
-            var newPublished = helper.CalculateEnvirontmentsToPublish(currentPublished, version, environment);
+            var newPublished = helper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
             var publishLog = helper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
@@ -2554,7 +2576,7 @@ LIMIT 1";
             }
             
             var jsLinks = template.LinkedTemplates?.LinkedJavascript?.Select(x => x.TemplateId).ToList();
-            var scssLinks = template.LinkedTemplates?.LinkedSccsTemplates?.Select(x => x.TemplateId).ToList();
+            var scssLinks = template.LinkedTemplates?.LinkedScssTemplates?.Select(x => x.TemplateId).ToList();
             var allLinkedTemplates = new List<int>(jsLinks ?? new List<int>());
             if (scssLinks != null)
             {
@@ -2711,6 +2733,200 @@ LIMIT 1";
             return new ServiceResult<bool>(true);
         }
 
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom)
+        {
+            var templates = new List<TemplateTreeViewModel>();
+            var path = startFrom.Split(',');
+            var remainingStartFrom = startFrom[(path[0].Length + (path.Length > 1 ? 1 : 0))..];
+
+            var templateTrees = (await GetTreeViewSectionAsync(parentId)).ModelObject;
+            foreach (var templateTree in templateTrees)
+            {
+                if (!String.IsNullOrWhiteSpace(startFrom) && !path[0].Equals(templateTree.TemplateName, StringComparison.InvariantCultureIgnoreCase)) continue;
+
+                if (templateTree.HasChildren)
+                {
+                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(templateTree.TemplateId, remainingStartFrom)).ModelObject;
+                }
+                else
+                {
+                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(templateTree.TemplateId)).ModelObject;
+                }
+
+                if (String.IsNullOrWhiteSpace(startFrom))
+                {
+                    templates.Add(templateTree);
+                }
+                else
+                {
+                    templates = templateTree.ChildNodes;
+                }
+            }
+
+            return new ServiceResult<List<TemplateTreeViewModel>>(templates);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int templateId, bool alsoDeleteChildren = true)
+        {
+            var result = await templateDataService.DeleteAsync(templateId, IdentityHelpers.GetUserName(identity), alsoDeleteChildren);
+            return new ServiceResult<bool>
+            {
+                ModelObject = result,
+                StatusCode = !result ? HttpStatusCode.NotFound : HttpStatusCode.OK,
+                ErrorMessage = !result ? $"Template with ID '{templateId}' not found." : null
+            };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, int componentId, GenerateTemplatePreviewRequestModel requestModel)
+        {
+            var component = requestModel.Components.FirstOrDefault(c => c.Id == componentId);
+            if (component == null)
+            {
+                return new ServiceResult<string>("");
+            }
+
+            requestModel.Url ??= HttpContextHelpers.GetBaseUri(httpContextAccessor.HttpContext);
+            await SetupGclForPreviewAsync(identity, requestModel);
+            
+            var (html, _) = await gclTemplatesService.GenerateDynamicContentHtmlAsync(component);
+            return new ServiceResult<string>((string)html);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel)
+        {
+            var outputHtml = requestModel?.TemplateSettings?.EditorValue;
+            if (String.IsNullOrWhiteSpace(outputHtml) || requestModel.TemplateSettings.Type != TemplateTypes.Html)
+            {
+                return new ServiceResult<string>(outputHtml);
+            }
+            
+            var javascriptTemplates = new List<int>();
+            var cssTemplates = new List<int>();
+            var externalJavascript = new List<string>();
+            var externalCss = new List<string>();
+
+            javascriptTemplates.AddRange(requestModel.TemplateSettings.LinkedTemplates.LinkedJavascript.Select(t => t.TemplateId));
+            cssTemplates.AddRange(requestModel.TemplateSettings.LinkedTemplates.LinkedCssTemplates.Select(t => t.TemplateId));
+            cssTemplates.AddRange(requestModel.TemplateSettings.LinkedTemplates.LinkedScssTemplates.Select(t => t.TemplateId));
+
+            requestModel.Url ??= HttpContextHelpers.GetBaseUri(httpContextAccessor.HttpContext);
+            var queryString = QueryHelpers.ParseQuery(requestModel.Url.Query);
+            var ombouw = (!queryString.ContainsKey("ombouw") || !String.Equals(queryString["ombouw"].ToString(), "false", StringComparison.OrdinalIgnoreCase)) && !String.Equals(requestModel.PreviewVariables.FirstOrDefault(v => String.Equals(v.Key, "ombouw", StringComparison.OrdinalIgnoreCase))?.Value, "false", StringComparison.OrdinalIgnoreCase);
+
+            var contentToWrite = new StringBuilder();
+
+            // Header template.
+            if (ombouw)
+            {
+                contentToWrite.Append(await pagesService.GetGlobalHeader(requestModel.Url.ToString(), javascriptTemplates, cssTemplates));
+            }
+
+            // Content template.
+            contentToWrite.Append(outputHtml);
+
+            // Footer template.
+            if (ombouw)
+            {
+                contentToWrite.Append(await pagesService.GetGlobalFooter(requestModel.Url.ToString(), javascriptTemplates, cssTemplates));
+            }
+            
+            await SetupGclForPreviewAsync(identity, requestModel);
+
+            outputHtml = contentToWrite.ToString();
+            if (requestModel.TemplateSettings.HandleStandards)
+            {
+                outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, requestModel.TemplateSettings.HandleRequests, false, true, false);
+                outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
+                outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
+            }
+            
+            if (requestModel.TemplateSettings.HandleDynamicContent)
+            {
+                outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
+            }
+            
+            if (requestModel.TemplateSettings.HandleLogicBlocks)
+            {
+                outputHtml = stringReplacementsService.EvaluateTemplate(outputHtml);
+            }
+
+            if (!ombouw)
+            {
+                return new ServiceResult<string>(outputHtml);
+            }
+
+            // Generate view model.
+            var viewModel = await pagesService.CreatePageViewModelAsync(externalCss, cssTemplates, externalJavascript, javascriptTemplates, outputHtml);
+            
+            // Determine main domain, using either the "maindomain" object or the "maindomain_wiser" object.
+            var mainDomain = await objectsService.FindSystemObjectByDomainNameAsync("maindomain_wiser");
+            if (String.IsNullOrWhiteSpace(mainDomain))
+            {
+                mainDomain = await objectsService.FindSystemObjectByDomainNameAsync("testdomainjuice");
+            }
+            if (String.IsNullOrWhiteSpace(mainDomain))
+            {
+                mainDomain = await objectsService.FindSystemObjectByDomainNameAsync("maindomain");
+            }
+
+            if (viewModel.Css != null)
+            {
+                viewModel.Css.GeneralCssFileName = AddMainDomainToUrl(viewModel.Css.GeneralCssFileName, mainDomain);
+                viewModel.Css.PageAsyncFooterCssFileName = AddMainDomainToUrl(viewModel.Css.PageAsyncFooterCssFileName, mainDomain);
+                viewModel.Css.PageInlineHeadCss = AddMainDomainToUrl(viewModel.Css.PageInlineHeadCss, mainDomain);
+                viewModel.Css.PageStandardCssFileName = AddMainDomainToUrl(viewModel.Css.PageStandardCssFileName, mainDomain);
+                viewModel.Css.PageSyncFooterCssFileName = AddMainDomainToUrl(viewModel.Css.PageSyncFooterCssFileName, mainDomain);
+            }
+
+            if (viewModel.Javascript != null)
+            {
+                viewModel.Javascript.GeneralJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.GeneralJavascriptFileName, mainDomain);
+                viewModel.Javascript.GeneralFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.GeneralFooterJavascriptFileName, mainDomain);
+                viewModel.Javascript.PageAsyncFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageAsyncFooterJavascriptFileName, mainDomain);
+                viewModel.Javascript.PageStandardJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageStandardJavascriptFileName, mainDomain);
+                viewModel.Javascript.PageSyncFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageSyncFooterJavascriptFileName, mainDomain);
+            }
+
+            // Generate HTML from view.
+            await using var writer = new StringWriter();
+            var executingAssemblyDirectoryAbsolutePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+            var executingFilePath = executingAssemblyDirectoryAbsolutePath.Replace('\\', '/');
+            const string viewPath = "~/Modules/Templates/Views/Shared/Template.cshtml";
+            var viewResult = razorViewEngine.GetView(executingFilePath, viewPath, true);
+
+            var actionContext = new ActionContext(httpContextAccessor.HttpContext, new RouteData(), new ActionDescriptor());
+
+            if (viewResult.Success == false)
+            {
+                return new ServiceResult<string>($"A view with the name {viewResult.ViewName} could not be found");
+            }
+                
+            var viewDictionary = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
+            {
+                Model = viewModel
+            };
+
+            var viewContext = new ViewContext(
+                actionContext,
+                viewResult.View,
+                viewDictionary,
+                new TempDataDictionary(actionContext.HttpContext, tempDataProvider),
+                writer,
+                new HtmlHelperOptions()
+            );
+
+            await viewResult.View.RenderAsync(viewContext);
+
+            var finalResult = writer.GetStringBuilder().ToString();
+            finalResult = finalResult.ReplaceCaseInsensitive("<head>", $"<head><base href='{AddMainDomainToUrl("/", mainDomain)}'>");
+            return new ServiceResult<string>(finalResult);
+        }
+
         /// <summary>
         /// Convert LinkedDynamicContentDAO to a DynamicContentOverviewModel.
         /// </summary>
@@ -2732,38 +2948,78 @@ LIMIT 1";
             return overview;
         }
 
-        /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom)
+        /// <summary>
+        /// Adds the main domain to an url (for CSS/javascript).
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="domain"></param>
+        /// <returns></returns>
+        private static string AddMainDomainToUrl(string input, string domain)
         {
-            var templates = new List<TemplateTreeViewModel>();
-            var path = startFrom.Split(',');
-            var remainingStartFrom = startFrom.Substring(path[0].Length + (path.Length > 1 ? 1 : 0));
-
-            var templateTrees = (await GetTreeViewSectionAsync(parentId)).ModelObject;
-            foreach (var templateTree in templateTrees)
+            if (String.IsNullOrWhiteSpace(domain) || String.IsNullOrWhiteSpace(input))
             {
-                if (!string.IsNullOrWhiteSpace(startFrom) && !path[0].Equals(templateTree.TemplateName, StringComparison.InvariantCultureIgnoreCase)) continue;
+                return input;
+            }
 
-                if (templateTree.HasChildren)
-                {
-                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(templateTree.TemplateId, remainingStartFrom)).ModelObject;
-                }
-                else
-                {
-                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(templateTree.TemplateId)).ModelObject;
-                }
+            if (!domain.StartsWith("http", StringComparison.OrdinalIgnoreCase) && !domain.StartsWith("//"))
+            {
+                domain = $"http://{domain}";
+            }
 
-                if (string.IsNullOrWhiteSpace(startFrom))
+            domain = domain.TrimEnd('/');
+            input = input.TrimStart('/');
+            return $"{domain}/{input}";
+        }
+
+        /// <summary>
+        /// Sets URL and variables in http context, so the GCL can use them for replacements and settings and such while generating a preview for a template and/or dynamic content.
+        /// </summary>
+        private async Task SetupGclForPreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel)
+        {
+            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
+            if (requestModel.PreviewVariables != null && httpContextAccessor.HttpContext != null)
+            {
+                foreach (var previewVariable in requestModel.PreviewVariables)
                 {
-                    templates.Add(templateTree);
-                }
-                else
-                {
-                    templates = templateTree.ChildNodes;
+                    switch (previewVariable.Type.ToUpperInvariant())
+                    {
+                        case "POST":
+                            if (!requestModel.TemplateSettings.HandleRequests)
+                            {
+                                break;
+                            }
+
+                            if (previewVariable.Encrypt)
+                            {
+                                previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(customer.EncryptionKey);
+                            }
+
+                            httpContextAccessor.HttpContext.Items.Add(previewVariable.Key, previewVariable.Value);
+                            break;
+                        case "SESSION":
+                            if (!requestModel.TemplateSettings.HandleSession)
+                            {
+                                break;
+                            }
+
+                            if (previewVariable.Encrypt)
+                            {
+                                previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(customer.EncryptionKey);
+                            }
+
+                            httpContextAccessor.HttpContext.Items.Add(previewVariable.Key, previewVariable.Value);
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(previewVariable.Type), previewVariable.Type);
+                    }
                 }
             }
 
-            return new ServiceResult<List<TemplateTreeViewModel>>(templates);
+            // Let the GCL know that we want to use the given URL for everything, so the generated preview will be just like when a user opened the given URL on the actual website.
+            if (httpContextAccessor.HttpContext != null && requestModel.Url != null && requestModel.Url.IsAbsoluteUri)
+            {
+                httpContextAccessor.HttpContext.Items.Add(Constants.WiserUriOverrideForReplacements, requestModel.Url);
+            }
         }
     }
 }

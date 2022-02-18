@@ -4,7 +4,7 @@ namespace Api.Modules.Templates.Models.Template
 {
     public class LinkedTemplatesModel
     {
-        public List<LinkedTemplateModel> LinkedSccsTemplates { get; set; } = new();
+        public List<LinkedTemplateModel> LinkedScssTemplates { get; set; } = new();
 
         public List<LinkedTemplateModel> LinkedCssTemplates { get; set; } = new();
 

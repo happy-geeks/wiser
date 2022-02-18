@@ -3,22 +3,15 @@
 }
 @model Api.Modules.Templates.Models.Template.TemplateSettingsModel
 <div id="published-environments" class="item version-block" style="width: 100%">
-    <h4><label>Versie @Model.Version. Laatst gewijzigd door '@Model.ChangedBy' op @Model.ChangedOn</label></h4>
+    <h4><label>@Model.Name (@Model.TemplateId). Versie @Model.Version. Laatst gewijzigd door '@Model.ChangedBy' op @Model.ChangedOn</label></h4>
 
     <div class="formview full">
         <div class="item version-live">
             <div class="flex-container">
                 <select class="combo-select" placeholder="Maak uw keuze...">
-                    @foreach (int version in versionList)
+                    @foreach (var version in versionList)
                     {
-                        if (version == Model.PublishedEnvironments.LiveVersion)
-                        {
-                            <option value="@version" selected>@version</option>
-                        }
-                        else
-                        {
-                            <option value="@version">@version</option>
-                        }
+                        <!option value="@version" @(version == Model.PublishedEnvironments.LiveVersion ? "selected" : "")>@version</!option>
                     }
                 </select>
 
@@ -29,16 +22,9 @@
         <div class="item version-accept">
             <div class="flex-container">
                 <select class="combo-select" placeholder="Maak uw keuze...">
-                    @foreach (int version in versionList)
+                    @foreach (var version in versionList)
                     {
-                        if (version == Model.PublishedEnvironments.AcceptVersion)
-                        {
-                            <option value="@version" selected>@version</option>
-                        }
-                        else
-                        {
-                            <option value="@version">@version</option>
-                        }
+                        <!option value="@version" @(version == Model.PublishedEnvironments.AcceptVersion ? "selected" : "")>@version</!option>
                     }
                 </select>
 
@@ -49,16 +35,9 @@
         <div class="item version-test">
             <div class="flex-container">
                 <select class="combo-select" placeholder="Maak uw keuze...">
-                    @foreach (int version in versionList)
+                    @foreach (var version in versionList)
                     {
-                        if (version == Model.PublishedEnvironments.TestVersion)
-                        {
-                            <option value="@version" selected>@version</option>
-                        }
-                        else
-                        {
-                            <option value="@version">@version</option>
-                        }
+                        <!option value="@version" @(version == Model.PublishedEnvironments.TestVersion ? "selected" : "")>@version</!option>
                     }
                 </select>
 

@@ -83,17 +83,18 @@
                         <div class="pane-content" style="border: 0; margin: 0; padding: 0; height: 100%">
                             <div class="tabstrip">
                                 <ul>
-                                    <!--<li class="preview-tab">Preview</li>-->
+                                    <li class="preview-tab">Preview</li>
                                     <li class="history-tab k-state-active">History</li>
                                 </ul>
-                                <!--<div>
+                                <div>
                                     <div class="formview full previewContainer">
-                                        <button tabindex="0" role="button" class="k-button k-tool k-group-start k-group-end" title="View HTML" aria-label="View HTML" unselectable="on">
+                                        <div id="previewTab"></div>
+                                        <button id="previewHtml" role="button" class="k-button k-tool k-group-start k-group-end" title="View HTML" aria-label="View HTML" unselectable="on">
                                             <span class="k-icon k-i-html"></span>
                                             <span class="k-tool-text k-button-text">View HTML</span>
                                         </button>
                                     </div>
-                                </div>-->
+                                </div>
                                 <div>
                                     <div class="formview full historyContainer">
                                         <div class="row historyHeader">
@@ -125,6 +126,13 @@
             <div></div>
             <div></div>
             <div></div>
+        </div>
+    </div>
+
+    <!-- Window for previewing the HTML source of a dynamic component. -->
+    <div id="htmlPreviewWindow" class="html-preview-window">
+        <div class="k-content-frame pane-content">
+            <textarea class="editor-html"></textarea>
         </div>
     </div>
 
