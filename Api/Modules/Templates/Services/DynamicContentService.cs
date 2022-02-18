@@ -13,9 +13,7 @@ using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
 using GeeksCoreLibrary.Components.Account;
-using GeeksCoreLibrary.Core.Cms.Attributes;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using Microsoft.OpenApi.Extensions;
 
 namespace Api.Modules.Templates.Services
 {

@@ -7,6 +7,7 @@ using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
+using Api.Modules.Templates.Models.Preview;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 using GeeksCoreLibrary.Modules.Templates.Models;
@@ -165,8 +166,34 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Gets the tree view including template settings of all templates.
         /// </summary>
+        /// <param name="parentId">The ID of the parent item.</param>
         /// <param name="startFrom">Set the place from which to start the tree view, folders separated by comma.</param>
         /// <returns></returns>
         Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom);
+
+        /// <summary>
+        /// Deletes a template. This will not actually delete it from the database, but add a new version with removed = 1 instead.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="templateId">The ID of the template to delete.</param>
+        /// <param name="alsoDeleteChildren">Optional: Whether or not to also delete all children of this template. Default value is <see langword="true"/>.</param>
+        Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int templateId, bool alsoDeleteChildren = true);
+
+        /// <summary>
+        /// Generates a preview for a dynamic component.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="componentId">The ID of the component.</param>
+        /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
+        /// <returns>The HTML of the component as it would look on the website.</returns>
+        Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, int componentId, GenerateTemplatePreviewRequestModel requestModel);
+
+        /// <summary>
+        /// Generates a preview for an HTML template.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
+        /// <returns>The HTML of the template as it would look on the website.</returns>
+        Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel);
     }
 }

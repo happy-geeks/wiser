@@ -1,5 +1,9 @@
 ﻿@import "../../Base/scss/base.scss";
 
+#htmlPreviewWindow {
+    display: none;
+}
+
 #left-pane .pane-content {
     height: 100% !important;
     min-height: inherit;
@@ -37,15 +41,15 @@
 }
 
 #right-pane .previewContainer {
-    background-color: var(--white-color);
-    border-radius: 3px;
-    border: 1px solid var(--border-color);
-    min-height: calc(100vh - 250px);
+    min-height: calc(100vh - 130px);
     position: relative;
-    margin-top: 4px;
 }
 
-#right-pane .previewContainer .k-button  {
+#right-pane .previewContainer .col-6 {
+    flex-basis: 100%;
+}
+
+#right-pane .previewContainer #previewHtml {
     font-family: var(--regular-txt);
     font-size: 13px;
     font-weight: 400;
@@ -55,7 +59,7 @@
     bottom: 10px;
 }
 
-#right-pane .previewContainer .k-button .k-button-text {
+#right-pane .previewContainer #previewHtml .k-button-text {
     padding-left: 5px;
 }
 

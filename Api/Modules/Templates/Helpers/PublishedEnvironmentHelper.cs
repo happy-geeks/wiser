@@ -47,9 +47,9 @@ namespace Api.Modules.Templates.Helpers
 
             return new PublishedEnvironmentModel
             {
-                LiveVersion = liveVersion, 
-                AcceptVersion = acceptVersion, 
-                TestVersion = testVersion, 
+                LiveVersion = liveVersion,
+                AcceptVersion = acceptVersion,
+                TestVersion = testVersion,
                 VersionList = versionList
             };
         }
@@ -83,34 +83,39 @@ namespace Api.Modules.Templates.Helpers
         /// <param name="version">The version that is to be published to an environment.</param>
         /// <param name="environment">The string of the environment that needs to be published.</param>
         /// <returns>A changelog in the form of a Dictionary containing the versions and their respective value changes to achieve the publishing of the environment given in the params.</returns>
-        public Dictionary<int,int> CalculateEnvirontmentsToPublish (PublishedEnvironmentModel publishModel, int version, string environment)
+        public Dictionary<int, int> CalculateEnvironmentsToPublish(PublishedEnvironmentModel publishModel, int version, string environment)
         {
             var environmentEnum = EnvironmentStringToEnum(environment);
 
             var versionsToUpdate = new Dictionary<int, int>();
             var versionsToPublish = (int)environmentEnum;
 
-            switch (environmentEnum) {
+            switch (environmentEnum)
+            {
                 case Environments.Test:
-                    //Add this publish
+                    // Add this publish.
                     TryAddToIntDictionary(versionsToUpdate, version, ((int)environmentEnum));
-                    //Remove the old publish of this environment
+                    // Remove the old publish of this environment.
                     TryAddToIntDictionary(versionsToUpdate, publishModel.TestVersion, -(int)Environments.Test);
 
                     break;
                 case Environments.Acceptance:
-                    //check if other environments should also be pushed.
+                    // Check if other environments should also be pushed.
                     if (version > publishModel.TestVersion)
                     {
                         versionsToPublish += (int)Environments.Test;
+                        TryAddToIntDictionary(versionsToUpdate, publishModel.TestVersion, -(int)Environments.Test);
                     }
-                    //Add this publish 
+
+                    // Add this publish 
                     TryAddToIntDictionary(versionsToUpdate, version, versionsToPublish);
-                    //Remove the old publish of this environment
+
+                    // Remove the old publish of this environment.
                     TryAddToIntDictionary(versionsToUpdate, publishModel.AcceptVersion, -(int)Environments.Acceptance);
+
                     break;
                 case Environments.Live:
-                    //check if other environments should also be pushed.
+                    // Check if other environments should also be pushed.
                     if (version > publishModel.AcceptVersion)
                     {
                         versionsToPublish += (int)Environments.Acceptance;
@@ -121,11 +126,16 @@ namespace Api.Modules.Templates.Helpers
                         versionsToPublish += (int)Environments.Test;
                         TryAddToIntDictionary(versionsToUpdate, publishModel.TestVersion, -(int)Environments.Test);
                     }
-                    //Add this publish
+
+                    // Add this publish.
                     TryAddToIntDictionary(versionsToUpdate, version, versionsToPublish);
-                    //Remove the old publish of this environment
+
+                    // Remove the old publish of this environment.
                     TryAddToIntDictionary(versionsToUpdate, publishModel.LiveVersion, -(int)Environments.Live);
+
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(environmentEnum), environmentEnum.ToString());
             }
 
             return versionsToUpdate;
@@ -137,7 +147,7 @@ namespace Api.Modules.Templates.Helpers
         /// <param name="dictionary">The dictionary to edit.</param>
         /// <param name="key">The key value that will be added or added to.</param>
         /// <param name="value">The value that is to be set or added to the key.</param>
-        public void TryAddToIntDictionary (Dictionary<int,int> dictionary, int key, int value)
+        public void TryAddToIntDictionary(Dictionary<int, int> dictionary, int key, int value)
         {
             if (dictionary.ContainsKey(key))
             {
@@ -156,24 +166,24 @@ namespace Api.Modules.Templates.Helpers
         /// <param name="currentPublished">A PublishedEnvironmentModel containing the current situation before the publish action is executed.</param>
         /// <param name="publishModel">A changelog in the form of a Dictionary containing the versions and their respective value changes to achieve the publishing of the environment</param>
         /// <returns>A model containing the PublishLogModel to log the event of publishing the environment of the item.</returns>
-        public PublishLogModel GeneratePublishLog (int templateId, PublishedEnvironmentModel currentPublished, Dictionary<int, int> publishModel)
+        public PublishLogModel GeneratePublishLog(int templateId, PublishedEnvironmentModel currentPublished, Dictionary<int, int> publishModel)
         {
             var publishLog = new PublishLogModel(templateId, currentPublished.LiveVersion, currentPublished.AcceptVersion, currentPublished.TestVersion);
 
-            foreach(var publishAction in publishModel)
+            foreach (var publishAction in publishModel)
             {
                 //Negative value means the value is the old environment. These have already been set and need no further action.
                 if (publishAction.Value > 0)
                 {
-                    if (((Environments)publishAction.Value).HasFlag(Environments.Live)) 
+                    if (((Environments)publishAction.Value).HasFlag(Environments.Live))
                     {
                         publishLog.NewLive = publishAction.Key;
                     }
-                    if (((Environments)publishAction.Value).HasFlag(Environments.Acceptance)) 
+                    if (((Environments)publishAction.Value).HasFlag(Environments.Acceptance))
                     {
                         publishLog.NewAccept = publishAction.Key;
                     }
-                    if (((Environments)publishAction.Value).HasFlag(Environments.Test)) 
+                    if (((Environments)publishAction.Value).HasFlag(Environments.Test))
                     {
                         publishLog.NewTest = publishAction.Key;
                     }

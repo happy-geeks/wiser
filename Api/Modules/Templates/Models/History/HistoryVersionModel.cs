@@ -31,6 +31,10 @@ namespace Api.Modules.Templates.Models.History
 
         public string ComponentMode { get; set; }
 
+        public HistoryVersionModel()
+        {
+        }
+
         public HistoryVersionModel(int version, DateTime changedOn, string changedBy, string component, string componentMode, string rawVersionString)
         {
             this.Version = version;
