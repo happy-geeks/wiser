@@ -2489,7 +2489,7 @@ LIMIT 1";
 
             var helper = new PublishedEnvironmentHelper();
 
-            var newPublished = helper.CalculateEnvirontmentsToPublish(currentPublished, version, environment);
+            var newPublished = helper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
             var publishLog = helper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
