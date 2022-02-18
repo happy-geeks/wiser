@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
+using Api.Modules.Templates.Models.Template;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,14 +19,16 @@ namespace Api.Modules.Templates.Controllers
     {
         private readonly IDynamicContentService dynamicContentService;
         private readonly IHistoryService historyService;
+        private readonly ITemplatesService templatesService;
 
         /// <summary>
         /// Creates a new instance of <see cref="DynamicContentController"/>.
         /// </summary>
-        public DynamicContentController(IDynamicContentService dynamicContentService, IHistoryService historyService)
+        public DynamicContentController(IDynamicContentService dynamicContentService, IHistoryService historyService, ITemplatesService templatesService)
         {
             this.dynamicContentService = dynamicContentService;
             this.historyService = historyService;
+            this.templatesService = templatesService;
         }
         
         [HttpGet, Route("{id:int}")]
@@ -94,6 +96,18 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> AddLinkToTemplateAsync(int contentId, int templateId)
         {
             return (await dynamicContentService.AddLinkToTemplateAsync((ClaimsIdentity)User.Identity, contentId, templateId)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Generates a preview for a dynamic component.
+        /// </summary>
+        /// <param name="componentId">The ID of the component.</param>
+        /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
+        /// <returns>The HTML of the component as it would look on the website.</returns>
+        [HttpPost, Route("{componentId:int}/html-preview"), ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GenerateHtmlForComponentAsync(int componentId, GenerateTemplatePreviewRequestModel requestModel)
+        {
+            return (await templatesService.GeneratePreviewAsync((ClaimsIdentity)User.Identity, componentId, requestModel)).GetHttpResponseMessage();
         }
     }
 }

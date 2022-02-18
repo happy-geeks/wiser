@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
+using ITemplatesService = Api.Modules.Templates.Interfaces.ITemplatesService;
 
 namespace Api.Modules.Templates.Controllers
 {
@@ -322,7 +323,7 @@ namespace Api.Modules.Templates.Controllers
         /// </summary>
         /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
         /// <returns>The HTML of the template as it would look on the website.</returns>
-        [HttpPost, Route("preview"), ProducesResponseType(typeof(List<TemplateTreeViewModel>), StatusCodes.Status200OK)]
+        [HttpPost, Route("preview"), ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public async Task<IActionResult> GeneratePreviewAsync(GenerateTemplatePreviewRequestModel requestModel)
         {
             return (await templatesService.GeneratePreviewAsync((ClaimsIdentity)User.Identity, requestModel)).GetHttpResponseMessage();

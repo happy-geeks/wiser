@@ -1,6 +1,7 @@
 ﻿import { TrackJS } from "trackjs";
 import { Wiser2, Misc } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
+import { Preview } from "./Preview.js";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -42,6 +43,7 @@ const moduleSettings = {
             this.componentModeComboBox = null;
             this.selectedComponentData = null;
             this.saving = false;
+            this.changesTimeout = null;
 
             // Default settings
             this.settings = {
@@ -55,6 +57,7 @@ const moduleSettings = {
 
             // Other.
             this.mainLoader = null;
+            this.preview = new Preview(this);
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -90,6 +93,7 @@ const moduleSettings = {
 
             // Setup any settings from the body element data. These settings are added via the Wiser backend and they take preference.
             Object.assign(this.settings, $("body").data());
+            this.selectedId = this.settings.templateId;
 
             if (this.settings.trackJsToken) {
                 TrackJS.install({
@@ -119,8 +123,9 @@ const moduleSettings = {
 
             await this.initCurrentComponentData();
 
-            this.bindSaveButton();
+            this.initializeButtons();
             await this.loadComponentHistory();
+            await this.loadPreviewTab();
             window.processing.removeProcess(process);
         }
 
@@ -185,17 +190,25 @@ const moduleSettings = {
             }
 
             //NUMERIC FIELD
-            container.find(".numeric").kendoNumericTextBox();
+            container.find(".numeric").kendoNumericTextBox({
+                change: () => this.onInputChange(true),
+                spin: () => this.onInputChange(false)
+            });
             
             //MULTISELECT
             container.find(".multi-select").kendoMultiSelect({
-                autoClose: false
+                autoClose: false,
+                change: () => this.onInputChange(true)
             });
 
-            container.find(".select").kendoDropDownList();
+            container.find(".select").kendoDropDownList({
+                change: () => this.onInputChange(true)
+            });
             
             container.find(".add-subgroup-button").off("click").click(this.onAddSubGroupButtonClick.bind(this));
             container.find(".remove-subgroup-button").off("click").click(this.onRemoveSubGroupButtonClick.bind(this));
+
+            container.find("input.textField, label.checkbox > input[type='checkbox']").change(() => this.onInputChange(true));
         }
 
         /**
@@ -325,7 +338,7 @@ const moduleSettings = {
         /**
          *  Bind the save button to the event for saving the newly acquired settings.
          * */
-        bindSaveButton() {
+        initializeButtons() {
             document.body.addEventListener("keydown", (event) => {
                 if ((event.ctrlKey || event.metaKey) && event.keyCode === 83) {
                     console.log("ctrl+s dynamic content", event);
@@ -349,6 +362,11 @@ const moduleSettings = {
                     window.parent.Templates.newContentTitle = this.settings.selectedTitle;
                     window.parent.$("#dynamicContentWindow").data("kendoWindow").close();
                 }
+            });
+
+            $("#previewHtml").click((event) => {
+                event.preventDefault();
+                this.preview.generateHtmlPreviewForComponent(this.settings.selectedId, this.getDynamicContentPreviewSettings());
             });
         }
 
@@ -400,6 +418,16 @@ const moduleSettings = {
                 method: "PUT",
                 contentType: "application/json"
             });
+        }
+
+        getDynamicContentPreviewSettings() {
+            return [
+                {
+                    id: this.settings.selectedId,
+                    name: document.getElementById("componentTypeDropDown").value,
+                    settingsJson: JSON.stringify(this.getNewSettings())
+                }
+            ];
         }
 
         /**
@@ -496,6 +524,21 @@ const moduleSettings = {
             this.bindHistoryButtons();
         }
 
+        async loadPreviewTab() {
+            // Preview
+            await this.preview.loadProfiles();
+            const response = await Wiser2.api({
+                method: "GET",
+                url: "/Modules/Templates/PreviewTab"
+            });
+            
+            document.getElementById("previewTab").innerHTML = response;
+
+            this.preview.initPreviewProfileInputs(true, true);
+            this.preview.bindPreviewButtons();
+            this.preview.generatePreview();
+        }
+
         async transformCodeMirrorViews(container = null) {
             await Misc.ensureCodeMirror();
             container = container || $("body");
@@ -528,8 +571,24 @@ const moduleSettings = {
                     mode: element.dataset.fieldType
                 });
 
+                codeMirrorInstance.on("change", () => this.onInputChange(false));
+
                 $(element).data("CodeMirrorInstance", codeMirrorInstance);
             });
+        }
+
+        /**
+         * Event for when the user changes a value in an input.
+         * This will generate a new preview, 500ms after the user's last change.
+         */
+        onInputChange(instant = false) {
+            if (this.changesTimeout) {
+                clearTimeout(this.changesTimeout);
+            }
+
+            this.changesTimeout = setTimeout(() => {
+                this.preview.generatePreview(false);
+            }, instant ? 0 : 500);
         }
 
         /**
@@ -590,6 +649,19 @@ const moduleSettings = {
 
                 window.processing.removeProcess(process);
             });
+        }
+
+        /**
+         * Gets the template settings. This method will be called from the Preview class.
+         * This will call the getCurrentTemplateSettings() method from the parent frame, which should be the templates module.
+         */
+        getCurrentTemplateSettings() {
+            if (!window.parent || !window.parent.Templates) {
+                console.warn("No parent window found, or parent window has no Templates class.");
+                return {};
+            } else {
+                return window.parent.Templates.getCurrentTemplateSettings();
+            }
         }
 
         async onAddSubGroupButtonClick(event) {

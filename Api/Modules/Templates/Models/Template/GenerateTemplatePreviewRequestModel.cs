@@ -23,5 +23,10 @@ namespace Api.Modules.Templates.Models.Template
         /// Gets or sets any extra variables for POST/session to simulate.
         /// </summary>
         public List<PreviewVariableModel> PreviewVariables { get; set; }
+
+        /// <summary>
+        /// Gets or sets any components with settings that have not been saved to database yet.
+        /// </summary>
+        public List<GeeksCoreLibrary.Modules.Templates.Models.DynamicContent> Components { get; set; }
     }
 }

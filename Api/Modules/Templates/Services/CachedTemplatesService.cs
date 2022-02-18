@@ -170,6 +170,12 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, int componentId, GenerateTemplatePreviewRequestModel requestModel)
+        {
+            return await templatesService.GeneratePreviewAsync(identity, componentId, requestModel);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel)
         {
             return await templatesService.GeneratePreviewAsync(identity, requestModel);

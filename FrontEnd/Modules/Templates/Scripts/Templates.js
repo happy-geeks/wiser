@@ -1,6 +1,7 @@
 ﻿import { TrackJS } from "trackjs";
 import { Wiser2 } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
+import { Preview } from "./Preview.js";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -49,15 +50,12 @@ const moduleSettings = {
             this.templateSettings = null;
             this.linkedTemplates = null;
             this.templateHistory = null;
-            this.previewProfiles = null;
             this.treeViewContextMenu = null;
             this.mainHtmlEditor = null;
             this.dynamicContentGrid = null;
             this.newContentId = 0;
             this.newContentTitle = null;
             this.saving = false;
-            this.filterVariablesGrid = null;
-            this.previewProfilesDropDown = null;
 
             this.templateTypes = Object.freeze({
                 "UNKNOWN": 0,
@@ -85,6 +83,7 @@ const moduleSettings = {
 
             // Other.
             this.mainLoader = null;
+            this.preview = new Preview(this);
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -193,7 +192,8 @@ const moduleSettings = {
                     open: {
                         effects: "fadeIn"
                     }
-                }
+                },
+                activate: this.onMainTabStripActivate.bind(this)
             }).data("kendoTabStrip");
 
             this.treeViewTabStrip = $(".tabstrip-treeview").kendoTabStrip({
@@ -277,96 +277,7 @@ const moduleSettings = {
         toggleMainLoader(show) {
             this.mainLoader.toggleClass("loading", show);
         }
-
-        customBoolEditor(container, options) {
-            $('<input class="checkbox" type="checkbox" name="encrypt" data-type="boolean" data-bind="checked:encrypt">').appendTo(container);
-        }
-        customDopdownEditor(container, options) {
-            $("<select name='type' data-type='string' data-bind='type'><option value='POST'>POST</option><option value='SESSION'>SESSION</option></select>").appendTo(container);
-        }
-
-        initPreviewProfileInputs(force = false) {
-            if (!this.previewProfilesDropDown || force) {
-                this.previewProfilesDropDown = $("#preview-combo-select").kendoDropDownList({
-                    dataSource: this.previewProfiles,
-                    dataTextField: "name",
-                    dataValueField: "id",
-                    optionLabel: "Nieuw profiel",
-                    change: (event) => {
-                        this.initPreviewProfileInputs();
-                    }
-                }).data("kendoDropDownList");
-            }
-
-            const selectedProfileId = this.previewProfilesDropDown.value();
-            let tempPreviewVariablesData = [];
-            if (this.previewProfiles && this.previewProfiles.length > 0) {
-                const selectedProfile = this.previewProfiles.find(p => p.id == selectedProfileId);
-                if (selectedProfile) {
-                    tempPreviewVariablesData = selectedProfile.variables || [];
-                    document.getElementById("profile-url").value = selectedProfile.url || "";
-                } else {
-                    document.getElementById("profile-url").value = "";
-                }
-            }
-
-            if (!this.filterVariablesGrid || force) {
-                this.filterVariablesGrid = $("#preview-variables").kendoGrid({
-                    scrollable: true,
-                    resizable: false,
-                    filterable: false,
-                    pageable: false,
-                    toolbar: [{ name: "create", text: "Add variable" }],
-                    columns: [
-                        {
-                            field: "type",
-                            title: "Type",
-                            editor: window.Templates.customDopdownEditor
-                        },
-                        {
-                            field: "key",
-                            title: "Key"
-                        },
-                        {
-                            field: "value",
-                            title: "Value"
-                        },
-                        {
-                            field: "encrypt",
-                            width: 50,
-                            editor: window.Templates.customBoolEditor
-
-                        },
-                        {
-                            command: ["edit",
-                                {
-                                    name: "delete", text: "",
-                                    iconClass: "k-icon k-i-trash"
-                                }
-                            ],
-                            title: "&nbsp;",
-                            width: 230
-                        }
-                    ],
-                    editable: "inline",
-                    edit: (editEvent) => {
-                        this.generatePreview();
-                    }
-                }).data("kendoGrid");
-            }
-
-            this.filterVariablesGrid.setDataSource({
-                data: tempPreviewVariablesData,
-                schema: {
-                    model: {
-                        id: "key"
-                    }
-                }
-            });
-            
-            this.generatePreview();
-        }
-
+                
         /**
          * Opens the dialog for creating a new item.
          * @param {any} dataItem When calling this from context menu, the selected data item from the tree view or tab sheet should be entered here.
@@ -422,6 +333,12 @@ const moduleSettings = {
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+            }
+        }
+
+        onMainTabStripActivate(event) {
+            if (event && event.item && event.item.textContent && event.item.textContent.toLowerCase() === "preview") {
+                this.preview.generatePreview();
             }
         }
 
@@ -748,24 +665,12 @@ const moduleSettings = {
                         },
                         {
                             command: [
-                                /*TODO {
-                                    name: "duplicate",
-                                    text: "",
-                                    iconClass: "k-icon k-i-copy",
-                                    click: this.kendoGridCopy.bind(this)
-                                },*/
                                 {
                                     name: "Open",
                                     text: "",
                                     iconClass: "k-icon k-i-edit",
                                     click: this.onDynamicContentOpenClick.bind(this)
-                                }/* TODO,
-                                        {
-                                            name: "Preview",
-                                            text: "",
-                                            iconClass: "k-icon k-i-preview",
-                                            click: this.kendoGridPreview.bind(this)
-                                        }*/
+                                }
                             ],
                             title: "&nbsp;",
                             width: 160,
@@ -780,33 +685,21 @@ const moduleSettings = {
                 }).data("kendoGrid");
 
                 // Preview
-                this.loadProfiles().then(() => {
+                this.preview.loadProfiles().then(() => {
                     Wiser2.api({
                         method: "GET",
                         url: "/Modules/Templates/PreviewTab"
                     }).then((response) => {
                         document.getElementById("previewTab").innerHTML = response;
 
-                        this.initPreviewProfileInputs(true);
-                        this.bindPreviewButtons();
+                        this.preview.initPreviewProfileInputs(true, true);
+                        this.preview.bindPreviewButtons();
                     })
                 });
             } catch (exception) {
                 console.error(exception);
                 kendo.alert(`Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.<br>${exception.responseText || exception}`);
                 window.processing.removeProcess(process);
-            }
-        }
-
-        async loadProfiles() {
-            this.previewProfiles = await Wiser2.api({
-                url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles`,
-                dataType: "json",
-                method: "GET"
-            });
-
-            if (this.previewProfilesDropDown) {
-                this.previewProfilesDropDown.setDataSource(this.previewProfiles);
             }
         }
 
@@ -920,15 +813,7 @@ const moduleSettings = {
                 row.displayVersions = Math.max(...row.versions.versionList) + " live: " + row.versions.liveVersion + ", Acceptatie: " + row.versions.acceptVersion + ", test: " + row.versions.testVersion;
             });
         }
-
-        kendoGridCopy(x) {
-            //TODO
-        }
-
-        kendoGridPreview() {
-            //TODO
-        }
-
+        
         /**
          * Event that gets called when the user executes the custom action for adding dynamic content from Wiser to the HTML editor.
          * This will open a dialog where they can select any component that is linked to the current template, or add a new one.
@@ -1228,7 +1113,7 @@ const moduleSettings = {
                 parentId: this.templateSettings.parentId,
                 editorValue: editorValue,
                 linkedTemplates: {
-                    linkedSccsTemplates: scssLinks,
+                    linkedScssTemplates: scssLinks,
                     linkedJavascript: jsLinks
                 }
             }, this.getNewSettings());
@@ -1255,13 +1140,14 @@ const moduleSettings = {
 
             try {
                 this.saving = true;
+                const data = this.getCurrentTemplateSettings();
 
                 const response = await Wiser2.api({
                     url: `${this.settings.wiserApiRoot}templates/${data.templateId}`,
                     dataType: "json",
                     type: "POST",
                     contentType: "application/json",
-                    data: JSON.stringify(this.getCurrentTemplateSettings())
+                    data: JSON.stringify(data)
                 });
 
                 window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
@@ -1323,118 +1209,6 @@ const moduleSettings = {
             await Promise.all(promises);
         }
 
-        //Bind buttons in the preview tab of the template overview
-        bindPreviewButtons() {
-            $("#preview-remove-profile").on("click", this.onDeletePreviewProfileButtonClick.bind(this));
-            $("#preview-save-profile-as").on("click", this.onSavePreviewProfileButtonClick.bind(this, true));
-            $("#preview-save-profile").on("click", this.onSavePreviewProfileButtonClick.bind(this, false));
-        }
-        
-        /**
-         * Generates a preview for the current HTML template, this will call the API to generate the HTML and put that HTML in an iframe.
-         */
-        async generatePreview() {
-            const process = `deleteProfile_${Date.now()}`;
-            window.processing.addProcess(process);
-
-            try {
-                const data = {
-                    templateSettings: this.getCurrentTemplateSettings(),
-                    url: $("#profile-url").val(),
-                    previewVariables: this.filterVariablesGrid.dataSource.data()
-                };
-
-                const generatedHtml = await Wiser2.api({
-                    url: `${this.settings.wiserApiRoot}templates/preview`,
-                    contentType: "application/json",
-                    type: "POST",
-                    data: JSON.stringify(data)
-                });
-                
-                const iframeElement = $("#previewIframe");
-                let iframe = iframeElement[0];
-                iframe = iframe.contentWindow || (iframe.contentDocument.document || iframe.contentDocument);
-
-                iframe.document.open();
-                iframe.document.write(generatedHtml);
-                iframe.document.close();
-            } catch (exception) {
-                console.error(exception);
-                kendo.alert("Er is iets fout gegaan met het genereren van de preciew. Probeer het a.u.b. opnieuw of neem contact op.")
-            }
-
-            window.processing.removeProcess(process);
-        }
-
-        async onDeletePreviewProfileButtonClick(event) {
-            if (event) event.preventDefault();
-
-            const selectedPreviewProfile = this.previewProfilesDropDown.value();
-            if (!selectedPreviewProfile) {
-                kendo.alert("U heeft geen bestaand profiel geselecteerd.");
-                return;
-            }
-
-            await Wiser2.showConfirmDialog(`Weet u zeker dat u het profiel "${this.previewProfilesDropDown.text()}" wilt verwijderen?`);
-
-            const process = `deleteProfile_${Date.now()}`;
-            window.processing.addProcess(process);
-
-            try {
-                await Wiser2.api({
-                    url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${selectedPreviewProfile}`,
-                    dataType: "json",
-                    contentType: "application/json",
-                    type: "DELETE"
-                });
-
-                window.popupNotification.show(`Het profiel '${this.previewProfilesDropDown.text()}' is verwijderd`, "info");
-            } catch (exception) {
-                logger.error(exception);
-                kendo.alert("Er is iets fout gegaan met verwijderen. Probeer het a.u.b. nogmaals of neem contact op.");
-            }
-
-            window.processing.removeProcess(process);
-        }
-
-        async onSavePreviewProfileButtonClick(saveAsNewProfile, event) {
-            if (event) event.preventDefault();
-
-            const selectedPreviewProfile = parseInt(this.previewProfilesDropDown.value()) || 0;
-            if (selectedPreviewProfile === 0) {
-                saveAsNewProfile = true;
-            }
-
-            const name = saveAsNewProfile ? await kendo.prompt("Kies een naam") : this.previewProfilesDropDown.text();
-            const process = `saveProfile_${Date.now()}`;
-            window.processing.addProcess(process);
-
-            try {
-                const newProfile = await Wiser2.api({
-                    url: saveAsNewProfile ? `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles` : `${this.settings.wiserApiRoot}templates/${this.selectedId}/profiles/${selectedPreviewProfile}`,
-                    dataType: "json",
-                    contentType: "application/json",
-                    type: saveAsNewProfile ? "POST" : "PUT",
-                    data: JSON.stringify({
-                        name: name,
-                        url: $("#profile-url").val(),
-                        variables: this.filterVariablesGrid.dataSource.data()
-                    })
-                });
-
-                await this.loadProfiles();
-                this.previewProfilesDropDown.value(newProfile.id);
-                this.initPreviewProfileInputs();
-
-                window.popupNotification.show(`Het profiel '${this.previewProfilesDropDown.text()}' is opgeslagen`, "info");
-            } catch (exception) {
-                logger.error(exception);
-                kendo.alert("Er is iets fout gegaan met opslaan. Probeer het a.u.b. nogmaals of neem contact op.");
-            }
-
-            window.processing.removeProcess(process);
-        }
-
         /**
          * Creates a new template, adds it to the tree view and finally opens it.
          * @param {any} parentId The ID of the parent to add the template to.
@@ -1494,7 +1268,6 @@ const moduleSettings = {
                 const field = $(element);
                 const propertyName = field.attr("name");
                 if (!propertyName) {
-                    console.warn("No property name found for field", field);
                     return;
                 }
 
