@@ -561,15 +561,14 @@ namespace Api.Modules.Customers.Services
                             AND pinned.`key` = '{UserPinnedModulesKey}'";
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
-            List<int> pinnedModules;
-            if (dataTable.Rows.Count == 0)
+            var pinnedModules = new List<int>();
+            if (dataTable.Rows.Count > 0)
             {
-                pinnedModules = new List<int>();
-            }
-            else
-            {
-                var pinned = dataTable.Rows[0].Field<string>("pinnedModules") ?? "";
-                pinnedModules = pinned.Split(',').Select(Int32.Parse).ToList();
+                var pinned = dataTable.Rows[0].Field<string>("pinnedModules");
+                if (!String.IsNullOrWhiteSpace(pinned))
+                {
+                    pinnedModules = pinned.Split(',').Select(Int32.Parse).ToList();
+                }
             }
 
             return new ServiceResult<List<int>>(pinnedModules);
