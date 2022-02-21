@@ -18,6 +18,7 @@ using Api.Modules.Grids.Enums;
 using Api.Modules.Grids.Interfaces;
 using Api.Modules.Grids.Models;
 using Api.Modules.Items.Interfaces;
+using Api.Modules.Kendo.Models;
 using Api.Modules.Modules.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
@@ -840,7 +841,9 @@ namespace Api.Modules.Grids.Services
                                             p.data_query,
                                             p.depends_on_field,
                                             p.depends_on_action,
-                                            p.link_type > 0 AS isLinkProperty
+                                            p.link_type > 0 AS isLinkProperty,
+                                            p.regex_validation,
+                                            p.mandatory
                                         FROM {WiserTableNames.WiserEntityProperty} p 
                                         WHERE (p.entity_name = ?entityType OR (p.link_type > 0 AND p.link_type = ?linkTypeNumber))
                                         AND p.visible_in_overview = 1
@@ -859,8 +862,18 @@ namespace Api.Modules.Grids.Services
 
                             var field = new FieldModel
                             {
-                                Editable = !Convert.ToBoolean(dataRow["readonly"])
+                                Editable = !Convert.ToBoolean(dataRow["readonly"]),
+                                Validation = new ValidationSettingsModel
+                                {
+                                    Required = Convert.ToBoolean(dataRow["mandatory"])
+                                }
                             };
+
+                            var regexValidation = dataRow.Field<string>("regex_validation");
+                            if (!String.IsNullOrWhiteSpace(regexValidation))
+                            {
+                                field.Validation.Pattern = regexValidation;
+                            }
 
                             var column = new GridColumn
                             {

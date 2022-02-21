@@ -188,7 +188,7 @@ if (customQueryGrid) {
         }).then(done);
     } else {
         Wiser2.api({
-            url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/entity-grids/" + encodeURIComponent(options.entityType) + "?propertyId={propertyId}" + linkTypeParameter.replace("?", "&") + "&mode=" + gridMode.toString() + "&fieldGroupName=" + encodeURIComponent(options.fieldGroupName) + "&currentItemIsSourceId=" + (options.currentItemIsSourceId || false).toString(),
+            url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/entity-grids/" + encodeURIComponent(options.entityType) + "?propertyId={propertyId}" + linkTypeParameter.replace("?", "&") + "&mode=" + gridMode.toString() + "&fieldGroupName=" + encodeURIComponent(options.fieldGroupName || "") + "&currentItemIsSourceId=" + (options.currentItemIsSourceId || false).toString(),
             method: "POST",
             contentType: "application/json"
         }).then(done);
@@ -336,7 +336,7 @@ function generateGrid(data, model, columns) {
                             });
                         } else {
                             Wiser2.api({
-                                url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/entity-grids/" + encodeURIComponent(options.entityType) + "?propertyId={propertyId}" + linkTypeParameter.replace("?", "&") + "&mode=" + gridMode.toString() + "&fieldGroupName=" + encodeURIComponent(options.fieldGroupName) + "&currentItemIsSourceId=" + (options.currentItemIsSourceId || false).toString(),
+                                url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/entity-grids/" + encodeURIComponent(options.entityType) + "?propertyId={propertyId}" + linkTypeParameter.replace("?", "&") + "&mode=" + gridMode.toString() + "&fieldGroupName=" + encodeURIComponent(options.fieldGroupName || "") + "&currentItemIsSourceId=" + (options.currentItemIsSourceId || false).toString(),
                                 method: "POST",
                                 contentType: "application/json",
                                 data: JSON.stringify(transportOptions.data)
@@ -391,7 +391,7 @@ function generateGrid(data, model, columns) {
                             details: []
                         };
                         
-						var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encryptedId;
+						var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id;
 						if (options.fieldGroupName) {
 							encryptedId = "{itemIdEncrypted}";
 							transportOptions.data.groupName = options.fieldGroupName;
