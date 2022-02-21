@@ -1,4 +1,4 @@
-﻿namespace Api.Modules.Grids.Models
+﻿namespace Api.Modules.Kendo.Models
 {
     /// <summary>
     /// A model for a Kendo data source item.

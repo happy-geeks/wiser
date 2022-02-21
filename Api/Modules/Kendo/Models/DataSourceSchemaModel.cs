@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Api.Modules.Grids.Models
+namespace Api.Modules.Kendo.Models
 {
     /// <summary>
     /// The data item (model) configuration.

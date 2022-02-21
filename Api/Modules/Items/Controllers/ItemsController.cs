@@ -13,6 +13,7 @@ using Api.Modules.Grids.Interfaces;
 using Api.Modules.Grids.Models;
 using Api.Modules.Items.Interfaces;
 using Api.Modules.Items.Models;
+using Api.Modules.Kendo.Models;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;

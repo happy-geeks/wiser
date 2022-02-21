@@ -11,6 +11,7 @@ using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Grids.Interfaces;
 using Api.Modules.Grids.Models;
+using Api.Modules.Kendo.Models;
 using Api.Modules.Modules.Interfaces;
 using Api.Modules.Modules.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;

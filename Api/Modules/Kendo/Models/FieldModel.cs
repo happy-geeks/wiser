@@ -1,4 +1,4 @@
-﻿namespace Api.Modules.Grids.Models
+﻿namespace Api.Modules.Kendo.Models
 {
     /// <summary>
     /// A model with field settings for a Kendo data source.
@@ -19,5 +19,10 @@
         /// Gets or sets whether this field can be <see langword="null"/>.
         /// </summary>
         public bool Nullable { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets the (client-side) validation for this field.
+        /// </summary>
+        public ValidationSettingsModel Validation { get; set; }
     }
 }
