@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Api.Modules.Kendo.Models;
 using Api.Modules.Modules.Models;
 
 namespace Api.Modules.Grids.Models

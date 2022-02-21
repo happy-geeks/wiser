@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Grids.Enums;
 using Api.Modules.Grids.Models;
+using Api.Modules.Kendo.Models;
 
 namespace Api.Modules.Grids.Interfaces
 {
