@@ -624,6 +624,8 @@ namespace Api.Modules.EntityProperties.Services
                     return EntityPropertyInputTypes.Empty;
                 case "qr":
                     return EntityPropertyInputTypes.Qr;
+                case "iframe":
+                    return EntityPropertyInputTypes.Iframe;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(value), value, null);
             }
@@ -689,6 +691,8 @@ namespace Api.Modules.EntityProperties.Services
                     return "empty";
                 case EntityPropertyInputTypes.Qr:
                     return "qr";
+                case EntityPropertyInputTypes.Iframe:
+                    return "iframe";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(value), value, null);
             }

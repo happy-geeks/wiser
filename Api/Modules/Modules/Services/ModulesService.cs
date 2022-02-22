@@ -10,7 +10,6 @@ using Api.Core.Interfaces;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Grids.Interfaces;
-using Api.Modules.Grids.Models;
 using Api.Modules.Kendo.Models;
 using Api.Modules.Modules.Interfaces;
 using Api.Modules.Modules.Models;
@@ -45,6 +44,7 @@ namespace Api.Modules.Modules.Services
         private readonly IUsersService usersService;
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly ILogger<ModulesService> logger;
+        private readonly IDatabaseHelpersService databaseHelpersService;
 
         private const string DefaultModulesGroupName = "Overig";
         private const string PinnedModulesGroupName = "Vastgepind";
@@ -52,7 +52,7 @@ namespace Api.Modules.Modules.Services
         /// <summary>
         /// Creates a new instance of <see cref="ModulesService"/>.
         /// </summary>
-        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IJsonService jsonService, IExcelService excelService, IObjectsService objectsService, IUsersService usersService, IStringReplacementsService stringReplacementsService, ILogger<ModulesService> logger)
+        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IJsonService jsonService, IExcelService excelService, IObjectsService objectsService, IUsersService usersService, IStringReplacementsService stringReplacementsService, ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.gridsService = gridsService;
@@ -63,6 +63,7 @@ namespace Api.Modules.Modules.Services
             this.usersService = usersService;
             this.stringReplacementsService = stringReplacementsService;
             this.logger = logger;
+            this.databaseHelpersService = databaseHelpersService;
             this.clientDatabaseConnection = clientDatabaseConnection;
         }
 
@@ -85,6 +86,10 @@ namespace Api.Modules.Modules.Services
             var pinnedModules = (await usersService.GetPinnedModulesAsync(identity)).ModelObject;
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+            // Make sure that Wiser tables are up-to-date.
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserItem, WiserTableNames.WiserEntityProperty, WiserTableNames.WiserModule });
+
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
 

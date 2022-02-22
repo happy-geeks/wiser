@@ -1211,6 +1211,7 @@ namespace Api.Modules.Items.Services
                         break;
 
                     case "qr":
+                    {
                         var customQueryResult = await ExecuteCustomQueryAsync(encryptedId, propertyId, new Dictionary<string, object>(), await wiserCustomersService.EncryptValue("0", identity), identity, userId);
                         var property = (JProperty)customQueryResult?.ModelObject?.OtherData?.FirstOrDefault()?.FirstOrDefault();
                         if (!String.IsNullOrWhiteSpace(property?.Name))
@@ -1231,7 +1232,7 @@ namespace Api.Modules.Items.Services
                         }
 
                         break;
-
+                    }
                     case "htmleditor":
                         value = await wiserItemsService.ReplaceHtmlForViewingAsync(value);
                         longValue = await wiserItemsService.ReplaceHtmlForViewingAsync(longValue);
@@ -1240,6 +1241,27 @@ namespace Api.Modules.Items.Services
                         // Other fields get HTML encoded later, with the exception of empty field. This is so that you can set some HTML in the default value for this field.
                         value = value.HtmlEncode();
                         break;
+                    case "iframe":
+                    {
+                        if (String.IsNullOrWhiteSpace(defaultValue))
+                        {
+                            break;
+                        }
+
+                        var customQueryResult = await ExecuteCustomQueryAsync(encryptedId, propertyId, new Dictionary<string, object>(), await wiserCustomersService.EncryptValue("0", identity), identity, userId);
+                        if (customQueryResult.ModelObject is not { Success: true })
+                        {
+                            break;
+                        }
+
+                        if (customQueryResult.ModelObject.OtherData.FirstOrDefault() is not JObject jObject)
+                        {
+                            break;
+                        }
+                        
+                        value = stringReplacementsService.DoReplacements(defaultValue, jObject.ToObject<Dictionary<string, object>>());
+                        break;
+                    }
                 }
 
                 // Setup any extra CSS for the field.
