@@ -307,7 +307,7 @@ export class Grids {
             }
 
             if (gridViewSettings.toolbar && gridViewSettings.toolbar.customActions && gridViewSettings.toolbar.customActions.length > 0) {
-                this.addCustomActionsToToolbar("#gridView", toolbar, gridViewSettings.toolbar.customActions);
+                this.addCustomActionsToToolbar("#gridView", 0, 0, toolbar, gridViewSettings.toolbar.customActions);
             }
 
             let totalResults = gridDataResult.totalResults;
@@ -910,11 +910,15 @@ export class Grids {
     /**
      * Adds all custom buttons in the toolbar for a grid, in the correct groups, based on the given settings.
      * @param {any} toolbar The toolbar array of the grid.
+     * @param {string} encryptedItemId The encrypted item ID of the item that the grid is located on, if applicable.
+     * @param {number} propertyId The ID of the property with the sub-entities-grid, if applicable.
      * @param {any} customActions The custom actions from the grid settings.
      */
-    addCustomActionsToToolbar(gridSelector, toolbar, customActions) {
+    addCustomActionsToToolbar(gridSelector, encryptedItemId, propertyId, toolbar, customActions) {
         const groups = [];
         const actionsWithoutGroups = [];
+        encryptedItemId = encryptedItemId || "";
+        propertyId = propertyId || "0";
 
         for (let i = 0; i < customActions.length; i++) {
             const customAction = customActions[i];
@@ -943,12 +947,12 @@ export class Grids {
                     groups.push(group);
                 }
 
-                group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${gridSelector.replace(/#/g, "\\#")}", 0, 0, ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
+                group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${gridSelector.replace(/#/g, "\\#")}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
             } else {
                 actionsWithoutGroups.push({
                     name: `customAction${i.toString()}`,
                     text: customAction.text,
-                    template: `<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${gridSelector.replace(/#/g, "\\#")}", 0, 0, ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
+                    template: `<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${gridSelector.replace(/#/g, "\\#")}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
                 });
             }
         }
