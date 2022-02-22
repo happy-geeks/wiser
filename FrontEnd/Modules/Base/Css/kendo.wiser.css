@@ -725,6 +725,11 @@ div.k-multiselect,
 	text-decoration: none;
 	color: var(--dark-txt);
 }
+.item .k-iframe iframe {
+    border: none;
+    width: 100%;
+    height: 100%;
+}
 .formview.half span.k-widget, 
 .formview.half div.k-multiselect, 
 .formview.half .k-widget.k-daterangepicker, 

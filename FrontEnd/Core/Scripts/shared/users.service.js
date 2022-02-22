@@ -200,8 +200,17 @@ export default class UsersService extends BaseService {
 
     async savePinnedModules(moduleIds) {
         try {
-            console.log("savePinnedModules", moduleIds);
             await this.base.api.post(`/api/v3/users/pinned-modules`, moduleIds);
+            return true;
+        } catch (error) {
+            console.error(error);
+            return false;
+        }
+    }
+
+    async saveAutoLoadModules(moduleIds) {
+        try {
+            await this.base.api.post(`/api/v3/users/auto-load-modules`, moduleIds);
             return true;
         } catch (error) {
             console.error(error);

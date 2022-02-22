@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <PackageId>HappyGeeks.Wiser.Api</PackageId>
-    <Version>3.0.2</Version>
+    <Version>3.0.3</Version>
     <Authors>Happy Geeks B.V.</Authors>
     <Company>Happy Geeks B.V.</Company>
     <Product>Wiser API</Product>
@@ -50,6 +50,8 @@
     <None Remove="Modules\Items\FieldTemplates\gpslocation.js" />
     <None Remove="Modules\Items\FieldTemplates\HTMLeditor.html" />
     <None Remove="Modules\Items\FieldTemplates\HTMLeditor.js" />
+    <None Remove="Modules\Items\FieldTemplates\iframe.html" />
+    <None Remove="Modules\Items\FieldTemplates\iframe.js" />
     <None Remove="Modules\Items\FieldTemplates\image-upload.html" />
     <None Remove="Modules\Items\FieldTemplates\image-upload.js" />
     <None Remove="Modules\Items\FieldTemplates\input.html" />
@@ -111,6 +113,8 @@
     <EmbeddedResource Include="Modules\Items\FieldTemplates\HTMLeditor.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\image-upload.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\image-upload.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\iframe.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\iframe.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\input.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\input.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\item-linker.html" />
@@ -138,7 +142,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="1.1.5" />
+    <PackageReference Include="GeeksCoreLibrary" Version="1.2.0" />
     <PackageReference Include="IdentityServer4" Version="4.1.2" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.16.0" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.16.0" />

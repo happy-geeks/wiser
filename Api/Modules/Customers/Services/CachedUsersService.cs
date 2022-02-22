@@ -128,6 +128,12 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
+        public Task<ServiceResult<List<int>>> GetAutoLoadModulesAsync(ClaimsIdentity identity)
+        {
+            return usersService.GetAutoLoadModulesAsync(identity);
+        }
+
+        /// <inheritdoc />
         public Task<ServiceResult<bool>> SaveGridSettingsAsync(ClaimsIdentity identity, string uniqueKey, JToken settings)
         {
             return usersService.SaveGridSettingsAsync(identity, uniqueKey, settings);
@@ -137,6 +143,12 @@ namespace Api.Modules.Customers.Services
         public Task<ServiceResult<bool>> SavePinnedModulesAsync(ClaimsIdentity identity, List<int> moduleIds)
         {
             return usersService.SavePinnedModulesAsync(identity, moduleIds);
+        }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<bool>> SaveAutoLoadModulesAsync(ClaimsIdentity identity, List<int> moduleIds)
+        {
+            return usersService.SaveAutoLoadModulesAsync(identity, moduleIds);
         }
 
         /// <inheritdoc />

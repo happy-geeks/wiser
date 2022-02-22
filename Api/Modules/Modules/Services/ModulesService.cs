@@ -10,7 +10,6 @@ using Api.Core.Interfaces;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Grids.Interfaces;
-using Api.Modules.Grids.Models;
 using Api.Modules.Kendo.Models;
 using Api.Modules.Modules.Interfaces;
 using Api.Modules.Modules.Models;
@@ -45,6 +44,7 @@ namespace Api.Modules.Modules.Services
         private readonly IUsersService usersService;
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly ILogger<ModulesService> logger;
+        private readonly IDatabaseHelpersService databaseHelpersService;
 
         private const string DefaultModulesGroupName = "Overig";
         private const string PinnedModulesGroupName = "Vastgepind";
@@ -52,7 +52,7 @@ namespace Api.Modules.Modules.Services
         /// <summary>
         /// Creates a new instance of <see cref="ModulesService"/>.
         /// </summary>
-        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IJsonService jsonService, IExcelService excelService, IObjectsService objectsService, IUsersService usersService, IStringReplacementsService stringReplacementsService, ILogger<ModulesService> logger)
+        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IJsonService jsonService, IExcelService excelService, IObjectsService objectsService, IUsersService usersService, IStringReplacementsService stringReplacementsService, ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.gridsService = gridsService;
@@ -63,6 +63,7 @@ namespace Api.Modules.Modules.Services
             this.usersService = usersService;
             this.stringReplacementsService = stringReplacementsService;
             this.logger = logger;
+            this.databaseHelpersService = databaseHelpersService;
             this.clientDatabaseConnection = clientDatabaseConnection;
         }
 
@@ -83,8 +84,13 @@ namespace Api.Modules.Modules.Services
 
             var isAdminAccount = IdentityHelpers.IsAdminAccount(identity);
             var pinnedModules = (await usersService.GetPinnedModulesAsync(identity)).ModelObject;
+            var autoLoadModules = (await usersService.GetAutoLoadModulesAsync(identity)).ModelObject;
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+            // Make sure that Wiser tables are up-to-date.
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserItem, WiserTableNames.WiserEntityProperty, WiserTableNames.WiserModule });
+
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
 
@@ -101,7 +107,7 @@ namespace Api.Modules.Modules.Services
                             FROM {WiserTableNames.WiserUserRoles} AS user_role
                             JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
                             JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
-                            LEFT JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
+                            JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
                             WHERE user_role.user_id = ?userId
                             GROUP BY permission.module_id
                             ORDER BY permission.module_id, permission.permissions
@@ -150,6 +156,10 @@ namespace Api.Modules.Modules.Services
                 if (String.IsNullOrWhiteSpace(groupName))
                 {
                     groupName = DefaultModulesGroupName;
+                }
+
+                if (String.IsNullOrWhiteSpace(originalGroupName))
+                {
                     originalGroupName = DefaultModulesGroupName;
                 }
 
@@ -169,6 +179,7 @@ namespace Api.Modules.Modules.Services
                 rightsModel.Type = dataRow.Field<string>("type");
                 rightsModel.Group = originalGroupName;
                 rightsModel.Pinned = pinnedModules.Contains(moduleId);
+                rightsModel.AutoLoad = autoLoadModules.Contains(moduleId);
                 rightsModel.PinnedGroup = PinnedModulesGroupName;
 
                 if (String.IsNullOrWhiteSpace(rightsModel.Icon))

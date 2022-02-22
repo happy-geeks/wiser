@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -81,17 +82,24 @@ namespace Api.Core.Services
                 {
                     // Admin account has not selected a user, so return a list of users.
                     var usersList = await usersService.GetAsync();
-
-                    // Everything is ok, create identity.
-                    customResponse = new Dictionary<string, object>
+                    if (usersList.ModelObject.Count == 1)
                     {
-                        { "adminLogin", true },
-                        { "name", adminAccountLoginResult.ModelObject.Name },
-                        { "users", JsonConvert.SerializeObject(usersList.ModelObject) },
-                        { "SkipRefreshTokenGeneration", true }
-                    };
-                    context.Result = new GrantValidationResult(adminAccountLoginResult.ModelObject.Id.ToString(), OidcConstants.AuthenticationMethods.Password, CreateClaimsList(adminAccountLoginResult.ModelObject, subDomain, isTestEnvironment), customResponse: customResponse);
-                    return;
+                        // If there is only one user, immediately login as that user.
+                        selectedUser = usersList.ModelObject.Single().GetDetailValue("username");
+                    }
+                    else
+                    {
+                        // Everything is ok, create identity.
+                        customResponse = new Dictionary<string, object>
+                        {
+                            { "adminLogin", true },
+                            { "name", adminAccountLoginResult.ModelObject.Name },
+                            { "users", JsonConvert.SerializeObject(usersList.ModelObject) },
+                            { "SkipRefreshTokenGeneration", true }
+                        };
+                        context.Result = new GrantValidationResult(adminAccountLoginResult.ModelObject.Id.ToString(), OidcConstants.AuthenticationMethods.Password, CreateClaimsList(adminAccountLoginResult.ModelObject, subDomain, isTestEnvironment), customResponse: customResponse);
+                        return;
+                    }
                 }
 
                 loginResult = await usersService.LoginCustomerAsync(selectedUser, null, adminAccountLoginResult.ModelObject.EncryptedId, subDomain, true);
