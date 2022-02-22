@@ -307,7 +307,7 @@ export class Grids {
             }
 
             if (gridViewSettings.toolbar && gridViewSettings.toolbar.customActions && gridViewSettings.toolbar.customActions.length > 0) {
-                this.addCustomActionsToToolbar(toolbar, gridViewSettings.toolbar.customActions);
+                this.addCustomActionsToToolbar("#gridView", toolbar, gridViewSettings.toolbar.customActions);
             }
 
             let totalResults = gridDataResult.totalResults;
@@ -912,7 +912,7 @@ export class Grids {
      * @param {any} toolbar The toolbar array of the grid.
      * @param {any} customActions The custom actions from the grid settings.
      */
-    addCustomActionsToToolbar(toolbar, customActions) {
+    addCustomActionsToToolbar(gridSelector, toolbar, customActions) {
         const groups = [];
         const actionsWithoutGroups = [];
 
@@ -943,12 +943,12 @@ export class Grids {
                     groups.push(group);
                 }
 
-                group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("\\#gridView", 0, 0, ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
+                group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${gridSelector.replace(/#/g, "\\#")}", 0, 0, ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
             } else {
                 actionsWithoutGroups.push({
                     name: `customAction${i.toString()}`,
                     text: customAction.text,
-                    template: `<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("\\#gridView", 0, 0, ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
+                    template: `<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${gridSelector.replace(/#/g, "\\#")}", 0, 0, ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
                 });
             }
         }
