@@ -17,10 +17,9 @@
                                 <ul>
                                     <li v-for="module in moduleGroup.modules" :key="module.moduleId">
                                         <a href="#" :title="module.name" @@click="onOpenModuleClick($event, module)"><ins :class="module.icon"></ins><span>{{ module.name }}</span></a>
-                                        <label>
-                                            <input type="checkbox" class="hidden" :checked="module.pinned" @@change="onTogglePin(module.moduleId)"/>
-                                            <ins :class="{ 'icon-line-pin-empty': !module.pinned, 'icon-line-pin-full': module.pinned }"></ins>
-                                        </label>
+                                        <button @@click="onTogglePin($event, module.moduleId)" :class="{ pinned: module.pinned, 'auto-load': module.autoLoad }">
+                                            <ins :class="{ 'icon-line-pin-empty': !module.autoLoad, 'icon-line-pin-full': module.pinned && module.autoLoad }"></ins>
+                                        </button>
                                     </li>
                                 </ul>
                             </li>

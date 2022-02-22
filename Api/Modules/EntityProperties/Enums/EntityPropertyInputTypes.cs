@@ -29,6 +29,7 @@
         Scheduler,
         TimeLine,
         Empty,
-        Qr
+        Qr,
+        Iframe
     }
 }
