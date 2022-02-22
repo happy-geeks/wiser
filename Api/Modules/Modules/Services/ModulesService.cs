@@ -84,6 +84,7 @@ namespace Api.Modules.Modules.Services
 
             var isAdminAccount = IdentityHelpers.IsAdminAccount(identity);
             var pinnedModules = (await usersService.GetPinnedModulesAsync(identity)).ModelObject;
+            var autoLoadModules = (await usersService.GetAutoLoadModulesAsync(identity)).ModelObject;
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
@@ -106,7 +107,7 @@ namespace Api.Modules.Modules.Services
                             FROM {WiserTableNames.WiserUserRoles} AS user_role
                             JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
                             JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
-                            LEFT JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
+                            JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
                             WHERE user_role.user_id = ?userId
                             GROUP BY permission.module_id
                             ORDER BY permission.module_id, permission.permissions
@@ -155,6 +156,10 @@ namespace Api.Modules.Modules.Services
                 if (String.IsNullOrWhiteSpace(groupName))
                 {
                     groupName = DefaultModulesGroupName;
+                }
+
+                if (String.IsNullOrWhiteSpace(originalGroupName))
+                {
                     originalGroupName = DefaultModulesGroupName;
                 }
 
@@ -174,6 +179,7 @@ namespace Api.Modules.Modules.Services
                 rightsModel.Type = dataRow.Field<string>("type");
                 rightsModel.Group = originalGroupName;
                 rightsModel.Pinned = pinnedModules.Contains(moduleId);
+                rightsModel.AutoLoad = autoLoadModules.Contains(moduleId);
                 rightsModel.PinnedGroup = PinnedModulesGroupName;
 
                 if (String.IsNullOrWhiteSpace(rightsModel.Icon))

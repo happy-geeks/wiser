@@ -109,5 +109,15 @@ namespace Api.Modules.Customers.Controllers
         {
             return (await usersService.SavePinnedModulesAsync((ClaimsIdentity)User.Identity, moduleIds)).GetHttpResponseMessage();
         }
+        
+        /// <summary>
+        /// Save the list of modules that should be automatically started when the user logs in, to the user details.
+        /// </summary>
+        /// <param name="moduleIds">The list of module IDs that the user has set as auto load.</param>
+        [HttpPost, Route("auto-load-modules")]
+        public async Task<IActionResult> SaveAutoLoadModulesAsync(List<int> moduleIds)
+        {
+            return (await usersService.SaveAutoLoadModulesAsync((ClaimsIdentity)User.Identity, moduleIds)).GetHttpResponseMessage();
+        }
     }
 }

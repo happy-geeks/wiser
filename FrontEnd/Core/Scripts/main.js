@@ -344,7 +344,8 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         return true;
                     },
 
-                    async onTogglePin(moduleId) {
+                    async onTogglePin(event, moduleId) {
+                        event.preventDefault();
                         this.$store.dispatch(TOGGLE_PIN_MODULE, moduleId);
                     }
                 }

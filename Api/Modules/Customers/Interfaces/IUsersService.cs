@@ -98,6 +98,12 @@ namespace Api.Modules.Customers.Interfaces
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         Task<ServiceResult<List<int>>> GetPinnedModulesAsync(ClaimsIdentity identity);
+        
+        /// <summary>
+        /// Gets the modules that should be auto loaded, for the authenticated user. These modules should be automatically started when the user logs in.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        Task<ServiceResult<List<int>>> GetAutoLoadModulesAsync(ClaimsIdentity identity);
 
         /// <summary>
         /// Saves settings for a grid for the authenticated user, so that the next time the grid is loaded, the user keeps those settings.
@@ -113,6 +119,13 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         /// <param name="moduleIds">The list of module IDs that the user has pinned.</param>
         Task<ServiceResult<bool>> SavePinnedModulesAsync(ClaimsIdentity identity, List<int> moduleIds);
+        
+        /// <summary>
+        /// Save the list of modules that should be automatically started when the user logs in, to the user details.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <param name="moduleIds">The list of module IDs that the user has set as auto load.</param>
+        Task<ServiceResult<bool>> SaveAutoLoadModulesAsync(ClaimsIdentity identity, List<int> moduleIds);
 
         /// <summary>
         /// Get the e-mail address of the user.
