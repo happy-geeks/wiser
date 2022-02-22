@@ -331,13 +331,27 @@ const modulesModule = {
             const module = state.allModules.filter(m => m.moduleId === moduleId)[0];
 
             // Toggle the pin status.
-            module.pinned = !module.pinned;
+            let pinnedChanged = true;
+            if (module.pinned && module.autoLoad) {
+                module.pinned = false;
+                module.autoLoad = false;
+            } else if (module.pinned && !module.autoLoad) {
+                module.autoLoad = true;
+                pinnedChanged = false;
+            } else {
+                module.pinned = true;
+            }
 
             const removeFrom = module.pinned ? module.group : module.pinnedGroup;
             const addTo = module.pinned ? module.pinnedGroup : module.group;
 
             const removeFromGroup = state.moduleGroups.filter(g => g.name === removeFrom)[0];
             let addToGroup = state.moduleGroups.filter(g => g.name === addTo)[0];
+
+            // Don't need to do the rest if only the auto load setting has been changed.
+            if (!pinnedChanged) {
+                return;
+            }
 
             // It's possible that these groups don't exist yet, so create them if they don't.
             if (!addToGroup) {
@@ -347,7 +361,7 @@ const modulesModule = {
                 };
                 state.moduleGroups.push(addToGroup);
             }
-
+            
             removeFromGroup.modules.splice(removeFromGroup.modules.indexOf(module), 1);
             addToGroup.modules.push(module);
 
@@ -409,7 +423,7 @@ const modulesModule = {
                 }
                 
                 for (let module of moduleGroups[group]) {
-                    if (!module.pinned) {
+                    if (!module.autoLoad) {
                         continue;
                     }
 
@@ -439,6 +453,9 @@ const modulesModule = {
             commit(TOGGLE_PIN_MODULE, moduleId);
             const pinnedModuleIds = state.allModules.filter(m => m.pinned).map(m => m.moduleId);
             await main.usersService.savePinnedModules(pinnedModuleIds);
+
+            const autoLoadModuleIds = state.allModules.filter(m => m.autoLoad).map(m => m.moduleId);
+            await main.usersService.saveAutoLoadModules(autoLoadModuleIds);
         }
     },
 

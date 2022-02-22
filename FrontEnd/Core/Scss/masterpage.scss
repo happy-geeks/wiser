@@ -732,7 +732,7 @@ main, div, section {
             vertical-align: middle;
         }
 
-        label {
+        button {
             cursor: pointer;
             position: absolute;
             right: 0;
@@ -741,6 +741,9 @@ main, div, section {
             bottom: 0;
             align-items: center;
             width: 60px;
+            line-height: normal;
+            padding: 0;
+            background: none;
 
             ins {
                 @include transition(100ms);
@@ -748,13 +751,9 @@ main, div, section {
                 width: 60px;
             }
 
-            input:checked {
-                + ins {
+            &.pinned {
+                ins {
                     opacity: 1 !important;
-
-                    &:before {
-                        content: "\ea3e";
-                    }
                 }
             }
         }
@@ -762,7 +761,7 @@ main, div, section {
         li {
             li {
                 &:hover {
-                    label {
+                    button {
                         ins {
                             opacity: 1;
                         }
@@ -849,7 +848,7 @@ main, div, section {
                 }
             }
 
-            label {
+            button {
                 display: none;
                 pointer-events: none;
             }

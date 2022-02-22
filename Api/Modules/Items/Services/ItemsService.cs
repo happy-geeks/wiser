@@ -1211,6 +1211,7 @@ namespace Api.Modules.Items.Services
                         break;
 
                     case "qr":
+                    {
                         var customQueryResult = await ExecuteCustomQueryAsync(encryptedId, propertyId, new Dictionary<string, object>(), await wiserCustomersService.EncryptValue("0", identity), identity, userId);
                         var property = (JProperty)customQueryResult?.ModelObject?.OtherData?.FirstOrDefault()?.FirstOrDefault();
                         if (!String.IsNullOrWhiteSpace(property?.Name))
@@ -1231,7 +1232,7 @@ namespace Api.Modules.Items.Services
                         }
 
                         break;
-
+                    }
                     case "htmleditor":
                         value = await wiserItemsService.ReplaceHtmlForViewingAsync(value);
                         longValue = await wiserItemsService.ReplaceHtmlForViewingAsync(longValue);
@@ -1240,6 +1241,27 @@ namespace Api.Modules.Items.Services
                         // Other fields get HTML encoded later, with the exception of empty field. This is so that you can set some HTML in the default value for this field.
                         value = value.HtmlEncode();
                         break;
+                    case "iframe":
+                    {
+                        if (String.IsNullOrWhiteSpace(defaultValue))
+                        {
+                            break;
+                        }
+
+                        var customQueryResult = await ExecuteCustomQueryAsync(encryptedId, propertyId, new Dictionary<string, object>(), await wiserCustomersService.EncryptValue("0", identity), identity, userId);
+                        if (customQueryResult.ModelObject is not { Success: true })
+                        {
+                            break;
+                        }
+
+                        if (customQueryResult.ModelObject.OtherData.FirstOrDefault() is not JObject jObject)
+                        {
+                            break;
+                        }
+                        
+                        value = stringReplacementsService.DoReplacements(defaultValue, jObject.ToObject<Dictionary<string, object>>());
+                        break;
+                    }
                 }
 
                 // Setup any extra CSS for the field.
@@ -1735,7 +1757,11 @@ namespace Api.Modules.Items.Services
             clientDatabaseConnection.AddParameter("checkId", checkId);
 
             var orderByClause = "IF(item.title IS NULL OR item.title = '', item.id, item.title) ASC";
-            if (!String.Equals(orderBy, "item_title", StringComparison.OrdinalIgnoreCase))
+            if (String.IsNullOrWhiteSpace(orderBy))
+            {
+                orderByClause = $"IF(IFNULL(entityModule.default_ordering, entity.default_ordering) = 'link_ordering', link_parent.ordering, TRUE) ASC, {orderByClause}";
+            }
+            else if (String.Equals(orderBy, "item_title", StringComparison.OrdinalIgnoreCase))
             {
                 orderByClause = $"link_parent.ordering ASC, {orderByClause}";
             }
@@ -1762,6 +1788,7 @@ namespace Api.Modules.Items.Services
                         # Get the items linked to the parent.
                         FROM {WiserTableNames.WiserItem} AS item
                         JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
+                        LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
                         JOIN {WiserTableNames.WiserItemLink} AS link_parent ON link_parent.destination_item_id = ?parentId AND link_parent.item_id = item.id
 
                         # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
@@ -1814,6 +1841,16 @@ namespace Api.Modules.Items.Services
 
             if (Convert.ToInt32(dataTable.Rows[0]["total"]) > 0)
             {
+                orderByClause = "IF(item.title IS NULL OR item.title = '', item.id, item.title) ASC";
+                if (String.IsNullOrWhiteSpace(orderBy))
+                {
+                    orderByClause = $"IF(IFNULL(entityModule.default_ordering, entity.default_ordering) = 'link_ordering', item.ordering, TRUE) ASC, {orderByClause}";
+                }
+                else if (String.Equals(orderBy, "item_title", StringComparison.OrdinalIgnoreCase))
+                {
+                    orderByClause = $"item.ordering ASC, {orderByClause}";
+                }
+
                 // Get children via the column parent_item_id of the table wiser_item.
                 query = $@"SELECT 
 	                        item.id,
@@ -1829,6 +1866,7 @@ namespace Api.Modules.Items.Services
                         # Get the items linked to the parent.
                         FROM {WiserTableNames.WiserItem} AS item
                         JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
+                        LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
 
                         # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                         LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
@@ -1848,7 +1886,7 @@ namespace Api.Modules.Items.Services
                         AND IFNULL(link_settings.show_in_tree_view, 1) = 1
                         GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
 
-                        ORDER BY item.ordering ASC";
+                        ORDER BY {orderByClause}";
                 dataTable = await clientDatabaseConnection.GetAsync(query);
 
                 if (dataTable.Rows.Count > 0)

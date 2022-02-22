@@ -39,7 +39,7 @@ if (customQueryGrid) {
         if (!options.disableOpeningOfItems) {
             if (customQueryResults.schemaModel && customQueryResults.schemaModel.fields) {
                 // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
-                options.disableOpeningOfItems = !(customQueryResults.schemaModel.fields.encryptedId || customQueryResults.schemaModel.fields.encryptedId || customQueryResults.schemaModel.fields.encryptedid || customQueryResults.schemaModel.fields.idencrypted);
+                options.disableOpeningOfItems = !(customQueryResults.schemaModel.fields.encryptedId || customQueryResults.schemaModel.fields.encrypted_id || customQueryResults.schemaModel.fields.encryptedid || customQueryResults.schemaModel.fields.idencrypted);
             }
         }
         
@@ -140,7 +140,7 @@ if (customQueryGrid) {
         if (!options.disableOpeningOfItems) {
             if (gridSettings.schemaModel && gridSettings.schemaModel.fields) {
                 // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
-                options.disableOpeningOfItems = !(gridSettings.schemaModel.fields.encryptedId || gridSettings.schemaModel.fields.encryptedId || gridSettings.schemaModel.fields.encryptedid || gridSettings.schemaModel.fields.idencrypted);
+                options.disableOpeningOfItems = !(gridSettings.schemaModel.fields.encryptedId || gridSettings.schemaModel.fields.encrypted_id || gridSettings.schemaModel.fields.encryptedid || gridSettings.schemaModel.fields.idencrypted);
             }
         }
         
@@ -247,7 +247,7 @@ function generateGrid(data, model, columns) {
     }
     
     if (options.toolbar && options.toolbar.customActions && options.toolbar.customActions.length > 0) {
-        dynamicItems.grids.addCustomActionsToToolbar(toolbar, options.toolbar.customActions);
+        dynamicItems.grids.addCustomActionsToToolbar("#overviewGrid{propertyIdWithSuffix}", "{itemIdEncrypted}", "{propertyId}", toolbar, options.toolbar.customActions);
     }
     
     if (columns && columns.length) {

@@ -65,6 +65,11 @@ namespace Api.Modules.Modules.Models
         public bool Pinned { get; set; }
 
         /// <summary>
+        /// Gets or sets whether the module should be automatically opened when the user logs in.
+        /// </summary>
+        public bool AutoLoad { get; set; }
+
+        /// <summary>
         /// Gets or sets the group name of the module for when the module is pinned by the user.
         /// </summary>
         public string PinnedGroup { get; set; }

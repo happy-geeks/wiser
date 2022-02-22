@@ -48,6 +48,7 @@ namespace Api.Modules.Customers.Services
         private const string UserGridSettingsGroupName = "grid_settings";
         private const string UserModuleSettingsGroupName = "module_settings";
         private const string UserPinnedModulesKey = "pinnedModules";
+        private const string UserAutoLoadModulesKey = "autoLoadModules";
 
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IDatabaseConnection wiserDatabaseConnection;
@@ -575,6 +576,32 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<List<int>>> GetAutoLoadModulesAsync(ClaimsIdentity identity)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+
+            var query = $@" SELECT autoLoad.`value` AS autoLoadModules
+                            FROM {WiserTableNames.WiserItemDetail} AS autoLoad
+                            WHERE autoLoad.item_id = ?userId
+                            AND autoLoad.`key` = '{UserAutoLoadModulesKey}'";
+
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            var autoLoadModules = new List<int>();
+            if (dataTable.Rows.Count > 0)
+            {
+                var autoLoad = dataTable.Rows[0].Field<string>("autoLoadModules");
+                if (!String.IsNullOrWhiteSpace(autoLoad))
+                {
+                    autoLoadModules = autoLoad.Split(',').Select(Int32.Parse).ToList();
+                }
+            }
+
+            return new ServiceResult<List<int>>(autoLoadModules);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<bool>> SaveGridSettingsAsync(ClaimsIdentity identity, string uniqueKey, JToken settings)
         {
             clientDatabaseConnection.ClearParameters();
@@ -599,6 +626,21 @@ namespace Api.Modules.Customers.Services
 
             var query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, groupname, value)
                         VALUES (?userId, '{UserPinnedModulesKey}', '{UserModuleSettingsGroupName}', '{String.Join(",", moduleIds)}')
+                        ON DUPLICATE KEY UPDATE value = VALUES(value)";
+            await clientDatabaseConnection.ExecuteAsync(query);
+            
+            return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveAutoLoadModulesAsync(ClaimsIdentity identity, List<int> moduleIds)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+
+            var query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, groupname, value)
+                        VALUES (?userId, '{UserAutoLoadModulesKey}', '{UserModuleSettingsGroupName}', '{String.Join(",", moduleIds)}')
                         ON DUPLICATE KEY UPDATE value = VALUES(value)";
             await clientDatabaseConnection.ExecuteAsync(query);
             
