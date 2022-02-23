@@ -402,6 +402,9 @@ ins {
 .gridview {
 	overflow: hidden;
 }
+.item.gridview:hover {
+    overflow: inherit;
+}
 .dynamicTabContent .gridview:only-child {
     /*height: calc(100vh - 222px);*/
     max-height: none !important;
@@ -587,18 +590,14 @@ ins {
 }
 
 /* TOOLTIPS */
-.item h4 {
-    display: flex;
-    justify-content: space-between;
-}
 .item h4 .property-name {
     background-color: var(--black-color);
     color: var(--white-color);
     padding: 3px 5px;
     position: absolute;
     border-radius: 3px;
-    left: 0;
-    bottom: calc(100% - 4px);
+    left: 3px;
+    bottom: calc(100% + 4px);
     opacity: 0;
     transform: translateY(-10px);
     transition: 200ms ease;
@@ -623,6 +622,16 @@ ins {
     display: none;
 }
 
+/* NORMAL LABELS */
+.item[data-label-style="normal"] h4 {
+    display: flex;
+    justify-content: space-between;
+}
+.item[data-label-style="normal"] h4 .property-name {
+    left: 0;
+    bottom: calc(100% + 4px);
+}
+
 /* INLINE LABELS */
 .item[data-label-style="inline"] {
     display: flex;
@@ -634,12 +643,24 @@ ins {
 }
 .item[data-label-style="inline"] h4 {
     padding: 13px 0;
+    display: flex;
+    justify-content: space-between;
+}
+.item[data-label-style="inline"] h4 > label {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.item[data-label-style="inline"] .info-link ins {
+    margin-left: 5px;
+    margin-right: 5px;
+}
 .item[data-label-style="inline"] h4 + .k-upload {
     margin-left: 0 !important;
+}
+.item[data-label-style="inline"] h4 .property-name {
+    left: 0;
+    bottom: calc(100% - 4px);
 }
 .item[data-label-style="inline"] .uploader,
 .item[data-label-style="inline"] .k-button,
@@ -730,6 +751,10 @@ ins {
 }
 .item[data-label-style="float"] h4 + * {
     width: 100%;
+}
+.item[data-label-style="float"] h4 .property-name {
+    left: 10px;
+    bottom: calc(100% + 8px);
 }
 .item[data-input-type="checkbox"][data-label-style="float"] h4 {
     font-size: 14px;

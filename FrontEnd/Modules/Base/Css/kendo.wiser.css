@@ -435,11 +435,11 @@
     margin: 0;
 }
 .k-window-titlebar .k-window-actions .k-button:not(:last-child):hover {
-    background-color: var(--color-2) !important;
-    width: auto;
+	background-color: var(--color-2) !important;
+	width: auto;
 }
 .k-window-titlebar .k-window-actions .k-button:not(:last-child):hover > span {
-    color: var(--white-color);
+	color: var(--white-color);
 }
 .k-window-titlebar .k-window-actions .k-button:not(:last-child):hover:after {
 	box-shadow: none;
@@ -552,6 +552,14 @@
 .btn[disabled] {
     cursor: not-allowed;
     opacity: 0.25;
+}
+.k-primary.delete-button {
+	background-color: var(--color-2) !important;
+	width: auto;
+}
+.k-primary.delete-button:hover {
+	background-color: var(--color-2) !important;
+	filter: brightness(0.9);
 }
 
 /* KENDO - TABSTRIP */
@@ -1712,10 +1720,19 @@ k-filter-menu .k-autocomplete,
     background-color: var(--lighter-color); 
     margin: 0;
 }
+.k-dialog-buttongroup {
+	border-color: var(--white-color);
+	margin-top: 20px;
+	gap: 10px;
+}
+.k-dialog-buttongroup .k-button,
+.k-dialog-buttongroup .k-button + .k-button {
+	margin: 0;
+}
 
 /* SEARCH ITEMS WINDOW */
 #searchItemsWindow {
-    overflow: hidden;
+	overflow: hidden;
 }
 #searchItemsWindow .pane-content {
 	display: flex;
