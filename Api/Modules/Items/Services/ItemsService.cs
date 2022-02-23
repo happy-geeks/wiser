@@ -1342,7 +1342,6 @@ namespace Api.Modules.Items.Services
                     htmlTemplate = htmlTemplate.Replace("{title}", String.IsNullOrWhiteSpace(displayName) ? propertyName ?? "" : displayName)
                         .Replace("{moduleId}", (dataRow.Field<short?>("module_id") ?? 0).ToString())
                         .Replace("{hint}", explanation)
-                        .Replace("{default_value}", valueToReplace)
                         .Replace("{propertyId}", propertyId.ToString())
                         .Replace("{propertyIdWithSuffix}", propertyId + (propertyIdSuffix ?? ""))
                         .Replace("{propertyIdSuffix}", propertyIdSuffix ?? "")
@@ -1371,7 +1370,8 @@ namespace Api.Modules.Items.Services
                         .Replace("{titleClass}", hasExtendedExplanation ? "tooltip" : "")
                         .Replace("{infoIconClass}", hasExtendedExplanation ? "" : "hidden")
                         .Replace("{labelStyle}", labelStyle)
-                        .Replace("{labelWidth}", labelWidth);
+                        .Replace("{labelWidth}", labelWidth)
+                        .Replace("{default_value}", valueToReplace);
                 }
 
                 // Replace values in javascript template.
@@ -1381,7 +1381,6 @@ namespace Api.Modules.Items.Services
                         .Replace("{propertyId}", propertyId.ToString())
                         .Replace("{propertyIdWithSuffix}", propertyId + (propertyIdSuffix ?? ""))
                         .Replace("{propertyIdSuffix}", propertyIdSuffix ?? "")
-                        .Replace("{default_value}", $"'{HttpUtility.JavaScriptStringEncode(defaultValue)}'")
                         .Replace("{itemId}", itemId.ToString())
                         .Replace("{itemIdEncrypted}", encryptedId.Replace(" ", "+"))
                         .Replace("{moduleId}", (dataRow.Field<short?>("module_id") ?? 0).ToString())
@@ -1399,7 +1398,8 @@ namespace Api.Modules.Items.Services
                         .Replace("{userId}", userId.ToString())
                         .Replace("{width}", width <= 0 ? "50" : width.ToString())
                         .Replace("{height}", height <= 0 ? "" : height.ToString())
-                        .Replace("{userItemPermissions}", ((int)userItemPermissions).ToString());
+                        .Replace("{userItemPermissions}", ((int)userItemPermissions).ToString())
+                        .Replace("{default_value}", $"'{HttpUtility.JavaScriptStringEncode(defaultValue)}'");
                 }
 
                 // Add the final templates to the current group.
