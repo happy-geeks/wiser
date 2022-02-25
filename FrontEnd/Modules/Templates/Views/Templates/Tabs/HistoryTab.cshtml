@@ -22,7 +22,7 @@
                 <div class="row historyLine">
                     <div class="col col-12 historyTagline">
                         <span><span class="k-icon k-i-edit"></span> Published Environment |</span>
-                        <span><span class="k-icon k-i-calendar"></span> @Model.PublishHistory[i].ChangedOn |</span>
+                        <span><span class="k-icon k-i-calendar"></span> @Model.PublishHistory[i].GetDisplayChangedOn() |</span>
                         <span><span class="k-icon k-i-user"></span> door @Model.PublishHistory[i].ChangedBy </span>
                     </div>
                     @if (Model.PublishHistory[i].PublishLog.OldLive != Model.PublishHistory[i].PublishLog.NewLive)
@@ -114,7 +114,7 @@
                     <ins class="version test" title="test"></ins>
                 }
                 <span><span class="k-icon k-i-edit"></span> Versie @historyModel.Version |</span>
-                <span><span class="k-icon k-i-calendar"></span> @historyModel.ChangedOn |</span>
+                <span><span class="k-icon k-i-calendar"></span> @historyModel.GetDisplayChangedOn() |</span>
                 <span><span class="k-icon k-i-user"></span> door @historyModel.ChangedBy </span>
             </div>
             @foreach (var change in historyModel.TemplateChanges)
