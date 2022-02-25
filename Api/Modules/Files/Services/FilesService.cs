@@ -259,21 +259,15 @@ namespace Api.Modules.Files.Services
                 itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedItemId, identity);
             }
 
-            if (itemId <= 0 && itemLinkId <= 0)
-            {
-                throw new ArgumentException("Id or itemLinkId must be greater than zero.");
-            }
-
             if (fileId <= 0)
             {
                 throw new ArgumentException("Image ID must be greater than zero.");
             }
             
-            var query = $"SELECT content_type, content, content_url, file_name, property_name FROM {WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?imageId";
+            var query = $"SELECT content_type, content, content_url, file_name, property_name FROM {WiserTableNames.WiserItemFile} WHERE id = ?imageId";
             
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
             databaseConnection.ClearParameters();
-            databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
             databaseConnection.AddParameter("imageId", fileId);
             var dataTable = await databaseConnection.GetAsync(query);
 

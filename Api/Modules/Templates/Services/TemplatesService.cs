@@ -137,6 +137,7 @@ namespace Api.Modules.Templates.Services
 
             var queryTemplate = GetQueryTemplate(0, templateName);
             queryTemplate.Content = apiReplacementsService.DoIdentityReplacements(queryTemplate.Content, identity, true);
+            queryTemplate.Content = stringReplacementsService.DoHttpRequestReplacements(queryTemplate.Content, true);
 
             if (requestPostData != null && requestPostData.Keys.Any())
             {

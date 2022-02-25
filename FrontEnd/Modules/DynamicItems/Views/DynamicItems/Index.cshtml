@@ -747,6 +747,20 @@
             <input type="file" id="fileUploadUserParameter" name="fileUploadUserParameter" />
         </div>
     </script>
+    <script id="advancedCheckBoxGroupItemTemplate" type="text/x-kendo-template">
+        <div class="checkbox-adv small">
+            <input type="checkbox" id="field_{propertyIdWithSuffix}_option_#= id #" class="hidden" data-id="#= id #" data-name="#= name #" />
+            <label for="field_{propertyIdWithSuffix}_option_#= id #">
+                <span class="checkbox-img">
+                    <img src="" alt="" />
+                </span>
+                <span class="checkbox-txt">
+                    #= name #
+                </span>
+                <ins class="checkbox-switch"></ins>
+            </label>
+        </div>
+    </script>
     
     <script src="/scripts/Utils.min.js"></script>
     <script src="/scripts/DynamicItems.min.js"></script>

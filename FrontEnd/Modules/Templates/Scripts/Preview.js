@@ -58,6 +58,9 @@ export class Preview {
 
         if (!this.filterVariablesGrid || force) {
             this.filterVariablesGrid = $("#preview-variables").kendoGrid({
+                noRecords: {
+                    template: "Er zijn nog geen variabelen toegevoegd"
+                },
                 scrollable: true,
                 resizable: false,
                 filterable: false,

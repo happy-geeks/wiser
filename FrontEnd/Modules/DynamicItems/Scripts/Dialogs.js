@@ -222,7 +222,7 @@ export class Dialogs {
             if (node && node.length > 0 && node[0].tagName !== "LI") {
                 node = node.closest("li.k-item");
             }
-            const parentName = node ? node.find("> .k-top > .k-in, > .k-bot > .k-in").text() : "Root";
+            const parentName = node ? (node.find("> .k-top > .k-in, > .k-bot > .k-in").text() || node.text()) : "Root";
 
             this.base.notification.show({ message: `${entityType} '${kendo.htmlEncode(newName)}' toegevoegd onder '${kendo.htmlEncode(parentName)}'` }, "success");
 
@@ -237,7 +237,8 @@ export class Dialogs {
                     title: newName,
                     destinationItemId: parentId,
                     newlyAdded: true,
-                    entityType: entityType
+                    entityType: entityType,
+                    hasChildren: false
                 }, node);
 
                 this.base.mainTreeView.select(newNode);
