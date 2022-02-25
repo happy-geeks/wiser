@@ -237,7 +237,8 @@ export class Dialogs {
                     title: newName,
                     destinationItemId: parentId,
                     newlyAdded: true,
-                    entityType: entityType
+                    entityType: entityType,
+                    hasChildren: false
                 }, node);
 
                 this.base.mainTreeView.select(newNode);
