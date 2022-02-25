@@ -91,9 +91,56 @@ if (typeof options.dataSource === "string") {
     }
 }
 
-var field = $("#field_{propertyIdWithSuffix}");
-var kendoComponent = field.kendoMultiSelect(options).data("kendoMultiSelect");
-var readonly = {readonly};
-kendoComponent.readonly(readonly);
+const field = $("#field_{propertyIdWithSuffix}");
+const container = field.closest(".item");
+const readonly = {readonly};
+
+if (options.mode === "checkBoxGroup") {
+    // Set the main image.
+    let mainImageUrl = options.mainImageUrl;
+    if (options.mainImageId) {
+        mainImageUrl = `${window.dynamicItems.settings.wiserApiRoot}items/0/files/${options.imageId}/${encodeURIComponent("{propertyName}.png")}?encryptedCustomerId=${encodeURIComponent(window.dynamicItems.settings.customerId)}&encryptedUserId=${encodeURIComponent(window.dynamicItems.settings.userId)}&isTest=${window.dynamicItems.settings.isTestEnvironment}&subDomain=${encodeURIComponent(window.dynamicItems.settings.subDomain)}`;
+    } 
+    if (mainImageUrl) {
+        container.find("#image_{propertyIdWithSuffix}").attr("src", mainImageUrl);
+    }
+    else {
+        container.find("#image_{propertyIdWithSuffix}").hide();
+    }
+
+    const panel = container.find(".checkbox-full-panel");
+    const dataSource = new kendo.data.DataSource(options.dataSource);
+    const template = kendo.template($("#advancedCheckBoxGroupItemTemplate").html());
+
+    dataSource.fetch().then(() => {
+        const data = dataSource.data();
+
+        for (let item of data) {
+            const html = $(template(item));
+
+            let imageUrl = item.imageUrl;
+            if (item.imageId) {
+                imageUrl = `${window.dynamicItems.settings.wiserApiRoot}items/0/files/${item.imageId}/${encodeURIComponent(item.name || item.imageId)}.png?encryptedCustomerId=${encodeURIComponent(window.dynamicItems.settings.customerId)}&encryptedUserId=${encodeURIComponent(window.dynamicItems.settings.userId)}&isTest=${window.dynamicItems.settings.isTestEnvironment}&subDomain=${encodeURIComponent(window.dynamicItems.settings.subDomain)}`;
+            } else if (item.id && (item.imagePropertyName || options.imagePropertyName)) {
+                imageUrl = `${window.dynamicItems.settings.mainDomain}image/wiser2/${item.id}/${item.imagePropertyName || options.imagePropertyName}/crop/66/66/${encodeURIComponent(item.name || item.imageId)}.png`;
+            }
+
+            if (imageUrl) {
+                html.find(".checkbox-img img").attr("src", imageUrl);
+            } else {
+                html.find(".checkbox-img img").hide();
+            }
+            
+            html.find("input[type='checkbox']").prop("readonly", readonly).prop("checked", options.value.indexOf(item.id.toString()) > -1);
+
+            panel.append(html);
+        }
+
+        field.prop("checked", panel.find("input[type='checkbox']:checked").length > 0);
+    });
+} else {
+    var kendoComponent = field.kendoMultiSelect(options).data("kendoMultiSelect");
+    kendoComponent.readonly(readonly);
+}
 {customScript}
 })();

@@ -1331,6 +1331,9 @@ namespace Api.Modules.Items.Services
                     case "switch":
                         containerCssClass = "checkbox-adv large";
                         break;
+                    case "checkBoxGroup":
+                        containerCssClass = "row checkbox-full-container";
+                        break;
                 }
 
                 // Encrypt certain values in options JSON.

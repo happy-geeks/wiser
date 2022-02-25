@@ -155,7 +155,7 @@ if (options.cascadeFrom && typeof options.cascadeFrom === "string") {
     options.dataSource.serverFiltering = true;
 }
 
-var kendoComponent = options.useDropDownList ? field.kendoDropDownList(options).data("kendoDropDownList") : field.kendoComboBox(options).data("kendoComboBox");
+var kendoComponent = options.useDropDownList || options.mode === "dropDownList" ? field.kendoDropDownList(options).data("kendoDropDownList") : field.kendoComboBox(options).data("kendoComboBox");
 var readonly = {readonly};
 kendoComponent.readonly(readonly);
 

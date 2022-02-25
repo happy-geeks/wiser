@@ -71,6 +71,32 @@ export class Fields {
 
             data.isLinkProperty = data.itemLinkId > 0;
 
+            const advancedCheckBoxContainer = field.closest(".checkbox-full-container");
+            if (advancedCheckBoxContainer.length > 0) {
+                // This is a check box group.
+                const checkBoxes = advancedCheckBoxContainer.find(".checkbox-full-panel input[type='checkbox']:checked");
+                const ids = [];
+                const names = [];
+                checkBoxes.each((index, element) => {
+                    const optionData = $(element).data();
+                    if (!optionData.id) {
+                        return;
+                    }
+
+                    ids.push(optionData.id);
+                    names.push(optionData.name);
+                });
+
+                data.value = ids;
+                results.push(data);
+
+                const extraData = $.extend({}, data);
+                extraData.key += "_value";
+                extraData.value = names;
+                results.push(extraData);
+                return;
+            } 
+            
             if (kendoControlName) {
                 let kendoControl = field.data(kendoControlName);
 
