@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Api.Modules.Templates.Models.History
 {
@@ -52,7 +53,7 @@ namespace Api.Modules.Templates.Models.History
         /// <returns>A string containing a displayable date.</returns>
         public string GetDisplayChangedOn()
         {
-            return ChangedOn.ToShortDateString() + " om " + ChangedOn.ToLongTimeString();
+            return ChangedOn.ToString("dd-MM-yyyy 'om' HH:mm:ss", new CultureInfo("nl-NL"));
         }
     }
 }

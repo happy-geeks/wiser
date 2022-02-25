@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Api.Modules.Templates.Models.History
 {
@@ -27,6 +28,15 @@ namespace Api.Modules.Templates.Models.History
             this.TemplateChanges = new Dictionary<string, KeyValuePair<object, object>>();
             this.LinkedTemplateChanges = new Dictionary<string, KeyValuePair<object, object>>();
             this.DynamicContentChanges = new List<HistoryVersionModel>();
+        }
+        
+        /// <summary>
+        /// Get the change date in a displayable format(DD-MM-YYYY om HH:MM:SS).
+        /// </summary>
+        /// <returns>A string containing a displayable date.</returns>
+        public string GetDisplayChangedOn()
+        {
+            return ChangedOn.ToString("dd-MM-yyyy 'om' HH:mm:ss", new CultureInfo("nl-NL"));
         }
     }
 }
