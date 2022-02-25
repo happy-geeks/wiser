@@ -1318,6 +1318,24 @@ namespace Api.Modules.Items.Services
                     }
                 }
 
+                // Get mode, some fields have different modes and need different HTML for different modes.
+                var fieldMode = "";
+                var containerCssClass = "";
+                if (optionsObject.ContainsKey("mode"))
+                {
+                    fieldMode = optionsObject.Value<string>("mode");
+                }
+
+                switch (fieldMode)
+                {
+                    case "switch":
+                        containerCssClass = "checkbox-adv large";
+                        break;
+                    case "checkBoxGroup":
+                        containerCssClass = "row checkbox-full-container";
+                        break;
+                }
+
                 // Encrypt certain values in options JSON.
                 jsonService.EncryptValuesInJson(optionsObject, encryptionKey);
                 options = optionsObject.ToString(Formatting.None);
@@ -1371,6 +1389,8 @@ namespace Api.Modules.Items.Services
                         .Replace("{infoIconClass}", hasExtendedExplanation ? "" : "hidden")
                         .Replace("{labelStyle}", labelStyle)
                         .Replace("{labelWidth}", labelWidth)
+                        .Replace("{fieldMode}", fieldMode)
+                        .Replace("{containerCssClass}", containerCssClass)
                         .Replace("{default_value}", valueToReplace);
                 }
 
@@ -1399,8 +1419,11 @@ namespace Api.Modules.Items.Services
                         .Replace("{width}", width <= 0 ? "50" : width.ToString())
                         .Replace("{height}", height <= 0 ? "" : height.ToString())
                         .Replace("{userItemPermissions}", ((int)userItemPermissions).ToString())
+                        .Replace("{fieldMode}", fieldMode)
                         .Replace("{default_value}", $"'{HttpUtility.JavaScriptStringEncode(defaultValue)}'");
                 }
+
+                htmlTemplate = stringReplacementsService.EvaluateTemplate(htmlTemplate);
 
                 // Add the final templates to the current group.
                 group.HtmlTemplateBuilder.Append(htmlTemplate ?? "");

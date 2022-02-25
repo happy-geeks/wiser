@@ -612,8 +612,7 @@ const moduleSettings = {
                     columns: [
                         {
                             field: "id",
-                            title: "ID",
-                            hidden: true
+                            title: "ID"
                         },
                         {
                             field: "title",
