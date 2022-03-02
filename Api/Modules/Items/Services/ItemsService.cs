@@ -1340,6 +1340,8 @@ namespace Api.Modules.Items.Services
                 jsonService.EncryptValuesInJson(optionsObject, encryptionKey);
                 options = optionsObject.ToString(Formatting.None);
 
+                defaultValue = defaultValue.Replace("{itemId}", itemId.ToString()).Replace("{userId}", userId.ToString());
+
                 // Replace values in html template.
                 if (!String.IsNullOrWhiteSpace(htmlTemplate))
                 {
