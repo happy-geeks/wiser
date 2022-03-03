@@ -1,0 +1,178 @@
+﻿body {
+    margin: 0;
+    padding: 0;
+}
+
+.upgrade-alert {
+    background-color: var(--color-2);
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.upgrade-alert a {
+    color: var(--white-color);
+    text-decoration: none;
+}
+.upgrade-alert a:hover {
+    text-decoration: underline;
+}
+
+/* MODAL */
+body.modal-active {
+    overflow: hidden;
+}
+
+.modal .toggle-message {
+    background-color: #FFFFFF;
+    border-radius: 100%;
+    margin: 0;
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    height: 30px;
+    width: 30px;
+}
+
+.modal .toggle-message .icon {
+    width: 30px;
+    height: 30px;
+}
+
+.modal-container .modal {
+    transition: 200ms all ease-in-out;
+    background-color: #FFFFFF;
+    box-shadow: 0 8px 8px rgba(0, 0, 0, 0.15);
+    padding: 0;
+    visibility: hidden;
+    position: fixed;
+    top: 200vh;
+    left: 50%;
+    z-index: 10000;
+    width: 750px;
+    height: auto;
+    transform: translate(-50%, -50%);
+    max-width: 90vw;
+    max-height: 80vh;
+}
+
+.modal-container .modal.active {
+    visibility: visible;
+    top: 50%;
+}
+
+.modal-container .modal.active ~ .modal-overlay {
+    transition: 200ms all ease-in-out;
+    background-color: rgba(0, 0, 0, 0.35);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: none;
+    margin: 0;
+    display: block;
+    height: 100vh;
+    width: 100vw;
+    z-index: 1000;
+}
+
+.modal-container .modal .video-container {
+    margin-top: 15px;
+    width: 100%;
+    aspect-ratio: 9/6;
+}
+
+.modal-container .modal .video-container iframe {
+    width: 100%;
+    height: 100%;
+}
+
+.modal-container .modal .container {
+    height: 100%;
+    padding: 2rem;
+    text-align: left;
+}
+
+.modal-container .modal .container > .row {
+    height: 100%;
+    margin: 0;
+}
+
+.modal-container .modal .container > .row > .sidebar {
+    padding: 0;
+}
+
+.modal-container .modal button {
+    color: #000000;
+    display: inline-flex;
+    align-items: center;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    border-radius: 0;
+    width: auto;
+    margin-bottom: 0;
+}
+
+.modal-container .modal button span {
+    text-transform: uppercase;
+}
+
+.modal-container .modal button .icon {
+    margin-left: 2px;
+}
+
+/* UPGRADE MODAL */
+.upgrade-modal .modal button {
+    cursor: pointer;
+    border: none;
+    height: 20px;
+    width: 20px;
+    right: 20px;
+    top: 20px;
+}
+.upgrade-modal .modal button ins {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 30px;
+}
+.upgrade-modal .modal button ins:after {
+    content: "\00d7";
+}
+.upgrade-modal .modal {
+    display: flex;
+    align-items: end;
+}
+.upgrade-modal .modal > figure {
+    height: 350px;
+    width: 350px;
+    transform: translate(-40px, 25px);
+}
+.upgrade-modal .modal > figure svg {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    width: 100%;
+    height: 100%;
+}
+.upgrade-modal .modal > .container {
+    display: flex;
+    flex-direction: column;
+    height: 325px;
+    width: calc(100% - 350px);
+}
+.upgrade-modal .modal > .container p {
+    margin-bottom: auto;
+}
+.upgrade-modal .modal > .container .k-button {
+    border-radius: 3px;
+    background-color: var(--color-2);
+    color: var(--white-color);
+    padding: 12px 30px;
+    text-decoration: none;
+    width: 220px;
+    text-align: center;
+}
+.upgrade-modal .modal > .container .k-button:hover {
+    filter: brightness(0.9);
+}
