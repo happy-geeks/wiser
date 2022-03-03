@@ -1,0 +1,66 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Wiser 3 upgrade</title>
+
+    <link href="css/variables.css" rel="stylesheet" />
+    <link href="css/fonts.css" rel="stylesheet" />
+    <link href="css/masterpage.css" rel="stylesheet" />
+    <link href="css/upgrade.css" rel="stylesheet" />
+</head>
+<body>
+
+    <div class="upgrade-alert"><a href="#">Ga naar nieuwe versie</a></div>
+
+    <section class="modal-container upgrade-modal">
+        <div class="modal active" data-popup="info" role="dialog" id="dialog-info" aria-labelledby="dialog-label" aria-modal="true">
+            <figure>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220">
+                    <path fill="#20799E" d="M214.5,130.4c0,23.7-30.7,67.5-30.7,67.5s-30.7-43.7-30.7-67.5c0-23.7,13.7-42.9,30.7-42.9 C200.8,87.4,214.5,106.7,214.5,130.4z"></path>
+                    <path fill="#20799E" d="M66.8,130.4c0,23.7-30.7,67.5-30.7,67.5S5.5,154.1,5.5,130.4c0-23.7,13.7-42.9,30.7-42.9 C53.1,87.4,66.8,106.7,66.8,130.4z"></path>
+                    <ellipse fill="#2BABE3" cx="110" cy="77.6" rx="83.4" ry="71.1"></ellipse>
+                    <ellipse fill="#2BABE3" cx="110" cy="136.3" rx="83.4" ry="71.1"></ellipse>
+                    <path fill="#FBB911" d="M140.7,95.3c0,16.7-30.7,47.4-30.7,47.4s-30.7-30.7-30.7-47.4S93.1,65.1,110,65.1 C126.9,65.1,140.7,78.6,140.7,95.3z"></path>
+                    <path fill="#FBB911" d="M77.3,201.6c0,2.8-1.6,6.8-3.1,9.9c-1.3,2.7-3.7,2.7-5,0c-1.5-3.1-3.1-7.2-3.1-9.9 c0-5.2,2.5-9.3,5.6-9.3C74.8,192.2,77.3,196.4,77.3,201.6z"></path>
+                    <path fill="#FBB911" d="M89.5,201.6c0,2.8-1.6,6.8-3.1,9.9c-1.3,2.7-3.7,2.7-5,0c-1.5-3.1-3.1-7.2-3.1-9.9 c0-5.2,2.5-9.3,5.6-9.3C87,192.2,89.5,196.4,89.5,201.6z"></path>
+                    <path fill="#FBB911" d="M101.7,201.6c0,2.8-1.6,6.8-3.1,9.9c-1.3,2.7-3.7,2.7-5,0c-1.5-3.1-3.1-7.2-3.1-9.9 c0-5.2,2.5-9.3,5.6-9.3S101.7,196.4,101.7,201.6z"></path>
+                    <path fill="#FBB911" d="M129.5,201.6c0,2.8-1.6,6.8-3.1,9.9c-1.3,2.7-3.7,2.7-5,0c-1.5-3.1-3.1-7.2-3.1-9.9 c0-5.2,2.5-9.3,5.6-9.3C127,192.2,129.5,196.4,129.5,201.6z"></path>
+                    <path fill="#FBB911" d="M141.7,201.6c0,2.8-1.6,6.8-3.1,9.9c-1.3,2.7-3.7,2.7-5,0c-1.5-3.1-3.1-7.2-3.1-9.9 c0-5.2,2.5-9.3,5.6-9.3C139.2,192.2,141.7,196.4,141.7,201.6z"></path>
+                    <path fill="#FBB911" d="M153.9,201.6c0,2.8-1.6,6.8-3.1,9.9c-1.3,2.7-3.7,2.7-5,0c-1.5-3.1-3.1-7.2-3.1-9.9 c0-5.2,2.5-9.3,5.6-9.3C151.4,192.2,153.9,196.4,153.9,201.6z"></path>
+                    <path fill="#89CCE3" d="M58.1,12.8c0,0-23,0.2-38.3-5.9c-4.5-1.8-9.3,1.8-8.8,6.6C12,23.2,11.9,36,7.2,46.4 c0,0,0,0.1-0.1,0.1C7,46.7,7,46.9,6.9,47c0,0.1-0.1,0.2-0.1,0.2c-2.7,6.5-4.1,13.6-4.1,21c0,30.6,24.8,55.5,55.5,55.5 c30.6,0,55.5-24.8,55.5-55.5S88.7,12.8,58.1,12.8z"></path>
+                    <ellipse fill="#FFFFFF" transform="matrix(0.7071 -0.7071 0.7071 0.7071 -31.2725 61.0976)" cx="58.1" cy="68.3" rx="42.2" ry="42.2"></ellipse>
+                    <path fill="#201C1D" d="M69.7,65c-5.4,0-9.8-4.4-9.8-9.8c0-2.1,0.7-4,1.8-5.6c-1.1-0.2-2.3-0.3-3.5-0.3 C47.5,49.2,39,57.7,39,68.3c0,10.6,8.6,19.1,19.1,19.1c10.6,0,19.1-8.6,19.1-19.1c0-2.1-0.3-4.1-0.9-5.9C74.6,64,72.2,65,69.7,65z"></path>
+                    <path fill="#89CCE3" d="M161.9,12.8c0,0,23,0.2,38.3-5.9c4.5-1.8,9.3,1.8,8.8,6.6c-0.9,9.7-0.8,22.5,3.9,32.8 c0,0,0,0.1,0.1,0.1c0.1,0.2,0.2,0.4,0.2,0.5c0,0.1,0.1,0.2,0.1,0.2c2.7,6.5,4.1,13.6,4.1,21c0,30.6-24.8,55.5-55.5,55.5 c-30.6,0-55.5-24.8-55.5-55.5S131.3,12.8,161.9,12.8z"></path>
+                    <ellipse fill="#FFFFFF" transform="matrix(0.2257 -0.9742 0.9742 0.2257 58.8164 210.5942)" cx="161.9" cy="68.3" rx="42.2" ry="42.2"></ellipse>
+                    <path fill="#201C1D" d="M150.3,65c5.4,0,9.8-4.4,9.8-9.8c0-2.1-0.7-4-1.8-5.6c1.1-0.2,2.3-0.3,3.5-0.3 c10.6,0,19.1,8.6,19.1,19.1c0,10.6-8.6,19.1-19.1,19.1c-10.6,0-19.1-8.6-19.1-19.1c0-2.1,0.3-4.1,0.9-5.9 C145.4,64,147.8,65,150.3,65z"></path>
+                </svg>
+            </figure>
+
+            <div class="container">
+                <h3>Upgrade naar Wiser 3</h3>
+                <p>
+                    Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula
+                    eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient
+                    montes, nascetur ridiculus mus...
+                </p>
+                <a href="" class="k-button k-primary">Ga naar nieuwe versie</a>
+            </div>
+
+            <button aria-label="Sluiten" class="toggle-message" data-toggle="info" id="upgrade-modal-close">
+                <ins></ins>
+            </button>
+        </div>
+        <button aria-label="Sluiten" class="toggle-message modal-overlay" data-toggle="info"></button>
+    </section>
+
+    <script>
+        const modal = document.getElementById('dialog-info');
+        const btn = document.getElementById('upgrade-modal-close');
+
+        btn.onclick = () => {
+            modal.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
