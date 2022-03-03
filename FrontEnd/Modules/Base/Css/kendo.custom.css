@@ -1974,6 +1974,7 @@ html .km-pane-wrapper .km-widget,
 
 .k-tabstrip > .k-content {
     padding-top: 10px;
+    overflow: inherit;
 }
 
 .k-menu.k-header,

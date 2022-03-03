@@ -83,6 +83,209 @@
                                             <li>Velden</li>
                                         </ul>
                                         <div>
+                                            <div class="pane-content flex-container">
+                                                <div class="item" style="width: 25%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <h4>
+                                                        <label>Naam</label>
+                                                    </h4>
+                                                    <span class="k-widget k-input k-state-default">
+                                                        <input id="entityName" type="text" class="textField k-input" autocomplete="off" />
+                                                    </span>
+                                                </div>
+
+                                                <div class="item" style="width: 75%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                </div>
+
+                                                <div class="item" style="width: 25%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <h4>
+                                                        <label>Module</label>
+                                                        <span class="info" data-type="entityModule"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <select id="entityModule">
+                                                    </select>
+                                                </div>
+
+                                                <div class="item" style="width: 25%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <h4>
+                                                        <label>Geaccepteerde entiteit(en)</label>
+                                                        <span class="info" data-type="entityAcceptedChildtypes"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <select id="acceptedChildTypes">
+                                                    </select>
+                                                </div>
+
+                                                <div class="item" style="width: 25%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <h4>
+                                                        <label>Vriendelijke Naam</label>
+                                                        <span class="info" data-type="friendlyName"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <span class="k-widget k-input k-state-default">
+                                                        <input id="friendlyName" type="text" class="textField k-input" autocomplete="off" />
+                                                    </span>
+                                                </div>
+
+                                                <div class="item" style="width: 25%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <h4>
+                                                        <label>Sortering</label>
+                                                        <span class="info" data-type="defaultOrdering"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <select id="defaultOrdering" placeholder="Maak uw keuze...">
+                                                    </select>
+                                                </div>
+
+                                                <div class="item" style="width: 25%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <h4>
+                                                        <label for="input-type">Icoon</label>
+                                                        <span class="info" data-type="entityIcon"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <select id="entityIcon">
+                                                    </select>
+                                                </div>
+
+                                                <div class="item" style="width: 25%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <h4>
+                                                        <label for="input-type">Icoon toevoegen</label>
+                                                        <span class="info" data-type="entityIconAdd"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <select id="entityIconAdd">
+                                                    </select>
+                                                </div>
+
+                                                <div class="item" style="width: 25%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <h4>
+                                                        <label for="input-type">Icoon uitgeklapt</label>
+                                                        <span class="info" data-type="entityIconExpanded"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <select id="entityIconExpanded">
+                                                    </select>
+                                                </div>
+
+                                                <div class="item" style="width: 25%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <h4>
+                                                        <label>Kleur</label>
+                                                        <span class="info" data-type="entityColor"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <select id="entityColor" placeholder="Maak uw keuze...">
+                                                    </select>
+                                                </div>
+
+                                                <div class="item" style="width: 15%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <span class="inline">
+                                                        <label class="checkbox">
+                                                            <input id="showInTreeView" type="checkbox" />
+                                                            <span>Tonen in tree view</span>
+                                                        </label>
+                                                    </span>
+                                                </div>
+
+                                                <div class="item" style="width: 15%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <span class="inline">
+                                                        <label class="checkbox">
+                                                            <input id="showInSearch" type="checkbox" />
+                                                            <span>Tonen bij zoeken</span>
+                                                        </label>
+                                                    </span>
+                                                </div>
+
+                                                <div class="item" style="width: 15%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <span class="inline">
+                                                        <label class="checkbox">
+                                                            <input id="showInOverviewTab" type="checkbox" />
+                                                            <span>Tonen in overzicht</span>
+                                                        </label>
+                                                    </span>
+                                                </div>
+
+                                                <div class="item" style="width: 15%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <span class="inline">
+                                                        <label class="checkbox">
+                                                            <input id="saveTitleAsSEO" type="checkbox" />
+                                                            <span>SEO titel opslaan</span>
+                                                        </label>
+                                                    </span>
+                                                </div>
+
+                                                <div class="item" style="width: 15%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <span class="inline">
+                                                        <label class="checkbox">
+                                                            <input id="showTitleField" type="checkbox" />
+                                                            <span>Toon titel veld</span>
+                                                        </label>
+                                                    </span>
+                                                </div>
+
+                                                <div class="item" style="width: 15%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <span class="inline">
+                                                        <label class="checkbox">
+                                                            <input id="saveHistory" type="checkbox" />
+                                                            <span>Geschiedenis opslaan</span>
+                                                        </label>
+                                                    </span>
+                                                </div>
+
+                                                <div class="item" style="width: 10%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                </div>
+
+                                                <div class="item">
+                                                    <h4>
+                                                        <label>Query na toevoegen</label>
+                                                        <span class="info" data-type="queryAfterInsert"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <span class="k-widget k-input k-state-default">
+                                                        <textarea id="queryAfterInsert"></textarea>
+                                                    </span>
+                                                </div>
+
+                                                <div class="item">
+                                                    <h4>
+                                                        <label>Query na bewerken</label>
+                                                        <span class="info" data-type="queryAfterUpdate"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <span class="k-widget k-input k-state-default">
+                                                        <textarea id="queryAfterUpdate"></textarea>
+                                                    </span>
+                                                </div>
+
+                                                <div class="item">
+                                                    <h4>
+                                                        <label>Query voor het bijwerken</label>
+                                                        <span class="info" data-type="queryBeforeUpdate"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <span class="k-widget k-input k-state-default">
+                                                        <textarea id="queryBeforeUpdate"></textarea>
+                                                    </span>
+                                                </div>
+
+                                                <div class="item">
+                                                    <h4>
+                                                        <label>Query na verwijderen</label>
+                                                        <span class="info" data-type="queryBeforeDelete"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <span class="k-widget k-input k-state-default">
+                                                        <textarea id="queryBeforeDelete"></textarea>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
                                             <div class="tabSplit staticSplit">
                                                 <div class="left-pane">
                                                     <div class="pane-content">
@@ -106,211 +309,6 @@
                                                     </div>
                                                 </div>
                                                 <div class="right-pane">
-                                                    <div class="pane-content flex-container">
-                                                        <div class="item" style="width: 25%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <h4>
-                                                                <label>Naam</label>
-                                                            </h4>
-                                                            <span class="k-widget k-input k-state-default">
-                                                                <input id="entityName" type="text" class="textField k-input" autocomplete="off" />
-                                                            </span>
-                                                        </div>
-
-                                                        <div class="item" style="width: 75%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                        </div>
-
-                                                        <div class="item" style="width: 25%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <h4>
-                                                                <label>Module</label>
-                                                                <span class="info" data-type="entityModule"><ins class="icon-info-full"></ins></span>
-                                                            </h4>
-                                                            <select id="entityModule">
-                                                            </select>
-                                                        </div>
-
-                                                        <div class="item" style="width: 25%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <h4>
-                                                                <label>Geaccepteerde entiteit(en)</label>
-                                                                <span class="info" data-type="entityAcceptedChildtypes"><ins class="icon-info-full"></ins></span>
-                                                            </h4>
-                                                            <select id="acceptedChildTypes">
-                                                            </select>
-                                                        </div>
-
-                                                        <div class="item" style="width: 25%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <h4>
-                                                                <label>Vriendelijke Naam</label>
-                                                                <span class="info" data-type="friendlyName"><ins class="icon-info-full"></ins></span>
-                                                            </h4>
-                                                            <span class="k-widget k-input k-state-default">
-                                                                <input id="friendlyName" type="text" class="textField k-input" autocomplete="off" />
-                                                            </span>
-                                                        </div>
-
-                                                        <div class="item" style="width: 25%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <h4>
-                                                                <label>Sortering</label>
-                                                                <span class="info" data-type="defaultOrdering"><ins class="icon-info-full"></ins></span>
-                                                            </h4>
-                                                            <select id="defaultOrdering" placeholder="Maak uw keuze...">
-                                                            </select>
-                                                        </div>
-
-                                                        <div class="item" style="width: 25%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <h4>
-                                                                <label for="input-type">Icoon</label>
-                                                                <span class="info" data-type="entityIcon"><ins class="icon-info-full"></ins></span>
-                                                            </h4>
-                                                            <select id="entityIcon">
-                                                            </select>
-                                                        </div>
-
-                                                        <div class="item" style="width: 25%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <h4>
-                                                                <label for="input-type">Icoon toevoegen</label>
-                                                                <span class="info" data-type="entityIconAdd"><ins class="icon-info-full"></ins></span>
-                                                            </h4>
-                                                            <select id="entityIconAdd">
-                                                            </select>
-                                                        </div>
-
-                                                        <div class="item" style="width: 25%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <h4>
-                                                                <label for="input-type">Icoon uitgeklapt</label>
-                                                                <span class="info" data-type="entityIconExpanded"><ins class="icon-info-full"></ins></span>
-                                                            </h4>
-                                                            <select id="entityIconExpanded">
-                                                            </select>
-                                                        </div>
-
-                                                        <div class="item" style="width: 25%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <h4>
-                                                                <label>Kleur</label>
-                                                                <span class="info" data-type="entityColor"><ins class="icon-info-full"></ins></span>
-                                                            </h4>
-                                                            <select id="entityColor" placeholder="Maak uw keuze...">
-                                                            </select>
-                                                        </div>
-
-                                                        <div class="item" style="width: 15%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <span class="inline">
-                                                                <label class="checkbox">
-                                                                    <input id="showInTreeView" type="checkbox" />
-                                                                    <span>Tonen in tree view</span>
-                                                                </label>
-                                                            </span>
-                                                        </div>
-
-                                                        <div class="item" style="width: 15%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <span class="inline">
-                                                                <label class="checkbox">
-                                                                    <input id="showInSearch" type="checkbox" />
-                                                                    <span>Tonen bij zoeken</span>
-                                                                </label>
-                                                            </span>
-                                                        </div>
-
-                                                        <div class="item" style="width: 15%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <span class="inline">
-                                                                <label class="checkbox">
-                                                                    <input id="showInOverviewTab" type="checkbox" />
-                                                                    <span>Tonen in overzicht</span>
-                                                                </label>
-                                                            </span>
-                                                        </div>
-
-                                                        <div class="item" style="width: 15%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <span class="inline">
-                                                                <label class="checkbox">
-                                                                    <input id="saveTitleAsSEO" type="checkbox" />
-                                                                    <span>SEO titel opslaan</span>
-                                                                </label>
-                                                            </span>
-                                                        </div>
-
-                                                        <div class="item" style="width: 15%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <span class="inline">
-                                                                <label class="checkbox">
-                                                                    <input id="showTitleField" type="checkbox" />
-                                                                    <span>Toon titel veld</span>
-                                                                </label>
-                                                            </span>
-                                                        </div>
-
-                                                        <div class="item" style="width: 15%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                            <span class="inline">
-                                                                <label class="checkbox">
-                                                                    <input id="saveHistory" type="checkbox" />
-                                                                    <span>Geschiedenis opslaan</span>
-                                                                </label>
-                                                            </span>
-                                                        </div>
-
-                                                        <div class="item" style="width: 10%;">
-                                                            <span class="handler">&nbsp;</span>
-                                                        </div>
-
-                                                        <div class="item">
-                                                            <h4>
-                                                                <label>Query na toevoegen</label>
-                                                                <span class="info" data-type="queryAfterInsert"><ins class="icon-info-full"></ins></span>
-                                                            </h4>
-                                                            <span class="k-widget k-input k-state-default">
-                                                                <textarea id="queryAfterInsert"></textarea>
-                                                            </span>
-                                                        </div>
-
-                                                        <div class="item">
-                                                            <h4>
-                                                                <label>Query na bewerken</label>
-                                                                <span class="info" data-type="queryAfterUpdate"><ins class="icon-info-full"></ins></span>
-                                                            </h4>
-                                                            <span class="k-widget k-input k-state-default">
-                                                                <textarea id="queryAfterUpdate"></textarea>
-                                                            </span>
-                                                        </div>
-
-                                                        <div class="item">
-                                                            <h4>
-                                                                <label>Query voor het bijwerken</label>
-                                                                <span class="info" data-type="queryBeforeUpdate"><ins class="icon-info-full"></ins></span>
-                                                            </h4>
-                                                            <span class="k-widget k-input k-state-default">
-                                                                <textarea id="queryBeforeUpdate"></textarea>
-                                                            </span>
-                                                        </div>
-
-                                                        <div class="item">
-                                                            <h4>
-                                                                <label>Query na verwijderen</label>
-                                                                <span class="info" data-type="queryBeforeDelete"><ins class="icon-info-full"></ins></span>
-                                                            </h4>
-                                                            <span class="k-widget k-input k-state-default">
-                                                                <textarea id="queryBeforeDelete"></textarea>
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                        </div>
-                                        <div>
                                             <div class="pane-content flex-container">
                                                 <div class="pane-content flex-container">
                                                     <div class="item">
@@ -1375,6 +1373,8 @@
                                                             <textarea id="customScriptField"></textarea>
                                                         </span>
                                                     </div>
+                                                </div>
+                                            </div>
                                                 </div>
                                             </div>
                                         </div>
