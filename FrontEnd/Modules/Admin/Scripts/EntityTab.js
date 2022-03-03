@@ -328,7 +328,6 @@ export class EntityTab {
                             event.preventDefault();
                         else {
                             $("#entityPropertyView").show();
-                            // $("#entityView").hide();
                         }
                         break;
                     default:
