@@ -70,7 +70,7 @@ namespace FrontEnd.Modules.Templates.Services
                 var value = data.FirstOrDefault(setting => property.Name.Equals(setting.Key, StringComparison.OrdinalIgnoreCase)).Value;
 
                 // If we have no value, get the default value.
-                if (component != null && (value == null || value == property.PropertyType.GetDefaultValue() || (value is string stringValue && String.IsNullOrEmpty(stringValue))))
+                if (component != null && (value == null || Equals(value, property.PropertyType.GetDefaultValue()) || (value is string stringValue && String.IsNullOrEmpty(stringValue)))))
                 {
                     var assembly = Assembly.GetAssembly(component);
                     var fullTypeName = $"{component.Namespace}.Models.{component.Name}{componentMode}SettingsModel";
