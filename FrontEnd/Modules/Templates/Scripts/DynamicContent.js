@@ -220,7 +220,6 @@ const moduleSettings = {
         }
 
         async onComponentTypeDropDownChange(event) {
-            console.log("onComponentTypeDropDownChange", event);
             await this.changeComponent(event.sender.value(), 0);
         }
 
@@ -229,6 +228,10 @@ const moduleSettings = {
             window.processing.addProcess(process);
 
             try {
+                this.selectedComponentData.component = newComponent;
+                await this.reloadComponentModes(newComponent, newComponentMode);
+                this.selectedComponentData.componentMode = this.componentModeComboBox.text();
+
                 const response = await Wiser2.api({
                     url: `/Modules/DynamicContent/${encodeURIComponent(newComponent)}/DynamicContentTabPane`,
                     method: "POST",
@@ -240,7 +243,6 @@ const moduleSettings = {
                 this.componentModus = null;
 
                 $("#DynamicContentTabPane").html(response);
-                this.reloadComponentModes(newComponent, newComponentMode);
                 this.initializeDynamicKendoComponents();
                 await this.transformCodeMirrorViews();
             } catch (exception) {
