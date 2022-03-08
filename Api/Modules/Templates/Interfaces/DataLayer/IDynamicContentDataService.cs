@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Api.Modules.Templates.Models.DynamicContent;
+using Api.Modules.Templates.Models.Template;
 
 namespace Api.Modules.Templates.Interfaces.DataLayer
 {
@@ -56,5 +57,22 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="templateId">The ID of the template.</param>
         /// <param name="username">The name of the user that is adding the link.</param>
         Task AddLinkToTemplateAsync(int contentId, int templateId, string username);
+
+        /// <summary>
+        /// Get published environments from a dynamic component.
+        /// </summary>
+        /// <param name="contentId">The id of the dynamic component for which the environment should be retrieved.</param>
+        /// <returns>A list of all version and their published environment.</returns>
+        Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int contentId);
+
+        /// <summary>
+        /// Publish the dynamic component to an environment. This method will execute the publishmodel instructions it recieves, logic for publishing linked environments should be handled in the servicelayer.
+        /// </summary>
+        /// <param name="contentId">The id of the template of which the enviroment should be published.</param>
+        /// <param name="publishModel">A publish model containing the versions that should be altered and their respective values to be altered with.</param>
+        /// <param name="publishLog"></param>
+        /// <param name="username">The name of the authenticated user.</param>
+        /// <returns>An int confirming the rows altered by the query.</returns>
+        Task<int> UpdatePublishedEnvironmentAsync(int contentId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username);
     }
 }

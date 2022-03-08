@@ -582,6 +582,7 @@ const moduleSettings = {
                     },
                     scrollable: true,
                     resizable: true,
+                    selectable: "row",
                     filterable: {
                         extra: false,
                         operators: {
@@ -667,11 +668,20 @@ const moduleSettings = {
                             filterable: false
                         }
                     ],
-                    toolbar: [{
-                        name: "add",
-                        text: "Nieuw",
-                        template: `<a class='k-button k-button-icontext' href='\\#' onclick='return window.Templates.openDynamicContentWindow(0, "Nieuw dynamische content toevoegen")'><span class='k-icon k-i-file-add'></span>Nieuw item toevoegen</a>`
-                    }]
+                    toolbar: [
+                        {
+                            name: "add",
+                            text: "Nieuw",
+                            template: `<a class='k-button k-button-icontext' href='\\#' onclick='return window.Templates.openDynamicContentWindow(0, "Nieuw dynamische content toevoegen")'><span class='k-icon k-i-file-add'></span>Nieuw item toevoegen</a>`
+                        },
+                        {
+                            name: "publishToEnvironments",
+                            text: "Deploy",
+                            template: `<a class='k-button k-button-icontext deploy-button hidden' href='\\#' onclick='return window.Templates.openDeployDynamicContentWindow()'><span class='k-icon k-i-cloud'></span>&nbsp;Deploy</a>`
+                        }
+                    ],
+                    change: this.onDynamicContentGridChange.bind(this),
+                    dataBound: this.onDynamicContentGridChange.bind(this)
                 }).data("kendoGrid");
 
                 // Preview
@@ -987,6 +997,12 @@ const moduleSettings = {
             this.openDynamicContentWindow(data.id, data.title);
         }
 
+        onDynamicContentGridChange(event) {
+            const grid = $("#dynamic-grid").data("kendoGrid");
+
+            grid.element.find(".k-toolbar .deploy-button").toggleClass("hidden", grid.select().length === 0);
+        }
+
         openDynamicContentWindow(contentId, title) {
             return new Promise((resolve) => {
                 const grid = $("#dynamic-grid").data("kendoGrid");
@@ -1014,6 +1030,46 @@ const moduleSettings = {
             return $("#dynamicContentWindow").data("kendoWindow") && $("#dynamicContentWindow").is(":visible");
         }
 
+        openDeployDynamicContentWindow() {
+            return new Promise(async (resolve) => {
+                const grid = $("#dynamic-grid").data("kendoGrid");
+                const selectedDataItem = grid.dataItem(grid.select());
+                if (!selectedDataItem) {
+                    resolve();
+                    return;
+                }
+                
+                const selectedComponentData = await Wiser2.api({
+                    url: `${this.settings.wiserApiRoot}dynamic-content/${selectedDataItem.id}?includeSettings=false`,
+                    dataType: "json",
+                    method: "GET"
+                });
+                
+                const html = await Wiser2.api({
+                    url: `/Modules/DynamicContent/PublishedEnvironments`,
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(selectedComponentData)
+                });
+                
+                const window = $("#deployDynamicContentWindow").kendoWindow({
+                    title: `Deploy ${selectedComponentData.title}`,
+                    width: "500px",
+                    height: "200px",
+                    actions: ["close"],
+                    modal: true,
+                    close: (closeWindowEvent) => {
+                        grid.dataSource.read();
+                        resolve();
+                    }
+                }).data("kendoWindow").content(html).maximize().open();
+                
+                $("#deployLiveComponent, #deployAcceptComponent, #deployTestComponent").kendoButton();
+                $("#published-environments-dynamic-component .combo-select").kendoDropDownList();
+                this.bindDynamicComponentDeployButtons(selectedDataItem.id);
+            });
+        }
+
         //Bind the deploybuttons for the template versions
         bindDeployButtons(templateId) {
             $("#deployLive").on("click", this.deployEnvironment.bind(this, "live", templateId));
@@ -1021,9 +1077,15 @@ const moduleSettings = {
             $("#deployTest").on("click", this.deployEnvironment.bind(this, "test", templateId));
         }
 
+        bindDynamicComponentDeployButtons(contentId) {
+            $("#deployLiveComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "live", contentId));
+            $("#deployAcceptComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "accept", contentId));
+            $("#deployTestComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "test", contentId));
+        }
+
         //Deploy a version to an enviorenment
         async deployEnvironment(environment, templateId) {
-            const version = document.querySelector(`.version-${environment} select.combo-select`).value;
+            const version = document.querySelector(`#published-environments .version-${environment} select.combo-select`).value;
             if (!version) {
                 kendo.alert("U heeft geen geldige versie geselecteerd.");
                 return;
@@ -1039,6 +1101,25 @@ const moduleSettings = {
             window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
             this.historyLoaded = false;
             await this.reloadMetaData(templateId);
+        }
+
+        async deployDynamicContentEnvironment(environment, contentId) {
+            const version = document.querySelector(`#published-environments-dynamic-component .version-${environment} select.combo-select`).value;
+            if (!version) {
+                kendo.alert("U heeft geen geldige versie geselecteerd.");
+                return;
+            }
+
+            await Wiser2.api({
+                url: `${this.settings.wiserApiRoot}dynamic-content/${contentId}/publish/${encodeURIComponent(environment)}/${version}`,
+                dataType: "json",
+                type: "POST",
+                contentType: "application/json"
+            });
+
+            window.popupNotification.show(`Dynamisch component is succesvol naar de ${environment} omgeving gezet`, "info");
+            this.historyLoaded = false;
+            $("#deployDynamicContentWindow").data("kendoWindow").close();
         }
 
         //Save the template data

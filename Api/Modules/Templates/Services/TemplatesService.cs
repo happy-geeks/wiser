@@ -2391,10 +2391,8 @@ LIMIT 1";
             }
 
             var versionsAndPublished = await templateDataService.GetPublishedEnvironmentsAsync(templateId);
-
-            var helper = new PublishedEnvironmentHelper();
-
-            return new ServiceResult<PublishedEnvironmentModel>(helper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
+            
+            return new ServiceResult<PublishedEnvironmentModel>(PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
         }
 
         /// <inheritdoc />
@@ -2510,12 +2508,10 @@ LIMIT 1";
             {
                 throw new ArgumentException("The version is invalid");
             }
+            
+            var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
-            var helper = new PublishedEnvironmentHelper();
-
-            var newPublished = helper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
-
-            var publishLog = helper.GeneratePublishLog(templateId, currentPublished, newPublished);
+            var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
             return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, newPublished, publishLog, IdentityHelpers.GetUserName(identity)));
         }
@@ -2619,7 +2615,8 @@ LIMIT 1";
                 WiserTableNames.WiserDynamicContent, 
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,
-                WiserTableNames.WiserPreviewProfiles
+                WiserTableNames.WiserPreviewProfiles,
+                WiserTableNames.WiserDynamicContentPublishLog
             });
 
             // Make sure the ordering is correct.
