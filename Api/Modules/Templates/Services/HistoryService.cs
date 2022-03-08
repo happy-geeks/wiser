@@ -88,10 +88,8 @@ namespace Api.Modules.Templates.Services
         public async Task<PublishedEnvironmentModel> GetHistoryVersionsOfDynamicContent(int templateId)
         {
             var versionsAndPublished = await historyDataService.GetPublishedEnvironmentsFromDynamicContentAsync(templateId);
-
-            var helper = new PublishedEnvironmentHelper();
-
-            return helper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished);
+            
+            return PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished);
         }
         
         /// <inheritdoc />

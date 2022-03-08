@@ -360,7 +360,8 @@
     }
 
 
-#published-environments .item .flex-container .k-dropdown {
+#published-environments .item .flex-container .k-dropdown,
+#published-environments-dynamic-component .item .flex-container .k-dropdown {
     width: 100%;
 }
 

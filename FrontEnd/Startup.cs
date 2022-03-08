@@ -16,6 +16,7 @@ using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
+using Serilog;
 
 [assembly: AspMvcAreaViewLocationFormat("/Modules/{2}/Views/{1}/{0}.cshtml")]
 [assembly: AspMvcAreaViewLocationFormat("/Modules/{2}/Views/Shared/{0}.cshtml")]
@@ -46,6 +47,11 @@ namespace FrontEnd
 
             // Build the final configuration with all combined settings.
             Configuration = builder.Build();
+
+            // Configure Serilog.
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(Configuration)
+                .CreateLogger();
         }
 
         public IConfiguration Configuration { get; }
@@ -55,6 +61,9 @@ namespace FrontEnd
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddHealthChecks();
+
+            // Use Serilog as our main logger.
+            services.AddLogging(builder => { builder.AddSerilog(); });
 
             // MVC looks in the directory "Areas" by default, but we use the directory "Modules", so we have to tell MC that.
             services.Configure<RazorViewEngineOptions>(options =>

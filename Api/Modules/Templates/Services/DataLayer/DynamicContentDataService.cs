@@ -4,6 +4,7 @@ using System.Data;
 using System.Threading.Tasks;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
+using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
@@ -30,7 +31,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             connection.ClearParameters();
             connection.AddParameter("version", version);
             connection.AddParameter("contentId", contentId);
-            var dataTable = await connection.GetAsync($"SELECT wdc.settings, wdc.`title` FROM {WiserTableNames.WiserDynamicContent} wdc WHERE wdc.content_id = ?contentId AND wdc.version = ?version ORDER BY wdc.version DESC LIMIT 1");
+            var dataTable = await connection.GetAsync($"SELECT wdc.settings, wdc.`title` FROM {WiserTableNames.WiserDynamicContent} wdc WHERE wdc.content_id = ?contentId AND wdc.version = ?version AND removed = 0 ORDER BY wdc.version DESC LIMIT 1");
 
             var settings = dataTable.Rows[0].Field<string>("settings") ?? "{}";
             var title = dataTable.Rows[0].Field<string>("title");
@@ -95,17 +96,18 @@ namespace Api.Modules.Templates.Services.DataLayer
             connection.ClearParameters();
             connection.AddParameter("contentId", contentId);
             var dataTable = await connection.GetAsync($@"SELECT
-                                                                component.id,
-                                                                component.component,
-                                                                component.component_mode,
-                                                                component.version,
-                                                                component.title,
-                                                                component.changed_on,
-                                                                component.changed_by
-                                                            FROM {WiserTableNames.WiserDynamicContent} AS component
-                                                            WHERE component.content_id = ?contentId
-                                                            ORDER BY component.version DESC
-                                                            LIMIT 1");
+                                                            component.id,
+                                                            component.component,
+                                                            component.component_mode,
+                                                            component.version,
+                                                            component.title,
+                                                            component.changed_on,
+                                                            component.changed_by
+                                                        FROM {WiserTableNames.WiserDynamicContent} AS component
+                                                        WHERE component.content_id = ?contentId
+                                                        AND component.removed = 0
+                                                        ORDER BY component.version DESC
+                                                        LIMIT 1");
 
             return dataTable.Rows.Count == 0 ? null : new DynamicContentOverviewModel
             {
@@ -131,11 +133,78 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                 VALUES (?contentId, ?templateId, ?now, ?username)");
         }
 
+        /// <inheritdoc />
+        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int contentId)
+        {
+            connection.ClearParameters();
+            connection.AddParameter("contentId", contentId);
+            var versionList = new Dictionary<int, int>();
+
+            var dataTable = await connection.GetAsync($"SELECT version, published_environment FROM {WiserTableNames.WiserDynamicContent} WHERE content_id = ?contentId AND removed = 0");
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                versionList.Add(row.Field<int>("version"), row.Field<SByte>("published_environment"));
+            }
+
+            return versionList;
+        }
+
+        /// <inheritdoc />
+        public async Task<int> UpdatePublishedEnvironmentAsync(int contentId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username)
+        {
+            connection.ClearParameters();
+            connection.AddParameter("contentId", contentId);
+
+            var baseQueryPart = $@"UPDATE {WiserTableNames.WiserDynamicContent} SET published_environment = CASE version";
+
+            var dynamicQueryPart = "";
+            var dynamicWherePart = " AND version IN (";
+            foreach (var versionChange in publishModel)
+            {
+                dynamicQueryPart += $" WHEN {versionChange.Key} THEN published_environment + {versionChange.Value}";
+                dynamicWherePart += $"{versionChange.Key},";
+            }
+            dynamicWherePart = $"{dynamicWherePart[..^1]})";
+            var endQueryPart = @" END
+                WHERE content_id = ?contentId";
+
+            var query = baseQueryPart + dynamicQueryPart + endQueryPart + dynamicWherePart;
+
+            connection.AddParameter("oldlive", publishLog.OldLive);
+            connection.AddParameter("oldaccept", publishLog.OldAccept);
+            connection.AddParameter("oldtest", publishLog.OldTest);
+            connection.AddParameter("newlive", publishLog.NewLive);
+            connection.AddParameter("newaccept", publishLog.NewAccept);
+            connection.AddParameter("newtest", publishLog.NewTest);
+            connection.AddParameter("now", DateTime.Now);
+            connection.AddParameter("username", username);
+
+            var logQuery = $@"INSERT INTO {WiserTableNames.WiserDynamicContentPublishLog} (content_id, old_live, old_accept, old_test, new_live, new_accept, new_test, changed_on, changed_by) 
+            VALUES(
+                ?contentId,
+                ?oldlive,
+                ?oldaccept,
+                ?oldtest,
+                ?newlive,
+                ?newaccept,
+                ?newtest,
+                ?now,
+                ?username
+            )";
+
+            return await connection.ExecuteAsync(query + ";" + logQuery);
+        }
+
         private async Task<KeyValuePair<string, string>> GetDatabaseData(int contentId)
         {
             connection.ClearParameters();
             connection.AddParameter("contentId", contentId);
-            var dataTable = await connection.GetAsync($@"SELECT wdc.settings, wdc.`title` FROM {WiserTableNames.WiserDynamicContent} wdc WHERE content_id = ?contentId ORDER BY wdc.version DESC LIMIT 1");
+            var dataTable = await connection.GetAsync($@"SELECT settings, title, removed FROM {WiserTableNames.WiserDynamicContent} WHERE content_id = ?contentId ORDER BY version DESC LIMIT 1");
+            if (Convert.ToBoolean(dataTable.Rows[0]["removed"]))
+            {
+                return new KeyValuePair<string, string>(null, null);
+            }
 
             var settings = dataTable.Rows[0].Field<string>("settings");
             var title = dataTable.Rows[0].Field<string>("title");
