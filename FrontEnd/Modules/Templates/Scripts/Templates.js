@@ -56,6 +56,7 @@ const moduleSettings = {
             this.newContentId = 0;
             this.newContentTitle = null;
             this.saving = false;
+            this.historyLoaded = false;
 
             this.templateTypes = Object.freeze({
                 "UNKNOWN": 0,
@@ -337,8 +338,13 @@ const moduleSettings = {
         }
 
         onMainTabStripActivate(event) {
-            if (event && event.item && event.item.textContent && event.item.textContent.toLowerCase() === "preview") {
-                this.preview.generatePreview();
+            switch (this.mainTabStrip.select().data("name")) {
+                case "preview":
+                    this.preview.generatePreview();
+                    break;
+                case "history":
+                    this.reloadHistoryTab();
+                    break;
             }
         }
 
@@ -387,6 +393,8 @@ const moduleSettings = {
             }
 
             this.selectedId = dataItem.id;
+            this.historyLoaded = false;
+            this.onMainTabStripActivate();
 
             if (dataItem.isFolder) {
                 return;
@@ -503,11 +511,6 @@ const moduleSettings = {
                         url: `${this.settings.wiserApiRoot}templates/${id}/linked-templates`,
                         dataType: "json",
                         method: "GET"
-                    }),
-                    Wiser2.api({
-                        url: `${this.settings.wiserApiRoot}templates/${id}/history`,
-                        dataType: "json",
-                        method: "GET"
                     })
                 ];
 
@@ -533,18 +536,6 @@ const moduleSettings = {
                         document.getElementById("developmentTab").innerHTML = response;
                         this.initKendoDeploymentTab();
                         this.bindDeployButtons(id);
-                    })
-                );
-
-                // History
-                promises.push(
-                    Wiser2.api({
-                        method: "POST",
-                        contentType: "application/json",
-                        url: "/Modules/Templates/HistoryTab",
-                        data: JSON.stringify(templateHistory)
-                    }).then((response) => {
-                        document.getElementById("historyTab").innerHTML = response;
                     })
                 );
 
@@ -591,6 +582,7 @@ const moduleSettings = {
                     },
                     scrollable: true,
                     resizable: true,
+                    selectable: "row",
                     filterable: {
                         extra: false,
                         operators: {
@@ -676,11 +668,20 @@ const moduleSettings = {
                             filterable: false
                         }
                     ],
-                    toolbar: [{
-                        name: "add",
-                        text: "Nieuw",
-                        template: `<a class='k-button k-button-icontext' href='\\#' onclick='return window.Templates.openDynamicContentWindow(0, "Nieuw dynamische content toevoegen")'><span class='k-icon k-i-file-add'></span>Nieuw item toevoegen</a>`
-                    }]
+                    toolbar: [
+                        {
+                            name: "add",
+                            text: "Nieuw",
+                            template: `<a class='k-button k-button-icontext' href='\\#' onclick='return window.Templates.openDynamicContentWindow(0, "Nieuw dynamische content toevoegen")'><span class='k-icon k-i-file-add'></span>Nieuw item toevoegen</a>`
+                        },
+                        {
+                            name: "publishToEnvironments",
+                            text: "Deploy",
+                            template: `<a class='k-button k-button-icontext deploy-button hidden' href='\\#' onclick='return window.Templates.openDeployDynamicContentWindow()'><span class='k-icon k-i-cloud'></span>&nbsp;Deploy</a>`
+                        }
+                    ],
+                    change: this.onDynamicContentGridChange.bind(this),
+                    dataBound: this.onDynamicContentGridChange.bind(this)
                 }).data("kendoGrid");
 
                 // Preview
@@ -802,6 +803,43 @@ const moduleSettings = {
                     dataSource: dataSource
                 });
             }
+
+            // Pre load query field for HTML templates.
+            const preLoadQueryField = $("#preLoadQuery");
+            if (preLoadQueryField.length > 0) {
+                // Initialize Code Mirror.
+                await Misc.ensureCodeMirror();
+                const codeMirrorInstance = CodeMirror.fromTextArea(preLoadQueryField[0], {
+                    lineNumbers: true,
+                    indentUnit: 4,
+                    lineWrapping: true,
+                    foldGutter: true,
+                    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
+                    lint: true,
+                    extraKeys: {
+                        "Ctrl-Q": (sender) => {
+                            sender.foldCode(sender.getCursor());
+                        },
+                        "F11": (sender) => {
+                            sender.setOption("fullScreen", !sender.getOption("fullScreen"));
+                        },
+                        "Esc": (sender) => {
+                            if (sender.getOption("fullScreen")) sender.setOption("fullScreen", false);
+                        },
+                        "Ctrl-Space": "autocomplete"
+                    },
+                    mode: preLoadQueryField.data("editorType")
+                });
+
+                preLoadQueryField.data("CodeMirrorInstance", codeMirrorInstance);
+            }
+
+            const advancedSettingsToggle = $("#advanced");
+            advancedSettingsToggle.change((event) => {
+                if (advancedSettingsToggle.prop("checked") && preLoadQueryField.length > 0) {
+                    preLoadQueryField.data("CodeMirrorInstance").refresh();
+                }
+            });
         }
 
         //Initialize display variable for the fields containing objects and dates within the grid.
@@ -959,6 +997,12 @@ const moduleSettings = {
             this.openDynamicContentWindow(data.id, data.title);
         }
 
+        onDynamicContentGridChange(event) {
+            const grid = $("#dynamic-grid").data("kendoGrid");
+
+            grid.element.find(".k-toolbar .deploy-button").toggleClass("hidden", grid.select().length === 0);
+        }
+
         openDynamicContentWindow(contentId, title) {
             return new Promise((resolve) => {
                 const grid = $("#dynamic-grid").data("kendoGrid");
@@ -986,6 +1030,46 @@ const moduleSettings = {
             return $("#dynamicContentWindow").data("kendoWindow") && $("#dynamicContentWindow").is(":visible");
         }
 
+        openDeployDynamicContentWindow() {
+            return new Promise(async (resolve) => {
+                const grid = $("#dynamic-grid").data("kendoGrid");
+                const selectedDataItem = grid.dataItem(grid.select());
+                if (!selectedDataItem) {
+                    resolve();
+                    return;
+                }
+                
+                const selectedComponentData = await Wiser2.api({
+                    url: `${this.settings.wiserApiRoot}dynamic-content/${selectedDataItem.id}?includeSettings=false`,
+                    dataType: "json",
+                    method: "GET"
+                });
+                
+                const html = await Wiser2.api({
+                    url: `/Modules/DynamicContent/PublishedEnvironments`,
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(selectedComponentData)
+                });
+                
+                const window = $("#deployDynamicContentWindow").kendoWindow({
+                    title: `Deploy ${selectedComponentData.title}`,
+                    width: "500px",
+                    height: "200px",
+                    actions: ["close"],
+                    modal: true,
+                    close: (closeWindowEvent) => {
+                        grid.dataSource.read();
+                        resolve();
+                    }
+                }).data("kendoWindow").content(html).maximize().open();
+                
+                $("#deployLiveComponent, #deployAcceptComponent, #deployTestComponent").kendoButton();
+                $("#published-environments-dynamic-component .combo-select").kendoDropDownList();
+                this.bindDynamicComponentDeployButtons(selectedDataItem.id);
+            });
+        }
+
         //Bind the deploybuttons for the template versions
         bindDeployButtons(templateId) {
             $("#deployLive").on("click", this.deployEnvironment.bind(this, "live", templateId));
@@ -993,9 +1077,15 @@ const moduleSettings = {
             $("#deployTest").on("click", this.deployEnvironment.bind(this, "test", templateId));
         }
 
+        bindDynamicComponentDeployButtons(contentId) {
+            $("#deployLiveComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "live", contentId));
+            $("#deployAcceptComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "accept", contentId));
+            $("#deployTestComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "test", contentId));
+        }
+
         //Deploy a version to an enviorenment
         async deployEnvironment(environment, templateId) {
-            const version = document.querySelector(`.version-${environment} select.combo-select`).value;
+            const version = document.querySelector(`#published-environments .version-${environment} select.combo-select`).value;
             if (!version) {
                 kendo.alert("U heeft geen geldige versie geselecteerd.");
                 return;
@@ -1009,7 +1099,27 @@ const moduleSettings = {
             });
 
             window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
-            await this.reloadTabs(templateId);
+            this.historyLoaded = false;
+            await this.reloadMetaData(templateId);
+        }
+
+        async deployDynamicContentEnvironment(environment, contentId) {
+            const version = document.querySelector(`#published-environments-dynamic-component .version-${environment} select.combo-select`).value;
+            if (!version) {
+                kendo.alert("U heeft geen geldige versie geselecteerd.");
+                return;
+            }
+
+            await Wiser2.api({
+                url: `${this.settings.wiserApiRoot}dynamic-content/${contentId}/publish/${encodeURIComponent(environment)}/${version}`,
+                dataType: "json",
+                type: "POST",
+                contentType: "application/json"
+            });
+
+            window.popupNotification.show(`Dynamisch component is succesvol naar de ${environment} omgeving gezet`, "info");
+            this.historyLoaded = false;
+            $("#deployDynamicContentWindow").data("kendoWindow").close();
         }
 
         //Save the template data
@@ -1150,7 +1260,8 @@ const moduleSettings = {
                 });
 
                 window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
-                await this.reloadTabs(this.selectedId);
+                this.historyLoaded = false;
+                await this.reloadMetaData(this.selectedId);
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
@@ -1166,46 +1277,63 @@ const moduleSettings = {
          * Reloads the publishedEnvironments and history of the template.
          * @param {any} templateId The ID of the template.
          */
-        async reloadTabs(templateId) {
-            let promises = [
-                Wiser2.api({
-                    url: `${this.settings.wiserApiRoot}templates/${templateId}/meta`,
-                    dataType: "json",
-                    type: "GET",
-                    contentType: "application/json"
-                }),
-                Wiser2.api({
+        async reloadMetaData(templateId) {
+            const templateMetaData = await Wiser2.api({
+                url: `${this.settings.wiserApiRoot}templates/${templateId}/meta`,
+                dataType: "json",
+                type: "GET",
+                contentType: "application/json"
+            });
+            
+            const response = await Wiser2.api({
+                method: "POST",
+                contentType: "application/json",
+                url: "/Modules/Templates/PublishedEnvironments",
+                data: JSON.stringify(templateMetaData)
+            });
+            
+            document.querySelector("#published-environments").outerHTML = response;
+            $("#deployLive, #deployAccept, #deployTest").kendoButton();
+            $("#published-environments .combo-select").kendoDropDownList();
+            this.bindDeployButtons(templateId);
+        }
+        
+        /**
+         * Reloads history of the template.
+         * @param {any} templateId The ID of the template.
+         */
+        async reloadHistoryTab(templateId) {
+            if (this.historyLoaded) {
+                return;
+            }
+
+            templateId = templateId || this.selectedId;
+            this.historyLoaded = true;
+            
+            const process = `reloadHistoryTab_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                const templateHistory = await Wiser2.api({
                     url: `${this.settings.wiserApiRoot}templates/${templateId}/history`,
                     dataType: "json",
                     method: "GET"
-                })
-            ];
+                });
 
-            const [templateMetaData, templateHistory] = await Promise.all(promises);
-
-            promises = [
-                Wiser2.api({
-                    method: "POST",
-                    contentType: "application/json",
-                    url: "/Modules/Templates/PublishedEnvironments",
-                    data: JSON.stringify(templateMetaData)
-                }).then((response) => {
-                    document.querySelector("#published-environments").outerHTML = response;
-                    $("#deployLive, #deployAccept, #deployTest").kendoButton();
-                    $("#published-environments .combo-select").kendoDropDownList();
-                    this.bindDeployButtons(templateId);
-                }),
-                Wiser2.api({
+                const historyTab = await Wiser2.api({
                     method: "POST",
                     contentType: "application/json",
                     url: "/Modules/Templates/HistoryTab",
                     data: JSON.stringify(templateHistory)
-                }).then((response) => {
-                    document.getElementById("historyTab").innerHTML = response;
-                })
-            ];
+                });
 
-            await Promise.all(promises);
+                document.getElementById("historyTab").innerHTML = historyTab;
+            } catch (exception) {
+                kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                console.error(exception);
+            }
+
+            window.processing.removeProcess(process);
         }
 
         /**
@@ -1262,6 +1390,11 @@ const moduleSettings = {
          * */
         getNewSettings() {
             const settingsList = {};
+
+            const preLoadQueryField = $("#preLoadQuery");
+            if (preLoadQueryField.length > 0) {
+                settingsList.preLoadQuery = preLoadQueryField.data("CodeMirrorInstance").getValue();
+            }
 
             $(".advanced input, .advanced select").each((index, element) => {
                 const field = $(element);

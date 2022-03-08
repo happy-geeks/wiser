@@ -97,7 +97,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.grouping_key_column_name,
                                                                 template.grouping_value_column_name,
                                                                 template.is_scss_include_template,
-                                                                template.use_in_wiser_html_editors
+                                                                template.use_in_wiser_html_editors,
+                                                                template.pre_load_query
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
 				                                            LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate WHERE linkedTemplate.removed = 0 GROUP BY template_id) AS linkedTemplates ON FIND_IN_SET(linkedTemplates.template_id, template.linked_templates)
                                                             WHERE template.template_id = ?templateId
@@ -148,7 +149,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                     GroupingKeyColumnName = row.Field<string>("grouping_key_column_name"),
                     GroupingValueColumnName = row.Field<string>("grouping_value_column_name"),
                     IsScssIncludeTemplate = Convert.ToBoolean(row["is_scss_include_template"]),
-                    UseInWiserHtmlEditors = Convert.ToBoolean(row["use_in_wiser_html_editors"])
+                    UseInWiserHtmlEditors = Convert.ToBoolean(row["use_in_wiser_html_editors"]),
+                    PreLoadQuery = row.Field<string>("pre_load_query")
                 };
 
                 resultList.Add(templateData);
@@ -173,17 +175,17 @@ namespace Api.Modules.Templates.Services.DataLayer
             {
                 var publishHistory = new PublishHistoryModel
                 {
-                    Templateid = (int)row.Field<long>("template_id"),
+                    Templateid = row.Field<int>("template_id"),
                     ChangedOn = row.Field<DateTime>("changed_on"),
                     ChangedBy = row.Field<string>("changed_by"),
                     PublishLog = new PublishLogModel(
-                        row.Field<long>("template_id"),
-                        row.Field<long>("old_live"),
-                        row.Field<long>("old_accept"),
-                        row.Field<long>("old_test"),
-                        row.Field<long>("new_live"),
-                        row.Field<long>("new_accept"),
-                        row.Field<long>("new_test")
+                        row.Field<int>("template_id"),
+                        row.Field<int>("old_live"),
+                        row.Field<int>("old_accept"),
+                        row.Field<int>("old_test"),
+                        row.Field<int>("new_live"),
+                        row.Field<int>("new_accept"),
+                        row.Field<int>("new_test")
                     )
                 };
 

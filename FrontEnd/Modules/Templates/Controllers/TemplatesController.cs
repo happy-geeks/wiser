@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using Api.Modules.Templates.Models.Preview;
 using Api.Modules.Templates.Models.Template;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Modules.Base.Models;

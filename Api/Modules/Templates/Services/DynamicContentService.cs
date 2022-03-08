@@ -12,6 +12,7 @@ using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
+using Api.Modules.Templates.Models.Other;
 using GeeksCoreLibrary.Components.Account;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 
@@ -21,13 +22,15 @@ namespace Api.Modules.Templates.Services
     public class DynamicContentService : IDynamicContentService, IScopedService
     {
         private readonly IDynamicContentDataService dataService;
+        private readonly IHistoryService historyService;
 
         /// <summary>
         /// Creates a new instance of <see cref="DynamicContentService"/>.
         /// </summary>
-        public DynamicContentService(IDynamicContentDataService dataService)
+        public DynamicContentService(IDynamicContentDataService dataService, IHistoryService historyService)
         {
             this.dataService = dataService;
+            this.historyService = historyService;
         }
 
         /// <inheritdoc />
@@ -150,7 +153,7 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<DynamicContentOverviewModel>> GetMetaDataAsync(int contentId)
+        public async Task<ServiceResult<DynamicContentOverviewModel>> GetMetaDataAsync(int contentId, bool includeSettings = true)
         {
             if (contentId <= 0)
             {
@@ -171,7 +174,13 @@ namespace Api.Modules.Templates.Services
                 };
             }
 
-            result.Data = (await dataService.GetComponentDataAsync(contentId)).Value;
+            result.Versions = await historyService.GetHistoryVersionsOfDynamicContent(contentId);
+
+            if (includeSettings)
+            {
+                result.Data = (await dataService.GetComponentDataAsync(contentId)).Value;
+            }
+
             return new ServiceResult<DynamicContentOverviewModel>
             {
                 StatusCode = HttpStatusCode.OK,
@@ -187,6 +196,39 @@ namespace Api.Modules.Templates.Services
             {
                 StatusCode = HttpStatusCode.NoContent
             };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<PublishedEnvironmentModel>> GetEnvironmentsAsync(int contentId)
+        {
+            if (contentId <= 0)
+            {
+                throw new ArgumentException("The Id cannot be zero.");
+            }
+
+            var versionsAndPublished = await dataService.GetPublishedEnvironmentsAsync(contentId);
+            
+            return new ServiceResult<PublishedEnvironmentModel>(PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int contentId, int version, string environment, PublishedEnvironmentModel currentPublished)
+        {
+            if (contentId <= 0)
+            {
+                throw new ArgumentException("The Id is invalid");
+            }
+
+            if (version <= 0)
+            {
+                throw new ArgumentException("The version is invalid");
+            }
+            
+            var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
+
+            var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(contentId, currentPublished, newPublished);
+
+            return new ServiceResult<int>(await dataService.UpdatePublishedEnvironmentAsync(contentId, newPublished, publishLog, IdentityHelpers.GetUserName(identity)));
         }
     }
 }
