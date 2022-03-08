@@ -4,15 +4,15 @@ namespace Api.Modules.Templates.Models.Template
 {
     public class PublishLogModel
     {
-        public Int64 Id { get; set; }
+        public int Id { get; set; }
 
-        public Int64 OldLive { get; set; }
-        public Int64 OldAccept { get; set; }
-        public Int64 OldTest { get; set; }
+        public int OldLive { get; set; }
+        public int OldAccept { get; set; }
+        public int OldTest { get; set; }
 
-        public Int64 NewLive { get; set; }
-        public Int64 NewAccept { get; set; }
-        public Int64 NewTest { get; set; }
+        public int NewLive { get; set; }
+        public int NewAccept { get; set; }
+        public int NewTest { get; set; }
 
         public PublishLogModel()
         {
@@ -26,7 +26,7 @@ namespace Api.Modules.Templates.Models.Template
         /// <param name="oldLive">The version number of the current version on the Live environment.</param>
         /// <param name="oldAccept">The version number of the current version on the Accept environment.</param>
         /// <param name="oldTest">The version number of the current version on the Test environment.</param>
-        public PublishLogModel(Int64 id, Int64 oldLive, Int64 oldAccept, Int64 oldTest)
+        public PublishLogModel(int id, int oldLive, int oldAccept, int oldTest)
         {
             this.Id = id;
             this.OldLive = oldLive;
@@ -47,7 +47,7 @@ namespace Api.Modules.Templates.Models.Template
         /// <param name="newLive">The version number that is being published on the Live environment.</param>
         /// <param name="newAccept">The version number that is being published on the Accept environment.</param>
         /// <param name="newTest">The version number that is being published on the Test environment.</param>
-        public PublishLogModel(Int64 id, Int64 oldLive, Int64 oldAccept, Int64 oldTest, Int64 newLive, Int64 newAccept, Int64 newTest)
+        public PublishLogModel(int id, int oldLive, int oldAccept, int oldTest, int newLive, int newAccept, int newTest)
         {
             this.Id = id;
             this.OldLive = oldLive;

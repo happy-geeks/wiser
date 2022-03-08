@@ -802,6 +802,43 @@ const moduleSettings = {
                     dataSource: dataSource
                 });
             }
+
+            // Pre load query field for HTML templates.
+            const preLoadQueryField = $("#preLoadQuery");
+            if (preLoadQueryField.length > 0) {
+                // Initialize Code Mirror.
+                await Misc.ensureCodeMirror();
+                const codeMirrorInstance = CodeMirror.fromTextArea(preLoadQueryField[0], {
+                    lineNumbers: true,
+                    indentUnit: 4,
+                    lineWrapping: true,
+                    foldGutter: true,
+                    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
+                    lint: true,
+                    extraKeys: {
+                        "Ctrl-Q": (sender) => {
+                            sender.foldCode(sender.getCursor());
+                        },
+                        "F11": (sender) => {
+                            sender.setOption("fullScreen", !sender.getOption("fullScreen"));
+                        },
+                        "Esc": (sender) => {
+                            if (sender.getOption("fullScreen")) sender.setOption("fullScreen", false);
+                        },
+                        "Ctrl-Space": "autocomplete"
+                    },
+                    mode: preLoadQueryField.data("editorType")
+                });
+
+                preLoadQueryField.data("CodeMirrorInstance", codeMirrorInstance);
+            }
+
+            const advancedSettingsToggle = $("#advanced");
+            advancedSettingsToggle.change((event) => {
+                if (advancedSettingsToggle.prop("checked") && preLoadQueryField.length > 0) {
+                    preLoadQueryField.data("CodeMirrorInstance").refresh();
+                }
+            });
         }
 
         //Initialize display variable for the fields containing objects and dates within the grid.
@@ -1262,6 +1299,11 @@ const moduleSettings = {
          * */
         getNewSettings() {
             const settingsList = {};
+
+            const preLoadQueryField = $("#preLoadQuery");
+            if (preLoadQueryField.length > 0) {
+                settingsList.preLoadQuery = preLoadQueryField.data("CodeMirrorInstance").getValue();
+            }
 
             $(".advanced input, .advanced select").each((index, element) => {
                 const field = $(element);

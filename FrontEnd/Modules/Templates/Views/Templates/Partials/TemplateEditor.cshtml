@@ -1,6 +1,5 @@
 ﻿@model FrontEnd.Modules.Templates.Models.DevelopmentTabViewModel
 <div class="item" style="width: 100%;">
-    <span class="handler">&nbsp;</span>
     <h4><label for="editor">Template (@Model.TemplateSettings.Type.ToString())</label></h4>
     <textarea class="editor" rows="10" cols="30" id="editor" data-editor-type="@Model.EditorType">@Model.TemplateSettings.EditorValue</textarea>
     <div class="form-hint"><span></span></div>
