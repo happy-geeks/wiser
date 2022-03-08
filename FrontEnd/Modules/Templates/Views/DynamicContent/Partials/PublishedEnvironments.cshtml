@@ -1,0 +1,48 @@
+﻿@{
+    var versionList = Model.Versions.VersionList;
+}
+@model Api.Modules.Templates.Models.DynamicContent.DynamicContentOverviewModel
+<div id="published-environments-dynamic-component" class="item version-block" style="width: 100%">
+    <h4><label>@Model.Title (@Model.Id). Versie @Model.LatestVersion. Laatst gewijzigd door '@Model.ChangedBy' op @Model.ChangedOn</label></h4>
+
+    <div class="formview full">
+        <div class="item version-live">
+            <div class="flex-container">
+                <select class="combo-select" placeholder="Maak uw keuze...">
+                    @foreach (var version in versionList)
+                    {
+                        <!option value="@version" @(version == Model.Versions.LiveVersion ? "selected" : "")>@version</!option>
+                    }
+                </select>
+
+                <button id="deployLiveComponent" class="k-primary">Deploy naar live</button>
+            </div>
+        </div>
+
+        <div class="item version-accept">
+            <div class="flex-container">
+                <select class="combo-select" placeholder="Maak uw keuze...">
+                    @foreach (var version in versionList)
+                    {
+                        <!option value="@version" @(version == Model.Versions.AcceptVersion ? "selected" : "")>@version</!option>
+                    }
+                </select>
+
+                <button id="deployAcceptComponent" class="k-primary">Deploy naar acceptatie</button>
+            </div>
+        </div>
+
+        <div class="item version-test">
+            <div class="flex-container">
+                <select class="combo-select" placeholder="Maak uw keuze...">
+                    @foreach (var version in versionList)
+                    {
+                        <!option value="@version" @(version == Model.Versions.TestVersion ? "selected" : "")>@version</!option>
+                    }
+                </select>
+
+                <button id="deployTestComponent" class="k-primary">Deploy naar test</button>
+            </div>
+        </div>
+    </div>
+</div>

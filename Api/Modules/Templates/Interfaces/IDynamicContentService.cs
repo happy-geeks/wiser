@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Templates.Models.DynamicContent;
+using Api.Modules.Templates.Models.Other;
 
 namespace Api.Modules.Templates.Interfaces
 {
@@ -63,8 +64,9 @@ namespace Api.Modules.Templates.Interfaces
         /// Gets the meta data (name, component mode etc) for a component.
         /// </summary>
         /// <param name="contentId">The ID of the dynamic content.</param>
+        /// <param name="includeSettings">Optional: Whether or not to include the settings that are saved with the component. Default value is <see langword="true" />.</param>
         /// <returns></returns>
-        Task<ServiceResult<DynamicContentOverviewModel>> GetMetaDataAsync(int contentId);
+        Task<ServiceResult<DynamicContentOverviewModel>> GetMetaDataAsync(int contentId, bool includeSettings = true);
         
         /// <summary>
         /// Links a dynamic content to a template.
@@ -73,5 +75,24 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="contentId">The ID of the dynamic content.</param>
         /// <param name="templateId">The ID of the template.</param>
         Task<ServiceResult<bool>> AddLinkToTemplateAsync(ClaimsIdentity identity, int contentId, int templateId);
+        
+        /// <summary>
+        /// Get the dynamic component environments. This will retrieve a list of versions and their published environments and convert it to a PublishedEnvironmentModel 
+        /// containing the Live, accept and test versions and the list of other versions that are present in the data.
+        /// </summary>
+        /// <param name="contentId">The id of the dynamic component to retrieve the environments of.</param>
+        /// <returns>A model containing the versions that are currently set for the live, accept and test environment.</returns>
+        Task<ServiceResult<PublishedEnvironmentModel>> GetEnvironmentsAsync(int contentId);
+        
+        /// <summary>
+        /// Publish a dynamic component version to a new environment using a content/component id. This requires you to provide a model with the current published state.
+        /// This method will use a generated change log to determine the environments that need to be changed. In some cases publishing an environment will also publish underlaying environments.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="contentId">The id of the template to publish.</param>
+        /// <param name="version">The version of the template to publish.</param>
+        /// <param name="environment">The environment to publish the template to.</param>
+        /// <param name="currentPublished">A PublishedEnvironmentModel containing the current published templates.</param>
+        Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int contentId, int version, string environment, PublishedEnvironmentModel currentPublished);
     }
 }

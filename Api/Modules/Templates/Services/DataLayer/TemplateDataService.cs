@@ -103,7 +103,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.grouping_key_column_name,
                                                                 template.grouping_value_column_name,
                                                                 template.is_scss_include_template,
-                                                                template.use_in_wiser_html_editors
+                                                                template.use_in_wiser_html_editors,
+                                                                template.pre_load_query
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
                                                             WHERE template.template_id = ?templateId
                                                             AND template.removed = 0
@@ -154,7 +155,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                 LinkedTemplates = new LinkedTemplatesModel
                 {
                     RawLinkList = dataTable.Rows[0].Field<string>("linked_templates")
-                }
+                },
+                PreLoadQuery = dataTable.Rows[0].Field<string>("pre_load_query")
             };
 
             return templateData;
@@ -394,6 +396,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("isScssIncludeTemplate", templateSettings.IsScssIncludeTemplate);
             clientDatabaseConnection.AddParameter("useInWiserHtmlEditors", templateSettings.UseInWiserHtmlEditors);
             clientDatabaseConnection.AddParameter("templateLinks", templateLinks);
+            clientDatabaseConnection.AddParameter("preLoadQuery", templateSettings.PreLoadQuery);
 
             return await clientDatabaseConnection.ExecuteAsync($@"
                 SET @VersionNumber = (SELECT MAX(version)+1 FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId GROUP BY template_id);
@@ -433,7 +436,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                     grouping_key_column_name,
                     grouping_value_column_name,
                     is_scss_include_template,
-                    use_in_wiser_html_editors
+                    use_in_wiser_html_editors,
+                    pre_load_query
                 ) 
                 VALUES (
                     ?name,
@@ -471,7 +475,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ?groupingKeyColumnName,
                     ?groupingValueColumnName,
                     ?isScssIncludeTemplate,
-                    ?useInWiserHtmlEditors
+                    ?useInWiserHtmlEditors,
+                    ?preLoadQuery
                 )");
         }
 
@@ -805,7 +810,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                             template.grouping_key_column_name,
                                                                             template.grouping_value_column_name,
                                                                             template.is_scss_include_template,
-                                                                            template.use_in_wiser_html_editors
+                                                                            template.use_in_wiser_html_editors,
+                                                                            template.pre_load_query
                                                                         FROM {WiserTableNames.WiserTemplate} AS template
                                                                         LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
                                                                         LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
@@ -865,7 +871,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                     LinkedTemplates = new LinkedTemplatesModel
                     {
                         RawLinkList = dataRow.Field<string>("linked_templates")
-                    }
+                    },
+                    PreLoadQuery = dataRow.Field<string>("pre_load_query")
                 });
             }
 

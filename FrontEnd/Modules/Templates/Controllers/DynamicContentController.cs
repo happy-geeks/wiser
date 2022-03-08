@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using Api.Modules.Templates.Helpers;
@@ -12,9 +11,6 @@ using FrontEnd.Modules.Templates.Models;
 using GeeksCoreLibrary.Core.Cms;
 using GeeksCoreLibrary.Core.Cms.Attributes;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.OpenApi.Extensions;
-using Newtonsoft.Json.Linq;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace FrontEnd.Modules.Templates.Controllers
 {
@@ -84,6 +80,11 @@ namespace FrontEnd.Modules.Templates.Controllers
             return PartialView("Partials/DynamicContentHistoryPane", viewModel);
         }
 
+        [HttpPost, Route("PublishedEnvironments")]
+        public IActionResult PublishedEnvironments([FromBody]DynamicContentOverviewModel tabViewData)
+        {
+            return PartialView("Partials/PublishedEnvironments", tabViewData);
+        }
         
         /// <summary>
         /// Get all possible components. These components should are retrieved from the assembly and should have the basetype CmsComponent&lt;CmsSettings, Enum&gt;

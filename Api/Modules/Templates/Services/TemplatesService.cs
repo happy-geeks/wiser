@@ -69,11 +69,12 @@ namespace Api.Modules.Templates.Services
         private readonly IRazorViewEngine razorViewEngine;
         private readonly ITempDataProvider tempDataProvider;
         private readonly IObjectsService objectsService;
+        private readonly IDatabaseHelpersService databaseHelpersService;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -88,6 +89,7 @@ namespace Api.Modules.Templates.Services
             this.razorViewEngine = razorViewEngine;
             this.tempDataProvider = tempDataProvider;
             this.objectsService = objectsService;
+            this.databaseHelpersService = databaseHelpersService;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -2389,10 +2391,8 @@ LIMIT 1";
             }
 
             var versionsAndPublished = await templateDataService.GetPublishedEnvironmentsAsync(templateId);
-
-            var helper = new PublishedEnvironmentHelper();
-
-            return new ServiceResult<PublishedEnvironmentModel>(helper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
+            
+            return new ServiceResult<PublishedEnvironmentModel>(PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
         }
 
         /// <inheritdoc />
@@ -2508,12 +2508,10 @@ LIMIT 1";
             {
                 throw new ArgumentException("The version is invalid");
             }
+            
+            var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
-            var helper = new PublishedEnvironmentHelper();
-
-            var newPublished = helper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
-
-            var publishLog = helper.GeneratePublishLog(templateId, currentPublished, newPublished);
+            var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
             return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, newPublished, publishLog, IdentityHelpers.GetUserName(identity)));
         }
@@ -2610,6 +2608,17 @@ LIMIT 1";
         /// <inheritdoc />
         public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(int parentId)
         {
+            // Make sure the tables are up-to-date.
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
+            {
+                WiserTableNames.WiserTemplate, 
+                WiserTableNames.WiserDynamicContent, 
+                WiserTableNames.WiserTemplateDynamicContent,
+                WiserTableNames.WiserTemplatePublishLog,
+                WiserTableNames.WiserPreviewProfiles,
+                WiserTableNames.WiserDynamicContentPublishLog
+            });
+
             // Make sure the ordering is correct.
             await templateDataService.FixTreeViewOrderingAsync(parentId);
 
@@ -2819,7 +2828,10 @@ LIMIT 1";
             var ombouw = (!queryString.ContainsKey("ombouw") || !String.Equals(queryString["ombouw"].ToString(), "false", StringComparison.OrdinalIgnoreCase)) && !String.Equals(requestModel.PreviewVariables.FirstOrDefault(v => String.Equals(v.Key, "ombouw", StringComparison.OrdinalIgnoreCase))?.Value, "false", StringComparison.OrdinalIgnoreCase);
 
             var contentToWrite = new StringBuilder();
-
+            
+            // Execute the pre load query before any replacements are being done and before any dynamic components are handled.
+            await gclTemplatesService.ExecutePreLoadQueryAndRememberResultsAsync(new Template { PreLoadQuery = requestModel.TemplateSettings.PreLoadQuery });
+            
             // Header template.
             if (ombouw)
             {

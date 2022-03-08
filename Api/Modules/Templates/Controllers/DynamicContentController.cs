@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Modules.Templates.Interfaces;
@@ -34,9 +35,9 @@ namespace Api.Modules.Templates.Controllers
         [HttpGet, Route("{id:int}")]
         [ProducesResponseType(typeof(DynamicContentOverviewModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Get(int id)
+        public async Task<IActionResult> Get(int id, bool includeSettings = true)
         {
-            return (await dynamicContentService.GetMetaDataAsync(id)).GetHttpResponseMessage();
+            return (await dynamicContentService.GetMetaDataAsync(id, includeSettings)).GetHttpResponseMessage();
         }
         
         [HttpGet, Route("{name}/component-modes")]
@@ -108,6 +109,22 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> GenerateHtmlForComponentAsync(int componentId, GenerateTemplatePreviewRequestModel requestModel)
         {
             return (await templatesService.GeneratePreviewAsync((ClaimsIdentity)User.Identity, componentId, requestModel)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Publish a dynamic component to a new environment. If moved forward the lower environments will also be moved.
+        /// </summary>
+        /// <param name="contentId">The id of the dynamic component to publish.</param>
+        /// <param name="version">The version of the dynamic component to publish.</param>
+        /// <param name="environment">The environment to push the dynamic component version to. This will be converted to a PublishedEnvironmentEnum.</param>
+        /// <returns>The number of affected rows.</returns>
+        [HttpPost, Route("{contentId:int}/publish/{environment}/{version:int}"), ProducesResponseType(typeof(LinkedTemplatesModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> PublishToEnvironmentAsync(int contentId, string environment, int version)
+        {
+            var currentPublished = await dynamicContentService.GetEnvironmentsAsync(contentId);
+            return currentPublished.StatusCode != HttpStatusCode.OK 
+                ? currentPublished.GetHttpResponseMessage() 
+                : (await dynamicContentService.PublishToEnvironmentAsync((ClaimsIdentity)User.Identity, contentId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
         }
     }
 }
