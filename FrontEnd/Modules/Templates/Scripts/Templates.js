@@ -56,6 +56,7 @@ const moduleSettings = {
             this.newContentId = 0;
             this.newContentTitle = null;
             this.saving = false;
+            this.historyLoaded = false;
 
             this.templateTypes = Object.freeze({
                 "UNKNOWN": 0,
@@ -337,8 +338,13 @@ const moduleSettings = {
         }
 
         onMainTabStripActivate(event) {
-            if (event && event.item && event.item.textContent && event.item.textContent.toLowerCase() === "preview") {
-                this.preview.generatePreview();
+            switch (this.mainTabStrip.select().data("name")) {
+                case "preview":
+                    this.preview.generatePreview();
+                    break;
+                case "history":
+                    this.reloadHistoryTab();
+                    break;
             }
         }
 
@@ -387,6 +393,8 @@ const moduleSettings = {
             }
 
             this.selectedId = dataItem.id;
+            this.historyLoaded = false;
+            this.onMainTabStripActivate();
 
             if (dataItem.isFolder) {
                 return;
@@ -503,11 +511,6 @@ const moduleSettings = {
                         url: `${this.settings.wiserApiRoot}templates/${id}/linked-templates`,
                         dataType: "json",
                         method: "GET"
-                    }),
-                    Wiser2.api({
-                        url: `${this.settings.wiserApiRoot}templates/${id}/history`,
-                        dataType: "json",
-                        method: "GET"
                     })
                 ];
 
@@ -533,18 +536,6 @@ const moduleSettings = {
                         document.getElementById("developmentTab").innerHTML = response;
                         this.initKendoDeploymentTab();
                         this.bindDeployButtons(id);
-                    })
-                );
-
-                // History
-                promises.push(
-                    Wiser2.api({
-                        method: "POST",
-                        contentType: "application/json",
-                        url: "/Modules/Templates/HistoryTab",
-                        data: JSON.stringify(templateHistory)
-                    }).then((response) => {
-                        document.getElementById("historyTab").innerHTML = response;
                     })
                 );
 
@@ -1046,7 +1037,8 @@ const moduleSettings = {
             });
 
             window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
-            await this.reloadTabs(templateId);
+            this.historyLoaded = false;
+            await this.reloadMetaData(templateId);
         }
 
         //Save the template data
@@ -1187,7 +1179,8 @@ const moduleSettings = {
                 });
 
                 window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
-                await this.reloadTabs(this.selectedId);
+                this.historyLoaded = false;
+                await this.reloadMetaData(this.selectedId);
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
@@ -1203,46 +1196,63 @@ const moduleSettings = {
          * Reloads the publishedEnvironments and history of the template.
          * @param {any} templateId The ID of the template.
          */
-        async reloadTabs(templateId) {
-            let promises = [
-                Wiser2.api({
-                    url: `${this.settings.wiserApiRoot}templates/${templateId}/meta`,
-                    dataType: "json",
-                    type: "GET",
-                    contentType: "application/json"
-                }),
-                Wiser2.api({
+        async reloadMetaData(templateId) {
+            const templateMetaData = await Wiser2.api({
+                url: `${this.settings.wiserApiRoot}templates/${templateId}/meta`,
+                dataType: "json",
+                type: "GET",
+                contentType: "application/json"
+            });
+            
+            const response = await Wiser2.api({
+                method: "POST",
+                contentType: "application/json",
+                url: "/Modules/Templates/PublishedEnvironments",
+                data: JSON.stringify(templateMetaData)
+            });
+            
+            document.querySelector("#published-environments").outerHTML = response;
+            $("#deployLive, #deployAccept, #deployTest").kendoButton();
+            $("#published-environments .combo-select").kendoDropDownList();
+            this.bindDeployButtons(templateId);
+        }
+        
+        /**
+         * Reloads history of the template.
+         * @param {any} templateId The ID of the template.
+         */
+        async reloadHistoryTab(templateId) {
+            if (this.historyLoaded) {
+                return;
+            }
+
+            templateId = templateId || this.selectedId;
+            this.historyLoaded = true;
+            
+            const process = `reloadHistoryTab_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                const templateHistory = await Wiser2.api({
                     url: `${this.settings.wiserApiRoot}templates/${templateId}/history`,
                     dataType: "json",
                     method: "GET"
-                })
-            ];
+                });
 
-            const [templateMetaData, templateHistory] = await Promise.all(promises);
-
-            promises = [
-                Wiser2.api({
-                    method: "POST",
-                    contentType: "application/json",
-                    url: "/Modules/Templates/PublishedEnvironments",
-                    data: JSON.stringify(templateMetaData)
-                }).then((response) => {
-                    document.querySelector("#published-environments").outerHTML = response;
-                    $("#deployLive, #deployAccept, #deployTest").kendoButton();
-                    $("#published-environments .combo-select").kendoDropDownList();
-                    this.bindDeployButtons(templateId);
-                }),
-                Wiser2.api({
+                const historyTab = await Wiser2.api({
                     method: "POST",
                     contentType: "application/json",
                     url: "/Modules/Templates/HistoryTab",
                     data: JSON.stringify(templateHistory)
-                }).then((response) => {
-                    document.getElementById("historyTab").innerHTML = response;
-                })
-            ];
+                });
 
-            await Promise.all(promises);
+                document.getElementById("historyTab").innerHTML = historyTab;
+            } catch (exception) {
+                kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                console.error(exception);
+            }
+
+            window.processing.removeProcess(process);
         }
 
         /**
