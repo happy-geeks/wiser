@@ -1392,7 +1392,7 @@ const moduleSettings = {
             const settingsList = {};
 
             const preLoadQueryField = $("#preLoadQuery");
-            if (preLoadQueryField.length > 0) {
+            if (preLoadQueryField.length > 0 && preLoadQueryField.data("CodeMirrorInstance")) {
                 settingsList.preLoadQuery = preLoadQueryField.data("CodeMirrorInstance").getValue();
             }
 
