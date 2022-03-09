@@ -483,6 +483,7 @@ namespace Api.Core.Services
             CommandForReading?.Dispose();
             ConnectionForWriting?.Dispose();
             CommandForWriting?.Dispose();
+            WiserDatabaseConnection?.Dispose();
         }
 
         /// <summary>
