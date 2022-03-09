@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
@@ -2938,6 +2939,321 @@ LIMIT 1";
             var finalResult = writer.GetStringBuilder().ToString();
             finalResult = finalResult.ReplaceCaseInsensitive("<head>", $"<head><base href='{AddMainDomainToUrl("/", mainDomain)}'>");
             return new ServiceResult<string>(finalResult);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplates()
+        {
+            // Make sure the tables are up-to-date.
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
+            {
+                WiserTableNames.WiserTemplate, 
+                WiserTableNames.WiserDynamicContent, 
+                WiserTableNames.WiserTemplateDynamicContent,
+                WiserTableNames.WiserTemplatePublishLog,
+                WiserTableNames.WiserPreviewProfiles,
+                WiserTableNames.WiserDynamicContentPublishLog
+            });
+
+            // Check if the tables are actually empty, otherwise we can't be sure that the conversion will be done correctly.
+            var dataTable = await clientDatabaseConnection.GetAsync($"SELECT COUNT(*) FROM {WiserTableNames.WiserTemplate}");
+            if (Convert.ToInt32(dataTable.Rows[0][0]) > 0)
+            {
+                return new ServiceResult<bool>
+                {
+                    ErrorMessage = $"The table {WiserTableNames.WiserTemplate} is not empty. It should be empty before attempting this, to prevent errors and duplicate templates.",
+                    StatusCode = HttpStatusCode.Conflict
+                };
+            }
+            
+            dataTable = await clientDatabaseConnection.GetAsync($"SELECT COUNT(*) FROM {WiserTableNames.WiserDynamicContent}");
+            if (Convert.ToInt32(dataTable.Rows[0][0]) > 0)
+            {
+                return new ServiceResult<bool>
+                {
+                    ErrorMessage = $"The table {WiserTableNames.WiserDynamicContent} is not empty. It should be empty before attempting this, to prevent errors and duplicate templates.",
+                    StatusCode = HttpStatusCode.Conflict
+                };
+            }
+
+            // Check if the legacy tables actually exist in the database.
+            if (!await databaseHelpersService.TableExistsAsync("easy_items") || !await databaseHelpersService.TableExistsAsync("easy_templates") || !await databaseHelpersService.TableExistsAsync("easy_dynamiccontent"))
+            {
+                return new ServiceResult<bool>
+                {
+                    ErrorMessage = "One or more of the tables 'easy_items', 'easy_templates' and 'easy_dynamiccontent' don't exist, so we have nothing to convert.",
+                    StatusCode = HttpStatusCode.Conflict
+                };
+            }
+
+            // Copy easy_templates to wiser_template, but only the versions that are actually still used, we don't need the entire history.
+            var query = @"
+SELECT
+	IF(item.parent_id <= 0, NULL, item.parent_id) AS parent_id,
+	item.name AS template_name,
+	IFNULL(template.html, template.template) AS template_data,
+	template.html_minified AS template_data_minified,
+    CONCAT_WS('/', '', parent9.name, parent8.name, parent7.name, parent6.name, parent5.name, parent4.name, parent3.name, parent2.name, parent1.name, '') AS path,
+	IFNULL(template.version, 1) AS version,
+	item.id AS template_id,
+	IFNULL(item.lastchangedate, item.createdon) AS changed_on,
+	IFNULL(item.lastchangedby, item.createdby) AS changed_by,
+	IF(template.istest = 1, 2, 0) + IF(template.isacceptance = 1, 4, 0) + IF(template.islive = 1, 8, 0) AS published_environment,
+	template.usecache AS use_cache,
+	template.cacheminutes AS cache_minutes,
+	template.handlerequest AS handle_request,
+	template.handlesession AS handle_session,
+	template.handleobjects AS handle_objects,
+	template.handlestandards AS handle_standards,
+	template.handletranslations AS handle_translations,
+	template.handledynamiccontent AS handle_dynamic_content,
+	template.handlelogicblocks AS handle_logic_blocks,
+	template.handlemutators AS handle_mutators,
+	template.issecure AS login_required,
+	template.securedsessionprefix AS login_session_prefix,
+	CONCAT_WS(',', template.jstemplates, template.csstemplates) AS linked_templates,
+	item.volgnr AS ordering,
+	template.pagemode AS insert_mode,
+	template.loadalways AS load_always,
+	template.urlregex AS url_regex,
+	template.externalfiles AS external_files,
+	template.groupingCreateObjectInsteadOfArray AS grouping_create_object_instead_of_array,
+	template.groupingprefix AS grouping_prefix,
+	template.groupingkey AS grouping_key,
+	template.groupingKeyColumnName AS grouping_key_column_name,
+	template.groupingValueColumnName AS grouping_value_column_name,
+	template.isscssincludetemplate AS is_scss_include_template,
+	template.useinwiserhtmleditors AS use_in_wiser_html_editors,
+    template.defaulttemplate AS wiser_cdn_templates,
+    template.templatetype AS type,
+    item.ismap AS is_directory
+FROM easy_items AS item
+LEFT JOIN easy_templates AS template ON template.itemid = item.id
+LEFT JOIN easy_items AS parent1 ON parent1.id = item.parent_id
+LEFT JOIN easy_items AS parent2 ON parent2.id = parent1.parent_id
+LEFT JOIN easy_items AS parent3 ON parent3.id = parent2.parent_id
+LEFT JOIN easy_items AS parent4 ON parent4.id = parent3.parent_id
+LEFT JOIN easy_items AS parent5 ON parent5.id = parent4.parent_id
+LEFT JOIN easy_items AS parent6 ON parent6.id = parent5.parent_id
+LEFT JOIN easy_items AS parent7 ON parent7.id = parent6.parent_id
+LEFT JOIN easy_items AS parent8 ON parent8.id = parent7.parent_id
+LEFT JOIN easy_items AS parent9 ON parent9.id = parent8.parent_id
+JOIN (
+	SELECT item.id, MIN(deployedVersion.version) AS version
+	FROM easy_items AS item
+	LEFT JOIN easy_templates AS template ON template.itemid = item.id
+	LEFT JOIN easy_templates AS deployedVersion ON deployedVersion.itemid = template.itemid AND 1 IN (deployedVersion.istest, deployedVersion.isacceptance, deployedVersion.islive)
+	WHERE item.moduleid = 143
+	AND item.deleted = 0
+	AND item.published = 1
+	GROUP BY item.id
+) AS lowestVersionToConvert ON lowestVersionToConvert.id = item.id AND (template.id IS NULL OR template.version >= lowestVersionToConvert.version)
+WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
+
+            await using var reader = await clientDatabaseConnection.GetReaderAsync(query);
+            while (await reader.ReadAsync())
+            {
+                // Get template type.
+                var templateType = TemplateTypes.Directory;
+                if (!reader.GetBoolean("is_directory"))
+                {
+                    var path = reader.GetStringHandleNull("path");
+                    
+                    if (path.Contains("/html/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        templateType = TemplateTypes.Html;
+                    }
+                    else if (path.Contains("/css/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        templateType = TemplateTypes.Css;
+                    }
+                    else if (path.Contains("/scss/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        templateType = TemplateTypes.Scss;
+                    }
+                    else if (path.Contains("/scripts/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        templateType = TemplateTypes.Js;
+                    }
+                    else if (path.Contains("/query/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        templateType = TemplateTypes.Query;
+                    }
+                    else if (path.Contains("/ais/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        templateType = TemplateTypes.Xml;
+                    }
+                }
+
+                // Combine the wiser CDN files with the external files, because we don't use Wiser CDN anymore in Wiser 3.
+                var cdnDirectory = reader.GetStringHandleNull("type");
+                if (String.Equals(cdnDirectory, "js"))
+                {
+                    cdnDirectory = "scripts";
+                }
+
+                var externalFiles = reader.GetStringHandleNull("external_files");
+                var wiserCdnTemplates = reader.GetStringHandleNull("wiser_cdn_templates");
+                var allExternalFiles = externalFiles.Split(';').ToList();
+                allExternalFiles.AddRange(wiserCdnTemplates.Select(filename => $"https://app.wiser.nl/{cdnDirectory}/cdn/{filename}"));
+
+                externalFiles = String.Join(";", allExternalFiles);
+
+                var content = reader.GetStringHandleNull("template_data");
+                var minifiedContent = reader.GetStringHandleNull("template_data_minified");
+                
+                // Convert dynamic components placeholders from Wiser 1 to Wiser 3 format.
+                if (templateType == TemplateTypes.Html)
+                {
+                    content = ConvertDynamicComponentsFromLegacyToNewInHtml(content);
+                    minifiedContent = ConvertDynamicComponentsFromLegacyToNewInHtml(minifiedContent);
+                }
+
+                // TODO: Make method for converting legacy replacements (such as {title_htmlencode}) to GCL replacements (such as {title:HtmlEncode}).
+
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("parent_id", reader.GetValue("parent_id"));
+                clientDatabaseConnection.AddParameter("template_name", reader.GetValue("template_name"));
+                clientDatabaseConnection.AddParameter("template_data", content);
+                clientDatabaseConnection.AddParameter("template_data_minified", minifiedContent);
+                clientDatabaseConnection.AddParameter("template_type", templateType);
+                clientDatabaseConnection.AddParameter("version", reader.GetValue("version"));
+                clientDatabaseConnection.AddParameter("template_id", reader.GetValue("template_id"));
+                clientDatabaseConnection.AddParameter("changed_on", reader.GetValue("changed_on"));
+                clientDatabaseConnection.AddParameter("changed_by", reader.GetValue("changed_by"));
+                clientDatabaseConnection.AddParameter("published_environment", reader.GetValue("published_environment"));
+                clientDatabaseConnection.AddParameter("use_cache", reader.GetValue("use_cache"));
+                clientDatabaseConnection.AddParameter("cache_minutes", reader.GetValue("cache_minutes"));
+                clientDatabaseConnection.AddParameter("handle_request", reader.GetValue("handle_request"));
+                clientDatabaseConnection.AddParameter("handle_session", reader.GetValue("handle_session"));
+                clientDatabaseConnection.AddParameter("handle_objects", reader.GetValue("handle_objects"));
+                clientDatabaseConnection.AddParameter("handle_standards", reader.GetValue("handle_standards"));
+                clientDatabaseConnection.AddParameter("handle_translations", reader.GetValue("handle_translations"));
+                clientDatabaseConnection.AddParameter("handle_dynamic_content", reader.GetValue("handle_dynamic_content"));
+                clientDatabaseConnection.AddParameter("handle_logic_blocks", reader.GetValue("handle_logic_blocks"));
+                clientDatabaseConnection.AddParameter("handle_mutators", reader.GetValue("handle_mutators"));
+                clientDatabaseConnection.AddParameter("login_required", reader.GetValue("login_required"));
+                clientDatabaseConnection.AddParameter("login_session_prefix", reader.GetValue("login_session_prefix"));
+                clientDatabaseConnection.AddParameter("linked_templates", reader.GetValue("linked_templates"));
+                clientDatabaseConnection.AddParameter("ordering", reader.GetValue("ordering"));
+                clientDatabaseConnection.AddParameter("insert_mode", reader.GetValue("insert_mode"));
+                clientDatabaseConnection.AddParameter("load_always", reader.GetValue("load_always"));
+                clientDatabaseConnection.AddParameter("url_regex", reader.GetValue("url_regex"));
+                clientDatabaseConnection.AddParameter("external_files", externalFiles);
+                clientDatabaseConnection.AddParameter("grouping_create_object_instead_of_array", reader.GetValue("grouping_create_object_instead_of_array"));
+                clientDatabaseConnection.AddParameter("grouping_prefix", reader.GetValue("grouping_prefix"));
+                clientDatabaseConnection.AddParameter("grouping_key", reader.GetValue("grouping_key"));
+                clientDatabaseConnection.AddParameter("grouping_key_column_name", reader.GetValue("grouping_key_column_name"));
+                clientDatabaseConnection.AddParameter("grouping_value_column_name", reader.GetValue("grouping_value_column_name"));
+                clientDatabaseConnection.AddParameter("is_scss_include_template", reader.GetValue("is_scss_include_template"));
+                clientDatabaseConnection.AddParameter("use_in_wiser_html_editors", reader.GetValue("use_in_wiser_html_editors"));
+                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserTemplate, 0);
+
+                // Convert dynamic content.
+                if (templateType == TemplateTypes.Html)
+                {
+                    query = @"SELECT *
+                            FROM easy_dynamiccontent
+                            WHERE itemid = ?template_id
+                            AND version = ?version";
+                    dataTable = await clientDatabaseConnection.GetAsync(query);
+                    if (dataTable.Rows.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    var legacyComponentName = dataTable.Rows[0].Field<string>("freefield1");
+                    var legacySettingsJson = dataTable.Rows[0].Field<string>("filledvariables");
+                    var newSettings = ConvertDynamicComponentSettingsFromLegacyToNew(legacyComponentName, legacySettingsJson);
+                }
+            }
+
+            return new ServiceResult<bool>(true);
+        }
+
+        private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html)
+        {
+            var regex = new Regex(@"<img[^>]*?(?:data=['""](?<data>.*?)['""][^>]*?)?contentid=['""](?<contentid>\d+)['""][^>]*?\/?>");
+            var matches = regex.Matches(html);
+            foreach (Match match in matches)
+            {
+                if (!match.Success)
+                {
+                    continue;
+                }
+
+                var dataAttribute = match.Groups["data"].Value;
+                if (!String.IsNullOrWhiteSpace(dataAttribute))
+                {
+                    dataAttribute = $"data=\"{dataAttribute}\"";
+                }
+
+                var newElement = $"<div class=\"dynamic-content\" {dataAttribute} component-id=\"{match.Groups["contentId"].Value}\">";
+                html = html.Replace(match.Value, newElement);
+            }
+
+            return html;
+        }
+
+        private static string ConvertDynamicComponentSettingsFromLegacyToNew(string legacyComponentName, string legacySettingsJson)
+        {
+            string viewComponentName;
+            switch (legacyComponentName)
+            {
+                case "JuiceControlLibrary.MLSimpleMenu":
+                case "JuiceControlLibrary.SimpleMenu":
+                case "JuiceControlLibrary.ProductModule":
+                    {
+                        viewComponentName = "Repeater";
+                        break;
+                    }
+                case "JuiceControlLibrary.AccountWiser2":
+                    {
+                        viewComponentName = "Account";
+                        break;
+                    }
+                case "JuiceControlLibrary.ShoppingBasket":
+                    {
+                        viewComponentName = "ShoppingBasket";
+                        break;
+                    }
+                case "JuiceControlLibrary.WebPage":
+                    {
+                        viewComponentName = "WebPage";
+                        break;
+                    }
+                case "JuiceControlLibrary.Pagination":
+                    {
+                        viewComponentName = "Pagination";
+                        break;
+                    }
+                case "JuiceControlLibrary.DynamicFilter":
+                    {
+                        viewComponentName = "Filter";
+                        break;
+                    }
+                case "JuiceControlLibrary.Sendform":
+                    {
+                        viewComponentName = "WebForm";
+                        break;
+                    }
+                case "JuiceControlLibrary.Configurator":
+                {
+                    viewComponentName = "Configurator";
+                    break;
+                }
+                case "JuiceControlLibrary.DataSelectorParser":
+                {
+                    viewComponentName = "DataSelectorParser";
+                    break;
+                }
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(legacyComponentName), legacyComponentName);
+            }
+
+            // TODO: The main CmsSettingsModel of every component should have a method "ToSettingsModel", which will convert the legacy settings to the new settings. Use that.
+
+            return null;
         }
 
         /// <summary>
