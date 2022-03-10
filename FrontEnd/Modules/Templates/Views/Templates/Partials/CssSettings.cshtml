@@ -3,7 +3,7 @@
     <div class="item" data-label-style="float" data-label-width="0">
         <h4><label for="combo-cache">Cache</label></h4>
         <div class="flex-container">
-            <select id="combo-cache" class="combo-select" data-kendo-control="kendoDropDownList">
+            <select id="combo-cache" class="combo-select" data-kendo-control="kendoDropDownList" name="useCache">
                 <!option value="0" @(Model.UseCache == 0 ? "selected" : "")>geen caching</!option>
                 <!option value="2" @(Model.UseCache == 2 ? "selected" : "")>server caching volledige template (ongeacht URL)</!option>
                 <!option value="3" @(Model.UseCache == 3 ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL verschillend)</!option>
