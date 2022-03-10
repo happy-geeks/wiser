@@ -5,7 +5,6 @@
         <div class="flex-container">
             <select id="combo-cache" class="combo-select" data-kendo-control="kendoDropDownList">
                 <!option value="0" @(Model.UseCache == 0 ? "selected" : "")>geen caching</!option>
-                <!option value="1" @(Model.UseCache == 1 ? "selected" : "")>app caching (client side)</!option>
                 <!option value="2" @(Model.UseCache == 2 ? "selected" : "")>server caching volledige template (ongeacht URL)</!option>
                 <!option value="3" @(Model.UseCache == 3 ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL verschillend)</!option>
                 <!option value="4" @(Model.UseCache == 4 ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL + querystring combinatie verschillend)</!option>
