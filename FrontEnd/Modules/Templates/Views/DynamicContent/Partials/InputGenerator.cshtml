@@ -18,7 +18,7 @@
                         <!option value="@((int)value)" @(Convert.ToInt32(Model.Value) == (int)value ? "selected" : "")>@value.ToString()</!option>
                     }
                 </select>
-                <div class="form-hint"><span>@Model.CmsPropertyAttribute.Description</span></div>
+                <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
             </div>
             break;
 
@@ -29,7 +29,7 @@
                 <span class="k-widget k-input k-state-default">
                     <input type="text" id="@Model.Name" class="textField k-input" autocomplete="off" value="@Model.Value" data-property="@Model.Name">
                 </span>
-                <div class="form-hint"><span>@Model.CmsPropertyAttribute.Description</span></div>
+                <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
             </div>
             break;
 
@@ -46,7 +46,7 @@
             <div class="item @defaultValueClass" style="width: 50%;" data-label-style="normal" data-label-width="0" data-component-mode="@Model.CmsPropertyAttribute.ComponentMode">
                 <h4><label for="@Model.Name">@Model.PrettyName</label></h4>
                 <input id="@Model.Name" type="number" class="numeric" value="@Model.Value" min="0" step="1" autocomplete="off" data-property="@Model.Name" data-kendo-control="kendoNumericTextBox" />
-                <div class="form-hint"><span>@Model.CmsPropertyAttribute.Description</span></div>
+                <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
             </div>
             break;
 
@@ -54,7 +54,7 @@
             <div class="item @defaultValueClass" style="width: 100%;" data-label-style="normal" data-label-width="0" data-component-mode="@Model.CmsPropertyAttribute.ComponentMode">
                 <h4><label for="@Model.Name">@Model.PrettyName</label></h4>
                 <div class="form-hint">
-                    <span>@Model.CmsPropertyAttribute.Description</span><br />
+                    @Html.Raw(Model.CmsPropertyAttribute.Description)<br />
                     <span>For each layer that you add, you need to have a column in your query named "idN", where "N" is the depth number (starting with 1).</span><br/>
                     <span>Layer 0 is a special case; If you only have a single layer, then layer 0 is the one and only layer that you need. If you have more than 1 layers, then layer 0 is where you can add a global header, footer and no-data template. Layer 1 and higher are the templates that correspond with the layers that the query returns.</span>
                 </div>

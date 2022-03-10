@@ -82,6 +82,11 @@ namespace FrontEnd.Modules.Templates.Services
                         value = defaultValueAttribute.Value;
                         isDefaultValue = true;
                     }
+                    else
+                    {
+                        value = property.GetValue(Activator.CreateInstance(property.DeclaringType));
+                        isDefaultValue = value != null && (value is not string v || !String.IsNullOrEmpty(v));
+                    }
                 }
 
                 var field = new FieldViewModel
