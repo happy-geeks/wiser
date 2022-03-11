@@ -54,7 +54,7 @@ Wiser v3. This includes the API and the front-end projects.
 
 ```
 
-#### Database
+# Database
 Wiser requires a certain database structure to work, several tables and triggers are required. At the moment, we only support MySQL, but other databases might be added in the future. Wiser requires MySQL 5.7 or higher to work, because it uses JSON functions and those have been added in MySQL 5.7.
 
 Please note that this script does not work with MySQL 8 users. For this to work you need to set the authentication plugin if your database user to "mysql_native_password". This is because the node package we use for MySQL does not support this yet.
@@ -82,7 +82,7 @@ We have several SQL scripts to create these tables and add the minimum amount of
 
 The scripts `InsertInitialDataConfigurator.sql` and `InsertInitialDataEcommerce.sql` can be used if you want to run a website that uses the GeeksCoreLibrary that can be managed in Wiser. If you have a website with a webshop, run `InsertInitialDataEcommerce.sql` and if you have a website with a product configurator, run `InsertInitialDataConfigurator.sql` to setup Wiser to work with those kinds of websites.
 
-## Debugging
+# Debugging
 1. Open PowerShell/CMS Window in the directory that contains the `FrontEnd.csproj` file (__NOT__ the root directory, that contains the `WiserCore.sln` file!).
 1. Run the command `node_modules\.bin\webpack --w --mode=development`. This will make webpack watch your javascript and automatically rebuild them when needed, so you don't have to rebuild it manully every time.
 1. To make debugging a little easier, you can setup Visual Studio to always start both the API and FrontEnd projects at the same time. You can do this by right clicking the solution and then `Properties`. Then go to `Common Properties --> Startup Project` and choose `Multiple startup projects`. Then set both `Api` and `FrontEnd` to `Start` and click `OK`.
@@ -147,3 +147,11 @@ So if someone has all permissions, you need to enter the value 1 + 2 + 4 + 8 = 1
 You can link users to one or more roles via `wiser_user_roles`. If a user has multiple roles with different permissions, all permissions of all roles are valid. So if the user has a role that allows them to only see an item and a role that allows them to see and update an item, that user can always see and update that item.
 
 By default, users can see and change everything. If there is no entry in wiser_permission for an item, it will be seen as if you added and entry with the permission value of "15". If you want to block certain users from seeing an item, you need to add a value with "0".
+
+# Publishing
+To publish Wiser 3 to your own server, you should use the following publish settings:
+- Configuration: `Release`
+- Target Framework: `net5.0`
+- Deployment Mode: `Self-Contained`
+- Target Runtime: The correct runtime for your system, for Windows this is usually `win-x64`
+- Under File Publish Option, tick the box for `Enable ReadyToRun compilation`
