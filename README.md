@@ -54,7 +54,7 @@ Wiser v3. This includes the API and the front-end projects.
 
 ```
 
-#### Datasbase
+#### Database
 Wiser requires a certain database structure to work, several tables and triggers are required. At the moment, we only support MySQL, but other databases might be added in the future.
 
 To setup this database, you can open a PowerShell or CMD window in the directory that contains the `Api.csproj` file and run the following command:
