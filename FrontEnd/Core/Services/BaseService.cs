@@ -55,7 +55,7 @@ namespace FrontEnd.Core.Services
 
             if (String.IsNullOrWhiteSpace(result))
             {
-                result = "main";
+                result = frontEndSettings.MainSubDomain;
             }
 
             return result;
