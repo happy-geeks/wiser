@@ -34,7 +34,8 @@
         user: arguments.user,
         password: arguments.password,
         port: arguments.port || 3306,
-        multipleStatements: true
+        multipleStatements: true,
+        charset: "utf8mb4_general_ci"
     });
 
     try {
