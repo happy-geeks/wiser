@@ -159,6 +159,7 @@
 .advanced-panel {
     display: flex;
     align-items: flex-start;
+    flex-wrap: wrap;
     transition: 200ms ease-in-out;
     max-height: 0;
     padding: 0;
@@ -188,6 +189,10 @@
 .advanced-panel .item-right {
     padding-left: 40px;
     padding-top: 15px;
+}
+
+.advanced-panel .item-full {
+    width: 100%;
 }
 
 .user-check-panel,
