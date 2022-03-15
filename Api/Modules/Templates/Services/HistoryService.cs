@@ -142,6 +142,7 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("editorValue", newVersion.EditorValue, oldVersion.EditorValue, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("useCache", newVersion.UseCache, oldVersion.UseCache, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheMinutes", newVersion.CacheMinutes, oldVersion.CacheMinutes, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheLocation", newVersion.CacheLocation, oldVersion.CacheLocation, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("handleRequests", newVersion.HandleRequests, oldVersion.HandleRequests, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("handleSession", newVersion.HandleSession, oldVersion.HandleSession, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("handleObjects", newVersion.HandleObjects, oldVersion.HandleObjects, historyModel);
