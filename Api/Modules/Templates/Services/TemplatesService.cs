@@ -2802,7 +2802,7 @@ LIMIT 1";
             requestModel.Url ??= HttpContextHelpers.GetBaseUri(httpContextAccessor.HttpContext);
             await SetupGclForPreviewAsync(identity, requestModel);
             
-            var (html, _) = await gclTemplatesService.GenerateDynamicContentHtmlAsync(component);
+            var html = await gclTemplatesService.GenerateDynamicContentHtmlAsync(component);
             return new ServiceResult<string>((string)html);
         }
 
