@@ -2571,7 +2571,7 @@ LIMIT 1";
                     break;
                 case TemplateTypes.Html:
                     template.EditorValue = await wiserItemsService.ReplaceHtmlForSavingAsync(template.EditorValue);
-                    template.MinifiedValue = Uglify.Html(template.EditorValue, new HtmlSettings { RemoveAttributeQuotes = false }).Code;
+                    template.MinifiedValue = Uglify.Html(template.EditorValue, new HtmlSettings { RemoveAttributeQuotes = false, ShortBooleanAttribute = false }).Code;
                     break;
             }
             
