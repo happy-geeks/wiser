@@ -768,8 +768,21 @@ const moduleSettings = {
                     indentUnit: 4,
                     lineWrapping: true,
                     foldGutter: true,
+                    matchBrackets: true,
                     gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
-                    lint: true,
+                    lint: { 
+                        options: { 
+                            esversion: 2022,
+                            rules: {
+                                "no-empty-rulesets": 0,
+                                "no-ids": 0,
+                                "indentation": [1, { size: 4 }],
+                                "variable-for-property": 0,
+                                "property-sort-order": 0,
+                                "no-important": 0
+                            }
+                        }
+                    },
                     extraKeys: {
                         "Ctrl-Q": (sender) => {
                             sender.foldCode(sender.getCursor());
