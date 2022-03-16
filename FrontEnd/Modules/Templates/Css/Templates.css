@@ -182,7 +182,7 @@
     flex-wrap: wrap;
 }
 
-    .advanced-panel .item-left .item {
+    .advanced-panel .item-left .item:not(.full-width) {
         width: 50%;
     }
 
@@ -456,4 +456,8 @@
 
 .html-source-window .CodeMirror {
     height: calc(100vh - 168px);
+}
+
+.CodeMirror-lint-tooltip {
+    z-index: 20000 !important;
 }
