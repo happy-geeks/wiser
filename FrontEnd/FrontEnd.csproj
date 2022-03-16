@@ -82,4 +82,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Api\Api.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Modules\Base\Scripts\codemirror\" />
+  </ItemGroup>
 </Project>
