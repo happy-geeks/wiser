@@ -32,9 +32,9 @@
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
-        <h4><label for="inserMode">Invoegmodus</label></h4>
+        <h4><label for="insertMode">Invoegmodus</label></h4>
         <div class="flex-container">
-            <select id="inserMode" class="combo-select" data-kendo-control="kendoDropDownList">
+            <select id="insertMode" class="combo-select" name="insertMode" data-kendo-control="kendoDropDownList">
                 @foreach (var value in Enum.GetValues(Model.InsertMode.GetType()))
                 {
                     <!option value="@((int)value)" @((int)Model.InsertMode == (int)value ? "selected" : "")>@value.ToString()</!option>
