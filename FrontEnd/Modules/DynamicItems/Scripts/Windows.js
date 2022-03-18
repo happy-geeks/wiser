@@ -1709,11 +1709,12 @@ export class Windows {
         const grid = event.sender;
         const rows = grid.items();
         const alreadyLinkedItems = this.searchItemsWindowSettings.senderGrid.dataSource.data();
+
         rows.each((index, element) => {
             const row = $(element);
             const dataItem = grid.dataItem(row);
 
-            if (alreadyLinkedItems.filter((item) => (item.id || item[`ID_${this.searchItemsWindowSettings.entityType}`]) === dataItem.id).length > 0) {
+            if (alreadyLinkedItems.filter((item) => (item.id || item[`id_${this.searchItemsWindowSettings.entityType}`] || item[`ID_${this.searchItemsWindowSettings.entityType}`]) === dataItem.id).length > 0) {
                 grid.select(row);
             }
         });
