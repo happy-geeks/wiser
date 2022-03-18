@@ -916,13 +916,13 @@ export class Fields {
         iframe.onload = () => {
             // Need to wait until the iframe is loaded, before we can add event listeners.
             iframeWindow.document.addEventListener("dataSelectorAfterSave", (saveEvent) => {
-                if (!saveEvent.detail || !saveEvent.detail.length || !saveEvent.detail[0].itemId) {
+                if (!saveEvent) {
                     kendo.alert("Er is iets fout gegaan tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals of neem contact op met ons.");
                     return;
                 }
 
                 // Save the value in the hidden input, so that it will be saved in wiser_itemdetail once the user saves the item.
-                field.prev("input.valueField").val(saveEvent.detail[0].itemId);
+                field.prev("input.valueField").val(saveEvent);
                 dataSelectorWindow.close().destroy();
             });
         };

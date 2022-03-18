@@ -887,10 +887,6 @@ SELECT CONCAT(`value`, long_value) AS `value`
 FROM wiser_itemdetail detail
 	JOIN wiser_item item ON item.id=detail.item_id AND item.unique_uuid = @user_id AND item.entity_type=@entity_type
 WHERE detail.`key` = @setting_name ");
-                TemplateQueryStrings.Add("GET_SAVED_DATA_SELECTORS", @"SELECT id, `name`
-FROM wiser_data_selector
-WHERE `name` <> '' AND removed = 0 AND request_json <> '' AND request_json <> '{}'
-ORDER BY `name`");
                 TemplateQueryStrings.Add("UPDATE_FILE_TITLE", @"UPDATE wiser_itemfile SET title = '{value}' WHERE id = {fileId} AND item_id = {itemId:decrypt(true)};");
                 TemplateQueryStrings.Add("UPDATE_FILE_NAME", @"UPDATE wiser_itemfile SET file_name = '{value}' WHERE id = {fileId} AND item_id = {itemId:decrypt(true)};");
                 TemplateQueryStrings.Add("GET_UNDERLYING_LINKED_TYPES", @"SET @_entity_name = IF(
@@ -1706,29 +1702,10 @@ ON DUPLICATE KEY UPDATE permissions = {permissionCode};");
 
                 TemplateQueryStrings.Add("GET_DATA_SELECTOR_BY_ID", @"SET @_id = {id};
 
-SELECT id, `name`, module_selection AS modules, request_json AS requestJson, saved_json AS savedJson, show_in_export_module AS showInExportModule
+SELECT id, `name`, module_selection AS modules, request_json AS requestJson, saved_json AS savedJson, show_in_export_module AS showInExportModule, available_for_rendering AS availableForRendering
 FROM wiser_data_selector
 WHERE id = @_id");
-                TemplateQueryStrings.Add("SAVE_DATA_SELECTOR", @"SET @_name = '{name}';
-SET @_modules = '{modules}';
-SET @_request_json = '{requestJson}';
-SET @_saved_json = IF('{savedJson}' = CONCAT('{', 'savedJson', '}'), '', '{savedJson}');
 
-# Will automatically be NULL if it doesn't exist, which is good.
-SET @_item_id = (SELECT id FROM wiser_data_selector WHERE `name` = @_name);
-
-# Whether the data selector will be available in the export module.
-SET @_show_in_export_module = IF(
-    '{showInExportModule}' LIKE '{%}' AND @_item_id IS NOT NULL AND @_item_id > 0,
-    (SELECT show_in_export_module FROM wiser_data_selector WHERE id = @_item_id),
-    '{showInExportModule}' = '1'
-);
-
-INSERT INTO wiser_data_selector (id, `name`, module_selection, request_json, saved_json, changed_on, show_in_export_module)
-VALUES (@_item_id, @_name, @_modules, @_request_json, @_saved_json, NOW(), @_show_in_export_module)
-ON DUPLICATE KEY UPDATE module_selection = VALUES(module_selection), request_json = VALUES(request_json), saved_json = VALUES(saved_json), changed_on = VALUES(changed_on), show_in_export_module = VALUES(show_in_export_module);
-
-SELECT IF(@_item_id IS NULL, LAST_INSERT_ID(), @_item_id) AS itemId;");
                 TemplateQueryStrings.Add("GET_ALL_ENTITY_TYPES", @"SET @userId = {encryptedUserId:decrypt(true)};
 
 SELECT DISTINCT 
