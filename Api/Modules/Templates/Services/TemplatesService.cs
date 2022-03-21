@@ -1277,17 +1277,17 @@ SELECT
         THEN (SELECT CONCAT('Items van type ""', @sourceType, '"" mogen niet toegevoegd worden onder items van type ""', @destinationType, '"".') AS error)
         ELSE ''
     END AS error;");
-                TemplateQueryStrings.Add("GET_CONTEXT_MENU", @"SET @itemid = {itemId:decrypt(true)};
-SET @moduleid = {moduleId};
-SET @entity_type = (SELECT entity_type FROM wiser_item WHERE id=@itemid);
-SET @itemname = (SELECT title FROM wiser_item WHERE id=@itemid);
+                TemplateQueryStrings.Add("GET_CONTEXT_MENU", @"SET @_itemId = {itemId:decrypt(true)};
+SET @_moduleId = {moduleId};
+SET @entity_type = (SELECT entity_type FROM wiser_item WHERE id=@_itemId);
+SET @itemname = (SELECT title FROM wiser_item WHERE id=@_itemId);
 SET @userId = {encryptedUserId:decrypt(true)};
 
 SELECT 
 	CONCAT('\'', @itemname, '\' hernoemen') AS text, 
     'icon-album-rename' AS spriteCssClass,
-    'RENAME_ITEM' AS attraction, 
-    '' AS attrentity_type
+    'RENAME_ITEM' AS attraction,
+    i.entity_type AS attrentity_type
     #the JSON must consist of a subnode with attributes, so attr is the name of the json object containing 'action' as a value, herefore the name here is attr...action
     FROM wiser_item i 
     
@@ -1296,7 +1296,7 @@ SELECT
 	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
 	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = i.moduleid
     
-    WHERE i.id = @itemid 
+    WHERE i.id = @_itemId 
     AND i.readonly = 0
 	AND (
 			(permissionModule.id IS NULL AND permission.id IS NULL)
@@ -1311,14 +1311,14 @@ UNION
 	i.icon_add,'CREATE_ITEM', 
 	i.name
     FROM wiser_entity i
-    JOIN wiser_entity we ON we.module_id=@moduleid AND we.name=@entity_type
+    JOIN wiser_entity we ON we.module_id=@_moduleId AND we.name=@entity_type
     
     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
 	LEFT JOIN wiser_user_roles user_role ON user_role.user_id = @userId
-	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = @itemid
-	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = @moduleid
+	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = @_itemId
+	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = @_moduleId
     
-    WHERE i.module_id = @moduleid
+    WHERE i.module_id = @_moduleId
     AND i.`name` IN (we.accepted_childtypes) AND i.name <> ''
 	AND (
 			(permissionModule.id IS NULL AND permission.id IS NULL)
@@ -1332,7 +1332,7 @@ UNION
 	SELECT CONCAT('\'', @itemname, '\' dupliceren') AS text, 
 	'icon-document-duplicate',
 	'DUPLICATE_ITEM',
-	'' 
+    i.entity_type AS attrentity_type
     FROM wiser_item i 
     
     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
@@ -1340,7 +1340,7 @@ UNION
 	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
 	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = i.moduleid
     
-    WHERE i.id = @itemid 
+    WHERE i.id = @_itemId 
     AND i.readonly = 0
 	AND (
 			(permissionModule.id IS NULL AND permission.id IS NULL)
@@ -1354,7 +1354,7 @@ UNION
 	SELECT CONCAT('Publiceer naar live'),
 	'icon-globe',
 	'PUBLISH_LIVE',
-	'' 
+    i.entity_type AS attrentity_type
     FROM wiser_item i 
     
     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
@@ -1362,7 +1362,7 @@ UNION
 	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
 	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = i.moduleid
     
-    WHERE i.id=@itemid 
+    WHERE i.id=@_itemId 
     AND i.published_environment <> 4
     AND i.readonly = 0
 	AND (
@@ -1377,7 +1377,7 @@ UNION
 	SELECT CONCAT('\'', @itemname, '\' tonen') AS text, 
 	'item-light-on',
 	'PUBLISH_ITEM',
-	'' 
+    i.entity_type AS attrentity_type
     FROM wiser_item i 
     
     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
@@ -1385,7 +1385,7 @@ UNION
 	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
 	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = i.moduleid
     
-    WHERE i.id = @itemid 
+    WHERE i.id = @_itemId 
     AND i.published_environment = 0
     AND i.readonly = 0
 	AND (
@@ -1400,7 +1400,7 @@ UNION
 	SELECT CONCAT('\'', @itemname, '\' verbergen') AS text, 
 	'icon-light-off',
 	'HIDE_ITEM',
-	'' 
+    i.entity_type AS attrentity_type
     FROM wiser_item i 
     
     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
@@ -1408,7 +1408,7 @@ UNION
 	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
 	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = i.moduleid
     
-    WHERE i.id = @itemid 
+    WHERE i.id = @_itemId 
     AND i.published_environment > 0
     AND i.readonly = 0
 	AND (
@@ -1423,7 +1423,7 @@ UNION
 	SELECT CONCAT('\'', @itemname, '\' verwijderen') AS text, 
 	'icon-delete',
 	'REMOVE_ITEM',
-	''
+    i.entity_type AS attrentity_type
     FROM wiser_item i 
     
     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
@@ -1431,7 +1431,7 @@ UNION
 	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
 	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = i.moduleid
     
-    WHERE i.id = @itemid 
+    WHERE i.id = @_itemId 
     AND i.readonly = 0
 	AND (
 			(permissionModule.id IS NULL AND permission.id IS NULL)

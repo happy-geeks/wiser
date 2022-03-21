@@ -655,7 +655,7 @@ const moduleSettings = {
                 // For some reason the JCL already encodes the values, so decode them here, otherwise they will be encoded twice in some cases, which can cause problems.
                 const itemId = decodeURIComponent(dataItem.id);
                 const action = button.attr("action");
-                const entityType = button.attr("entityType");
+                const entityType = button.attr("entity_type");
 
                 switch (action) {
                     case "RENAME_ITEM":
