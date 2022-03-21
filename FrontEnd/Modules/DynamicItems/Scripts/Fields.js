@@ -2791,40 +2791,6 @@ export class Fields {
     }
 
     /**
-     * Event that gets called when the user executes the custom action for adding dynamic content from Wiser to the HTML editor.
-     * This will open the dynamicHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser 2.0 is being loaded in an iframe.
-     * @param {any} event The event from the execute action.
-     * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
-     * @param {any} itemId The ID of the current item.
-     * @param {any} codeMirror The CodeMirror editor where the action is executed in.
-     */
-    async onHtmlEditorDynamicContentExec(event, kendoEditor, itemId, codeMirror) {
-        if (!window.parent || !window.parent.$ || !window.parent.$.dynamicHandler) {
-            console.warn("No parent window found, or no file handler found on parent window.");
-            kendo.alert("Deze functie wordt nog niet ondersteund.");
-            return;
-        }
-
-        window.parent.$.core.loadCodeMirror(() => {
-            new window.parent.$.dynamicHandler(this, 0, null, null, { id: this.base.settings.moduleId }, itemId, null, (dynamicContentData) => {
-                if (kendoEditor) {
-                    const originalOptions = kendoEditor.options.pasteCleanup;
-                    kendoEditor.options.pasteCleanup.none = true;
-                    kendoEditor.options.pasteCleanup.span = false;
-                    kendoEditor.exec("inserthtml", { value: dynamicContentData.img || dynamicContentData.html });
-                    kendoEditor.options.pasteCleanup.none = originalOptions.none;
-                    kendoEditor.options.pasteCleanup.span = originalOptions.span;
-                }
-                if (codeMirror) {
-                    const doc = codeMirror.getDoc();
-                    const cursor = doc.getCursor();
-                    doc.replaceRange(dynamicContentData.img || dynamicContentData.html, cursor);
-                }
-            });
-        });
-    }
-
-    /**
      * Event that gets called when the user executes the custom action for viewing / changing the HTML source of the editor.
      * @param {any} event The event from the execute action.
      * @param {any} editor The HTML editor where the action is executed in.
