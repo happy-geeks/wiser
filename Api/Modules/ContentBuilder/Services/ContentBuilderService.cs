@@ -102,7 +102,7 @@ namespace Api.Modules.ContentBuilder.Services
             }
 
             clientDatabaseConnection.AddParameter("itemId", itemId);
-            clientDatabaseConnection.AddParameter("languageCode", languageCode);
+            clientDatabaseConnection.AddParameter("languageCode", languageCode ?? "");
             clientDatabaseConnection.AddParameter("propertyName", propertyName);
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT IFNULL(CONCAT_WS('', html.value, html.long_value), '') AS html 
                                                             FROM {WiserTableNames.WiserItem} AS item

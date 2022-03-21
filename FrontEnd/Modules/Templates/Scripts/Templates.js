@@ -768,7 +768,6 @@ const moduleSettings = {
                     indentUnit: 4,
                     lineWrapping: true,
                     foldGutter: true,
-                    matchBrackets: true,
                     gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
                     lint: { 
                         options: { 

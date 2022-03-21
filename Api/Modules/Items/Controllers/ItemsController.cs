@@ -178,6 +178,12 @@ namespace Api.Modules.Items.Controllers
         {
             return (await filesService.RenameFileAsync(encryptedItemId, fileId, newName, (ClaimsIdentity)User.Identity, itemLinkId)).GetHttpResponseMessage();
         }
+        
+        [HttpPut, Route("{encryptedItemId}/files/{fileId:int}/title/{newTitle}")]
+        public async Task<IActionResult> UpdateFileTitleAsync(string encryptedItemId, int fileId, string newTitle, [FromQuery]ulong itemLinkId = 0)
+        {
+            return (await filesService.UpdateFileTitleAsync(encryptedItemId, fileId, newTitle, (ClaimsIdentity)User.Identity, itemLinkId)).GetHttpResponseMessage();
+        }
 
         [HttpPost, Route("{encryptedId}/entity-grids/{entityType}"), ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> EntityGridAsync(string encryptedId, string entityType, GridReadOptionsModel options, [FromQuery]int linkTypeNumber = 0, [FromQuery]int moduleId = 0, [FromQuery]EntityGridModes mode = EntityGridModes.Normal, [FromQuery]int propertyId = 0, [FromQuery]string queryId = null, [FromQuery]string countQueryId = null, [FromQuery]string fieldGroupName = null, [FromQuery]bool currentItemIsSourceId = false)

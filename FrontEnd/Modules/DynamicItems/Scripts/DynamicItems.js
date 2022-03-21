@@ -26,7 +26,7 @@ import "../Css/DynamicItems.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
-    
+
 };
 
 ((settings) => {
@@ -66,7 +66,7 @@ const moduleSettings = {
             this.mainLoader = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
-            kendo.culture("nl-NL"); 
+            kendo.culture("nl-NL");
 
             // Flags to use in wiser_field_templates, so that we can add code there that depends on code in this file, without having to deploy this to live right away.
             this.fieldTemplateFlags = {
@@ -131,7 +131,7 @@ const moduleSettings = {
             this.windows = new Windows(this);
             this.grids = new Grids(this);
             this.fields = new Fields(this);
-            
+
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
                 headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
@@ -152,7 +152,7 @@ const moduleSettings = {
             // Setup processing.
             document.addEventListener("processing.Busy", this.toggleMainLoader.bind(this, true));
             document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
-            
+
             // Fullscreen event for elements that can go fullscreen, such as HTML editors.
             const classHolder = $(document.documentElement);
             const fullscreenChange = "webkitfullscreenchange mozfullscreenchange fullscreenchange MSFullscreenChange";
@@ -166,12 +166,12 @@ const moduleSettings = {
                     token: this.settings.trackJsToken
                 });
             }
-            
+
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
-                
+
             const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
@@ -184,7 +184,7 @@ const moduleSettings = {
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
-            
+
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.htmlEditorCssUrl = `${this.settings.wiserApiRoot}templates/css-for-html-editors?encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&isTest=${this.base.settings.isTestEnvironment}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&username=${encodeURIComponent(this.base.settings.username)}&userType=${encodeURIComponent(this.base.settings.userType)}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`
 
@@ -245,7 +245,7 @@ const moduleSettings = {
                         if (!$(element).data("isNewItem") || $(element).data("saving")) {
                             return;
                         }
-                        
+
                         let canDelete = true;
                         for (let gridElement of $(element).find(".grid")) {
                             const kendoGrid = $(gridElement).data("kendoGrid");
@@ -282,13 +282,13 @@ const moduleSettings = {
 
                 switch (event.key) {
                     case "N":
-                    {
-                        const addButton = $("#addButton");
-                        if (event.shiftKey && addButton.is(":visible")) {
-                            addButton.click();
+                        {
+                            const addButton = $("#addButton");
+                            if (event.shiftKey && addButton.is(":visible")) {
+                                addButton.click();
+                            }
+                            break;
                         }
-                        break;
-                    }
                 }
             });
 
@@ -350,10 +350,7 @@ const moduleSettings = {
                 dialog.open();
             });
 
-            $("body").on("click", ".imgEdit", function () {
-                const image = $(this).parents(".product").find("img");
-                kendo.alert("Deze functionaliteit is nog niet geïmplementeerd");
-            });
+            $("body").on("click", ".imgTools .imgEdit", this.fields.onImageEdit.bind(this.fields));
 
             $("body").on("click", ".imgTools .imgDelete", this.fields.onImageDelete.bind(this.fields));
 
@@ -616,7 +613,7 @@ const moduleSettings = {
             if (event.valid) {
                 return;
             }
-            
+
             // Switch to the tab sheet that contains the first error.
             const fieldName = Object.keys(event.sender._errors)[0];
             const tabSheet = tabStrip.element.find(`[name=${fieldName}]`).closest("div[role=tabpanel]");
@@ -655,7 +652,7 @@ const moduleSettings = {
                 // For some reason the JCL already encodes the values, so decode them here, otherwise they will be encoded twice in some cases, which can cause problems.
                 const itemId = decodeURIComponent(dataItem.id);
                 const action = button.attr("action");
-                const entityType = button.attr("entityType");
+                const entityType = button.attr("entity_type");
 
                 switch (action) {
                     case "RENAME_ITEM":
@@ -666,7 +663,7 @@ const moduleSettings = {
                                     treeView.text(node, newName);
                                     $("#right-pane input[name='_nameForExistingItem']").val(newName);
                                 });
-                            }).fail(() => {});
+                            }).fail(() => { });
                             break;
                         }
                     case "CREATE_ITEM":
@@ -690,7 +687,7 @@ const moduleSettings = {
                             } else {
                                 treeView.dataSource.read();
                             }
-                            
+
                             break;
                         }
                     case "REMOVE_ITEM":
@@ -708,7 +705,7 @@ const moduleSettings = {
                                         kendo.alert("Er is iets fout gegaan tijdens het verwijderen van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
                                     }
                                 }
-                            }).catch(() => {});
+                            }).catch(() => { });
 
                             break;
                         }
@@ -789,13 +786,13 @@ const moduleSettings = {
                     window.processing.removeProcess(process);
                     return false;
                 }
-                
+
                 const updateItemResult = await this.base.updateItem(itemId, inputData, $("#right-pane"), false, title, true, true, this.selectedItem && this.selectedItem.entityType ? this.selectedItem.entityType : this.selectedItemMetaData.entityType);
                 document.dispatchEvent(new CustomEvent("dynamicItems.onSaveButtonClick", { detail: updateItemResult }));
                 if (window.parent && window.parent.document) {
                     window.parent.document.dispatchEvent(new CustomEvent("dynamicItems.onSaveButtonClick", { detail: updateItemResult }));
                 }
-                
+
                 window.processing.removeProcess(process);
                 return true;
             } catch (exception) {
@@ -806,12 +803,12 @@ const moduleSettings = {
                 } else {
                     kendo.alert("Er is iets fout gegaan tijdens het opslaan van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
                 }
-                
+
                 window.processing.removeProcess(process);
                 return false;
             }
         }
-        
+
         /**
          * Event that gets called once a notification is being shown.
          */
@@ -998,7 +995,7 @@ const moduleSettings = {
             try {
                 const sourceDataItem = event.sender.dataItem(event.sourceNode);
                 const destinationDataItem = event.sender.dataItem(event.destinationNode);
-                
+
                 const moveItemResult = await Wiser2.api({
                     url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(sourceDataItem.id)}/move/${encodeURIComponent(destinationDataItem.id)}`,
                     method: "PUT",
@@ -1037,7 +1034,7 @@ const moduleSettings = {
                     if (!codeMirrorInstance) {
                         return;
                     }
-                    
+
                     codeMirrorInstance.refresh();
                 });
             }, 500);
@@ -1322,7 +1319,7 @@ const moduleSettings = {
          */
         async onDeleteItemClick(event, encryptedItemId, entityType) {
             event.preventDefault();
-            
+
             await Wiser2.showConfirmDialog(`Weet u zeker dat u het item '${this.base.selectedItem.title}' wilt verwijderen?`);
 
             try {
@@ -1356,7 +1353,7 @@ const moduleSettings = {
          */
         async onUndeleteItemClick(event, encryptedItemId) {
             event.preventDefault();
-            
+
             await Wiser2.showConfirmDialog(`Weet u zeker dat u het verwijderen ongedaan wilt maken voor '${this.base.selectedItem.title}'?`);
 
             const process = `undeleteItem_${Date.now()}`;
@@ -1373,9 +1370,9 @@ const moduleSettings = {
                 if (Wiser2.validateArray(entityType)) {
                     entityType = entityType[0];
                 }
-                
+
                 await this.base.undeleteItem(encryptedItemId, entityType);
-                
+
                 const kendoWindow = popupWindowContainer.data("kendoWindow");
                 if (kendoWindow) {
                     const data = kendoWindow.element.data();
@@ -1420,10 +1417,8 @@ const moduleSettings = {
                     return;
                 }
 
-                let entityTypeSettings = await this.base.getEntityType(itemMetaData.entityType);
-                if (Wiser2.validateArray(entityTypeSettings)) {
-                    entityTypeSettings = entityTypeSettings[0];
-                }
+                const entityTypeSettings = await this.base.getEntityType(itemMetaData.entityType);
+                entityTypeSettings.showTitleField = entityTypeSettings.showTitleField || false;
                 this.selectedItemTitle = itemMetaData.title;
                 this.selectedItemMetaData = itemMetaData;
                 const itemTitleFieldContainer = $("#tabstrip .itemNameFieldContainer");
@@ -1496,7 +1491,7 @@ const moduleSettings = {
 
                 // Handle dependencies for the first tab, to make sure all the correct fields are hidden/shown on the first tab. The other tabs will be done once they are opened.
                 this.base.fields.handleAllDependenciesOfContainer(this.mainTabStrip.contentHolder(0), itemMetaData.entityType, "Gegevens", "mainScreen");
-                
+
                 $(this.mainTabStrip.items()[0]).toggle(genericTabHasFields || itemTitleFieldContainer.is(":visible"));
 
                 // Figure our which tab to select (don't select hidden or empty tabs).
@@ -1568,7 +1563,7 @@ const moduleSettings = {
                 data: JSON.stringify(updateItemData)
             }).then((updateResult) => {
                 if (fieldsContainer) {
-                    
+
                     const windowId = fieldsContainer.hasClass("popup-container") ? fieldsContainer.attr("id") : "mainScreen";
 
                     if (this.base.fields.originalItemValues[windowId] && this.base.fields.unsavedItemValues[windowId]) {
@@ -1608,7 +1603,7 @@ const moduleSettings = {
                     } else if (showSuccessMessage) {
                         this.notification.show({ message: "Opslaan is gelukt" }, "success");
                     }
-                } catch(exception) {
+                } catch (exception) {
                     console.error(exception);
                     kendo.alert("Er is iets fout gegaan tijdens het uitvoeren (of opzoeken) van de actie 'api_after_update'. Indien er een koppeling is opgezet met een extern systeem, dan zijn de wijzigingen nu niet gesynchroniseerd naar dat systeem. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
                 }
@@ -1651,7 +1646,7 @@ const moduleSettings = {
                 const saveButtons = itemContainer.find(".saveButton");
                 const deleteButtons = itemContainer.find(".k-i-verwijderen, .editMenu .deleteItem").parent();
                 const undeleteButtons = editMenu.find(".undeleteItem").closest("li");
-                
+
                 saveButtons.toggleClass("hidden", !itemMetaData.canWrite);
 
                 // If there are still options for switching environment, remove them and re-add them, because they are probably left overs of a different item.
@@ -1700,7 +1695,7 @@ const moduleSettings = {
                     // Setup the overview tab.
                     if (!this.settings.iframeMode) {
                         const entityTypeDetails = await this.base.getEntityType(itemMetaData.entityType);
-                        this.base.mainTabStrip.element.find(".overview-tab").toggleClass("hidden", !entityTypeDetails[0].showOverviewTab);
+                        this.base.mainTabStrip.element.find(".overview-tab").toggleClass("hidden", !entityTypeDetails.showOverviewTab);
                     }
                 }
 
@@ -1716,10 +1711,10 @@ const moduleSettings = {
 
                 let addedOn = DateTime.fromISO(itemMetaData.addedOn, { locale: "nl-NL" }).toLocaleString(Dates.LongDateTimeFormat);
                 metaDataListElement.find(".added-on").html(addedOn);
-            
+
                 if (itemMetaData.changedOn) {
                     let changedOn = DateTime.fromISO(itemMetaData.changedOn, { locale: "nl-NL" }).toLocaleString(Dates.LongDateTimeFormat);
-                        
+
                     metaDataListElement.find(".changed-on").html(changedOn).closest("li").removeClass("hidden");
 
                     metaDataListElement.find(".changedon-footer").off("click");
@@ -1741,7 +1736,7 @@ const moduleSettings = {
                 } else {
                     metaDataListElement.find(".uuid").html("").closest("li").addClass("hidden");
                 }
-                
+
                 if (!isForItemWindow) {
                     window.processing.removeProcess(process);
                 }
@@ -1749,7 +1744,7 @@ const moduleSettings = {
                 return itemMetaData;
             } catch (exception) {
                 console.error(`Error while loading meta data for item ${itemId}:`, exception);
-                
+
                 if (!isForItemWindow) {
                     window.processing.removeProcess(process);
                 }
@@ -1820,7 +1815,7 @@ const moduleSettings = {
                 // Call updateItem with only the title, to make sure the SEO value of the title gets saved if needed.
                 let newItemDetails = [];
                 if (!skipUpdate) newItemDetails = await this.base.updateItem(createItemResult.newItemId, data || [], null, false, name, false, false, entityType);
-                
+
                 const workflowResult = await Wiser2.api({
                     url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(createItemResult.newItemId)}/workflow?isNewItem=true`,
                     method: "POST",
@@ -1836,7 +1831,7 @@ const moduleSettings = {
                     if (apiActionId) {
                         apiActionResult = await Wiser2.doApiCall(this.settings, apiActionId, newItemDetails);
                     }
-                } catch(exception) {
+                } catch (exception) {
                     console.error(exception);
                     kendo.alert("Er is iets fout gegaan tijdens het uitvoeren (of opzoeken) van de actie 'api_after_update'. Indien er een koppeling is opgezet met een extern systeem, dan zijn de wijzigingen nu niet gesynchroniseerd naar dat systeem. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
                 }
@@ -1921,14 +1916,14 @@ const moduleSettings = {
             try {
                 const entityTypeQueryString = !entityType ? "" : `?entityType=${encodeURIComponent(entityType)}`;
                 const parentEntityTypeQueryString = !parentEntityType ? "" : `${!entityType ? "?" : "&"}parentEntityType=${encodeURIComponent(parentEntityType)}`;
-                const createItemResult = await Wiser2.api({ 
-                    method: "POST", 
+                const createItemResult = await Wiser2.api({
+                    method: "POST",
                     url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/duplicate/${encodeURIComponent(parentId)}${entityTypeQueryString}${parentEntityTypeQueryString}`,
                     contentType: "application/json",
                     dataType: "JSON"
                 });
-                const workflowResult = await Wiser2.api({ 
-                    method: "POST", 
+                const workflowResult = await Wiser2.api({
+                    method: "POST",
                     url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(createItemResult.newItemId)}/workflow?isNewItem=true`,
                     contentType: "application/json",
                     dataType: "JSON"
@@ -2045,7 +2040,7 @@ const moduleSettings = {
          * @return {any} An array with all the available entity types.
          */
         async getAvailableEntityTypes(parentId) {
-            const names =  await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}entity-types/${encodeURIComponent(this.settings.moduleId)}?parentId=${encodeURIComponent(parentId)}` });
+            const names = await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}entity-types/${encodeURIComponent(this.settings.moduleId)}?parentId=${encodeURIComponent(parentId)}` });
             return names.map(name => { return { name: name }; });
         }
 
@@ -2055,14 +2050,14 @@ const moduleSettings = {
          * @param {number} moduleId The ID of the module (different modules can have entity types with the same name).
          * @returns {Promise} A promise with the results.
          */
-        async getEntityType(name, moduleId) {
-            const sessionStorageKey = `wiserEntityTypeInfo${name}`;
+        async getEntityType(name, moduleId = 0) {
+            const sessionStorageKey = `wiserEntityTypeInformation${name}${moduleId}`;
             let result = sessionStorage.getItem(sessionStorageKey);
             if (result) {
                 return JSON.parse(result);
             }
-            
-            result = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPE?entityType=${encodeURIComponent(name)}&moduleId=${encodeURIComponent(moduleId || "")}` });
+
+            result = await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}entity-types/${encodeURIComponent(name)}?moduleId=${moduleId}` });
             sessionStorage.setItem(sessionStorageKey, JSON.stringify(result));
             return result;
         }
@@ -2078,7 +2073,7 @@ const moduleSettings = {
             return !result || !result.length ? 0 : result[0].apiConnectionId || 0;
         }
     }
-    
+
     // Initialize the DynamicItems class and make one instance of it globally available.
     window.dynamicItems = new DynamicItems(settings);
 })(moduleSettings);

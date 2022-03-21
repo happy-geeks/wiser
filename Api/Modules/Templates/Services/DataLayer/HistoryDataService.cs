@@ -144,7 +144,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     InsertMode = row.Field<ResourceInsertModes>("insert_mode"),
                     LoadAlways = Convert.ToBoolean(row["load_always"]),
                     UrlRegex = row.Field<string>("url_regex"),
-                    ExternalFiles = row.Field<string>("external_files")?.Split(",")?.ToList() ?? new List<string>(),
+                    ExternalFiles = row.Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
                     GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(row["grouping_create_object_instead_of_array"]),
                     GroupingPrefix = row.Field<string>("grouping_prefix"),
                     GroupingKey = row.Field<string>("grouping_key"),

@@ -1743,6 +1743,8 @@ namespace Api.Modules.Items.Services
                 };
             }
 
+            await FixTreeViewOrderingAsync(moduleId, identity, entityType, encryptedParentId, orderBy, encryptedCheckId);
+
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             var parentId = String.IsNullOrWhiteSpace(encryptedParentId) ? 0 : wiserCustomersService.DecryptValue<ulong>(encryptedParentId, customer);
             var userId = IdentityHelpers.GetWiserUserId(identity);

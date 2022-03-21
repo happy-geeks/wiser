@@ -16,11 +16,6 @@ var templateTool = {
 	tooltip: "Template toevoegen",
 	exec: function(e) { window.dynamicItems.fields.onHtmlEditorTemplateExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor")); }
 };
-var dynamicContentTool = {
-	name: "wiserDynamicContent",
-	tooltip: "Dynamische inhoud toevoegen",
-	exec: function(e) { window.dynamicItems.fields.onHtmlEditorDynamicContentExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"), "{itemId}"); }
-};
 var htmlSourceTool = {
 	name: "wiserHtmlSource",
 	tooltip: "HTML bekijken/aanpassen",
@@ -105,7 +100,6 @@ var allTools = {
     imageTool: [99],
     fileTool: [99],
     templateTool: [3,99],
-    dynamicContentTool: [99],
     entityBlockTool: [99],
     "subscript": [99],
     "superscript": [99],
@@ -162,9 +156,6 @@ for (var toolName in allTools) {
             break;
         case "templateTool":
             tool = templateTool;
-            break;
-        case "dynamicContentTool":
-            tool = dynamicContentTool;
             break;
         case "htmlSourceTool":
             tool = htmlSourceTool;
