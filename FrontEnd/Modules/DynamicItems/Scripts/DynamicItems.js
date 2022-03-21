@@ -1424,6 +1424,7 @@ const moduleSettings = {
                 if (Wiser2.validateArray(entityTypeSettings)) {
                     entityTypeSettings = entityTypeSettings[0];
                 }
+                entityTypeSettings.showTitleField = entityTypeSettings.showTitleField || false;
                 this.selectedItemTitle = itemMetaData.title;
                 this.selectedItemMetaData = itemMetaData;
                 const itemTitleFieldContainer = $("#tabstrip .itemNameFieldContainer");
