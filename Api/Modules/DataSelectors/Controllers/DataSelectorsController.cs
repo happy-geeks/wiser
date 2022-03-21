@@ -53,6 +53,15 @@ namespace Api.Modules.DataSelectors.Controllers
         }
 
         /// <summary>
+        /// Save a data selector.
+        /// </summary>
+        [HttpPost, Route("save"), ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SaveAsync(DataSelectorModel data)
+        {
+            return (await dataSelectorsService.SaveAsync((ClaimsIdentity)User.Identity, data)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
         /// Generate a signature.
         /// </summary>
         /// <param name="values">The values used for the signature.</param>

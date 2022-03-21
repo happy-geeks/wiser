@@ -20,7 +20,8 @@ html, body {
     #filesUploaderWindow,
     #templatesUploaderWindow,
     #infoPanel_template,
-    #maximizeSubEntitiesGridWindow {
+    #maximizeSubEntitiesGridWindow,
+    #changeImageDataDialog {
         display: none;
     }
 
@@ -36,6 +37,10 @@ dt {
 
 dd {
     margin-bottom: 10px;
+}
+
+.k-dialog #changeImageDataDialog {
+    display: block;
 }
 
 .k-dialog #sendMailDialog {

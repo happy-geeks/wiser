@@ -146,7 +146,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                 InsertMode = dataTable.Rows[0].Field<ResourceInsertModes>("insert_mode"),
                 LoadAlways = Convert.ToBoolean(dataTable.Rows[0]["load_always"]),
                 UrlRegex = dataTable.Rows[0].Field<string>("url_regex"),
-                ExternalFiles = dataTable.Rows[0].Field<string>("external_files")?.Split(",")?.ToList() ?? new List<string>(),
+                ExternalFiles = dataTable.Rows[0].Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
                 GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(dataTable.Rows[0]["grouping_create_object_instead_of_array"]),
                 GroupingPrefix = dataTable.Rows[0].Field<string>("grouping_prefix"),
                 GroupingKey = dataTable.Rows[0].Field<string>("grouping_key"),
@@ -390,7 +390,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("insertMode", (int)templateSettings.InsertMode);
             clientDatabaseConnection.AddParameter("loadAlways", templateSettings.LoadAlways);
             clientDatabaseConnection.AddParameter("urlRegex", templateSettings.UrlRegex);
-            clientDatabaseConnection.AddParameter("externalFiles", String.Join(",", templateSettings.ExternalFiles));
+            clientDatabaseConnection.AddParameter("externalFiles", String.Join(";", templateSettings.ExternalFiles));
             clientDatabaseConnection.AddParameter("groupingCreateObjectInsteadOfArray", templateSettings.GroupingCreateObjectInsteadOfArray);
             clientDatabaseConnection.AddParameter("groupingPrefix", templateSettings.GroupingPrefix);
             clientDatabaseConnection.AddParameter("groupingKey", templateSettings.GroupingKey);
@@ -867,7 +867,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     InsertMode = dataRow.Field<ResourceInsertModes>("insert_mode"),
                     LoadAlways = Convert.ToBoolean(dataRow["load_always"]),
                     UrlRegex = dataRow.Field<string>("url_regex"),
-                    ExternalFiles = dataRow.Field<string>("external_files")?.Split(",")?.ToList() ?? new List<string>(),
+                    ExternalFiles = dataRow.Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
                     GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(dataRow["grouping_create_object_instead_of_array"]),
                     GroupingPrefix = dataRow.Field<string>("grouping_prefix"),
                     GroupingKey = dataRow.Field<string>("grouping_key"),

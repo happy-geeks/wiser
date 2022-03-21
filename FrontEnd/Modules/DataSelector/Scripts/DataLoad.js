@@ -87,9 +87,14 @@
                 autoBind: false,
                 dataSource: {
                     transport: {
-                        read: {
-                            url: `${this.dataSelector.settings.serviceRoot}/GET_SAVED_DATA_SELECTORS`,
-                            dataType: "json"
+                        read: async (options) => {
+                            try {
+                                const results = await Wiser2.api({ url: `${this.dataSelector.settings.wiserApiRoot}data-selectors` });
+                                options.success(results);
+                            } catch (exception) {
+                                console.error(exception);
+                                options.error(exception);
+                            }
                         }
                     }
                 }
@@ -331,6 +336,10 @@
 
                 if (typeof savedData.showInExportModule === "boolean") {
                     document.getElementById("showInExportModule").checked = savedData.showInExportModule;
+                }
+
+                if (typeof savedData.availableForRendering === "boolean") {
+                    document.getElementById("availableForRendering").checked = savedData.availableForRendering;
                 }
 
                 // This is where the data selector will complete loading.

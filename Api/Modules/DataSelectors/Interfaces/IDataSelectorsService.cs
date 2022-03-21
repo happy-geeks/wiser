@@ -19,22 +19,26 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// <param name="entityName">The name of the entity.</param>
         /// <param name="forExportMode">Whether the data selector is in export mode.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <returns></returns>
         Task<ServiceResult<List<DataSelectorEntityPropertyModel>>> GetEntityProperties(string entityName, bool forExportMode, ClaimsIdentity identity);
 
         /// <summary>
         /// Get the saved data selectors.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <returns></returns>
         Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity);
+
+        /// <summary>
+        /// Saves a data selector based on name. The ID will be ignored. If a data selector with the given name already exists, it will be overwritten.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="data">The data to save.</param>
+        Task<ServiceResult<int>> SaveAsync(ClaimsIdentity identity, DataSelectorModel data);
 
         /// <summary>
         /// Generate a signature.
         /// </summary>
         /// <param name="values">The values used for the signature.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <returns></returns>
         Task<ServiceResult<DataSelectorSignatureResultModel>> GenerateSignatureAsync(SortedList<string, string> values, ClaimsIdentity identity);
 
         /// <summary>
@@ -42,7 +46,6 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// </summary>
         /// <param name="data">The request containing the information for the data selector.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <returns></returns>
         Task<ServiceResult<JArray>> GetResultsAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity);
 
         /// <summary>
@@ -50,7 +53,6 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// </summary>
         /// <param name="data">The request containing the information for the data selector.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <returns></returns>
         Task<ServiceResult<string>> GetQueryAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity);
 
         /// <summary>
@@ -58,7 +60,6 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// </summary>
         /// <param name="data">The request containing the information for the data selector.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <returns></returns>
         Task<ServiceResult<byte[]>> ToExcelAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity);
 
         /// <summary>
@@ -66,7 +67,6 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// </summary>
         /// <param name="data">The request containing the information for the data selector.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <returns></returns>
         Task<ServiceResult<string>> ToHtmlAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity);
 
         /// <summary>
@@ -74,7 +74,6 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// </summary>
         /// <param name="data">The request containing the information for the data selector.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <returns></returns>
         Task<ServiceResult<FileContentResult>> ToPdfAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity);
 
         /// <summary>
@@ -85,7 +84,6 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// <param name="defaultFileName">The default name for the file if no name has been set in the request.</param>
         /// <param name="extension">The extension of the file to save as.</param>
         /// <param name="contentType">The content type of the file.</param>
-        /// <returns></returns>
         IActionResult CreateFileResult(WiserDataSelectorRequestModel data, ServiceResult<byte[]> result, string defaultFileName, string extension, string contentType);
 
         /// <summary>
@@ -95,7 +93,6 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// <param name="result">The file result of the data selector.</param>
         /// <param name="defaultFileName">The default name for the file if no name has been set in the request.</param>
         /// <param name="extension">The extension of the file to save as.</param>
-        /// <returns></returns>
         IActionResult SetFileName(WiserDataSelectorRequestModel data, ServiceResult<FileContentResult> result, string defaultFileName, string extension);
     }
 }

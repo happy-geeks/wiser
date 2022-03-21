@@ -1646,7 +1646,8 @@ k-filter-menu .k-autocomplete,
 }
 .html-source-window .CodeMirror,
 .content-builder-window iframe {
-    height: calc(100vh - 110px);
+	height: calc(100vh - 168px);
+	width: 100%;
 }
 
 .k-editor,
