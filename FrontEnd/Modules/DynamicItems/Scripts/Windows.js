@@ -149,11 +149,11 @@ export class Windows {
 
                 const html = `<figure>` +
                     `<picture>` +
-                        `<source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('jpg')}" type="image/jpeg" />` +
-                        `<source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('webp')}" type="image/webp" />` +
-                        `<img width="100%" height="auto" loading="lazy" src="${this.generateImagePreviewUrl('jpg')}" />` +
+                    `<source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('jpg')}" type="image/jpeg" />` +
+                    `<source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('webp')}" type="image/webp" />` +
+                    `<img width="100%" height="auto" loading="lazy" src="${this.generateImagePreviewUrl('jpg')}" />` +
                     `</picture>` +
-                `</figure>`;
+                    `</figure>`;
                 if (this.imagesUploaderSender.kendoEditor) {
                     this.imagesUploaderSender.kendoEditor.exec("inserthtml", { value: html });
                 }
@@ -1270,7 +1270,7 @@ export class Windows {
             element.data("validator", validator);
             element.data("showTitleField", showTitleField);
             element.data("linkId", linkId);
-            
+
             if (!windowTitle && title) {
                 windowTitle = title
             }
@@ -1356,10 +1356,7 @@ export class Windows {
                     let lastUsedEntityType = data[0];
                     const htmlData = data[1];
 
-                    if (Wiser2.validateArray(lastUsedEntityType)) {
-                        lastUsedEntityType = lastUsedEntityType[0];
-                    }
-
+                    lastUsedEntityType.showTitleField = lastUsedEntityType.showTitleField || false;
                     currentItemWindow.element.data("entityTypeDetails", lastUsedEntityType);
                     currentItemWindow.element.data("entityType", entityType);
                     const nameField = currentItemWindow.element.find(".itemNameField");
@@ -1385,7 +1382,7 @@ export class Windows {
                             const container = currentItemWindow.element.find(".right-pane-content-popup").html(tabData.htmlTemplate);
                             await this.base.loadKendoScripts(tabData.scriptTemplate);
                             $.globalEval(tabData.scriptTemplate);
-                            
+
                             await Utils.sleep(150);
                             container.find("input").first().focus();
                         } else {
@@ -1440,7 +1437,7 @@ export class Windows {
             };
 
             currentItemWindow.element.data("reloadFunction", loadPopupContents);
-            
+
             // Bind events for the icons on the top-right of the window.
             currentItemWindow.wrapper.find(".k-i-verversen").parent().click(async (event) => {
                 const previouslySelectedTab = currentItemTabStrip.select().index();
@@ -1628,7 +1625,7 @@ export class Windows {
                 const row = $(element);
                 const dataItem = grid.dataItem(row);
                 const isChecked = row.find("td > input[type=checkbox]").prop("checked");
-                
+
                 if (isChecked) {
                     if (alreadyLinkedItems.filter((item) => (item.id || item[`ID_${this.searchItemsWindowSettings.entityType}`]) === dataItem.id).length === 0) {
                         if (dataItem.parentItemId > 0 && dataItem.parentItemId !== this.searchItemsWindowSettings.plainParentId) {

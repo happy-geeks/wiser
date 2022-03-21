@@ -9,23 +9,27 @@ using Api.Modules.Customers.Interfaces;
 using Api.Modules.EntityTypes.Interfaces;
 using Api.Modules.EntityTypes.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
 namespace Api.Modules.EntityTypes.Services
 {
+    /// <inheritdoc cref="IEntityTypesService" />
     public class EntityTypesService : IEntityTypesService, IScopedService
     {
         private readonly IWiserCustomersService wiserCustomersService;
         private readonly IDatabaseConnection clientDatabaseConnection;
+        private readonly IWiserItemsService wiserItemsService;
 
         /// <summary>
         /// Creates a new instance of <see cref="EntityTypesService"/>.
         /// </summary>
-        public EntityTypesService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection)
+        public EntityTypesService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.clientDatabaseConnection = clientDatabaseConnection;
+            this.wiserItemsService = wiserItemsService;
         }
         
         /// <inheritdoc />
@@ -62,7 +66,14 @@ namespace Api.Modules.EntityTypes.Services
 
             return new ServiceResult<List<EntityTypeModel>>(result);
         }
-        
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<EntitySettingsModel>> GetAsync(ClaimsIdentity identity, string entityType, int moduleId = 0)
+        {
+            var result = await wiserItemsService.GetEntityTypeSettingsAsync(entityType, moduleId);
+            return new ServiceResult<EntitySettingsModel>(result);
+        }
+
         /// <inheritdoc />
         public async Task<ServiceResult<List<string>>> GetAvailableEntityTypesAsync(ClaimsIdentity identity, int moduleId, string parentId = null)
         {

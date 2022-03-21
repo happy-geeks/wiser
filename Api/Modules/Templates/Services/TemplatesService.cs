@@ -951,22 +951,6 @@ SELECT @setting_value;");
 FROM wiser_itemdetail
 WHERE item_id = {itemId:decrypt(true)}
 AND `key` = '{propertyName}'");
-                TemplateQueryStrings.Add("GET_ENTITY_TYPE", @"SET @_entityType = '{entityType}';
-SET @_moduleId = IF('{moduleId}' LIKE '{%}', '', '{moduleId}');
-
-SELECT 
-	id,
-    name,
-    module_id,
-    accepted_childtypes,
-    icon,
-    icon_add,
-    show_in_tree_view,
-    show_overview_tab,
-    show_title_field
-FROM wiser_entity
-WHERE name = @_entityType
-AND (@_moduleId = '' OR module_id = @_moduleId)");
                 TemplateQueryStrings.Add("GET_ITEM_DETAILS", @"SET @_itemId = {itemId:decrypt(true)};
 SET @userId = {encryptedUserId:decrypt(true)};
 
