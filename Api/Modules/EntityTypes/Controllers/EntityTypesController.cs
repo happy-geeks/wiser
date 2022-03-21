@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Modules.EntityTypes.Interfaces;
 using Api.Modules.EntityTypes.Models;
+using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 
@@ -33,9 +34,21 @@ namespace Api.Modules.EntityTypes.Controllers
         /// <param name="onlyEntityTypesWithDisplayName">Optional: Set to <see langword="false"/> to get all entity types, or <see langword="true"/> to get only entity types that have a display name.</param>
         /// <returns>A list of all available entity types.</returns>
         [HttpGet, ProducesResponseType(typeof(List<EntityTypeModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> Get(bool onlyEntityTypesWithDisplayName = false)
+        public async Task<IActionResult> GetAsync(bool onlyEntityTypesWithDisplayName = false)
         {
             return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, onlyEntityTypesWithDisplayName)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Gets the settings for an entity type. These settings will be cached for 1 hour.
+        /// </summary>
+        /// <param name="entityType">The name of the entity type.</param>
+        /// <param name="moduleId">Optional: The ID of the module, in case the entity type has different settings for different modules.</param>
+        /// <returns>A <see cref="EntitySettingsModel"/> containing all settings of the entity type.</returns>
+        [HttpGet, Route("{entityType}"), ProducesResponseType(typeof(EntitySettingsModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAsync(string entityType, int moduleId = 0)
+        {
+            return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, entityType, moduleId)).GetHttpResponseMessage();
         }
         
         /// <summary>

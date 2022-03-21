@@ -158,7 +158,7 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("insertMode", newVersion.InsertMode, oldVersion.InsertMode, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loadAlways", newVersion.LoadAlways, oldVersion.LoadAlways, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("urlRegex", newVersion.UrlRegex, oldVersion.UrlRegex, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("externalFiles", String.Join(", ", newVersion.ExternalFiles ?? new List<string>()), String.Join(", ", oldVersion.ExternalFiles ?? new List<string>()), historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("externalFiles", String.Join(";", newVersion.ExternalFiles ?? new List<string>()), String.Join(";", oldVersion.ExternalFiles ?? new List<string>()), historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingCreateObjectInsteadOfArray", newVersion.GroupingCreateObjectInsteadOfArray, oldVersion.GroupingCreateObjectInsteadOfArray, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingPrefix", newVersion.GroupingPrefix, oldVersion.GroupingPrefix, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingKey", newVersion.GroupingKey, oldVersion.GroupingKey, historyModel);
@@ -167,8 +167,8 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("isScssIncludeTemplate", newVersion.IsScssIncludeTemplate, oldVersion.IsScssIncludeTemplate, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("useInWiserHtmlEditors", newVersion.UseInWiserHtmlEditors, oldVersion.UseInWiserHtmlEditors, historyModel);
 
-            var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(",");
-            var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(",");
+            var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries);
+            var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries);
 
             if (!String.IsNullOrEmpty(newVersion.LinkedTemplates.RawLinkList))
             {

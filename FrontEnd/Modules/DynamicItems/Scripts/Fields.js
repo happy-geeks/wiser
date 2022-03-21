@@ -744,7 +744,13 @@ export class Fields {
         const container = $(event.currentTarget).closest(".fileContainer");
         const containerData = container.data();
         const value = await kendo.prompt("", containerData.name);
-        await Wiser2.api({ url: `${this.base.settings.serviceRoot}/UPDATE_FILE_NAME?fileId=${encodeURIComponent(containerData.fileId)}&itemId=${encodeURIComponent(containerData.itemId)}&value=${encodeURIComponent(value)}` });
+        
+        await Wiser2.api({
+            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/rename/${encodeURIComponent(value)}`,
+            method: "PUT",
+            contentType: "application/json",
+            dataType: "JSON"
+        });
         this.base.notification.show({ message: `Bestandsnaam is succesvol aangepast` }, "success");
         container.find(".name").html(kendo.htmlEncode(value));
     }
@@ -758,7 +764,13 @@ export class Fields {
         const container = $(event.currentTarget).closest(".fileContainer");
         const containerData = container.data();
         const value = await kendo.prompt("", containerData.title);
-        await Wiser2.api({ url: `${this.base.settings.serviceRoot}/UPDATE_FILE_TITLE?fileId=${encodeURIComponent(containerData.fileId)}&itemId=${encodeURIComponent(containerData.itemId)}&value=${encodeURIComponent(value)}` });
+
+        await Wiser2.api({
+            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/title/${encodeURIComponent(value)}`,
+            method: "PUT",
+            contentType: "application/json",
+            dataType: "JSON"
+        });
         this.base.notification.show({ message: `Bestandsomschrijving is succesvol aangepast` }, "success");
         container.find(".title").html(kendo.htmlEncode(value));
     }
@@ -916,13 +928,13 @@ export class Fields {
         iframe.onload = () => {
             // Need to wait until the iframe is loaded, before we can add event listeners.
             iframeWindow.document.addEventListener("dataSelectorAfterSave", (saveEvent) => {
-                if (!saveEvent.detail || !saveEvent.detail.length || !saveEvent.detail[0].itemId) {
+                if (!saveEvent) {
                     kendo.alert("Er is iets fout gegaan tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals of neem contact op met ons.");
                     return;
                 }
 
                 // Save the value in the hidden input, so that it will be saved in wiser_itemdetail once the user saves the item.
-                field.prev("input.valueField").val(saveEvent.detail[0].itemId);
+                field.prev("input.valueField").val(saveEvent);
                 dataSelectorWindow.close().destroy();
             });
         };
@@ -1014,6 +1026,79 @@ export class Fields {
         } catch (exception) {
             console.error("Error on onFileDelete", exception);
             window.dynamicItems.notification.show({ message: `Er is iets fout gegaan met opslaan: ${exception}` }, "error");
+        }
+    }
+
+    async onImageEdit(event) {
+        const imageContainer = $(event.currentTarget).closest(".product");
+        const data = imageContainer.data();
+
+        try {
+            const dialogElement = $("#changeImageDataDialog");
+            let changeImageDataDialog = dialogElement.data("kendoDialog");
+
+            // Set the initial values from the query.
+            dialogElement.find("input[name=fileName]").val(data.fileName);
+            dialogElement.find("input[name=title]").val(data.title);
+            
+            if (changeImageDataDialog) {
+                changeImageDataDialog.destroy();
+            }
+
+            changeImageDataDialog = dialogElement.kendoDialog({
+                width: "900px",
+                title: "Afbeelding eigenschappen wijzigen",
+                closable: false,
+                modal: true,
+                actions: [
+                    {
+                        text: "Annuleren"
+                    },
+                    {
+                        text: "Opslaan",
+                        primary: true,
+                        action: (event) => {
+                            try {
+                                const newFileName = dialogElement.find("input[name=fileName]").val();
+                                const newTitle = dialogElement.find("input[name=title]").val();
+
+                                const promises = [
+                                    Wiser2.api({
+                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/rename/${encodeURIComponent(newFileName)}`,
+                                        method: "PUT",
+                                        contentType: "application/json",
+                                        dataType: "JSON"
+                                    }),
+                                    Wiser2.api({
+                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/title/${encodeURIComponent(newTitle)}`,
+                                        method: "PUT",
+                                        contentType: "application/json",
+                                        dataType: "JSON"
+                                    })
+                                ];
+
+                                Promise.all(promises).then(() => {
+                                    imageContainer.data("fileName", newFileName);
+                                    imageContainer.data("title", newTitle);
+                                    changeImageDataDialog.close();
+                                    this.base.notification.show({ message: `Afbeelding is succesvol aangepast` }, "success");
+                                }).catch((error) => {
+                                    console.error(error);
+                                    kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                                });
+                            } catch (exception) {
+                                console.error(exception);
+                                kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                            }
+                        }
+                    }
+                ]
+            }).data("kendoDialog");
+
+            changeImageDataDialog.open();
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan met het verwijderen van de afbeelding. Probeer het a.u.b. nogmaals of neem contact op met ons.");
         }
     }
 
@@ -2703,40 +2788,6 @@ export class Fields {
             this.base.windows.templatesUploaderSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
             this.base.windows.templatesUploaderWindow.center().open();
         }
-    }
-
-    /**
-     * Event that gets called when the user executes the custom action for adding dynamic content from Wiser to the HTML editor.
-     * This will open the dynamicHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser 2.0 is being loaded in an iframe.
-     * @param {any} event The event from the execute action.
-     * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
-     * @param {any} itemId The ID of the current item.
-     * @param {any} codeMirror The CodeMirror editor where the action is executed in.
-     */
-    async onHtmlEditorDynamicContentExec(event, kendoEditor, itemId, codeMirror) {
-        if (!window.parent || !window.parent.$ || !window.parent.$.dynamicHandler) {
-            console.warn("No parent window found, or no file handler found on parent window.");
-            kendo.alert("Deze functie wordt nog niet ondersteund.");
-            return;
-        }
-
-        window.parent.$.core.loadCodeMirror(() => {
-            new window.parent.$.dynamicHandler(this, 0, null, null, { id: this.base.settings.moduleId }, itemId, null, (dynamicContentData) => {
-                if (kendoEditor) {
-                    const originalOptions = kendoEditor.options.pasteCleanup;
-                    kendoEditor.options.pasteCleanup.none = true;
-                    kendoEditor.options.pasteCleanup.span = false;
-                    kendoEditor.exec("inserthtml", { value: dynamicContentData.img || dynamicContentData.html });
-                    kendoEditor.options.pasteCleanup.none = originalOptions.none;
-                    kendoEditor.options.pasteCleanup.span = originalOptions.span;
-                }
-                if (codeMirror) {
-                    const doc = codeMirror.getDoc();
-                    const cursor = doc.getCursor();
-                    doc.replaceRange(dynamicContentData.img || dynamicContentData.html, cursor);
-                }
-            });
-        });
     }
 
     /**
