@@ -350,10 +350,7 @@ const moduleSettings = {
                 dialog.open();
             });
 
-            $("body").on("click", ".imgEdit", function () {
-                const image = $(this).parents(".product").find("img");
-                kendo.alert("Deze functionaliteit is nog niet geïmplementeerd");
-            });
+            $("body").on("click", ".imgTools .imgEdit", this.fields.onImageEdit.bind(this.fields));
 
             $("body").on("click", ".imgTools .imgDelete", this.fields.onImageDelete.bind(this.fields));
 

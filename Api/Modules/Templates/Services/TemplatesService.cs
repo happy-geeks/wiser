@@ -887,8 +887,6 @@ SELECT CONCAT(`value`, long_value) AS `value`
 FROM wiser_itemdetail detail
 	JOIN wiser_item item ON item.id=detail.item_id AND item.unique_uuid = @user_id AND item.entity_type=@entity_type
 WHERE detail.`key` = @setting_name ");
-                TemplateQueryStrings.Add("UPDATE_FILE_TITLE", @"UPDATE wiser_itemfile SET title = '{value}' WHERE id = {fileId} AND item_id = {itemId:decrypt(true)};");
-                TemplateQueryStrings.Add("UPDATE_FILE_NAME", @"UPDATE wiser_itemfile SET file_name = '{value}' WHERE id = {fileId} AND item_id = {itemId:decrypt(true)};");
                 TemplateQueryStrings.Add("GET_UNDERLYING_LINKED_TYPES", @"SET @_entity_name = IF(
     '{entityName}' NOT LIKE '{%}',
     '{entityName}',
