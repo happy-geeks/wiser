@@ -2995,6 +2995,97 @@ export class Fields {
     }
 
     /**
+     * Event that gets called when the user executes the custom action for entering an HTML block for an entity.
+     * @param {any} event The event from the execute action.
+     * @param {any} editor The HTML editor where the action is executed in.
+     */
+    async onHtmlEditorDataSelectorExec(event, editor) {
+        try {
+            const dialogElement = $("#dataSelectorTemplateDialog");
+            let dataSelectorTemplateDialog = dialogElement.data("kendoDialog");
+                        
+            if (dataSelectorTemplateDialog) {
+                dataSelectorTemplateDialog.destroy();
+            }
+            
+            const dataSelectorDropDown = dialogElement.find("#dataSelectorDropDown").kendoDropDownList({
+                optionLabel: "Selecteer data selector",
+                dataTextField: "name",
+                dataValueField: "id",
+                dataSource: {
+                    transport: {
+                        read: async (options) => {
+                            try {
+                                const results = await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}data-selectors?forRendering=true` });
+                                options.success(results);
+                            } catch (exception) {
+                                console.error(exception);
+                                options.error(exception);
+                            }
+                        }
+                    }
+                }
+            }).data("kendoDropDownList");
+
+            const dataSelectorTemplateDropDown = dialogElement.find("#dataSelectorTemplateDropDown").kendoDropDownList({
+                optionLabel: "Selecteer template",
+                dataTextField: "title",
+                dataValueField: "id",
+                dataSource: {
+                    transport: {
+                        read: async (options) => {
+                            try {
+                                const results = await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}data-selectors/templates` });
+                                options.success(results);
+                            } catch (exception) {
+                                console.error(exception);
+                                options.error(exception);
+                            }
+                        }
+                    }
+                }
+            }).data("kendoDropDownList");
+
+            dataSelectorTemplateDialog = dialogElement.kendoDialog({
+                width: "900px",
+                title: "Datas elector met template invoegen",
+                closable: false,
+                modal: true,
+                actions: [
+                    {
+                        text: "Annuleren"
+                    },
+                    {
+                        text: "Invoegen",
+                        primary: true,
+                        action: (event) => {
+                            const selectedDataSelector = dataSelectorDropDown.value();
+                            const selectedTemplate = dataSelectorTemplateDropDown.value();
+                            if (!selectedDataSelector || !selectedTemplate) {
+                                kendo.alert("Kies a.u.b. een data selector en een template.")
+                                return false;
+                            }
+                            
+                            const html = `<div class="dynamic-content" data-selector-id="${selectedDataSelector}" template-id="${selectedTemplate}"><h2>Data selector '${dataSelectorDropDown.text()}' met template '${dataSelectorTemplateDropDown.text()}' (wordt alleen weergegeven op front-end)</h2></div>`;
+                            const originalOptions = editor.options.pasteCleanup;
+                            editor.options.pasteCleanup.none = true;
+                            editor.options.pasteCleanup.span = false;
+                            editor.exec("inserthtml", { value: html });
+                            editor.options.pasteCleanup.none = originalOptions.none;
+                            editor.options.pasteCleanup.span = originalOptions.span;
+                        }
+                    }
+                ]
+            }).data("kendoDialog");
+
+            dataSelectorTemplateDialog.open();
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan met het verwijderen van de afbeelding. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+        }
+    }
+
+    /**
      * Event that gets called when the user double clicks a dynamic content block in a HTML editor.
      * This will open the dynamicHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser 2.0 is being loaded in an iframe.
      * @param {any} event The event from the execute action.
