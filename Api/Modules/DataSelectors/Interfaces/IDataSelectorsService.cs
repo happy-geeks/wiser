@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.DataSelectors.Models;
+using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 
@@ -25,7 +26,9 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// Get the saved data selectors.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
-        Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity);
+        /// <param name="forExportModule">Optional: Set to true to only get data selectors that can be shown in the export module.</param>
+        /// <param name="forRendering">Optional: Set to true to only get data selectors to use with templating rendering.</param>
+        Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity, bool forExportModule = false, bool forRendering = false);
 
         /// <summary>
         /// Saves a data selector based on name. The ID will be ignored. If a data selector with the given name already exists, it will be overwritten.
@@ -94,5 +97,11 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// <param name="defaultFileName">The default name for the file if no name has been set in the request.</param>
         /// <param name="extension">The extension of the file to save as.</param>
         IActionResult SetFileName(WiserDataSelectorRequestModel data, ServiceResult<FileContentResult> result, string defaultFileName, string extension);
+
+        /// <summary>
+        /// Get templates that can be used with data selectors.
+        /// </summary>
+        /// <returns>A list of WiserItemModel.</returns>
+        Task<ServiceResult<List<WiserItemModel>>> GetTemplatesAsync(ClaimsIdentity identity);
     }
 }

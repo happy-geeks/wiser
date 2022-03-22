@@ -1638,6 +1638,9 @@ k-filter-menu .k-autocomplete,
 .k-editor .k-i-wiser-entity-block:before {
     content: "\e63b";
 }
+.k-editor .k-i-wiser-data-selector:before {
+	content: "\e13b";
+}
 .k-editor .k-i-wiser-paste-without-formatting:before {
     content: "\e665";
 }
