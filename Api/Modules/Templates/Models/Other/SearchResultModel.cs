@@ -1,4 +1,7 @@
-﻿namespace Api.Modules.Templates.Models.Other
+﻿using System.Collections.Generic;
+using GeeksCoreLibrary.Modules.Templates.Enums;
+
+namespace Api.Modules.Templates.Models.Other
 {
     /// <summary>
     /// A model for returning template search results.
@@ -18,11 +21,16 @@
         /// <summary>
         /// Gets or sets the template type (query, html, javascript etc).
         /// </summary>
-        public string Type { get; set; }
-
+        public TemplateTypes Type { get; set; }
+        
         /// <summary>
         /// Gets or sets the parent directory of the template.
         /// </summary>
-        public string Parent { get; set; }
+        public int ParentId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the found children.
+        /// </summary>
+        public List<SearchResultModel> Children { get; set; }
     }
 }

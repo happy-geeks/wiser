@@ -521,28 +521,145 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<List<SearchResultModel>> SearchAsync(SearchSettingsModel searchSettings)
+        public async Task<List<SearchResultModel>> SearchAsync(string searchValue)
         {
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("needle", searchSettings.Needle);
-            var dataTable = await clientDatabaseConnection.GetAsync(BuildSearchQuery(searchSettings));
-
-            var searchResults = new List<SearchResultModel>();
-
-            foreach (DataRow row in dataTable.Rows)
+            var searchForId = false;
+            if (searchValue.StartsWith("#"))
             {
-                var result = new SearchResultModel
-                {
-                    Id = row.Field<int>("id"),
-                    Name = row.Field<string>("name"),
-                    Type = row.Field<string>("type"),
-                    Parent = row.Field<string>("parent")
-                };
-                searchResults.Add(result);
+                searchForId = true;
+                searchValue = searchValue[1..];
             }
 
-            return searchResults;
+            var whereClauseForTemplates = searchForId ? "template.template_id = ?searchValue" : "(template.template_name LIKE CONCAT('%', ?searchValue, '%') OR template.template_data LIKE CONCAT('%', ?searchValue, '%'))";
+            var whereClauseForDynamicContent = searchForId ? "component.content_id = ?searchValue" : "(component.title LIKE CONCAT('%', ?searchValue, '%') OR component.settings LIKE CONCAT('%', ?searchValue, '%') OR component.component_mode LIKE CONCAT('%', ?searchValue, '%'))";
+            var query = $@"SELECT 
+	template.template_id,
+	template.template_type,
+	template.template_name,
+	parent1.template_id AS parent1Id,
+	parent1.template_name AS parent1Name,
+	parent2.template_id AS parent2Id,
+	parent2.template_name AS parent2Name,
+	parent3.template_id AS parent3Id,
+	parent3.template_name AS parent3Name,
+	parent4.template_id AS parent4Id,
+	parent4.template_name AS parent4Name,
+	parent5.template_id AS parent5Id,
+	parent5.template_name AS parent5Name,
+	parent6.template_id AS parent6Id,
+	parent6.template_name AS parent6Name,
+	parent7.template_id AS parent7Id,
+	parent7.template_name AS parent7Name,
+	parent8.template_id AS parent8Id,
+	parent8.template_name AS parent8Name
+FROM (
+	# The actual searching is done in an inner query and the parents are retrieved in the outer query, 
+	# so that we only get the parents of the actual results instead of everything in the database.
+	SELECT 
+		template.template_id,
+		template.template_type,
+		template.template_name,
+		template.parent_id
+	FROM {WiserTableNames.WiserTemplate} AS template
+	LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+	WHERE {whereClauseForTemplates}
+	AND template.removed = 0
+	AND otherVersion.id IS NULL
+	
+	UNION
+	
+	SELECT 
+		template.template_id,
+		template.template_type,
+		template.template_name,
+		template.parent_id
+	FROM (
+		# The actual searching is done in an inner query and the parents are retrieved in the outer query, 
+		# so that we only get the parents of the actual results instead of everything in the database.
+		SELECT component.content_id
+		FROM {WiserTableNames.WiserDynamicContent} AS component
+		LEFT JOIN {WiserTableNames.WiserDynamicContent} AS otherVersion ON otherVersion.content_id = component.content_id AND otherVersion.version > component.version
+		WHERE {whereClauseForDynamicContent}
+		AND component.removed = 0
+		AND otherVersion.id IS NULL
+	) AS component
+	JOIN {WiserTableNames.WiserTemplateDynamicContent} AS link ON link.content_id = component.content_id
+	JOIN {WiserTableNames.WiserTemplate} AS template ON template.template_id = link.destination_template_id
+	LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersionTemplate ON otherVersionTemplate.template_id = template.template_id AND otherVersionTemplate.version > template.version
+	WHERE otherVersionTemplate.id IS NULL
+	GROUP BY template.template_id
+) AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent2 ON parent2.template_id = parent1.parent_id AND parent2.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent1.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent3 ON parent3.template_id = parent2.parent_id AND parent3.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent2.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent4 ON parent4.template_id = parent3.parent_id AND parent4.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent3.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent5 ON parent5.template_id = parent4.parent_id AND parent5.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent4.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent6 ON parent6.template_id = parent5.parent_id AND parent6.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent5.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent7 ON parent7.template_id = parent6.parent_id AND parent7.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent6.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = parent7.parent_id AND parent8.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent7.parent_id)";
+
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("searchValue", searchValue);
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            
+            var allItems = new List<SearchResultModel>();
+
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                var templateId = dataRow.Field<int>("template_id");
+                if (allItems.Any(i => i.Id == templateId))
+                {
+                    continue;
+                }
+
+                var result = new SearchResultModel
+                {
+                    Id = templateId,
+                    Name = dataRow.Field<string>("template_name"),
+                    Type = dataRow.Field<TemplateTypes>("template_type")
+                };
+
+                var previousParent = result;
+                var parentCounter = 1;
+                while (!dataRow.IsNull($"parent{parentCounter}Id"))
+                {
+                    var id = dataRow.Field<int>($"parent{parentCounter}Id");
+                    previousParent.ParentId = id;
+                    var newParent = allItems.SingleOrDefault(i => i.Id == id);
+                    if (newParent == null)
+                    {
+                        newParent = new SearchResultModel
+                        {
+                            Id = id,
+                            Name = dataRow.Field<string>($"parent{parentCounter}Name"),
+                            Type = TemplateTypes.Directory
+                        };
+
+                        allItems.Add(newParent);
+                    }
+
+                    previousParent = newParent;
+                    parentCounter++;
+                }
+
+                allItems.Add(result);
+            }
+
+            void AddChildren(List<SearchResultModel> currentLevel)
+            {
+                foreach (var result in currentLevel)
+                {
+                    result.Children = allItems.Where(i => i.ParentId == result.Id).ToList();
+                    AddChildren(result.Children);
+                }
+            }
+
+            var results = allItems.Where(i => i.ParentId == 0).ToList();
+            AddChildren(results);
+
+            return results;
         }
+
 
         /// <inheritdoc/>
         public async Task<int> CreateAsync(string name, int parent, TemplateTypes type, string username)
@@ -940,131 +1057,14 @@ namespace Api.Modules.Templates.Services.DataLayer
                         1,
                         ?now,
                         ?username
-                    FROM wiser_template AS template
-                    LEFT JOIN wiser_template AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+                    FROM {WiserTableNames.WiserTemplate} AS template
+                    LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
                     WHERE template.parent_id = ?templateId
                     AND template.removed = 0
                     AND otherVersion.id IS NULL";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             return true;
-        }
-
-        private string BuildSearchQuery(SearchSettingsModel searchSettings)
-        {
-            var searchQuery = new StringBuilder();
-            if (!searchSettings.IsTemplateSearchDisabled())
-            {
-                searchQuery.Append($"SELECT t.template_id AS id, 'template' AS type, t.template_name AS name, (SELECT par.template_name FROM {WiserTableNames.WiserTemplate} par WHERE par.template_id=t.parent_id) AS parent FROM {WiserTableNames.WiserTemplate} t WHERE ");
-
-                switch (searchSettings.SearchEnvironment)
-                {
-                    case Environments.Development:
-                        searchQuery.Append($"t.version = (SELECT MAX(tt.version) FROM {WiserTableNames.WiserTemplate} tt WHERE tt.template_id = t.template_id)");
-                        break;
-                    case Environments.Test:
-                        clientDatabaseConnection.AddParameter("environment", Environments.Test);
-                        searchQuery.Append("t.published_environment & ?environment");
-                        break;
-                    case Environments.Acceptance:
-                        clientDatabaseConnection.AddParameter("environment", Environments.Acceptance);
-                        searchQuery.Append("t.published_environment & ?environment");
-                        break;
-                    case Environments.Live:
-                        clientDatabaseConnection.AddParameter("environment", Environments.Live);
-                        searchQuery.Append("t.published_environment & ?environment");
-                        break;
-                    default:
-                        searchQuery.Append($"t.version = (SELECT MAX(tt.version) FROM {WiserTableNames.WiserTemplate} tt WHERE tt.template_id = t.template_id)");
-                        break;
-                }
-
-                searchQuery.Append("AND t.removed = 0 AND (");
-
-                if (searchSettings.SearchTemplateId)
-                {
-                    searchQuery.Append("t.template_id = ?needle OR ");
-                }
-                if (searchSettings.SearchTemplateType)
-                {
-                    searchQuery.Append("t.template_type LIKE CONCAT('%',?needle,'%') OR ");
-                }
-                if (searchSettings.SearchTemplateName)
-                {
-                    searchQuery.Append("t.template_name LIKE CONCAT('%',?needle,'%') OR ");
-                }
-                if (searchSettings.SearchTemplateData)
-                {
-                    searchQuery.Append("t.template_data LIKE CONCAT('%',?needle,'%') OR ");
-                }
-                if (searchSettings.SearchTemplateParent)
-                {
-                    searchQuery.Append("t.template_name LIKE CONCAT('%',?needle,'%') OR ");
-                }
-                if (searchSettings.SearchTemplateLinkedTemplates)
-                {
-                    searchQuery.Append("t.linked_templates LIKE CONCAT('%',?needle,'%') OR ");
-                }
-
-                //Remove last 'OR' from query
-                searchQuery.Remove(searchQuery.Length - 3, 3);
-
-                searchQuery.Append(")");
-
-                searchQuery.Append(" UNION ALL ");
-            }
-            if (!searchSettings.IsDynamicContentSearchDisabled())
-            {
-                searchQuery.Append($"SELECT wdc.content_id AS id, 'dynamiccontent' AS type, wdc.title AS name, (SELECT GROUP_CONCAT(tdc.template_id) FROM {WiserTableNames.WiserTemplateDynamicContent} tdc WHERE tdc.destination_template_id=wdc.content_id) AS parent FROM {WiserTableNames.WiserDynamicContent} wdc WHERE ");
-
-                switch (searchSettings.SearchEnvironment)
-                {
-                    case Environments.Development:
-                        searchQuery.Append($"wdc.version = (SELECT MAX(dc.version) FROM {WiserTableNames.WiserDynamicContent} dc WHERE dc.content_id = wdc.content_id)");
-                        break;
-                    case Environments.Test:
-                        clientDatabaseConnection.AddParameter("environment", Environments.Test);
-                        searchQuery.Append("wdc.published_environment & ?environment");
-                        break;
-                    case Environments.Acceptance:
-                        clientDatabaseConnection.AddParameter("environment", Environments.Acceptance);
-                        searchQuery.Append("wdc.published_environment & ?environment");
-                        break;
-                    case Environments.Live:
-                        clientDatabaseConnection.AddParameter("environment", Environments.Live);
-                        searchQuery.Append("wdc.published_environment & ?environment");
-                        break;
-                    default:
-                        searchQuery.Append($"wdc.version = (SELECT MAX(dc.version) FROM {WiserTableNames.WiserDynamicContent} dc WHERE dc.content_id = wdc.content_id)");
-                        break;
-                }
-
-                searchQuery.Append("AND (");
-
-                if (searchSettings.SearchDynamicContentId)
-                {
-                    searchQuery.Append("wdc.content_id = ?needle OR ");
-                }
-                if (searchSettings.SearchDynamicContentSettings)
-                {
-                    searchQuery.Append("wdc.settings LIKE CONCAT('%',?needle,'%') OR ");
-                }
-                if (searchSettings.SearchDynamicContentComponentName)
-                {
-                    searchQuery.Append("wdc.component LIKE CONCAT('%',?needle,'%') OR ");
-                }
-                if (searchSettings.SearchDynamicContentComponentMode)
-                {
-                    searchQuery.Append("wdc.component_mode LIKE CONCAT('%',?needle,'%') OR ");
-                }
-
-                //Remove last 'OR' from query
-                searchQuery.Remove(searchQuery.Length - 3, 3);
-
-                searchQuery.Append(")");
-            }
-
-            return searchQuery.ToString();
         }
     }
 }

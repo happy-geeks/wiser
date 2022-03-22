@@ -2591,9 +2591,9 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(SearchSettingsModel searchSettings)
+        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(string searchValue)
         {
-            return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchSettings));
+            return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchValue));
         }
 
         /// <inheritdoc />
