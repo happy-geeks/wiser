@@ -42,16 +42,11 @@ var entityBlockTool = {
     tooltip: "Entiteit-blok",
     exec: function(e) { window.dynamicItems.fields.onHtmlEditorEntityBlockExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor")); }
 };
-/*var insertLinkTool = {
-    name: "wiserInsertLink",
-    tooltip: "Hyperlink invoegen",
-    exec: function(e) { window.dynamicItems.fields.onHtmlEditorEntityBlockExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor")); }
-};*/
-
-if (!window.dynamicItems.settings.imagesRootId && (!window.parent || !window.parent.$ || !window.parent.$.fileHandler)) {
-	// Fall back to default inset image tool from Kendo when not using it inside an iframe of Wiser 1.0.
-	imageTool = "insertImage";
-}
+var dataSelectorTool = {
+    name: "wiserDataSelector",
+    tooltip: "Data selector met template",
+    exec: function(e) { window.dynamicItems.fields.onHtmlEditorDataSelectorExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor")); }
+};
 
 var options = $.extend(true, {
 	resizable: true,
@@ -101,6 +96,7 @@ var allTools = {
     fileTool: [99],
     templateTool: [3,99],
     entityBlockTool: [99],
+    dataSelectorTool: [99],
     "subscript": [99],
     "superscript": [99],
     "tableWizard": [3,99],
@@ -165,6 +161,9 @@ for (var toolName in allTools) {
             break;
         case "entityBlockTool":
             tool = entityBlockTool;
+            break;
+        case "dataSelectorTool":
+            tool = dataSelectorTool;
             break;
         default:
             tool = toolName;

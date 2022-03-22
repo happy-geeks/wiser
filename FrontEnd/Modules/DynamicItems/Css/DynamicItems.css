@@ -21,7 +21,8 @@ html, body {
     #templatesUploaderWindow,
     #infoPanel_template,
     #maximizeSubEntitiesGridWindow,
-    #changeImageDataDialog {
+    #changeImageDataDialog,
+    #dataSelectorTemplateDialog {
         display: none;
     }
 
@@ -39,7 +40,8 @@ dd {
     margin-bottom: 10px;
 }
 
-.k-dialog #changeImageDataDialog {
+.k-dialog #changeImageDataDialog,
+.k-dialog #dataSelectorTemplateDialog {
     display: block;
 }
 
