@@ -8,7 +8,8 @@
 }
 html {
     font-size: 14px;
-	font-family: var(--regular-txt);
+    font-family: var(--regular-txt);
+    font-weight: 300;
 }
 html, body {
 	height: 100%;
@@ -208,11 +209,16 @@ ins {
 }
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent {
     align-content: flex-start;
-    height: 100%;
+    /*height: 100%;*/
 }
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview {
     max-height: calc(100% - 132px);
     height: 100%;
+}
+.k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview:nth-of-type(1) {
+    min-height: calc(100vh - 222px);
+    display: flex;
+    flex-direction: column;
 }
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview h4 {
     display: none;
@@ -222,7 +228,9 @@ ins {
     max-width: 100%;
     display: flex;
     flex-direction: column;
+    flex-grow: 1;
     height: 100% !important;
+    min-height: 250px;
 }
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .k-grid .k-grid-content {
     flex-grow: 1;
@@ -261,7 +269,7 @@ ins {
     padding: 6px 8px;
     box-sizing: border-box;
     font-family: var(--medium-txt);
-    font-weight: 600;
+    font-weight: 500;
     width: 100%;
     margin-bottom: 10px;
 }
@@ -298,7 +306,7 @@ ins {
 .item h4 > label {
 	color: var(--light-txt);
 	font-family: var(--regular-txt);
-	font-weight: normal;
+	font-weight: 500;
 	padding-left: 3px;
 }
 .item h4:hover {
@@ -406,7 +414,7 @@ ins {
     overflow: inherit;
 }
 .dynamicTabContent .gridview:only-child {
-    /*height: calc(100vh - 222px);*/
+    height: calc(100vh - 222px);
     max-height: none !important;
 }
 .dynamicTabContent .gridview:only-child h4 {
@@ -1034,6 +1042,8 @@ footer .actions button {
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
+    min-height: 42px;
+    min-width: 42px;
 }
 footer input ~ .meta-data li {
     display: none;
