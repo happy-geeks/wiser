@@ -176,7 +176,7 @@ namespace Api.Core.Services
                     throw;
                 }
 
-                switch (mySqlException.ErrorCode)
+                switch (mySqlException.Number)
                 {
                     case (int)MySqlErrorCode.LockDeadlock:
                     case (int)MySqlErrorCode.LockWaitTimeout:
@@ -364,7 +364,7 @@ namespace Api.Core.Services
                     throw;
                 }
 
-                switch (mySqlException.ErrorCode)
+                switch (mySqlException.Number)
                 {
                     case (int)MySqlErrorCode.LockDeadlock:
                     case (int)MySqlErrorCode.LockWaitTimeout:
