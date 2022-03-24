@@ -140,9 +140,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateTreeViewModel>> CreateAsync(ClaimsIdentity identity, string name, int parent, TemplateTypes type)
+        public async Task<ServiceResult<TemplateTreeViewModel>> CreateAsync(ClaimsIdentity identity, string name, int parent, TemplateTypes type, string editorValue="")
         {
-            return await templatesService.CreateAsync(identity, name, parent, type);
+            return await templatesService.CreateAsync(identity, name, parent, type, editorValue);
         }
 
         /// <inheritdoc />

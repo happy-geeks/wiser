@@ -197,9 +197,24 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="type">The type of the new template that will be created.</param>
         /// <returns>The id of the newly created template. This can be used to update the interface accordingly.</returns>
         [HttpPut, Route("{parentId:int}"), ProducesResponseType(typeof(TemplateTreeViewModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> CreateAsync(int parentId, [FromQuery]string name, [FromQuery]TemplateTypes type)
+        public async Task<IActionResult> CreateAsync(int parentId, NewTemplateModel newTemplate)
         {
-            return (await templatesService.CreateAsync((ClaimsIdentity)User.Identity, name, parentId, type)).GetHttpResponseMessage();
+            return (await templatesService.CreateAsync((ClaimsIdentity)User.Identity, newTemplate.name, parentId, newTemplate.type, newTemplate.editorValue)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Creates a template from a file with the given name, type and parent template.
+        /// </summary>
+        /// <param name="parentId">The id of the parent template of the template that will be created.</param>
+        /// <param name="name">The name to give the template that will be created.</param>
+        /// <param name="type">The type of the new template that will be created.</param>
+        /// <param name="editorValue">The value that is to be set as the editorValue for the template</param>
+        /// <returns>The id of the newly created template. This can be used to update the interface accordingly.</returns>
+        [HttpPost, Route("file/{parentId:int}"), ProducesResponseType(typeof(TemplateTreeViewModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CreateFromFileAsync(int parentId, [FromQuery] string name, [FromQuery] TemplateTypes type, string editorValue)
+        {
+            return null;
+            //return (await templatesService.CreateAsync((ClaimsIdentity)User.Identity, name, parentId, type, editorValue)).GetHttpResponseMessage();
         }
 
         /// <summary>

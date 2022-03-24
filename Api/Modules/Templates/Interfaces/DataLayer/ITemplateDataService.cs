@@ -97,8 +97,9 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="parent">The id of the parent template of the template that will be created.</param>
         /// <param name="type">The type of the new template that will be created.</param>
         /// <param name="username">The name of the authenticated user.</param>
+        /// <param name="editorValue">The value to be inserted into the editor. This will be empty for blank templates.</param>
         /// <returns>The id of the newly created template. This can be used to update the interface accordingly.</returns>
-        Task<int> CreateAsync(string name, int parent, TemplateTypes type, string username);
+        Task<int> CreateAsync(string name, int parent, TemplateTypes type, string username, string editorValue);
 
         /// <summary>
         /// Makes sure that the ordering of a tree view is correct, to prevent issues with drag and drop in the tree view.

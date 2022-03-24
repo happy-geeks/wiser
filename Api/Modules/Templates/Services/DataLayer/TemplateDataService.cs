@@ -545,7 +545,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc/>
-        public async Task<int> CreateAsync(string name, int parent, TemplateTypes type, string username)
+        public async Task<int> CreateAsync(string name, int parent, TemplateTypes type, string username, string editorValue)
         {
             var ordering = await GetHighestOrderNumberOfChildrenAsync(parent) + 1;
             clientDatabaseConnection.ClearParameters();
@@ -555,10 +555,11 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
             clientDatabaseConnection.AddParameter("username", username);
             clientDatabaseConnection.AddParameter("ordering", ordering);
+            clientDatabaseConnection.AddParameter("editorval", editorValue);
 
             var dataTable = await clientDatabaseConnection.GetAsync(@$"SET @id = (SELECT MAX(template_id)+1 FROM {WiserTableNames.WiserTemplate});
-                                                            INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, changed_on, changed_by, published_environment, ordering)
-                                                            VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, 1, ?ordering);
+                                                            INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, changed_on, changed_by, published_environment, ordering, template_data)
+                                                            VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, 1, ?ordering, ?editorval);
                                                             SELECT @id;");
 
             return Convert.ToInt32(dataTable.Rows[0]["@id"]);

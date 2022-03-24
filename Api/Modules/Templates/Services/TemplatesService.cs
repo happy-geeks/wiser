@@ -2674,9 +2674,9 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateTreeViewModel>> CreateAsync(ClaimsIdentity identity, string name, int parent, TemplateTypes type)
+        public async Task<ServiceResult<TemplateTreeViewModel>> CreateAsync(ClaimsIdentity identity, string name, int parent, TemplateTypes type, string editorValue = "")
         {
-            var newId = await templateDataService.CreateAsync(name, parent, type, IdentityHelpers.GetUserName(identity));
+            var newId = await templateDataService.CreateAsync(name, parent, type, IdentityHelpers.GetUserName(identity), editorValue);
             return new ServiceResult<TemplateTreeViewModel>(new TemplateTreeViewModel
             {
                 TemplateId = newId,

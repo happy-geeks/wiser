@@ -147,6 +147,7 @@ const moduleSettings = {
 
             await this.initializeKendoComponents();
             this.bindSaveButton();
+            this.bindDropFiles();
             window.processing.removeProcess(process);
         }
 
@@ -425,6 +426,40 @@ const moduleSettings = {
                 console.error(exception);
                 kendo.alert(`Er is iets fout gegaan met het verplaatsen van dit item. De fout was:<br>${exception.responseText || exception.statusText}`);
                 event.setValid(false);
+            }
+        }
+
+        async onDropFile(event) {
+            event.preventDefault();
+
+            if (event.originalEvent.dataTransfer.items) {
+                for (var i = 0; i < event.originalEvent.dataTransfer.items.length; i++) {
+                    if (event.originalEvent.dataTransfer.items[i].kind === 'file') {
+                        var file = event.originalEvent.dataTransfer.items[i].getAsFile();
+                        var reader = new FileReader();
+                        reader.onload = (function (file) {
+                            return async function (event) {
+                                const content = event.target.result;
+                                var filename = file.name.split('.');
+                                filename.splice(-1);
+                                filename.join('.');
+                                const treeviewtab = window.Templates.treeViewTabs[window.Templates.treeViewTabStrip.select().index()];
+                                const treeview = $(window.Templates.treeViewTabStrip.contentElement(window.Templates.treeViewTabStrip.select().index()).querySelector("ul")).data("kendoTreeView");
+                                var parentId = treeviewtab.templateId;
+
+                                await window.Templates.createNewTemplate(
+                                    parentId,
+                                    filename,
+                                    window.Templates.templateTypes[treeviewtab.templateName.toUpperCase()],
+                                    treeview,
+                                    !parentId ? undefined : treeview.select(),
+                                    content
+                                );
+                            }
+                        })(file);
+                        reader.readAsText(file);
+                    }
+                }
             }
         }
 
@@ -1160,6 +1195,15 @@ const moduleSettings = {
             document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
         }
 
+        bindDropFiles() {
+            console.log("Binding drop event");
+            $(".window-content #left-pane div.k-content").on("dragover", function (e) {
+                e = e || event;
+                e.preventDefault();
+            });
+            $(".window-content #left-pane div.k-content").on("drop", window.Templates.onDropFile);
+        }
+
         /**
          * Change the name of a template or directory.
          * @param {any} id
@@ -1359,17 +1403,18 @@ const moduleSettings = {
          * @param {any} treeView The tree view that the template should be added to.
          * @param {any} parentElement The parent node in the tree view to add the parent to.
          */
-        async createNewTemplate(parentId, title, type, treeView, parentElement) {
+        async createNewTemplate(parentId, title, type, treeView, parentElement, body='') {
             const process = `createNewTemplate_${Date.now()}`;
             window.processing.addProcess(process);
 
             let success = true;
             try {
                 const result = await Wiser2.api({
-                    url: `${this.settings.wiserApiRoot}templates/${parentId}?name=${encodeURIComponent(title)}&type=${type}`,
+                    url: `${this.settings.wiserApiRoot}templates/${parentId}`,
                     dataType: "json",
                     type: "PUT",
-                    contentType: "application/json"
+                    contentType: "application/json",
+                    data: JSON.stringify({ name: encodeURIComponent(title), type: type, editorvalue: body })
                 });
 
                 const dataItem = treeView.dataItem(parentElement);
