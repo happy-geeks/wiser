@@ -1,5 +1,5 @@
 // GOOGLE FONT
-@import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap');
+@import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900&display=swap');
 
 // VARIABLES
 @import 'variables';
@@ -53,25 +53,25 @@ h1 {
 }
 
 h2 {
-    font: 600 24px/32px $font-body;
+    font: 500 24px/32px $font-body;
 }
 
 h3 {
-    font: 600 18px/32px $font-body;
+    font: 500 18px/32px $font-body;
 }
 
 h4 {
-    font: 600 16px/28px $font-body;
+    font: 500 16px/28px $font-body;
 }
 
 strong {
-    font: 18px/22px $font-bold;
+    font: 700 18px/22px $font-bold;
 }
 
 .title {
-    font: 18px/32px $font-bold;
+    font: 700 18px/32px $font-bold;
 }
 
 .sub-title {
-    font: 18px/22px $font-medium;
+    font: 500 18px/22px $font-medium;
 }
