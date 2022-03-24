@@ -209,7 +209,6 @@ ins {
 }
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent {
     align-content: flex-start;
-    /*height: 100%;*/
 }
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview {
     max-height: calc(100% - 132px);
