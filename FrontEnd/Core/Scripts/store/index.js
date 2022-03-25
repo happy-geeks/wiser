@@ -119,12 +119,12 @@ const loginModule = {
                 const user = JSON.parse(localStorage.getItem("userData"));
 
                 if (data.gotUnauthorized || !accessTokenExpires || new Date(accessTokenExpires) <= new Date() || user.requirePasswordChange) {
-                    if (!user || !user.refreshToken || user.requirePasswordChange) {
+                    if (!user || !user.refresh_token || user.requirePasswordChange) {
                         this.dispatch(AUTH_LOGOUT);
                         return;
                     }
 
-                    const loginResult = await main.usersService.refreshToken(user.refreshToken);
+                    const loginResult = await main.usersService.refreshToken(user.refresh_token);
                     if (!loginResult.success) {
                         this.dispatch(AUTH_LOGOUT);
                         return;

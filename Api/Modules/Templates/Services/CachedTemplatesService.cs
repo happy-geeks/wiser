@@ -12,6 +12,7 @@ using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Templates.Enums;
 using GeeksCoreLibrary.Modules.Templates.Models;
 using LazyCache;
 using Microsoft.AspNetCore.Http;
@@ -108,9 +109,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<int>> PublishEnvironmentOfTemplateAsync(ClaimsIdentity identity, int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
+        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
         {
-            return await templatesService.PublishEnvironmentOfTemplateAsync(identity, templateId, version, environment, currentPublished);
+            return await templatesService.PublishToEnvironmentAsync(identity, templateId, version, environment, currentPublished);
         }
 
         /// <inheritdoc />
@@ -126,15 +127,27 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<SearchResultModel>>> Search(SearchSettingsModel searchSettings)
+        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(SearchSettingsModel searchSettings)
         {
-            return await templatesService.Search(searchSettings);
+            return await templatesService.SearchAsync(searchSettings);
         }
 
         /// <inheritdoc />
         public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(int templateId)
         {
             return await templatesService.GetTemplateHistoryAsync(templateId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateTreeViewModel>> CreateAsync(ClaimsIdentity identity, string name, int parent, TemplateTypes type)
+        {
+            return await templatesService.CreateAsync(identity, name, parent, type);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> RenameAsync(ClaimsIdentity identity, int id, string newName)
+        {
+            return await templatesService.RenameAsync(identity, id, newName);
         }
     }
 }
