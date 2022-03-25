@@ -219,9 +219,6 @@ ins {
     display: flex;
     flex-direction: column;
 }
-.k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview h4 {
-    display: none;
-}
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .k-grid {
     margin: 0;
     max-width: 100%;
