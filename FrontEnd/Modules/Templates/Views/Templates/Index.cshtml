@@ -53,6 +53,7 @@
                                     </div>
                                     <button id="addButton" class="k-primary k-button-round"></button>
                                 </div>
+                                <ul id="treeViewContextMenu"></ul>
                             </div>
 
 
@@ -86,7 +87,34 @@
         </div>
     </form>
 
-    <div id="DynamicContentWindow"></div>
+    <div id="dynamicContentWindow"></div>
+
+    <div id="createNewItemDialog">
+        <div class="formview full static-fields">
+            <div class="item">
+                <span class="inline">
+                    <label class="checkbox"><input type="checkbox" id="newItemIsDirectoryCheckBox" class="textField k-input" /><span>Is map</span></label>
+                </span>
+            </div>
+            <div class="item">
+                <h4><label for="newItemTitleField">Naam</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="text" id="newItemTitleField" class="textField k-input" autocomplete="off"/>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div id="addDynamicContentToHtmlDialog">
+        <div class="formview full static-fields">
+            <div class="item">
+                <h4><label for="dynamicContentDropDown">Kies een component</label></h4>
+                <div class="flex-container">
+                    <select id="dynamicContentDropDown" class="select" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."></select>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="mainLoader" class="fullscreen-loader loading">
         <div class="loader-icon">

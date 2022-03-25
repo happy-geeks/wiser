@@ -1793,62 +1793,69 @@ namespace Api.Modules.Items.Services
                     AddItem(dataRow);
                 }
             }
-
-            // Parent ID 0 means we want all items from the root. Those are always done via wiser_itemlink, so we can return the results here and do nothing else.
+            
+            // If there are no entities that use item_parent_id from wiser_item with the given parent, just return the results.
             if (parentId > 0)
             {
-                // If there are no entities that use item_parent_id from wiser_item with the given parent, just return the results.
                 query = $@"SELECT COUNT(*) AS total
                         FROM {WiserTableNames.WiserItem} AS item
                         JOIN {WiserTableNames.WiserLink} AS link ON link.destination_entity_type = item.entity_type AND link.use_item_parent_id = 1
                         WHERE item.id = ?parentId";
+            }
+            else
+            {
+                query = $@"SELECT COUNT(*) AS total
+                        FROM {WiserTableNames.WiserLink} AS link
+                        WHERE link.destination_entity_type = ''
+                        AND link.use_item_parent_id = 1";
+            }
+
+            dataTable = await clientDatabaseConnection.GetAsync(query);
+
+            if (Convert.ToInt32(dataTable.Rows[0]["total"]) > 0)
+            {
+                // Get children via the column parent_item_id of the table wiser_item.
+                query = $@"SELECT 
+	                        item.id,
+	                        item.original_item_id,
+	                        IF(item.title IS NULL OR item.title = '', item.id, item.title) AS name,
+	                        entity.icon,
+	                        entity.icon_expanded,
+	                        IF(MAX(item.published_environment) = 0, 'hiddenOnWebsite', '') AS nodeCssClass,
+	                        item.entity_type,
+	                        GROUP_CONCAT(DISTINCT entity.accepted_childtypes) AS accepted_childtypes,
+                            IF(item.parent_item_id > 0 AND item.parent_item_id = ?checkId, 1, 0) AS checked
+
+                        # Get the items linked to the parent.
+                        FROM {WiserTableNames.WiserItem} AS item
+                        JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
+
+                        # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                        LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
+                        LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
+
+                        # Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
+                        LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = item.parent_item_id
+                        JOIN {WiserTableNames.WiserEntity} AS parent_entity ON {(parentId == 0 ? "parent_entity.module_id = ?moduleId AND parent_entity.`name` = ''" : "parent_entity.`name` = parent_item.entity_type")} AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
+
+                        # Link settings to check if these links should be shown.
+                        LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
+
+                        WHERE item.parent_item_id = ?parentId
+                        AND (?entityType = '' OR FIND_IN_SET(item.entity_type, ?entityType))
+                        AND item.moduleid = ?moduleId
+                        AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+                        AND IFNULL(link_settings.show_in_tree_view, 1) = 1
+                        GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
+
+                        ORDER BY item.ordering ASC";
                 dataTable = await clientDatabaseConnection.GetAsync(query);
 
-                if (Convert.ToInt32(dataTable.Rows[0]["total"]) > 0)
+                if (dataTable.Rows.Count > 0)
                 {
-                    // Get children via the column parent_item_id of the table wiser_item.
-                    query = $@"SELECT 
-	                            item.id,
-	                            item.original_item_id,
-	                            IF(item.title IS NULL OR item.title = '', item.id, item.title) AS name,
-	                            entity.icon,
-	                            entity.icon_expanded,
-	                            IF(MAX(item.published_environment) = 0, 'hiddenOnWebsite', '') AS nodeCssClass,
-	                            item.entity_type,
-	                            GROUP_CONCAT(DISTINCT entity.accepted_childtypes) AS accepted_childtypes,
-                                IF(item.parent_item_id > 0 AND item.parent_item_id = ?checkId, 1, 0) AS checked
-
-                            # Get the items linked to the parent.
-                            FROM {WiserTableNames.WiserItem} AS item
-                            JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
-
-                            # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                            LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
-                            LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
-
-                            # Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
-                            LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = item.parent_item_id
-                            JOIN {WiserTableNames.WiserEntity} AS parent_entity ON parent_entity.`name` = parent_item.entity_type AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
-
-                            # Link settings to check if these links should be shown.
-                            LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
-
-                            WHERE item.parent_item_id = ?parentId
-                            AND (?entityType = '' OR FIND_IN_SET(item.entity_type, ?entityType))
-                            AND item.moduleid = ?moduleId
-                            AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                            AND IFNULL(link_settings.show_in_tree_view, 1) = 1
-                            GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
-
-                            ORDER BY item.ordering ASC";
-                    dataTable = await clientDatabaseConnection.GetAsync(query);
-
-                    if (dataTable.Rows.Count > 0)
+                    foreach (DataRow dataRow in dataTable.Rows)
                     {
-                        foreach (DataRow dataRow in dataTable.Rows)
-                        {
-                            AddItem(dataRow);
-                        }
+                        AddItem(dataRow);
                     }
                 }
             }
