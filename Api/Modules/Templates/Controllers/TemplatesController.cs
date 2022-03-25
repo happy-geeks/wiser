@@ -203,21 +203,6 @@ namespace Api.Modules.Templates.Controllers
         }
 
         /// <summary>
-        /// Creates a template from a file with the given name, type and parent template.
-        /// </summary>
-        /// <param name="parentId">The id of the parent template of the template that will be created.</param>
-        /// <param name="name">The name to give the template that will be created.</param>
-        /// <param name="type">The type of the new template that will be created.</param>
-        /// <param name="editorValue">The value that is to be set as the editorValue for the template</param>
-        /// <returns>The id of the newly created template. This can be used to update the interface accordingly.</returns>
-        [HttpPost, Route("file/{parentId:int}"), ProducesResponseType(typeof(TemplateTreeViewModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> CreateFromFileAsync(int parentId, [FromQuery] string name, [FromQuery] TemplateTypes type, string editorValue)
-        {
-            return null;
-            //return (await templatesService.CreateAsync((ClaimsIdentity)User.Identity, name, parentId, type, editorValue)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
         /// Save the template as a new version and save the linked templates if necessary. This method will calculate if links are to be added or removed from the current situation.
         /// </summary>
         /// <param name="templateId">The ID of the template to update.</param>
