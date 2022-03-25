@@ -15,6 +15,7 @@ export default {
                 name: "",
                 subDomain: "",
                 isWebShop: false,
+                isConfigurator: false,
                 createNewDatabase: true,
                 digitalOceanApiAccessToken: "",
                 databaseHost: "",
@@ -85,6 +86,7 @@ export default {
                 name: "",
                 subDomain: "",
                 isWebShop: false,
+                isConfigurator: false,
                 createNewDatabase: true,
                 digitalOceanApiAccessToken: "",
                 databaseHost: "",
@@ -226,7 +228,7 @@ export default {
             };
 
             this.loading = true;
-            this.createCustomerResult = await main.customersService.create(newCustomer, this.newCustomerData.isWebShop);
+            this.createCustomerResult = await main.customersService.create(newCustomer, this.newCustomerData.isWebShop, this.newCustomerData.isConfigurator);
             this.createCustomerResult.databaseUsers = databaseResult.data.users;
 			// For testing CSS/HTML, comment the line above and uncomment the code below.
             /*this.createCustomerResult = {
