@@ -549,6 +549,10 @@
 .btn.btn-left {
     margin-right: 16px;
 }
+.btn[disabled] {
+    cursor: not-allowed;
+    opacity: 0.25;
+}
 
 /* KENDO - TABSTRIP */
 .k-tabstrip {
@@ -1003,8 +1007,8 @@ span.k-input .k-input:hover {
     right: 1px;
     left: 1px;
 }
-.k-popup .k-item.k-first {
-    padding-top: 24px !important;
+.k-popup:not(.k-context-menu) .k-item.k-first {
+	padding-top: 24px !important;
 }
 
 /* KENDO - COLORPICKER */

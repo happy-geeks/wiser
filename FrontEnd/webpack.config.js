@@ -1,5 +1,7 @@
 ﻿var path = require("path");
 
+const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
+
 module.exports = {
     context: path.join(__dirname, "Core/Scripts"),
     entry: {
@@ -34,7 +36,9 @@ module.exports = {
         chunkFilename: "[name].min.js",
         publicPath: "/scripts/"
     },
-
+    plugins: [
+        new NodePolyfillPlugin()
+    ],
     resolve: {
         alias: {
             vue$: "vue/dist/vue.esm-bundler.js",

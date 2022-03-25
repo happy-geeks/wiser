@@ -27,7 +27,7 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="contentId">The id of the content</param>
         /// <param name="changesToRevert">Contains the properties and specific versions that need to be reverted.</param>
         /// <returns>An int indicating whether the action was successful.</returns>
-        Task<ServiceResult<int>> RevertChanges(ClaimsIdentity identity, int contentId, List<RevertHistoryModel> changesToRevert);
+        Task<ServiceResult<int>> RevertChangesAsync(ClaimsIdentity identity, int contentId, List<RevertHistoryModel> changesToRevert);
         
         /// <summary>
         /// Retrieve the published environments for dynamic content overviews. This method will accept a list of DynamicContentOverviewModel and retrieve the published environments for each dynamic content.

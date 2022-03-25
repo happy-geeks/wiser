@@ -1,9 +1,5 @@
 ﻿@import "../../Base/scss/base.scss";
 
-.col-6>.item.selected [data-historyproperty]{
-	border-color: blue;
-}
-
 #left-pane .pane-content {
     height: 100% !important;
     min-height: inherit;

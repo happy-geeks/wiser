@@ -24,7 +24,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<List<PreviewProfileDao>> Get(int templateId)
+        public async Task<List<PreviewProfileDao>> GetAsync(int templateId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
@@ -46,7 +46,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<int> Create(PreviewProfileDao profile, int templateId)
+        public async Task<int> CreateAsync(PreviewProfileDao profile, int templateId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
@@ -58,7 +58,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<int> Update(PreviewProfileDao profile, int templateId)
+        public async Task<int> UpdateAsync(PreviewProfileDao profile, int templateId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);
@@ -71,7 +71,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<int> Delete(int templateId, int profileId)
+        public async Task<int> DeleteAsync(int templateId, int profileId)
         {
             connection.ClearParameters();
             connection.AddParameter("templateid", templateId);

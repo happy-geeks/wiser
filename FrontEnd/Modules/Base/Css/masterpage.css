@@ -204,6 +204,7 @@ ins {
 }
 .k-window-content > .pane-content .k-tabstrip .k-content.k-state-active {
     height: calc(100% - 50px);
+    overflow: visible;
 }
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent {
     align-content: flex-start;
@@ -299,6 +300,10 @@ ins {
 	font-family: var(--regular-txt);
 	font-weight: normal;
 	padding-left: 3px;
+}
+.item h4:hover {
+    position: relative;
+    z-index: 1000;
 }
 .item.error {
     background-color: var(--error-bg-color);
@@ -825,6 +830,14 @@ ins {
     right: 7px;
     padding: 4px 10px;
     pointer-events: none;
+}
+.item[data-label-style="float"] .CodeMirror {
+    padding-top: 25px;
+}
+/* SELECTED */
+.item.selected {
+    background-color: var(--primary-color);
+    padding-top: 16px;
 }
 /* CUSTOM CHECKBOX / RADIOBUTTON */
 .checkbox, .radio {
