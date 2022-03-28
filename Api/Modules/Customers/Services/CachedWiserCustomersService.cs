@@ -96,9 +96,9 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> CreateCustomerAsync(CustomerModel customer, bool isWebShop = false)
+        public async Task<ServiceResult<CustomerModel>> CreateCustomerAsync(CustomerModel customer, bool isWebShop = false, bool isConfigurator = false)
         {
-            return await wiserCustomersService.CreateCustomerAsync(customer, isWebShop);
+            return await wiserCustomersService.CreateCustomerAsync(customer, isWebShop, isConfigurator);
         }
 
         /// <inheritdoc />
