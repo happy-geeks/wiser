@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <None Remove="Core\Queries\WiserInstallation\CreateTables.sql" />
+    <None Remove="Core\Queries\WiserInstallation\CreateTablesConfigurator.sql" />
     <None Remove="Core\Queries\WiserInstallation\CreateTriggers.sql" />
     <None Remove="Core\Queries\WiserInstallation\InsertInitialData.sql" />
     <None Remove="Core\Queries\WiserInstallation\InsertInitialDataConfigurator.sql" />
@@ -83,6 +84,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateTables.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateTablesConfigurator.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateTriggers.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialData.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataConfigurator.sql" />
