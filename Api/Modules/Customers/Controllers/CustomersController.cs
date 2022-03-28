@@ -53,11 +53,12 @@ namespace Api.Modules.Customers.Controllers
         /// </summary>
         /// <param name="customer">The customer to create.</param>
         /// <param name="isWebShop">Is this customer going to have a web shop?</param>
+        /// <param name="isConfigurator">Is this customer going to have a configurator?</param>
         /// <returns>A <see cref="CustomerModel"/>.</returns>
         [HttpPost, ProducesResponseType(typeof(CustomerModel), StatusCodes.Status200OK), Authorize]
-        public async Task<IActionResult> Create(CustomerModel customer, [FromQuery]bool isWebShop = false)
+        public async Task<IActionResult> Create(CustomerModel customer, [FromQuery]bool isWebShop = false, [FromQuery]bool isConfigurator = false)
         {
-            return (await wiserCustomersService.CreateCustomerAsync(customer, isWebShop)).GetHttpResponseMessage();
+            return (await wiserCustomersService.CreateCustomerAsync(customer, isWebShop, isConfigurator)).GetHttpResponseMessage();
         }
     }
 }
