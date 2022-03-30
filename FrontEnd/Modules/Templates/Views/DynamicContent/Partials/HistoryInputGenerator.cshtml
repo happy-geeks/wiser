@@ -42,7 +42,7 @@
                 <div class="item" data-label-style="normal" data-label-width="0">
                     <span class="inline">
                         <label class="checkbox">
-                            <input type="checkbox" value="@Model.Name" @(Model.Value != null && (bool)Model.Value ? "checked" : "") data-history-property="@Model.Name" disabled>
+                            <input type="checkbox" value="@Model.Name" @(Model.Value != null && Model.Value != "" && (bool)Model.Value ? "checked" : "") data-history-property="@Model.Name" disabled>
                             <span>@Model.PrettyName</span>
                         </label>
                     </span>
