@@ -1354,9 +1354,23 @@ export class Fields {
 
                             if (options.defaultValueQueryId) {
                                 try {
+                                    let extraData = {};
+                                    if (selectedItems && selectedItems.length) {
+                                        for (let item of selectedItems) {
+                                            // Enter the values of all properties in userParametersWithValues, so that they can be used in actions.
+                                            for (let key in item.dataItem) {
+                                                if (!item.dataItem.hasOwnProperty(key) || (typeof item.dataItem[key] === "object" && !(item.dataItem[key] || {}).getDate)) {
+                                                    continue;
+                                                }
+                                                
+                                                extraData[`selected_${key}`] = (item.dataItem[key] || {}).getDate ? DateTime.fromJSDate(item.dataItem[key], { locale: "nl-NL" }).toFormat("yyyy-LL-dd HH:mm:ss") : item.dataItem[key];
+                                            }
+                                        }
+                                    }
                                     const queryResult = await Wiser2.api({
                                         method: "POST",
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(options.defaultValueQueryId)}`,
+                                        data: JSON.stringify(extraData),
                                         contentType: "application/json"
                                     });
 
