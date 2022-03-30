@@ -167,8 +167,8 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("isScssIncludeTemplate", newVersion.IsScssIncludeTemplate, oldVersion.IsScssIncludeTemplate, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("useInWiserHtmlEditors", newVersion.UseInWiserHtmlEditors, oldVersion.UseInWiserHtmlEditors, historyModel);
 
-            var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries);
-            var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries);
+            var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
             if (!String.IsNullOrEmpty(newVersion.LinkedTemplates.RawLinkList))
             {
