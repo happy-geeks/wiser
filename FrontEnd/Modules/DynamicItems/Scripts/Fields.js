@@ -3095,7 +3095,7 @@ export class Fields {
             dataSelectorTemplateDialog.open();
         } catch (exception) {
             console.error(exception);
-            kendo.alert("Er is iets fout gegaan met het verwijderen van de afbeelding. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+            kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
         }
     }
 
