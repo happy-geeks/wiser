@@ -58,7 +58,7 @@ namespace Api.Modules.DataSelectors.Controllers
         /// </summary>
         /// <returns>A list of WiserItemModel.</returns>
         [HttpGet, Route("templates"), ProducesResponseType(typeof(List<WiserItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAsync()
+        public async Task<IActionResult> GetTemplatesAsync()
         {
             return (await dataSelectorsService.GetTemplatesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
