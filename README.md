@@ -19,7 +19,7 @@ Wiser v3. This includes the API and the front-end projects.
 ```json
 {
   "GCL": {
-    "connectionString": "", // The connection string to the main database for Wiser.
+    "connectionString": "", // The connection string to the main database for Wiser. See the chapter 'Database' for an example connectiom string.
     "DefaultEncryptionKey": "", // The default encryption key that should be used for encrypting values with AES when no encryption key is given.
     "DefaultEncryptionKeyTripleDes": "",  // The default encryption key that should be used for encrypting values with Tripe DES when no encryption key is given.
     "evoPdfLicenseKey": "" // If you're going to use the PdfService, you need a license key for Evo PDF, or make your own implementation.
@@ -63,6 +63,13 @@ At the moment, we only support MySQL, but other databases might be added in the 
 Please note that this script does not work with MySQL 8 users. For this to work you need to set the authentication plugin of your database user to "mysql_native_password". This is because the node package we use for MySQL does not support this yet.
 
 If you do not have SUPER privileges in the database, you might get an error while running `CreateTriggers.sql`. To fix this, you need to either disable `bin_logging` in MySQL, or enable the option `log_bin_trust_function_creators`. For more information see [this article](https://dev.mysql.com/doc/refman/5.7/en/stored-programs-logging.html).
+
+## Connection string
+The connection string in the `appsettings.json` or `appsettings-secrets.json` of the API should look like this:
+```
+server=;port=;uid=;pwd=;database=;pooling=true;Convert Zero Datetime=true;CharSet=utf8
+```
+Note the options that are added at the end of the connection string, Wiser will not work properly without these options.
 
 ## Installation script
 To setup this database, you can open a PowerShell or CMD window in the directory that contains the `Api.csproj` file and run the following command:
