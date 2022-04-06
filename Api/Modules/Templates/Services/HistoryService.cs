@@ -166,6 +166,8 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingValueColumnName", newVersion.GroupingValueColumnName, oldVersion.GroupingValueColumnName, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("isScssIncludeTemplate", newVersion.IsScssIncludeTemplate, oldVersion.IsScssIncludeTemplate, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("useInWiserHtmlEditors", newVersion.UseInWiserHtmlEditors, oldVersion.UseInWiserHtmlEditors, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("preLoadQuery", newVersion.PreLoadQuery, oldVersion.PreLoadQuery, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("returnNotFoundWhenPreLoadQueryHasNoData", newVersion.ReturnNotFoundWhenPreLoadQueryHasNoData, oldVersion.ReturnNotFoundWhenPreLoadQueryHasNoData, historyModel);
 
             var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
