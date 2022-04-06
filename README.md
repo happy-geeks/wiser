@@ -55,10 +55,16 @@ Wiser v3. This includes the API and the front-end projects.
 ```
 
 # Database
-Wiser requires a certain database structure to work, several tables and triggers are required. At the moment, we only support MySQL, but other databases might be added in the future. Wiser requires MySQL 5.7 or higher to work, because it uses JSON functions and those have been added in MySQL 5.7.
+Wiser requires a certain database structure to work, several tables and triggers are required. 
 
-Please note that this script does not work with MySQL 8 users. For this to work you need to set the authentication plugin if your database user to "mysql_native_password". This is because the node package we use for MySQL does not support this yet.
+## Requirements
+At the moment, we only support MySQL, but other databases might be added in the future. Wiser requires MySQL 5.7 or higher to work, because it uses JSON functions and those have been added in MySQL 5.7.
 
+Please note that this script does not work with MySQL 8 users. For this to work you need to set the authentication plugin of your database user to "mysql_native_password". This is because the node package we use for MySQL does not support this yet.
+
+If you do not have SUPER privileges in the database, you might get an error while running `CreateTriggers.sql`. To fix this, you need to either disable `bin_logging` in MySQL, or enable the option `log_bin_trust_function_creators`. For more information see [this article](https://dev.mysql.com/doc/refman/5.7/en/stored-programs-logging.html).
+
+## Installation script
 To setup this database, you can open a PowerShell or CMD window in the directory that contains the `Api.csproj` file and run the following command:
 ```
 npm run setup:mysql -- --host=host --database=database --user=user --password=password
