@@ -105,7 +105,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.grouping_value_column_name,
                                                                 template.is_scss_include_template,
                                                                 template.use_in_wiser_html_editors,
-                                                                template.pre_load_query
+                                                                template.pre_load_query,
+                                                                template.return_not_found_when_pre_load_query_has_no_data
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
                                                             WHERE template.template_id = ?templateId
                                                             AND template.removed = 0
@@ -158,7 +159,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                 {
                     RawLinkList = dataTable.Rows[0].Field<string>("linked_templates")
                 },
-                PreLoadQuery = dataTable.Rows[0].Field<string>("pre_load_query")
+                PreLoadQuery = dataTable.Rows[0].Field<string>("pre_load_query"),
+                ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataTable.Rows[0]["return_not_found_when_pre_load_query_has_no_data"])
             };
 
             return templateData;
@@ -400,6 +402,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("useInWiserHtmlEditors", templateSettings.UseInWiserHtmlEditors);
             clientDatabaseConnection.AddParameter("templateLinks", templateLinks);
             clientDatabaseConnection.AddParameter("preLoadQuery", templateSettings.PreLoadQuery);
+            clientDatabaseConnection.AddParameter("returnNotFoundWhenPreLoadQueryHasNoData", templateSettings.ReturnNotFoundWhenPreLoadQueryHasNoData);
 
             return await clientDatabaseConnection.ExecuteAsync($@"
                 SET @VersionNumber = (SELECT MAX(version)+1 FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId GROUP BY template_id);
@@ -441,7 +444,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                     grouping_value_column_name,
                     is_scss_include_template,
                     use_in_wiser_html_editors,
-                    pre_load_query
+                    pre_load_query,
+                    return_not_found_when_pre_load_query_has_no_data
                 ) 
                 VALUES (
                     ?name,
@@ -481,7 +485,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ?groupingValueColumnName,
                     ?isScssIncludeTemplate,
                     ?useInWiserHtmlEditors,
-                    ?preLoadQuery
+                    ?preLoadQuery,
+                    ?returnNotFoundWhenPreLoadQueryHasNoData
                 )");
         }
 
@@ -817,7 +822,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                             template.grouping_value_column_name,
                                                                             template.is_scss_include_template,
                                                                             template.use_in_wiser_html_editors,
-                                                                            template.pre_load_query
+                                                                            template.pre_load_query,
+                                                                            template.return_not_found_when_pre_load_query_has_no_data
                                                                         FROM {WiserTableNames.WiserTemplate} AS template
                                                                         LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
                                                                         LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
@@ -879,7 +885,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                     {
                         RawLinkList = dataRow.Field<string>("linked_templates")
                     },
-                    PreLoadQuery = dataRow.Field<string>("pre_load_query")
+                    PreLoadQuery = dataRow.Field<string>("pre_load_query"),
+                    ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataRow["return_not_found_when_pre_load_query_has_no_data"])
                 });
             }
 

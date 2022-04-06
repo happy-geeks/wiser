@@ -80,6 +80,12 @@
                 <span>Verwerk mutators</span>
             </label>
         </li>
+        <li>
+            <label class="checkbox">
+                <input id="returnNotFoundWhenPreLoadQueryHasNoData" name="returnNotFoundWhenPreLoadQueryHasNoData" type="checkbox" @(Model.ReturnNotFoundWhenPreLoadQueryHasNoData ? "checked" : "")>
+                <span>Geef 404 status indien pre-load query geen resultaten heeft</span>
+            </label>
+        </li>
     </ul>
 </div>
 <div class="item item-right" style="width: 40%;">

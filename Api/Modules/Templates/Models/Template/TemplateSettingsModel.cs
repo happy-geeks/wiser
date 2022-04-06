@@ -62,5 +62,7 @@ namespace Api.Modules.Templates.Models.Template
         public string GroupingValueColumnName { get; set; }
 
         public Dictionary<string, object> Changes { get; set; }
+        
+        public bool ReturnNotFoundWhenPreLoadQueryHasNoData { get; set; }
     }
 }
