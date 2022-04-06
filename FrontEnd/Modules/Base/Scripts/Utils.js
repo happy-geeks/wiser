@@ -900,12 +900,15 @@ export class Misc {
                 import("codemirror/addon/search/searchcursor.js"),
                 import("codemirror/addon/search/search.js"),
                 import("codemirror/addon/dialog/dialog.js"),
+                import("./codemirror/scsslint.js"),
+                import("./codemirror/scss-lint.js"),
 
                 import("codemirror/lib/codemirror.css"),
-                import("codemirror/addon/hint/show-hint.css"),
                 import("codemirror/addon/display/fullscreen.css"),
                 import("codemirror/addon/fold/foldgutter.css"),
-                import("codemirror/addon/lint/lint.css")
+                import("codemirror/addon/lint/lint.css"),
+                import("codemirror/addon/hint/show-hint.css"),
+                import("codemirror/addon/dialog/dialog.css")
             ];
 
             Promise.all(codeMirrorPromises).then((modules) => {

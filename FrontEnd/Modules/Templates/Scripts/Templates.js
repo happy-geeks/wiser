@@ -769,7 +769,19 @@ const moduleSettings = {
                     lineWrapping: true,
                     foldGutter: true,
                     gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
-                    lint: true,
+                    lint: { 
+                        options: { 
+                            esversion: 2022,
+                            rules: {
+                                "no-empty-rulesets": 0,
+                                "no-ids": 0,
+                                "indentation": [1, { size: 4 }],
+                                "variable-for-property": 0,
+                                "property-sort-order": 0,
+                                "no-important": 0
+                            }
+                        }
+                    },
                     extraKeys: {
                         "Ctrl-Q": (sender) => {
                             sender.foldCode(sender.getCursor());
@@ -1009,20 +1021,22 @@ const moduleSettings = {
 
                 this.newContentId = 0;
                 this.newContentTitle = null;
-
-                $("#dynamicContentWindow").kendoWindow({
-                    title: title,
+                
+                const dynamicContentWindow = $("#dynamicContentWindow").kendoWindow({
                     width: "100%",
                     height: "100%",
-                    content: `/Modules/DynamicContent/${contentId || 0}?templateId=${this.selectedId}`,
                     actions: ["close"],
                     draggable: false,
                     iframe: true,
+                    content: `/Modules/DynamicContent/${contentId || 0}?templateId=${this.selectedId}`,
                     close: (closeWindowEvent) => {
                         grid.dataSource.read();
                         resolve({ id: this.newContentId, title: this.newContentTitle });
                     }
                 }).data("kendoWindow").maximize().open();
+
+                dynamicContentWindow.title(title);
+                dynamicContentWindow.maximize().open();
             });
         }
 

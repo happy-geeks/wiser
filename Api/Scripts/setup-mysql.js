@@ -83,6 +83,11 @@
         console.log(notice("Data inserted."));
 
         if (arguments.isConfigurator) {
+            console.log(notice("Creating configurator tables..."));
+            const createTablesConfigurator = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/CreateTablesConfigurator.sql"), "utf8");
+            await connection.query(createTablesConfigurator);
+            console.log(notice("Tables created."));
+
             console.log(notice("Setting up configurator..."));
             const insertInitialDataConfiguratorQuery = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/InsertInitialDataConfigurator.sql"), "utf8");
             await connection.query(insertInitialDataConfiguratorQuery);

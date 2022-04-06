@@ -159,6 +159,7 @@
 .advanced-panel {
     display: flex;
     align-items: flex-start;
+    flex-wrap: wrap;
     transition: 200ms ease-in-out;
     max-height: 0;
     padding: 0;
@@ -181,13 +182,17 @@
     flex-wrap: wrap;
 }
 
-    .advanced-panel .item-left .item {
+    .advanced-panel .item-left .item:not(.full-width) {
         width: 50%;
     }
 
 .advanced-panel .item-right {
     padding-left: 40px;
     padding-top: 15px;
+}
+
+.advanced-panel .item-full {
+    width: 100%;
 }
 
 .user-check-panel,
@@ -451,4 +456,8 @@
 
 .html-source-window .CodeMirror {
     height: calc(100vh - 168px);
+}
+
+.CodeMirror-lint-tooltip {
+    z-index: 20000 !important;
 }

@@ -142,6 +142,7 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("editorValue", newVersion.EditorValue, oldVersion.EditorValue, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("useCache", newVersion.UseCache, oldVersion.UseCache, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheMinutes", newVersion.CacheMinutes, oldVersion.CacheMinutes, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheLocation", newVersion.CacheLocation, oldVersion.CacheLocation, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("handleRequests", newVersion.HandleRequests, oldVersion.HandleRequests, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("handleSession", newVersion.HandleSession, oldVersion.HandleSession, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("handleObjects", newVersion.HandleObjects, oldVersion.HandleObjects, historyModel);
@@ -157,7 +158,7 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("insertMode", newVersion.InsertMode, oldVersion.InsertMode, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loadAlways", newVersion.LoadAlways, oldVersion.LoadAlways, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("urlRegex", newVersion.UrlRegex, oldVersion.UrlRegex, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("externalFiles", String.Join(", ", newVersion.ExternalFiles ?? new List<string>()), String.Join(", ", oldVersion.ExternalFiles ?? new List<string>()), historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("externalFiles", String.Join(";", newVersion.ExternalFiles ?? new List<string>()), String.Join(";", oldVersion.ExternalFiles ?? new List<string>()), historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingCreateObjectInsteadOfArray", newVersion.GroupingCreateObjectInsteadOfArray, oldVersion.GroupingCreateObjectInsteadOfArray, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingPrefix", newVersion.GroupingPrefix, oldVersion.GroupingPrefix, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingKey", newVersion.GroupingKey, oldVersion.GroupingKey, historyModel);
@@ -165,9 +166,11 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingValueColumnName", newVersion.GroupingValueColumnName, oldVersion.GroupingValueColumnName, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("isScssIncludeTemplate", newVersion.IsScssIncludeTemplate, oldVersion.IsScssIncludeTemplate, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("useInWiserHtmlEditors", newVersion.UseInWiserHtmlEditors, oldVersion.UseInWiserHtmlEditors, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("preLoadQuery", newVersion.PreLoadQuery, oldVersion.PreLoadQuery, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("returnNotFoundWhenPreLoadQueryHasNoData", newVersion.ReturnNotFoundWhenPreLoadQueryHasNoData, oldVersion.ReturnNotFoundWhenPreLoadQueryHasNoData, historyModel);
 
-            var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(",");
-            var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(",");
+            var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
             if (!String.IsNullOrEmpty(newVersion.LinkedTemplates.RawLinkList))
             {

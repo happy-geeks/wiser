@@ -1067,12 +1067,16 @@ const moduleSettings = {
                 modules: this.selectedModules.join(","),
                 requestJson: JSON.stringify(this.createJsonRequest()),
                 savedJson: JSON.stringify(this.createJsonRequest(true)),
-                showInExportModule: document.getElementById("showInExportModule").checked ? 1 : 0
+                showInExportModule: document.getElementById("showInExportModule").checked ? 1 : 0,
+                availableForRendering: document.getElementById("availableForRendering").checked ? 1 : 0
             };
+
             const saveResult = await Wiser2.api({
-                url: `${this.settings.serviceRoot}/SAVE_DATA_SELECTOR`,
+                url: `${this.settings.wiserApiRoot}data-selectors/save`,
                 method: "POST",
-                data: postData
+                contentType: "application/json",
+                dataType: "json",
+                data: JSON.stringify(postData)
             });
 
             // Check if the load select exists.
@@ -1084,7 +1088,7 @@ const moduleSettings = {
 
             // Set ID and name in header.
             const header = document.getElementById("dataSelectorId");
-            header.querySelector("h3 > label").innerHTML = `${name} (ID: ${saveResult[0].itemId})`;
+            header.querySelector("h3 > label").innerHTML = `${name} (ID: ${saveResult})`;
             header.style.display = "";
 
             // Trigger save event. This event can be used on places that load the data selector in an iframe, such as the module DynamicItems.
@@ -1124,7 +1128,8 @@ const moduleSettings = {
                                     content: "De data selector is succesvol opgeslagen."
                                 });
                             },
-                            () => {
+                            (error) => {
+                                console.error(error);
                                 window.processing.removeProcess("dataSelectorSave");
                                 Wiser2.alert({
                                     title: "Opslaan mislukt",

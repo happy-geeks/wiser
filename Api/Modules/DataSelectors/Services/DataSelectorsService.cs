@@ -13,6 +13,7 @@ using Api.Modules.DataSelectors.Interfaces;
 using Api.Modules.DataSelectors.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
+using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Exports.Interfaces;
@@ -32,17 +33,23 @@ namespace Api.Modules.DataSelectors.Services
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly GeeksCoreLibrary.Modules.DataSelector.Interfaces.IDataSelectorsService gclDataSelectorsService;
         private readonly IExcelService excelService;
+        private readonly IDatabaseHelpersService databaseHelpersService;
+        private readonly IWiserItemsService wiserItemsService;
+
+        private const string DataSelectorTemplateEntityType = "dataselector-template";
 
         /// <summary>
         /// Creates a new instance of <see cref="DataSelectorsService"/>
         /// </summary>
-        public DataSelectorsService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, GeeksCoreLibrary.Modules.DataSelector.Interfaces.IDataSelectorsService gclDataSelectorsService, IExcelService excelService)
+        public DataSelectorsService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, GeeksCoreLibrary.Modules.DataSelector.Interfaces.IDataSelectorsService gclDataSelectorsService, IExcelService excelService, IDatabaseHelpersService databaseHelpersService, IWiserItemsService wiserItemsService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.httpContextAccessor = httpContextAccessor;
             this.gclDataSelectorsService = gclDataSelectorsService;
             this.excelService = excelService;
+            this.databaseHelpersService = databaseHelpersService;
+            this.wiserItemsService = wiserItemsService;
         }
 
         /// <inheritdoc />
@@ -221,13 +228,24 @@ namespace Api.Modules.DataSelectors.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity)
+        public async Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity, bool forExportModule = false, bool forRendering = false)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserDataSelector });
+
+            var whereClauses = new List<string> { "removed = 0" };
+            if (forExportModule)
+            {
+                whereClauses.Add("show_in_export_module = 1");
+            }
+            if (forRendering)
+            {
+                whereClauses.Add("available_for_rendering = 1");
+            }
 
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id, name
                                                                             FROM {WiserTableNames.WiserDataSelector}
-                                                                            WHERE removed = 0 AND show_in_export_module = 1
+                                                                            WHERE {String.Join(" AND ", whereClauses)}
                                                                             ORDER BY name ASC");
 
             var results = new List<DataSelectorModel>();
@@ -247,6 +265,35 @@ namespace Api.Modules.DataSelectors.Services
             }
 
             return new ServiceResult<List<DataSelectorModel>>(results);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<int>> SaveAsync(ClaimsIdentity identity, DataSelectorModel data)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserDataSelector });
+
+            clientDatabaseConnection.AddParameter("name", data.Name);
+            clientDatabaseConnection.AddParameter("availableForRendering", data.AvailableForRendering);
+            clientDatabaseConnection.AddParameter("defaultTemplate", data.DefaultTemplate);
+            clientDatabaseConnection.AddParameter("requestJson", data.RequestJson);
+            clientDatabaseConnection.AddParameter("savedJson", data.SavedJson);
+            clientDatabaseConnection.AddParameter("showInExportModule", data.ShowInExportModule);
+
+            int result;
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id FROM {WiserTableNames.WiserDataSelector} WHERE name = ?name");
+            if (dataTable.Rows.Count == 0)
+            {
+                result = (int)await clientDatabaseConnection.InsertRecordAsync($@"INSERT INTO {WiserTableNames.WiserDataSelector} (name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template)
+                                                                                    VALUES (?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate)");
+            }
+            else
+            {
+                result = dataTable.Rows[0].Field<int>("id");
+                await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.WiserDataSelector} SET request_json = ?requestJson, saved_json = ?savedJson, show_in_export_module = ?showInExportModule, available_for_rendering = ?availableForRendering, default_template = ?defaultTemplate WHERE name = ?name");
+            }
+
+            return new ServiceResult<int>(result);
         }
 
         /// <inheritdoc />
@@ -478,6 +525,29 @@ namespace Api.Modules.DataSelectors.Services
 
             result.ModelObject.FileDownloadName = data.FileName;
             return result.ModelObject;
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<WiserItemModel>>> GetTemplatesAsync(ClaimsIdentity identity)
+        {
+            var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(DataSelectorTemplateEntityType);
+            clientDatabaseConnection.AddParameter("entityType", DataSelectorTemplateEntityType);
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id, title 
+                                                                        FROM {tablePrefix}{WiserTableNames.WiserItem} 
+                                                                        WHERE entity_type = ?entityType
+                                                                        ORDER BY title ASC");
+            if (dataTable.Rows.Count == 0)
+            {
+                return new ServiceResult<List<WiserItemModel>>(new List<WiserItemModel>());
+            }
+
+            var results = dataTable.Rows.Cast<DataRow>().Select(dataRow => new WiserItemModel
+            {
+                Id = dataRow.Field<ulong>("id"),
+                Title = dataRow.Field<string>("title")
+            }).ToList();
+
+            return new ServiceResult<List<WiserItemModel>>(results);
         }
 
         private async Task<(JArray Result, HttpStatusCode StatusCode, string Error)> GetJsonResponseAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity)

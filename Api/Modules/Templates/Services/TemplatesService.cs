@@ -887,12 +887,6 @@ SELECT CONCAT(`value`, long_value) AS `value`
 FROM wiser_itemdetail detail
 	JOIN wiser_item item ON item.id=detail.item_id AND item.unique_uuid = @user_id AND item.entity_type=@entity_type
 WHERE detail.`key` = @setting_name ");
-                TemplateQueryStrings.Add("GET_SAVED_DATA_SELECTORS", @"SELECT id, `name`
-FROM wiser_data_selector
-WHERE `name` <> '' AND removed = 0 AND request_json <> '' AND request_json <> '{}'
-ORDER BY `name`");
-                TemplateQueryStrings.Add("UPDATE_FILE_TITLE", @"UPDATE wiser_itemfile SET title = '{value}' WHERE id = {fileId} AND item_id = {itemId:decrypt(true)};");
-                TemplateQueryStrings.Add("UPDATE_FILE_NAME", @"UPDATE wiser_itemfile SET file_name = '{value}' WHERE id = {fileId} AND item_id = {itemId:decrypt(true)};");
                 TemplateQueryStrings.Add("GET_UNDERLYING_LINKED_TYPES", @"SET @_entity_name = IF(
     '{entityName}' NOT LIKE '{%}',
     '{entityName}',
@@ -955,22 +949,6 @@ SELECT @setting_value;");
 FROM wiser_itemdetail
 WHERE item_id = {itemId:decrypt(true)}
 AND `key` = '{propertyName}'");
-                TemplateQueryStrings.Add("GET_ENTITY_TYPE", @"SET @_entityType = '{entityType}';
-SET @_moduleId = IF('{moduleId}' LIKE '{%}', '', '{moduleId}');
-
-SELECT 
-	id,
-    name,
-    module_id,
-    accepted_childtypes,
-    icon,
-    icon_add,
-    show_in_tree_view,
-    show_overview_tab,
-    show_title_field
-FROM wiser_entity
-WHERE name = @_entityType
-AND (@_moduleId = '' OR module_id = @_moduleId)");
                 TemplateQueryStrings.Add("GET_ITEM_DETAILS", @"SET @_itemId = {itemId:decrypt(true)};
 SET @userId = {encryptedUserId:decrypt(true)};
 
@@ -1297,17 +1275,17 @@ SELECT
         THEN (SELECT CONCAT('Items van type ""', @sourceType, '"" mogen niet toegevoegd worden onder items van type ""', @destinationType, '"".') AS error)
         ELSE ''
     END AS error;");
-                TemplateQueryStrings.Add("GET_CONTEXT_MENU", @"SET @itemid = {itemId:decrypt(true)};
-SET @moduleid = {moduleId};
-SET @entity_type = (SELECT entity_type FROM wiser_item WHERE id=@itemid);
-SET @itemname = (SELECT title FROM wiser_item WHERE id=@itemid);
+                TemplateQueryStrings.Add("GET_CONTEXT_MENU", @"SET @_itemId = {itemId:decrypt(true)};
+SET @_moduleId = {moduleId};
+SET @entity_type = (SELECT entity_type FROM wiser_item WHERE id=@_itemId);
+SET @itemname = (SELECT title FROM wiser_item WHERE id=@_itemId);
 SET @userId = {encryptedUserId:decrypt(true)};
 
 SELECT 
 	CONCAT('\'', @itemname, '\' hernoemen') AS text, 
     'icon-album-rename' AS spriteCssClass,
-    'RENAME_ITEM' AS attraction, 
-    '' AS attrentity_type
+    'RENAME_ITEM' AS attraction,
+    i.entity_type AS attrentity_type
     #the JSON must consist of a subnode with attributes, so attr is the name of the json object containing 'action' as a value, herefore the name here is attr...action
     FROM wiser_item i 
     
@@ -1316,7 +1294,7 @@ SELECT
 	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
 	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = i.moduleid
     
-    WHERE i.id = @itemid 
+    WHERE i.id = @_itemId 
     AND i.readonly = 0
 	AND (
 			(permissionModule.id IS NULL AND permission.id IS NULL)
@@ -1331,14 +1309,14 @@ UNION
 	i.icon_add,'CREATE_ITEM', 
 	i.name
     FROM wiser_entity i
-    JOIN wiser_entity we ON we.module_id=@moduleid AND we.name=@entity_type
+    JOIN wiser_entity we ON we.module_id=@_moduleId AND we.name=@entity_type
     
     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
 	LEFT JOIN wiser_user_roles user_role ON user_role.user_id = @userId
-	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = @itemid
-	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = @moduleid
+	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = @_itemId
+	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = @_moduleId
     
-    WHERE i.module_id = @moduleid
+    WHERE i.module_id = @_moduleId
     AND i.`name` IN (we.accepted_childtypes) AND i.name <> ''
 	AND (
 			(permissionModule.id IS NULL AND permission.id IS NULL)
@@ -1352,7 +1330,7 @@ UNION
 	SELECT CONCAT('\'', @itemname, '\' dupliceren') AS text, 
 	'icon-document-duplicate',
 	'DUPLICATE_ITEM',
-	'' 
+    i.entity_type AS attrentity_type
     FROM wiser_item i 
     
     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
@@ -1360,7 +1338,7 @@ UNION
 	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
 	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = i.moduleid
     
-    WHERE i.id = @itemid 
+    WHERE i.id = @_itemId 
     AND i.readonly = 0
 	AND (
 			(permissionModule.id IS NULL AND permission.id IS NULL)
@@ -1374,7 +1352,7 @@ UNION
 	SELECT CONCAT('Publiceer naar live'),
 	'icon-globe',
 	'PUBLISH_LIVE',
-	'' 
+    i.entity_type AS attrentity_type
     FROM wiser_item i 
     
     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
@@ -1382,7 +1360,7 @@ UNION
 	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
 	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = i.moduleid
     
-    WHERE i.id=@itemid 
+    WHERE i.id=@_itemId 
     AND i.published_environment <> 4
     AND i.readonly = 0
 	AND (
@@ -1397,7 +1375,7 @@ UNION
 	SELECT CONCAT('\'', @itemname, '\' tonen') AS text, 
 	'item-light-on',
 	'PUBLISH_ITEM',
-	'' 
+    i.entity_type AS attrentity_type
     FROM wiser_item i 
     
     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
@@ -1405,7 +1383,7 @@ UNION
 	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
 	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = i.moduleid
     
-    WHERE i.id = @itemid 
+    WHERE i.id = @_itemId 
     AND i.published_environment = 0
     AND i.readonly = 0
 	AND (
@@ -1420,7 +1398,7 @@ UNION
 	SELECT CONCAT('\'', @itemname, '\' verbergen') AS text, 
 	'icon-light-off',
 	'HIDE_ITEM',
-	'' 
+    i.entity_type AS attrentity_type
     FROM wiser_item i 
     
     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
@@ -1428,7 +1406,7 @@ UNION
 	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
 	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = i.moduleid
     
-    WHERE i.id = @itemid 
+    WHERE i.id = @_itemId 
     AND i.published_environment > 0
     AND i.readonly = 0
 	AND (
@@ -1443,7 +1421,7 @@ UNION
 	SELECT CONCAT('\'', @itemname, '\' verwijderen') AS text, 
 	'icon-delete',
 	'REMOVE_ITEM',
-	''
+    i.entity_type AS attrentity_type
     FROM wiser_item i 
     
     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
@@ -1451,7 +1429,7 @@ UNION
 	LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
 	LEFT JOIN wiser_permission permissionModule ON permissionModule.role_id = user_role.role_id AND permissionModule.module_id = i.moduleid
     
-    WHERE i.id = @itemid 
+    WHERE i.id = @_itemId 
     AND i.readonly = 0
 	AND (
 			(permissionModule.id IS NULL AND permission.id IS NULL)
@@ -1706,29 +1684,10 @@ ON DUPLICATE KEY UPDATE permissions = {permissionCode};");
 
                 TemplateQueryStrings.Add("GET_DATA_SELECTOR_BY_ID", @"SET @_id = {id};
 
-SELECT id, `name`, module_selection AS modules, request_json AS requestJson, saved_json AS savedJson, show_in_export_module AS showInExportModule
+SELECT id, `name`, module_selection AS modules, request_json AS requestJson, saved_json AS savedJson, show_in_export_module AS showInExportModule, available_for_rendering AS availableForRendering
 FROM wiser_data_selector
 WHERE id = @_id");
-                TemplateQueryStrings.Add("SAVE_DATA_SELECTOR", @"SET @_name = '{name}';
-SET @_modules = '{modules}';
-SET @_request_json = '{requestJson}';
-SET @_saved_json = IF('{savedJson}' = CONCAT('{', 'savedJson', '}'), '', '{savedJson}');
 
-# Will automatically be NULL if it doesn't exist, which is good.
-SET @_item_id = (SELECT id FROM wiser_data_selector WHERE `name` = @_name);
-
-# Whether the data selector will be available in the export module.
-SET @_show_in_export_module = IF(
-    '{showInExportModule}' LIKE '{%}' AND @_item_id IS NOT NULL AND @_item_id > 0,
-    (SELECT show_in_export_module FROM wiser_data_selector WHERE id = @_item_id),
-    '{showInExportModule}' = '1'
-);
-
-INSERT INTO wiser_data_selector (id, `name`, module_selection, request_json, saved_json, changed_on, show_in_export_module)
-VALUES (@_item_id, @_name, @_modules, @_request_json, @_saved_json, NOW(), @_show_in_export_module)
-ON DUPLICATE KEY UPDATE module_selection = VALUES(module_selection), request_json = VALUES(request_json), saved_json = VALUES(saved_json), changed_on = VALUES(changed_on), show_in_export_module = VALUES(show_in_export_module);
-
-SELECT IF(@_item_id IS NULL, LAST_INSERT_ID(), @_item_id) AS itemId;");
                 TemplateQueryStrings.Add("GET_ALL_ENTITY_TYPES", @"SET @userId = {encryptedUserId:decrypt(true)};
 
 SELECT DISTINCT 
@@ -2571,7 +2530,7 @@ LIMIT 1";
                     break;
                 case TemplateTypes.Html:
                     template.EditorValue = await wiserItemsService.ReplaceHtmlForSavingAsync(template.EditorValue);
-                    template.MinifiedValue = Uglify.Html(template.EditorValue, new HtmlSettings { RemoveAttributeQuotes = false }).Code;
+                    template.MinifiedValue = Uglify.Html(template.EditorValue, new HtmlSettings { RemoveAttributeQuotes = false, ShortBooleanAttribute = false }).Code;
                     break;
             }
             
@@ -2802,7 +2761,7 @@ LIMIT 1";
             requestModel.Url ??= HttpContextHelpers.GetBaseUri(httpContextAccessor.HttpContext);
             await SetupGclForPreviewAsync(identity, requestModel);
             
-            var (html, _) = await gclTemplatesService.GenerateDynamicContentHtmlAsync(component);
+            var html = await gclTemplatesService.GenerateDynamicContentHtmlAsync(component);
             return new ServiceResult<string>((string)html);
         }
 

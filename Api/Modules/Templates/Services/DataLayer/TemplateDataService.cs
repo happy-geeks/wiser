@@ -79,6 +79,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.changed_by, 
                                                                 template.use_cache,   
                                                                 template.cache_minutes, 
+                                                                template.cache_location, 
                                                                 template.handle_request, 
                                                                 template.handle_session, 
                                                                 template.handle_objects, 
@@ -104,7 +105,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.grouping_value_column_name,
                                                                 template.is_scss_include_template,
                                                                 template.use_in_wiser_html_editors,
-                                                                template.pre_load_query
+                                                                template.pre_load_query,
+                                                                template.return_not_found_when_pre_load_query_has_no_data
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
                                                             WHERE template.template_id = ?templateId
                                                             AND template.removed = 0
@@ -126,8 +128,9 @@ namespace Api.Modules.Templates.Services.DataLayer
                 Version = dataTable.Rows[0].Field<int>("version"),
                 ChangedOn = dataTable.Rows[0].Field<DateTime>("changed_on"),
                 ChangedBy = dataTable.Rows[0].Field<string>("changed_by"),
-                UseCache = dataTable.Rows[0].Field<int>("use_cache"),
+                UseCache = (TemplateCachingModes)dataTable.Rows[0].Field<int>("use_cache"),
                 CacheMinutes = dataTable.Rows[0].Field<int>("cache_minutes"),
+                CacheLocation = (TemplateCachingLocations)dataTable.Rows[0].Field<int>("cache_location"),
                 HandleRequests = Convert.ToBoolean(dataTable.Rows[0]["handle_request"]),
                 HandleSession = Convert.ToBoolean(dataTable.Rows[0]["handle_session"]),
                 HandleStandards = Convert.ToBoolean(dataTable.Rows[0]["handle_standards"]),
@@ -144,7 +147,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                 InsertMode = dataTable.Rows[0].Field<ResourceInsertModes>("insert_mode"),
                 LoadAlways = Convert.ToBoolean(dataTable.Rows[0]["load_always"]),
                 UrlRegex = dataTable.Rows[0].Field<string>("url_regex"),
-                ExternalFiles = dataTable.Rows[0].Field<string>("external_files")?.Split(",")?.ToList() ?? new List<string>(),
+                ExternalFiles = dataTable.Rows[0].Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
                 GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(dataTable.Rows[0]["grouping_create_object_instead_of_array"]),
                 GroupingPrefix = dataTable.Rows[0].Field<string>("grouping_prefix"),
                 GroupingKey = dataTable.Rows[0].Field<string>("grouping_key"),
@@ -156,7 +159,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                 {
                     RawLinkList = dataTable.Rows[0].Field<string>("linked_templates")
                 },
-                PreLoadQuery = dataTable.Rows[0].Field<string>("pre_load_query")
+                PreLoadQuery = dataTable.Rows[0].Field<string>("pre_load_query"),
+                ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataTable.Rows[0]["return_not_found_when_pre_load_query_has_no_data"])
             };
 
             return templateData;
@@ -367,8 +371,9 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("editorValue", templateSettings.EditorValue);
             clientDatabaseConnection.AddParameter("minifiedValue", templateSettings.MinifiedValue);
             clientDatabaseConnection.AddParameter("type", templateSettings.Type);
-            clientDatabaseConnection.AddParameter("useCache", templateSettings.UseCache);
+            clientDatabaseConnection.AddParameter("useCache", (int)templateSettings.UseCache);
             clientDatabaseConnection.AddParameter("cacheMinutes", templateSettings.CacheMinutes);
+            clientDatabaseConnection.AddParameter("cacheLocation", templateSettings.CacheLocation);
             clientDatabaseConnection.AddParameter("handleRequests", templateSettings.HandleRequests);
             clientDatabaseConnection.AddParameter("handleSession", templateSettings.HandleSession);
             clientDatabaseConnection.AddParameter("handleObjects", templateSettings.HandleObjects);
@@ -387,7 +392,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("insertMode", (int)templateSettings.InsertMode);
             clientDatabaseConnection.AddParameter("loadAlways", templateSettings.LoadAlways);
             clientDatabaseConnection.AddParameter("urlRegex", templateSettings.UrlRegex);
-            clientDatabaseConnection.AddParameter("externalFiles", String.Join(",", templateSettings.ExternalFiles));
+            clientDatabaseConnection.AddParameter("externalFiles", String.Join(";", templateSettings.ExternalFiles));
             clientDatabaseConnection.AddParameter("groupingCreateObjectInsteadOfArray", templateSettings.GroupingCreateObjectInsteadOfArray);
             clientDatabaseConnection.AddParameter("groupingPrefix", templateSettings.GroupingPrefix);
             clientDatabaseConnection.AddParameter("groupingKey", templateSettings.GroupingKey);
@@ -397,6 +402,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("useInWiserHtmlEditors", templateSettings.UseInWiserHtmlEditors);
             clientDatabaseConnection.AddParameter("templateLinks", templateLinks);
             clientDatabaseConnection.AddParameter("preLoadQuery", templateSettings.PreLoadQuery);
+            clientDatabaseConnection.AddParameter("returnNotFoundWhenPreLoadQueryHasNoData", templateSettings.ReturnNotFoundWhenPreLoadQueryHasNoData);
 
             return await clientDatabaseConnection.ExecuteAsync($@"
                 SET @VersionNumber = (SELECT MAX(version)+1 FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId GROUP BY template_id);
@@ -412,6 +418,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     changed_by, 
                     use_cache,
                     cache_minutes, 
+                    cache_location,
                     handle_request, 
                     handle_session, 
                     handle_objects, 
@@ -437,7 +444,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                     grouping_value_column_name,
                     is_scss_include_template,
                     use_in_wiser_html_editors,
-                    pre_load_query
+                    pre_load_query,
+                    return_not_found_when_pre_load_query_has_no_data
                 ) 
                 VALUES (
                     ?name,
@@ -451,6 +459,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ?username,
                     ?useCache,
                     ?cacheMinutes,
+                    ?cacheLocation,
                     ?handleRequests,
                     ?handleSession,
                     ?handleObjects,
@@ -476,7 +485,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ?groupingValueColumnName,
                     ?isScssIncludeTemplate,
                     ?useInWiserHtmlEditors,
-                    ?preLoadQuery
+                    ?preLoadQuery,
+                    ?returnNotFoundWhenPreLoadQueryHasNoData
                 )");
         }
 
@@ -762,7 +772,7 @@ namespace Api.Modules.Templates.Services.DataLayer
 
             do
             {
-                var parent = await GetParentAsync(templateId);
+                var parent = await GetParentAsync(scssRootId);
                 if (parent == null)
                 {
                     break;
@@ -786,6 +796,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                             template.changed_by, 
                                                                             template.use_cache,   
                                                                             template.cache_minutes, 
+                                                                            template.cache_location, 
                                                                             template.handle_request, 
                                                                             template.handle_session, 
                                                                             template.handle_objects, 
@@ -811,7 +822,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                             template.grouping_value_column_name,
                                                                             template.is_scss_include_template,
                                                                             template.use_in_wiser_html_editors,
-                                                                            template.pre_load_query
+                                                                            template.pre_load_query,
+                                                                            template.return_not_found_when_pre_load_query_has_no_data
                                                                         FROM {WiserTableNames.WiserTemplate} AS template
                                                                         LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
                                                                         LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
@@ -842,8 +854,9 @@ namespace Api.Modules.Templates.Services.DataLayer
                     Version = dataRow.Field<int>("version"),
                     ChangedOn = dataRow.Field<DateTime>("changed_on"),
                     ChangedBy = dataRow.Field<string>("changed_by"),
-                    UseCache = dataRow.Field<int>("use_cache"),
+                    UseCache = (TemplateCachingModes)dataRow.Field<int>("use_cache"),
                     CacheMinutes = dataRow.Field<int>("cache_minutes"),
+                    CacheLocation = (TemplateCachingLocations)dataRow.Field<int>("cache_location"),
                     HandleRequests = Convert.ToBoolean(dataRow["handle_request"]),
                     HandleSession = Convert.ToBoolean(dataRow["handle_session"]),
                     HandleStandards = Convert.ToBoolean(dataRow["handle_standards"]),
@@ -860,7 +873,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     InsertMode = dataRow.Field<ResourceInsertModes>("insert_mode"),
                     LoadAlways = Convert.ToBoolean(dataRow["load_always"]),
                     UrlRegex = dataRow.Field<string>("url_regex"),
-                    ExternalFiles = dataRow.Field<string>("external_files")?.Split(",")?.ToList() ?? new List<string>(),
+                    ExternalFiles = dataRow.Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
                     GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(dataRow["grouping_create_object_instead_of_array"]),
                     GroupingPrefix = dataRow.Field<string>("grouping_prefix"),
                     GroupingKey = dataRow.Field<string>("grouping_key"),
@@ -872,7 +885,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                     {
                         RawLinkList = dataRow.Field<string>("linked_templates")
                     },
-                    PreLoadQuery = dataRow.Field<string>("pre_load_query")
+                    PreLoadQuery = dataRow.Field<string>("pre_load_query"),
+                    ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataRow["return_not_found_when_pre_load_query_has_no_data"])
                 });
             }
 

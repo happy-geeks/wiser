@@ -1,14 +1,25 @@
-﻿@model Api.Modules.Templates.Models.Template.TemplateSettingsModel
+﻿@using GeeksCoreLibrary.Modules.Templates.Enums
+@model Api.Modules.Templates.Models.Template.TemplateSettingsModel
 <div class="item item-left" style="width: 50%;">
-    <div class="item" data-label-style="float" data-label-width="0">
+    <div class="item full-width" data-label-style="float" data-label-width="0">
         <h4><label for="combo-cache">Cache</label></h4>
         <div class="flex-container">
             <select id="combo-cache" class="combo-select" data-kendo-control="kendoDropDownList" name="useCache">
-                <!option value="0" @(Model.UseCache == 0 ? "selected" : "")>geen caching</!option>
-                <!option value="2" @(Model.UseCache == 2 ? "selected" : "")>server caching volledige template (ongeacht URL)</!option>
-                <!option value="3" @(Model.UseCache == 3 ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL verschillend)</!option>
-                <!option value="4" @(Model.UseCache == 4 ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL + querystring combinatie verschillend)</!option>
-                <!option value="5" @(Model.UseCache == 5 ? "selected" : "")>server caching volledige template (obv volledige URL, inclusief domein en querystring)</!option>
+                <!option value="@((int)TemplateCachingModes.NoCaching)" @(Model.UseCache == TemplateCachingModes.NoCaching ? "selected" : "")>geen caching</!option>
+                <!option value="@((int)TemplateCachingModes.ServerSideCaching)" @(Model.UseCache == TemplateCachingModes.ServerSideCaching ? "selected" : "")>server caching volledige template (ongeacht URL)</!option>
+                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerUrl)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerUrl ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL verschillend)</!option>
+                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerUrlAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerUrlAndQueryString ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL + querystring combinatie verschillend)</!option>
+                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString ? "selected" : "")>server caching volledige template (obv volledige URL, inclusief domein en querystring)</!option>
+            </select>
+        </div>
+    </div>
+
+    <div class="item" data-label-style="float" data-label-width="0">
+        <h4><label for="cache-location">Cache locatie</label></h4>
+        <div class="flex-container">
+            <select id="cache-location" class="combo-select" data-kendo-control="kendoDropDownList" name="cacheLocation">
+                <!option value="@((int)TemplateCachingLocations.InMemory)" @(Model.CacheLocation == TemplateCachingLocations.InMemory ? "selected" : "")>In geheugen</!option>
+                <!option value="@((int)TemplateCachingLocations.OnDisk)" @(Model.CacheLocation == TemplateCachingLocations.OnDisk ? "selected" : "")>Op harde schijf</!option>
             </select>
         </div>
     </div>
@@ -21,9 +32,9 @@
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
-        <h4><label for="inserMode">Invoegmodus</label></h4>
+        <h4><label for="insertMode">Invoegmodus</label></h4>
         <div class="flex-container">
-            <select id="inserMode" class="combo-select" data-kendo-control="kendoDropDownList">
+            <select id="insertMode" class="combo-select" name="insertMode" data-kendo-control="kendoDropDownList">
                 @foreach (var value in Enum.GetValues(Model.InsertMode.GetType()))
                 {
                     <!option value="@((int)value)" @((int)Model.InsertMode == (int)value ? "selected" : "")>
@@ -54,6 +65,7 @@
         <span class="k-widget k-input k-state-default">
             <input type="text" id="urlRegex" class="textField k-input" name="urlRegex" value="@Model.UrlRegex" autocomplete="off" pattern=".*">
         </span>
+        <div class="form-hint"><span>De regular expression waar de URL aan moet voldoen om deze generieke template in te laden. Bijvoorbeeld ^((?!newsitem).)*$ voor alle paginas waar 'newsitem' niet in de naam voorkomt.</span></div>
     </div>
 </div>
 

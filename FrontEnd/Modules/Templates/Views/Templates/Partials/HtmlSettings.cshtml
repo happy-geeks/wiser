@@ -1,14 +1,25 @@
-﻿@model Api.Modules.Templates.Models.Template.TemplateSettingsModel
+﻿@using GeeksCoreLibrary.Modules.Templates.Enums
+@model Api.Modules.Templates.Models.Template.TemplateSettingsModel
 <div class="item item-left" style="width: 60%;">
-    <div class="item" data-label-style="float" data-label-width="0">
+    <div class="item full-width" data-label-style="float" data-label-width="0">
         <h4><label for="combo-cache">Cache</label></h4>
         <div class="flex-container">
             <select id="combo-cache" class="combo-select" data-kendo-control="kendoDropDownList" name="useCache">
-                <!option value="0" @(Model.UseCache == 0 ? "selected" : "")>geen caching</!option>
-                <!option value="2" @(Model.UseCache == 2 ? "selected" : "")>server caching volledige template (ongeacht URL)</!option>
-                <!option value="3" @(Model.UseCache == 3 ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL verschillend)</!option>
-                <!option value="4" @(Model.UseCache == 4 ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL + querystring combinatie verschillend)</!option>
-                <!option value="5" @(Model.UseCache == 5 ? "selected" : "")>server caching volledige template (obv volledige URL, inclusief domein en querystring)</!option>
+                <!option value="@((int)TemplateCachingModes.NoCaching)" @(Model.UseCache == TemplateCachingModes.NoCaching ? "selected" : "")>geen caching</!option>
+                <!option value="@((int)TemplateCachingModes.ServerSideCaching)" @(Model.UseCache == TemplateCachingModes.ServerSideCaching ? "selected" : "")>server caching volledige template (ongeacht URL)</!option>
+                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerUrl)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerUrl ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL verschillend)</!option>
+                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerUrlAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerUrlAndQueryString ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL + querystring combinatie verschillend)</!option>
+                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString ? "selected" : "")>server caching volledige template (obv volledige URL, inclusief domein en querystring)</!option>
+            </select>
+        </div>
+    </div>
+
+    <div class="item" data-label-style="float" data-label-width="0">
+        <h4><label for="cache-location">Cache locatie</label></h4>
+        <div class="flex-container">
+            <select id="cache-location" class="combo-select" data-kendo-control="kendoDropDownList" name="cacheLocation">
+                <!option value="@((int)TemplateCachingLocations.InMemory)" @(Model.CacheLocation == TemplateCachingLocations.InMemory ? "selected" : "")>In geheugen</!option>
+                <!option value="@((int)TemplateCachingLocations.OnDisk)" @(Model.CacheLocation == TemplateCachingLocations.OnDisk ? "selected" : "")>Op harde schijf</!option>
             </select>
         </div>
     </div>
@@ -69,6 +80,12 @@
                 <span>Verwerk mutators</span>
             </label>
         </li>
+        <li>
+            <label class="checkbox">
+                <input id="returnNotFoundWhenPreLoadQueryHasNoData" name="returnNotFoundWhenPreLoadQueryHasNoData" type="checkbox" @(Model.ReturnNotFoundWhenPreLoadQueryHasNoData ? "checked" : "")>
+                <span>Geef 404 status indien pre-load query geen resultaten heeft</span>
+            </label>
+        </li>
     </ul>
 </div>
 <div class="item item-right" style="width: 40%;">
@@ -116,8 +133,8 @@
     </div>
 </div>
 
-<div class="item">
+<div class="item item-full">
     <h4><label for="preLoadQuery">Pre-load query</label></h4>
     <textarea rows="10" cols="30" id="preLoadQuery" data-editor-type="text/x-mysql">@Model.PreLoadQuery</textarea>
-    <div class="form-hint"><span>Deze query wordt 1 keer helemaal aan het begin uitgevoerd tijdens het laden van deze template. De resultaten van deze query kunnen dan op andere plekken in de template gebruikt worden met de prefix "template.". Als de query bijvoorbeeld een kolom "title" terruggeeft, dan kan de variabele "{template.title}" overal in de template gebruikt worden, inclusief dynamische componenten. Alleen de eerste regel van het resultaat van de query kan gebruikt worden.</span></div>
+    <div class="form-hint"><span>Deze query wordt 1 keer helemaal aan het begin uitgevoerd tijdens het laden van deze template. De resultaten van deze query kunnen dan op andere plekken in de template gebruikt worden met de prefix "template.". Als de query bijvoorbeeld een kolom "title" terruggeeft, dan kan de variabele "{template.title}" overal in de template gebruikt worden, inclusief dynamische componenten. Alleen de eerste regel van het resultaat van de query kan gebruikt worden. Deze query kan ook gebruikt worden om SEO meta tags op de pagina te zetten. De query moet dan een of meer van de volgende kolommen bevatten, die worden dan automatisch verwerkt: SEOtitle, SEOdescription, SEOkeywords, SEOcanonical, noindex, nofollow en SEOrobots.</span></div>
 </div>
