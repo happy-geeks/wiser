@@ -274,7 +274,7 @@ INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_t
 -- ----------------------------
 -- Stored procedures
 -- ----------------------------
-CREATE DEFINER=CURRENT_USER FUNCTION `CreateJsonSafeProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8 DETERMINISTIC
+CREATE DEFINER=CURRENT_USER FUNCTION `CreateJsonSafeProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8mb4 DETERMINISTIC
 BEGIN
 	DECLARE output VARCHAR(255);
 	
@@ -289,7 +289,7 @@ BEGIN
 	RETURN output;
 END;
 
-CREATE DEFINER=CURRENT_USER FUNCTION `GetNameFromSafeJsonProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8 DETERMINISTIC
+CREATE DEFINER=CURRENT_USER FUNCTION `GetNameFromSafeJsonProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8mb4 DETERMINISTIC
 BEGIN
 	DECLARE output VARCHAR(255);
 	
