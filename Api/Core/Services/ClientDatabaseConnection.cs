@@ -75,7 +75,7 @@ namespace Api.Core.Services
         /// </summary>
         private bool IsMainDatabase()
         {
-            return String.IsNullOrWhiteSpace(subDomain) || String.Equals(subDomain, CustomerConstants.MainSubDomain, StringComparison.OrdinalIgnoreCase);
+            return String.IsNullOrWhiteSpace(subDomain) || String.Equals(subDomain, apiSettings.MainSubDomain, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -93,7 +93,7 @@ namespace Api.Core.Services
 
             WiserDatabaseConnection.ClearParameters();
             WiserDatabaseConnection.AddParameter("subDomain", subDomain);
-            var query = $"SELECT propertys, db_host, db_login, db_passencrypted, db_port, db_dbname, encryption_key FROM {ApiTableNames.WiserCustomers} WHERE subdomain = ?subDomain";
+            var query = $"SELECT db_host, db_login, db_passencrypted, db_port, db_dbname, encryption_key FROM {ApiTableNames.WiserCustomers} WHERE subdomain = ?subDomain";
 
             var dataTable = await WiserDatabaseConnection.GetAsync(query);
 
@@ -109,18 +109,6 @@ namespace Api.Core.Services
             var decryptedPassword = encryptedPassword.DecryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey);
             var database = dataTable.Rows[0].Field<string>("db_dbname");
             
-            // Check if there is a custom database name set for the Wiser API. This is mainly for customers who have multiple databases.
-            var customerProperties = dataTable.Rows[0].Field<string>("propertys")?.Replace("\r", "").Split('\n');
-            var wiserApiDatabaseName = customerProperties?.FirstOrDefault(p => p.StartsWith("wiser_api_database_name=", StringComparison.Ordinal));
-            if (wiserApiDatabaseName != null)
-            {
-                var propertyValue = wiserApiDatabaseName.Split('=')[1].Trim();
-                if (propertyValue != "")
-                {
-                    database = propertyValue;
-                }
-            }
-
             // Use the default port number for MySQL (which is 3306) if it isn't set in the customer settings table.
             if (String.IsNullOrWhiteSpace(port))
             {
@@ -566,6 +554,10 @@ namespace Api.Core.Services
                     return;
                 case ConnectionState.Closed:
                     await ConnectionForReading.OpenAsync();
+                    
+                    // Make sure we always use the same character set and collation.
+                    CommandForReading.CommandText = "SET NAMES utf8mb4 COLLATE utf8mb4_general_ci";
+                    await CommandForReading.ExecuteNonQueryAsync();
                     break;
             }
         }
@@ -610,6 +602,10 @@ namespace Api.Core.Services
                     return;
                 case ConnectionState.Closed:
                     await ConnectionForWriting.OpenAsync();
+                    
+                    // Make sure we always use the same character set and collation.
+                    CommandForWriting.CommandText = "SET NAMES utf8mb4 COLLATE utf8mb4_general_ci";
+                    await CommandForWriting.ExecuteNonQueryAsync();
                     break;
             }
         }
