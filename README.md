@@ -168,3 +168,8 @@ To publish Wiser 3 to your own server, you should use the following publish sett
 - Deployment Mode: `Self-Contained`
 - Target Runtime: The correct runtime for your system, for Windows this is usually `win-x64`
 - Under File Publish Option, tick the box for `Enable ReadyToRun compilation`
+
+# Authentication
+The API uses `IdentityServer4` for authentication, it uses OAUTH2 with bearer tokens. It uses a global secret key and client id that need to be configured in the appsettings. The actual user credentials come from the database of Wiser, these are entities with the type `wiseruser`. The installation script will create a user with username `Admin` and password `admin` to authenticate via the API to login to Wiser.
+
+This authentication requires an SSL certificate. By default it will generate a self-signed certificate that will be saved as `tempkey.jwk` in the root directory of the API. On production servers it's recommended to configure the API to use a proper SSL certificate. If you really want/need to use the self-signed certificate on production, you can either copy the `tempkey.jwk` file from your development environment, or give the application pool (if you run Wiser in IIS) write permissions in the root directory of the API, so that it can create a new certificate there. After the certificate has been created, you can remove the write permissions again. 
