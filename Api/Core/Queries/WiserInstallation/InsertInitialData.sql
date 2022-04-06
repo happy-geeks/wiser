@@ -232,8 +232,6 @@ INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `publis
 -- ----------------------------
 # Admin user.
 INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (1, '', 1, '', 'email_address', '', '');
-INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (2, '', 1, '', 'last_login', '', NULL);
-INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (3, '', 1, '', 'last_login_ip', '', NULL);
 INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (4, '', 1, '', 'password', 'HQPXXPmbW+UeP2InOt+URL3lJQ+wzLlnPgAa6n638fBFG1wuTLJmIw5M2JWYZaPXialY9n69RcChSdnZXIOYtOBfliZ8H1se', ''); # = admin
 INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (5, '', 1, '', 'require_password_change', '0', '');
 INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (6, '', 1, '', 'username', 'Admin', '');
