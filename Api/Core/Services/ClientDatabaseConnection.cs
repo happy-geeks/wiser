@@ -554,6 +554,10 @@ namespace Api.Core.Services
                     return;
                 case ConnectionState.Closed:
                     await ConnectionForReading.OpenAsync();
+                    
+                    // Make sure we always use the same character set and collation.
+                    CommandForReading.CommandText = "SET NAMES utf8mb4 COLLATE utf8mb4_general_ci";
+                    await CommandForReading.ExecuteNonQueryAsync();
                     break;
             }
         }
@@ -598,6 +602,10 @@ namespace Api.Core.Services
                     return;
                 case ConnectionState.Closed:
                     await ConnectionForWriting.OpenAsync();
+                    
+                    // Make sure we always use the same character set and collation.
+                    CommandForWriting.CommandText = "SET NAMES utf8mb4 COLLATE utf8mb4_general_ci";
+                    await CommandForWriting.ExecuteNonQueryAsync();
                     break;
             }
         }
