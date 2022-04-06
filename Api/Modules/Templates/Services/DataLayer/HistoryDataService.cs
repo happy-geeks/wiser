@@ -152,7 +152,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                     GroupingValueColumnName = row.Field<string>("grouping_value_column_name"),
                     IsScssIncludeTemplate = Convert.ToBoolean(row["is_scss_include_template"]),
                     UseInWiserHtmlEditors = Convert.ToBoolean(row["use_in_wiser_html_editors"]),
-                    PreLoadQuery = row.Field<string>("pre_load_query")
+                    PreLoadQuery = row.Field<string>("pre_load_query"),
+                    ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(row["return_not_found_when_pre_load_query_has_no_data"])
                 };
 
                 resultList.Add(templateData);
