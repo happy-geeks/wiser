@@ -80,6 +80,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.use_cache,   
                                                                 template.cache_minutes, 
                                                                 template.cache_location, 
+                                                                template.cache_regex,
                                                                 template.handle_request, 
                                                                 template.handle_session, 
                                                                 template.handle_objects, 
@@ -131,6 +132,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                 UseCache = (TemplateCachingModes)dataTable.Rows[0].Field<int>("use_cache"),
                 CacheMinutes = dataTable.Rows[0].Field<int>("cache_minutes"),
                 CacheLocation = (TemplateCachingLocations)dataTable.Rows[0].Field<int>("cache_location"),
+                CacheRegex = dataTable.Rows[0].Field<string>("cache_regex"),
                 HandleRequests = Convert.ToBoolean(dataTable.Rows[0]["handle_request"]),
                 HandleSession = Convert.ToBoolean(dataTable.Rows[0]["handle_session"]),
                 HandleStandards = Convert.ToBoolean(dataTable.Rows[0]["handle_standards"]),
@@ -374,6 +376,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("useCache", (int)templateSettings.UseCache);
             clientDatabaseConnection.AddParameter("cacheMinutes", templateSettings.CacheMinutes);
             clientDatabaseConnection.AddParameter("cacheLocation", templateSettings.CacheLocation);
+            clientDatabaseConnection.AddParameter("cacheRegex", templateSettings.CacheRegex);
             clientDatabaseConnection.AddParameter("handleRequests", templateSettings.HandleRequests);
             clientDatabaseConnection.AddParameter("handleSession", templateSettings.HandleSession);
             clientDatabaseConnection.AddParameter("handleObjects", templateSettings.HandleObjects);
@@ -419,6 +422,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     use_cache,
                     cache_minutes, 
                     cache_location,
+                    cache_regex,
                     handle_request, 
                     handle_session, 
                     handle_objects, 
@@ -460,6 +464,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ?useCache,
                     ?cacheMinutes,
                     ?cacheLocation,
+                    ?cacheRegex,
                     ?handleRequests,
                     ?handleSession,
                     ?handleObjects,
@@ -797,6 +802,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                             template.use_cache,   
                                                                             template.cache_minutes, 
                                                                             template.cache_location, 
+                                                                            template.cache_regex, 
                                                                             template.handle_request, 
                                                                             template.handle_session, 
                                                                             template.handle_objects, 
@@ -857,6 +863,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     UseCache = (TemplateCachingModes)dataRow.Field<int>("use_cache"),
                     CacheMinutes = dataRow.Field<int>("cache_minutes"),
                     CacheLocation = (TemplateCachingLocations)dataRow.Field<int>("cache_location"),
+                    CacheRegex = dataTable.Rows[0].Field<string>("cache_regex"),
                     HandleRequests = Convert.ToBoolean(dataRow["handle_request"]),
                     HandleSession = Convert.ToBoolean(dataRow["handle_session"]),
                     HandleStandards = Convert.ToBoolean(dataRow["handle_standards"]),

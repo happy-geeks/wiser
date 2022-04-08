@@ -29,6 +29,7 @@ namespace Api.Modules.Templates.Models.Template
         public TemplateCachingModes UseCache { get; set; }
         public int CacheMinutes { get; set; }
         public TemplateCachingLocations CacheLocation { get; set; }
+        public string CacheRegex { get; set; }
         public bool HandleRequests { get; set; }
         public bool HandleSession { get; set; }
         public bool HandleObjects { get; set; }

@@ -74,6 +74,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.use_cache,
                                                                 template.cache_minutes, 
                                                                 template.cache_location, 
+                                                                template.cache_regex, 
                                                                 template.handle_request, 
                                                                 template.handle_session, 
                                                                 template.handle_objects, 
