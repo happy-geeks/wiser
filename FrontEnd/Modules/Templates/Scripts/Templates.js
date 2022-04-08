@@ -432,20 +432,25 @@ const moduleSettings = {
         async onDropFile(event) {
             event.preventDefault();
 
-            if (event.originalEvent.dataTransfer.items) {
+            if (!event.originalEvent.dataTransfer.items) {
+                return;
+            }
+
                 for (var i = 0; i < event.originalEvent.dataTransfer.items.length; i++) {
-                    if (event.originalEvent.dataTransfer.items[i].kind === 'file') {
+                    if (event.originalEvent.dataTransfer.items[i].kind !== "file") {
+                        continue;
+                    }
                         var file = event.originalEvent.dataTransfer.items[i].getAsFile();
                         var reader = new FileReader();
-                        reader.onload = (function (file) {
-                            return async function (event) {
+                        reader.onload = ((file) => {
+                            return async (event) => {
                                 const content = event.target.result;
-                                var filename = file.name.split('.');
+                                let filename = file.name.split(".");
                                 filename.splice(-1);
-                                filename.join('.');
+                                filename = filename.join(".");
                                 const treeviewtab = window.Templates.treeViewTabs[window.Templates.treeViewTabStrip.select().index()];
                                 const treeview = $(window.Templates.treeViewTabStrip.contentElement(window.Templates.treeViewTabStrip.select().index()).querySelector("ul")).data("kendoTreeView");
-                                var parentId = treeviewtab.templateId;
+                                let parentId = treeviewtab.templateId;
 
                                 await window.Templates.createNewTemplate(
                                     parentId,
@@ -458,9 +463,7 @@ const moduleSettings = {
                             }
                         })(file);
                         reader.readAsText(file);
-                    }
                 }
-            }
         }
 
         /**
@@ -1196,10 +1199,8 @@ const moduleSettings = {
         }
 
         bindDropFiles() {
-            console.log("Binding drop event");
-            $(".window-content #left-pane div.k-content").on("dragover", function (e) {
-                e = e || event;
-                e.preventDefault();
+            $(".window-content #left-pane div.k-content").on("dragover", (event) => {
+                event.preventDefault();
             });
             $(".window-content #left-pane div.k-content").on("drop", window.Templates.onDropFile);
         }
@@ -1403,7 +1404,7 @@ const moduleSettings = {
          * @param {any} treeView The tree view that the template should be added to.
          * @param {any} parentElement The parent node in the tree view to add the parent to.
          */
-        async createNewTemplate(parentId, title, type, treeView, parentElement, body='') {
+        async createNewTemplate(parentId, title, type, treeView, parentElement, body = "") {
             const process = `createNewTemplate_${Date.now()}`;
             window.processing.addProcess(process);
 
@@ -1414,7 +1415,7 @@ const moduleSettings = {
                     dataType: "json",
                     type: "PUT",
                     contentType: "application/json",
-                    data: JSON.stringify({ name: encodeURIComponent(title), type: type, editorvalue: body })
+                    data: JSON.stringify({ name: title, type: type, editorvalue: body })
                 });
 
                 const dataItem = treeView.dataItem(parentElement);

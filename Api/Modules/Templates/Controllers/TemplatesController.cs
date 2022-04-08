@@ -199,7 +199,7 @@ namespace Api.Modules.Templates.Controllers
         [HttpPut, Route("{parentId:int}"), ProducesResponseType(typeof(TemplateTreeViewModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateAsync(int parentId, NewTemplateModel newTemplate)
         {
-            return (await templatesService.CreateAsync((ClaimsIdentity)User.Identity, newTemplate.name, parentId, newTemplate.type, newTemplate.editorValue)).GetHttpResponseMessage();
+            return (await templatesService.CreateAsync((ClaimsIdentity)User.Identity, newTemplate.Name, parentId, newTemplate.Type, newTemplate.EditorValue)).GetHttpResponseMessage();
         }
 
         /// <summary>

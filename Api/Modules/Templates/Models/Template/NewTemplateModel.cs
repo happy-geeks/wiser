@@ -8,9 +8,9 @@ namespace Api.Modules.Templates.Models.Template
 {
     public class NewTemplateModel
     {
-        public string name { get; set; }
-        public TemplateTypes type { get; set; }
+        public string Name { get; set; }
+        public TemplateTypes Type { get; set; }
 
-        public string editorValue { get; set; }
+        public string EditorValue { get; set; }
     }
 }
