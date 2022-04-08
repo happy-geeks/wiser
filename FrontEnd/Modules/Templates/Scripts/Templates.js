@@ -436,12 +436,12 @@ const moduleSettings = {
                 return;
             }
 
-                for (var i = 0; i < event.originalEvent.dataTransfer.items.length; i++) {
+                for (let i = 0; i < event.originalEvent.dataTransfer.items.length; i++) {
                     if (event.originalEvent.dataTransfer.items[i].kind !== "file") {
                         continue;
                     }
-                        var file = event.originalEvent.dataTransfer.items[i].getAsFile();
-                        var reader = new FileReader();
+                        let file = event.originalEvent.dataTransfer.items[i].getAsFile();
+                        let reader = new FileReader();
                         reader.onload = ((file) => {
                             return async (event) => {
                                 const content = event.target.result;
