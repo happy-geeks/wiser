@@ -37,6 +37,7 @@ const moduleSettings = {
             // Kendo components.
             this.mainSplitter = null;
             this.mainTreeView = null;
+            this.searchResultsTreeView = null;
             this.mainTabStrip = null;
             this.treeViewTabStrip = null;
             this.treeViewTabs = null;
@@ -219,12 +220,19 @@ const moduleSettings = {
                 });
             }
 
+            this.treeViewTabStrip.append({
+                text: "Zoekresultaten",
+                content: `<ul id="search-results-treeview" class="treeview" data-id="0" data-title="Zoekresultaten"></ul>`
+            });
+            
+            this.treeViewTabStrip.tabGroup.find("li:last-child").addClass("hidden");
+
             // Select first tab.
             this.treeViewTabStrip.select(0);
 
             // Treeview 
             this.mainTreeView = [];
-            $(".treeview").each((index, element) => {
+            $(".treeview:not(#search-results-treeview)").each((index, element) => {
                 const treeViewElement = $(element);
                 this.mainTreeView[index] = treeViewElement.kendoTreeView({
                     loadOnDemand: true,
@@ -258,6 +266,14 @@ const moduleSettings = {
                     dataSpriteCssClassField: "spriteCssClass"
                 }).data("kendoTreeView");
             });
+            
+            this.searchResultsTreeView = $("#search-results-treeview").kendoTreeView({
+                loadOnDemand: false,
+                dragAndDrop: false,
+                dataTextField: "templateName",
+                dataSpriteCssClassField: "spriteCssClass",
+                select: this.onTreeViewSelect.bind(this),
+            }).data("kendoTreeView");
 
             this.treeViewContextMenu = $("#treeViewContextMenu").kendoContextMenu({
                 dataSource: [
@@ -434,6 +450,11 @@ const moduleSettings = {
          * @param {any} event The open event of a kendoContextMenu.
          */
         onContextMenuOpen(event) {
+            if (event.target.closest("#search-results-treeview")) {
+                event.preventDefault();
+                return;
+            }
+
             let selectedItemIsRootDirectory = false;
             let selectedItem;
             if (!event.target.closest(".k-treeview")) {
@@ -463,7 +484,7 @@ const moduleSettings = {
             if (!event.target.closest(".k-treeview")) {
                 selectedItem = this.treeViewTabs[$(event.target).index()];
             } else {
-                selectedItem = treeView.dataItem(node);;
+                selectedItem = treeView.dataItem(node);
             }
 
             const action = selectedOption.attr("action");
@@ -1299,35 +1320,6 @@ const moduleSettings = {
             const searchField = container.find("input");
 
             try {
-                // Reset any previous search results.
-                const clearFilters = (treeView, dataSource) => {
-                    const data = dataSource instanceof kendo.data.HierarchicalDataSource && dataSource.data();
-                    if (!data) {
-                        return;
-                    }
-                    
-                    for (let treeViewItem of data) {
-                        treeViewItem.hidden = false;
-                        clearFilters(treeView, treeViewItem.children);
-                    }
-
-                    try {
-                        dataSource.filter({ field: "hidden", operator: "neq", value: true });
-                    } catch (error) {
-                        console.error(error);
-                    }
-                };
-
-                for (let tab of this.treeViewTabStrip.tabGroup.find("li")) {
-                    const tabElement = $(tab);
-                    tabElement.removeClass("hidden");
-                    
-                    const selectedTabContentElement = this.treeViewTabStrip.contentElement(tabElement.index());
-                    const treeViewElement = selectedTabContentElement.querySelector("ul");
-                    const treeView = $(treeViewElement).data("kendoTreeView");
-                    clearFilters(treeView, treeView.dataSource);
-                }
-
                 // If there is no search term, do nothing.
                 const value = searchField.val();
                 if (!value) {
@@ -1349,70 +1341,21 @@ const moduleSettings = {
                     container.removeClass("loading");
                     return;
                 }
-                
-                const filter = async (treeView, dataSource, searchResult) => {
-                    const data = dataSource instanceof kendo.data.HierarchicalDataSource && dataSource.data();
-                    if (!data) {
-                        return;
-                    }
 
-                    const promises = [];
-                    for (let treeViewItem of data) {
-                        const searchResultItem = searchResult.children.find(i => i.id == treeViewItem.templateId)
-                        treeViewItem.hidden = !searchResultItem;
-
-                        if (!searchResultItem || !treeViewItem.hasChildren) {
-                            continue;
+                const dataSource = new kendo.data.HierarchicalDataSource({
+                    data: response,
+                    schema: {
+                        model: {
+                            id: "templateId",
+                            children: "childNodes"
                         }
-                        
-                        ((subTreeView, subTreeViewItem, subResultItem) => {
-                            try {
-                                promises.push(new Promise((resolve) => {
-                                    subTreeView.one("dataBound", (event) => {
-                                        filter(subTreeView, subTreeViewItem.children, subResultItem).then(resolve);
-                                    });
-
-                                    subTreeView.expand(subTreeView.findByUid(subTreeViewItem.uid));
-                                }));
-                            } catch (error) {
-                                console.error(error);
-                            }
-                        })(treeView, treeViewItem, searchResultItem);
                     }
-                    
-                    await Promise.all(promises);
-
-                    try {
-                        dataSource.filter({ field: "hidden", operator: "neq", value: true });
-                    } catch (error) {
-                        console.error(error);
-                    }
-                };
-
-                // Hide tabs that contain no search results.
-                let firstVisibleTab = null;
-                for (let tab of this.treeViewTabStrip.tabGroup.find("li")) {
-                    const tabElement = $(tab);
-                    const resultsForTab = response.find(i => i.name === tabElement.text());
-                    const hideTab = !resultsForTab;
-                    tabElement.toggleClass("hidden", hideTab);
-
-                    if (!hideTab && !firstVisibleTab) {
-                        firstVisibleTab = tabElement;
-                    }
-
-                    if (!resultsForTab || !resultsForTab.children || !resultsForTab.children.length) {
-                        continue;
-                    }
-
-                    const selectedTabContentElement = this.treeViewTabStrip.contentElement(tabElement.index());
-                    const treeViewElement = selectedTabContentElement.querySelector("ul");
-                    const treeView = $(treeViewElement).data("kendoTreeView");
-                    await filter(treeView, treeView.dataSource, resultsForTab);
-                }
-
-                this.treeViewTabStrip.select(firstVisibleTab);
-
+                });
+                this.searchResultsTreeView.setDataSource(dataSource);
+                
+                const searchResultsTab = this.treeViewTabStrip.tabGroup.find("li:last-child");
+                searchResultsTab.removeClass("hidden");
+                this.treeViewTabStrip.select(searchResultsTab);
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");

@@ -617,16 +617,17 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var templateId = dataRow.Field<int>("template_id");
-                if (allItems.Any(i => i.Id == templateId))
+                if (allItems.Any(i => i.TemplateId == templateId))
                 {
                     continue;
                 }
 
                 var result = new SearchResultModel
                 {
-                    Id = templateId,
-                    Name = dataRow.Field<string>("template_name"),
-                    Type = dataRow.Field<TemplateTypes>("template_type")
+                    TemplateId = templateId,
+                    TemplateName = dataRow.Field<string>("template_name"),
+                    Type = dataRow.Field<TemplateTypes>("template_type"),
+                    IsFolder = dataRow.Field<TemplateTypes>("template_type") == TemplateTypes.Directory
                 };
 
                 var previousParent = result;
@@ -635,14 +636,15 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                 {
                     var id = dataRow.Field<int>($"parent{parentCounter}Id");
                     previousParent.ParentId = id;
-                    var newParent = allItems.SingleOrDefault(i => i.Id == id);
+                    var newParent = allItems.SingleOrDefault(i => i.TemplateId == id);
                     if (newParent == null)
                     {
                         newParent = new SearchResultModel
                         {
-                            Id = id,
-                            Name = dataRow.Field<string>($"parent{parentCounter}Name"),
-                            Type = TemplateTypes.Directory
+                            TemplateId = id,
+                            TemplateName = dataRow.Field<string>($"parent{parentCounter}Name"),
+                            Type = TemplateTypes.Directory,
+                            IsFolder = true
                         };
 
                         allItems.Add(newParent);
@@ -659,8 +661,8 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             {
                 foreach (var result in currentLevel)
                 {
-                    result.Children = allItems.Where(i => i.ParentId == result.Id).ToList();
-                    AddChildren(result.Children);
+                    result.ChildNodes = allItems.Where(i => i.ParentId == result.TemplateId).Cast<TemplateTreeViewModel>().ToList();
+                    AddChildren(result.ChildNodes.Cast<SearchResultModel>().ToList());
                 }
             }
 
