@@ -97,7 +97,7 @@ The scripts `InsertInitialDataConfigurator.sql` and `InsertInitialDataEcommerce.
 
 # Debugging
 1. Open PowerShell/CMS Window in the directory that contains the `FrontEnd.csproj` file (__NOT__ the root directory, that contains the `WiserCore.sln` file!).
-1. Run the command `node_modules\.bin\webpack --w --mode=development`. This will make webpack watch your javascript and automatically rebuild them when needed, so you don't have to rebuild it manully every time.
+1. Run the command `node_modules\.bin\webpack --mode=development -w`. This will make webpack watch your javascript and automatically rebuild them when needed, so you don't have to rebuild it manully every time.
 1. To make debugging a little easier, you can setup Visual Studio to always start both the API and FrontEnd projects at the same time. You can do this by right clicking the solution and then `Properties`. Then go to `Common Properties --> Startup Project` and choose `Multiple startup projects`. Then set both `Api` and `FrontEnd` to `Start` and click `OK`.
 
 # Multitenancy
