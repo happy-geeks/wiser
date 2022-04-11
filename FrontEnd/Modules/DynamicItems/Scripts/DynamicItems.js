@@ -1353,8 +1353,9 @@ const moduleSettings = {
          */
         async onUndeleteItemClick(event, encryptedItemId) {
             event.preventDefault();
-
-            await Wiser2.showConfirmDialog(`Weet u zeker dat u het verwijderen ongedaan wilt maken voor '${this.base.selectedItem.title}'?`);
+            
+            const title = $("#tabstrip .itemNameFieldContainer .itemNameField").val();
+            await Wiser2.showConfirmDialog(`Weet u zeker dat u het verwijderen ongedaan wilt maken voor '${title}'?`);
 
             const process = `undeleteItem_${Date.now()}`;
             window.processing.addProcess(process);

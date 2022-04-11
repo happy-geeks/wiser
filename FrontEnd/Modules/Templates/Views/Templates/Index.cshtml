@@ -26,66 +26,64 @@
       data-api-client-id="@Model.Settings.ApiClientId"
       data-api-client-secret="@Model.Settings.ApiClientSecret">
     <span id="popupNotification"></span>
-    <form id="templatesForm" autocomplete="off" novalidate>
-        <div id="wiser">
-            <div id="window" style="margin: 0 auto; padding: 0;">
-                <div class="window-header">
-                    <div class="search-container">
-                        <input type="text" placeholder="Zoeken" id="search-field" class="k-input">
-                        <div class="icon-line-search"></div>
-                        <div class="loader-icon"><div></div><div></div><div></div><div></div></div>
-                    </div>
+    <div id="wiser">
+        <div id="window" style="margin: 0 auto; padding: 0;">
+            <div class="window-header">
+                <form id="searchForm" class="search-container">
+                    <input type="text" placeholder="Zoeken" id="search-field" class="k-input" autocomplete="off">
+                    <button class="icon-line-search"></button>
+                    <div class="loader-icon"><div></div><div></div><div></div><div></div></div>
+                </form>
 
-                    <div class="header-actions">
-                        <button id="saveButton" class="k-primary saveButton">Opslaan</button>
-                    </div>
+                <div class="header-actions">
+                    <button id="saveButton" class="k-primary saveButton">Opslaan</button>
                 </div>
+            </div>
 
-                <div class="window-content">
+            <div class="window-content">
 
-                    <div id="panelwithsplitter" style="height: 100%; margin: 0; padding: 0; border: 0;">
+                <div id="panelwithsplitter" style="height: 100%; margin: 0; padding: 0; border: 0;">
 
-                        <div id="horizontal" style="border: 0; height: 100%; width: 100%;">
+                    <div id="horizontal" style="border: 0; height: 100%; width: 100%;">
 
-                            <div id="left-pane" style="background-color: #cccccc;">
-                                <div class="pane-content">
-                                    <div class="tabstrip-treeview">
-                                    </div>
-                                    <button id="addButton" class="k-primary k-button-round"></button>
+                        <div id="left-pane" style="background-color: #cccccc;">
+                            <div class="pane-content">
+                                <div class="tabstrip-treeview">
                                 </div>
-                                <ul id="treeViewContextMenu"></ul>
+                                <button id="addButton" class="k-primary k-button-round"></button>
                             </div>
+                            <ul id="treeViewContextMenu"></ul>
+                        </div>
 
 
-                            <div id="right-pane" style="background-color: #eeeeee;">
-                                <div class="tabstrip">
-                                    <ul>
-                                        <li class="development-tab k-state-active" data-name="development">Development</li>
-                                        <li class="history-tab" data-name="history">Historie</li>
-                                        <li class="dynamic-tab" data-name="dynamic-content">Dynamische content</li>
-                                        <li class="preview-tab" data-name="preview">Preview</li>
-                                    </ul>
-                                    <div id="developmentTab">
+                        <div id="right-pane" style="background-color: #eeeeee;">
+                            <div class="tabstrip">
+                                <ul>
+                                    <li class="development-tab k-state-active" data-name="development">Development</li>
+                                    <li class="history-tab" data-name="history">Historie</li>
+                                    <li class="dynamic-tab" data-name="dynamic-content">Dynamische content</li>
+                                    <li class="preview-tab" data-name="preview">Preview</li>
+                                </ul>
+                                <div id="developmentTab">
 
-                                    </div>
-                                    <div id="historyTab">
+                                </div>
+                                <div id="historyTab">
 
-                                    </div>
-                                    <div>
-                                        <partial name="Tabs/DynamicContentTab" />
-                                    </div>
-                                    <div id="previewTab">
+                                </div>
+                                <div>
+                                    <partial name="Tabs/DynamicContentTab" />
+                                </div>
+                                <div id="previewTab">
 
-                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                 </div>
+
             </div>
         </div>
-    </form>
+    </div>
 
     <div id="dynamicContentWindow"></div>
     <div id="deployDynamicContentWindow"></div>

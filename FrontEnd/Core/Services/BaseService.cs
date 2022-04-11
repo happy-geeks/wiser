@@ -13,8 +13,6 @@ namespace FrontEnd.Core.Services
 {
     public class BaseService : IBaseService
     {
-        public const int DebuggingPortNumber = 51593;
-        public const int DebuggingSslPortNumber = 44377;
         public const int Wiser1DebuggingPortNumber = 54405;
 
         private readonly IHttpContextAccessor httpContextAccessor;
@@ -38,7 +36,7 @@ namespace FrontEnd.Core.Services
 
             var requestUrl = new Uri(httpContextAccessor.HttpContext.Request.GetDisplayUrl());
             var result = "";
-            if (requestUrl.Port is DebuggingPortNumber or DebuggingSslPortNumber && requestUrl.Host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase))
+            if (requestUrl.Host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase))
             {
                 // E.g.: customername.localhost
                 var lastDotIndex = requestUrl.Host.LastIndexOf('.');
@@ -48,14 +46,14 @@ namespace FrontEnd.Core.Services
             {
                 result = frontEndSettings.WiserHostNames.Where(host => !String.IsNullOrWhiteSpace(host)).Aggregate(requestUrl.Host, (current, host) => current.Replace(host, ""));
             }
-            else if (requestUrl.Port is DebuggingPortNumber or DebuggingSslPortNumber && !requestUrl.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+            else if (requestUrl.Port != 443 && requestUrl.Port != 80 && !requestUrl.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
             {
                 result = requestUrl.Host;
             }
 
             if (String.IsNullOrWhiteSpace(result))
             {
-                result = "main";
+                result = frontEndSettings.MainSubDomain;
             }
 
             return result;
@@ -71,7 +69,7 @@ namespace FrontEnd.Core.Services
 
             var requestUrl = new Uri(httpContextAccessor.HttpContext.Request.GetDisplayUrl());
             var subDomain = GetSubDomain();
-            if (requestUrl.Port == DebuggingPortNumber || requestUrl.Port == DebuggingSslPortNumber)
+            if (requestUrl.Port != 443 && requestUrl.Port == 80)
             {
                 return $"http://{subDomain}:{Wiser1DebuggingPortNumber}/";
             }

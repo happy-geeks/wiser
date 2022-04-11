@@ -52,22 +52,23 @@ namespace Api.Modules.Templates.Services
         {
             var currentVersion = await dataService.GetComponentDataAsync(contentId);
 
-            foreach (var RevisedVersion in changesToRevert)
+            foreach (var revisedVersion in changesToRevert)
             {
-                var OldVersion = await dataService.GetVersionDataAsync(RevisedVersion.GetVersionForRevision(), contentId);
+                var OldVersion = await dataService.GetVersionDataAsync(revisedVersion.GetVersionForRevision(), contentId);
 
-                foreach (var RevisedProperty in RevisedVersion.RevertedProperties)
+                foreach (var revisedProperty in revisedVersion.RevertedProperties)
                 {
-                    if (currentVersion.Value.ContainsKey(RevisedProperty))
+                    if (currentVersion.Value.ContainsKey(revisedProperty))
                     {
-                        currentVersion.Value[RevisedProperty] = OldVersion.Value.GetValueOrDefault(RevisedProperty);
+                        currentVersion.Value[revisedProperty] = OldVersion.Value.GetValueOrDefault(revisedProperty);
                     }
                     else
                     {
-                        currentVersion.Value.Add(RevisedProperty, OldVersion.Value.GetValueOrDefault(RevisedProperty));
+                        currentVersion.Value.Add(revisedProperty, OldVersion.Value.GetValueOrDefault(revisedProperty));
                     }
                 }
             }
+            
             var componentAndMode = await dataService.GetComponentAndModeFromContentIdAsync(contentId);
             var result = await dataService.SaveSettingsStringAsync(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value, IdentityHelpers.GetUserName(identity));
             return new ServiceResult<int>(result);
@@ -143,6 +144,7 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("useCache", newVersion.UseCache, oldVersion.UseCache, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheMinutes", newVersion.CacheMinutes, oldVersion.CacheMinutes, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheLocation", newVersion.CacheLocation, oldVersion.CacheLocation, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheRegex", newVersion.CacheRegex, oldVersion.CacheRegex, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("handleRequests", newVersion.HandleRequests, oldVersion.HandleRequests, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("handleSession", newVersion.HandleSession, oldVersion.HandleSession, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("handleObjects", newVersion.HandleObjects, oldVersion.HandleObjects, historyModel);
@@ -166,9 +168,11 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingValueColumnName", newVersion.GroupingValueColumnName, oldVersion.GroupingValueColumnName, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("isScssIncludeTemplate", newVersion.IsScssIncludeTemplate, oldVersion.IsScssIncludeTemplate, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("useInWiserHtmlEditors", newVersion.UseInWiserHtmlEditors, oldVersion.UseInWiserHtmlEditors, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("preLoadQuery", newVersion.PreLoadQuery, oldVersion.PreLoadQuery, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("returnNotFoundWhenPreLoadQueryHasNoData", newVersion.ReturnNotFoundWhenPreLoadQueryHasNoData, oldVersion.ReturnNotFoundWhenPreLoadQueryHasNoData, historyModel);
 
-            var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries);
-            var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries);
+            var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
             if (!String.IsNullOrEmpty(newVersion.LinkedTemplates.RawLinkList))
             {

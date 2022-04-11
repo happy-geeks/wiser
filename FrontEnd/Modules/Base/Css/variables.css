@@ -1,8 +1,8 @@
 :root {
-	--bold-txt: 		'AvantGardeGothic-Bd', sans-serif;
-	--medium-txt: 		'AvantGardeGothic-Md', sans-serif;
-	--demi-txt: 		'AvantGardeGothic-Dm', sans-serif;
-	--regular-txt: 		'AvantGardeGothic-Bk', sans-serif;
+	--bold-txt: 		'Roboto', sans-serif;
+	--medium-txt: 		'Roboto', sans-serif;
+	--demi-txt: 		'Roboto', sans-serif;
+	--regular-txt: 		'Roboto', sans-serif;
 	--body-txt: 		'Roboto', sans-serif;
 	
     --body-color:       #F5F7F8;

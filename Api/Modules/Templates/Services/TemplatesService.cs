@@ -2530,7 +2530,7 @@ LIMIT 1";
                     break;
                 case TemplateTypes.Html:
                     template.EditorValue = await wiserItemsService.ReplaceHtmlForSavingAsync(template.EditorValue);
-                    template.MinifiedValue = Uglify.Html(template.EditorValue, new HtmlSettings { RemoveAttributeQuotes = false, ShortBooleanAttribute = false }).Code;
+                    template.MinifiedValue = template.EditorValue;
                     break;
             }
             
@@ -2591,9 +2591,9 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(SearchSettingsModel searchSettings)
+        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(string searchValue)
         {
-            return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchSettings));
+            return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchValue));
         }
 
         /// <inheritdoc />
