@@ -78,7 +78,11 @@ export class Grids {
             }
 
             this.informationBlockIframe = $(`<iframe />`).appendTo(informationBlockContainer);
-            this.informationBlockIframe[0].onload = () => {
+            this.informationBlockIframe[0].onload = (event) => {
+                if (event.target.contentDocument.URL === "about:blank") {
+                    return;
+                }
+                
                 window.processing.removeProcess(initialProcess);
 
                 dynamicItems.grids.informationBlockIframe[0].contentDocument.addEventListener("dynamicItems.onSaveButtonClick", () => {
@@ -107,8 +111,9 @@ export class Grids {
                         if (!createItemResult) {
                             return hideGrid;
                         }
+                        
                         const itemId = createItemResult.itemId;
-                        this.informationBlockIframe.attr("src", `${"/Modules/DynamicItems"}?itemId=${itemId}&moduleId=${this.base.settings.moduleId}&iframe=true&readonly=${!!informationBlockSettings.initialItem.readOnly}&hideFooter=${!!informationBlockSettings.initialItem.hideFooter}&hideHeader=${!!informationBlockSettings.initialItem.hideHeader}`);
+                        this.informationBlockIframe.attr("src", `/Modules/DynamicItems?itemId=${itemId}&moduleId=${this.base.settings.moduleId}&iframe=true&readonly=${!!informationBlockSettings.initialItem.readOnly}&hideFooter=${!!informationBlockSettings.initialItem.hideFooter}&hideHeader=${!!informationBlockSettings.initialItem.hideHeader}`);
                     },
                     icon: "save"
                 });
@@ -123,7 +128,7 @@ export class Grids {
                 itemId = createItemResult.itemId;
             }
 
-            this.informationBlockIframe.attr("src", `${"/Modules/DynamicItems"}?itemId=${itemId}&moduleId=${this.base.settings.moduleId}&iframe=true&readonly=${!!informationBlockSettings.initialItem.readOnly}&hideFooter=${!!informationBlockSettings.initialItem.hideFooter}&hideHeader=${!!informationBlockSettings.initialItem.hideHeader}`);
+            this.informationBlockIframe.attr("src", `/Modules/DynamicItems?itemId=${itemId}&moduleId=${this.base.settings.moduleId}&iframe=true&readonly=${!!informationBlockSettings.initialItem.readOnly}&hideFooter=${!!informationBlockSettings.initialItem.hideFooter}&hideHeader=${!!informationBlockSettings.initialItem.hideHeader}`);
         } catch (exception) {
             kendo.alert("Er is iets fout gegaan tijdens het laden van de data voor deze module. Sluit a.u.b. de module en probeer het nogmaals, of neem contact op met ons.");
             console.error(exception);
