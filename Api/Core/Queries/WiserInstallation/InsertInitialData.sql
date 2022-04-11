@@ -232,8 +232,6 @@ INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `publis
 -- ----------------------------
 # Admin user.
 INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (1, '', 1, '', 'email_address', '', '');
-INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (2, '', 1, '', 'last_login', '', NULL);
-INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (3, '', 1, '', 'last_login_ip', '', NULL);
 INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (4, '', 1, '', 'password', 'HQPXXPmbW+UeP2InOt+URL3lJQ+wzLlnPgAa6n638fBFG1wuTLJmIw5M2JWYZaPXialY9n69RcChSdnZXIOYtOBfliZ8H1se', ''); # = admin
 INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (5, '', 1, '', 'require_password_change', '0', '');
 INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (6, '', 1, '', 'username', 'Admin', '');
@@ -269,12 +267,26 @@ INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_prop
 -- ----------------------------
 -- Records of wiser_link
 -- ----------------------------
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, '', 'map', 'Map in Stamgegevens', 1, 0, 'one-to-one', 'none', 1);
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'filedirectory', 'filedirectory', 'Filedirectory', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'template', 'template', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'ftp_configuration', 'ftp_configuration', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'content-builder-snippet', 'content-builder-snippet', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'shippingcost', 'shippingcost', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'deliverymethod', 'deliverymethod', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'paymentmethod', 'paymentmethod', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'mailtemplate', 'mailtemplate', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'language', 'language', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'filter', 'filter', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'vatrate', 'vatrate', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'vatrule', 'vatrule', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'country', 'country', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'dataselector-template', 'dataselector-template', 1, 0, 'one-to-one', 'none', 1);
 
 -- ----------------------------
 -- Stored procedures
 -- ----------------------------
-CREATE DEFINER=CURRENT_USER FUNCTION `CreateJsonSafeProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8
+CREATE DEFINER=CURRENT_USER FUNCTION `CreateJsonSafeProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8mb4 DETERMINISTIC
 BEGIN
 	DECLARE output VARCHAR(255);
 	
@@ -289,7 +301,7 @@ BEGIN
 	RETURN output;
 END;
 
-CREATE DEFINER=CURRENT_USER FUNCTION `GetNameFromSafeJsonProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8
+CREATE DEFINER=CURRENT_USER FUNCTION `GetNameFromSafeJsonProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8mb4 DETERMINISTIC
 BEGIN
 	DECLARE output VARCHAR(255);
 	

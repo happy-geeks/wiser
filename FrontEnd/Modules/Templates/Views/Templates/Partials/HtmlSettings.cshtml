@@ -31,6 +31,14 @@
         </span>
     </div>
 
+    <div class="item" data-label-style="float" data-label-width="0">
+        <h4><label for="cacheRegex">Cache regex</label></h4>
+        <span class="k-widget k-input k-state-default">
+            <input type="text" id="cacheRegex" class="textField k-input" name="cacheRegex" value="@Model.CacheRegex" autocomplete="off">
+        </span>
+        <div class="form-hint"><span>Indien hier een geldige regex is ingevuld, wordt deze template alleen gecached voor URL's die voldoen aan deze regex.</span></div>
+    </div>
+
     <ul class="checkColumns">
         <li>
             <label class="checkbox">
@@ -78,6 +86,12 @@
             <label class="checkbox">
                 <input id="handleMutators" name="handleMutators" type="checkbox" @(Model.HandleMutators ? "checked" : "")>
                 <span>Verwerk mutators</span>
+            </label>
+        </li>
+        <li>
+            <label class="checkbox">
+                <input id="returnNotFoundWhenPreLoadQueryHasNoData" name="returnNotFoundWhenPreLoadQueryHasNoData" type="checkbox" @(Model.ReturnNotFoundWhenPreLoadQueryHasNoData ? "checked" : "")>
+                <span>Geef 404 status indien pre-load query geen resultaten heeft</span>
             </label>
         </li>
     </ul>
@@ -130,5 +144,5 @@
 <div class="item item-full">
     <h4><label for="preLoadQuery">Pre-load query</label></h4>
     <textarea rows="10" cols="30" id="preLoadQuery" data-editor-type="text/x-mysql">@Model.PreLoadQuery</textarea>
-    <div class="form-hint"><span>Deze query wordt 1 keer helemaal aan het begin uitgevoerd tijdens het laden van deze template. De resultaten van deze query kunnen dan op andere plekken in de template gebruikt worden met de prefix "template.". Als de query bijvoorbeeld een kolom "title" terruggeeft, dan kan de variabele "{template.title}" overal in de template gebruikt worden, inclusief dynamische componenten. Alleen de eerste regel van het resultaat van de query kan gebruikt worden.</span></div>
+    <div class="form-hint"><span>Deze query wordt 1 keer helemaal aan het begin uitgevoerd tijdens het laden van deze template. De resultaten van deze query kunnen dan op andere plekken in de template gebruikt worden met de prefix "template.". Als de query bijvoorbeeld een kolom "title" terruggeeft, dan kan de variabele "{template.title}" overal in de template gebruikt worden, inclusief dynamische componenten. Alleen de eerste regel van het resultaat van de query kan gebruikt worden. Deze query kan ook gebruikt worden om SEO meta tags op de pagina te zetten. De query moet dan een of meer van de volgende kolommen bevatten, die worden dan automatisch verwerkt: SEOtitle, SEOdescription, SEOkeywords, SEOcanonical, noindex, nofollow en SEOrobots.</span></div>
 </div>

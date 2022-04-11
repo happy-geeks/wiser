@@ -22,16 +22,21 @@
     min-height: initial;
 }
 .k-window-content {
+	background-color: var(--item-bg-color);
 	padding: 0;
-    width: 100%;
-    height: 100%;
+	width: 100%;
+	height: 100%;
+	padding-bottom: 65px;
 }
 .k-window-content.k-dialog-content {
     padding: 16px;
     height: 100% !important;
 }
+.k-window-content.html-source-window {
+	overflow: hidden;
+}
 .k-edit-buttons {
-    min-height: 54px;
+	min-height: 54px;
 }
 .k-window-content .pane-content > p {
 	padding: 16px;
@@ -47,12 +52,25 @@
 .pane-content + footer {
 	background: var(--white-color);
 	border-top: 1px solid #dddddd;
+	border-radius: 0 0 6px 6px;
 	box-sizing: content-box;
 	padding: 10px;
+	z-index: 250;
+	min-height: 47px;
+	position: fixed;
+	left: 0;
+	right: 0;
+	top: 100%;
+	transform: translateY(-100%);
+}
+#right-pane .pane-content + footer {
 	position: -webkit-sticky;
 	position: sticky;
 	bottom: 0;
-	z-index: 250;
+	left: auto;
+	right: auto;
+	top: auto;
+	transform: none;
 	min-height: 36px;
 }
 
@@ -62,7 +80,7 @@
 	border: 1px solid rgba(20, 53, 80, 0.14);
 	box-sizing: border-box;
 	margin: 5px 0;
-    padding: .8em;
+	padding: .8em;
 	width: calc(100% - 35px);
 }
 .k-dropzone.k-dropzone-hovered {
@@ -224,6 +242,7 @@
 /* KENDO - CUSTOM CSS */
 .k-button {
 	font-family: var(--medium-txt);
+	font-weight: 400;
 	font-size: 14px;
 	line-height: 18px;
 	padding: 12px 8px;
@@ -643,7 +662,7 @@
 .k-tabstrip-items .k-item.k-state-active .k-link {
 	color: var(--dark-txt);
 	font-family: var(--medium-txt);
-	font-weight: 600;
+	font-weight: 500;
 }
 .k-tabstrip-items .k-item.k-state-hover {
     background: var(--white-color);
@@ -805,6 +824,7 @@ input[type=search] + button {
 	color: var(--dark-txt);
 	font-family: var(--medium-txt);
 	font-size: 15px;
+	font-weight: 400;
     line-height: 2.5em;
     margin: 0;
     overflow: hidden;
@@ -822,17 +842,18 @@ input[type=search] + button {
 }
 
 textarea {
-    background-color: var(--white-color);
+	background-color: var(--white-color);
 	color: var(--dark-txt);
-    border: 0;
+	border: 0;
 	font-family: var(--medium-txt);
-    font-size: 12px;
-    line-height: 1.65em;
-    margin: 0;
-    min-height: 80px;
-    padding: .5em .8em;
-    width: 100%;
-    resize: vertical;
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 1.65em;
+	margin: 0;
+	min-height: 80px;
+	padding: .5em .8em;
+	width: 100%;
+	resize: vertical;
 }
 .k-input[type=text], 
 .k-input[type=number], 
@@ -976,6 +997,7 @@ span.k-input .k-input:hover {
 .k-multiselect-wrap li {
 	font-family: var(--medium-txt);
 	font-size: 14px;
+	font-weight: 500;
 	line-height: 16px;
 	padding: 8px;
 	text-indent: 8px;
@@ -1637,6 +1659,9 @@ k-filter-menu .k-autocomplete,
 }
 .k-editor .k-i-wiser-entity-block:before {
     content: "\e63b";
+}
+.k-editor .k-i-wiser-data-selector:before {
+	content: "\e13b";
 }
 .k-editor .k-i-wiser-paste-without-formatting:before {
     content: "\e665";

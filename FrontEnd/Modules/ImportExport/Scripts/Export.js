@@ -238,7 +238,7 @@ const exportModuleSettings = {
 
             try {
                 const promiseResults = await Promise.all([
-                    Wiser2.api({ url: `${this.settings.wiserApiRoot}data-selectors` }),
+                    Wiser2.api({ url: `${this.settings.wiserApiRoot}data-selectors?forExportModule=true` }),
                     Wiser2.api({ url: `${this.settings.wiserApiRoot}queries/export-module` }),
                     Wiser2.api({ url: `${this.settings.wiserApiRoot}modules` })
                 ]);
