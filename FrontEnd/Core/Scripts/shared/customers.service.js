@@ -78,13 +78,13 @@ export default class CustomersService extends BaseService {
      * Gets all modules that the user has access to.
      * @param {any} data The data for the new customer.
      * @param {boolean} isWebShop: Whether or not this customer is getting a web shop.
+     * @param {boolean} isConfigurator: Whether or not this customer is getting a configurator.
      * @returns {any} The newly created customer.
      */
-    async create(data, isWebShop) {
+    async create(data, isWebShop, isConfigurator) {
         const result = {};
-
         try {
-            const response = await this.base.api.post(`/api/v3/wiser-customers?isWebShop=${isWebShop}`, data);
+            const response = await this.base.api.post(`/api/v3/wiser-customers?isWebShop=${isWebShop}&isConfigurator=${isConfigurator}`, data);
             result.success = true;
             result.data = response.data;
         } catch (error) {

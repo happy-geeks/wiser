@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Api.Modules.DataSelectors.Interfaces;
 using Api.Modules.DataSelectors.Models;
+using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -47,9 +48,19 @@ namespace Api.Modules.DataSelectors.Controllers
         /// Get the saved data selectors.
         /// </summary>
         [HttpGet, ProducesResponseType(typeof(List<DataSelectorModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAsync()
+        public async Task<IActionResult> GetAsync(bool forExportModule = false, bool forRendering = false)
         {
-            return (await dataSelectorsService.GetAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+            return (await dataSelectorsService.GetAsync((ClaimsIdentity)User.Identity, forExportModule, forRendering)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Get templates that can be used with data selectors.
+        /// </summary>
+        /// <returns>A list of WiserItemModel.</returns>
+        [HttpGet, Route("templates"), ProducesResponseType(typeof(List<WiserItemModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetTemplatesAsync()
+        {
+            return (await dataSelectorsService.GetTemplatesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
 
         /// <summary>

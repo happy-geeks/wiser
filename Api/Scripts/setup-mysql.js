@@ -34,7 +34,8 @@
         user: arguments.user,
         password: arguments.password,
         port: arguments.port || 3306,
-        multipleStatements: true
+        multipleStatements: true,
+        charset: "utf8mb4_general_ci"
     });
 
     try {
@@ -47,25 +48,25 @@
         console.log(notice(`Connected to database.`));
 
         console.log(notice("Creating tables..."));
-        connection.query(`CREATE TABLE \`easy_customers\`  (
-                          \`id\` int NOT NULL AUTO_INCREMENT,
-                          \`customerid\` int NULL DEFAULT NULL,
-                          \`name\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-                          \`db_host\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-                          \`db_login\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-                          \`db_pass\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-                          \`db_passencrypted\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL,
-                          \`db_port\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-                          \`db_dbname\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-                          \`encryption_key\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-                          \`encryption_key_test\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-                          \`subdomain\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-                          \`wiser_title\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-                          PRIMARY KEY (\`id\`) USING BTREE,
-                          UNIQUE INDEX \`subdomain\`(\`subdomain\`) USING BTREE,
-                          INDEX \`customerid\`(\`customerid\`) USING BTREE,
-                          INDEX \`name\`(\`name\`) USING BTREE
-                        ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;`);
+        await connection.query(`CREATE TABLE \`easy_customers\`  (
+                              \`id\` int NOT NULL AUTO_INCREMENT,
+                              \`customerid\` int NULL DEFAULT NULL,
+                              \`name\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                              \`db_host\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                              \`db_login\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                              \`db_pass\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                              \`db_passencrypted\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL,
+                              \`db_port\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                              \`db_dbname\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                              \`encryption_key\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                              \`encryption_key_test\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                              \`subdomain\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                              \`wiser_title\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                              PRIMARY KEY (\`id\`) USING BTREE,
+                              UNIQUE INDEX \`subdomain\`(\`subdomain\`) USING BTREE,
+                              INDEX \`customerid\`(\`customerid\`) USING BTREE,
+                              INDEX \`name\`(\`name\`) USING BTREE
+                            ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;`);
         const createTablesQuery = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/CreateTables.sql"), "utf8");
         await connection.query(createTablesQuery);
         console.log(notice("Tables created."));
@@ -82,6 +83,11 @@
         console.log(notice("Data inserted."));
 
         if (arguments.isConfigurator) {
+            console.log(notice("Creating configurator tables..."));
+            const createTablesConfigurator = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/CreateTablesConfigurator.sql"), "utf8");
+            await connection.query(createTablesConfigurator);
+            console.log(notice("Tables created."));
+
             console.log(notice("Setting up configurator..."));
             const insertInitialDataConfiguratorQuery = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/InsertInitialDataConfigurator.sql"), "utf8");
             await connection.query(insertInitialDataConfiguratorQuery);
