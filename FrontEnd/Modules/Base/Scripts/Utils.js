@@ -259,12 +259,15 @@ export class Wiser2 {
         // If another process/request is already requesting a new access token, wait for that to finish first.
         // This is to prevent multiple access token requests at the same time and to prevent racing conditions.
         if (wiserMainWindow.wiserApiRefreshTokenPromise) {
-            const newRefreshToken = await wiserMainWindow.wiserApiRefreshTokenPromise;
+            const timeoutPromise = new Promise((res) => setTimeout(() => res("TIMEOUT"), 1000));
+            const newRefreshToken = await Promise.race([wiserMainWindow.wiserApiRefreshTokenPromise, timeoutPromise]);
             
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
-            $.ajaxSetup({
-                headers: { "Authorization": `Bearer ${newRefreshToken.access_token}` }
-            });
+            if (newRefreshToken !== "TIMEOUT") {
+                $.ajaxSetup({
+                    headers: {"Authorization": `Bearer ${newRefreshToken.access_token}`}
+                });
+            }
         }
 
         const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
@@ -314,7 +317,8 @@ export class Wiser2 {
             });
 
             // Of course we also need to wait until we have the new auth token, otherwise the code below will be executed too early.
-            await wiserMainWindow.wiserApiRefreshTokenPromise;
+            const timeoutPromise = new Promise((res) => setTimeout(() => res("TIMEOUT"), 1000));
+            await Promise.race([wiserMainWindow.wiserApiRefreshTokenPromise, timeoutPromise]);
         }
 
         return $.ajax(settings).fail((jqXhr, textStatus, errorThrown) => {
