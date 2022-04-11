@@ -128,9 +128,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(SearchSettingsModel searchSettings)
+        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(string searchValue)
         {
-            return await templatesService.SearchAsync(searchSettings);
+            return await templatesService.SearchAsync(searchValue);
         }
 
         /// <inheritdoc />
