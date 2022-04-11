@@ -53,6 +53,23 @@
     top: 0;
     text-align: center;
     width: 42px;
+    background: none;
+    border: none;
+}
+
+.search-container .loader-icon {
+    position: absolute;
+    top: 7px;
+    right: 0;
+}
+
+.search-container.loading .icon-line-search {
+    display: none;
+}
+
+.search-container.loading,
+.search-container.loading input {
+    cursor: wait;
 }
 
 .version-block {

@@ -2375,9 +2375,12 @@ div.k-splitbar.k-state-focused .k-icon,
     opacity: 0.25;
 }
 
-.k-button,
+.k-button {
+    font-weight: 400;
+}
+
 .k-header {
-    font-weight: 500;
+    font-weight: 300;
 }
 
 /*.k-dropdown .k-state-default {

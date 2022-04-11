@@ -1542,7 +1542,7 @@ export class Windows {
             if (titleField.is(":visible")) {
                 titleToSave = newTitle;
             }
-            const promises = [this.base.updateItem(itemId, inputData, popupWindowContainer, isNewItemWindow, titleToSave, true, true, entityType.name)];
+            const promises = [this.base.updateItem(itemId, inputData, popupWindowContainer, isNewItemWindow, titleToSave, true, true, entityType.entityType || entityType.name)];
 
             await Promise.all(promises);
 

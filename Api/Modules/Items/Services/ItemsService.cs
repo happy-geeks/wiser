@@ -1757,6 +1757,11 @@ namespace Api.Modules.Items.Services
                 var itemId = dataRow.Field<ulong>("id");
                 var originalItemId = dataRow.Field<ulong>("original_item_id");
 
+                if (results.Any(item => item.PlainItemId == itemId))
+                {
+                    return;
+                }
+
                 results.Add(new TreeViewItemModel
                 {
                     EntityType = dataRow.Field<string>("entity_type"),
