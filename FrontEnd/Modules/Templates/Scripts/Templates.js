@@ -445,6 +445,44 @@ const moduleSettings = {
             }
         }
 
+        async onDropFile(event) {
+            event.preventDefault();
+
+            if (!event.originalEvent.dataTransfer.items) {
+                return;
+            }
+
+            for (let i = 0; i < event.originalEvent.dataTransfer.items.length; i++) {
+                if (event.originalEvent.dataTransfer.items[i].kind !== "file") {
+                    continue;
+                }
+
+                let file = event.originalEvent.dataTransfer.items[i].getAsFile();
+                let reader = new FileReader();
+                reader.onload = ((file) => {
+                    return async (event) => {
+                        const content = event.target.result;
+                        let filename = file.name.split(".");
+                        filename.splice(-1);
+                        filename = filename.join(".");
+                        const treeviewtab = window.Templates.treeViewTabs[window.Templates.treeViewTabStrip.select().index()];
+                        const treeview = $(window.Templates.treeViewTabStrip.contentElement(window.Templates.treeViewTabStrip.select().index()).querySelector("ul")).data("kendoTreeView");
+                        let parentId = treeviewtab.templateId;
+
+                        await window.Templates.createNewTemplate(
+                            parentId,
+                            filename,
+                            window.Templates.templateTypes[treeviewtab.templateName.toUpperCase()],
+                            treeview,
+                            !parentId ? undefined : treeview.select(),
+                            content
+                        );
+                    }
+                })(file);
+                reader.readAsText(file);
+            }
+        }
+
         /**
          * Event for when the context menu of the tree view gets opened.
          * @param {any} event The open event of a kendoContextMenu.
@@ -1181,6 +1219,11 @@ const moduleSettings = {
             document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
 
             document.getElementById("searchForm").addEventListener("submit", this.onSearchFormSubmit.bind(this));
+          
+            $(".window-content #left-pane div.k-content").on("dragover", (event) => {
+                event.preventDefault();
+            });
+            $(".window-content #left-pane div.k-content").on("drop", this.onDropFile.bind(this));
         }
 
         /**
@@ -1435,17 +1478,18 @@ const moduleSettings = {
          * @param {any} treeView The tree view that the template should be added to.
          * @param {any} parentElement The parent node in the tree view to add the parent to.
          */
-        async createNewTemplate(parentId, title, type, treeView, parentElement) {
+        async createNewTemplate(parentId, title, type, treeView, parentElement, body = "") {
             const process = `createNewTemplate_${Date.now()}`;
             window.processing.addProcess(process);
 
             let success = true;
             try {
                 const result = await Wiser2.api({
-                    url: `${this.settings.wiserApiRoot}templates/${parentId}?name=${encodeURIComponent(title)}&type=${type}`,
+                    url: `${this.settings.wiserApiRoot}templates/${parentId}`,
                     dataType: "json",
                     type: "PUT",
-                    contentType: "application/json"
+                    contentType: "application/json",
+                    data: JSON.stringify({ name: title, type: type, editorvalue: body })
                 });
 
                 const dataItem = treeView.dataItem(parentElement);
