@@ -7,7 +7,6 @@ using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
-using Api.Modules.Templates.Models.Preview;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 using GeeksCoreLibrary.Modules.Templates.Models;
@@ -126,8 +125,8 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Search for a template.
         /// </summary>
-        /// <param name="searchSettings">The search parameters.</param>
-        Task<ServiceResult<List<SearchResultModel>>> SearchAsync(SearchSettingsModel searchSettings);
+        /// <param name="searchValue">The value to search for.</param>
+        Task<ServiceResult<List<SearchResultModel>>> SearchAsync(string searchValue);
         
         /// <summary>
         /// Retrieve the history of the template. This will include changes made to dynamic content between the releases of templates and the publishes to different environments from this template. This data is collected and combined in a TemnplateHistoryOverviewModel

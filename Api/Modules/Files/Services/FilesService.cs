@@ -445,6 +445,37 @@ namespace Api.Modules.Files.Services
 
             return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> UpdateFileTitleAsync(string encryptedItemId, int fileId, string newTitle, ClaimsIdentity identity, ulong itemLinkId = 0)
+        {
+            if (String.IsNullOrWhiteSpace(encryptedItemId))
+            {
+                throw new ArgumentNullException(nameof(encryptedItemId));
+            }
+            
+            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedItemId, identity);
+            if (itemId <= 0 && itemLinkId <= 0)
+            {
+                throw new ArgumentException("Id or itemLinkId must be greater than zero.");
+            }
+
+            if (fileId <= 0)
+            {
+                throw new ArgumentException("File ID must be greater than zero.");
+            }
+            
+            var query = $"UPDATE {WiserTableNames.WiserItemFile} SET title = ?newTitle WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
+            
+            await databaseConnection.EnsureOpenConnectionForReadingAsync();
+            databaseConnection.ClearParameters();
+            databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
+            databaseConnection.AddParameter("fileId", fileId);
+            databaseConnection.AddParameter("newTitle", newTitle);
+            await databaseConnection.ExecuteAsync(query);
+
+            return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
+        }
         
         /// <inheritdoc />
         public async Task<ServiceResult<FileModel>> AddFileUrl(string encryptedItemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId)

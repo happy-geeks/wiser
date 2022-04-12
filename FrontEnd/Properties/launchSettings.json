@@ -21,7 +21,7 @@
       "commandName": "Project",
       "dotnetRunMessages": "true",
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:44377;http://localhost:51593",
+      "applicationUrl": "https://localhost:44377;http://localhost:51593;https://wiserdemo:44377;https://westpoort:44378;https://happyhorizon:44379;https://igdeuren:44380;https://hfs:44381;https://ixxxi:44382;https://giliantest:44383;https://sneakers:44384;https://sneakers-test:44385;https://gilian_test_nieuw:44386;https://foodconnect:44387;https://argonaut:44388;https://argonaut-test:44389;https://beachlife:44390;https://cyell:44391;https://fixer:44392;https://deurentest:44393;https://lequal:44394;https://horrenconfigurator:44395;https://multiprofiel:44396;https://wereldvanraamdecoratie:44397;https://dost-voordeelgordijnen:44398;https://knolpower:44399/",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "development"
       }

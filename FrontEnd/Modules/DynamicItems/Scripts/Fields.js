@@ -744,7 +744,13 @@ export class Fields {
         const container = $(event.currentTarget).closest(".fileContainer");
         const containerData = container.data();
         const value = await kendo.prompt("", containerData.name);
-        await Wiser2.api({ url: `${this.base.settings.serviceRoot}/UPDATE_FILE_NAME?fileId=${encodeURIComponent(containerData.fileId)}&itemId=${encodeURIComponent(containerData.itemId)}&value=${encodeURIComponent(value)}` });
+        
+        await Wiser2.api({
+            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/rename/${encodeURIComponent(value)}`,
+            method: "PUT",
+            contentType: "application/json",
+            dataType: "JSON"
+        });
         this.base.notification.show({ message: `Bestandsnaam is succesvol aangepast` }, "success");
         container.find(".name").html(kendo.htmlEncode(value));
     }
@@ -758,7 +764,13 @@ export class Fields {
         const container = $(event.currentTarget).closest(".fileContainer");
         const containerData = container.data();
         const value = await kendo.prompt("", containerData.title);
-        await Wiser2.api({ url: `${this.base.settings.serviceRoot}/UPDATE_FILE_TITLE?fileId=${encodeURIComponent(containerData.fileId)}&itemId=${encodeURIComponent(containerData.itemId)}&value=${encodeURIComponent(value)}` });
+
+        await Wiser2.api({
+            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/title/${encodeURIComponent(value)}`,
+            method: "PUT",
+            contentType: "application/json",
+            dataType: "JSON"
+        });
         this.base.notification.show({ message: `Bestandsomschrijving is succesvol aangepast` }, "success");
         container.find(".title").html(kendo.htmlEncode(value));
     }
@@ -916,13 +928,13 @@ export class Fields {
         iframe.onload = () => {
             // Need to wait until the iframe is loaded, before we can add event listeners.
             iframeWindow.document.addEventListener("dataSelectorAfterSave", (saveEvent) => {
-                if (!saveEvent.detail || !saveEvent.detail.length || !saveEvent.detail[0].itemId) {
+                if (!saveEvent) {
                     kendo.alert("Er is iets fout gegaan tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals of neem contact op met ons.");
                     return;
                 }
 
                 // Save the value in the hidden input, so that it will be saved in wiser_itemdetail once the user saves the item.
-                field.prev("input.valueField").val(saveEvent.detail[0].itemId);
+                field.prev("input.valueField").val(saveEvent);
                 dataSelectorWindow.close().destroy();
             });
         };
@@ -1014,6 +1026,79 @@ export class Fields {
         } catch (exception) {
             console.error("Error on onFileDelete", exception);
             window.dynamicItems.notification.show({ message: `Er is iets fout gegaan met opslaan: ${exception}` }, "error");
+        }
+    }
+
+    async onImageEdit(event) {
+        const imageContainer = $(event.currentTarget).closest(".product");
+        const data = imageContainer.data();
+
+        try {
+            const dialogElement = $("#changeImageDataDialog");
+            let changeImageDataDialog = dialogElement.data("kendoDialog");
+
+            // Set the initial values from the query.
+            dialogElement.find("input[name=fileName]").val(data.fileName);
+            dialogElement.find("input[name=title]").val(data.title);
+            
+            if (changeImageDataDialog) {
+                changeImageDataDialog.destroy();
+            }
+
+            changeImageDataDialog = dialogElement.kendoDialog({
+                width: "900px",
+                title: "Afbeelding eigenschappen wijzigen",
+                closable: false,
+                modal: true,
+                actions: [
+                    {
+                        text: "Annuleren"
+                    },
+                    {
+                        text: "Opslaan",
+                        primary: true,
+                        action: (event) => {
+                            try {
+                                const newFileName = dialogElement.find("input[name=fileName]").val();
+                                const newTitle = dialogElement.find("input[name=title]").val();
+
+                                const promises = [
+                                    Wiser2.api({
+                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/rename/${encodeURIComponent(newFileName)}`,
+                                        method: "PUT",
+                                        contentType: "application/json",
+                                        dataType: "JSON"
+                                    }),
+                                    Wiser2.api({
+                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/title/${encodeURIComponent(newTitle)}`,
+                                        method: "PUT",
+                                        contentType: "application/json",
+                                        dataType: "JSON"
+                                    })
+                                ];
+
+                                Promise.all(promises).then(() => {
+                                    imageContainer.data("fileName", newFileName);
+                                    imageContainer.data("title", newTitle);
+                                    changeImageDataDialog.close();
+                                    this.base.notification.show({ message: `Afbeelding is succesvol aangepast` }, "success");
+                                }).catch((error) => {
+                                    console.error(error);
+                                    kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                                });
+                            } catch (exception) {
+                                console.error(exception);
+                                kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                            }
+                        }
+                    }
+                ]
+            }).data("kendoDialog");
+
+            changeImageDataDialog.open();
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan met het verwijderen van de afbeelding. Probeer het a.u.b. nogmaals of neem contact op met ons.");
         }
     }
 
@@ -1269,9 +1354,23 @@ export class Fields {
 
                             if (options.defaultValueQueryId) {
                                 try {
+                                    let extraData = {};
+                                    if (selectedItems && selectedItems.length) {
+                                        for (let item of selectedItems) {
+                                            // Enter the values of all properties in userParametersWithValues, so that they can be used in actions.
+                                            for (let key in item.dataItem) {
+                                                if (!item.dataItem.hasOwnProperty(key) || (typeof item.dataItem[key] === "object" && !(item.dataItem[key] || {}).getDate)) {
+                                                    continue;
+                                                }
+                                                
+                                                extraData[`selected_${key}`] = (item.dataItem[key] || {}).getDate ? DateTime.fromJSDate(item.dataItem[key], { locale: "nl-NL" }).toFormat("yyyy-LL-dd HH:mm:ss") : item.dataItem[key];
+                                            }
+                                        }
+                                    }
                                     const queryResult = await Wiser2.api({
                                         method: "POST",
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(options.defaultValueQueryId)}`,
+                                        data: JSON.stringify(extraData),
                                         contentType: "application/json"
                                     });
 
@@ -2706,40 +2805,6 @@ export class Fields {
     }
 
     /**
-     * Event that gets called when the user executes the custom action for adding dynamic content from Wiser to the HTML editor.
-     * This will open the dynamicHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser 2.0 is being loaded in an iframe.
-     * @param {any} event The event from the execute action.
-     * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
-     * @param {any} itemId The ID of the current item.
-     * @param {any} codeMirror The CodeMirror editor where the action is executed in.
-     */
-    async onHtmlEditorDynamicContentExec(event, kendoEditor, itemId, codeMirror) {
-        if (!window.parent || !window.parent.$ || !window.parent.$.dynamicHandler) {
-            console.warn("No parent window found, or no file handler found on parent window.");
-            kendo.alert("Deze functie wordt nog niet ondersteund.");
-            return;
-        }
-
-        window.parent.$.core.loadCodeMirror(() => {
-            new window.parent.$.dynamicHandler(this, 0, null, null, { id: this.base.settings.moduleId }, itemId, null, (dynamicContentData) => {
-                if (kendoEditor) {
-                    const originalOptions = kendoEditor.options.pasteCleanup;
-                    kendoEditor.options.pasteCleanup.none = true;
-                    kendoEditor.options.pasteCleanup.span = false;
-                    kendoEditor.exec("inserthtml", { value: dynamicContentData.img || dynamicContentData.html });
-                    kendoEditor.options.pasteCleanup.none = originalOptions.none;
-                    kendoEditor.options.pasteCleanup.span = originalOptions.span;
-                }
-                if (codeMirror) {
-                    const doc = codeMirror.getDoc();
-                    const cursor = doc.getCursor();
-                    doc.replaceRange(dynamicContentData.img || dynamicContentData.html, cursor);
-                }
-            });
-        });
-    }
-
-    /**
      * Event that gets called when the user executes the custom action for viewing / changing the HTML source of the editor.
      * @param {any} event The event from the execute action.
      * @param {any} editor The HTML editor where the action is executed in.
@@ -2941,6 +3006,97 @@ export class Fields {
         editor.exec("inserthtml", { value: `<table cellpadding="0" cellspacing="0" class="dyn-content content k-table" data-item-id="${itemId}"><tbody><tr><td><div class="dyn-content-info">item ID: ${itemId}</div>${html}</td></tr></tbody></table>` });
         editor.options.pasteCleanup.none = originalOptions.none;
         editor.options.pasteCleanup.span = originalOptions.span;
+    }
+
+    /**
+     * Event that gets called when the user executes the custom action for entering an HTML block for an entity.
+     * @param {any} event The event from the execute action.
+     * @param {any} editor The HTML editor where the action is executed in.
+     */
+    async onHtmlEditorDataSelectorExec(event, editor) {
+        try {
+            const dialogElement = $("#dataSelectorTemplateDialog");
+            let dataSelectorTemplateDialog = dialogElement.data("kendoDialog");
+                        
+            if (dataSelectorTemplateDialog) {
+                dataSelectorTemplateDialog.destroy();
+            }
+            
+            const dataSelectorDropDown = dialogElement.find("#dataSelectorDropDown").kendoDropDownList({
+                optionLabel: "Selecteer data selector",
+                dataTextField: "name",
+                dataValueField: "id",
+                dataSource: {
+                    transport: {
+                        read: async (options) => {
+                            try {
+                                const results = await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}data-selectors?forRendering=true` });
+                                options.success(results);
+                            } catch (exception) {
+                                console.error(exception);
+                                options.error(exception);
+                            }
+                        }
+                    }
+                }
+            }).data("kendoDropDownList");
+
+            const dataSelectorTemplateDropDown = dialogElement.find("#dataSelectorTemplateDropDown").kendoDropDownList({
+                optionLabel: "Selecteer template",
+                dataTextField: "title",
+                dataValueField: "id",
+                dataSource: {
+                    transport: {
+                        read: async (options) => {
+                            try {
+                                const results = await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}data-selectors/templates` });
+                                options.success(results);
+                            } catch (exception) {
+                                console.error(exception);
+                                options.error(exception);
+                            }
+                        }
+                    }
+                }
+            }).data("kendoDropDownList");
+
+            dataSelectorTemplateDialog = dialogElement.kendoDialog({
+                width: "900px",
+                title: "Datas elector met template invoegen",
+                closable: false,
+                modal: true,
+                actions: [
+                    {
+                        text: "Annuleren"
+                    },
+                    {
+                        text: "Invoegen",
+                        primary: true,
+                        action: (event) => {
+                            const selectedDataSelector = dataSelectorDropDown.value();
+                            const selectedTemplate = dataSelectorTemplateDropDown.value();
+                            if (!selectedDataSelector || !selectedTemplate) {
+                                kendo.alert("Kies a.u.b. een data selector en een template.")
+                                return false;
+                            }
+                            
+                            const html = `<div class="dynamic-content" data-selector-id="${selectedDataSelector}" template-id="${selectedTemplate}"><h2>Data selector '${dataSelectorDropDown.text()}' met template '${dataSelectorTemplateDropDown.text()}' (wordt alleen weergegeven op front-end)</h2></div>`;
+                            const originalOptions = editor.options.pasteCleanup;
+                            editor.options.pasteCleanup.none = true;
+                            editor.options.pasteCleanup.span = false;
+                            editor.exec("inserthtml", { value: html });
+                            editor.options.pasteCleanup.none = originalOptions.none;
+                            editor.options.pasteCleanup.span = originalOptions.span;
+                        }
+                    }
+                ]
+            }).data("kendoDialog");
+
+            dataSelectorTemplateDialog.open();
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+        }
     }
 
     /**

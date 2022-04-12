@@ -240,11 +240,11 @@ namespace Api.Modules.Templates.Controllers
         /// <summary>
         /// Search for a template.
         /// </summary>
-        /// <param name="searchSettings">The search parameters.</param>
-        [HttpPost, Route("search"), ProducesResponseType(typeof(List<SearchResultModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> SearchAsync(SearchSettingsModel searchSettings)
+        /// <param name="searchValue">The value to search for.</param>
+        [HttpGet, Route("search"), ProducesResponseType(typeof(List<SearchResultModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SearchAsync(string searchValue)
         {
-            return (await templatesService.SearchAsync(searchSettings)).GetHttpResponseMessage();
+            return (await templatesService.SearchAsync(searchValue)).GetHttpResponseMessage();
         }
         
         /// <summary>

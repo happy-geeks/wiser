@@ -1743,6 +1743,8 @@ namespace Api.Modules.Items.Services
                 };
             }
 
+            await FixTreeViewOrderingAsync(moduleId, identity, entityType, encryptedParentId, orderBy, encryptedCheckId);
+
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             var parentId = String.IsNullOrWhiteSpace(encryptedParentId) ? 0 : wiserCustomersService.DecryptValue<ulong>(encryptedParentId, customer);
             var userId = IdentityHelpers.GetWiserUserId(identity);
@@ -1754,6 +1756,11 @@ namespace Api.Modules.Items.Services
             {
                 var itemId = dataRow.Field<ulong>("id");
                 var originalItemId = dataRow.Field<ulong>("original_item_id");
+
+                if (results.Any(item => item.PlainItemId == itemId))
+                {
+                    return;
+                }
 
                 results.Add(new TreeViewItemModel
                 {

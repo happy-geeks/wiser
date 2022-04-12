@@ -331,7 +331,7 @@
         <div class="k-content-frame pane-content">
         </div>
     </div>
-    
+
     <!-- Dialog for open URL links. -->
     <div id="openLinkWindow"></div>
 
@@ -665,6 +665,36 @@
         </div>
     </div>
 
+    <div id="changeImageDataDialog">
+        <div class="formview full static-fields">
+            <div class="item">
+                <h4><label>Bestandsnaam</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="text" class="textField k-input" name="fileName" autocomplete="off">
+                </span>
+            </div>
+            <div class="item">
+                <h4><label>Omschrijving</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="email" class="textField k-input" name="title" autocomplete="off" value="" required>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div id="dataSelectorTemplateDialog">
+        <div class="formview full static-fields">
+            <div class="item">
+                <h4><label>Data selector</label></h4>
+                <select id="dataSelectorDropDown" class="select"></select>
+            </div>
+            <div class="item">
+                <h4><label>Template</label></h4>
+                <select id="dataSelectorTemplateDropDown" class="select"></select>
+            </div>
+        </div>
+    </div>
+
     <div id="gridDeleteDialog"></div>
 
     <div id="data-builder" class="x-window"></div>
@@ -695,7 +725,7 @@
     </script>
 
     <script id="uploaderTemplate" type="text/x-kendo-template">
-        <div class="product" data-item-id="#= itemId #" data-image-id="#= fileId #" data-item-link-id="#= itemLinkId #">
+        <div class="product" data-item-id="#= itemId #" data-image-id="#= fileId #" data-item-link-id="#= itemLinkId #" data-file-name="#= name #" data-title="#= title #">
             <img src="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(itemId) #/files/#= fileId #/#= encodeURIComponent(name) #?encryptedCustomerId=#= encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#= encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#= window.dynamicItems.settings.isTestEnvironment #&subDomain=#= encodeURIComponent(window.dynamicItems.settings.subDomain) #&itemLinkId=#= encodeURIComponent(itemLinkId) #" alt="#: name # image" />
             <div class="imgTools">
                 <button type="button" class="imgZoom" title="Preview"></button>
@@ -761,7 +791,7 @@
             </label>
         </div>
     </script>
-    
+
     <script src="/scripts/Utils.min.js"></script>
     <script src="/scripts/DynamicItems.min.js"></script>
 

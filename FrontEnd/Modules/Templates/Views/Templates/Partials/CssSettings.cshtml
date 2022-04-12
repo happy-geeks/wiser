@@ -32,9 +32,9 @@
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
-        <h4><label for="inserMode">Invoegmodus</label></h4>
+        <h4><label for="insertMode">Invoegmodus</label></h4>
         <div class="flex-container">
-            <select id="inserMode" class="combo-select" data-kendo-control="kendoDropDownList">
+            <select id="insertMode" class="combo-select" name="insertMode" data-kendo-control="kendoDropDownList">
                 @foreach (var value in Enum.GetValues(Model.InsertMode.GetType()))
                 {
                     <!option value="@((int)value)" @((int)Model.InsertMode == (int)value ? "selected" : "")>
@@ -65,6 +65,7 @@
         <span class="k-widget k-input k-state-default">
             <input type="text" id="urlRegex" class="textField k-input" name="urlRegex" value="@Model.UrlRegex" autocomplete="off" pattern=".*">
         </span>
+        <div class="form-hint"><span>De regular expression waar de URL aan moet voldoen om deze generieke template in te laden. Bijvoorbeeld ^((?!newsitem).)*$ voor alle paginas waar 'newsitem' niet in de naam voorkomt.</span></div>
     </div>
 </div>
 

@@ -86,9 +86,9 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <summary>
         /// Searches for a template.
         /// </summary>
-        /// <param name="searchSettings">The things to search for.</param>
+        /// <param name="searchValue">What to search for.</param>
         /// <returns></returns>
-        Task<List<SearchResultModel>> SearchAsync(SearchSettingsModel searchSettings);
+        Task<List<SearchResultModel>> SearchAsync(string searchValue);
 
         /// <summary>
         /// Creates an empty template with the given name, type and parent template.

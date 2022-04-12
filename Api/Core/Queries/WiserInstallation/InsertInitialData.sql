@@ -131,12 +131,14 @@ INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('filedirectory', 5531, 'filedirectory', '', '');
 # Stamgegevens
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('', 700, 'map', '', '');
-INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `icon_expanded`) VALUES ('map', 700, 'map,template,ftp_configuration,content-builder-snippet,shippingcost,deliverymethod,paymentmethod,mailtemplate,language,filter,vatrate,vatrule,country', 'icon-folder-closed', 'icon-folder-add', 'icon-folder');
+INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `icon_expanded`) VALUES ('map', 700, 'map,template,ftp_configuration,content-builder-snippet,shippingcost,deliverymethod,paymentmethod,mailtemplate,language,filter,vatrate,vatrule,country,dataselector-template', 'icon-folder-closed', 'icon-folder-add', 'icon-folder');
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('template', 700, '', 'icon-document', 'icon-document-add');
 # FTP
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('ftp_configuration', 700, '', 'icon-cloud-up', 'icon-cloud-up');
 # Content builder
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('content-builder-snippet', 700, '', 'icon-document-exam', 'icon-document-add');
+# Data Selector
+INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('dataselector-template', 700, '', 'icon-document-exam', 'icon-document-add');
 
 
 -- ----------------------------
@@ -206,6 +208,9 @@ INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `tab_name`, `gro
 INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `mandatory`, `readonly`, `default_value`, `css`, `width`, `height`, `options`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `link_type`, `extended_explanation`, `label_style`, `label_width`) VALUES (700, 'template', 'PDF', '', 'HTMLeditor', 'Header', 'header', '', 4, 0, 0, NULL, NULL, 100, 400, '{ \"mode\": 99 }', NULL, NULL, NULL, '', NULL, 0, NULL, 0, 0, 0, 'normal', '0');
 INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `mandatory`, `readonly`, `default_value`, `css`, `width`, `height`, `options`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `link_type`, `extended_explanation`, `label_style`, `label_width`) VALUES (700, 'template', 'PDF', '', 'HTMLeditor', 'Footer', 'footer', '', 5, 0, 0, NULL, NULL, 100, 400, '{ \"mode\": 99 }', NULL, NULL, NULL, '', NULL, 0, NULL, 0, 0, 0, 'normal', '0');
 
+# Datas elector
+INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `mandatory`, `readonly`, `default_value`, `css`, `width`, `height`, `options`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `link_type`, `extended_explanation`, `label_style`, `label_width`) VALUES (700, 'dataselector-template', '', '', 'HTMLeditor', 'Template', 'template', '', 1, 0, 0, NULL, NULL, 100, 600, '{ \"mode\": 99 }', NULL, NULL, NULL, '', NULL, 0, NULL, 0, 0, 1, 'normal', '0');
+
 -- ----------------------------
 -- Records of wiser_item
 -- ----------------------------
@@ -219,14 +224,14 @@ INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `publis
 INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (4, '', 'filedirectory', 5531, 4, 0, 'Hoofdmap bestanden', NOW(), 'Systeem', NULL, '');
 # Root directory for templates
 INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (5, '', 'filedirectory', 5531, 4, 0, 'Hoofdmap templates', NOW(), 'Systeem', NULL, '');
+# Root directory for data selector templates
+INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (6, '', 'map', 700, 4, 0, 'Data selector templates', NOW(), 'Systeem', NULL, '');
 
 -- ----------------------------
 -- Records of wiser_itemdetail
 -- ----------------------------
 # Admin user.
 INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (1, '', 1, '', 'email_address', '', '');
-INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (2, '', 1, '', 'last_login', '', NULL);
-INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (3, '', 1, '', 'last_login_ip', '', NULL);
 INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (4, '', 1, '', 'password', 'HQPXXPmbW+UeP2InOt+URL3lJQ+wzLlnPgAa6n638fBFG1wuTLJmIw5M2JWYZaPXialY9n69RcChSdnZXIOYtOBfliZ8H1se', ''); # = admin
 INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (5, '', 1, '', 'require_password_change', '0', '');
 INSERT INTO `wiser_itemdetail`(`id`, `language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES (6, '', 1, '', 'username', 'Admin', '');
@@ -262,12 +267,26 @@ INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_prop
 -- ----------------------------
 -- Records of wiser_link
 -- ----------------------------
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, '', 'map', 'Map in Stamgegevens', 1, 0, 'one-to-one', 'none', 1);
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'filedirectory', 'filedirectory', 'Filedirectory', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'template', 'template', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'ftp_configuration', 'ftp_configuration', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'content-builder-snippet', 'content-builder-snippet', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'shippingcost', 'shippingcost', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'deliverymethod', 'deliverymethod', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'paymentmethod', 'paymentmethod', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'mailtemplate', 'mailtemplate', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'language', 'language', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'filter', 'filter', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'vatrate', 'vatrate', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'vatrule', 'vatrule', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'country', 'country', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'dataselector-template', 'dataselector-template', 1, 0, 'one-to-one', 'none', 1);
 
 -- ----------------------------
 -- Stored procedures
 -- ----------------------------
-CREATE DEFINER=CURRENT_USER FUNCTION `CreateJsonSafeProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8
+CREATE DEFINER=CURRENT_USER FUNCTION `CreateJsonSafeProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8mb4 DETERMINISTIC
 BEGIN
 	DECLARE output VARCHAR(255);
 	
@@ -282,7 +301,7 @@ BEGIN
 	RETURN output;
 END;
 
-CREATE DEFINER=CURRENT_USER FUNCTION `GetNameFromSafeJsonProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8
+CREATE DEFINER=CURRENT_USER FUNCTION `GetNameFromSafeJsonProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8mb4 DETERMINISTIC
 BEGIN
 	DECLARE output VARCHAR(255);
 	

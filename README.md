@@ -19,7 +19,7 @@ Wiser v3. This includes the API and the front-end projects.
 ```json
 {
   "GCL": {
-    "connectionString": "", // The connection string to the main database for Wiser.
+    "connectionString": "", // The connection string to the main database for Wiser. See the chapter 'Database' for an example connectiom string.
     "DefaultEncryptionKey": "", // The default encryption key that should be used for encrypting values with AES when no encryption key is given.
     "DefaultEncryptionKeyTripleDes": "",  // The default encryption key that should be used for encrypting values with Tripe DES when no encryption key is given.
     "evoPdfLicenseKey": "" // If you're going to use the PdfService, you need a license key for Evo PDF, or make your own implementation.
@@ -54,9 +54,24 @@ Wiser v3. This includes the API and the front-end projects.
 
 ```
 
-#### Datasbase
-Wiser requires a certain database structure to work, several tables and triggers are required. At the moment, we only support MySQL, but other databases might be added in the future.
+# Database
+Wiser requires a certain database structure to work, several tables and triggers are required. 
 
+## Requirements
+At the moment, we only support MySQL, but other databases might be added in the future. Wiser requires MySQL 5.7 or higher to work, because it uses JSON functions and those have been added in MySQL 5.7.
+
+Please note that this script does not work with MySQL 8 users. For this to work you need to set the authentication plugin of your database user to "mysql_native_password". This is because the node package we use for MySQL does not support this yet.
+
+If you do not have SUPER privileges in the database, you might get an error while running `CreateTriggers.sql`. To fix this, you need to either disable `bin_logging` in MySQL, or enable the option `log_bin_trust_function_creators`. For more information see [this article](https://dev.mysql.com/doc/refman/5.7/en/stored-programs-logging.html).
+
+## Connection string
+The connection string in the `appsettings.json` or `appsettings-secrets.json` of the API should look like this:
+```
+server=;port=;uid=;pwd=;database=;pooling=true;Convert Zero Datetime=true;CharSet=utf8
+```
+Note the options that are added at the end of the connection string, Wiser will not work properly without these options.
+
+## Installation script
 To setup this database, you can open a PowerShell or CMD window in the directory that contains the `Api.csproj` file and run the following command:
 ```
 npm run setup:mysql -- --host=host --database=database --user=user --password=password
@@ -80,9 +95,9 @@ We have several SQL scripts to create these tables and add the minimum amount of
 
 The scripts `InsertInitialDataConfigurator.sql` and `InsertInitialDataEcommerce.sql` can be used if you want to run a website that uses the GeeksCoreLibrary that can be managed in Wiser. If you have a website with a webshop, run `InsertInitialDataEcommerce.sql` and if you have a website with a product configurator, run `InsertInitialDataConfigurator.sql` to setup Wiser to work with those kinds of websites.
 
-## Debugging
+# Debugging
 1. Open PowerShell/CMS Window in the directory that contains the `FrontEnd.csproj` file (__NOT__ the root directory, that contains the `WiserCore.sln` file!).
-1. Run the command `node_modules\.bin\webpack --w --mode=development`. This will make webpack watch your javascript and automatically rebuild them when needed, so you don't have to rebuild it manully every time.
+1. Run the command `node_modules\.bin\webpack --mode=development -w`. This will make webpack watch your javascript and automatically rebuild them when needed, so you don't have to rebuild it manully every time.
 1. To make debugging a little easier, you can setup Visual Studio to always start both the API and FrontEnd projects at the same time. You can do this by right clicking the solution and then `Properties`. Then go to `Common Properties --> Startup Project` and choose `Multiple startup projects`. Then set both `Api` and `FrontEnd` to `Start` and click `OK`.
 
 # Multitenancy
@@ -145,3 +160,16 @@ So if someone has all permissions, you need to enter the value 1 + 2 + 4 + 8 = 1
 You can link users to one or more roles via `wiser_user_roles`. If a user has multiple roles with different permissions, all permissions of all roles are valid. So if the user has a role that allows them to only see an item and a role that allows them to see and update an item, that user can always see and update that item.
 
 By default, users can see and change everything. If there is no entry in wiser_permission for an item, it will be seen as if you added and entry with the permission value of "15". If you want to block certain users from seeing an item, you need to add a value with "0".
+
+# Publishing
+To publish Wiser 3 to your own server, you should use the following publish settings:
+- Configuration: `Release`
+- Target Framework: `net5.0`
+- Deployment Mode: `Self-Contained`
+- Target Runtime: The correct runtime for your system, for Windows this is usually `win-x64`
+- Under File Publish Option, tick the box for `Enable ReadyToRun compilation`
+
+# Authentication
+The API uses `IdentityServer4` for authentication, it uses OAUTH2 with bearer tokens. It uses a global secret key and client id that need to be configured in the appsettings. The actual user credentials come from the database of Wiser, these are entities with the type `wiseruser`. The installation script will create a user with username `Admin` and password `admin` to authenticate via the API to login to Wiser.
+
+This authentication requires an SSL certificate. By default it will generate a self-signed certificate that will be saved as `tempkey.jwk` in the root directory of the API. On production servers it's recommended to configure the API to use a proper SSL certificate. If you really want/need to use the self-signed certificate on production, you can either copy the `tempkey.jwk` file from your development environment, or give the application pool (if you run Wiser in IIS) write permissions in the root directory of the API, so that it can create a new certificate there. After the certificate has been created, you can remove the write permissions again. 
