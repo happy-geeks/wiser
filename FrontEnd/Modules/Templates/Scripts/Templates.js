@@ -452,35 +452,35 @@ const moduleSettings = {
                 return;
             }
 
-			for (let i = 0; i < event.originalEvent.dataTransfer.items.length; i++) {
-				if (event.originalEvent.dataTransfer.items[i].kind !== "file") {
-					continue;
-				}
+            for (let i = 0; i < event.originalEvent.dataTransfer.items.length; i++) {
+                if (event.originalEvent.dataTransfer.items[i].kind !== "file") {
+                    continue;
+                }
 
-				let file = event.originalEvent.dataTransfer.items[i].getAsFile();
-				let reader = new FileReader();
-				reader.onload = ((file) => {
-					return async (event) => {
-						const content = event.target.result;
-						let filename = file.name.split(".");
-						filename.splice(-1);
-						filename = filename.join(".");
-						const treeviewtab = window.Templates.treeViewTabs[window.Templates.treeViewTabStrip.select().index()];
-						const treeview = $(window.Templates.treeViewTabStrip.contentElement(window.Templates.treeViewTabStrip.select().index()).querySelector("ul")).data("kendoTreeView");
-						let parentId = treeviewtab.templateId;
+                let file = event.originalEvent.dataTransfer.items[i].getAsFile();
+                let reader = new FileReader();
+                reader.onload = ((file) => {
+                    return async (event) => {
+                        const content = event.target.result;
+                        let filename = file.name.split(".");
+                        filename.splice(-1);
+                        filename = filename.join(".");
+                        const treeviewtab = window.Templates.treeViewTabs[window.Templates.treeViewTabStrip.select().index()];
+                        const treeview = $(window.Templates.treeViewTabStrip.contentElement(window.Templates.treeViewTabStrip.select().index()).querySelector("ul")).data("kendoTreeView");
+                        let parentId = treeviewtab.templateId;
 
-						await window.Templates.createNewTemplate(
-							parentId,
-							filename,
-							window.Templates.templateTypes[treeviewtab.templateName.toUpperCase()],
-							treeview,
-							!parentId ? undefined : treeview.select(),
-							content
-						);
-					}
-				})(file);
-				reader.readAsText(file);
-			}
+                        await window.Templates.createNewTemplate(
+                            parentId,
+                            filename,
+                            window.Templates.templateTypes[treeviewtab.templateName.toUpperCase()],
+                            treeview,
+                            !parentId ? undefined : treeview.select(),
+                            content
+                        );
+                    }
+                })(file);
+                reader.readAsText(file);
+            }
         }
 
         /**
