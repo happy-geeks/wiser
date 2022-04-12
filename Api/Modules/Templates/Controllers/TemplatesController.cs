@@ -197,9 +197,9 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="type">The type of the new template that will be created.</param>
         /// <returns>The id of the newly created template. This can be used to update the interface accordingly.</returns>
         [HttpPut, Route("{parentId:int}"), ProducesResponseType(typeof(TemplateTreeViewModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> CreateAsync(int parentId, [FromQuery]string name, [FromQuery]TemplateTypes type)
+        public async Task<IActionResult> CreateAsync(int parentId, NewTemplateModel newTemplate)
         {
-            return (await templatesService.CreateAsync((ClaimsIdentity)User.Identity, name, parentId, type)).GetHttpResponseMessage();
+            return (await templatesService.CreateAsync((ClaimsIdentity)User.Identity, newTemplate.Name, parentId, newTemplate.Type, newTemplate.EditorValue)).GetHttpResponseMessage();
         }
 
         /// <summary>
