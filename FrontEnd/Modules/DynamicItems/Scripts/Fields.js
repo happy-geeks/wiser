@@ -1306,7 +1306,7 @@ export class Fields {
                             let width;
                             let height;
                             let gridHeight = parseInt(parameter.gridHeight) || 600;
-                            const extraDialogSize = 150;
+                            const extraDialogSize = 200;
 
                             // Make sure that the dialog and grid fit in the user's window.
                             if (window.innerHeight < gridHeight + extraDialogSize) {
@@ -1331,7 +1331,12 @@ export class Fields {
                                 width: width,
                                 height: height,
                                 open: (event) => {
-                                    setTimeout(() => { event.sender.element.find("input:visible, textarea:visible").focus(); }, 100);
+                                    setTimeout(() => { 
+                                        event.sender.element.find("input:visible, textarea:visible").focus();
+                                        if (parameter.fieldType === "grid") {
+                                            $("#gridUserParameter").data("kendoGrid").resize();
+                                        }
+                                    }, 100);
                                 },
                                 close: (event) => { event.sender.destroy(); }
                             }).data("kendoDialog");
@@ -1521,7 +1526,8 @@ export class Fields {
                                         }
                                     }
 
-                                    this.base.grids.initializeItemsGrid(options, dialog.element.find("#gridUserParameter"), null, mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid, `${gridHeight}px`, 0, userParametersWithValues);
+                                    const gridOptions = $.extend({ toolbar: { hideFullScreenButton: true } }, options);
+                                    await this.base.grids.initializeItemsGrid(gridOptions, dialog.element.find("#gridUserParameter"), null, mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid, `${gridHeight}px`, 0, userParametersWithValues);
                                     break;
                                 case "fileupload":
                                     {

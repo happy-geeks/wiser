@@ -301,12 +301,11 @@ export class Windows {
 
         /***** NOTE: Only add code below this line that should NOT be executed if the module is loaded inside an iframe *****/
         this.mainWindow = $("#window").kendoWindow({
-            width: "1500",
-            height: "650",
             title: this.base.settings.moduleName || "Modulenaam",
             visible: true,
             actions: ["refresh"]
         }).data("kendoWindow").maximize().open();
+        this.mainWindow.wrapper.addClass("main-window");
 
         this.mainWindow.wrapper.find(".k-i-refresh").parent().click(this.base.onMainRefreshButtonClick.bind(this.base));
     }
@@ -1161,7 +1160,7 @@ export class Windows {
             // If the window still exists, we just want to bring that window to the front, to prevent people from opening an item in multiple windows.
             // This prevents confusion ("I thought I already closed this item before.") and also prevents problems with fields that would have duplicate IDs then.
             if (currentItemWindow) {
-                currentItemWindow.maximize().open();
+                currentItemWindow.maximize().center().open();
                 return;
             }
 
@@ -1233,7 +1232,7 @@ export class Windows {
                 currentItemWindow.element.find(".saveAndCloseBottomPopup").trigger("click");
             });
 
-            currentItemWindow.maximize().open();
+            currentItemWindow.maximize().center().open();
 
             // Initialize the tab strip on the new window.
             const currentItemTabStrip = currentItemWindow.element.find(".tabStripPopup").kendoTabStrip({
