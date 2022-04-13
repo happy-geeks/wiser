@@ -531,6 +531,7 @@ const moduleSettings = {
         async loadKendoScripts(scriptTemplate) {
             if (scriptTemplate.indexOf("kendoDateTimePicker") > -1) {
                 await require("@progress/kendo-ui/js/kendo.datetimepicker.js");
+                await require("/kendo/messages/kendo.upload.nl-NL.js");
             }
             if (scriptTemplate.indexOf("kendoDatePicker") > -1) {
                 await require("@progress/kendo-ui/js/kendo.datepicker.js");
@@ -552,9 +553,11 @@ const moduleSettings = {
             }
             if (scriptTemplate.indexOf("kendoUpload") > -1) {
                 await require("@progress/kendo-ui/js/kendo.upload.js");
+                await require("/kendo/messages/kendo.upload.nl-NL.js");
             }
             if (scriptTemplate.indexOf("kendoEditor") > -1) {
                 await require("@progress/kendo-ui/js/kendo.editor.js");
+                await require("/kendo/messages/kendo.editor.nl-NL.js");
             }
             if (scriptTemplate.indexOf("kendoNumericTextBox") > -1) {
                 await require("@progress/kendo-ui/js/kendo.numerictextbox.js");
@@ -564,10 +567,13 @@ const moduleSettings = {
             }
             if (scriptTemplate.indexOf("kendoScheduler") > -1) {
                 await require("@progress/kendo-ui/js/kendo.scheduler.js");
+                await require("/kendo/messages/kendo.scheduler.nl-NL.js");
             }
             if (scriptTemplate.indexOf("kendoTimeline") > -1) {
                 await require("@progress/kendo-ui/js/kendo.timeline.js");
             }
+
+            await require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
         }
 
         /**

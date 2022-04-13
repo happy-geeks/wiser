@@ -1306,7 +1306,7 @@ export class Fields {
                             let width;
                             let height;
                             let gridHeight = parseInt(parameter.gridHeight) || 600;
-                            const extraDialogSize = 150;
+                            const extraDialogSize = 200;
 
                             // Make sure that the dialog and grid fit in the user's window.
                             if (window.innerHeight < gridHeight + extraDialogSize) {
@@ -1331,7 +1331,12 @@ export class Fields {
                                 width: width,
                                 height: height,
                                 open: (event) => {
-                                    setTimeout(() => { event.sender.element.find("input:visible, textarea:visible").focus(); }, 100);
+                                    setTimeout(() => { 
+                                        event.sender.element.find("input:visible, textarea:visible").focus();
+                                        if (parameter.fieldType === "grid") {
+                                            $("#gridUserParameter").data("kendoGrid").resize();
+                                        }
+                                    }, 100);
                                 },
                                 close: (event) => { event.sender.destroy(); }
                             }).data("kendoDialog");
@@ -1521,7 +1526,8 @@ export class Fields {
                                         }
                                     }
 
-                                    this.base.grids.initializeItemsGrid(options, dialog.element.find("#gridUserParameter"), null, mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid, `${gridHeight}px`, 0, userParametersWithValues);
+                                    const gridOptions = $.extend({ toolbar: { hideFullScreenButton: true } }, options);
+                                    await this.base.grids.initializeItemsGrid(gridOptions, dialog.element.find("#gridUserParameter"), null, mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid, `${gridHeight}px`, 0, userParametersWithValues);
                                     break;
                                 case "fileupload":
                                     {
@@ -1548,6 +1554,16 @@ export class Fields {
                                                 saveUrl: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=${encodeURIComponent(options.propertyName)}&itemLinkId=${itemLinkId}`,
                                                 removeUrl: "remove",
                                                 withCredentials: false
+                                            },
+                                            upload: (e) => {
+                                                let xhr = e.XMLHttpRequest;
+                                                if (xhr) {
+                                                    xhr.addEventListener("readystatechange", (e) => {
+                                                        if (xhr.readyState === 1 /* OPENED */) {
+                                                            xhr.setRequestHeader("authorization", `Bearer ${localStorage.getItem("accessToken")}`);
+                                                        }
+                                                    });
+                                                }
                                             },
                                             success: (uploadSuccessEvent) => {
                                                 uploadSuccessEvent.sender.element.data("fileData", uploadSuccessEvent.response[0]);
@@ -3062,7 +3078,7 @@ export class Fields {
 
             dataSelectorTemplateDialog = dialogElement.kendoDialog({
                 width: "900px",
-                title: "Datas elector met template invoegen",
+                title: "Data selector met template invoegen",
                 closable: false,
                 modal: true,
                 actions: [
@@ -3079,14 +3095,24 @@ export class Fields {
                                 kendo.alert("Kies a.u.b. een data selector en een template.")
                                 return false;
                             }
-                            
-                            const html = `<div class="dynamic-content" data-selector-id="${selectedDataSelector}" template-id="${selectedTemplate}"><h2>Data selector '${dataSelectorDropDown.text()}' met template '${dataSelectorTemplateDropDown.text()}' (wordt alleen weergegeven op front-end)</h2></div>`;
-                            const originalOptions = editor.options.pasteCleanup;
-                            editor.options.pasteCleanup.none = true;
-                            editor.options.pasteCleanup.span = false;
-                            editor.exec("inserthtml", { value: html });
-                            editor.options.pasteCleanup.none = originalOptions.none;
-                            editor.options.pasteCleanup.span = originalOptions.span;
+
+                            let html = `<div class="dynamic-content" data-selector-id="${selectedDataSelector}" template-id="${selectedTemplate}"><h2>Data selector '${dataSelectorDropDown.text()}' met template '${dataSelectorTemplateDropDown.text()}'</h2></div>`;
+                            Wiser2.api({
+                                url: `${this.base.settings.wiserApiRoot}data-selectors/preview-for-html-editor`,
+                                method: "POST",
+                                data: html
+                            }).then((newHtml) => {
+                                html = newHtml;
+                            }).catch((error) => {
+                                console.error(error);
+                            }).finally(() => {
+                                const originalOptions = editor.options.pasteCleanup;
+                                editor.options.pasteCleanup.none = true;
+                                editor.options.pasteCleanup.span = false;
+                                editor.exec("inserthtml", { value: html });
+                                editor.options.pasteCleanup.none = originalOptions.none;
+                                editor.options.pasteCleanup.span = originalOptions.span;
+                            });
                         }
                     }
                 ]
