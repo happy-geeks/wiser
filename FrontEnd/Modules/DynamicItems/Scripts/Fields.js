@@ -1555,6 +1555,16 @@ export class Fields {
                                                 removeUrl: "remove",
                                                 withCredentials: false
                                             },
+                                            upload: (e) => {
+                                                let xhr = e.XMLHttpRequest;
+                                                if (xhr) {
+                                                    xhr.addEventListener("readystatechange", (e) => {
+                                                        if (xhr.readyState === 1 /* OPENED */) {
+                                                            xhr.setRequestHeader("authorization", `Bearer ${localStorage.getItem("accessToken")}`);
+                                                        }
+                                                    });
+                                                }
+                                            },
                                             success: (uploadSuccessEvent) => {
                                                 uploadSuccessEvent.sender.element.data("fileData", uploadSuccessEvent.response[0]);
                                             }

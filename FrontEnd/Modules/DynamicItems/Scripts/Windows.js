@@ -401,7 +401,13 @@ export class Windows {
                     const formData = new FormData();
                     formData.append(file.name, file);
 
-                    promises.push(fetch(`${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=globalFile&useTinyPng=false`, { method: "POST", body: formData }));
+                    promises.push(Wiser2.api({
+                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=globalFile&useTinyPng=false`,
+                        method: "POST",
+                        processData: false,
+                        contentType: false,
+                        data: formData
+                    }));
                 }
 
                 Promise.all(promises).then((results) => {
@@ -608,7 +614,13 @@ export class Windows {
                     const formData = new FormData();
                     formData.append(file.name, file);
 
-                    promises.push(fetch(`${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=globalFile&useTinyPng=false`, { method: "POST", body: formData }));
+                    promises.push(Wiser2.api({
+                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=globalFile&useTinyPng=false`,
+                        method: "POST",
+                        processData: false,
+                        contentType: false,
+                        data: formData
+                    }));
                 }
 
                 Promise.all(promises).then((results) => {
@@ -830,7 +842,13 @@ export class Windows {
                     const formData = new FormData();
                     formData.append(file.name, file);
 
-                    promises.push(fetch(`${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=globalFile&useTinyPng=false`, { method: "POST", body: formData }));
+                    promises.push(Wiser2.api({
+                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=globalFile&useTinyPng=false`,    
+                        method: "POST",
+                        processData: false,
+                        contentType: false,
+                        data: formData 
+                    }));
                 }
 
                 Promise.all(promises).then((results) => {
