@@ -24,13 +24,15 @@ namespace Api.Modules.DataSelectors.Controllers
     public class DataSelectorsController : ControllerBase
     {
         private readonly IDataSelectorsService dataSelectorsService;
+        private readonly GeeksCoreLibrary.Modules.DataSelector.Interfaces.IDataSelectorsService gclDataSelectorsService;
 
         /// <summary>
         /// Creates a new instance of <see cref="DataSelectorsController"/>.
         /// </summary>
-        public DataSelectorsController(IDataSelectorsService dataSelectorsService)
+        public DataSelectorsController(IDataSelectorsService dataSelectorsService, GeeksCoreLibrary.Modules.DataSelector.Interfaces.IDataSelectorsService gclDataSelectorsService)
         {
             this.dataSelectorsService = dataSelectorsService;
+            this.gclDataSelectorsService = gclDataSelectorsService;
         }
 
         /// <summary>
@@ -149,6 +151,19 @@ namespace Api.Modules.DataSelectors.Controllers
             var data = CombineDataSelectorRequestModels(bodyModel, dataFromUri);
             var result = await dataSelectorsService.ToPdfAsync(data, (ClaimsIdentity)User.Identity);
             return result.StatusCode != HttpStatusCode.OK ? result.GetHttpResponseMessage() : dataSelectorsService.SetFileName(data, result, $"{Guid.NewGuid():N}.pdf", ".pdf");
+        }
+
+        /// <summary>
+        /// Replaces data selectors in a string to preview them in an HTML editor.
+        /// </summary>
+        /// <param name="html">The HTML to replace the data selectors in for previewing in HTML editor.</param>
+        [HttpPost, Route("preview-for-html-editor"), ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> PreviewForHtmlEditorAsync()
+        {
+            using var reader = new StreamReader(Request.Body, Encoding.UTF8);
+            var html = await reader.ReadToEndAsync();
+            var output = await gclDataSelectorsService.ReplaceAllDataSelectorsAsync(html);
+            return Content(output, "text/html");
         }
 
         /// <summary>

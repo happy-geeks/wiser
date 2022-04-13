@@ -1330,24 +1330,6 @@ div.k-filebrowser-dropzone em {
 	height: auto !important;
 }
 
-.k-window.k-widget.k-dialog {
-    top: 50% !important;
-    left: 50% !important;
-    bottom: auto !important;
-    max-width: 800px !important;
-    transform: translate(-50%,-50%);
-}
-
-.k-window.k-alert {
-    right: auto !important;
-    bottom: auto !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%,-50%);
-    max-width: 500px !important;
-    width: auto !important;
-}
-
 .k-window-maximized .k-window-titlebar,
 .k-window.k-widget .k-window-titlebar {
 	box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.05);
