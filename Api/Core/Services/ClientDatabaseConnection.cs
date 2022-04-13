@@ -554,10 +554,24 @@ namespace Api.Core.Services
                     return;
                 case ConnectionState.Closed:
                     await ConnectionForReading.OpenAsync();
-                    
-                    // Make sure we always use the same character set and collation.
-                    CommandForReading.CommandText = "SET NAMES utf8mb4 COLLATE utf8mb4_general_ci";
-                    await CommandForReading.ExecuteNonQueryAsync();
+
+                    try
+                    {
+                        // Make sure we always use the same character set and collation.
+                        CommandForReading.CommandText = "SET NAMES utf8mb4 COLLATE utf8mb4_general_ci;";
+                        await CommandForReading.ExecuteNonQueryAsync();
+                        
+                        // Make sure we always use the correct timezone.
+                        if (!String.IsNullOrWhiteSpace(gclSettings.DatabaseTimeZone))
+                        {
+                            CommandForReading.CommandText = $"SET @@time_zone = {gclSettings.DatabaseTimeZone.ToMySqlSafeValue(true)};";
+                            await CommandForReading.ExecuteNonQueryAsync();
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        logger.LogWarning(exception, $"An error occurred while trying to set the time zone to '{gclSettings.DatabaseTimeZone}' or the collation to 'utf8mb4_general_ci'.");
+                    }
                     break;
             }
         }
@@ -602,10 +616,25 @@ namespace Api.Core.Services
                     return;
                 case ConnectionState.Closed:
                     await ConnectionForWriting.OpenAsync();
+
+                    try
+                    {
                     
-                    // Make sure we always use the same character set and collation.
-                    CommandForWriting.CommandText = "SET NAMES utf8mb4 COLLATE utf8mb4_general_ci";
-                    await CommandForWriting.ExecuteNonQueryAsync();
+                        // Make sure we always use the same character set and collation.
+                        CommandForWriting.CommandText = "SET NAMES utf8mb4 COLLATE utf8mb4_general_ci;";
+                        await CommandForWriting.ExecuteNonQueryAsync();
+                        
+                        // Make sure we always use the correct timezone.
+                        if (!String.IsNullOrWhiteSpace(gclSettings.DatabaseTimeZone))
+                        {
+                            CommandForWriting.CommandText = $"SET @@time_zone = {gclSettings.DatabaseTimeZone.ToMySqlSafeValue(true)};";
+                            await CommandForWriting.ExecuteNonQueryAsync();
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        logger.LogWarning(exception, $"An error occurred while trying to set the time zone to '{gclSettings.DatabaseTimeZone}' or the collation to 'utf8mb4_general_ci'.");
+                    }
                     break;
             }
         }
