@@ -3068,7 +3068,7 @@ export class Fields {
 
             dataSelectorTemplateDialog = dialogElement.kendoDialog({
                 width: "900px",
-                title: "Datas elector met template invoegen",
+                title: "Data selector met template invoegen",
                 closable: false,
                 modal: true,
                 actions: [
@@ -3085,14 +3085,24 @@ export class Fields {
                                 kendo.alert("Kies a.u.b. een data selector en een template.")
                                 return false;
                             }
-                            
-                            const html = `<div class="dynamic-content" data-selector-id="${selectedDataSelector}" template-id="${selectedTemplate}"><h2>Data selector '${dataSelectorDropDown.text()}' met template '${dataSelectorTemplateDropDown.text()}' (wordt alleen weergegeven op front-end)</h2></div>`;
-                            const originalOptions = editor.options.pasteCleanup;
-                            editor.options.pasteCleanup.none = true;
-                            editor.options.pasteCleanup.span = false;
-                            editor.exec("inserthtml", { value: html });
-                            editor.options.pasteCleanup.none = originalOptions.none;
-                            editor.options.pasteCleanup.span = originalOptions.span;
+
+                            let html = `<div class="dynamic-content" data-selector-id="${selectedDataSelector}" template-id="${selectedTemplate}"><h2>Data selector '${dataSelectorDropDown.text()}' met template '${dataSelectorTemplateDropDown.text()}'</h2></div>`;
+                            Wiser2.api({
+                                url: `${this.base.settings.wiserApiRoot}data-selectors/preview-for-html-editor`,
+                                method: "POST",
+                                data: html
+                            }).then((newHtml) => {
+                                html = newHtml;
+                            }).catch((error) => {
+                                console.error(error);
+                            }).finally(() => {
+                                const originalOptions = editor.options.pasteCleanup;
+                                editor.options.pasteCleanup.none = true;
+                                editor.options.pasteCleanup.span = false;
+                                editor.exec("inserthtml", { value: html });
+                                editor.options.pasteCleanup.none = originalOptions.none;
+                                editor.options.pasteCleanup.span = originalOptions.span;
+                            });
                         }
                     }
                 ]
