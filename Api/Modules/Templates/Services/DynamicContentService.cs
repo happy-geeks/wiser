@@ -149,7 +149,7 @@ namespace Api.Modules.Templates.Services
                 }
             }
 
-            return new ServiceResult<int>(await dataService.SaveSettingsStringAsync(contentId, component, componentModeName, title, settings, IdentityHelpers.GetUserName(identity)));
+            return new ServiceResult<int>(await dataService.SaveSettingsStringAsync(contentId, component, componentModeName, title, settings, IdentityHelpers.GetUserName(identity, true)));
         }
 
         /// <inheritdoc />
@@ -191,7 +191,7 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> AddLinkToTemplateAsync(ClaimsIdentity identity, int contentId, int templateId)
         {
-            await dataService.AddLinkToTemplateAsync(contentId, templateId, IdentityHelpers.GetUserName(identity));
+            await dataService.AddLinkToTemplateAsync(contentId, templateId, IdentityHelpers.GetUserName(identity, true));
             return new ServiceResult<bool>(true)
             {
                 StatusCode = HttpStatusCode.NoContent
@@ -228,7 +228,7 @@ namespace Api.Modules.Templates.Services
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(contentId, currentPublished, newPublished);
 
-            return new ServiceResult<int>(await dataService.UpdatePublishedEnvironmentAsync(contentId, newPublished, publishLog, IdentityHelpers.GetUserName(identity)));
+            return new ServiceResult<int>(await dataService.UpdatePublishedEnvironmentAsync(contentId, newPublished, publishLog, IdentityHelpers.GetUserName(identity, true)));
         }
     }
 }
