@@ -299,8 +299,9 @@ const moduleSettings = {
         /**
          * Opens the dialog for creating a new item.
          * @param {any} dataItem When calling this from context menu, the selected data item from the tree view or tab sheet should be entered here.
+         * @param isFromRootItem {boolean} When calling this from context menu, indicate whether this was a context menu of a root item or a tree node.
          */
-        async openCreateNewItemDialog(dataItem) {
+        async openCreateNewItemDialog(dataItem = null, isFromRootItem = false) {
             try {
                 const selectedTabIndex = this.treeViewTabStrip.select().index();
                 const selectedTabContentElement = this.treeViewTabStrip.contentElement(selectedTabIndex);
@@ -337,7 +338,7 @@ const moduleSettings = {
 
                                     const type = isDirectory ? this.templateTypes.DIRECTORY : this.templateTypes[treeViewElement.dataset.title.toUpperCase()];
 
-                                    this.createNewTemplate(parentId, title, type, treeView, !parentId ? undefined : treeView.select());
+                                    this.createNewTemplate(parentId, title, type, treeView, !parentId || isFromRootItem ? undefined : treeView.select());
                                 } catch (exception) {
                                     console.error(exception);
                                     kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
@@ -518,18 +519,21 @@ const moduleSettings = {
             const node = $(event.target);
             const treeView = this.mainTreeView[this.treeViewTabStrip.select().index()];
 
+            let isFromRootItem;
             let selectedItem;
             if (!event.target.closest(".k-treeview")) {
                 selectedItem = this.treeViewTabs[$(event.target).index()];
+                isFromRootItem = true;
             } else {
                 selectedItem = treeView.dataItem(node);
+                isFromRootItem = false;
             }
 
             const action = selectedOption.attr("action");
 
             switch (action) {
                 case "addNewItem":
-                    this.openCreateNewItemDialog(selectedItem);
+                    this.openCreateNewItemDialog(selectedItem, isFromRootItem);
                     break;
                 case "rename":
                     kendo.prompt("Vul een nieuwe naam in", selectedItem.templateName).then((newName) => {
@@ -1503,7 +1507,7 @@ const moduleSettings = {
                     });
                     treeView.expand(parentElement);
                 } else {
-                    const newTreeViewElement = parentElement.length > 0 ? treeView.append(result, parentElement) : treeView.append(result);
+                    const newTreeViewElement = parentElement && parentElement.length > 0 ? treeView.append(result, parentElement) : treeView.append(result);
                     treeView.select(newTreeViewElement);
                     treeView.trigger("select", {
                         node: newTreeViewElement
