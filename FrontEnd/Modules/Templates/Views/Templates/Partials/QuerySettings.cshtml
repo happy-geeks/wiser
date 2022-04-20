@@ -12,6 +12,7 @@
                 <!option value="@((int)TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString ? "selected" : "")>server caching volledige template (obv volledige URL, inclusief domein en querystring)</!option>
             </select>
         </div>
+        <div class="form-hint"><span>Moet caching ingeschakeld worden voor deze template? Zo ja, wat voor caching. Caching kan bijvoorbeeld hetzelfde zijn voor alle URL's, of per URL/querystring aparte cache.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
@@ -22,6 +23,7 @@
                 <!option value="@((int)TemplateCachingLocations.OnDisk)" @(Model.CacheLocation == TemplateCachingLocations.OnDisk ? "selected" : "")>Op harde schijf</!option>
             </select>
         </div>
+        <div class="form-hint"><span>Waar moet de cache opgeslagen worden? In geheugen is het snelste, maar deze cache gaat verloren bij herstart van de application pool.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
@@ -29,6 +31,7 @@
         <span class="k-widget k-input k-state-default">
             <input type="number" id="cacheMinutes" class="textField k-input" name="cacheMinutes" value="@Model.CacheMinutes" autocomplete="off" pattern=".*">
         </span>
+        <div class="form-hint"><span>Hoe lang moet de cache bewaard blijven? Indien deze waarde 0 of kleiner is, wordt de instelling "GCL.DefaultTemplateCacheDuration" gebruikt van de appsettings.json.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
@@ -36,6 +39,7 @@
         <span class="k-widget k-input k-state-default">
             <input type="text" id="groupingKey" class="textField k-input" name="groupingKey" value="@Model.GroupingKey" autocomplete="off" pattern=".*">
         </span>
+        <div class="form-hint"><span>Indien de resultaten van de query gegroepeerd moeten worden, vul dan hier de kolom in waarop gegroepeerd moet worden.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
@@ -43,12 +47,16 @@
         <span class="k-widget k-input k-state-default">
             <input type="text" id="groupingPrefix" class="textField k-input" name="groupingPrefix" value="@Model.GroupingPrefix" autocomplete="off" pattern=".*">
         </span>
+        <div class="form-hint"><span>Indien de resultaten van de query gegroepeerd moeten worden, vul dan hier de prefix in voor alle kolommen die van sub-items zijn. Deze betreffende kolommen moeten dan in de resultaten van de query beginnen met deze waarde.</span></div>
     </div>
 
-    <input id="groupingCreateObjectInsteadOfArray" name="groupingCreateObjectInsteadOfArray" type="checkbox" @(Model.GroupingCreateObjectInsteadOfArray ? "checked" : "") class="hidden">
-    <label class="checkbox" for="groupingCreateObjectInsteadOfArray">
-        <span>Object i.p.v. array</span>
-    </label>
+    <div class="item" data-label-style="float" data-label-width="0">
+        <input id="groupingCreateObjectInsteadOfArray" name="groupingCreateObjectInsteadOfArray" type="checkbox" @(Model.GroupingCreateObjectInsteadOfArray ? "checked" : "") class="hidden">
+        <label class="checkbox" for="groupingCreateObjectInsteadOfArray">
+            <span>Object i.p.v. array</span>
+        </label>
+        <div class="form-hint"><span>Standaard wordt er altijd een JSON array met objecten gemaakt voor de resultaten van de query. Indien deze optie aan staat, wordt er één object gemaakt met keys en values.</span></div>
+    </div>
 
     <div class="object-grouping-panel">
         <div class="item" data-label-style="float" data-label-width="0">
@@ -56,13 +64,15 @@
             <span class="k-widget k-input k-state-default">
                 <input type="text" id="groupingKeyColumnName" class="textField k-input" name="groupingKeyColumnName" value="@Model.GroupingKeyColumnName" autocomplete="off" pattern=".*">
             </span>
+            <div class="form-hint"><span>De kolom in de query die de key voor het object bevat.</span></div>
         </div>
 
         <div class="item" data-label-style="float" data-label-width="0">
-            <h4><label for="groupingValueColumnName">Groepeer velden prefix</label></h4>
+            <h4><label for="groupingValueColumnName">Kolomnaam met value</label></h4>
             <span class="k-widget k-input k-state-default">
                 <input type="text" id="groupingValueColumnName" class="textField k-input" name="groupingValueColumnName" value="@Model.GroupingValueColumnName" autocomplete="off" pattern=".*">
             </span>
+            <div class="form-hint"><span>De kolom in de query die de value voor het object bevat.</span></div>
         </div>
     </div>
 </div>
