@@ -127,11 +127,11 @@
                                 <label class="checkbox">
                                     @if (booleanValue)
                                     {
-                                        <input id="change.Key" name="change.Key" type="checkbox" value="(Boolean)change.Value.Value" checked="checked" disabled>
+                                        <input id="change.Key" name="change.Key" type="checkbox" checked="checked" disabled>
                                     }
                                     else
                                     {
-                                        <input id="change.Key" name="change.Key" type="checkbox" value="(Boolean)change.Value.Value" disabled>
+                                        <input id="change.Key" name="change.Key" type="checkbox" disabled>
                                     }
                                     <span>@change.Key</span>
                                 </label>
@@ -145,11 +145,11 @@
                                 <label class="checkbox">
                                     @if (booleanValue)
                                     {
-                                        <input id="change.Key" name="change.Key" type="checkbox" value="(Boolean)change.Value.Key" checked="checked" disabled>
+                                        <input id="change.Key" name="change.Key" type="checkbox" checked="checked" disabled>
                                     }
                                     else
                                     {
-                                        <input id="change.Key" name="change.Key" type="checkbox" value="(Boolean)change.Value.Key" disabled>
+                                        <input id="change.Key" name="change.Key" type="checkbox" disabled>
                                     }
                                     <span>@change.Key</span>
                                 </label>
@@ -183,7 +183,7 @@
                             <span class="k-widget k-input k-state-default">
                                 @if (String.Equals(change.Key, "editorValue"))
                                 {
-                                    <textarea id="text_102" autocomplete="off" disabled>@change.Value.Value</textarea>
+                                    <textarea id="text_102" autocomplete="off" disabled>@change.Value.Key</textarea>
                                 }
                                 else
                                 {
@@ -211,11 +211,11 @@
                                 <label class="checkbox">
                                     @if ((Boolean)change.Value.Value)
                                     {
-                                        <input id="change.Key" name="change.Key" type="checkbox" value="(Boolean)change.Value.Value" checked="checked" disabled>
+                                        <input id="change.Key" name="change.Key" type="checkbox" checked="checked" disabled>
                                     }
                                     else
                                     {
-                                        <input id="change.Key" name="change.Key" type="checkbox" value="(Boolean)change.Value.Value" disabled>
+                                        <input id="change.Key" name="change.Key" type="checkbox" disabled>
                                     }
                                     <span>@change.Key</span>
                                 </label>
@@ -229,11 +229,11 @@
                                 <label class="checkbox">
                                     @if ((Boolean)change.Value.Key)
                                     {
-                                        <input id="@change.Key" name="@change.Key" type="checkbox" value="@change.Value.Key" checked="checked" disabled>
+                                        <input id="@change.Key" name="@change.Key" type="checkbox" checked="checked" disabled>
                                     }
                                     else
                                     {
-                                        <input id="@change.Key" name="@change.Key" type="checkbox" value="@change.Value.Key" disabled>
+                                        <input id="@change.Key" name="@change.Key" type="checkbox" disabled>
                                     }
                                     <span>@change.Key</span>
                                 </label>
