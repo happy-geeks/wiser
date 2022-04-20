@@ -36,10 +36,20 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public Dictionary<int, string> GetComponentModes(Type component)
         {
-            var info = (component.BaseType).GetTypeInfo();
-            var enumtype = info.GetGenericArguments()[1];
-            var enumFields = enumtype.GetFields();
+            if (component?.BaseType == null)
+            {
+                return new Dictionary<int, string>();
+            }
 
+            var info = component.BaseType.GetTypeInfo();
+            var settingsType = info.GetGenericArguments().FirstOrDefault();
+            var componentModeProperty = settingsType?.GetProperty("ComponentMode");
+            if (componentModeProperty == null || !componentModeProperty.PropertyType.IsEnum)
+            {
+                return new Dictionary<int, string>();
+            }
+
+            var enumFields = componentModeProperty.PropertyType.GetFields();
             var returnDict = new Dictionary<int, string>();
 
             foreach (var enumField in enumFields)
