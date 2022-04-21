@@ -215,17 +215,18 @@ INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `tab_name`, `gro
 -- Records of wiser_item
 -- ----------------------------
 # Admin user.
-INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (1, '', 'wiseruser', 806, 4, 0, 'Admin', NOW(), 'Systeem', NULL, '');
+INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (1, '', 'wiseruser', 806, 15, 0, 'Admin', NOW(), 'Systeem', NULL, '');
 # Welcome task alert.
-INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (2, '', 'agendering', 708, 4, 0, 'Admin', NOW(), 'Systeem', NULL, '');
+INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (2, '', 'agendering', 708, 15, 0, 'Admin', NOW(), 'Systeem', NULL, '');
 # Root directory for images
-INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (3, '', 'filedirectory', 5531, 4, 0, 'Hoofdmap afbeeldingen', NOW(), 'Systeem', NULL, '');
+INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (3, '', 'filedirectory', 5531, 15, 0, 'Hoofdmap afbeeldingen', NOW(), 'Systeem', NULL, '');
 # Root directory for files
-INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (4, '', 'filedirectory', 5531, 4, 0, 'Hoofdmap bestanden', NOW(), 'Systeem', NULL, '');
+INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (4, '', 'filedirectory', 5531, 15, 0, 'Hoofdmap bestanden', NOW(), 'Systeem', NULL, '');
 # Root directory for templates
-INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (5, '', 'filedirectory', 5531, 4, 0, 'Hoofdmap templates', NOW(), 'Systeem', NULL, '');
-# Root directory for data selector templates
-INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (6, '', 'map', 700, 4, 0, 'Data selector templates', NOW(), 'Systeem', NULL, '');
+INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (5, '', 'filedirectory', 5531, 15, 0, 'Hoofdmap templates', NOW(), 'Systeem', NULL, '');
+# Data selector templates
+INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (6, '', 'map', 700, 15, 0, 'Data selector templates', NOW(), 'Systeem', NULL, '');
+INSERT INTO `wiser_item`(`id`, `unique_uuid`, `parent_item_id`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (7, '', 6, 'dataselector-template', 700, 15, 0, 'Voorbeeld', NOW(), 'Systeem', NULL, '');
 
 -- ----------------------------
 -- Records of wiser_itemdetail
@@ -242,6 +243,8 @@ INSERT INTO `wiser_itemdetail`(`language_code`, `item_id`, `groupname`, `key`, `
 INSERT INTO `wiser_itemdetail`(`language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES ('', 2, '', 'placed_by_id', '1', '');
 INSERT INTO `wiser_itemdetail`(`language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES ('', 2, '', 'userid', '1', '');
 INSERT INTO `wiser_itemdetail`(`language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES ('', 2, '', 'username', 'Admin', '');
+# Data selector template
+INSERT INTO `wiser_itemdetail`(`language_code`, `item_id`, `groupname`, `key`, `value`, `long_value`) VALUES ('', 7, '', 'template', '<ul>{repeat}<li>{itemtitle} ({id})</li>{/repeat} </ul>', '');
 
 -- ----------------------------
 -- Records of wiser_user_roles
@@ -282,6 +285,11 @@ INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_t
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'vatrule', 'vatrule', 1, 0, 'one-to-one', 'none', 1);
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'country', 'country', 1, 0, 'one-to-one', 'none', 1);
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'dataselector-template', 'dataselector-template', 1, 0, 'one-to-one', 'none', 1);
+
+-- ----------------------------
+-- Records of wiser_data_selector
+-- ----------------------------
+INSERT INTO `wiser_data_selector` (`name`, `removed`, `module_selection`, `request_json`, `saved_json`, `added_on`, `changed_on`, `show_in_export_module`, `available_for_rendering`, `default_template`) VALUES ('Voorbeeld', 0, '', '{\"main\":{\"entityName\":\"map\",\"fields\":[{\"fieldname\":\"id\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"},{\"fieldname\":\"itemtitle\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"}]},\"orderBy\":[{\"fieldname\":\"itemtitle\",\"direction\":\"ASC\"}],\"limit\":\"0\"}', '{\"main\":{\"entityName\":\"map\",\"fields\":[{\"fieldname\":\"id\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"},{\"fieldname\":\"itemtitle\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"}]},\"useExportMode\":false,\"orderBy\":[{\"entityName\":\"map\",\"fieldName\":\"itemtitle\",\"fieldAlias\":\"\",\"direction\":\"ASC\"}],\"limit\":\"0\"}', NOW(), NOW(), 1, 1, 0);
 
 -- ----------------------------
 -- Stored procedures

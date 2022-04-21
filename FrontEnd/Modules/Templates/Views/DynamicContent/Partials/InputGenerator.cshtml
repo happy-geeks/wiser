@@ -19,6 +19,7 @@
                     }
                 </select>
                 <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
+                <div class="form-hint developer-remarks">@Html.Raw(Model.CmsPropertyAttribute.DeveloperRemarks)</div>
             </div>
             break;
 
@@ -30,6 +31,7 @@
                     <input type="text" id="@Model.Name" class="textField k-input" autocomplete="off" value="@Model.Value" data-property="@Model.Name">
                 </span>
                 <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
+                <div class="form-hint developer-remarks">@Html.Raw(Model.CmsPropertyAttribute.DeveloperRemarks)</div>
             </div>
             break;
 
@@ -39,6 +41,8 @@
                     <input id="@Model.Name" type="checkbox" @(Model.Value != null && (bool)Model.Value ? "checked" : "") data-property="@Model.Name">
                     <span>@Model.PrettyName</span>
                 </label>
+                <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
+                <div class="form-hint developer-remarks">@Html.Raw(Model.CmsPropertyAttribute.DeveloperRemarks)</div>
             </div>
             break;
 
@@ -47,6 +51,7 @@
                 <h4><label for="@Model.Name">@Model.PrettyName</label></h4>
                 <input id="@Model.Name" type="number" class="numeric" value="@Model.Value" min="0" step="1" autocomplete="off" data-property="@Model.Name" data-kendo-control="kendoNumericTextBox" />
                 <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
+                <div class="form-hint developer-remarks">@Html.Raw(Model.CmsPropertyAttribute.DeveloperRemarks)</div>
             </div>
             break;
 
@@ -96,6 +101,7 @@
                     <textarea id="@Model.Name" data-property="@Model.Name">@Model.Value</textarea>
                 </span>
                 <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
+                <div class="form-hint developer-remarks">@Html.Raw(Model.CmsPropertyAttribute.DeveloperRemarks)</div>
             </div>
             break;
 
@@ -106,6 +112,7 @@
                     <textarea id="@Model.Name" data-property="@Model.Name" data-field-type="text/x-mysql">@Model.Value</textarea>
                 </span>
                 <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
+                <div class="form-hint developer-remarks">@Html.Raw(Model.CmsPropertyAttribute.DeveloperRemarks)</div>
             </div>
             break;
 
@@ -116,6 +123,7 @@
                     <textarea id="@Model.Name" data-property="@Model.Name" data-field-type="text/html">@Model.Value</textarea>
                 </span>
                 <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
+                <div class="form-hint developer-remarks">@Html.Raw(Model.CmsPropertyAttribute.DeveloperRemarks)</div>
             </div>
             break;
 
@@ -126,6 +134,7 @@
                     <textarea id="@Model.Name" data-property="@Model.Name" data-field-type="application/xml">@Model.Value</textarea>
                 </span>
                 <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
+                <div class="form-hint developer-remarks">@Html.Raw(Model.CmsPropertyAttribute.DeveloperRemarks)</div>
             </div>
             break;
 
@@ -136,6 +145,7 @@
                     <textarea id="@Model.Name" data-property="@Model.Name" data-field-type="text/javascript">@Model.Value</textarea>
                 </span>
                 <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
+                <div class="form-hint developer-remarks">@Html.Raw(Model.CmsPropertyAttribute.DeveloperRemarks)</div>
             </div>
             break;
 
@@ -146,6 +156,7 @@
                     <textarea id="@Model.Name" data-property="@Model.Name" data-field-type="application/json">@Model.Value</textarea>
                 </span>
                 <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
+                <div class="form-hint developer-remarks">@Html.Raw(Model.CmsPropertyAttribute.DeveloperRemarks)</div>
             </div>
             break;
 
@@ -156,6 +167,7 @@
                     <textarea id="@Model.Name" data-property="@Model.Name" data-field-type="text">@Model.Value</textarea>
                 </span>
                 <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
+                <div class="form-hint developer-remarks">@Html.Raw(Model.CmsPropertyAttribute.DeveloperRemarks)</div>
             </div>
             break;
 
