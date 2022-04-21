@@ -12,6 +12,7 @@
                 <!option value="@((int)TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString ? "selected" : "")>server caching volledige template (obv volledige URL, inclusief domein en querystring)</!option>
             </select>
         </div>
+        <div class="form-hint"><span>Moet caching ingeschakeld worden voor deze template? Zo ja, wat voor caching. Caching kan bijvoorbeeld hetzelfde zijn voor alle URL's, of per URL/querystring aparte cache.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
@@ -22,6 +23,7 @@
                 <!option value="@((int)TemplateCachingLocations.OnDisk)" @(Model.CacheLocation == TemplateCachingLocations.OnDisk ? "selected" : "")>Op harde schijf</!option>
             </select>
         </div>
+        <div class="form-hint"><span>Waar moet de cache opgeslagen worden? In geheugen is het snelste, maar deze cache gaat verloren bij herstart van de application pool.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
@@ -29,6 +31,7 @@
         <span class="k-widget k-input k-state-default">
             <input type="number" id="cacheMinutes" class="textField k-input" name="cacheMinutes" value="@Model.CacheMinutes" autocomplete="off" pattern=".*">
         </span>
+        <div class="form-hint"><span>Hoe lang moet de cache bewaard blijven? Indien deze waarde 0 of kleiner is, wordt de instelling "GCL.DefaultTemplateCacheDuration" gebruikt van de appsettings.json.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
@@ -41,6 +44,7 @@
                 }
             </select>
         </div>
+        <div class="form-hint"><span>Hoe en waar op de pagina moet deze SCSS-template toegevoegd worden?</span></div>
     </div>
 
     <ul class="checkColumns">
@@ -55,6 +59,7 @@
                 <input id="isScssIncludeTemplate" name="isScssIncludeTemplate" type="checkbox" @(Model.IsScssIncludeTemplate ? "checked" : "")>
                 <span>Is SCSS include template</span>
             </label>
+            <div class="form-hint"><span>Is dit een SCSS template welke dmv een import in andere SCSS templates gebruikt wordt?</span></div>
         </li>
         <li>
             <label class="checkbox">

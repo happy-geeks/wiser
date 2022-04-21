@@ -15,6 +15,7 @@ require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
 import "../css/Templates.css";
+import {Init} from "codemirror/src/edit/options";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -58,6 +59,7 @@ const moduleSettings = {
             this.newContentTitle = null;
             this.saving = false;
             this.historyLoaded = false;
+            this.initialTemplateSettings = null;
 
             this.templateTypes = Object.freeze({
                 "UNKNOWN": 0,
@@ -149,6 +151,13 @@ const moduleSettings = {
             await this.initializeKendoComponents();
             this.bindEvents();
             window.processing.removeProcess(process);
+
+            window.addEventListener("beforeunload", async (event) => {
+                if (!this.canUnloadTemplate()) {
+                    event.preventDefault();
+                    event.returnValue = "";
+                }
+            });
         }
 
         /**
@@ -299,8 +308,9 @@ const moduleSettings = {
         /**
          * Opens the dialog for creating a new item.
          * @param {any} dataItem When calling this from context menu, the selected data item from the tree view or tab sheet should be entered here.
+         * @param isFromRootItem {boolean} When calling this from context menu, indicate whether this was a context menu of a root item or a tree node.
          */
-        async openCreateNewItemDialog(dataItem) {
+        async openCreateNewItemDialog(dataItem = null, isFromRootItem = false) {
             try {
                 const selectedTabIndex = this.treeViewTabStrip.select().index();
                 const selectedTabContentElement = this.treeViewTabStrip.contentElement(selectedTabIndex);
@@ -337,7 +347,7 @@ const moduleSettings = {
 
                                     const type = isDirectory ? this.templateTypes.DIRECTORY : this.templateTypes[treeViewElement.dataset.title.toUpperCase()];
 
-                                    this.createNewTemplate(parentId, title, type, treeView, !parentId ? undefined : treeView.select());
+                                    this.createNewTemplate(parentId, title, type, treeView, !parentId || isFromRootItem ? undefined : treeView.select());
                                 } catch (exception) {
                                     console.error(exception);
                                     kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
@@ -399,6 +409,22 @@ const moduleSettings = {
                 return;
             }
 
+            if (this.selectedId && !this.canUnloadTemplate()) {
+                try {
+                    await kendo.confirm("U heeft nog openstaande wijzigingen. Weet u zeker dat u door wilt gaan?");
+                } catch {
+                    event.preventDefault();
+                    // Select the previous item again, otherwise the tree view will still show the other item to be selected.
+                    const dataItem = event.sender.dataSource.get(this.selectedId);
+                    if (dataItem) {
+                        event.sender.select(event.sender.findByUid(dataItem.uid));
+                    } else {
+                        event.sender.select($());
+                    }
+                    return;
+                }
+            }
+
             $("#addButton").toggleClass("hidden", !dataItem.isFolder);
 
             // Deselect all tree views in other tabs, otherwise they will stay selected even though the user selected a different template.
@@ -417,7 +443,7 @@ const moduleSettings = {
                 return;
             }
 
-            this.loadTemplate(dataItem.id);
+            await this.loadTemplate(dataItem.id);
         }
 
         /**
@@ -518,18 +544,21 @@ const moduleSettings = {
             const node = $(event.target);
             const treeView = this.mainTreeView[this.treeViewTabStrip.select().index()];
 
+            let isFromRootItem;
             let selectedItem;
             if (!event.target.closest(".k-treeview")) {
                 selectedItem = this.treeViewTabs[$(event.target).index()];
+                isFromRootItem = true;
             } else {
                 selectedItem = treeView.dataItem(node);
+                isFromRootItem = false;
             }
 
             const action = selectedOption.attr("action");
 
             switch (action) {
                 case "addNewItem":
-                    this.openCreateNewItemDialog(selectedItem);
+                    this.openCreateNewItemDialog(selectedItem, isFromRootItem);
                     break;
                 case "rename":
                     kendo.prompt("Vul een nieuwe naam in", selectedItem.templateName).then((newName) => {
@@ -912,6 +941,9 @@ const moduleSettings = {
                     preLoadQueryField.data("CodeMirrorInstance").refresh();
                 }
             });
+
+            // Save the current settings so that we can keep track of any changes and warn the user if they're about to leave without saving.
+            this.initialTemplateSettings = this.getCurrentTemplateSettings();
         }
 
         //Initialize display variable for the fields containing objects and dates within the grid.
@@ -1294,7 +1326,12 @@ const moduleSettings = {
             const editorElement = $(".editor");
             const kendoEditor = editorElement.data("kendoEditor");
             const codeMirror = editorElement.data("CodeMirrorInstance");
-            const editorValue = kendoEditor ? kendoEditor.value() : codeMirror.getValue();
+            let editorValue = "";
+            if (kendoEditor) {
+                editorValue = kendoEditor.value();
+            } else if (codeMirror) {
+                editorValue = codeMirror.getValue();
+            }
 
             const settings = Object.assign({
                 templateId: this.selectedId,
@@ -1343,6 +1380,9 @@ const moduleSettings = {
                 window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
                 this.historyLoaded = false;
                 await this.reloadMetaData(this.selectedId);
+
+                // Save the current settings so that we can keep track of any changes and warn the user if they're about to leave without saving.
+                this.initialTemplateSettings = data;
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
@@ -1503,7 +1543,7 @@ const moduleSettings = {
                     });
                     treeView.expand(parentElement);
                 } else {
-                    const newTreeViewElement = parentElement.length > 0 ? treeView.append(result, parentElement) : treeView.append(result);
+                    const newTreeViewElement = parentElement && parentElement.length > 0 ? treeView.append(result, parentElement) : treeView.append(result);
                     treeView.select(newTreeViewElement);
                     treeView.trigger("select", {
                         node: newTreeViewElement
@@ -1575,6 +1615,12 @@ const moduleSettings = {
             });
 
             return settingsList;
+        }
+
+        canUnloadTemplate() {
+            const initialData = JSON.stringify(this.initialTemplateSettings);
+            const currentData = JSON.stringify(this.getCurrentTemplateSettings());
+            return initialData === currentData;
         }
     }
 
