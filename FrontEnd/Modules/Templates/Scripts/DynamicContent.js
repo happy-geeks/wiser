@@ -239,9 +239,6 @@ const moduleSettings = {
                     data: JSON.stringify(this.selectedComponentData)
                 });
 
-                //force reload on component modes
-                this.componentModus = null;
-
                 $("#DynamicContentTabPane").html(response);
                 this.initializeDynamicKendoComponents();
                 await this.transformCodeMirrorViews();

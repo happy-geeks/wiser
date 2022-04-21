@@ -93,10 +93,22 @@ namespace Api.Core.Helpers
         /// Get the username from a <see cref="ClaimsIdentity">ClaimsIdentity</see>.
         /// </summary>
         /// <param name="claimsIdentity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
+        /// <param name="useAdminAccountNameIfAvailable">Optional: Set to <see langword="true"/> to get the username of the logged in admin account, if applicable.</param>
         /// <returns></returns>
-        public static string GetUserName(ClaimsIdentity claimsIdentity)
+        public static string GetUserName(ClaimsIdentity claimsIdentity, bool useAdminAccountNameIfAvailable = false)
         {
-            return claimsIdentity?.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Name)?.Value;
+            string result = null;
+            if (useAdminAccountNameIfAvailable)
+            {
+                result = claimsIdentity?.Claims.FirstOrDefault(claim => claim.Type == IdentityConstants.AdminAccountName)?.Value;
+            }
+
+            if (String.IsNullOrEmpty(result))
+            {
+                result = claimsIdentity?.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Name)?.Value;
+            }
+
+            return result;
         }
 
         /// <summary>

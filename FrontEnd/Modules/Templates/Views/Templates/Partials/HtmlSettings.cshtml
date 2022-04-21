@@ -12,6 +12,7 @@
                 <!option value="@((int)TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString ? "selected" : "")>server caching volledige template (obv volledige URL, inclusief domein en querystring)</!option>
             </select>
         </div>
+        <div class="form-hint"><span>Moet caching ingeschakeld worden voor deze template? Zo ja, wat voor caching. Caching kan bijvoorbeeld hetzelfde zijn voor alle URL's, of per URL/querystring aparte cache.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
@@ -22,6 +23,7 @@
                 <!option value="@((int)TemplateCachingLocations.OnDisk)" @(Model.CacheLocation == TemplateCachingLocations.OnDisk ? "selected" : "")>Op harde schijf</!option>
             </select>
         </div>
+        <div class="form-hint"><span>Waar moet de cache opgeslagen worden? In geheugen is het snelste, maar deze cache gaat verloren bij herstart van de application pool.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
@@ -29,6 +31,7 @@
         <span class="k-widget k-input k-state-default">
             <input type="number" id="cacheMinutes" class="textField k-input" name="cacheMinutes" value="@Model.CacheMinutes" autocomplete="off">
         </span>
+        <div class="form-hint"><span>Hoe lang moet de cache bewaard blijven? Indien deze waarde 0 of kleiner is, wordt de instelling "GCL.DefaultTemplateCacheDuration" gebruikt van de appsettings.json.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
@@ -39,62 +42,13 @@
         <div class="form-hint"><span>Indien hier een geldige regex is ingevuld, wordt deze template alleen gecached voor URL's die voldoen aan deze regex.</span></div>
     </div>
 
-    <ul class="checkColumns">
-        <li>
-            <label class="checkbox">
-                <input id="handleRequests" name="handleRequests" type="checkbox" @(Model.HandleRequests ? "checked" : "")>
-                <span>Verwerk requestvariabelen</span>
-            </label>
-        </li>
-        <li>
-            <label class="checkbox">
-                <input id="handleSession" name="handleSession" type="checkbox" @(Model.HandleSession ? "checked" : "")>
-                <span>Verwerk sessievariabelen</span>
-            </label>
-        </li>
-        <li>
-            <label class="checkbox">
-                <input id="handleObjects" name="handleObjects" type="checkbox" @(Model.HandleObjects ? "checked" : "")>
-                <span>Verwerk objectvariabelen</span>
-            </label>
-        </li>
-        <li>
-            <label class="checkbox">
-                <input id="handleStandards" name="handleStandards" type="checkbox" @(Model.HandleStandards ? "checked" : "")>
-                <span>Verwerk standards</span>
-            </label>
-        </li>
-        <li>
-            <label class="checkbox">
-                <input id="handleTranslations" name="handleTranslations" type="checkbox" @(Model.HandleTranslations ? "checked" : "")>
-                <span>Verwerk vertalingen</span>
-            </label>
-        </li>
-        <li>
-            <label class="checkbox">
-                <input id="handleDynamicContent" name="handleDynamicContent" type="checkbox" @(Model.HandleDynamicContent ? "checked" : "")>
-                <span>Verwerk dynamische content</span>
-            </label>
-        </li>
-        <li>
-            <label class="checkbox">
-                <input id="handleLogicBlocks" name="handleLogicBlocks" type="checkbox" @(Model.HandleLogicBlocks ? "checked" : "")>
-                <span>Verwerk logische blokken</span>
-            </label>
-        </li>
-        <li>
-            <label class="checkbox">
-                <input id="handleMutators" name="handleMutators" type="checkbox" @(Model.HandleMutators ? "checked" : "")>
-                <span>Verwerk mutators</span>
-            </label>
-        </li>
-        <li>
-            <label class="checkbox">
-                <input id="returnNotFoundWhenPreLoadQueryHasNoData" name="returnNotFoundWhenPreLoadQueryHasNoData" type="checkbox" @(Model.ReturnNotFoundWhenPreLoadQueryHasNoData ? "checked" : "")>
-                <span>Geef 404 status indien pre-load query geen resultaten heeft</span>
-            </label>
-        </li>
-    </ul>
+    <div class="item" data-label-style="float" data-label-width="0">
+        <label class="checkbox">
+            <input id="returnNotFoundWhenPreLoadQueryHasNoData" name="returnNotFoundWhenPreLoadQueryHasNoData" type="checkbox" @(Model.ReturnNotFoundWhenPreLoadQueryHasNoData ? "checked" : "")>
+            <span>Geef 404 status indien pre-load query geen resultaten heeft</span>
+        </label>
+        <div class="form-hint"><span>Indien hieronder een pre-load query is ingevuld en deze query geeft geen resultaat, dan kan er een 404 getoond worden aan de bezoeker.</span></div>
+    </div>
 </div>
 <div class="item item-right" style="width: 40%;">
     <input id="loginRequired" name="loginRequired" type="checkbox" @(Model.LoginRequired ? "checked": "") class="hidden">
