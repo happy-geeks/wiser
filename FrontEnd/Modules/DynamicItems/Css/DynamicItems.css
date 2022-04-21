@@ -107,19 +107,19 @@ body.gridViewMode:not(.iframe) #gridView {
 }
 
 body.gridViewMode {
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
-    body.gridViewMode,
-    body.gridViewMode #gridView,
-    body.gridViewMode #wiser,
-    body.gridViewMode #fullForm,
-    body.gridViewMode #mainScreenForm {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        border-width: 0;
-    }
+body.gridViewMode,
+body.gridViewMode #gridView,
+body.gridViewMode #wiser,
+body.gridViewMode #fullForm,
+body.gridViewMode #mainScreenForm {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+}
 
 .forceHidden {
     display: none !important;

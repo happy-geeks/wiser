@@ -24,6 +24,7 @@ import "../scss/main.scss";
 import "../scss/task-alerts.scss";
 
 import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, ACTIVATE_MODULE, LOAD_ENTITY_TYPES_OF_ITEM_ID, GET_CUSTOMER_TITLE, TOGGLE_PIN_MODULE } from "./store/mutation-types";
+import { Doc } from "codemirror";
 
 (() => {
     class Main {
@@ -347,7 +348,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                     async onTogglePin(event, moduleId) {
                         event.preventDefault();
                         this.$store.dispatch(TOGGLE_PIN_MODULE, moduleId);
-                    }
+                    }                    
                 }
             });
 
