@@ -5,7 +5,6 @@ using Api.Modules.Imports.Interfaces;
 using Api.Modules.Imports.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
-using GeeksCoreLibrary.Core.Services;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -21,7 +20,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Enums;
 using Api.Modules.Customers.Models;
-using RestSharp;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
@@ -566,10 +564,10 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity));
                 await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>("wiser_import_log");
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
                 // TODO: Report if logging fails.
-                importResult.Errors.Add(ex.ToString());
+                importResult.Errors.Add(exception.ToString());
             }
 
             if (wiserImportId == 0)
@@ -884,9 +882,9 @@ namespace Api.Modules.Imports.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<DeleteItemsConfirmModel>> PrepareDeleteItems(ClaimsIdentity identity, DeleteItemsRequestModel deleteItemsRequest)
+        public async Task<ServiceResult<DeleteItemsConfirmModel>> PrepareDeleteItemsAsync(ClaimsIdentity identity, DeleteItemsRequestModel deleteItemsRequest)
         {
-            //Get all lines, skip first line containing column names.
+            // Get all lines, skip first line containing column names.
             var fileLines = (await File.ReadAllLinesAsync(deleteItemsRequest.FilePath)).Skip(1);
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -896,13 +894,13 @@ namespace Api.Modules.Imports.Services
 
             var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(deleteItemsRequest.EntityName);
 
-            //Build the query based on a delete by id or by property.
+            // Build the query based on a delete by id or by property.
             var query = $@"
 SELECT item.id
 FROM {tablePrefix}{WiserTableNames.WiserItem} AS item {(deleteItemsRequest.PropertyName == "id" ? CreatePrepareDeleteQueryBottomForId(deleteItemsRequest, fileLines) : CreatePrepareDeleteQueryBottomForProperty(deleteItemsRequest, fileLines, tablePrefix))}";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
-            var itemsToDelete = new DeleteItemsConfirmModel()
+            var itemsToDelete = new DeleteItemsConfirmModel
             {
                 EntityType = deleteItemsRequest.EntityName,
                 Ids = new List<ulong>()
@@ -914,6 +912,41 @@ FROM {tablePrefix}{WiserTableNames.WiserItem} AS item {(deleteItemsRequest.Prope
             }
 
             return new ServiceResult<DeleteItemsConfirmModel>(itemsToDelete);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeleteItemsAsync(ClaimsIdentity identity, DeleteItemsConfirmModel deleteItemsConfirm)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var userName = $"Import ({IdentityHelpers.GetName(identity)})";
+
+            await wiserItemsService.DeleteAsync(deleteItemsConfirm.Ids, userId: userId, username: userName, entityType: deleteItemsConfirm.EntityType);
+            return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<DeleteLinksConfirmModel>>> PrepareDeleteLinksAsync(ClaimsIdentity identity, DeleteLinksRequestModel deleteLinksRequest)
+        {
+            //Get all lines, skip first line containing column names.
+            var fileLines = File.ReadAllLines(deleteLinksRequest.FilePath).Skip(1);
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+
+            var linksToDelete = new List<DeleteLinksConfirmModel>();
+
+            switch (deleteLinksRequest.DeleteLinksType)
+            {
+                case DeleteLinksTypes.Single:
+                    linksToDelete.Add(await CreateQueryForSingleColumn(fileLines, deleteLinksRequest));
+                    break;
+                case DeleteLinksTypes.Multiple:
+                    linksToDelete.AddRange(await CreateQueryForMultipleColumns(fileLines, deleteLinksRequest));
+                    break;
+            }
+
+            return new ServiceResult<List<DeleteLinksConfirmModel>>(linksToDelete);
         }
 
         /// <summary>
@@ -941,53 +974,6 @@ AND item.entity_type = ?entityName";
 JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} AS detail ON detail.item_id = item.id AND detail.`key` = ?propertyName
 WHERE detail.`value` IN({String.Join(",", fileLines.Select(line => line.ToMySqlSafeValue(true)))})
 AND item.entity_type = ?entityName";
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<bool>> DeleteItems(ClaimsIdentity identity, DeleteItemsConfirmModel deleteItemsConfirm)
-        {
-            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-
-            try
-            {
-                var userId = IdentityHelpers.GetWiserUserId(identity);
-                var userName = $"Import ({IdentityHelpers.GetName(identity)})";
-
-                await wiserItemsService.DeleteAsync(deleteItemsConfirm.Ids, userId: userId, username: userName, entityType: deleteItemsConfirm.EntityType);
-                return new ServiceResult<bool>(true);
-            }
-            catch (Exception exception)
-            {
-                logger.LogError(exception.ToString());
-                return new ServiceResult<bool>(false)
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = $"Error during delete: {exception.Message}"
-                };
-            }
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<List<DeleteLinksConfirmModel>>> PrepareDeleteLinks(ClaimsIdentity identity, DeleteLinksRequestModel deleteLinksRequest)
-        {
-            //Get all lines, skip first line containing column names.
-            var fileLines = File.ReadAllLines(deleteLinksRequest.FilePath).Skip(1);
-            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            clientDatabaseConnection.ClearParameters();
-
-            var linksToDelete = new List<DeleteLinksConfirmModel>();
-
-            switch (deleteLinksRequest.DeleteLinksType)
-            {
-                case DeleteLinksTypes.Single:
-                    linksToDelete.Add(await CreateQueryForSingleColumn(fileLines, deleteLinksRequest));
-                    break;
-                case DeleteLinksTypes.Multiple:
-                    linksToDelete.AddRange(await CreateQueryForMultipleColumns(fileLines, deleteLinksRequest));
-                    break;
-            }
-
-            return new ServiceResult<List<DeleteLinksConfirmModel>>(linksToDelete);
         }
 
         /// <summary>
@@ -1236,7 +1222,7 @@ AND destinationDetail.`value` IN({String.Join(",", destinationValues.Select(line
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> DeleteLinks(ClaimsIdentity identity, List<DeleteLinksConfirmModel> deleteLinksConfirms)
+        public async Task<ServiceResult<bool>> DeleteLinksAsync(ClaimsIdentity identity, List<DeleteLinksConfirmModel> deleteLinksConfirms)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
@@ -1266,15 +1252,10 @@ AND destinationDetail.`value` IN({String.Join(",", destinationValues.Select(line
 
                 return new ServiceResult<bool>(true);
             }
-            catch (Exception exception)
+            catch
             {
-                logger.LogError(exception.ToString());
                 await clientDatabaseConnection.RollbackTransactionAsync(false);
-                return new ServiceResult<bool>(false)
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = $"Error during delete: {exception.Message}"
-                };
+                throw;
             }
         }
     }

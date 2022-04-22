@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
@@ -14,7 +13,11 @@ namespace Api.Modules.EntityProperties.Controllers
     /// <summary>
     /// Controller for all CRUD functions for entity properties.
     /// </summary>
-    [Route("api/v3/entity-properties"), ApiController, Authorize]
+    [Route("api/v3/entity-properties")]
+    [ApiController]
+    [Authorize]
+    [Consumes(MediaTypeNames.Application.Json)]
+    [Produces(MediaTypeNames.Application.Json)]
     public class EntityPropertiesController : ControllerBase
     {
         private readonly IEntityPropertiesService entityPropertiesService;
@@ -32,7 +35,8 @@ namespace Api.Modules.EntityProperties.Controllers
         /// Get all entity properties. 
         /// </summary>
         /// <returns>A List of <see cref="EntityPropertyModel"/> with all settings.</returns>
-        [HttpGet, ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
+        [HttpGet]
+        [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> Get()
         {
             return (await entityPropertiesService.GetAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
@@ -43,7 +47,10 @@ namespace Api.Modules.EntityProperties.Controllers
         /// </summary>
         /// <param name="id">The ID from wiser_entityproperty.</param>
         /// <returns>A <see cref="EntityPropertyModel"/> with all settings.</returns>
-        [HttpGet, Route("{id:int}"), ProducesResponseType(typeof(EntityPropertyModel), StatusCodes.Status200OK)]
+        [HttpGet]
+        [Route("{id:int}")]
+        [ProducesResponseType(typeof(EntityPropertyModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Get(int id)
         {
             return (await entityPropertiesService.GetAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
@@ -57,39 +64,50 @@ namespace Api.Modules.EntityProperties.Controllers
         /// <param name="onlyEntityTypesWithPropertyName">Only get properties with a property name.</param>
         /// <param name="addIdProperty">Add a property for the id.</param>
         /// <returns>A <see cref="List{EntityPropertyModel}"/> with all properties of a specific entity.</returns>
-        [HttpGet, Route("{entityName}"), ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
+        [HttpGet]
+        [Route("{entityName}")]
+        [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPropertiesOfEntity(string entityName, [FromQuery] bool onlyEntityTypesWithDisplayName, [FromQuery] bool onlyEntityTypesWithPropertyName, [FromQuery] bool addIdProperty = false)
         {
             return (await entityPropertiesService.GetPropertiesOfEntityAsync((ClaimsIdentity)User.Identity, entityName, onlyEntityTypesWithDisplayName, onlyEntityTypesWithPropertyName, addIdProperty)).GetHttpResponseMessage();
         }
 
         /// <summary>
-        /// Creates new entity property.
+        /// Creates a new entity property.
         /// </summary>
-        /// <param name="entityProperty">The link settings to create.</param>
-        /// <returns>The newly created link settings.</returns>
-        [HttpPost, ProducesResponseType(typeof(EntityPropertyModel), StatusCodes.Status200OK)]
+        /// <param name="entityProperty">The entity property to create.</param>
+        /// <returns>The newly created entity property.</returns>
+        [HttpPost]
+        [ProducesResponseType(typeof(EntityPropertyModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> Create(EntityPropertyModel entityProperty)
         {
             return (await entityPropertiesService.CreateAsync((ClaimsIdentity)User.Identity, entityProperty)).GetHttpResponseMessage();
         }
 
         /// <summary>
-        /// Updates existing entity property.
+        /// Updates an existing entity property.
         /// </summary>
-        /// <param name="id">The ID from wiser_entityproperty.</param>
+        /// <param name="id">The ID from of the entity property.</param>
         /// <param name="entityProperty">The new data to save.</param>
-        [HttpPut, Route("{id:int}")]
+        [HttpPut]
+        [Route("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> Update(int id, EntityPropertyModel entityProperty)
         {
             return (await entityPropertiesService.UpdateAsync((ClaimsIdentity)User.Identity, id, entityProperty)).GetHttpResponseMessage();
         }
 
         /// <summary>
-        /// Deletes link settings.
+        /// Deletes an entity property.
         /// </summary>
-        /// <param name="id">The ID from wiser_entityproperty.</param>
-        [HttpDelete, Route("{id:int}")]
+        /// <param name="id">The ID of the entity property to delete.</param>
+        [HttpDelete]
+        [Route("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Delete(int id)
         {
             return (await entityPropertiesService.DeleteAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();

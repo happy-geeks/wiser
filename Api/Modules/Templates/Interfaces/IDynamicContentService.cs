@@ -16,22 +16,18 @@ namespace Api.Modules.Templates.Interfaces
     public interface IDynamicContentService
     {
         /// <summary>
-        /// Retrieve the component modes of the current CMScomponent.
+        /// Retrieve all component modes of a dynamic component.
         /// </summary>
         /// <param name="component">The type of the component from which the modes should be retrieved.</param>
-        /// <returns>
-        /// Dictionary containing the Key and (Display)name for each componentmode.
-        /// </returns>
+        /// <returns>A dictionary containing the Key and (Display)name for each component mode.</returns>
         Dictionary<int, string> GetComponentModes(Type component);
         
         /// <summary>
-        /// Retrieve the component modes of the current CMScomponent.
+        /// Retrieve all component modes of a dynamic component.
         /// </summary>
-        /// <param name="componentType">The name of the type.</param>
-        /// <returns>
-        /// Dictionary containing the Key and (Display)name for each componentmode.
-        /// </returns>
-        ServiceResult<List<ComponentModeModel>> GetComponentModes(string componentType);
+        /// <param name="name">The name of the type.</param>
+        /// <returns>A list containing the id and name for each component mode.</returns>
+        ServiceResult<List<ComponentModeModel>> GetComponentModes(string name);
 
         /// <summary>
         /// Retrieve the properties of the CMSSettingsmodel.
@@ -65,7 +61,6 @@ namespace Api.Modules.Templates.Interfaces
         /// </summary>
         /// <param name="contentId">The ID of the dynamic content.</param>
         /// <param name="includeSettings">Optional: Whether or not to include the settings that are saved with the component. Default value is <see langword="true" />.</param>
-        /// <returns></returns>
         Task<ServiceResult<DynamicContentOverviewModel>> GetMetaDataAsync(int contentId, bool includeSettings = true);
         
         /// <summary>

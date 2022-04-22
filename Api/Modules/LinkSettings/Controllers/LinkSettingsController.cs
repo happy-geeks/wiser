@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
@@ -12,7 +13,11 @@ namespace Api.Modules.LinkSettings.Controllers
     /// <summary>
     /// Controller for all CRUD functions for link type settings.
     /// </summary>
-    [Route("api/v3/link-settings"), ApiController, Authorize]
+    [Route("api/v3/link-settings")]
+    [ApiController]
+    [Authorize]
+    [Consumes(MediaTypeNames.Application.Json)]
+    [Produces(MediaTypeNames.Application.Json)]
     public class LinkSettingsController : ControllerBase
     {
         private readonly ILinkSettingsService linkSettingsService;
@@ -30,7 +35,8 @@ namespace Api.Modules.LinkSettings.Controllers
         /// Get all link settings. 
         /// </summary>
         /// <returns>A List of <see cref="LinkSettingsModel"/> with all settings.</returns>
-        [HttpGet, ProducesResponseType(typeof(List<LinkSettingsModel>), StatusCodes.Status200OK)]
+        [HttpGet]
+        [ProducesResponseType(typeof(List<LinkSettingsModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> Get()
         {
             return (await linkSettingsService.GetAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
@@ -41,7 +47,9 @@ namespace Api.Modules.LinkSettings.Controllers
         /// </summary>
         /// <param name="id">The ID of the settings from wiser_link.</param>
         /// <returns>A <see cref="LinkSettingsModel"/> with all settings.</returns>
-        [HttpGet, Route("{id:int}"), ProducesResponseType(typeof(LinkSettingsModel), StatusCodes.Status200OK)]
+        [HttpGet]
+        [Route("{id:int}")]
+        [ProducesResponseType(typeof(LinkSettingsModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> Get(int id)
         {
             return (await linkSettingsService.GetAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
@@ -52,7 +60,9 @@ namespace Api.Modules.LinkSettings.Controllers
         /// </summary>
         /// <param name="linkSettings">The link settings to create.</param>
         /// <returns>The newly created link settings.</returns>
-        [HttpPost, ProducesResponseType(typeof(LinkSettingsModel), StatusCodes.Status200OK)]
+        [HttpPost]
+        [ProducesResponseType(typeof(LinkSettingsModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> Create(LinkSettingsModel linkSettings)
         {
             return (await linkSettingsService.CreateAsync((ClaimsIdentity)User.Identity, linkSettings)).GetHttpResponseMessage();
@@ -63,7 +73,10 @@ namespace Api.Modules.LinkSettings.Controllers
         /// </summary>
         /// <param name="id">The ID of the link settings to update.</param>
         /// <param name="linkSettings">The new data to save.</param>
-        [HttpPut, Route("{id:int}")]
+        [HttpPut]
+        [Route("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> Update(int id, LinkSettingsModel linkSettings)
         {
             return (await linkSettingsService.UpdateAsync((ClaimsIdentity)User.Identity, id, linkSettings)).GetHttpResponseMessage();
@@ -73,7 +86,10 @@ namespace Api.Modules.LinkSettings.Controllers
         /// Deletes link settings.
         /// </summary>
         /// <param name="id">The ID of the link settings to delete.</param>
-        [HttpDelete, Route("{id:int}")]
+        [HttpDelete]
+        [Route("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> Delete(int id)
         {
             return (await linkSettingsService.DeleteAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();

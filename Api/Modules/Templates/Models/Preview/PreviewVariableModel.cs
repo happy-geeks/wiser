@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Api.Modules.Templates.Models.Preview
+﻿namespace Api.Modules.Templates.Models.Preview
 {
     public class PreviewVariableModel
     {

@@ -36,7 +36,15 @@ namespace Api.Modules.Templates.Services.DataLayer
             var resultDict = new List<HistoryVersionModel>();
             foreach (DataRow row in dataTable.Rows)
             {
-                resultDict.Add(new HistoryVersionModel(row.Field<int>("version"), row.Field<DateTime>("changed_on"), row.Field<string>("changed_by"), row.Field<string>("component"), row.Field<string>("component_mode"), row.Field<string>("settings")));
+                resultDict.Add(new HistoryVersionModel
+                {
+                    Version = row.Field<int>("version"),
+                    ChangedOn = row.Field<DateTime>("changed_on"),
+                    ChangedBy = row.Field<string>("changed_by"),
+                    Component = row.Field<string>("component"),
+                    ComponentMode = row.Field<string>("component_mode"),
+                    RawVersionString = row.Field<string>("version")
+                });
             }
             return resultDict;
         }

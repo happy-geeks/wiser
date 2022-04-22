@@ -3,7 +3,6 @@ using Api.Modules.EntityProperties.Enums;
 
 namespace Api.Modules.EntityProperties.Models
 {
-    //TODO Verify comments
     /// <summary>
     /// A model for the property of an entity within Wiser.
     /// </summary>
@@ -15,7 +14,7 @@ namespace Api.Modules.EntityProperties.Models
         public int Id { get; set; }
 
         /// <summary>
-        /// Gets or sets the ID of the module that this task alert belongs to.
+        /// Gets or sets the ID of the module. This can be 0 if the property should be available for all modules.
         /// </summary>
         public int ModuleId { get; set; }
 
@@ -151,7 +150,7 @@ namespace Api.Modules.EntityProperties.Models
         public EntityPropertyDependencyModel DependsOn { get; set; }
 
         /// <summary>
-        /// Gets or sets a custom script.
+        /// Gets or sets a custom javascript.
         /// </summary>
         public string CustomScript { get; set; }
 

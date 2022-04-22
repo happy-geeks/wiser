@@ -13,7 +13,8 @@ namespace Api.Core.Models
         /// <summary>
         /// Gets or sets the ID.
         /// </summary>
-        [Key, JsonIgnore]
+        [Key]
+        [JsonIgnore]
         public ulong Id { get; set; }
 
         /// <summary>

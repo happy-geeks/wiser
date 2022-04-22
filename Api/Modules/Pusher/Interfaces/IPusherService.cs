@@ -15,7 +15,7 @@ namespace Api.Modules.Pusher.Interfaces
         /// </summary>
         /// <param name="userId">The ID of the user.</param>
         /// <param name="subDomain">The sub domain of Wiser.</param>
-        /// <returns></returns>
+        /// <returns>The event ID for pusher.</returns>
         ServiceResult<string> GeneratePusherIdForUser(ulong userId, string subDomain);
 
         /// <summary>

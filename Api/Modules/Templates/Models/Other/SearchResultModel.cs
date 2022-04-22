@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Api.Modules.Templates.Models.Template;
+﻿using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Models.Other

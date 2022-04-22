@@ -27,12 +27,15 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Interfaces;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using React;
 using React.AspNet;
 using Serilog;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Api
 {
@@ -91,11 +94,11 @@ namespace Api
             services.AddSwaggerGenNewtonsoftSupport();
             services.AddSwaggerGen(config =>
             {
-                config.SwaggerDoc("v1",
+                config.SwaggerDoc("v3",
                     new OpenApiInfo
                     {
                         Title = "Wiser.WebAPI",
-                        Version = "1",
+                        Version = "3",
                         Description = "Web API for Wiser"
                     });
 
@@ -103,7 +106,8 @@ namespace Api
                 config.DocInclusionPredicate((_, apiDesc) =>
                 {
                     // Filter out 3rd party controllers
-                    var assemblyName = ((ControllerActionDescriptor)apiDesc.ActionDescriptor).ControllerTypeInfo.Assembly.GetName().Name;
+                    var assemblyName = ((ControllerActionDescriptor) apiDesc.ActionDescriptor).ControllerTypeInfo
+                        .Assembly.GetName().Name;
                     var currentAssemblyName = GetType().Assembly.GetName().Name;
                     return currentAssemblyName == assemblyName;
                 });
@@ -120,12 +124,12 @@ namespace Api
                         OpenIdConnectUrl = new Uri($"{apiBaseUrl}/.well-known/openid-configuration"),
                         Flows = new OpenApiOAuthFlows
                         {
-                            ClientCredentials = new OpenApiOAuthFlow
+                            Password = new OpenApiOAuthFlow
                             {
                                 TokenUrl = new Uri($"{apiBaseUrl}/connect/token"),
-                                Scopes =
+                                Extensions = new Dictionary<string, IOpenApiExtension>
                                 {
-                                    { "wiser-api", "Default Scope" }
+                                    { "subDomain", new OpenApiString("main") }
                                 }
                             }
                         }
@@ -287,7 +291,7 @@ namespace Api
                 });
             });
 
-            app.UseSwaggerUI(config => { config.SwaggerEndpoint("/swagger/v1/swagger.json", "Wiser.WebApi V1"); });
+            app.UseSwaggerUI(config => { config.SwaggerEndpoint("/swagger/v3/swagger.json", "Wiser.WebApi V3"); });
 
             app.UseHttpsRedirection();
 

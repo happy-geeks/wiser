@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
@@ -71,6 +72,14 @@ namespace Api.Modules.EntityTypes.Services
         public async Task<ServiceResult<EntitySettingsModel>> GetAsync(ClaimsIdentity identity, string entityType, int moduleId = 0)
         {
             var result = await wiserItemsService.GetEntityTypeSettingsAsync(entityType, moduleId);
+            if (String.IsNullOrEmpty(result?.EntityType))
+            {
+                return new ServiceResult<EntitySettingsModel>
+                {
+                    StatusCode = HttpStatusCode.NotFound
+                };
+            }
+
             return new ServiceResult<EntitySettingsModel>(result);
         }
 

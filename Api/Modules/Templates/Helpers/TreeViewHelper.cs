@@ -1,5 +1,4 @@
-﻿using Api.Modules.Templates.Enums;
-using Api.Modules.Templates.Models.Template;
+﻿using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Helpers

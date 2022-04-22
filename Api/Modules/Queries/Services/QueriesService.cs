@@ -6,7 +6,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
-using Api.Modules.EntityProperties.Models;
 using Api.Modules.Queries.Interfaces;
 using Api.Modules.Queries.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -96,7 +95,6 @@ namespace Api.Modules.Queries.Services
         /// <inheritdoc />
         public async Task<ServiceResult<QueryModel>> GetAsync(ClaimsIdentity identity, int id)
         {
-
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
@@ -142,7 +140,7 @@ namespace Api.Modules.Queries.Services
             var queryModel = new QueryModel
             {
                 Description = description,
-                Query = string.Empty,
+                Query = "",
                 ShowInExportModule = false
             };
 
@@ -191,13 +189,25 @@ namespace Api.Modules.Queries.Services
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> UpdateAsync(ClaimsIdentity identity, QueryModel queryModel)
         {
-            if (queryModel == null || queryModel.Description == null)
+            if (queryModel?.Description == null)
             {
                 return new ServiceResult<bool>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
                     ErrorMessage = "Either 'Query' or 'Description' must contain a value.",
                     ReasonPhrase = "Either 'Query' or 'Description' must contain a value."
+                };
+            }
+            
+            // Check if query exists.
+            var queryResult = await GetAsync(identity, queryModel.Id);
+            if (queryResult.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<bool>
+                {
+                    ErrorMessage = queryResult.ErrorMessage,
+                    ReasonPhrase = queryResult.ReasonPhrase,
+                    StatusCode = queryResult.StatusCode
                 };
             }
 
@@ -216,7 +226,7 @@ namespace Api.Modules.Queries.Services
 
             await clientDatabaseConnection.ExecuteAsync(query);
             
-            return new ServiceResult<bool>(true)
+            return new ServiceResult<bool>
             {
                 StatusCode = HttpStatusCode.NoContent
             };
@@ -226,6 +236,18 @@ namespace Api.Modules.Queries.Services
         public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            
+            // Check if query exists.
+            var queryResult = await GetAsync(identity, id);
+            if (queryResult.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<bool>
+                {
+                    ErrorMessage = queryResult.ErrorMessage,
+                    ReasonPhrase = queryResult.ReasonPhrase,
+                    StatusCode = queryResult.StatusCode
+                };
+            }
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
@@ -233,7 +255,10 @@ namespace Api.Modules.Queries.Services
             var query = $"DELETE FROM {WiserTableNames.WiserQuery} WHERE id = ?id";
             await clientDatabaseConnection.ExecuteAsync(query);
 
-            return new ServiceResult<bool>(true);
+            return new ServiceResult<bool>
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Net;
+using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
@@ -51,7 +52,7 @@ namespace Api.Modules.Pdfs.Services
 
             if (data.SaveInDatabase)
             {
-                var saveResult = await filesService.SaveFileInDatabaseAsync(identity, pdfResult.FileContents, "application/pdf", pdfResult.FileDownloadName, "TEMPORARY_FILE_FROM_WISER");
+                var saveResult = await filesService.SaveFileAsync(identity, pdfResult.FileContents, MediaTypeNames.Application.Pdf, pdfResult.FileDownloadName, "TEMPORARY_FILE_FROM_WISER");
                 if (saveResult.StatusCode != HttpStatusCode.OK)
                 {
                     return new ServiceResult<string>

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.Mime;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,7 +21,11 @@ namespace Api.Modules.DataSelectors.Controllers
     /// <summary>
     /// Controller for the data selector in Wiser.
     /// </summary>
-    [Route("api/v3/data-selectors"), ApiController, Authorize]
+    [Route("api/v3/data-selectors")]
+    [ApiController]
+    [Authorize]
+    [Consumes(MediaTypeNames.Application.Json)]
+    [Produces(MediaTypeNames.Application.Json)]
     public class DataSelectorsController : ControllerBase
     {
         private readonly IDataSelectorsService dataSelectorsService;
@@ -40,7 +45,9 @@ namespace Api.Modules.DataSelectors.Controllers
         /// </summary>
         /// <param name="entityName">The name of the entity.</param>
         /// <param name="forExportMode">Whether the data selector is in export mode.</param>
-        [HttpGet, Route("entity-properties/{entityName}"), ProducesResponseType(typeof(List<DataSelectorEntityPropertyModel>), StatusCodes.Status200OK)]
+        [HttpGet]
+        [Route("entity-properties/{entityName}")]
+        [ProducesResponseType(typeof(List<DataSelectorEntityPropertyModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetEntityPropertiesAsync(string entityName, [FromQuery] bool forExportMode)
         {
             return (await dataSelectorsService.GetEntityProperties(entityName, forExportMode, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
@@ -49,7 +56,8 @@ namespace Api.Modules.DataSelectors.Controllers
         /// <summary>
         /// Get the saved data selectors.
         /// </summary>
-        [HttpGet, ProducesResponseType(typeof(List<DataSelectorModel>), StatusCodes.Status200OK)]
+        [HttpGet]
+        [ProducesResponseType(typeof(List<DataSelectorModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAsync(bool forExportModule = false, bool forRendering = false)
         {
             return (await dataSelectorsService.GetAsync((ClaimsIdentity)User.Identity, forExportModule, forRendering)).GetHttpResponseMessage();
@@ -59,7 +67,9 @@ namespace Api.Modules.DataSelectors.Controllers
         /// Get templates that can be used with data selectors.
         /// </summary>
         /// <returns>A list of WiserItemModel.</returns>
-        [HttpGet, Route("templates"), ProducesResponseType(typeof(List<WiserItemModel>), StatusCodes.Status200OK)]
+        [HttpGet]
+        [Route("templates")]
+        [ProducesResponseType(typeof(List<WiserItemModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetTemplatesAsync()
         {
             return (await dataSelectorsService.GetTemplatesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
@@ -68,7 +78,9 @@ namespace Api.Modules.DataSelectors.Controllers
         /// <summary>
         /// Save a data selector.
         /// </summary>
-        [HttpPost, Route("save"), ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [HttpPost]
+        [Route("save")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         public async Task<IActionResult> SaveAsync(DataSelectorModel data)
         {
             return (await dataSelectorsService.SaveAsync((ClaimsIdentity)User.Identity, data)).GetHttpResponseMessage();
@@ -78,7 +90,9 @@ namespace Api.Modules.DataSelectors.Controllers
         /// Generate a signature.
         /// </summary>
         /// <param name="values">The values used for the signature.</param>
-        [HttpPost, Route("signature"), ProducesResponseType(typeof(DataSelectorSignatureResultModel), StatusCodes.Status200OK)]
+        [HttpPost]
+        [Route("signature")]
+        [ProducesResponseType(typeof(DataSelectorSignatureResultModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GenerateSignatureAsync(SortedList<string, string> values)
         {
             return (await dataSelectorsService.GenerateSignatureAsync(values, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
@@ -88,7 +102,9 @@ namespace Api.Modules.DataSelectors.Controllers
         /// Get the result of the data selector based on the request.
         /// </summary>
         /// <param name="dataFromUri">The request containing the information for the data selector in the query.</param>
-        [HttpPost, ProducesResponseType(typeof(JArray), StatusCodes.Status200OK)]
+        [HttpPost]
+        [ProducesResponseType(typeof(JArray), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetResultsAsync([FromQuery] WiserDataSelectorRequestModel dataFromUri)
         {
             using var reader = new StreamReader(Request.Body, Encoding.UTF8);
@@ -101,7 +117,10 @@ namespace Api.Modules.DataSelectors.Controllers
         /// Get the query of the data selector based on the request.
         /// </summary>
         /// <param name="dataFromUri">The request containing the information for the data selector in the query.</param>
-        [HttpPost, Route("query"), ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [HttpPost]
+        [Route("query")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetQueryAsync([FromQuery] WiserDataSelectorRequestModel dataFromUri)
         {
             using var reader = new StreamReader(Request.Body, Encoding.UTF8);
@@ -114,7 +133,11 @@ namespace Api.Modules.DataSelectors.Controllers
         /// Get the result of the data selector based on the request as an Excel file.
         /// </summary>
         /// <param name="dataFromUri">The request containing the information for the data selector in the query.</param>
-        [HttpPost, Route("excel"), ProducesResponseType(typeof(List<DataSelectorModel>), StatusCodes.Status200OK)]
+        [HttpPost]
+        [Route("excel")]
+        [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
         public async Task<IActionResult> ToExcelAsync([FromQuery] WiserDataSelectorRequestModel dataFromUri)
         {
             using var reader = new StreamReader(Request.Body, Encoding.UTF8);
@@ -129,20 +152,28 @@ namespace Api.Modules.DataSelectors.Controllers
         /// Get the result of the data selector based on the request as a HTML page.
         /// </summary>
         /// <param name="dataFromUri">The request containing the information for the data selector in the query.</param>
-        [HttpPost, Route("html"), ProducesResponseType(typeof(List<DataSelectorModel>), StatusCodes.Status200OK)]
+        [HttpPost]
+        [Route("html")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Produces(MediaTypeNames.Text.Html)]
         public async Task<IActionResult> ToHtmlAsync([FromQuery] WiserDataSelectorRequestModel dataFromUri)
         {
             using var reader = new StreamReader(Request.Body, Encoding.UTF8);
             var dataFromBody = await reader.ReadToEndAsync();
             var bodyModel = String.IsNullOrWhiteSpace(dataFromBody) ? new WiserDataSelectorRequestModel() : JsonConvert.DeserializeObject<WiserDataSelectorRequestModel>(dataFromBody, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
-            return (await dataSelectorsService.ToHtmlAsync(CombineDataSelectorRequestModels(bodyModel, dataFromUri), (ClaimsIdentity)User.Identity)).GetHttpResponseMessage("text/html");
+            return (await dataSelectorsService.ToHtmlAsync(CombineDataSelectorRequestModels(bodyModel, dataFromUri), (ClaimsIdentity)User.Identity)).GetHttpResponseMessage(MediaTypeNames.Text.Html);
         }
 
         /// <summary>
         /// Get the result of the data selector based on the request as a PDF file.
         /// </summary>
         /// <param name="dataFromUri">The request containing the information for the data selector in the query.</param>
-        [HttpPost, Route("pdf"), ProducesResponseType(typeof(List<DataSelectorModel>), StatusCodes.Status200OK)]
+        [HttpPost]
+        [Route("pdf")]
+        [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Produces(MediaTypeNames.Application.Pdf)]
         public async Task<IActionResult> ToPdfAsync([FromQuery] WiserDataSelectorRequestModel dataFromUri)
         {
             using var reader = new StreamReader(Request.Body, Encoding.UTF8);
@@ -157,13 +188,16 @@ namespace Api.Modules.DataSelectors.Controllers
         /// Replaces data selectors in a string to preview them in an HTML editor.
         /// </summary>
         /// <param name="html">The HTML to replace the data selectors in for previewing in HTML editor.</param>
-        [HttpPost, Route("preview-for-html-editor"), ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [HttpPost]
+        [Route("preview-for-html-editor")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [Produces(MediaTypeNames.Text.Html)]
         public async Task<IActionResult> PreviewForHtmlEditorAsync()
         {
             using var reader = new StreamReader(Request.Body, Encoding.UTF8);
             var html = await reader.ReadToEndAsync();
             var output = await gclDataSelectorsService.ReplaceAllDataSelectorsAsync(html);
-            return Content(output, "text/html");
+            return Content(output, MediaTypeNames.Text.Html);
         }
 
         /// <summary>

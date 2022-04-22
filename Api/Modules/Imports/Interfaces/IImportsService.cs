@@ -17,7 +17,7 @@ namespace Api.Modules.Imports.Interfaces
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="importRequest">The information needed for the import.</param>
-        /// <returns></returns>
+        /// <returns>A ImportResultModel containing the result of the import.</returns>
         Task<ServiceResult<ImportResultModel>> PrepareImportAsync(ClaimsIdentity identity, ImportRequestModel importRequest);
 
         /// <summary>
@@ -26,7 +26,7 @@ namespace Api.Modules.Imports.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="deleteItemsRequest">The criteria for the items to delete.</param>
         /// <returns>Returns a <see cref="DeleteItemsConfirmModel"/> containing all the item ids to delete.</returns>
-        Task<ServiceResult<DeleteItemsConfirmModel>> PrepareDeleteItems(ClaimsIdentity identity, DeleteItemsRequestModel deleteItemsRequest);
+        Task<ServiceResult<DeleteItemsConfirmModel>> PrepareDeleteItemsAsync(ClaimsIdentity identity, DeleteItemsRequestModel deleteItemsRequest);
 
         /// <summary>
         /// Delete the items corresponding with the provided item ids.
@@ -34,7 +34,7 @@ namespace Api.Modules.Imports.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="deleteItemsConfirm">The <see cref="DeleteItemsConfirmModel"/> containing the item ids to delete the items from.</param>
         /// <returns>Returns true on success.</returns>
-        Task<ServiceResult<bool>> DeleteItems(ClaimsIdentity identity, DeleteItemsConfirmModel deleteItemsConfirm);
+        Task<ServiceResult<bool>> DeleteItemsAsync(ClaimsIdentity identity, DeleteItemsConfirmModel deleteItemsConfirm);
 
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace Api.Modules.Imports.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="deleteLinksRequest">The criteria for the item links to delete.</param>
         /// <returns>Returns a collection of <see cref="DeleteLinksConfirmModel"/> containing information to delete the links.</returns>
-        Task<ServiceResult<List<DeleteLinksConfirmModel>>> PrepareDeleteLinks(ClaimsIdentity identity, DeleteLinksRequestModel deleteLinksRequest);
+        Task<ServiceResult<List<DeleteLinksConfirmModel>>> PrepareDeleteLinksAsync(ClaimsIdentity identity, DeleteLinksRequestModel deleteLinksRequest);
 
         /// <summary>
         /// Delete the links corresponding to the provided information.
@@ -51,6 +51,6 @@ namespace Api.Modules.Imports.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="deleteLinksConfirms">A collection of <see cref="DeleteLinksConfirmModel"/>s containing the information about the links to delete.</param>
         /// <returns>Returns true on success.</returns>
-        Task<ServiceResult<bool>> DeleteLinks(ClaimsIdentity identity, List<DeleteLinksConfirmModel> deleteLinksConfirms);
+        Task<ServiceResult<bool>> DeleteLinksAsync(ClaimsIdentity identity, List<DeleteLinksConfirmModel> deleteLinksConfirms);
     }
 }
