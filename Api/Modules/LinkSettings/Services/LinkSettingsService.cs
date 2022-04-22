@@ -23,6 +23,9 @@ namespace Api.Modules.LinkSettings.Services
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
 
+        /// <summary>
+        /// Creates a new instance of <see cref="LinkSettingsService"/>.
+        /// </summary>
         public LinkSettingsService(IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService)
         {
             this.clientDatabaseConnection = clientDatabaseConnection;

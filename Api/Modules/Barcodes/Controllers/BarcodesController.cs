@@ -10,7 +10,8 @@ namespace Api.Modules.Barcodes.Controllers
     /// <summary>
     /// Controller for doing things with barcodes and QR codes.
     /// </summary>
-    [Route("api/v3/[controller]"), ApiController]
+    [Route("api/v3/[controller]")]
+    [ApiController]
     public class BarcodesController : ControllerBase
     {
         /// <summary>
@@ -20,7 +21,8 @@ namespace Api.Modules.Barcodes.Controllers
         /// <param name="size">Optional: The size (in pixels) of the image. Default is 500px.</param>
         /// <param name="downloadFileName">Optional: If this should be downloaded by the browser instead of just shown, you can enter a file name here.</param>
         /// <returns>The generated QR code image.</returns>
-        [HttpGet, Route("qr")]
+        [HttpGet]
+        [Route("qr")]
         public IActionResult GetQrCode(string text, int size = 500, string downloadFileName = null)
         {
             if (size <= 0)

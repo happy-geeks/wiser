@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
@@ -24,11 +25,14 @@ using Microsoft.Extensions.Options;
 
 namespace Api.Modules.Items.Controllers
 {
-    // TODO: Add documentation.
     /// <summary>
     /// Controller for all operations that have something to do with Wiser items.
     /// </summary>
-    [Route("api/v3/[controller]"), ApiController, Authorize]
+    [Route("api/v3/[controller]")]
+    [ApiController]
+    [Authorize]
+    [Consumes(MediaTypeNames.Application.Json)]
+    [Produces(MediaTypeNames.Application.Json)]
     public class ItemsController : ControllerBase
     {
         private readonly IItemsService itemsService;
@@ -46,8 +50,16 @@ namespace Api.Modules.Items.Controllers
             this.filesService = filesService;
             this.gclSettings = gclSettings.Value;
         }
-        
-        [HttpGet, ProducesResponseType(typeof(PagedResults<FlatItemModel>), StatusCodes.Status200OK)]
+
+        /// <summary>
+        /// Gets all items from Wiser. It's possible to use filters here.
+        /// The results will be returned in multiple pages, with a max of 500 items per page.
+        /// </summary>
+        /// <param name="pagedRequest">Optional: Which page to get and how many items per page to get.</param>
+        /// <param name="filters">Optional: Add filters if you only want specific results.</param>
+        /// <returns>A PagedResults with information about the total amount of items, page number etc. The results property contains the actual results, of type FlatItemModel.</returns>
+        [HttpGet]
+        [ProducesResponseType(typeof(PagedResults<FlatItemModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetItemsAsync([FromQuery]PagedRequest pagedRequest = null, [FromQuery]WiserItemModel filters = null)
         {
             return (await itemsService.GetItemsAsync((ClaimsIdentity)User.Identity, pagedRequest, filters)).GetHttpResponseMessage();
@@ -61,67 +73,180 @@ namespace Api.Modules.Items.Controllers
         /// <param name="itemLinkId">Optional: The id of the item link from wiser_itemlink. This should be used when opening an item via a sub-entities-grid, to show link fields. Default value is 0.</param>
         /// <param name="entityType">Optional: The entity type of the item. Default value is <see langword="null"/>.</param>
         /// <returns>A <see cref="ItemHtmlAndScriptModel"/> with the HTML and javascript needed to load this item in Wiser.</returns>
-        [HttpGet, Route("{encryptedId}"), ProducesResponseType(typeof(ItemHtmlAndScriptModel), StatusCodes.Status200OK)]
+        [HttpGet]
+        [Route("{encryptedId}")]
+        [ProducesResponseType(typeof(ItemHtmlAndScriptModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetItemAsync(string encryptedId, [FromQuery]string propertyIdSuffix = null, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null)
         {
             return (await itemsService.GetItemHtmlAsync(encryptedId, (ClaimsIdentity)User.Identity, propertyIdSuffix, itemLinkId, entityType)).GetHttpResponseMessage();
         }
 
-        [HttpGet, Route("{encryptedId}/meta"), ProducesResponseType(typeof(ItemMetaDataModel), StatusCodes.Status200OK)]
+        /// <summary>
+        /// Get the meta data of an item. This is data such as the title, entity type, last change date etc.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item.</param>
+        /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <returns>The item meta data.</returns>
+        [HttpGet]
+        [Route("{encryptedId}/meta")]
+        [ProducesResponseType(typeof(ItemMetaDataModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetItemMetDataAsync(string encryptedId, [FromQuery]string entityType = null)
         {
             return (await itemsService.GetItemMetaDataAsync(encryptedId, (ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
         }
 
-        [HttpGet, Route("{itemId}/block"), ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+        /// <summary>
+        /// Get the HTML for a specific Wiser item.
+        /// In Wiser you can declare a default query and HTML template for entity types, to render a single item of that type on a website.
+        /// This method will return that rendered HTML.
+        /// </summary>
+        /// <param name="itemId">The ID of the item to render to HTML.</param>
+        /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <returns>The rendered HTML for the item.</returns>
+        [HttpGet]
+        [Route("{itemId}/block")]
+        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetHtmlBlockAsync(ulong itemId, [FromQuery]string entityType = null)
         {
-            return (await itemsService.GetHtmlForWiser2EntityAsync(itemId, (ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
+            return (await itemsService.GetHtmlForWiserEntityAsync(itemId, (ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
         }
 
-        [HttpPost, ProducesResponseType(typeof(CreateItemResultModel), StatusCodes.Status200OK)]
+        /// <summary>
+        /// Create a new item.
+        /// </summary>
+        /// <param name="item">The item to create.</param>
+        /// <param name="parentId">Optional: The encrypted ID of the parent to create this item under.</param>
+        /// <param name="linkType">Optional: The link type of the link to the parent.</param>
+        /// <returns>A CreateItemResultModel with information about the newly created item.</returns>
+        [HttpPost]
+        [ProducesResponseType(typeof(CreateItemResultModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> PostAsync(WiserItemModel item, [FromQuery]string parentId = null, [FromQuery]int linkType = 1)
         {
             return (await itemsService.CreateAsync(item, (ClaimsIdentity)User.Identity, parentId, linkType)).GetHttpResponseMessage();
         }
 
-        [HttpPut, Route("{encryptedId}"), ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+        /// <summary>
+        /// Updates an item.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item to update.</param>
+        /// <param name="item">The new data for the item.</param>
+        /// <returns>The updated item.</returns>
+        [HttpPut]
+        [Route("{encryptedId}")]
+        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> PutAsync(string encryptedId, WiserItemModel item)
         {
             return (await itemsService.UpdateAsync(encryptedId, item, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
 
-        [HttpPost, Route("{encryptedId}/duplicate/{encryptedParentId}"), ProducesResponseType(typeof(WiserItemDuplicationResultModel), StatusCodes.Status200OK)]
+        /// <summary>
+        /// Creates a duplicate copy of an existing item.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item to duplicate.</param>
+        /// <param name="encryptedParentId">The encrypted ID of the parent of the item to duplicate. The copy will be placed under the same parent.</param>
+        /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <param name="parentEntityType">Optional: The entity type of the parent of the item to duplicate. This is needed when the parent item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <returns>A WiserItemDuplicationResultModel containing the result of the duplication.</returns>
+        [HttpPost]
+        [Route("{encryptedId}/duplicate/{encryptedParentId}")]
+        [ProducesResponseType(typeof(WiserItemDuplicationResultModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> DuplicateAsync(string encryptedId, string encryptedParentId, [FromQuery]string entityType = null, [FromQuery]string parentEntityType = null)
         {
             return (await itemsService.DuplicateItemAsync(encryptedId, encryptedParentId, (ClaimsIdentity)User.Identity, entityType, parentEntityType)).GetHttpResponseMessage();
         }
 
-        [HttpPost, Route("{encryptedId}/copy-to-environment/{newEnvironments:int}"), ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+        /// <summary>
+        /// Copy an item one or more other environments, so that you can have multiple different versions of an item for different environments.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item.</param>
+        /// <param name="newEnvironments">The environment(s) to copy the item to.</param>
+        /// <returns>The copied item.</returns>
+        [HttpPost]
+        [Route("{encryptedId}/copy-to-environment/{newEnvironments:int}")]
+        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> CopyToEnvironmentAsync(string encryptedId, Environments newEnvironments)
         {
             return (await itemsService.CopyToEnvironmentAsync(encryptedId, newEnvironments, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
 
-        [HttpDelete, Route("{encryptedId}"), ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+        /// <summary>
+        /// Delete or undelete an item. Deleting an item will move it to an archive table, so it's never completely deleted by this method.
+        /// Undeleting an item moves it from the archive table back to the actual table.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item to delete.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="undelete">Optional: Whether to undelete the item instead of deleting it.</param>
+        /// <param name="entityType">Optional: The entity type of the item. This is needed if the item is saved in a different table than wiser_item.</param>
+        [HttpDelete]
+        [Route("{encryptedId}")]
+        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> DeleteAsync(string encryptedId, [FromQuery]bool undelete = false, [FromQuery]string entityType = null)
         {
             return (await itemsService.DeleteAsync(encryptedId, (ClaimsIdentity)User.Identity, undelete, entityType)).GetHttpResponseMessage();
         }
 
-        [HttpPost, Route("{encryptedId}/workflow"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        /// <summary>
+        /// Executes the workflow for an item. In wiser_entity you can set queries that need to be executed after an item has been created or updated.
+        /// This method will execute these queries, based on what is being done with the item.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item that was recently created or updated.</param>
+        /// <param name="isNewItem">Set to true if the item was just created, or false if it was updated.</param>
+        /// <param name="item">Optional: The data of the item to execute the workflow for.</param>
+        /// <returns>A boolean indicating whether or not anything was done. If there was no workflow setup, false will be returned, otherwise true.</returns>
+        [HttpPost]
+        [Route("{encryptedId}/workflow")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> WorkflowAsync(string encryptedId, WiserItemModel item, [FromQuery] bool isNewItem = false)
         {
             return (await itemsService.ExecuteWorkflowAsync(encryptedId, isNewItem, (ClaimsIdentity)User.Identity, item)).GetHttpResponseMessage();
         }
 
-        [HttpPost, Route("{encryptedId}/action-button/{propertyId:int}"), ProducesResponseType(typeof(ActionButtonResultModel), StatusCodes.Status200OK)]
+        /// <summary>
+        /// Executes a custom query and return the results.
+        /// This will call GetCustomQueryAsync and use that query.
+        /// This will replace the details from an item in the query before executing it.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item to execute the query for.</param>
+        /// <param name="propertyId">The ID of the property from wiser_entityproperty. Set to 0 if you want to use a query ID.</param>
+        /// <param name="extraParameters">Any extra parameters to use in the query.</param>
+        /// <param name="queryId">The encrypted ID of the query from wiser_query. Encrypt the value "0" if you want to use a property ID.</param>
+        /// <param name="itemLinkId">Optional: If the item is linked to something else and you need to know that in the query, enter the ID of that link from wiser_itemlink here.</param>
+        /// <returns>The results of the query.</returns>
+        [HttpPost]
+        [Route("{encryptedId}/action-button/{propertyId:int}")]
+        [ProducesResponseType(typeof(ActionButtonResultModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> ActionButton(string encryptedId, int propertyId, [FromBody] Dictionary<string, object> extraParameters, [FromQuery] string queryId = null, [FromQuery] ulong itemLinkId = 0)
         {
             return (await itemsService.ExecuteCustomQueryAsync(encryptedId, propertyId, extraParameters, queryId, (ClaimsIdentity)User.Identity, itemLinkId)).GetHttpResponseMessage();
         }
 
-        [HttpPost, Route("{encryptedId}/upload")]
+        /// <summary>
+        /// Upload one or more files for an item.
+        /// The files should be included in the request as multi part form data.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item the file should be linked to.</param>
+        /// <param name="propertyName">The name of the property that contains the file upload.</param>
+        /// <param name="title">The title/description of the file.</param>
+        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
+        /// <param name="useTinyPng">Optional: Whether to use tiny PNG to compress image files, one or more image files are being uploaded.</param>
+        /// <returns>A list of <see cref="FileModel"/> with file data.</returns>
+        [HttpPost]
+        [Route("{encryptedId}/upload")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Upload(string encryptedId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false)
         {
             var form = await Request.ReadFormAsync();
@@ -130,14 +255,40 @@ namespace Api.Modules.Items.Controllers
             return result.GetHttpResponseMessage();
         }
 
-        [HttpPost, Route("{encryptedId}/files/url")]
+        /// <summary>
+        /// Adds an URL to an external file.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item the file is linked to.</param>
+        /// <param name="propertyName">The name of the property that contains the file upload.</param>
+        /// <param name="file">The file data.</param>
+        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
+        /// <returns>The <see cref="FileModel">FileModel</see> of the new file.</returns>
+        [HttpPost]
+        [Route("{encryptedId}/files/url")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> AddFileUrl(string encryptedId, [FromBody]FileModel file, [FromQuery]string propertyName, [FromQuery]ulong itemLinkId = 0)
         {
             var result = await filesService.AddFileUrl(encryptedId, propertyName, file, (ClaimsIdentity)User.Identity, itemLinkId);
             return result.GetHttpResponseMessage();
         }
-        
-        [HttpGet, Route("{itemId}/files/{fileId:int}/{filename}"), AllowAnonymous]
+
+        /// <summary>
+        /// Gets a file of an item.
+        /// </summary>
+        /// <param name="itemId">The encrypted ID of the item to get the file of.</param>
+        /// <param name="fileId">The ID of the file to get.</param>
+        /// <param name="fileName">The full file name to return (including extension).</param>
+        /// <param name="customerInformation">Information about the authenticated user, such as the encrypted user ID.</param>
+        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
+        /// <returns>The file contents.</returns>
+        [HttpGet]
+        [Route("{itemId}/files/{fileId:int}/{filename}")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status302Found)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [Produces(MediaTypeNames.Application.Octet)]
         public async Task<IActionResult> GetFileAsync(string itemId, int fileId, string fileName, [FromQuery] CustomerInformationModel customerInformation, [FromQuery]ulong itemLinkId = 0)
         {
             // Create a ClaimsIdentity based on query parameters instead the Identity from the bearer token due to being called from an image source where no headers can be set.
@@ -166,92 +317,234 @@ namespace Api.Modules.Items.Controllers
 
             return File(imageResult.ModelObject.Data, imageResult.ModelObject.ContentType);
         }
-        
-        [HttpDelete, Route("{encryptedItemId}/files/{fileId:int}")]
+
+        /// <summary>
+        /// Deletes a file.
+        /// </summary>
+        /// <param name="encryptedItemId">The encrypted ID of the item the file is linked to.</param>
+        /// <param name="fileId">The ID of the file.</param>
+        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
+        [HttpDelete]
+        [Route("{encryptedItemId}/files/{fileId:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> DeleteFileAsync(string encryptedItemId, int fileId, [FromQuery]ulong itemLinkId = 0)
         {
             return (await filesService.DeleteFileAsync(encryptedItemId, fileId, (ClaimsIdentity)User.Identity, itemLinkId)).GetHttpResponseMessage();
         }
-        
-        [HttpPut, Route("{encryptedItemId}/files/{fileId:int}/rename/{newName}")]
+
+        /// <summary>
+        /// Change the name of a file.
+        /// </summary>
+        /// <param name="encryptedItemId">The encrypted ID of the item the file is linked to.</param>
+        /// <param name="fileId">The ID of the file.</param>
+        /// <param name="newName">The new name of the file.</param>
+        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
+        [HttpPut]
+        [Route("{encryptedItemId}/files/{fileId:int}/rename/{newName}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> RenameFileAsync(string encryptedItemId, int fileId, string newName, [FromQuery]ulong itemLinkId = 0)
         {
             return (await filesService.RenameFileAsync(encryptedItemId, fileId, newName, (ClaimsIdentity)User.Identity, itemLinkId)).GetHttpResponseMessage();
         }
-        
-        [HttpPut, Route("{encryptedItemId}/files/{fileId:int}/title/{newTitle}")]
+
+        /// <summary>
+        /// Change the title/description of a file.
+        /// </summary>
+        /// <param name="encryptedItemId">The encrypted ID of the item the file is linked to.</param>
+        /// <param name="fileId">The ID of the file.</param>
+        /// <param name="newTitle">The new title/description of the file.</param>
+        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
+        [HttpPut]
+        [Route("{encryptedItemId}/files/{fileId:int}/title/{newTitle}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdateFileTitleAsync(string encryptedItemId, int fileId, string newTitle, [FromQuery]ulong itemLinkId = 0)
         {
             return (await filesService.UpdateFileTitleAsync(encryptedItemId, fileId, newTitle, (ClaimsIdentity)User.Identity, itemLinkId)).GetHttpResponseMessage();
         }
 
-        [HttpPost, Route("{encryptedId}/entity-grids/{entityType}"), ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
+        /// <summary>
+        /// Get the data for a sub-entities-grid.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
+        /// <param name="entityType">The entity type of the currently opened item that contains the sub-entities-grid.</param>
+        /// <param name="linkTypeNumber">The link type number to use for getting linked items.</param>
+        /// <param name="moduleId">The module ID of the items to get.</param>
+        /// <param name="mode">The mode that the sub-entities-grid is in.</param>
+        /// <param name="options">The options for the grid.</param>
+        /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
+        /// <param name="queryId">Optional: The encrypted ID of the query to execute for getting the data.</param>
+        /// <param name="countQueryId">Optional: The encrypted ID of the query to execute for counting the total amount of items.</param>
+        /// <param name="fieldGroupName">Optional: The field group name, when getting all fields of a group.</param>
+        /// <param name="currentItemIsSourceId">Optional: Whether the opened item (that contains the sub-entities-grid) is the source instead of the destination.</param>
+        /// <returns>The data of the grid, as a <see cref="GridSettingsAndDataModel"/>.</returns>
+        [HttpPost]
+        [Route("{encryptedId}/entity-grids/{entityType}")]
+        [ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> EntityGridAsync(string encryptedId, string entityType, GridReadOptionsModel options, [FromQuery]int linkTypeNumber = 0, [FromQuery]int moduleId = 0, [FromQuery]EntityGridModes mode = EntityGridModes.Normal, [FromQuery]int propertyId = 0, [FromQuery]string queryId = null, [FromQuery]string countQueryId = null, [FromQuery]string fieldGroupName = null, [FromQuery]bool currentItemIsSourceId = false)
         {
             return (await gridsService.GetEntityGridDataAsync(encryptedId, entityType, linkTypeNumber, moduleId, mode, options, propertyId, queryId, countQueryId, fieldGroupName, currentItemIsSourceId, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
-        
-        [HttpGet, Route("{encryptedId}/grids/{propertyId:int}"), ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
+
+        /// <summary>
+        /// Get the data for a grid.
+        /// </summary>
+        /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
+        /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
+        /// <param name="queryId">Optional: The encrypted ID of the query to execute for getting the data.</param>
+        /// <param name="countQueryId">Optional: The encrypted ID of the query to execute for counting the total amount of items.</param>
+        /// <returns>The data of the grid, as a <see cref="GridSettingsAndDataModel"/>.</returns>
+        [HttpGet]
+        [Route("{encryptedId}/grids/{propertyId:int}")]
+        [ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetGridDataAsync(string encryptedId, int propertyId, [FromQuery]string queryId = null, [FromQuery]string countQueryId = null)
         {
             return (await gridsService.GetDataAsync(propertyId, encryptedId, new GridReadOptionsModel(), queryId, countQueryId, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
-        
-        [HttpPost, Route("{encryptedId}/grids-with-filters/{propertyId:int}"), ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
+
+        /// <summary>
+        /// Get the data for a grid with filters.
+        /// </summary>
+        /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
+        /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
+        /// <param name="options">The options for the grid.</param>
+        /// <param name="queryId">Optional: The encrypted ID of the query to execute for getting the data.</param>
+        /// <param name="countQueryId">Optional: The encrypted ID of the query to execute for counting the total amount of items.</param>
+        /// <returns>The data of the grid, as a <see cref="GridSettingsAndDataModel"/>.</returns>
+        [HttpPost]
+        [Route("{encryptedId}/grids-with-filters/{propertyId:int}")]
+        [ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetGridDataWithFiltersAsync(string encryptedId, int propertyId, GridReadOptionsModel options, [FromQuery]string queryId = null, [FromQuery]string countQueryId = null)
         {
             return (await gridsService.GetDataAsync(propertyId, encryptedId, options, queryId, countQueryId, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
-        
-        [HttpPost, Route("{encryptedId}/grids/{propertyId:int}"), ProducesResponseType(typeof(List<Dictionary<string, object>>), StatusCodes.Status200OK)]
+
+        /// <summary>
+        /// Insert a new row in a grid.
+        /// </summary>
+        /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
+        /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
+        /// <param name="data">The data for the new row.</param>
+        /// <returns>The newly added data.</returns>
+        [HttpPost]
+        [Route("{encryptedId}/grids/{propertyId:int}")]
+        [ProducesResponseType(typeof(List<Dictionary<string, object>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> InsertGridDataAsync(string encryptedId, int propertyId, Dictionary<string, object> data)
         {
             return (await gridsService.InsertDataAsync(propertyId, encryptedId, data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
-        
-        [HttpPut, Route("{encryptedId}/grids/{propertyId:int}"), ProducesResponseType(typeof(List<Dictionary<string, object>>), StatusCodes.Status200OK)]
+
+        /// <summary>
+        /// Update a row in a grid.
+        /// </summary>
+        /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
+        /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
+        /// <param name="data">The new data for the row.</param>
+        [HttpPut]
+        [Route("{encryptedId}/grids/{propertyId:int}")]
+        [ProducesResponseType(typeof(List<Dictionary<string, object>>), StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdateGridDataAsync(string encryptedId, int propertyId, Dictionary<string, object> data)
         {
             return (await gridsService.UpdateDataAsync(propertyId, encryptedId, data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
-        
-        [HttpDelete, Route("{encryptedId}/grids/{propertyId:int}"), ProducesResponseType(typeof(List<Dictionary<string, object>>), StatusCodes.Status200OK)]
+
+        /// <summary>
+        /// Delete a row in a grid.
+        /// </summary>
+        /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
+        /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
+        /// <param name="data">The new data for the row.</param>
+        [HttpDelete]
+        [Route("{encryptedId}/grids/{propertyId:int}")]
+        [ProducesResponseType(typeof(List<Dictionary<string, object>>), StatusCodes.Status204NoContent)]
         public async Task<IActionResult> DeleteGridDataAsync(string encryptedId, int propertyId, Dictionary<string, object> data)
         {
             return (await gridsService.DeleteDataAsync(propertyId, encryptedId, data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
-        
-        [HttpGet, Route("{itemId:long}/entity-types"), ProducesResponseType(typeof(List<EntityTypeModel>), StatusCodes.Status200OK)]
+
+        /// <summary>
+        /// Gets all entity types from an item ID.
+        /// Wiser can have multiple wiser_item tables, with a prefix for certain entity types. This means an ID can exists multiple times.
+        /// This method will get the different entity types with the given ID.
+        /// </summary>
+        /// <param name="itemId">The ID of the item to render to HTML.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <returns>A list of all entity types that contain an item with this ID.</returns>
+        [HttpGet]
+        [Route("{itemId:long}/entity-types")]
+        [ProducesResponseType(typeof(List<EntityTypeModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPossibleEntityTypesAsync(ulong itemId)
         {
             return (await itemsService.GetPossibleEntityTypesAsync(itemId, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
 
-        [HttpGet, Route("tree-view"), ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
+        /// <summary>
+        /// Get all items for a tree view for a specific parent.
+        /// </summary>
+        /// <param name="moduleId">The ID of the module.</param>
+        /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <param name="encryptedItemId">Optional: The encrypted ID of the parent to fix the ordering for. If no value has been given, the root will be used as parent.</param>
+        /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
+        /// <param name="checkId">Optional: This is meant for item-linker fields. This is the encrypted ID for the item that should currently be checked.</param>
+        /// <returns>A list of <see cref="TreeViewItemModel"/>.</returns>
+        [HttpGet]
+        [Route("tree-view")]
+        [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] string encryptedItemId = null, [FromQuery] string entityType = null, [FromQuery] string orderBy = null, [FromQuery] string checkId = null)
         {
             return (await itemsService.GetItemsForTreeViewAsync(moduleId, (ClaimsIdentity)User.Identity, entityType, encryptedItemId, orderBy, checkId)).GetHttpResponseMessage();
         }
 
-        [HttpPut, Route("{encryptedSourceId}/move/{encryptedDestinationId}"), ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
+        /// <summary>
+        /// Move an item to a different position in the tree view.
+        /// </summary>
+        /// <param name="encryptedSourceId">The encrypted ID of the item that is being moved.</param>
+        /// <param name="encryptedDestinationId">The encrypted ID of the item that it's being moved towards.</param>
+        /// <param name="data">The data needed to know where the item should be moved to.</param>
+        [HttpPut]
+        [Route("{encryptedSourceId}/move/{encryptedDestinationId}")]
+        [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> MoveItemAsync(string encryptedSourceId, string encryptedDestinationId, [FromBody]MoveItemRequestModel data)
         {
             return (await itemsService.MoveItemAsync((ClaimsIdentity)User.Identity, encryptedSourceId, encryptedDestinationId, data.Position, data.EncryptedSourceParentId, data.EncryptedDestinationParentId, data.SourceEntityType, data.DestinationEntityType, data.ModuleId)).GetHttpResponseMessage();
         }
 
-        [HttpPost, Route("add-links")]
+        /// <summary>
+        /// Link one or more items to one or more other items.
+        /// </summary>
+        /// <param name="data">The data needed to add new links.</param>
+        [HttpPost]
+        [Route("add-links")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> AddMultipleLinksAsync([FromBody]AddOrRemoveLinksRequestModel data)
         {
             return (await itemsService.AddMultipleLinksAsync((ClaimsIdentity)User.Identity, data.EncryptedSourceIds, data.EncryptedDestinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
         }
 
-        [HttpDelete, Route("remove-links")]
+        /// <summary>
+        /// Removed one or more links between items.
+        /// </summary>
+        /// <param name="data">The data for the links to remove.</param>
+        [HttpDelete]
+        [Route("remove-links")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> RemoveMultipleLinksAsync([FromBody]AddOrRemoveLinksRequestModel data)
         {
             return (await itemsService.RemoveMultipleLinksAsync((ClaimsIdentity)User.Identity, data.EncryptedSourceIds, data.EncryptedDestinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
         }
-        
-        [HttpGet, Route("{id:long}/encrypt"), ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+
+        /// <summary>
+        /// Encrypt an ID of an item.
+        /// </summary>
+        /// <param name="id">The ID to encrypt.</param>
+        /// <returns>The encrypted ID.</returns>
+        [HttpGet]
+        [Route("{id:long}/encrypt")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetEncryptedIdAsync(ulong id)
         {
             return (await itemsService.GetEncryptedIdAsync(id, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();

@@ -62,9 +62,9 @@ namespace Api.Modules.Templates.Services
         }
         
         /// <inheritdoc />
-        public ServiceResult<List<ComponentModeModel>> GetComponentModes(string componentType)
+        public ServiceResult<List<ComponentModeModel>> GetComponentModes(string name)
         {
-            if (String.IsNullOrWhiteSpace(componentType))
+            if (String.IsNullOrWhiteSpace(name))
             {
                 return new ServiceResult<List<ComponentModeModel>>
                 {
@@ -73,13 +73,13 @@ namespace Api.Modules.Templates.Services
                 };
             }
             
-            var type = ReflectionHelper.GetComponentTypeByName(componentType);
+            var type = ReflectionHelper.GetComponentTypeByName(name);
             if (type == null)
             {
                 return new ServiceResult<List<ComponentModeModel>>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Component with type '{componentType}' not found."
+                    ErrorMessage = $"Component with type '{name}' not found."
                 };
             }
 
@@ -237,8 +237,11 @@ namespace Api.Modules.Templates.Services
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(contentId, currentPublished, newPublished);
-
-            return new ServiceResult<int>(await dataService.UpdatePublishedEnvironmentAsync(contentId, newPublished, publishLog, IdentityHelpers.GetUserName(identity, true)));
+            await dataService.UpdatePublishedEnvironmentAsync(contentId, newPublished, publishLog, IdentityHelpers.GetUserName(identity, true));
+            return new ServiceResult<int>
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
     }
 }

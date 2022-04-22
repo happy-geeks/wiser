@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
@@ -34,7 +35,7 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<HistoryVersionModel>>> GetChangesInComponent(int contentId)
+        public async Task<ServiceResult<List<HistoryVersionModel>>> GetChangesInComponentAsync(int contentId)
         {
             var historyList = await GetHistoryOfComponent(contentId);
             historyList = historyList.OrderByDescending(version => version.Version).ToList();
@@ -70,8 +71,11 @@ namespace Api.Modules.Templates.Services
             }
             
             var componentAndMode = await dataService.GetComponentAndModeFromContentIdAsync(contentId);
-            var result = await dataService.SaveSettingsStringAsync(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value, IdentityHelpers.GetUserName(identity));
-            return new ServiceResult<int>(result);
+            await dataService.SaveSettingsStringAsync(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value, IdentityHelpers.GetUserName(identity));
+            return new ServiceResult<int>
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
 
         /// <inheritdoc />
