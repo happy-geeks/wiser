@@ -14,7 +14,9 @@ using Api.Modules.Customers.Interfaces;
 using Api.Modules.Files.Interfaces;
 using Api.Modules.Files.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
+using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Core.Services;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
@@ -25,17 +27,23 @@ using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Files.Services
 {
+    /// <inheritdoc cref="IFilesService" />
     public class FilesService : IFilesService, IScopedService
     {
         private readonly IWiserCustomersService wiserCustomersService;
         private readonly ILogger<FilesService> logger;
         private readonly IDatabaseConnection databaseConnection;
+        private readonly IWiserItemsService wiserItemsService;
 
-        public FilesService(IWiserCustomersService wiserCustomersService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection)
+        /// <summary>
+        /// Creates a new instance of <see cref="FilesService"/>.
+        /// </summary>
+        public FilesService(IWiserCustomersService wiserCustomersService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.logger = logger;
             this.databaseConnection = databaseConnection;
+            this.wiserItemsService = wiserItemsService;
         }
 
         /// <inheritdoc />
@@ -46,7 +54,7 @@ namespace Api.Modules.Files.Services
                 throw new ArgumentNullException(nameof(encryptedId));
             }
             
-            var isTest = IdentityHelpers.IsTestEnvironment(identity);
+            var userId = IdentityHelpers.GetWiserUserId(identity);
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
             if (itemId <= 0)
             {
@@ -66,6 +74,17 @@ namespace Api.Modules.Files.Services
             try
             {
                 await databaseConnection.EnsureOpenConnectionForReadingAsync();
+                var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId);
+                if (!success)
+                {
+                    return new ServiceResult<List<FileModel>>
+                    {
+                        ErrorMessage = errorMessage,
+                        ReasonPhrase = errorMessage,
+                        StatusCode = HttpStatusCode.Forbidden
+                    };
+                }
+                
                 databaseConnection.ClearParameters();
 
                 var (ftpDirectory, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
@@ -95,7 +114,7 @@ namespace Api.Modules.Files.Services
                         throw new NotImplementedException("Tiny PNG not supported yet.");
                     }
 
-                    var fileResult = await SaveFileInDatabaseAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId);
+                    var fileResult = await SaveFileAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId);
                     if (fileResult.StatusCode != HttpStatusCode.OK)
                     {
                         return new ServiceResult<List<FileModel>>
@@ -128,7 +147,7 @@ namespace Api.Modules.Files.Services
         }
         
         /// <inheritdoc />
-        public async Task<ServiceResult<FileModel>> SaveFileInDatabaseAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0)
+        public async Task<ServiceResult<FileModel>> SaveFileAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0)
         {
             var fileExtension = Path.GetExtension(fileName);
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -343,7 +362,7 @@ namespace Api.Modules.Files.Services
             {
                 throw new ArgumentNullException(nameof(encryptedItemId));
             }
-            
+
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedItemId, identity);
             if (itemId <= 0 && itemLinkId <= 0)
             {
@@ -356,6 +375,19 @@ namespace Api.Modules.Files.Services
             }
             
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
+            
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId);
+            if (!success)
+            {
+                return new ServiceResult<bool>
+                {
+                    ErrorMessage = errorMessage,
+                    ReasonPhrase = errorMessage,
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+            
             databaseConnection.ClearParameters();
             databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
             databaseConnection.AddParameter("fileId", fileId);
@@ -437,6 +469,19 @@ namespace Api.Modules.Files.Services
             var query = $"UPDATE {WiserTableNames.WiserItemFile} SET file_name = ?newName WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
             
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
+            
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId);
+            if (!success)
+            {
+                return new ServiceResult<bool>
+                {
+                    ErrorMessage = errorMessage,
+                    ReasonPhrase = errorMessage,
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+            
             databaseConnection.ClearParameters();
             databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
             databaseConnection.AddParameter("fileId", fileId);
@@ -468,6 +513,19 @@ namespace Api.Modules.Files.Services
             var query = $"UPDATE {WiserTableNames.WiserItemFile} SET title = ?newTitle WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
             
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
+            
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId);
+            if (!success)
+            {
+                return new ServiceResult<bool>
+                {
+                    ErrorMessage = errorMessage,
+                    ReasonPhrase = errorMessage,
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+            
             databaseConnection.ClearParameters();
             databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
             databaseConnection.AddParameter("fileId", fileId);
@@ -502,6 +560,19 @@ namespace Api.Modules.Files.Services
             }
         
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
+            
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId);
+            if (!success)
+            {
+                return new ServiceResult<FileModel>
+                {
+                    ErrorMessage = errorMessage,
+                    ReasonPhrase = errorMessage,
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+            
             databaseConnection.ClearParameters();
 
             if (itemLinkId > 0)

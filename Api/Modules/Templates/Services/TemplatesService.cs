@@ -44,7 +44,6 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Newtonsoft.Json.Linq;
 using NUglify;
-using NUglify.Html;
 using NUglify.JavaScript;
 using ITemplatesService = Api.Modules.Templates.Interfaces.ITemplatesService;
 
@@ -2618,7 +2617,7 @@ LIMIT 1";
             var dynamicContentHistory = new Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>>();
             foreach (var dc in dynamicContentOverview.ModelObject)
             {
-                dynamicContentHistory.Add(dc, (await historyService.GetChangesInComponent(dc.Id)).ModelObject);
+                dynamicContentHistory.Add(dc, (await historyService.GetChangesInComponentAsync(dc.Id)).ModelObject);
             }
 
             var overview = new TemplateHistoryOverviewModel

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Net;
+using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Modules.Templates.Interfaces;
@@ -15,7 +16,11 @@ namespace Api.Modules.Templates.Controllers
     /// <summary>
     /// Controller for getting or doing things with templates from the templates module in Wiser.
     /// </summary>
-    [Route("api/v3/dynamic-content"), ApiController, Authorize]
+    [Route("api/v3/dynamic-content")]
+    [ApiController]
+    [Authorize]
+    [Consumes(MediaTypeNames.Application.Json)]
+    [Produces(MediaTypeNames.Application.Json)]
     public class DynamicContentController : Controller
     {
         private readonly IDynamicContentService dynamicContentService;
@@ -31,18 +36,31 @@ namespace Api.Modules.Templates.Controllers
             this.historyService = historyService;
             this.templatesService = templatesService;
         }
-        
-        [HttpGet, Route("{id:int}")]
+
+        /// <summary>
+        /// Gets the meta data (name, component mode etc) for a component.
+        /// </summary>
+        /// <param name="id">The ID of the dynamic component.</param>
+        /// <param name="includeSettings">Optional: Whether or not to include the settings that are saved with the component. Default value is <see langword="true" />.</param>
+        [HttpGet]
+        [Route("{id:int}")]
         [ProducesResponseType(typeof(DynamicContentOverviewModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Get(int id, bool includeSettings = true)
+        public async Task<IActionResult> GetAsync(int id, bool includeSettings = true)
         {
             return (await dynamicContentService.GetMetaDataAsync(id, includeSettings)).GetHttpResponseMessage();
         }
-        
-        [HttpGet, Route("{name}/component-modes")]
+
+        /// <summary>
+        /// Retrieve all component modes of a dynamic component.
+        /// </summary>
+        /// <param name="name">The name of the dynamic component.</param>
+        /// <returns>A list containing the id and name for each component mode.</returns>
+        [HttpGet]
+        [Route("{name}/component-modes")]
         [ProducesResponseType(typeof(List<ComponentModeModel>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult GetComponentModes(string name)
         {
             return dynamicContentService.GetComponentModes(name).GetHttpResponseMessage();
@@ -53,25 +71,27 @@ namespace Api.Modules.Templates.Controllers
         /// </summary>
         /// <param name="contentId">The component of the history.</param>
         /// <returns>History PartialView containing the retrieved history of the component</returns>
-        [HttpGet, Route("{contentId:int}/history")]
-        [ProducesResponseType(typeof(List<ComponentModeModel>), StatusCodes.Status200OK)]
+        [HttpGet]
+        [Route("{contentId:int}/history")]
+        [ProducesResponseType(typeof(List<HistoryVersionModel>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetHistoryOfComponent(int contentId)
+        public async Task<IActionResult> GetHistoryOfComponentAsync(int contentId)
         {
-            return (await historyService.GetChangesInComponent(contentId)).GetHttpResponseMessage();
+            return (await historyService.GetChangesInComponentAsync(contentId)).GetHttpResponseMessage();
         }
 
         /// <summary>
         ///  POST endpoint for saving the settings of a component.
         /// </summary>
-        /// <param name="contentId">The id of the content to save</param>
+        /// <param name="id">The id of the content to save</param>
         /// <param name="data">The data to save</param>
         /// <returns>The ID of the saved component.</returns>
-        [HttpPost, Route("{contentId:int}")]
+        [HttpPost]
+        [Route("{id:int}")]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
-        public async Task<IActionResult> SaveSettings(int contentId, DynamicContentOverviewModel data)
+        public async Task<IActionResult> SaveSettingsAsync(int id, DynamicContentOverviewModel data)
         {
-            return (await dynamicContentService.SaveNewSettingsAsync((ClaimsIdentity)User.Identity, contentId, data.Component, data.ComponentModeId.Value, data.Title, data.Data)).GetHttpResponseMessage();
+            return (await dynamicContentService.SaveNewSettingsAsync((ClaimsIdentity)User.Identity, id, data.Component, data.ComponentModeId ?? 0, data.Title, data.Data)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -79,10 +99,11 @@ namespace Api.Modules.Templates.Controllers
         /// </summary>
         /// <param name="contentId">The ID of the component.</param>
         /// <param name="changes">A json string of changes that can be converted to a List of RevertHistoryModels</param>
-        /// <returns>An int representing the affected rows as confirmation</returns>
-        [HttpPost, Route("{contentId:int}/undo-changes")]
-        [ProducesResponseType(typeof(List<ComponentModeModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> UndoChanges(int contentId, List<RevertHistoryModel> changes)
+        /// <returns>The ID of the component that was reverted.</returns>
+        [HttpPost]
+        [Route("{contentId:int}/undo-changes")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> RevertChangesAsync(int contentId, List<RevertHistoryModel> changes)
         {
             return (await historyService.RevertChangesAsync((ClaimsIdentity)User.Identity, contentId, changes)).GetHttpResponseMessage();
         }
@@ -92,7 +113,8 @@ namespace Api.Modules.Templates.Controllers
         /// </summary>
         /// <param name="contentId">The ID of the dynamic content.</param>
         /// <param name="templateId">The ID of the template.</param>
-        [HttpPut, Route("{contentId:int}/link/{templateId:int}")]
+        [HttpPut]
+        [Route("{contentId:int}/link/{templateId:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> AddLinkToTemplateAsync(int contentId, int templateId)
         {
@@ -105,10 +127,13 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="componentId">The ID of the component.</param>
         /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
         /// <returns>The HTML of the component as it would look on the website.</returns>
-        [HttpPost, Route("{componentId:int}/html-preview"), ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [HttpPost]
+        [Route("{componentId:int}/html-preview")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [Produces(MediaTypeNames.Text.Html)]
         public async Task<IActionResult> GenerateHtmlForComponentAsync(int componentId, GenerateTemplatePreviewRequestModel requestModel)
         {
-            return (await templatesService.GeneratePreviewAsync((ClaimsIdentity)User.Identity, componentId, requestModel)).GetHttpResponseMessage();
+            return (await templatesService.GeneratePreviewAsync((ClaimsIdentity)User.Identity, componentId, requestModel)).GetHttpResponseMessage(MediaTypeNames.Text.Html);
         }
 
         /// <summary>
@@ -117,8 +142,9 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="contentId">The id of the dynamic component to publish.</param>
         /// <param name="version">The version of the dynamic component to publish.</param>
         /// <param name="environment">The environment to push the dynamic component version to. This will be converted to a PublishedEnvironmentEnum.</param>
-        /// <returns>The number of affected rows.</returns>
-        [HttpPost, Route("{contentId:int}/publish/{environment}/{version:int}"), ProducesResponseType(typeof(LinkedTemplatesModel), StatusCodes.Status200OK)]
+        [HttpPost]
+        [Route("{contentId:int}/publish/{environment}/{version:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> PublishToEnvironmentAsync(int contentId, string environment, int version)
         {
             var currentPublished = await dynamicContentService.GetEnvironmentsAsync(contentId);

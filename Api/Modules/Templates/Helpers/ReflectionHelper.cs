@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
-using Api.Modules.Templates.Exceptions;
 using GeeksCoreLibrary.Core.Cms;
 
 namespace Api.Modules.Templates.Helpers

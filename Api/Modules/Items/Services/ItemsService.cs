@@ -329,6 +329,16 @@ namespace Api.Modules.Items.Services
                         StatusCode = HttpStatusCode.NotFound
                     };
                 }
+                
+                var userId = IdentityHelpers.GetWiserUserId(identity);
+                var (success, _, userItemPermissions) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(item.Id, EntityActions.Update, userId, onlyCheckAccessRights: true, entityType: item.EntityType);
+                if (!success)
+                {
+                    return new ServiceResult<WiserItemModel>
+                    {
+                        StatusCode = HttpStatusCode.Forbidden
+                    };
+                }
 
                 clientDatabaseConnection.AddParameter("entityType", item.EntityType);
                 var dataTable = await clientDatabaseConnection.GetAsync($"SELECT enable_multiple_environments FROM {WiserTableNames.WiserEntity} WHERE name = ?entityType");
@@ -346,7 +356,6 @@ namespace Api.Modules.Items.Services
                 var username = IdentityHelpers.GetUserName(identity);
                 var customer = await wiserCustomersService.GetSingleAsync(identity);
                 var encryptionKey = customer.ModelObject.EncryptionKey;
-                var userId = IdentityHelpers.GetWiserUserId(identity);
 
                 var query = $@"SELECT other.id, current.original_item_id, other.published_environment
                             FROM {tablePrefix}{WiserTableNames.WiserItem} AS current
@@ -589,7 +598,12 @@ namespace Api.Modules.Items.Services
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
             if (itemId <= 0)
             {
-                throw new ArgumentException("Id must be greater than zero.");
+                return new ServiceResult<WiserItemModel>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Id must be greater than zero.",
+                    ReasonPhrase = "Id must be greater than zero."
+                };
             }
 
             var customer = await wiserCustomersService.GetSingleAsync(identity);
@@ -643,7 +657,10 @@ namespace Api.Modules.Items.Services
                 };
             }
 
-            return new ServiceResult<bool>(true);
+            return new ServiceResult<bool>
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
 
         /// <inheritdoc />
@@ -1601,7 +1618,7 @@ namespace Api.Modules.Items.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<string>> GetHtmlForWiser2EntityAsync(ulong itemId, ClaimsIdentity identity, string entityType = null)
+        public async Task<ServiceResult<string>> GetHtmlForWiserEntityAsync(ulong itemId, ClaimsIdentity identity, string entityType = null)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var (template, dataRow) = await wiserItemsService.GetTemplateAndDataForItemAsync(itemId, entityType);
@@ -1653,7 +1670,7 @@ namespace Api.Modules.Items.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> FixTreeViewOrderingAsync(int moduleId, ClaimsIdentity identity, string entityType = null, string encryptedParentId = null, string orderBy = null, string encryptedCheckId = null)
+        public async Task<ServiceResult<bool>> FixTreeViewOrderingAsync(int moduleId, ClaimsIdentity identity, string encryptedParentId = null)
         {
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             var parentId = String.IsNullOrWhiteSpace(encryptedParentId) ? 0 : wiserCustomersService.DecryptValue<ulong>(encryptedParentId, customer);
@@ -1743,7 +1760,7 @@ namespace Api.Modules.Items.Services
                 };
             }
 
-            await FixTreeViewOrderingAsync(moduleId, identity, entityType, encryptedParentId, orderBy, encryptedCheckId);
+            await FixTreeViewOrderingAsync(moduleId, identity, encryptedParentId);
 
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             var parentId = String.IsNullOrWhiteSpace(encryptedParentId) ? 0 : wiserCustomersService.DecryptValue<ulong>(encryptedParentId, customer);
@@ -2205,7 +2222,10 @@ namespace Api.Modules.Items.Services
                 await clientDatabaseConnection.ExecuteAsync(query);
 
                 await clientDatabaseConnection.CommitTransactionAsync();
-                return new ServiceResult<bool>(true);
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.NoContent
+                };
             }
             catch
             {

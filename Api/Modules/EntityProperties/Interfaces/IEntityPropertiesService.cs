@@ -38,7 +38,7 @@ namespace Api.Modules.EntityProperties.Interfaces
         Task<ServiceResult<List<EntityPropertyModel>>> GetPropertiesOfEntityAsync(ClaimsIdentity identity, string entityName, bool onlyEntityTypesWithDisplayName = true, bool onlyEntityTypesWithPropertyName = true, bool addIdProperty = false);
 
         /// <summary>
-        /// Creates new entity property.
+        /// Creates a new entity property.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="entityProperty">The entity property to create.</param>
@@ -46,7 +46,7 @@ namespace Api.Modules.EntityProperties.Interfaces
         Task<ServiceResult<EntityPropertyModel>> CreateAsync(ClaimsIdentity identity, EntityPropertyModel entityProperty);
 
         /// <summary>
-        /// Updates existing entity property.
+        /// Updates an existing entity property.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="id">The ID of the entity property to update.</param>
@@ -54,7 +54,7 @@ namespace Api.Modules.EntityProperties.Interfaces
         Task<ServiceResult<bool>> UpdateAsync(ClaimsIdentity identity, int id, EntityPropertyModel entityProperty);
 
         /// <summary>
-        /// Deletes entity property.
+        /// Deletes ab entity property.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="id">The ID of the entity property to delete.</param>

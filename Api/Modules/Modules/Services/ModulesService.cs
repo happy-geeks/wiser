@@ -25,7 +25,6 @@ using GeeksCoreLibrary.Modules.Objects.Interfaces;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Serilog.Core;
 
 namespace Api.Modules.Modules.Services
 {
@@ -52,7 +51,11 @@ namespace Api.Modules.Modules.Services
         /// <summary>
         /// Creates a new instance of <see cref="ModulesService"/>.
         /// </summary>
-        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IJsonService jsonService, IExcelService excelService, IObjectsService objectsService, IUsersService usersService, IStringReplacementsService stringReplacementsService, ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService)
+        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService,
+            IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService,
+            IJsonService jsonService, IExcelService excelService, IObjectsService objectsService,
+            IUsersService usersService, IStringReplacementsService stringReplacementsService,
+            ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.gridsService = gridsService;
@@ -68,7 +71,8 @@ namespace Api.Modules.Modules.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>> GetAsync(ClaimsIdentity identity)
+        public async Task<ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>> GetAsync(
+            ClaimsIdentity identity)
         {
             var modulesForAdmins = new List<int>
             {
@@ -89,7 +93,8 @@ namespace Api.Modules.Modules.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
             // Make sure that Wiser tables are up-to-date.
-            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserItem, WiserTableNames.WiserEntityProperty, WiserTableNames.WiserModule });
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
+                {WiserTableNames.WiserItem, WiserTableNames.WiserEntityProperty, WiserTableNames.WiserModule});
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
@@ -139,13 +144,18 @@ namespace Api.Modules.Modules.Services
                 return new ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>(results);
             }
 
-            var onlyOneInstanceAllowedGlobal = String.Equals(await objectsService.FindSystemObjectByDomainNameAsync("wiser_modules_OnlyOneInstanceAllowed", "false"), "true", StringComparison.OrdinalIgnoreCase);
+            var onlyOneInstanceAllowedGlobal =
+                String.Equals(
+                    await objectsService.FindSystemObjectByDomainNameAsync("wiser_modules_OnlyOneInstanceAllowed",
+                        "false"), "true", StringComparison.OrdinalIgnoreCase);
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var moduleId = dataRow.Field<int>("module_id");
                 var originalGroupName = dataRow.Field<string>("group");
-                var groupName = pinnedModules.Contains(moduleId) ? PinnedModulesGroupName : dataRow.Field<string>("group");
-                var permissionsBitMask = (AccessRights)Convert.ToInt32(dataRow["permissions"]);
+                var groupName = pinnedModules.Contains(moduleId)
+                    ? PinnedModulesGroupName
+                    : dataRow.Field<string>("group");
+                var permissionsBitMask = (AccessRights) Convert.ToInt32(dataRow["permissions"]);
                 var options = dataRow.Field<string>("options");
 
                 var canRead = (permissionsBitMask & AccessRights.Read) == AccessRights.Read;
@@ -168,7 +178,8 @@ namespace Api.Modules.Modules.Services
                     results.Add(groupName, new List<ModuleAccessRightsModel>());
                 }
 
-                var rightsModel = results[groupName].FirstOrDefault(r => r.ModuleId == moduleId) ?? new ModuleAccessRightsModel { ModuleId = moduleId };
+                var rightsModel = results[groupName].FirstOrDefault(r => r.ModuleId == moduleId) ??
+                                  new ModuleAccessRightsModel {ModuleId = moduleId};
 
                 rightsModel.CanRead = rightsModel.CanRead || canRead;
                 rightsModel.CanCreate = rightsModel.CanCreate || canCreate;
@@ -196,11 +207,15 @@ namespace Api.Modules.Modules.Services
                     }
                     catch (JsonReaderException exception)
                     {
-                        logger.LogWarning(exception, $"An error occurred while parsing options JSON of module {rightsModel.ModuleId}");
+                        logger.LogWarning(exception,
+                            $"An error occurred while parsing options JSON of module {rightsModel.ModuleId}");
                     }
 
                     var onlyOneInstanceAllowed = optionsObject.Value<bool?>("onlyOneInstanceAllowed");
-                    rightsModel.OnlyOneInstanceAllowed = (onlyOneInstanceAllowedGlobal && (!onlyOneInstanceAllowed.HasValue || onlyOneInstanceAllowed.Value)) || (onlyOneInstanceAllowed.HasValue && onlyOneInstanceAllowed.Value);
+                    rightsModel.OnlyOneInstanceAllowed =
+                        (onlyOneInstanceAllowedGlobal &&
+                         (!onlyOneInstanceAllowed.HasValue || onlyOneInstanceAllowed.Value)) ||
+                        (onlyOneInstanceAllowed.HasValue && onlyOneInstanceAllowed.Value);
 
                     if (rightsModel.Type.Equals("Iframe", StringComparison.OrdinalIgnoreCase))
                     {
@@ -215,10 +230,14 @@ namespace Api.Modules.Modules.Services
                             var moduleQuery = dataRow.Field<string>("custom_query");
                             if (!String.IsNullOrWhiteSpace(moduleQuery))
                             {
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId}", IdentityHelpers.GetWiserUserId(identity).ToString());
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity) ?? "");
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId}",
+                                    IdentityHelpers.GetWiserUserId(identity).ToString());
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{username}",
+                                    IdentityHelpers.GetUserName(identity) ?? "");
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userEmailAddress}",
+                                    IdentityHelpers.GetEmailAddress(identity) ?? "");
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userType}",
+                                    IdentityHelpers.GetRoles(identity) ?? "");
 
                                 var moduleDataTable = await clientDatabaseConnection.GetAsync(moduleQuery);
                                 if (moduleDataTable.Rows.Count > 0)
@@ -229,7 +248,8 @@ namespace Api.Modules.Modules.Services
                         }
                         catch (Exception exception)
                         {
-                            logger.LogWarning(exception, $"An error occurred while executing query of module {rightsModel.ModuleId}");
+                            logger.LogWarning(exception,
+                                $"An error occurred while executing query of module {rightsModel.ModuleId}");
                         }
 
                         rightsModel.IframeUrl = url;
@@ -242,7 +262,8 @@ namespace Api.Modules.Modules.Services
             // Make sure that we add certain modules for admins, even if those modules don't exist in wiser_module for this customer.
             if (isAdminAccount)
             {
-                foreach (var moduleId in modulesForAdmins.Where(moduleId => !results.Any(g => g.Value.Any(m => m.ModuleId == moduleId))))
+                foreach (var moduleId in modulesForAdmins.Where(moduleId =>
+                             !results.Any(g => g.Value.Any(m => m.ModuleId == moduleId))))
                 {
                     string groupName;
                     var isPinned = pinnedModules.Contains(moduleId);
@@ -404,7 +425,8 @@ namespace Api.Modules.Modules.Services
                             });
                             break;
                         default:
-                            throw new NotImplementedException($"Trying to hard-code add module '{moduleId}' to list for admin account, but no case has been added for this module in the switch statement.");
+                            throw new NotImplementedException(
+                                $"Trying to hard-code add module '{moduleId}' to list for admin account, but no case has been added for this module in the switch statement.");
                     }
                 }
             }
@@ -416,7 +438,8 @@ namespace Api.Modules.Modules.Services
                 results[key] = results[key].OrderBy(m => m.Name).ToList();
             }
 
-            results = results.OrderBy(g => g.Key == PinnedModulesGroupName ? "-" : g.Key).ToDictionary(g => g.Key, g => g.Value);
+            results = results.OrderBy(g => g.Key == PinnedModulesGroupName ? "-" : g.Key)
+                .ToDictionary(g => g.Key, g => g.Value);
 
             return new ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>(results);
         }
@@ -424,18 +447,18 @@ namespace Api.Modules.Modules.Services
         /// <inheritdoc />
         public async Task<ServiceResult<List<ModuleSettingsModel>>> GetSettingsAsync(ClaimsIdentity identity)
         {
-            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync(); 
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
 
             var isAdminAccount = IdentityHelpers.IsAdminAccount(identity);
-            var query = isAdminAccount ? 
-                        $@"SELECT
+            var query = isAdminAccount
+                ? $@"SELECT
 	                        module.id,
 	                        module.name
                         FROM {WiserTableNames.WiserModule} AS module
-                        ORDER BY module.id ASC;" : 
-                        $@"SELECT
+                        ORDER BY module.id ASC;"
+                : $@"SELECT
 	                        module.id,
 	                        module.name
                         FROM {WiserTableNames.WiserUserRoles} AS user_role
@@ -449,7 +472,7 @@ namespace Api.Modules.Modules.Services
 
             var results = new List<ModuleSettingsModel>();
             var dataTable = await clientDatabaseConnection.GetAsync(query);
-                        
+
             if (dataTable.Rows.Count == 0)
             {
                 return new ServiceResult<List<ModuleSettingsModel>>(results);
@@ -458,7 +481,9 @@ namespace Api.Modules.Modules.Services
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var moduleId = dataRow.Field<int>("id");
-                var userItemPermissions = await wiserItemsService.GetUserModulePermissions(moduleId, IdentityHelpers.GetWiserUserId(identity));
+                var userItemPermissions =
+                    await wiserItemsService.GetUserModulePermissions(moduleId,
+                        IdentityHelpers.GetWiserUserId(identity));
 
                 results.Add(new ModuleSettingsModel
                 {
@@ -480,11 +505,12 @@ namespace Api.Modules.Modules.Services
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
 
-            var result = new ModuleSettingsModel { Id = id };
+            var result = new ModuleSettingsModel {Id = id};
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
-            var userItemPermissions = await wiserItemsService.GetUserModulePermissions(id, IdentityHelpers.GetWiserUserId(identity));
+            var userItemPermissions =
+                await wiserItemsService.GetUserModulePermissions(id, IdentityHelpers.GetWiserUserId(identity));
 
             result.CanRead = (userItemPermissions & AccessRights.Read) == AccessRights.Read;
             result.CanCreate = (userItemPermissions & AccessRights.Create) == AccessRights.Create;
@@ -494,12 +520,16 @@ namespace Api.Modules.Modules.Services
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
 
-            var query = $@"SELECT id, custom_query, count_query, `options`, `name`, icon, color, type, `group` FROM wiser_module WHERE id = ?id";
+            var query =
+                $@"SELECT id, custom_query, count_query, `options`, `name`, icon, color, type, `group` FROM wiser_module WHERE id = ?id";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count == 0)
             {
-                return new ServiceResult<ModuleSettingsModel>(result);
+                return new ServiceResult<ModuleSettingsModel>
+                {
+                    StatusCode = HttpStatusCode.NotFound
+                };
             }
 
             result.CustomQuery = dataTable.Rows[0].Field<string>("custom_query");
@@ -509,7 +539,7 @@ namespace Api.Modules.Modules.Services
             result.Color = dataTable.Rows[0].Field<string>("color");
             result.Type = dataTable.Rows[0].Field<string>("type");
             result.Group = dataTable.Rows[0].Field<string>("group");
-            
+
             var optionsJson = dataTable.Rows[0].Field<string>("options");
 
             if (string.IsNullOrWhiteSpace(optionsJson))
@@ -518,7 +548,7 @@ namespace Api.Modules.Modules.Services
             }
 
             var parsedOptionsJson = JToken.Parse(optionsJson);
-            jsonService.EncryptValuesInJson(parsedOptionsJson, encryptionKey, new List<string> { "itemId" });
+            jsonService.EncryptValuesInJson(parsedOptionsJson, encryptionKey, new List<string> {"itemId"});
 
             result.Options = parsedOptionsJson;
 
@@ -531,7 +561,7 @@ namespace Api.Modules.Modules.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("name", name);
-            
+
             var query = $@"
                         SET @newID = (SELECT MAX(id)+ 1 FROM wiser_module);
                         INSERT INTO {WiserTableNames.WiserModule}(id,`name`)
@@ -539,7 +569,7 @@ namespace Api.Modules.Modules.Services
                         INSERT IGNORE INTO {WiserTableNames.WiserPermission}(role_id,entity_name,item_id,entity_property_id, permissions,module_id)
                         VALUES (1, '', 0, 0, 15, @newID);
                         SELECT @newID;";
-            
+
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             var id = Convert.ToInt32(dataTable.Rows[0][0]);
 
@@ -549,7 +579,8 @@ namespace Api.Modules.Modules.Services
         /// <inheritdoc />
         public async Task<ServiceResult<byte[]>> ExportAsync(int id, ClaimsIdentity identity)
         {
-            var gridResult = await gridsService.GetOverviewGridDataAsync(id, new GridReadOptionsModel(), identity, true);
+            var gridResult =
+                await gridsService.GetOverviewGridDataAsync(id, new GridReadOptionsModel(), identity, true);
             if (gridResult.StatusCode != HttpStatusCode.OK)
             {
                 return new ServiceResult<byte[]>
@@ -605,22 +636,12 @@ namespace Api.Modules.Modules.Services
                                 `type` = ?type,
                                 `group` = ?group
                         WHERE id = ?id";
-            try
+            
+            await clientDatabaseConnection.ExecuteAsync(query);
+            return new ServiceResult<bool>(true)
             {
-                await clientDatabaseConnection.ExecuteAsync(query);
-                return new ServiceResult<bool>(true)
-                {
-                    StatusCode = HttpStatusCode.NoContent
-                };
-            }
-            catch (Exception e)
-            {
-                return new ServiceResult<bool>(false)
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = e.Message
-                };
-            }
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
     }
 }

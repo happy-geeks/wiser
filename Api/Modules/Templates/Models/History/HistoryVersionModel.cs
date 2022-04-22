@@ -4,6 +4,9 @@ using System.Globalization;
 
 namespace Api.Modules.Templates.Models.History
 {
+    /// <summary>
+    /// A model representing a single change in the settings of a dynamic component.
+    /// </summary>
     public class HistoryVersionModel
     {
         /// <summary>
@@ -26,26 +29,20 @@ namespace Api.Modules.Templates.Models.History
         /// </summary>
         public List<DynamicContentChangeModel> Changes { get; set; }
 
+        /// <summary>
+        /// Gets or sets the raw version string.
+        /// </summary>
         public string RawVersionString { get; set; }
 
+        /// <summary>
+        /// Gets or sets the name of the component.
+        /// </summary>
         public string Component { get; set; }
 
+        /// <summary>
+        /// Gets or sets the name of the component mode.
+        /// </summary>
         public string ComponentMode { get; set; }
-
-        public HistoryVersionModel()
-        {
-        }
-
-        public HistoryVersionModel(int version, DateTime changedOn, string changedBy, string component, string componentMode, string rawVersionString)
-        {
-            this.Version = version;
-            this.ChangedOn = changedOn;
-            this.ChangedBy = changedBy;
-            this.Component = component;
-            this.ComponentMode = componentMode;
-            this.RawVersionString = rawVersionString;
-            Changes = null;
-        }
         
         /// <summary>
         /// Get the change date in a displayable format(DD-MM-YYYY om HH:MM:SS).

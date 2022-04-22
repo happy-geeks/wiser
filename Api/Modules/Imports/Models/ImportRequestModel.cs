@@ -4,9 +4,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Api.Modules.Imports.Models
 {
-    //TODO Verify comments
     /// <summary>
-    /// A model for the request to the Wiser import module.
+    /// A model for a request to add a new import to the queue.
     /// </summary>
     public class ImportRequestModel
     {

@@ -18,7 +18,7 @@ namespace Api.Modules.Templates.Interfaces
         /// </summary>
         /// <param name="contentId">The id of the content</param>
         /// <returns>List of HistoryVersionModels with generated changes. Sorted by descending version.</returns>
-        Task<ServiceResult<List<HistoryVersionModel>>> GetChangesInComponent(int contentId);
+        Task<ServiceResult<List<HistoryVersionModel>>> GetChangesInComponentAsync(int contentId);
 
         /// <summary>
         /// Retrieves the current settings and applies the List of changes that should be reverted.
@@ -26,7 +26,7 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="contentId">The id of the content</param>
         /// <param name="changesToRevert">Contains the properties and specific versions that need to be reverted.</param>
-        /// <returns>An int indicating whether the action was successful.</returns>
+        /// <returns>The ID of the component that was reverted.</returns>
         Task<ServiceResult<int>> RevertChangesAsync(ClaimsIdentity identity, int contentId, List<RevertHistoryModel> changesToRevert);
         
         /// <summary>
