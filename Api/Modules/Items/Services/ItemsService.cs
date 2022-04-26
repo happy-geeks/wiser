@@ -1118,10 +1118,26 @@ namespace Api.Modules.Items.Services
 
                 if (String.IsNullOrWhiteSpace(htmlTemplate))
                 {
+                    var nameWithoutMode = $"{fieldType}.html"; 
                     var name = $"{fieldType}{(String.IsNullOrWhiteSpace(fieldMode) ? "" : $"-{fieldMode}")}.html";
+
                     if (!fieldTemplates.ContainsKey(name))
                     {
-                        fieldTemplates.Add(name, ReadTextResourceFromAssembly(name));
+                        if (fieldTemplates.ContainsKey(nameWithoutMode))
+                        {
+                            name = nameWithoutMode;
+                        }
+                        else
+                        {
+                            var contents = ReadTextResourceFromAssembly(name);
+                            if (String.IsNullOrWhiteSpace(contents))
+                            {
+                                name = nameWithoutMode;
+                                contents = ReadTextResourceFromAssembly(name);
+                            }
+
+                            fieldTemplates.Add(name, contents);
+                        }
                     }
 
                     htmlTemplate = fieldTemplates[name];
