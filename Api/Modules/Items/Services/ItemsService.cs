@@ -1096,9 +1096,29 @@ namespace Api.Modules.Items.Services
                 var scriptTemplate = dataRow.Field<string>("script_template");
                 var fieldType = dataRow.Field<string>("field_type");
 
+                // Get mode, some fields have different modes and need different HTML for different modes.
+                var options = dataRow.Field<string>("options")?.ReplaceCaseInsensitive("{itemId}", itemId.ToString());
+                var optionsObject = JObject.Parse(String.IsNullOrWhiteSpace(options) ? "{}" : options);
+                var fieldMode = "";
+                var containerCssClass = "";
+                if (optionsObject.ContainsKey("mode"))
+                {
+                    fieldMode = optionsObject.Value<string>("mode");
+                }
+
+                switch (fieldMode)
+                {
+                    case "switch":
+                        containerCssClass = "checkbox-adv large";
+                        break;
+                    case "checkBoxGroup":
+                        containerCssClass = "row checkbox-full-container";
+                        break;
+                }
+
                 if (String.IsNullOrWhiteSpace(htmlTemplate))
                 {
-                    var name = $"{fieldType}.html";
+                    var name = $"{fieldType}{(String.IsNullOrWhiteSpace(fieldMode) ? "" : $"-{fieldMode}")}.html";
                     if (!fieldTemplates.ContainsKey(name))
                     {
                         fieldTemplates.Add(name, ReadTextResourceFromAssembly(name));
@@ -1119,8 +1139,6 @@ namespace Api.Modules.Items.Services
 
                 var displayName = dataRow.Field<string>("display_name");
                 var propertyName = dataRow.Field<string>("property_name");
-                var options = dataRow.Field<string>("options")?.ReplaceCaseInsensitive("{itemId}", itemId.ToString());
-                var optionsObject = JObject.Parse(String.IsNullOrWhiteSpace(options) ? "{}" : options);
                 var longValue = dataRow.Field<string>("long_value");
                 var value = dataRow.Field<string>("value");
                 var defaultValue = dataRow.Field<string>("default_value") ?? "";
@@ -1335,24 +1353,6 @@ namespace Api.Modules.Items.Services
                     }
                 }
 
-                // Get mode, some fields have different modes and need different HTML for different modes.
-                var fieldMode = "";
-                var containerCssClass = "";
-                if (optionsObject.ContainsKey("mode"))
-                {
-                    fieldMode = optionsObject.Value<string>("mode");
-                }
-
-                switch (fieldMode)
-                {
-                    case "switch":
-                        containerCssClass = "checkbox-adv large";
-                        break;
-                    case "checkBoxGroup":
-                        containerCssClass = "row checkbox-full-container";
-                        break;
-                }
-
                 // Encrypt certain values in options JSON.
                 jsonService.EncryptValuesInJson(optionsObject, encryptionKey);
                 options = optionsObject.ToString(Formatting.None);
@@ -1441,8 +1441,6 @@ namespace Api.Modules.Items.Services
                         .Replace("{fieldMode}", fieldMode)
                         .Replace("{default_value}", $"'{HttpUtility.JavaScriptStringEncode(defaultValue)}'");
                 }
-
-                htmlTemplate = stringReplacementsService.EvaluateTemplate(htmlTemplate);
 
                 // Add the final templates to the current group.
                 group.HtmlTemplateBuilder.Append(htmlTemplate ?? "");
