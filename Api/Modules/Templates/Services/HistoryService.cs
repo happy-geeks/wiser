@@ -245,8 +245,8 @@ namespace Api.Modules.Templates.Services
         /// <returns>List of changes that can be added to the changes of the newer versions HistoryVersionModel.</returns>
         private List<DynamicContentChangeModel> GenerateChangeLogFromDataStrings(string newComponent, string newMode, string newVersion, string oldComponent, string oldMode, string oldVersion)
         {
-            var newVersionDict = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(newVersion) ?? new Dictionary<string, JToken>();
-            var oldVersionDict = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(oldVersion) ?? new Dictionary<string, JToken>();
+            var newVersionDict = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(newVersion ?? "{}") ?? new Dictionary<string, JToken>();
+            var oldVersionDict = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(oldVersion ?? "{}") ?? new Dictionary<string, JToken>();
 
             var changeLog = new List<DynamicContentChangeModel>();
 
