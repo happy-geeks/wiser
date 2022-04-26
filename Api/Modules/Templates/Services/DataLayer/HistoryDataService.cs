@@ -43,7 +43,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ChangedBy = row.Field<string>("changed_by"),
                     Component = row.Field<string>("component"),
                     ComponentMode = row.Field<string>("component_mode"),
-                    RawVersionString = row.Field<string>("version")
+                    RawVersionString = row.Field<string>("settings")
                 });
             }
             return resultDict;
