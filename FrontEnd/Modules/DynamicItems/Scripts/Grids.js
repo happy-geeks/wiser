@@ -1244,7 +1244,7 @@ export class Grids {
                                 primary: true,
                                 action: (e) => {
                                     const destinationItemId = dataItem.encryptedDestinationItemId || senderGrid.element.closest(".item").data("itemIdEncrypted");
-                                    this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.linkTypeNumber).then(() => {
+                                    this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.link_type_number).then(() => {
                                         senderGrid.dataSource.read();
                                     });
                                 }

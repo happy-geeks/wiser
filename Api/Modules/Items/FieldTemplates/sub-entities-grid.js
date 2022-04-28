@@ -408,7 +408,7 @@ function generateGrid(data, model, columns) {
 									continue;
 								} else if (key === "__ordering") {
 									if (dynamicItems.fieldTemplateFlags.enableSubEntitiesGridsOrdering) {
-										itemModel.details.push({ "key": key, "value": transportOptions.data[key], "is_link_property": true, "item_link_id": transportOptions.data.linkId });
+										itemModel.details.push({ "key": key, "value": transportOptions.data[key], "isLinkProperty": true, "itemLinkId": transportOptions.data.link_id });
 									}
 									continue;
 								}
@@ -443,7 +443,7 @@ function generateGrid(data, model, columns) {
 									}
 								}
 								
-								itemModel.details.push({ "key": key, "value": transportOptions.data[key], "is_link_property": isLinkProperty, "item_link_id": transportOptions.data.linkId });
+								itemModel.details.push({ "key": key, "value": transportOptions.data[key], "isLinkProperty": isLinkProperty, "itemLinkId": transportOptions.data.linkId });
 							}
 						}
                         
