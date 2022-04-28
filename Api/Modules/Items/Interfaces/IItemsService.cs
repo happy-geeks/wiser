@@ -174,7 +174,8 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="moduleId">The ID of the module.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="encryptedParentId">Optional: The encrypted ID of the parent to fix the ordering for. If no value has been given, the root will be used as parent.</param>
-        Task<ServiceResult<bool>> FixTreeViewOrderingAsync(int moduleId, ClaimsIdentity identity, string encryptedParentId = null);
+        /// <param name="linkType">Optional: The link type number. Default value is 1.</param>
+        Task<ServiceResult<bool>> FixTreeViewOrderingAsync(int moduleId, ClaimsIdentity identity, string encryptedParentId = null, int linkType = 1);
 
         /// <summary>
         /// Get all items for a tree view for a specific parent.
