@@ -1684,7 +1684,7 @@ namespace Api.Modules.Items.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> FixTreeViewOrderingAsync(int moduleId, ClaimsIdentity identity, string encryptedParentId = null)
+        public async Task<ServiceResult<bool>> FixTreeViewOrderingAsync(int moduleId, ClaimsIdentity identity, string encryptedParentId = null, int linkType = 1)
         {
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             var parentId = String.IsNullOrWhiteSpace(encryptedParentId) ? 0 : wiserCustomersService.DecryptValue<ulong>(encryptedParentId, customer);
@@ -1692,6 +1692,9 @@ namespace Api.Modules.Items.Services
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("moduleId", moduleId);
             clientDatabaseConnection.AddParameter("parentId", parentId);
+            clientDatabaseConnection.AddParameter("linkType", linkType);
+
+            var moduleIdClause = moduleId <= 0 ? "" : "AND item.moduleid = ?moduleId"; 
 
             // Fix the ordering of items, because when people import items, they often don't set the order number correctly.
             // So we do that first here, to make sure they're all set correctly, otherwise moving items to a different position in the tree view won't work properly.
@@ -1705,13 +1708,14 @@ namespace Api.Modules.Items.Services
                                 SELECT
                                     link.id
                                 FROM {WiserTableNames.WiserItemLink} AS link
-                                JOIN {WiserTableNames.WiserItem} AS item ON item.id = link.item_id AND item.moduleid = ?moduleId
+                                JOIN {WiserTableNames.WiserItem} AS item ON item.id = link.item_id {moduleIdClause}
                                 WHERE link.destination_item_id = ?parentId
+                                AND link.type = ?linkType
 		                        GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
                                 ORDER BY link.ordering ASC
                             ) AS x
                         ) AS ordering ON ordering.id = link.id
-                        JOIN {WiserTableNames.WiserItem} AS item ON item.id = link.item_id AND item.moduleid = ?moduleId
+                        JOIN {WiserTableNames.WiserItem} AS item ON item.id = link.item_id {moduleIdClause}
                         SET link.ordering = ordering.ordering
                         WHERE destination_item_id = ?parentId";
             await clientDatabaseConnection.ExecuteAsync(query);
@@ -1741,14 +1745,14 @@ namespace Api.Modules.Items.Services
                                 item.id
                             FROM {WiserTableNames.WiserItem} AS item
                             WHERE item.parent_item_id = ?parentId
-                            AND item.moduleid = ?moduleId
+                            {moduleIdClause}
 		                    GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
                             ORDER BY item.ordering ASC
                         ) AS x
                     ) AS ordering ON ordering.id = item.id
                     SET item.ordering = ordering.ordering
                     WHERE item.parent_item_id = ?parentId
-                    AND item.moduleid = ?moduleId";
+                    {moduleIdClause}";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             query = $@"UPDATE {WiserTableNames.WiserItem} AS item 

@@ -830,6 +830,8 @@ namespace Api.Modules.Grids.Services
                     results.SchemaModel.Fields.Add("changed_by", new FieldModel {Type = "string", Editable = false});
                     results.SchemaModel.Fields.Add(WiserItemsService.LinkOrderingFieldName, new FieldModel {Type = "number", Nullable = false});
 
+                    await itemsService.FixTreeViewOrderingAsync(moduleId, identity, encryptedId, linkTypeNumber);
+
                     var columnsQuery = $@"SELECT  
 	                                        IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name) AS field,
                                             p.display_name AS title,
@@ -1185,7 +1187,7 @@ namespace Api.Modules.Grids.Services
                                                     i.added_by,
                                                     i.changed_on,
                                                     i.changed_by,
-                                                    0 AS `{WiserItemsService.LinkOrderingFieldName}`
+                                                    i.ordering AS `{WiserItemsService.LinkOrderingFieldName}`
                                                 FROM {tablePrefix}{WiserTableNames.WiserItem} i
 
                                                 {{filters}}
