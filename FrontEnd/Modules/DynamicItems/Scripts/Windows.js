@@ -402,7 +402,7 @@ export class Windows {
                     formData.append(file.name, file);
 
                     promises.push(Wiser2.api({
-                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=globalFile&useTinyPng=false`,
+                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=global_file&useTinyPng=false`,
                         method: "POST",
                         processData: false,
                         contentType: false,
@@ -615,7 +615,7 @@ export class Windows {
                     formData.append(file.name, file);
 
                     promises.push(Wiser2.api({
-                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=globalFile&useTinyPng=false`,
+                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=global_file&useTinyPng=false`,
                         method: "POST",
                         processData: false,
                         contentType: false,
@@ -843,7 +843,7 @@ export class Windows {
                     formData.append(file.name, file);
 
                     promises.push(Wiser2.api({
-                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=globalFile&useTinyPng=false`,    
+                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=global_file&useTinyPng=false`,
                         method: "POST",
                         processData: false,
                         contentType: false,
@@ -1053,10 +1053,10 @@ export class Windows {
 
     /**
      * Generates the URL for the image preview for the imagesUploaderWindow.
-     * @param ext The extension of the image file
+     * @param extension The extension of the image file
      * @returns {string} The URL for the preview image.
      */
-    generateImagePreviewUrl(ext) {
+    generateImagePreviewUrl(extension) {
         const selectedItem = this.imagesUploaderWindowTreeView.dataItem(this.imagesUploaderWindowTreeView.select());
         let resizeMode = this.imagesUploaderWindow.element.find("#resizeMode").data("kendoDropDownList").value() || "normal";
         if (resizeMode === "crop" || resizeMode === "fill") {
@@ -1066,7 +1066,13 @@ export class Windows {
 
         const width = this.imagesUploaderWindow.element.find("#preferredWidth").val() || 0;
         const height = this.imagesUploaderWindow.element.find("#preferredHeight").val() || 0;
-        return `${this.base.settings.mainDomain}/image/wiser2/${selectedItem.plainId}/direct/${selectedItem.propertyName}/${resizeMode}/${width}/${height}/${selectedItem.name}.${ext}`;
+
+        let fileName = selectedItem.name;
+        if (extension) {
+            fileName = `${fileName.substr(0, fileName.lastIndexOf("."))}.${extension}`;
+        }
+
+        return `${this.base.settings.mainDomain}image/wiser2/${selectedItem.plainId}/direct/${selectedItem.property_name}/${resizeMode}/${width}/${height}/${fileName}`;
     }
 
     /**
