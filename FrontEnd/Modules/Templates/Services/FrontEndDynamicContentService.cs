@@ -32,7 +32,7 @@ namespace FrontEnd.Modules.Templates.Services
             foreach (var property in orderedProperties)
             {
                 var cmsPropertyAttribute = property.GetCustomAttribute<CmsPropertyAttribute>();
-                
+
                 if (cmsPropertyAttribute == null || cmsPropertyAttribute.HideInCms)
                 {
                     continue;
@@ -51,7 +51,7 @@ namespace FrontEnd.Modules.Templates.Services
 
                     result.Tabs.Add(tab);
                 }
-                
+
                 var groupEnumAttribute = cmsPropertyAttribute.GroupName.GetAttributeOfType<CmsEnumAttribute>();
                 var group = tab.Groups.SingleOrDefault(g => g.Name == cmsPropertyAttribute.GroupName);
                 if (group == null)
@@ -77,15 +77,24 @@ namespace FrontEnd.Modules.Templates.Services
                     var type = assembly?.GetType(fullTypeName);
                     var defaultValueProperty = type?.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).FirstOrDefault(p => p.Name == property.Name);
                     var defaultValueAttribute = defaultValueProperty?.GetCustomAttribute<DefaultValueAttribute>();
+                    object defaultValue;
                     if (defaultValueAttribute != null)
                     {
-                        value = defaultValueAttribute.Value;
+                        defaultValue = defaultValueAttribute.Value;
                         isDefaultValue = true;
                     }
                     else
                     {
-                        value = property.GetValue(Activator.CreateInstance(property.DeclaringType));
+                        defaultValue = property.GetValue(Activator.CreateInstance(property.DeclaringType));
                         isDefaultValue = value != null && (value is not string v || !String.IsNullOrEmpty(v));
+                    }
+
+                    // Do not force the default value if the type of value is a value type, as it might incorrectly overwrite the value.
+                    // Say, for example, that the default value of a bool property is True, but a developer has set that property to False, the final value would be True.
+                    // Same goes for integers: if the default value of that property is 100, but a developer has set it to 0, the final value would be 100.
+                    if (value == null || !value.GetType().IsValueType)
+                    {
+                        value = defaultValue;
                     }
                 }
 
@@ -113,7 +122,7 @@ namespace FrontEnd.Modules.Templates.Services
                     {
                         { "_template", subFields }
                     };
-                    
+
                     if (value is JObject { HasValues: true } jsonObject)
                     {
                         foreach (var item in jsonObject.Properties())
@@ -137,7 +146,7 @@ namespace FrontEnd.Modules.Templates.Services
 
             return result;
         }
-        
+
         /// <inheritdoc />
         public List<(FieldViewModel OldVersion, FieldViewModel NewVersion)> GenerateChangesListForHistory(List<DynamicContentChangeModel> dynamicContentChanges)
         {
@@ -157,7 +166,7 @@ namespace FrontEnd.Modules.Templates.Services
                     var dynamicContentInformation = GenerateDynamicContentInformationViewModel(componentType, new Dictionary<string, object>(), historyChange.ComponentMode);
                     componentFields.Add(historyChange.Component, dynamicContentInformation.Tabs.SelectMany(t => t.Groups.SelectMany(g => g.Fields)).ToList());
                 }
-                
+
                 var field = componentFields[historyChange.Component].SingleOrDefault(f => String.Equals(f.Name, historyChange.Property, StringComparison.OrdinalIgnoreCase));
                 if (field == null)
                 {
