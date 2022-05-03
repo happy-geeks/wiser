@@ -147,11 +147,12 @@ export class Windows {
                     return;
                 }
 
+                const imagePreviewUrl = this.generateImagePreviewUrl('jpg');
                 const html = `<figure>` +
                     `<picture>` +
-                    `<source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('jpg')}" type="image/jpeg" />` +
-                    `<source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('webp')}" type="image/webp" />` +
-                    `<img width="100%" height="auto" loading="lazy" src="${this.generateImagePreviewUrl('jpg')}" />` +
+                    `<source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('jpg').url}" type="image/jpeg" />` +
+                    `<source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('webp').url}" type="image/webp" />` +
+                    `<img width="100%" height="auto" loading="lazy" src="${imagePreviewUrl.url}" alt="${imagePreviewUrl.altText}" />` +
                     `</picture>` +
                     `</figure>`;
                 if (this.imagesUploaderSender.kendoEditor) {
@@ -1066,13 +1067,17 @@ export class Windows {
 
         const width = this.imagesUploaderWindow.element.find("#preferredWidth").val() || 0;
         const height = this.imagesUploaderWindow.element.find("#preferredHeight").val() || 0;
+        const altText = this.imagesUploaderWindow.element.find("#altText").val() || "";
 
         let fileName = selectedItem.name;
         if (extension) {
             fileName = `${fileName.substr(0, fileName.lastIndexOf("."))}.${extension}`;
         }
 
-        return `${this.base.settings.mainDomain}image/wiser2/${selectedItem.plainId}/direct/${selectedItem.property_name}/${resizeMode}/${width}/${height}/${fileName}`;
+        return {
+            url: `${this.base.settings.mainDomain}image/wiser2/${selectedItem.plainId}/direct/${selectedItem.property_name}/${resizeMode}/${width}/${height}/${fileName}`,
+            altText: altText
+        };
     }
 
     /**
@@ -1105,8 +1110,8 @@ export class Windows {
         footer.removeClass("hidden");
 
         const newImageUrl = this.generateImagePreviewUrl();
-        anchorElement.attr("href", newImageUrl);
-        imagePreviewElement.attr("src", newImageUrl);
+        anchorElement.attr("href", newImageUrl.url);
+        imagePreviewElement.attr("src", newImageUrl.url);
     }
 
     /**
