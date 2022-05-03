@@ -12,6 +12,7 @@ using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Preview;
 using Api.Modules.Templates.Models.Template;
+using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -359,13 +360,14 @@ namespace Api.Modules.Templates.Controllers
         /// Gets the tree view including template settings of all templates.
         /// </summary>
         /// <param name="startFrom">Set the place from which to start the tree view, folders separated by comma.</param>
+        /// <param name="environment">The environment the template needs to be active on.</param>
         /// <returns></returns>
         [HttpGet]
         [Route("entire-tree-view")]
         [ProducesResponseType(typeof(List<TemplateTreeViewModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetEntireTreeViewStructureAsync(string startFrom = "")
+        public async Task<IActionResult> GetEntireTreeViewStructureAsync(string startFrom = "", Environments? environment = null)
         {
-            return (await templatesService.GetEntireTreeViewStructureAsync(0, startFrom)).GetHttpResponseMessage();
+            return (await templatesService.GetEntireTreeViewStructureAsync(0, startFrom, environment)).GetHttpResponseMessage();
         }
         
         /// <summary>

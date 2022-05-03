@@ -8,6 +8,7 @@ using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
+using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 using GeeksCoreLibrary.Modules.Templates.Models;
 using Microsoft.AspNetCore.Http;
@@ -65,13 +66,14 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="templateId">The id of the template to retrieve the data from.</param>
         /// <returns>A <see cref="TemplateSettingsModel"/> containing the current template data of the template with the given id.</returns>
         Task<ServiceResult<TemplateSettingsModel>> GetTemplateMetaDataAsync(int templateId);
-		
+
         /// <summary>
         /// Get the latest version for a given template.
         /// </summary>
         /// <param name="templateId">The id of the template.</param>
+        /// <param name="environment">The environment the template needs to be active on.</param>
         /// <returns>A <see cref="TemplateSettingsModel"/> containing the template data of the latest version.</returns>
-        Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId);
+        Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId, Environments? environment = null);
         
         /// <summary>
         /// Get the template environments. This will retrieve a list of versions and their published environments and convert it to a PublishedEnvironmentModel 
@@ -168,8 +170,9 @@ namespace Api.Modules.Templates.Interfaces
         /// </summary>
         /// <param name="parentId">The ID of the parent item.</param>
         /// <param name="startFrom">Set the place from which to start the tree view, folders separated by comma.</param>
+        /// <param name="environment">The environment the template needs to be active on.</param>
         /// <returns></returns>
-        Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom);
+        Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom, Environments? environment = null);
 
         /// <summary>
         /// Deletes a template. This will not actually delete it from the database, but add a new version with removed = 1 instead.

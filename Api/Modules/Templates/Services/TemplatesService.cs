@@ -22,6 +22,7 @@ using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
@@ -2432,14 +2433,14 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId)
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId, Environments? environment = null)
         {
             if (templateId <= 0)
             {
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var templateData = await templateDataService.GetDataAsync(templateId);
+            var templateData = await templateDataService.GetDataAsync(templateId, environment);
             var templateEnvironmentsResult = await GetTemplateEnvironmentsAsync(templateId);
             if (templateEnvironmentsResult.StatusCode != HttpStatusCode.OK)
             {
@@ -2703,7 +2704,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom)
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom, Environments? environment = null)
         {
             var templates = new List<TemplateTreeViewModel>();
             var path = startFrom.Split(',');
@@ -2716,11 +2717,11 @@ LIMIT 1";
 
                 if (templateTree.HasChildren)
                 {
-                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(templateTree.TemplateId, remainingStartFrom)).ModelObject;
+                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(templateTree.TemplateId, remainingStartFrom, environment)).ModelObject;
                 }
                 else
                 {
-                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(templateTree.TemplateId)).ModelObject;
+                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(templateTree.TemplateId, environment)).ModelObject;
                 }
 
                 if (String.IsNullOrWhiteSpace(startFrom))

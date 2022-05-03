@@ -10,6 +10,7 @@ using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Enums;
@@ -63,59 +64,72 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<TemplateSettingsModel> GetDataAsync(int templateId)
+        public async Task<TemplateSettingsModel> GetDataAsync(int templateId, Environments? environment = null)
         {
+            var publishedVersionWhere = environment switch
+            {
+                null => "",
+                Environments.Hidden => "AND template.published_environment = 0",
+                _ => $"AND (template.published_environment & {(int)environment}) = {(int)environment}"
+            };
+
+
+
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("templateId", templateId);
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
-                                                                template.template_id, 
-                                                                template.parent_id, 
-                                                                template.template_type, 
-                                                                template.template_name, 
-                                                                template.template_data, 
-                                                                template.version, 
-                                                                template.changed_on, 
-                                                                template.changed_by, 
-                                                                template.use_cache,   
-                                                                template.cache_minutes, 
-                                                                template.cache_location, 
-                                                                template.cache_regex,
-                                                                template.handle_request, 
-                                                                template.handle_session, 
-                                                                template.handle_objects, 
-                                                                template.handle_standards, 
-                                                                template.handle_translations, 
-                                                                template.handle_dynamic_content, 
-                                                                template.handle_logic_blocks, 
-                                                                template.handle_mutators, 
-                                                                template.login_required, 
-                                                                template.login_user_type, 
-                                                                template.login_session_prefix, 
-                                                                template.login_role, 
-                                                                template.linked_templates, 
-                                                                template.ordering,
-                                                                template.insert_mode,
-                                                                template.load_always,
-                                                                template.url_regex,
-                                                                template.external_files,
-                                                                template.grouping_create_object_instead_of_array,
-                                                                template.grouping_prefix,
-                                                                template.grouping_key,
-                                                                template.grouping_key_column_name,
-                                                                template.grouping_value_column_name,
-                                                                template.is_scss_include_template,
-                                                                template.use_in_wiser_html_editors,
-                                                                template.pre_load_query,
-                                                                template.return_not_found_when_pre_load_query_has_no_data
-                                                            FROM {WiserTableNames.WiserTemplate} AS template 
-                                                            WHERE template.template_id = ?templateId
-                                                            AND template.removed = 0
-                                                            ORDER BY template.version DESC 
-                                                            LIMIT 1");
+                                                                                template.template_id, 
+                                                                                template.parent_id, 
+                                                                                template.template_type, 
+                                                                                template.template_name, 
+                                                                                template.template_data, 
+                                                                                template.version, 
+                                                                                template.changed_on, 
+                                                                                template.changed_by, 
+                                                                                template.use_cache,   
+                                                                                template.cache_minutes, 
+                                                                                template.cache_location, 
+                                                                                template.cache_regex,
+                                                                                template.handle_request, 
+                                                                                template.handle_session, 
+                                                                                template.handle_objects, 
+                                                                                template.handle_standards, 
+                                                                                template.handle_translations, 
+                                                                                template.handle_dynamic_content, 
+                                                                                template.handle_logic_blocks, 
+                                                                                template.handle_mutators, 
+                                                                                template.login_required, 
+                                                                                template.login_user_type, 
+                                                                                template.login_session_prefix, 
+                                                                                template.login_role, 
+                                                                                template.linked_templates, 
+                                                                                template.ordering,
+                                                                                template.insert_mode,
+                                                                                template.load_always,
+                                                                                template.url_regex,
+                                                                                template.external_files,
+                                                                                template.grouping_create_object_instead_of_array,
+                                                                                template.grouping_prefix,
+                                                                                template.grouping_key,
+                                                                                template.grouping_key_column_name,
+                                                                                template.grouping_value_column_name,
+                                                                                template.is_scss_include_template,
+                                                                                template.use_in_wiser_html_editors,
+                                                                                template.pre_load_query,
+                                                                                template.return_not_found_when_pre_load_query_has_no_data
+                                                                            FROM {WiserTableNames.WiserTemplate} AS template 
+                                                                            WHERE template.template_id = ?templateId
+                                                                            {publishedVersionWhere}
+                                                                            AND template.removed = 0
+                                                                            ORDER BY template.version DESC 
+                                                                            LIMIT 1");
 
             if (dataTable.Rows.Count == 0)
             {
-                return null;
+                return new TemplateSettingsModel
+                {
+                    TemplateId = templateId
+                };
             }
 
             var templateData = new TemplateSettingsModel

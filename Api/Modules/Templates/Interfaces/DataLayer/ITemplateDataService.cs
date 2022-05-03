@@ -5,6 +5,7 @@ using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
+using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Interfaces.DataLayer
@@ -25,8 +26,9 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// Get the template data of a template.
         /// </summary>
         /// <param name="templateId">The id of the template to retrieve the data from.</param>
+        /// <param name="environment">The environment the template needs to be active on.</param>
         /// <returns>A <see cref="TemplateSettingsModel"/> containing the current template data of the template with the given id.</returns>
-        Task<TemplateSettingsModel> GetDataAsync(int templateId);
+        Task<TemplateSettingsModel> GetDataAsync(int templateId, Environments? environment = null);
 
         /// <summary>
         /// Get published environments from a template.
