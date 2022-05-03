@@ -1242,7 +1242,6 @@ footer input ~ .meta-data li.meta-toggle label span:last-child {
 .dynamicTabContent .gridview:only-child .k-grid {
     display: flex;
     flex-direction: column;
-    max-height: calc(100% - 58px);
 }
 
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview:not(:only-child) {
