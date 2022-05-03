@@ -652,7 +652,8 @@ const moduleSettings = {
                 this.mainTabStrip.enable(previewTab);
 
                 // Dynamic content
-                this.dynamicContentGrid = $("#dynamic-grid").kendoGrid({
+                const dynamicGridDiv = $("#dynamic-grid");
+                this.dynamicContentGrid = dynamicGridDiv.kendoGrid({
                     dataSource: {
                         transport: {
                             read: (readOptions) => {
@@ -772,6 +773,9 @@ const moduleSettings = {
                     change: this.onDynamicContentGridChange.bind(this),
                     dataBound: this.onDynamicContentGridChange.bind(this)
                 }).data("kendoGrid");
+
+                // Open dynamic content by double clicking on a row.
+                dynamicGridDiv.on("dblclick", "tr.k-state-selected", this.onDynamicContentOpenClick.bind(this));
 
                 // Preview
                 this.preview.loadProfiles().then(() => {
