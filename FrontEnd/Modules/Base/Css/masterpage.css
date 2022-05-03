@@ -210,7 +210,8 @@ ins {
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent {
     align-content: flex-start;
 }
-.k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview {
+
+/* .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview {
     max-height: calc(100% - 132px);
     height: 100%;
 }
@@ -228,6 +229,8 @@ ins {
     height: 100% !important;
     min-height: 250px;
 }
+*/
+
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .k-grid .k-grid-content {
     flex-grow: 1;
 }
@@ -1228,6 +1231,12 @@ footer input ~ .meta-data li.meta-toggle label span:last-child {
     max-height: calc(100% - 138px);
     display: flex;
     flex-direction: column;
+}
+
+.k-window-content > .pane-content .k-tabstrip .dynamicTabContent script ~ .gridview:last-child:nth-child(3) .k-grid {
+	flex-basis: 100%;
+	display: flex;
+	flex-direction: column;
 }
 
 .dynamicTabContent .gridview:only-child .k-grid {
