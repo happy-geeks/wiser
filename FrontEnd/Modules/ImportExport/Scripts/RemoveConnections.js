@@ -173,9 +173,10 @@ export class RemoveConnections {
                         optionLabel: "Kies een eigenschap",
                         dataSource: {
                             transport: {
-                                read: `${this.settings.wiserApiRoot}entity-properties/${options.model.entity}?onlyEntityTypesWithDisplayName=false&onlyEntityTypesWithPropertyName=true&addIdProperty=true`
+                                read: `${this.settings.wiserApiRoot}entity-properties/${options.model.entity}?onlyEntityTypesWithDisplayName=false&onlyEntityTypesWithPropertyName=true&addIdProperty=true`,
                             }
-                        }
+                        },
+                        template: "#: displayName # - Tab: #: tabName #"
                     });
                 }
             },
