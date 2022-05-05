@@ -180,3 +180,5 @@ In the appsettings you should set the property `Api.SigningCredentialCertificate
 Get-ChildItem -path Cert:\LocalMachine\My -Recurse
 ```
 The correct value will be shown in the column `Subject`, you can copy that value to the app settings (including `CN=`).
+
+If you run the API on IIS in Windows, you need to give IIS permissions to access the private keys of the specified certificate. You can do this by opening the Windows certificate manager (`Certmgr.exe`), then find your certificate there. Right click the certificate, then `All Tasks -> Manage Private Keys -> Add group "IIS_IUSRS"`. If you don't do this, you will most likely get the error `WindowsCryptographicException: Keyset does not exist`.
