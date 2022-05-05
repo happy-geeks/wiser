@@ -200,7 +200,7 @@ namespace Api
             }
             else
             {
-                identityServerBuilder.AddSigningCredential(Configuration.GetValue<string>("WiserApi:SigningCredentialCertificate"));
+                identityServerBuilder.AddSigningCredential(Configuration.GetValue<string>("Api:SigningCredentialCertificate"));
             }
 
             services.AddAuthentication("Bearer")
