@@ -998,7 +998,7 @@ export class Grids {
         const originalEncryptedId = encryptedId;
         let entityType = dataItem.entityType || dataItem.entity_type;
         let title = dataItem.title;
-        const linkId = dataItem.linkId;
+        const linkId = dataItem.linkId || dataItem.link_id;
 
         if (options.fromMainGrid && this.base.settings.openGridItemsInBlock) {
             this.base.grids.informationBlockIframe.attr("src", `${"/Modules/DynamicItems"}?itemId=${encryptedId}&moduleId=${this.base.settings.moduleId}&iframe=true`);
