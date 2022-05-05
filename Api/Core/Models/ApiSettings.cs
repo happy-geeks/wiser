@@ -64,5 +64,10 @@ namespace Api.Core.Models
         /// This value is not used when not using multi tenancy.
         /// </summary>
         public string MainSubDomain { get; set; } = "main";
+
+        /// <summary>
+        /// The fully qualified name of the certificate in the store of the server, of the certificate to use for IdentityServer4 (OAUTH2) authentication.
+        /// </summary>
+        public string SigningCredentialCertificate { get; set; }
     }
 }

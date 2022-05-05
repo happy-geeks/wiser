@@ -31,7 +31,8 @@ Wiser v3. This includes the API and the front-end projects.
     "PusherAppId": "", // Some modules use pusher to send notifications to users. Enter the app ID for pusher here if you want to use that.
     "PusherAppKey": "", // The app key for pusher.
     "PusherAppSecret": "", // The app secret for pusher.
-    "PusherSalt": "" // A salt to use when hashing event IDs for pusher.
+    "PusherSalt": "" // A salt to use when hashing event IDs for pusher.,
+    "SigningCredentialCertificate": "" // The fully qualified name of the certificate in the store of the server, of the certificate to use for IdentityServer4 (OAUTH2) authentication.
   },
   "DigitalOcean": {
     "ClientId": "", // If you want to use the Digital Ocean API, enter the client ID for that here.
@@ -172,4 +173,10 @@ To publish Wiser 3 to your own server, you should use the following publish sett
 # Authentication
 The API uses `IdentityServer4` for authentication, it uses OAUTH2 with bearer tokens. It uses a global secret key and client id that need to be configured in the appsettings. The actual user credentials come from the database of Wiser, these are entities with the type `wiseruser`. The installation script will create a user with username `Admin` and password `admin` to authenticate via the API to login to Wiser.
 
-This authentication requires an SSL certificate. By default it will generate a self-signed certificate that will be saved as `tempkey.jwk` in the root directory of the API. On production servers it's recommended to configure the API to use a proper SSL certificate. If you really want/need to use the self-signed certificate on production, you can either copy the `tempkey.jwk` file from your development environment, or give the application pool (if you run Wiser in IIS) write permissions in the root directory of the API, so that it can create a new certificate there. After the certificate has been created, you can remove the write permissions again. 
+This authentication requires an SSL certificate. By default it will generate a self-signed certificate that will be saved as `tempkey.jwk` in the root directory of the API. On all other environments, the API will expect a proper SSL certificate, but you can change that in `Startup.cs` if you search for `AddSigningCredential`. Especially on production servers it's recommended to configure the API to use a proper SSL certificate. If you really want/need to use the self-signed certificate on production, you can either copy the `tempkey.jwk` file from your development environment, or give the application pool (if you run Wiser in IIS) write permissions in the root directory of the API, so that it can create a new certificate there. After the certificate has been created, you can remove the write permissions again.
+
+In the appsettings you should set the property `Api.SigningCredentialCertificate`. That property should contain the full name of the certificate, to be able to find it in the certificate store of the server that the API runs on. To find out what this value should be, you can (on Windows) execute the following command in PowerShell:
+```
+Get-ChildItem -path Cert:\LocalMachine\My -Recurse
+```
+The correct value will be shown in the column `Subject`, you can copy that value to the app settings (including `CN=`).
