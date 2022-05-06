@@ -92,7 +92,8 @@ namespace Api.Modules.EntityProperties.Services
                 results.Add(new EntityPropertyModel
                 {
                     PropertyName = "id",
-                    DisplayName = "Id"
+                    DisplayName = "Id",
+                    TabName = ""
                 });
             }
 
