@@ -1,5 +1,6 @@
 /* KENDO - SPLITTER */
 .pane-content {
+	background-color: var(--item-bg-color);
 	height: auto !important;
 	min-height: calc(100% - 65px);
 	padding: 0;
@@ -81,20 +82,27 @@
 	box-sizing: border-box;
 	margin: 5px 0;
 	padding: .8em;
-	width: calc(100% - 35px);
+	width: 100%;
+	gap: 5px;
+	flex-wrap: wrap;
 }
 .k-dropzone.k-dropzone-hovered {
     border: 2px dashed var(--error-bg-color);
+}
+.uploader .imagesContainer {
+	display: flex;
+	gap: 5px;
 }
 .dropZoneElement {
 	position: relative;
 	display: inline-block;
 	background-color: var(--lightest-color);
 	border: 1px solid var(--dark-bd-color);
-	/*width: 300px;*/
-    width: 100%;
+	/*width: 100%;*/
 	height: 110px;
 	text-align: center;
+	flex-grow: 1;
+	min-width: 250px;
 }
 .textWrapper {
 	position: absolute;
@@ -127,11 +135,11 @@
 .k-dropzone-hovered, .k-dropzone-hovered strong {
 	background: var(--white-color);
 }
-.product {
+.uploader .product {
     background-color: var(--black-color);
 	float: left;
 	position: relative;
-	margin: 5px 10px 5px 0;
+	margin: 0;
 	padding: 0;
 }
 .product img {
@@ -139,12 +147,18 @@
 	height: 110px;
     object-fit: contain;
 }
+.uploader + .k-upload {
+	width: 100%;
+}
 .wrapper:after {
 	content: ".";
 	display: block;
 	height: 0;
 	clear: both;
 	visibility: hidden;
+}
+.uploader:after {
+	display: none;
 }
 .checkGroup label {
 	display: inline-block;

@@ -2221,6 +2221,8 @@ html .km-pane-wrapper .km-widget,
 }
 
 .checkboxlist .checkbox span {
+    display: flex;
+    align-items: center;
     padding: 1px 5px 1px 28px;
 }
 
