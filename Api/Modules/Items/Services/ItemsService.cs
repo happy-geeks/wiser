@@ -329,6 +329,16 @@ namespace Api.Modules.Items.Services
                         StatusCode = HttpStatusCode.NotFound
                     };
                 }
+                
+                var userId = IdentityHelpers.GetWiserUserId(identity);
+                var (success, _, userItemPermissions) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(item.Id, EntityActions.Update, userId, onlyCheckAccessRights: true, entityType: item.EntityType);
+                if (!success)
+                {
+                    return new ServiceResult<WiserItemModel>
+                    {
+                        StatusCode = HttpStatusCode.Forbidden
+                    };
+                }
 
                 clientDatabaseConnection.AddParameter("entityType", item.EntityType);
                 var dataTable = await clientDatabaseConnection.GetAsync($"SELECT enable_multiple_environments FROM {WiserTableNames.WiserEntity} WHERE name = ?entityType");
@@ -346,7 +356,6 @@ namespace Api.Modules.Items.Services
                 var username = IdentityHelpers.GetUserName(identity);
                 var customer = await wiserCustomersService.GetSingleAsync(identity);
                 var encryptionKey = customer.ModelObject.EncryptionKey;
-                var userId = IdentityHelpers.GetWiserUserId(identity);
 
                 var query = $@"SELECT other.id, current.original_item_id, other.published_environment
                             FROM {tablePrefix}{WiserTableNames.WiserItem} AS current
@@ -589,7 +598,12 @@ namespace Api.Modules.Items.Services
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
             if (itemId <= 0)
             {
-                throw new ArgumentException("Id must be greater than zero.");
+                return new ServiceResult<WiserItemModel>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Id must be greater than zero.",
+                    ReasonPhrase = "Id must be greater than zero."
+                };
             }
 
             var customer = await wiserCustomersService.GetSingleAsync(identity);
@@ -643,7 +657,10 @@ namespace Api.Modules.Items.Services
                 };
             }
 
-            return new ServiceResult<bool>(true);
+            return new ServiceResult<bool>
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
 
         /// <inheritdoc />
@@ -1079,12 +1096,48 @@ namespace Api.Modules.Items.Services
                 var scriptTemplate = dataRow.Field<string>("script_template");
                 var fieldType = dataRow.Field<string>("field_type");
 
+                // Get mode, some fields have different modes and need different HTML for different modes.
+                var options = dataRow.Field<string>("options")?.ReplaceCaseInsensitive("{itemId}", itemId.ToString());
+                var optionsObject = JObject.Parse(String.IsNullOrWhiteSpace(options) ? "{}" : options);
+                var fieldMode = "";
+                var containerCssClass = "";
+                if (optionsObject.ContainsKey("mode"))
+                {
+                    fieldMode = optionsObject.Value<string>("mode");
+                }
+
+                switch (fieldMode)
+                {
+                    case "switch":
+                        containerCssClass = "checkbox-adv large";
+                        break;
+                    case "checkBoxGroup":
+                        containerCssClass = "row checkbox-full-container";
+                        break;
+                }
+
                 if (String.IsNullOrWhiteSpace(htmlTemplate))
                 {
-                    var name = $"{fieldType}.html";
+                    var nameWithoutMode = $"{fieldType}.html"; 
+                    var name = $"{fieldType}{(String.IsNullOrWhiteSpace(fieldMode) ? "" : $"-{fieldMode}")}.html";
+
                     if (!fieldTemplates.ContainsKey(name))
                     {
-                        fieldTemplates.Add(name, ReadTextResourceFromAssembly(name));
+                        if (fieldTemplates.ContainsKey(nameWithoutMode))
+                        {
+                            name = nameWithoutMode;
+                        }
+                        else
+                        {
+                            var contents = ReadTextResourceFromAssembly(name);
+                            if (String.IsNullOrWhiteSpace(contents))
+                            {
+                                name = nameWithoutMode;
+                                contents = ReadTextResourceFromAssembly(name);
+                            }
+
+                            fieldTemplates.Add(name, contents);
+                        }
                     }
 
                     htmlTemplate = fieldTemplates[name];
@@ -1102,8 +1155,6 @@ namespace Api.Modules.Items.Services
 
                 var displayName = dataRow.Field<string>("display_name");
                 var propertyName = dataRow.Field<string>("property_name");
-                var options = dataRow.Field<string>("options")?.ReplaceCaseInsensitive("{itemId}", itemId.ToString());
-                var optionsObject = JObject.Parse(String.IsNullOrWhiteSpace(options) ? "{}" : options);
                 var longValue = dataRow.Field<string>("long_value");
                 var value = dataRow.Field<string>("value");
                 var defaultValue = dataRow.Field<string>("default_value") ?? "";
@@ -1318,24 +1369,6 @@ namespace Api.Modules.Items.Services
                     }
                 }
 
-                // Get mode, some fields have different modes and need different HTML for different modes.
-                var fieldMode = "";
-                var containerCssClass = "";
-                if (optionsObject.ContainsKey("mode"))
-                {
-                    fieldMode = optionsObject.Value<string>("mode");
-                }
-
-                switch (fieldMode)
-                {
-                    case "switch":
-                        containerCssClass = "checkbox-adv large";
-                        break;
-                    case "checkBoxGroup":
-                        containerCssClass = "row checkbox-full-container";
-                        break;
-                }
-
                 // Encrypt certain values in options JSON.
                 jsonService.EncryptValuesInJson(optionsObject, encryptionKey);
                 options = optionsObject.ToString(Formatting.None);
@@ -1424,8 +1457,6 @@ namespace Api.Modules.Items.Services
                         .Replace("{fieldMode}", fieldMode)
                         .Replace("{default_value}", $"'{HttpUtility.JavaScriptStringEncode(defaultValue)}'");
                 }
-
-                htmlTemplate = stringReplacementsService.EvaluateTemplate(htmlTemplate);
 
                 // Add the final templates to the current group.
                 group.HtmlTemplateBuilder.Append(htmlTemplate ?? "");
@@ -1601,7 +1632,7 @@ namespace Api.Modules.Items.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<string>> GetHtmlForWiser2EntityAsync(ulong itemId, ClaimsIdentity identity, string entityType = null)
+        public async Task<ServiceResult<string>> GetHtmlForWiserEntityAsync(ulong itemId, ClaimsIdentity identity, string entityType = null)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var (template, dataRow) = await wiserItemsService.GetTemplateAndDataForItemAsync(itemId, entityType);
@@ -1653,7 +1684,7 @@ namespace Api.Modules.Items.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> FixTreeViewOrderingAsync(int moduleId, ClaimsIdentity identity, string entityType = null, string encryptedParentId = null, string orderBy = null, string encryptedCheckId = null)
+        public async Task<ServiceResult<bool>> FixTreeViewOrderingAsync(int moduleId, ClaimsIdentity identity, string encryptedParentId = null, int linkType = 1)
         {
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             var parentId = String.IsNullOrWhiteSpace(encryptedParentId) ? 0 : wiserCustomersService.DecryptValue<ulong>(encryptedParentId, customer);
@@ -1661,6 +1692,9 @@ namespace Api.Modules.Items.Services
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("moduleId", moduleId);
             clientDatabaseConnection.AddParameter("parentId", parentId);
+            clientDatabaseConnection.AddParameter("linkType", linkType);
+
+            var moduleIdClause = moduleId <= 0 ? "" : "AND item.moduleid = ?moduleId"; 
 
             // Fix the ordering of items, because when people import items, they often don't set the order number correctly.
             // So we do that first here, to make sure they're all set correctly, otherwise moving items to a different position in the tree view won't work properly.
@@ -1674,13 +1708,14 @@ namespace Api.Modules.Items.Services
                                 SELECT
                                     link.id
                                 FROM {WiserTableNames.WiserItemLink} AS link
-                                JOIN {WiserTableNames.WiserItem} AS item ON item.id = link.item_id AND item.moduleid = ?moduleId
+                                JOIN {WiserTableNames.WiserItem} AS item ON item.id = link.item_id {moduleIdClause}
                                 WHERE link.destination_item_id = ?parentId
+                                AND link.type = ?linkType
 		                        GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
                                 ORDER BY link.ordering ASC
                             ) AS x
                         ) AS ordering ON ordering.id = link.id
-                        JOIN {WiserTableNames.WiserItem} AS item ON item.id = link.item_id AND item.moduleid = ?moduleId
+                        JOIN {WiserTableNames.WiserItem} AS item ON item.id = link.item_id {moduleIdClause}
                         SET link.ordering = ordering.ordering
                         WHERE destination_item_id = ?parentId";
             await clientDatabaseConnection.ExecuteAsync(query);
@@ -1710,14 +1745,14 @@ namespace Api.Modules.Items.Services
                                 item.id
                             FROM {WiserTableNames.WiserItem} AS item
                             WHERE item.parent_item_id = ?parentId
-                            AND item.moduleid = ?moduleId
+                            {moduleIdClause}
 		                    GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
                             ORDER BY item.ordering ASC
                         ) AS x
                     ) AS ordering ON ordering.id = item.id
                     SET item.ordering = ordering.ordering
                     WHERE item.parent_item_id = ?parentId
-                    AND item.moduleid = ?moduleId";
+                    {moduleIdClause}";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             query = $@"UPDATE {WiserTableNames.WiserItem} AS item 
@@ -1743,7 +1778,7 @@ namespace Api.Modules.Items.Services
                 };
             }
 
-            await FixTreeViewOrderingAsync(moduleId, identity, entityType, encryptedParentId, orderBy, encryptedCheckId);
+            await FixTreeViewOrderingAsync(moduleId, identity, encryptedParentId);
 
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             var parentId = String.IsNullOrWhiteSpace(encryptedParentId) ? 0 : wiserCustomersService.DecryptValue<ulong>(encryptedParentId, customer);
@@ -2205,7 +2240,10 @@ namespace Api.Modules.Items.Services
                 await clientDatabaseConnection.ExecuteAsync(query);
 
                 await clientDatabaseConnection.CommitTransactionAsync();
-                return new ServiceResult<bool>(true);
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.NoContent
+                };
             }
             catch
             {

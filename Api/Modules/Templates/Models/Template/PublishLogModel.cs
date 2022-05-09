@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Api.Modules.Templates.Models.Template
+﻿namespace Api.Modules.Templates.Models.Template
 {
     public class PublishLogModel
     {

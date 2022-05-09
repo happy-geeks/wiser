@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace Api.Modules.DigitalOcean.Models
+﻿namespace Api.Modules.DigitalOcean.Models
 {
     public class CreateDatabaseRequestModel
     {

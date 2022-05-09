@@ -2,7 +2,6 @@
 
 namespace Api.Modules.EntityProperties.Models
 {
-    //TODO Verify comments
     /// <summary>
     /// A model for a dependency of an entity property within Wiser.
     /// </summary>

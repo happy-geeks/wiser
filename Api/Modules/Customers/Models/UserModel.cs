@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Data;
-using Newtonsoft.Json;
 
 namespace Api.Modules.Customers.Models
 {

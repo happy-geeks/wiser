@@ -1,22 +1,8 @@
 ﻿<div class="item {containerCssClass}" style="{style}" id="container_{propertyIdWithSuffix}" data-property-id="{propertyId}" data-item-id="{itemId}" data-depends-on-field="{dependsOnField}" data-depends-on-operator="{dependsOnOperator}" data-depends-on-value="{dependsOnValue}" data-depends-on-action="{dependsOnAction}" data-property-name="{propertyName}" data-item-link-id="{itemLinkId}" data-language-code="{languageCode}" data-width="{width}" data-save-on-change="{saveOnChange}" data-label-style="{labelStyle}" data-label-width="{labelWidth}">
     <span class="handler">&nbsp;</span>
 
-    [if({fieldMode}=switch)]
-    <input type="checkbox" id="field_{propertyIdWithSuffix}" class="hidden" name="{propertyName}" {extraAttribute} {required} {readonly} />
-    <label for="field_{propertyIdWithSuffix}">
-        <span class="checkbox-img">
-            <img src="" alt="{title}" />
-        </span>
-        <span class="checkbox-txt">
-            <span>{title}</span>
-            <ins class="checkbox-switch"></ins>
-        </span>
-    </label>
-    <div class="form-hint {formHintClass}">{hint}</div>
-    [else]
     <h4><label for="field_{propertyIdWithSuffix}">{title}</label></h4>
     <span class="inline">
         <label class="checkbox"><input type="checkbox" id="field_{propertyIdWithSuffix}" class="textField k-input" name="{propertyName}" {extraAttribute} {required} {readonly} data-lpignore="true" /><span>{hint}</span></label>
     </span>
-    [endif]
 </div>

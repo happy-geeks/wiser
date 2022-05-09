@@ -44,7 +44,6 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Newtonsoft.Json.Linq;
 using NUglify;
-using NUglify.Html;
 using NUglify.JavaScript;
 using ITemplatesService = Api.Modules.Templates.Interfaces.ITemplatesService;
 
@@ -2473,7 +2472,7 @@ LIMIT 1";
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
-            return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, newPublished, publishLog, IdentityHelpers.GetUserName(identity)));
+            return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, newPublished, publishLog, IdentityHelpers.GetUserName(identity, true)));
         }
 
         /// <inheritdoc />
@@ -2548,7 +2547,7 @@ LIMIT 1";
                 templateLinks = template.LinkedTemplates.RawLinkList;
             }
 
-            await templateDataService.SaveAsync(template, templateLinks, IdentityHelpers.GetUserName(identity));
+            await templateDataService.SaveAsync(template, templateLinks, IdentityHelpers.GetUserName(identity, true));
 
             if (template.Type != TemplateTypes.Scss || !template.IsScssIncludeTemplate || skipCompilation)
             {
@@ -2618,7 +2617,7 @@ LIMIT 1";
             var dynamicContentHistory = new Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>>();
             foreach (var dc in dynamicContentOverview.ModelObject)
             {
-                dynamicContentHistory.Add(dc, (await historyService.GetChangesInComponent(dc.Id)).ModelObject);
+                dynamicContentHistory.Add(dc, (await historyService.GetChangesInComponentAsync(dc.Id)).ModelObject);
             }
 
             var overview = new TemplateHistoryOverviewModel
@@ -2635,7 +2634,7 @@ LIMIT 1";
         /// <inheritdoc />
         public async Task<ServiceResult<TemplateTreeViewModel>> CreateAsync(ClaimsIdentity identity, string name, int parent, TemplateTypes type, string editorValue = "")
         {
-            var newId = await templateDataService.CreateAsync(name, parent, type, IdentityHelpers.GetUserName(identity), editorValue);
+            var newId = await templateDataService.CreateAsync(name, parent, type, IdentityHelpers.GetUserName(identity, true), editorValue);
             return new ServiceResult<TemplateTreeViewModel>(new TemplateTreeViewModel
             {
                 TemplateId = newId,
@@ -2699,7 +2698,7 @@ LIMIT 1";
                 _ => throw new ArgumentOutOfRangeException(nameof(dropPosition), dropPosition, null)
             };
 
-            await templateDataService.MoveAsync(sourceId, destinationId, sourceParentId, destinationParentId, oldOrderNumber, newOrderNumber, dropPosition, IdentityHelpers.GetUserName(identity));
+            await templateDataService.MoveAsync(sourceId, destinationId, sourceParentId, destinationParentId, oldOrderNumber, newOrderNumber, dropPosition, IdentityHelpers.GetUserName(identity, true));
             return new ServiceResult<bool>(true);
         }
 
@@ -2740,7 +2739,7 @@ LIMIT 1";
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int templateId, bool alsoDeleteChildren = true)
         {
-            var result = await templateDataService.DeleteAsync(templateId, IdentityHelpers.GetUserName(identity), alsoDeleteChildren);
+            var result = await templateDataService.DeleteAsync(templateId, IdentityHelpers.GetUserName(identity, true), alsoDeleteChildren);
             return new ServiceResult<bool>
             {
                 ModelObject = result,

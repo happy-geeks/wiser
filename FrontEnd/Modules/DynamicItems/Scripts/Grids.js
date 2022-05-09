@@ -998,7 +998,7 @@ export class Grids {
         const originalEncryptedId = encryptedId;
         let entityType = dataItem.entityType || dataItem.entity_type;
         let title = dataItem.title;
-        const linkId = dataItem.linkId;
+        const linkId = dataItem.linkId || dataItem.link_id;
 
         if (options.fromMainGrid && this.base.settings.openGridItemsInBlock) {
             this.base.grids.informationBlockIframe.attr("src", `${"/Modules/DynamicItems"}?itemId=${encryptedId}&moduleId=${this.base.settings.moduleId}&iframe=true`);
@@ -1244,7 +1244,7 @@ export class Grids {
                                 primary: true,
                                 action: (e) => {
                                     const destinationItemId = dataItem.encryptedDestinationItemId || senderGrid.element.closest(".item").data("itemIdEncrypted");
-                                    this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.linkTypeNumber).then(() => {
+                                    this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.link_type_number).then(() => {
                                         senderGrid.dataSource.read();
                                     });
                                 }

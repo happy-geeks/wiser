@@ -105,31 +105,6 @@ const moduleSettings = {
             this.connectionBlocksContainer = document.getElementById("connectionBlocks");
             this.havingContainer = $(document.getElementById("havingContainer"));
 
-            // Load modules.
-            const allModules = await Wiser2.api({ url: `${this.settings.wiserApiRoot}modules` });
-            const ul = $(`<ul class="hScroll" id="moduleSelect"></ul>`);
-            for (let groupName in allModules) {
-                if (!allModules.hasOwnProperty(groupName)) {
-                    continue;
-                }
-
-                for (let module of allModules[groupName]) {
-                    if (!module.name) {
-                        continue;
-                    }
-
-                    const li = $(`<li data-module-id="${module.moduleId}"></li>`).appendTo(ul);
-                    const label = $(`<label />`).appendTo(li);
-                    const input = $(`<input type="checkbox" name="module-picker" class="noForm" value="${module.moduleId}" />`).appendTo(label);
-                    const span = $(`<span/>`).appendTo(label);
-                    const icon = $(`<ins class="icon-${module.icon}"></ins>`).appendTo(span);
-                    span.append(module.name);
-                }
-            }
-
-            let modulesHtml = ul.prop("outerHTML");
-            document.getElementById("modulesHolder").insertAdjacentHTML("beforeend", modulesHtml);
-
             // Initialize the rest.
             this.initializeWindow();
             this.initializeKendoElements();

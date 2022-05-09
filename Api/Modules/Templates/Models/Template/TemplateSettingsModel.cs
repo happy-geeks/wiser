@@ -42,6 +42,7 @@ namespace Api.Modules.Templates.Models.Template
         public string LoginUserType { get; set; }
         public string LoginSessionPrefix { get; set; }
         public string LoginRole { get; set; }
+        public string LoginRedirectUrl { get; set; }
         public string PreLoadQuery { get; set; }
 
         // Css/Scss/Js settings.

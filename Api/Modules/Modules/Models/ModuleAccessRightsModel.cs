@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Api.Modules.Modules.Models
+﻿namespace Api.Modules.Modules.Models
 {
     /// <summary>
     /// A model for storing what the authenticated user can do with a module.

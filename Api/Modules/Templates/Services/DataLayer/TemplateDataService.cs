@@ -10,7 +10,6 @@ using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Enums;
@@ -93,6 +92,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.login_user_type, 
                                                                 template.login_session_prefix, 
                                                                 template.login_role, 
+                                                                template.login_redirect_url,
                                                                 template.linked_templates, 
                                                                 template.ordering,
                                                                 template.insert_mode,
@@ -145,6 +145,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                 LoginUserType = dataTable.Rows[0].Field<string>("login_user_type"),
                 LoginSessionPrefix = dataTable.Rows[0].Field<string>("login_session_prefix"),
                 LoginRole = dataTable.Rows[0].Field<string>("login_role"),
+                LoginRedirectUrl = dataTable.Rows[0].Field<string>("login_redirect_url"),
                 Ordering = dataTable.Rows[0].Field<int>("ordering"),
                 InsertMode = dataTable.Rows[0].Field<ResourceInsertModes>("insert_mode"),
                 LoadAlways = Convert.ToBoolean(dataTable.Rows[0]["load_always"]),
@@ -389,6 +390,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("loginUserType", templateSettings.LoginUserType);
             clientDatabaseConnection.AddParameter("loginSessionPrefix", templateSettings.LoginSessionPrefix);
             clientDatabaseConnection.AddParameter("loginRole", templateSettings.LoginRole);
+            clientDatabaseConnection.AddParameter("loginRedirectUrl", templateSettings.LoginRedirectUrl);
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
             clientDatabaseConnection.AddParameter("username", username);
             clientDatabaseConnection.AddParameter("ordering", ordering);
@@ -435,6 +437,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     login_user_type,
                     login_session_prefix,
                     login_role,
+                    login_redirect_url,
                     linked_templates,
                     ordering,
                     insert_mode,
@@ -477,6 +480,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ?loginUserType,
                     ?loginSessionPrefix,
                     ?loginRole,
+                    ?loginRedirectUrl,
                     ?templateLinks,
                     ?ordering,
                     ?insertMode,
@@ -935,6 +939,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                                                                             template.login_user_type, 
                                                                             template.login_session_prefix, 
                                                                             template.login_role, 
+                                                                            template.login_redirect_url, 
                                                                             template.linked_templates, 
                                                                             template.ordering,
                                                                             template.insert_mode,
@@ -996,6 +1001,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                     LoginUserType = dataRow.Field<string>("login_user_type"),
                     LoginSessionPrefix = dataRow.Field<string>("login_session_prefix"),
                     LoginRole = dataRow.Field<string>("login_role"),
+                    LoginRedirectUrl = dataRow.Field<string>("login_redirect_url"),
                     Ordering = dataRow.Field<int>("ordering"),
                     InsertMode = dataRow.Field<ResourceInsertModes>("insert_mode"),
                     LoadAlways = Convert.ToBoolean(dataRow["load_always"]),

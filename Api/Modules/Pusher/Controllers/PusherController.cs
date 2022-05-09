@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -9,22 +10,34 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Modules.Pusher.Controllers
 {
-    //TODO Verify comments
-    [Route("api/v3/[controller]"), ApiController, Authorize]
+    /// <summary>
+    /// Controller for doing things with Pusher.
+    /// </summary>
+    [Route("api/v3/[controller]")]
+    [ApiController]
+    [Authorize]
+    [Consumes(MediaTypeNames.Application.Json)]
+    [Produces(MediaTypeNames.Application.Json)]
     public class PusherController : ControllerBase
     {
         private readonly IPusherService pusherService;
 
+        /// <summary>
+        /// Creates a new instance of <see cref="PusherController"/>.
+        /// </summary>
         public PusherController(IPusherService pusherService)
         {
             this.pusherService = pusherService;
         }
 
         /// <summary>
-        /// Get a generated pushed ID for the user.
+        /// Get a generated pusher event ID for the user.
         /// </summary>
-        /// <returns></returns>
-        [HttpGet, Route("event-id"), ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        /// <returns>The event ID for pusher.</returns>
+        [HttpGet]
+        [Route("event-id")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult GetPusherEventId()
         {
             var identity = (ClaimsIdentity)User.Identity;
@@ -38,8 +51,10 @@ namespace Api.Modules.Pusher.Controllers
         /// </summary>
         /// <param name="data">The <see cref="PusherMessageRequestModel"/> containing the information for the message to be send.</param>
         /// <returns></returns>
-        [HttpPost, Route("message"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetForExportModuleAsync(PusherMessageRequestModel data)
+        [HttpPost]
+        [Route("message")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SendMessageToUserAsync(PusherMessageRequestModel data)
         {
             var identity = (ClaimsIdentity)User.Identity;
             var subDomain = IdentityHelpers.GetSubDomain(identity);

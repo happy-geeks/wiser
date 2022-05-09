@@ -1,6 +1,6 @@
 ﻿@using GeeksCoreLibrary.Modules.Templates.Enums
 @model FrontEnd.Modules.Templates.Models.DevelopmentTabViewModel
-<div class="formview full developmentContainer">
+<div class="formview full developmentContainer @Model.TemplateSettings.Type.ToString()Tab">
     <partial name="Partials/PublishedEnvironments" model="@Model.TemplateSettings" />
 
     <partial name="Partials/TemplateEditor" model="@Model"/>

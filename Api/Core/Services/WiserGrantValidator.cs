@@ -55,7 +55,7 @@ namespace Api.Core.Services
 
             Dictionary<string, object> customResponse;
             ulong adminAccountId = 0;
-            string adminAccountName = null;
+            var adminAccountName = "";
             var selectedUser = context.Request.Raw[HttpContextConstants.SelectedUserKey];
             var isTestEnvironment = context.Request.Raw[HttpContextConstants.IsTestEnvironmentKey];
             if (String.IsNullOrWhiteSpace(isTestEnvironment))
@@ -130,7 +130,7 @@ namespace Api.Core.Services
                 customResponse.Add("adminAccountName", adminAccountName);
             }
             
-            context.Result = new GrantValidationResult(loginResult.ModelObject.Id.ToString(), OidcConstants.AuthenticationMethods.Password, CreateClaimsList(loginResult.ModelObject, subDomain, adminAccountId, isTestEnvironment), customResponse: customResponse);
+            context.Result = new GrantValidationResult(loginResult.ModelObject.Id.ToString(), OidcConstants.AuthenticationMethods.Password, CreateClaimsList(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment), customResponse: customResponse);
         }
 
         private static IEnumerable<Claim> CreateClaimsList(AdminAccountModel adminAccount, string subDomain, string isTestEnvironment)
@@ -146,7 +146,7 @@ namespace Api.Core.Services
             };
         }
 
-        private static IEnumerable<Claim> CreateClaimsList(UserModel user, string subDomain, ulong adminAccountId, string isTestEnvironment)
+        private static IEnumerable<Claim> CreateClaimsList(UserModel user, string subDomain, ulong adminAccountId, string adminAccountName, string isTestEnvironment)
         {
             var claimsIdentity = new List<Claim>
             {
@@ -155,6 +155,7 @@ namespace Api.Core.Services
                 new(ClaimTypes.Role, user.Role),
                 new(ClaimTypes.GroupSid, subDomain),
                 new(ClaimTypes.Sid, adminAccountId.ToString()),
+                new(IdentityConstants.AdminAccountName, adminAccountName ?? ""),
                 new(HttpContextConstants.IsTestEnvironmentKey, isTestEnvironment)
             };
 

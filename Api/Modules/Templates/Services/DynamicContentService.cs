@@ -36,10 +36,20 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public Dictionary<int, string> GetComponentModes(Type component)
         {
-            var info = (component.BaseType).GetTypeInfo();
-            var enumtype = info.GetGenericArguments()[1];
-            var enumFields = enumtype.GetFields();
+            if (component?.BaseType == null)
+            {
+                return new Dictionary<int, string>();
+            }
 
+            var info = component.BaseType.GetTypeInfo();
+            var settingsType = info.GetGenericArguments().FirstOrDefault();
+            var componentModeProperty = settingsType?.GetProperty("ComponentMode");
+            if (componentModeProperty == null || !componentModeProperty.PropertyType.IsEnum)
+            {
+                return new Dictionary<int, string>();
+            }
+
+            var enumFields = componentModeProperty.PropertyType.GetFields();
             var returnDict = new Dictionary<int, string>();
 
             foreach (var enumField in enumFields)
@@ -52,9 +62,9 @@ namespace Api.Modules.Templates.Services
         }
         
         /// <inheritdoc />
-        public ServiceResult<List<ComponentModeModel>> GetComponentModes(string componentType)
+        public ServiceResult<List<ComponentModeModel>> GetComponentModes(string name)
         {
-            if (String.IsNullOrWhiteSpace(componentType))
+            if (String.IsNullOrWhiteSpace(name))
             {
                 return new ServiceResult<List<ComponentModeModel>>
                 {
@@ -63,13 +73,13 @@ namespace Api.Modules.Templates.Services
                 };
             }
             
-            var type = ReflectionHelper.GetComponentTypeByName(componentType);
+            var type = ReflectionHelper.GetComponentTypeByName(name);
             if (type == null)
             {
                 return new ServiceResult<List<ComponentModeModel>>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Component with type '{componentType}' not found."
+                    ErrorMessage = $"Component with type '{name}' not found."
                 };
             }
 
@@ -149,7 +159,7 @@ namespace Api.Modules.Templates.Services
                 }
             }
 
-            return new ServiceResult<int>(await dataService.SaveSettingsStringAsync(contentId, component, componentModeName, title, settings, IdentityHelpers.GetUserName(identity)));
+            return new ServiceResult<int>(await dataService.SaveSettingsStringAsync(contentId, component, componentModeName, title, settings, IdentityHelpers.GetUserName(identity, true)));
         }
 
         /// <inheritdoc />
@@ -191,7 +201,7 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> AddLinkToTemplateAsync(ClaimsIdentity identity, int contentId, int templateId)
         {
-            await dataService.AddLinkToTemplateAsync(contentId, templateId, IdentityHelpers.GetUserName(identity));
+            await dataService.AddLinkToTemplateAsync(contentId, templateId, IdentityHelpers.GetUserName(identity, true));
             return new ServiceResult<bool>(true)
             {
                 StatusCode = HttpStatusCode.NoContent
@@ -227,8 +237,11 @@ namespace Api.Modules.Templates.Services
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(contentId, currentPublished, newPublished);
-
-            return new ServiceResult<int>(await dataService.UpdatePublishedEnvironmentAsync(contentId, newPublished, publishLog, IdentityHelpers.GetUserName(identity)));
+            await dataService.UpdatePublishedEnvironmentAsync(contentId, newPublished, publishLog, IdentityHelpers.GetUserName(identity, true));
+            return new ServiceResult<int>
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
     }
 }
