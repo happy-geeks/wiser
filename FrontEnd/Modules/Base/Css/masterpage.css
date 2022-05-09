@@ -389,8 +389,7 @@ ins {
 	overflow: hidden;
 }
 .dynamicTabContent .gridview:only-child {
-    height: calc(100vh - 222px);
-    max-height: none !important;
+    height: calc(100vh - 230px);
 }
 .dynamicTabContent .gridview:only-child h4 {
     display: none;
@@ -1182,16 +1181,13 @@ footer input ~ .meta-data li.meta-toggle label span:last-child {
 
 /* Grid styling - in case the grid is first or second child of its parent container */
 .k-window-content > .pane-content {
-    height: 100%;
     min-height: auto;
 }
 .k-window-content > .pane-content .k-tabstrip .k-content.k-state-active,
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent {
-	height: auto;
+ 	height: auto;
 }
-.k-window-content > .pane-content .k-tabstrip .dynamicTabContent {
-	padding-bottom: 32px;
-}
+
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview:last-child:nth-child(2),
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent script ~ .gridview:last-child:nth-child(3) {
     height: 100%;
