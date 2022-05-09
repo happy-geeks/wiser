@@ -1187,7 +1187,8 @@ footer input ~ .meta-data li.meta-toggle label span:last-child {
 }
 .k-window-content > .pane-content .k-tabstrip .k-content.k-state-active,
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent {
-    height: 100%;
+	height: auto;
+	padding-bottom: 32px;
 }
 
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview:last-child:nth-child(2),
