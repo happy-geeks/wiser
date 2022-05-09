@@ -235,7 +235,6 @@ ins {
 }
 .item-group {
     width: 100%;
-    height: 100%;
     display: flex;
     flex-wrap: wrap;
     padding: 20px 0;
@@ -1208,6 +1207,7 @@ footer input ~ .meta-data li.meta-toggle label span:last-child {
 .dynamicTabContent .gridview:only-child .k-grid {
     display: flex;
     flex-direction: column;
+	height: calc(100% - 10px);
 }
 
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview:not(:only-child) {
