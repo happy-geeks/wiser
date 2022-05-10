@@ -129,6 +129,12 @@ namespace Api.Modules.Customers.Services
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
 
+        /// <inheritdoc />
+        public async Task<ServiceResult<CustomerModel>> CreateNewEnvironmentAsync(ClaimsIdentity identity, string name)
+        {
+            return await wiserCustomersService.CreateNewEnvironmentAsync(identity, name);
+        }
+
         #endregion
     }
 }

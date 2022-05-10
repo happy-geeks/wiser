@@ -44,7 +44,10 @@
                     <ins class="icon-line-bug"></ins>
                 </div>
                 <div class="ico-item">
-                    <ins class="icon-line-database-search" @@click="openWiserIdPrompt"></ins>
+                    <ins class="icon-line-database-search" @@click="openWiserIdPrompt" title="Wiser item openen via ID"></ins>
+                </div>
+                <div class="ico-item">
+                    <ins class="icon-line-database-add" @@click="openNewEnvironmentPromptPrompt" title="Nieuwe omgeving aanmaken"></ins>
                 </div>
                 <task-alerts ref="taskAlerts"></task-alerts>
             </li>
@@ -94,6 +97,12 @@
         <p>Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:</p>
         <div class="form-row">
             <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
+        </div>
+    </wiser-dialog>
+    <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een naam in'" ref="newEnvironmentPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: createNewEnvironment }]">
+        <p>Vul a.u.b. een naam in voor de nieuwe omgeving:</p>
+        <div class="form-row">
+            <input type="text" id="newEnvironmentName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newEnvironmentPromptValue" required>
         </div>
     </wiser-dialog>
 </div>

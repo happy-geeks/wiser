@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Modules.Customers.Enums;
 using Api.Modules.Customers.Interfaces;
@@ -66,6 +67,20 @@ namespace Api.Modules.Customers.Controllers
         public async Task<IActionResult> Create(CustomerModel customer, [FromQuery]bool isWebShop = false, [FromQuery]bool isConfigurator = false)
         {
             return (await wiserCustomersService.CreateCustomerAsync(customer, isWebShop, isConfigurator)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Creates a new environment for the authenticated customer.
+        /// This will create a new database schema on the same server/cluster and then fill it with part of the data from the original database.
+        /// </summary>
+        /// <param name="name">The name of the environment</param>
+        [HttpPost]
+        [ProducesResponseType(typeof(CustomerModel), StatusCodes.Status200OK)]
+        [Authorize]
+        [Route("create-new-environment/{name}")]
+        public async Task<IActionResult> CreateNewEnvironmentAsync(string name)
+        {
+            return (await wiserCustomersService.CreateNewEnvironmentAsync((ClaimsIdentity)User.Identity, name)).GetHttpResponseMessage();
         }
     }
 }

@@ -93,7 +93,8 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         appSettings: this.appSettings,
                         wiserIdPromptValue: null,
                         wiserEntityTypePromptValue: null,
-                        markerWidget: this.markerWidget
+                        markerWidget: this.markerWidget,
+                        newEnvironmentPromptValue: null,
                     };
                 },
                 created() {
@@ -260,6 +261,10 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         this.$refs.wiserEntityTypePrompt.open();
                     },
 
+                    openNewEnvironmentPromptPrompt() {
+                        this.$refs.newEnvironmentPrompt.open();
+                    },
+
                     async openWiserItem() {
                         if (!this.wiserIdPromptValue || isNaN(parseInt(this.wiserIdPromptValue))) {
                             return false;
@@ -316,6 +321,10 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
 
                     openMarkerIoScreen() {
                         this.markerWidget.capture("fullscreen");
+                    },
+
+                    createNewEnvironment() {
+                        alert(this.newEnvironmentPromptValue)
                     },
 
                     onOpenModuleClick(event, module) {

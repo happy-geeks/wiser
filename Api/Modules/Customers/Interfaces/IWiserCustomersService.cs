@@ -14,7 +14,7 @@ namespace Api.Modules.Customers.Interfaces
         /// <summary>
         /// Get a single customer via <see cref="ClaimsIdentity"/>.
         /// </summary>
-        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user to check for rights.</param>
+        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
         /// <returns>The <see cref="CustomerModel"/>.</returns>
         Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity);
 
@@ -96,5 +96,13 @@ namespace Api.Modules.Customers.Interfaces
         /// Get whether or not a sub domain is empty or the sub domain of the main Wiser database.
         /// </summary>
         bool IsMainDatabase(string subDomain);
+
+        /// <summary>
+        /// Creates a new environment for the authenticated customer.
+        /// This will create a new database schema on the same server/cluster and then fill it with part of the data from the original database.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
+        /// <param name="name">The name of the environment</param>
+        Task<ServiceResult<CustomerModel>> CreateNewEnvironmentAsync(ClaimsIdentity identity, string name);
     }
 }
