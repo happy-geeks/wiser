@@ -2531,6 +2531,15 @@ LIMIT 1";
                     template.EditorValue = await wiserItemsService.ReplaceHtmlForSavingAsync(template.EditorValue);
                     template.MinifiedValue = template.EditorValue;
                     break;
+                case TemplateTypes.Xml:
+                    if (!template.EditorValue.StartsWith("<Configuration>") && !template.EditorValue.StartsWith("<OAuthConfiguration>"))
+                    {
+                        break;
+                    }
+
+                    template.EditorValue = template.EditorValue.EncryptWithAes((await wiserCustomersService.GetEncryptionKey(identity)).ModelObject, useSlowerButMoreSecureMethod: true);
+
+                    break;
             }
             
             var jsLinks = template.LinkedTemplates?.LinkedJavascript?.Select(x => x.TemplateId).ToList();
