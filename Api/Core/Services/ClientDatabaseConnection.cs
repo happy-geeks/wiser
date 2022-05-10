@@ -640,6 +640,14 @@ namespace Api.Core.Services
         }
 
         /// <inheritdoc />
+        public async Task ChangeConnectionStringsAsync(string newConnectionStringForReading, string newConnectionStringForWriting)
+        {
+            connectionStringForReading = newConnectionStringForReading;
+            connectionStringForWriting = newConnectionStringForReading;
+            await CleanUpAsync();
+        }
+
+        /// <inheritdoc />
         public string GetDatabaseNameForCaching(bool writeDatabase = false)
         {
             if (connectionStringForReading == null)
