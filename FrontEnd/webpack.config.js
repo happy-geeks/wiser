@@ -29,7 +29,8 @@ module.exports = {
         Preview: "../../Modules/Templates/Scripts/Preview.js",
         Templates: "../../Modules/Templates/Scripts/Templates.js",
         DynamicContent: "../../Modules/Templates/Scripts/DynamicContent.js",
-        Admin: "../../Modules/Admin/Scripts/Admin.js"
+        Admin: "../../Modules/Admin/Scripts/Admin.js",
+        Base: "../../Modules/Base/Scripts/Base.js"
     },
     output: {
         path: path.join(__dirname, "wwwroot/scripts"),
