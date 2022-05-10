@@ -1,7 +1,7 @@
 /* KENDO - SPLITTER */
 .pane-content {
+	height: auto;
 	background-color: var(--item-bg-color);
-	height: auto !important;
 	min-height: calc(100% - 65px);
 	padding: 0;
 	position: relative;
