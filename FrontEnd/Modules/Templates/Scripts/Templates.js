@@ -72,7 +72,8 @@ const moduleSettings = {
                 "NORMAL": 6,
                 "DIRECTORY": 7,
                 "XML": 8,
-                "AIS": 8
+                "AIS": 8,
+                "ROUTINES": 9
             });
 
             // Default settings
@@ -893,6 +894,50 @@ const moduleSettings = {
                 editorElement.data("CodeMirrorInstance", codeMirrorInstance);
             }
 
+            const routineParametersInput = document.getElementById("routineParameters");
+            if (routineParametersInput) {
+                const editorType = routineParametersInput.dataset.editorType;
+
+                // Initialize Code Mirror.
+                await Misc.ensureCodeMirror();
+                const codeMirrorInstance = CodeMirror.fromTextArea(routineParametersInput, {
+                    lineNumbers: true,
+                    indentUnit: 4,
+                    lineWrapping: true,
+                    foldGutter: true,
+                    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
+                    lint: {
+                        options: {
+                            esversion: 2022,
+                            rules: {
+                                "no-empty-rulesets": 0,
+                                "no-ids": 0,
+                                "indentation": [1, { size: 4 }],
+                                "variable-for-property": 0,
+                                "property-sort-order": 0,
+                                "no-important": 0
+                            }
+                        }
+                    },
+                    extraKeys: {
+                        "Ctrl-Q": (sender) => {
+                            sender.foldCode(sender.getCursor());
+                        },
+                        "F11": (sender) => {
+                            sender.setOption("fullScreen", !sender.getOption("fullScreen"));
+                        },
+                        "Esc": (sender) => {
+                            if (sender.getOption("fullScreen")) sender.setOption("fullScreen", false);
+                        },
+                        "Ctrl-Space": "autocomplete"
+                    },
+                    mode: editorType
+                });
+                codeMirrorInstance.setSize(null, 60);
+
+                $(routineParametersInput).data("CodeMirrorInstance", codeMirrorInstance);
+            }
+
             const dataSource = (this.templateSettings.externalFiles || []).map(url => { return { url: url } })
             const externalFilesGridElement = $("#externalFiles");
             if (externalFilesGridElement.length > 0) {
@@ -1337,6 +1382,18 @@ const moduleSettings = {
                 editorValue = codeMirror.getValue();
             }
 
+            const routineType = document.querySelector("input[type=radio][name=routineType]:checked");
+            let routineParameters = null;
+            const routineReturnType = document.getElementById("routineReturnType");
+
+            const routineParametersElement = document.getElementById("routineParameters");
+            if (routineParametersElement) {
+                const routineParametersEditor = $(routineParametersElement).data("CodeMirrorInstance");
+                if (routineParametersEditor) {
+                    routineParameters = routineParametersEditor.getValue();
+                }
+            }
+
             const settings = Object.assign({
                 templateId: this.selectedId,
                 name: this.templateSettings.name || "",
@@ -1346,7 +1403,10 @@ const moduleSettings = {
                 linkedTemplates: {
                     linkedScssTemplates: scssLinks,
                     linkedJavascript: jsLinks
-                }
+                },
+                routineType: routineType ? Number(routineType.value) : 0,
+                routineParameters: routineParameters,
+                routineReturnType: routineReturnType ? routineReturnType.value : null
             }, this.getNewSettings());
 
             const externalFilesGrid = $("#externalFiles").data("kendoGrid");
