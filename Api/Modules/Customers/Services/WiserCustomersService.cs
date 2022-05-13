@@ -55,7 +55,7 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity)
+        public async Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity, bool includeDatabaseInformation = false)
         {
             var subDomain = IdentityHelpers.GetSubDomain(identity);
             if (IsMainDatabase(subDomain))
@@ -79,7 +79,9 @@ namespace Api.Modules.Customers.Services
                             customerid,
                             name,
                             {(IdentityHelpers.IsTestEnvironment(identity) ? "encryption_key_test" : "encryption_key")} AS encryption_key,
-                            subdomain
+                            subdomain,
+                            wiser_title
+                            {(includeDatabaseInformation ? ", db_host, db_login, db_passencrypted, db_port, db_dbname" : "")}
                         FROM {ApiTableNames.WiserCustomers} 
                         WHERE subdomain = ?name";
 
@@ -392,21 +394,26 @@ namespace Api.Modules.Customers.Services
                 };
             }
 
-            var currentCustomer = (await GetSingleAsync(identity)).ModelObject;
+            var currentCustomer = (await GetSingleAsync(identity, true)).ModelObject;
             var subDomain = currentCustomer.SubDomain;
+            var newCustomerName = $"{currentCustomer.Name} - {name}";
+            var newCustomerTitle = $"{currentCustomer.WiserTitle} - {name}";
 
             // If the ID is not the same as the customer ID, it means this is not the main/production environment of this customer.
             // Then we want to get the sub domain of the main/production environment of the customer, to use as base for the new sub domain for the new environment.
             if (currentCustomer.Id != currentCustomer.CustomerId)
             {
                 wiserDatabaseConnection.AddParameter("customerId", currentCustomer.CustomerId);
-                var dataTable = await wiserDatabaseConnection.GetAsync($"SELECT subdomain FROM {ApiTableNames.WiserCustomers} WHERE id = ?customerId");
+                var dataTable = await wiserDatabaseConnection.GetAsync($"SELECT subdomain, name, wiser_title FROM {ApiTableNames.WiserCustomers} WHERE id = ?customerId");
                 if (dataTable.Rows.Count == 0)
                 {
+                    // This should never happen, hence the exception.
                     throw new Exception("Customer not found");
                 }
 
                 subDomain = dataTable.Rows[0].Field<string>("subdomain");
+                newCustomerName = $"{dataTable.Rows[0].Field<string>("name")} - {name}";
+                newCustomerTitle = $"{dataTable.Rows[0].Field<string>("wiser_title")} - {name}";
             }
 
             // Create a valid database and sub domain name for the new environment.
@@ -422,13 +429,47 @@ namespace Api.Modules.Customers.Services
 
             subDomain += $"_{databaseNameBuilder}";
 
+            // Make sure no customer exists yet with this name and/or sub domain.
+            var customerExists = await CustomerExistsAsync(newCustomerName, subDomain);
+            if (customerExists.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<CustomerModel>
+                {
+                    ErrorMessage = customerExists.ErrorMessage,
+                    ReasonPhrase = customerExists.ReasonPhrase,
+                    StatusCode = customerExists.StatusCode
+                };
+            }
+
+            if (customerExists.ModelObject != CustomerExistsResults.Available)
+            {
+                return new ServiceResult<CustomerModel>
+                {
+                    StatusCode = HttpStatusCode.Conflict,
+                    ErrorMessage = $"Een omgeving met de naam '{name}' bestaat al.",
+                    ReasonPhrase = $"Een omgeving met de naam '{name}' bestaat al."
+                };
+            }
+
+            // Make sure the database doesn't exist yet. This method is only meant for creating new environments.
+            if (await databaseHelpersService.DatabaseExistsAsync(databaseName))
+            {
+                return new ServiceResult<CustomerModel>
+                {
+                    StatusCode = HttpStatusCode.Conflict,
+                    ErrorMessage = $"We hebben geprobeerd een database aan te maken met de naam '{databaseName}', echter bestaat deze al. Kies a.u.b. een andere omgevingsnaam, of neem contact op met ons.",
+                    ReasonPhrase = $"We hebben geprobeerd een database aan te maken met de naam '{databaseName}', echter bestaat deze al. Kies a.u.b. een andere omgevingsnaam, of neem contact op met ons."
+                };
+            }
+
             // Add the new customer environment to easy_customers.
             var newCustomer = new CustomerModel
             {
                 CustomerId = currentCustomer.CustomerId,
-                Name = name,
+                Name = newCustomerName,
                 EncryptionKey = SecurityHelpers.GenerateRandomPassword(20),
                 SubDomain = subDomain,
+                WiserTitle = newCustomerTitle,
                 LiveDatabase = new ConnectionInformationModel
                 {
                     Host = currentCustomer.LiveDatabase.Host,
@@ -449,12 +490,10 @@ namespace Api.Modules.Customers.Services
                 // Create the database in the same server/cluster.
                 await databaseHelpersService.CreateDatabaseAsync(databaseName);
 
-                // Remove passwords from response.
-                newCustomer.LiveDatabase.Password = null;
-
                 // Create tables in new database.
                 var query = @"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES
                             WHERE TABLE_SCHEMA = ?currentSchema
+                            AND TABLE_TYPE = 'BASE TABLE'
                             AND TABLE_NAME NOT LIKE '\_%'";
 
                 clientDatabaseConnection.AddParameter("currentSchema", currentCustomer.LiveDatabase.DatabaseName);
@@ -482,51 +521,77 @@ namespace Api.Modules.Customers.Services
                     "relatie",
                     "klant"
                 };
+                
+                // Create the tables in a new connection, because these cause implicit commits.
+                await using (var mysqlConnection = new MySqlConnection(GenerateConnectionStringFromCustomer(newCustomer)))
+                {
+                    await mysqlConnection.OpenAsync();
+                    await using (var command = mysqlConnection.CreateCommand())
+                    {
+                        foreach (DataRow dataRow in dataTable.Rows)
+                        {
+                            var tableName = dataRow.Field<string>("TABLE_NAME");
 
+                            command.CommandText = $"CREATE TABLE `{newCustomer.LiveDatabase.DatabaseName.ToMySqlSafeValue(false)}`.`{tableName.ToMySqlSafeValue(false)}` LIKE `{currentCustomer.LiveDatabase.DatabaseName.ToMySqlSafeValue(false)}`.`{tableName.ToMySqlSafeValue(false)}`";
+                            await command.ExecuteNonQueryAsync();
+                        }
+                    }
+                }
+
+                // Fill the tables with data.
                 var entityTypesString = String.Join(",", entityTypesToSkip.Select(x => $"'{x}'"));
                 foreach (DataRow dataRow in dataTable.Rows)
                 {
                     var tableName = dataRow.Field<string>("TABLE_NAME");
-                    await clientDatabaseConnection.ExecuteAsync($"CREATE TABLE `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` LIKE `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}`");
-                    
-                    // For Wiser tables, we don't want to copy customer data, so copy everything except data of certain entity types.
-                    if (tableName!.EndsWith(WiserTableNames.WiserItem, StringComparison.OrdinalIgnoreCase))
+
+                    try
                     {
-                        await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
+                        // For Wiser tables, we don't want to copy customer data, so copy everything except data of certain entity types.
+                        if (tableName!.EndsWith(WiserTableNames.WiserItem, StringComparison.OrdinalIgnoreCase))
+                        {
+                            await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
                                                                         SELECT * FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
                                                                         WHERE entity_type NOT IN ('{String.Join("','", entityTypesToSkip)}')");
-                        continue;
-                    }
+                            continue;
+                        }
 
-                    if (tableName!.EndsWith(WiserTableNames.WiserItemDetail, StringComparison.OrdinalIgnoreCase))
-                    {
-                        var prefix = tableName.Replace(WiserTableNames.WiserItemDetail, "");
-                        await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
-                                                                        SELECT * FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}` AS detail
+                        if (tableName!.EndsWith(WiserTableNames.WiserItemDetail, StringComparison.OrdinalIgnoreCase))
+                        {
+                            var prefix = tableName.Replace(WiserTableNames.WiserItemDetail, "");
+                            await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
+                                                                        SELECT detail.* FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}` AS detail
                                                                         JOIN `{currentCustomer.LiveDatabase.DatabaseName}`.`{prefix}{WiserTableNames.WiserItem}` AS item ON item.id = detail.item_id AND item.entity_type NOT IN ({entityTypesString})");
-                        continue;
-                    }
+                            continue;
+                        }
 
-                    if (tableName!.EndsWith(WiserTableNames.WiserItemFile, StringComparison.OrdinalIgnoreCase))
-                    {
-                        var prefix = tableName.Replace(WiserTableNames.WiserItemDetail, "");
-                        await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
-                                                                        SELECT * FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}` AS file
+                        if (tableName!.EndsWith(WiserTableNames.WiserItemFile, StringComparison.OrdinalIgnoreCase))
+                        {
+                            var prefix = tableName.Replace(WiserTableNames.WiserItemFile, "");
+                            await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
+                                                                        SELECT file.* FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}` AS file
                                                                         JOIN `{currentCustomer.LiveDatabase.DatabaseName}`.`{prefix}{WiserTableNames.WiserItem}` AS item ON item.id = file.item_id AND item.entity_type NOT IN ({entityTypesString})");
-                        continue;
-                    }
+                            continue;
+                        }
 
-                    // Don't copy data from certain tables, such as log and archive tables.
-                    if (tablesToAlwaysLeaveEmpty.Any(t => String.Equals(t, tableName, StringComparison.OrdinalIgnoreCase)) 
-                        || tableName!.StartsWith("log_", StringComparison.OrdinalIgnoreCase) 
-                        || tableName.EndsWith("_log", StringComparison.OrdinalIgnoreCase)
-                        || tableName.EndsWith(WiserTableNames.ArchiveSuffix))
+                        // Don't copy data from certain tables, such as log and archive tables.
+                        if (tablesToAlwaysLeaveEmpty.Any(t => String.Equals(t, tableName, StringComparison.OrdinalIgnoreCase))
+                            || tableName!.StartsWith("log_", StringComparison.OrdinalIgnoreCase)
+                            || tableName.EndsWith("_log", StringComparison.OrdinalIgnoreCase)
+                            || tableName.EndsWith(WiserTableNames.ArchiveSuffix))
+                        {
+                            continue;
+                        }
+
+                        await clientDatabaseConnection.ExecuteAsync($"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` SELECT * FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}`");
+                    }
+                    catch (Exception exception)
                     {
-                        continue;
+                        throw new Exception($"Error while trying to fill table '{tableName}'", exception);
                     }
-
-                    await clientDatabaseConnection.ExecuteAsync($"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` SELECT * FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}`");
                 }
+
+                // Remove passwords from response.
+                newCustomer.LiveDatabase.Password = null;
 
                 await clientDatabaseConnection.CommitTransactionAsync();
                 await wiserDatabaseConnection.CommitTransactionAsync();
@@ -537,6 +602,14 @@ namespace Api.Modules.Customers.Services
             {
                 await wiserDatabaseConnection.RollbackTransactionAsync();
                 await clientDatabaseConnection.RollbackTransactionAsync();
+
+                // Drop the new database it something went wrong, so that we can start over again later.
+                // We can safely do this, because this method will return an error if the database already exists,
+                // so we can be sure that this database was created here and we can drop it again it something went wrong.
+                if (await databaseHelpersService.DatabaseExistsAsync(databaseName))
+                {
+                    //await databaseHelpersService.DropDatabaseAsync(databaseName);
+                }
 
                 throw;
             }
@@ -564,6 +637,7 @@ namespace Api.Modules.Customers.Services
             wiserDatabaseConnection.AddParameter("encryption_key", customer.EncryptionKey);
             wiserDatabaseConnection.AddParameter("encryption_key_test", customer.EncryptionKey);
             wiserDatabaseConnection.AddParameter("subdomain", customer.SubDomain);
+            wiserDatabaseConnection.AddParameter("wiser_title", customer.WiserTitle);
 
             customer.Id = await wiserDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(ApiTableNames.WiserCustomers, customer.Id);
         }
@@ -576,7 +650,7 @@ namespace Api.Modules.Customers.Services
         private string GenerateConnectionStringFromCustomer(CustomerModel customer, bool passwordIsEncrypted = true)
         {
             var decryptedPassword = passwordIsEncrypted ? customer.LiveDatabase.Password.DecryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey) : customer.LiveDatabase.Password;
-            return $"server={customer.LiveDatabase.Host};port={(customer.LiveDatabase.PortNumber > 0 ? customer.LiveDatabase.Password : 3306)};uid={customer.LiveDatabase.Username};pwd={decryptedPassword};database={customer.LiveDatabase.DatabaseName};AllowUserVariables=True;ConvertZeroDateTime=true;CharSet=utf8";
+            return $"server={customer.LiveDatabase.Host};port={(customer.LiveDatabase.PortNumber > 0 ? customer.LiveDatabase.PortNumber : 3306)};uid={customer.LiveDatabase.Username};pwd={decryptedPassword};database={customer.LiveDatabase.DatabaseName};AllowUserVariables=True;ConvertZeroDateTime=true;CharSet=utf8";
         }
 
         #endregion

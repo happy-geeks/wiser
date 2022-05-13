@@ -40,14 +40,14 @@ namespace Api.Modules.Customers.Services
         }
         
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity)
+        public async Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity, bool includeDatabaseInformation = false)
         {
             var subDomain = IdentityHelpers.GetSubDomain(identity);
-            return await cache.GetOrAdd($"customer_{subDomain}",
+            return await cache.GetOrAdd($"customer_{subDomain}_{includeDatabaseInformation}",
                 async cacheEntry =>
                 {
                     cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
-                    return await wiserCustomersService.GetSingleAsync(identity);
+                    return await wiserCustomersService.GetSingleAsync(identity, includeDatabaseInformation);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
 

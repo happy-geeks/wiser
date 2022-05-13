@@ -127,6 +127,11 @@ header {
     position: absolute;
     height: 100%;
     width: 100%;
+    
+    > div {
+        height: 100%;
+        width: 100%;
+    }
 }
 
 .form-row {
@@ -151,6 +156,8 @@ header {
     color: $white-color;
     padding: 12px 12px 12px 40px;
     line-height: 20px;
+    max-height: 400px;
+    overflow: auto;
     
     ins {
         position: absolute;

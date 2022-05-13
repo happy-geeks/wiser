@@ -42,7 +42,12 @@ namespace Api.Modules.Customers.Models
         /// Gets or sets the sub domain for Wiser 2+.
         /// </summary>
         public string SubDomain { get; set; }
-        
+
+        /// <summary>
+        /// Gets or sets the title to show in the browser tab when the user opens Wiser for this tenant/customer.
+        /// </summary>
+        public string WiserTitle { get; set; }
+
         /// <summary>
         /// Gets or sets extra Wiser settings, for easy_objects.
         /// This is only used for creating a new customer via Wiser 3.
@@ -62,7 +67,8 @@ namespace Api.Modules.Customers.Models
                 CustomerId = dataRow.Field<int>("customerid"),
                 Name = dataRow.Field<string>("name"),
                 EncryptionKey = dataRow.Field<string>("encryption_key"),
-                SubDomain = dataRow.Field<string>("subdomain")
+                SubDomain = dataRow.Field<string>("subdomain"),
+                WiserTitle = dataRow.Field<string>("wiser_title")
             };
 
             if (dataRow.Table.Columns.Contains("db_host"))

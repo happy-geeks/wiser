@@ -31,3 +31,6 @@ export const LOAD_ENTITY_TYPES_OF_ITEM_ID = "loadEntityTypesOfItemId";
 // Customers module.
 export const GET_CUSTOMER_TITLE = "getCustomerTitle";
 export const VALID_SUB_DOMAIN = "validSubDomain";
+export const CREATE_ENVIRONMENT = "createEnvironment";
+export const CREATE_ENVIRONMENT_SUCCESS = "createEnvironmentSuccess";
+export const CREATE_ENVIRONMENT_ERROR = "createEnvironmentError";

@@ -75,7 +75,7 @@ export default class CustomersService extends BaseService {
     }
 
     /**
-     * Gets all modules that the user has access to.
+     * Creates a new customer / tenant in Wiser.
      * @param {any} data The data for the new customer.
      * @param {boolean} isWebShop: Whether or not this customer is getting a web shop.
      * @param {boolean} isConfigurator: Whether or not this customer is getting a configurator.
@@ -190,6 +190,49 @@ export default class CustomersService extends BaseService {
             console.error("Error create customer", error.toJSON());
             result.message = "Er is een onbekende fout opgetreden tijdens het aanmaken van de database voor deze klant. Probeer het a.u.b. nogmaals of neem contact op met ons.";
 
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                console.warn(error.response);
+            } else if (error.request) {
+                // The request was made but no response was received
+                // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                // http.ClientRequest in node.js
+                console.warn(error.request);
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                console.warn(error.message);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Creates a new environment for the customers. This will create a new database (on the same server/cluster as the current) and copied most data to that new database.
+     * It will then also create a new tenant in Wiser so the customer can login to the new environment.
+     * @param {any} name The name for the new environment.
+     * @returns {any} The information about the new environment.
+     */
+    async createNewEnvironment(name) {
+        const result = {};
+        try {
+            const response = await this.base.api.post(`/api/v3/wiser-customers/create-new-environment/${encodeURIComponent(name)}`);
+            result.success = true;
+            result.data = response.data;
+        } catch (error) {
+            result.success = false;
+            console.error("Error create customer", error.toJSON());
+            
+            let errorMessage = error.message;
+            if (error.response && error.response.data && error.response.data.error) {
+                errorMessage = error.response.data.error;
+            } else if (error.response.data) {
+                errorMessage = error.response.data;
+            } else if (error.response.statusText) {
+                errorMessage = error.response.statusText;
+            }
+            result.message = `Er is iets fout gegaan tijdens het aanmaken van deze omgeving. Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br>${errorMessage}`;
             if (error.response) {
                 // The request was made and the server responded with a status code
                 // that falls out of the range of 2xx

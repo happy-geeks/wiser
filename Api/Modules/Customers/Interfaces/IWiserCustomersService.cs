@@ -15,8 +15,9 @@ namespace Api.Modules.Customers.Interfaces
         /// Get a single customer via <see cref="ClaimsIdentity"/>.
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
+        /// <param name="includeDatabaseInformation">Optional: Whether to also get the connection information for the database of the customer. Default is <see langword="false"/>.</param>
         /// <returns>The <see cref="CustomerModel"/>.</returns>
-        Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity);
+        Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity, bool includeDatabaseInformation = false);
 
         /// <summary>
         /// Get the encryption key for a customer via <see cref="ClaimsIdentity"/>.

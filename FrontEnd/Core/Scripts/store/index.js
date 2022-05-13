@@ -1,5 +1,32 @@
 ﻿import { createStore } from "vuex";
-import { START_REQUEST, END_REQUEST, AUTH_REQUEST, AUTH_LIST, AUTH_SUCCESS, AUTH_ERROR, AUTH_LOGOUT, MODULES_LOADED, OPEN_MODULE, ACTIVATE_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, MODULES_REQUEST, LOAD_ENTITY_TYPES_OF_ITEM_ID, FORGOT_PASSWORD, RESET_PASSWORD_SUCCESS, RESET_PASSWORD_ERROR, CHANGE_PASSWORD, CHANGE_PASSWORD_SUCCESS, CHANGE_PASSWORD_ERROR, GET_CUSTOMER_TITLE, VALID_SUB_DOMAIN, TOGGLE_PIN_MODULE } from "./mutation-types";
+import {
+    START_REQUEST,
+    END_REQUEST,
+    AUTH_REQUEST,
+    AUTH_LIST,
+    AUTH_SUCCESS,
+    AUTH_ERROR,
+    AUTH_LOGOUT,
+    MODULES_LOADED,
+    OPEN_MODULE,
+    ACTIVATE_MODULE,
+    CLOSE_MODULE,
+    CLOSE_ALL_MODULES,
+    MODULES_REQUEST,
+    LOAD_ENTITY_TYPES_OF_ITEM_ID,
+    FORGOT_PASSWORD,
+    RESET_PASSWORD_SUCCESS,
+    RESET_PASSWORD_ERROR,
+    CHANGE_PASSWORD,
+    CHANGE_PASSWORD_SUCCESS,
+    CHANGE_PASSWORD_ERROR,
+    GET_CUSTOMER_TITLE,
+    VALID_SUB_DOMAIN,
+    TOGGLE_PIN_MODULE,
+    CREATE_ENVIRONMENT,
+    CREATE_ENVIRONMENT_SUCCESS,
+    CREATE_ENVIRONMENT_ERROR
+} from "./mutation-types";
 
 const baseModule = {
     state: () => ({
@@ -108,7 +135,6 @@ const loginModule = {
     actions: {
         async [AUTH_REQUEST]({ commit }, data = {}) {
             const user = data.user;
-            commit(START_REQUEST);
             commit(AUTH_REQUEST, user);
 
             // Check if we have user data in the local storage and if that data is still valid.
@@ -145,7 +171,6 @@ const loginModule = {
                 }
 
                 commit(AUTH_SUCCESS, user);
-                commit(END_REQUEST);
 
                 await this.dispatch(MODULES_REQUEST);
                 return;
@@ -465,7 +490,9 @@ const modulesModule = {
 const customersModule = {
     state: () => ({
         title: null,
-        validSubDomain: true
+        validSubDomain: true,
+        createEnvironmentError: null,
+        createEnvironmentResult: null
     }),
 
     mutations: {
@@ -480,6 +507,16 @@ const customersModule = {
 
         [VALID_SUB_DOMAIN](state, valid) {
             state.validSubDomain = valid;
+        },
+        
+        [CREATE_ENVIRONMENT_SUCCESS](state, result) {
+            state.createEnvironmentResult = result;
+            state.createEnvironmentError = null;
+        },
+
+        [CREATE_ENVIRONMENT_ERROR](state, error) {
+            state.createEnvironmentResult = null;
+            state.createEnvironmentError = error;
         }
     },
 
@@ -489,6 +526,22 @@ const customersModule = {
             const titleResponse = await main.customersService.getTitle(subDomain);
             commit(GET_CUSTOMER_TITLE, titleResponse.data);
             commit(VALID_SUB_DOMAIN, titleResponse.statusCode !== 404);
+            commit(END_REQUEST);
+        },
+        
+        async [CREATE_ENVIRONMENT]({ commit }, name) {
+            commit(START_REQUEST);
+            const result = await main.customersService.createNewEnvironment(name);
+
+            if (result.success) {
+                if (result.data) {
+                    commit(CREATE_ENVIRONMENT_SUCCESS, result.data);
+                } else {
+                    commit(CREATE_ENVIRONMENT_ERROR, result.message);
+                }
+            } else {
+                commit(CREATE_ENVIRONMENT_ERROR, result.message);
+            }
             commit(END_REQUEST);
         }
     },

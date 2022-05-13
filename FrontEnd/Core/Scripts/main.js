@@ -23,7 +23,7 @@ import WiserDialog from "./components/wiser-dialog";
 import "../scss/main.scss";
 import "../scss/task-alerts.scss";
 
-import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, ACTIVATE_MODULE, LOAD_ENTITY_TYPES_OF_ITEM_ID, GET_CUSTOMER_TITLE, TOGGLE_PIN_MODULE } from "./store/mutation-types";
+import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, ACTIVATE_MODULE, LOAD_ENTITY_TYPES_OF_ITEM_ID, GET_CUSTOMER_TITLE, TOGGLE_PIN_MODULE, CREATE_ENVIRONMENT } from "./store/mutation-types";
 
 (() => {
     class Main {
@@ -152,6 +152,12 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                     },
                     validSubDomain() {
                         return this.$store.state.customers.validSubDomain;
+                    },
+                    createEnvironmentError() {
+                        return this.$store.state.customers.createEnvironmentError;
+                    },
+                    createEnvironmentResult() {
+                        return this.$store.state.customers.createEnvironmentResult;
                     }
                 },
                 components: {
@@ -323,8 +329,13 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         this.markerWidget.capture("fullscreen");
                     },
 
-                    createNewEnvironment() {
-                        alert(this.newEnvironmentPromptValue)
+                    async createNewEnvironment() {
+                        if (!this.newEnvironmentPromptValue) {
+                            return false;
+                        }
+                        
+                        await this.$store.dispatch(CREATE_ENVIRONMENT, this.newEnvironmentPromptValue);
+                        return !this.createEnvironmentError;
                     },
 
                     onOpenModuleClick(event, module) {

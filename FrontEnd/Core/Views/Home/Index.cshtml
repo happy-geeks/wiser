@@ -2,109 +2,113 @@
 
 @model BaseViewModel
 <!-- Current Wiser version: @Model.WiserVersion?.ToString() -->
-<div id="app" v-cloak :class="{ loading: mainLoader }">
-    <header v-if="user.loggedIn && !requirePasswordChange">
-        <ul class="main-menu">
-            <li id="side-menu">
-                <div id="menu-btn" @@click="toggleMenuState()"><ins class="icon-menu"></ins><span>Menu</span></div>
-                <div id="side-btn" @@click="toggleMenuActive()"><ins class="icon-chevron-right"></ins></div>
+<div id="app" v-cloak>
+    <div :class="{ 'loading': mainLoader }">
+        <header v-if="user.loggedIn && !requirePasswordChange">
+            <ul class="main-menu">
+                <li id="side-menu">
+                    <div id="menu-btn" @@click="toggleMenuState()"><ins class="icon-menu"></ins><span>Menu</span></div>
+                    <div id="side-btn" @@click="toggleMenuActive()"><ins class="icon-chevron-right"></ins></div>
 
-                <nav id="side-nav">
-                    <div class="menu-scroller">
-                        <ul>
-                            <li v-for="moduleGroup in moduleGroups" :key="moduleGroup.name">
-                                <strong v-if="moduleGroup.name">{{ moduleGroup.name }}</strong>
-                                <ul>
-                                    <li v-for="module in moduleGroup.modules" :key="module.moduleId">
-                                        <a href="#" :title="module.name" @@click="onOpenModuleClick($event, module)"><ins :class="module.icon"></ins><span>{{ module.name }}</span></a>
-                                        <button @@click="onTogglePin($event, module.moduleId)" :class="{ pinned: module.pinned, 'auto-load': module.autoLoad }">
-                                            <ins :class="{ 'icon-line-pin-empty': !module.autoLoad, 'icon-line-pin-full': module.pinned && module.autoLoad }"></ins>
-                                        </button>
-                                    </li>
-                                </ul>
-                            </li>
-                        </ul>
+                    <nav id="side-nav">
+                        <div class="menu-scroller">
+                            <ul>
+                                <li v-for="moduleGroup in moduleGroups" :key="moduleGroup.name">
+                                    <strong v-if="moduleGroup.name">{{ moduleGroup.name }}</strong>
+                                    <ul>
+                                        <li v-for="module in moduleGroup.modules" :key="module.moduleId">
+                                            <a href="#" :title="module.name" @@click="onOpenModuleClick($event, module)"><ins :class="module.icon"></ins><span>{{ module.name }}</span></a>
+                                            <button @@click="onTogglePin($event, module.moduleId)" :class="{ pinned: module.pinned, 'auto-load': module.autoLoad }">
+                                                <ins :class="{ 'icon-line-pin-empty': !module.autoLoad, 'icon-line-pin-full': module.pinned && module.autoLoad }"></ins>
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+                </li>
+
+                <li class="tabs">
+                    <div v-for="module in openedModules" :key="module.id" :class="{ 'tab-item': true, active: module.id === activeModule }" @@click="setActiveModule($event, module.id)" :title="module.name">
+                        <ins :class="module.icon"></ins>
+                        <strong>{{ module.name }}</strong>
+                        <span class="close-module" title="module sluiten" @@click="closeModule(module)"></span>
                     </div>
-                </nav>
-            </li>
+                </li>
 
-            <li class="tabs">
-                <div v-for="module in openedModules" :key="module.id" :class="{ 'tab-item': true, active: module.id === activeModule }" @@click="setActiveModule($event, module.id)" :title="module.name">
-                    <ins :class="module.icon"></ins>
-                    <strong>{{ module.name }}</strong>
-                    <span class="close-module" title="module sluiten" @@click="closeModule(module)"></span>
-                </div>
-            </li>
+                <li class="icons">
+                    <div class="ico-item" v-if="modules.find(m => m.moduleId === 709)">
+                        <ins class="icon-line-search" @@click="openModule(709)"></ins>
+                    </div>
+                    <div class="ico-item" title="Bug melden!" v-if="markerIoEnabled" @@click="openMarkerIoScreen()">
+                        <ins class="icon-line-bug"></ins>
+                    </div>
+                    <div class="ico-item">
+                        <ins class="icon-line-database-search" @@click="openWiserIdPrompt" title="Wiser item openen via ID"></ins>
+                    </div>
+                    <task-alerts ref="taskAlerts"></task-alerts>
+                </li>
 
-            <li class="icons">
-                <div class="ico-item" v-if="modules.find(m => m.moduleId === 709)">
-                    <ins class="icon-line-search" @@click="openModule(709)"></ins>
-                </div>
-                <div class="ico-item" title="Bug melden!" v-if="markerIoEnabled" @@click="openMarkerIoScreen()">
-                    <ins class="icon-line-bug"></ins>
-                </div>
-                <div class="ico-item">
-                    <ins class="icon-line-database-search" @@click="openWiserIdPrompt" title="Wiser item openen via ID"></ins>
-                </div>
-                <div class="ico-item">
-                    <ins class="icon-line-database-add" @@click="openNewEnvironmentPromptPrompt" title="Nieuwe omgeving aanmaken"></ins>
-                </div>
-                <task-alerts ref="taskAlerts"></task-alerts>
-            </li>
+                <li class="login">
+                    <span>
+                        <strong class="title">Welkom</strong>
+                        <span class="sub-title">{{ user.name }}</span>
+                        <ins class="icon-chevron-down"></ins>
+                    </span>
 
-            <li class="login">
-                <span>
-                    <strong class="title">Welkom</strong>
-                    <span class="sub-title">{{ user.name }}</span>
-                    <ins class="icon-chevron-down"></ins>
-                </span>
+                    <ul class="sub-menu">
+                        <li><a href="#" v-if="user.adminAccountId" @@click="openCustomerManagement()"><ins class="icon-line-user-plus"></ins><span>Klant toevoegen</span></a></li>
+                        <li><a href="#" @@click="openNewEnvironmentPromptPrompt()"><ins class="icon-line-user-plus"></ins><span>Nieuwe omgeving aanmaken</span></a></li>
+                        <li><a href="#" @@click="logout()"><ins class="icon-line-log-out"></ins><span>Uitloggen</span></a></li>
+                    </ul>
+                </li>
+                <li class="logo">
+                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 266" style="enable-background:new 0 0 512 266;" xml:space="preserve">
+                        <circle class="logo1" cx="183.1" cy="97.1" r="24.3"/>
+                        <circle class="logo1" cx="328.9" cy="97.1" r="24.3"/>
+                        <path class="logo1" d="M256,179.6c-9.6,10.8-21.5,19.5-35,25.2l35,60.8l35-60.8C277.5,199.1,265.6,190.4,256,179.6z"/>
+                        <path class="logo2" d="M352.1,54.5c15.1,8.3,25.3,24.3,25.3,42.7c0,26.8-21.8,48.6-48.6,48.6c-26.8,0-48.6-21.7-48.6-48.4 c0-26.8,21.8-48.3,48.6-48.3L511,1H328.9c-29,0-55.1,12.6-72.9,32.6C238.2,13.6,212.2,1,183.1,1H1l182.1,48.1 c26.8,0,48.6,21.5,48.6,48.3c0,26.8-21.8,48.4-48.6,48.4c-26.8,0-48.6-21.9-48.6-48.6c0-18.4,10.2-34.4,25.3-42.7l-55.1-14.7 C93,55.9,86,75.7,86,97.1c0,53.7,43.5,97.1,97.1,97.1c29,0,55.1-12.6,72.9-32.6c17.8,20,43.8,32.6,72.9,32.6 c53.7,0,97.1-43.5,97.1-97.1c0-21.4-7-41.3-18.7-57.3L352.1,54.5z"/>
+                    </svg>
+                </li>
+            </ul>
+        </header>
 
-                <ul class="sub-menu">
-                    <li><a href="#" v-if="user.adminAccountId" @@click="openCustomerManagement()"><ins class="icon-line-user-plus"></ins><span>Klant toevoegen</span></a></li>
-                    <li><a href="#" @@click="logout()"><ins class="icon-line-log-out"></ins><span>Uitloggen</span></a></li>
-                </ul>
-            </li>
-            <li class="logo">
-                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 266" style="enable-background:new 0 0 512 266;" xml:space="preserve">
-                <circle class="logo1" cx="183.1" cy="97.1" r="24.3" />
-                <circle class="logo1" cx="328.9" cy="97.1" r="24.3" />
-                <path class="logo1" d="M256,179.6c-9.6,10.8-21.5,19.5-35,25.2l35,60.8l35-60.8C277.5,199.1,265.6,190.4,256,179.6z" />
-                <path class="logo2" d="M352.1,54.5c15.1,8.3,25.3,24.3,25.3,42.7c0,26.8-21.8,48.6-48.6,48.6c-26.8,0-48.6-21.7-48.6-48.4 c0-26.8,21.8-48.3,48.6-48.3L511,1H328.9c-29,0-55.1,12.6-72.9,32.6C238.2,13.6,212.2,1,183.1,1H1l182.1,48.1 c26.8,0,48.6,21.5,48.6,48.3c0,26.8-21.8,48.4-48.6,48.4c-26.8,0-48.6-21.9-48.6-48.6c0-18.4,10.2-34.4,25.3-42.7l-55.1-14.7 C93,55.9,86,75.7,86,97.1c0,53.7,43.5,97.1,97.1,97.1c29,0,55.1-12.6,72.9-32.6c17.8,20,43.8,32.6,72.9,32.6 c53.7,0,97.1-43.5,97.1-97.1c0-21.4-7-41.3-18.7-57.3L352.1,54.5z" />
-                </svg>
-            </li>
-        </ul>
-    </header>
+        <main :class="{ login: !user.loggedIn || requirePasswordChange }">
+            <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
+            <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
+            <section class="iframe-container">
+                <iframe v-for="module in openedModulesWithBackend" :key="module.id" :src="module.iframeUrl || `/Modules/${module.type}${module.fileName}${module.queryString}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
+                <iframe v-for="module in openedWiser1Modules" :key="module.id" :src="`${appSettings.wiser1BaseUrl}?singleModuleId=${module.moduleId}&autoLoginCookie=${encodeURIComponent(user.cookieValue)}&autoLoginUserId=${encodeURIComponent(user.encryptedId)}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
+            </section>
 
-    <main :class="{ login: !user.loggedIn || requirePasswordChange }">
-        <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
-        <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
-        <section class="iframe-container">
-            <iframe v-for="module in openedModulesWithBackend" :key="module.id" :src="module.iframeUrl || `/Modules/${module.type}${module.fileName}${module.queryString}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
-            <iframe v-for="module in openedWiser1Modules" :key="module.id" :src="`${appSettings.wiser1BaseUrl}?singleModuleId=${module.moduleId}&autoLoginCookie=${encodeURIComponent(user.cookieValue)}&autoLoginUserId=${encodeURIComponent(user.encryptedId)}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
-        </section>
+            <keep-alive>
+                <customer-management v-if="user.adminAccountId && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
+            </keep-alive>
+        </main>
 
-        <keep-alive>
-            <customer-management v-if="user.adminAccountId && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
-        </keep-alive>
-    </main>
-
-    <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een ID in'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]" @@open="onWiserIdPromptOpen">
-        <div class="form-row">
-            <input type="number" id="wiserId" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" @@keypress="onWiserIdFieldKeyPress" required>
-        </div>
-    </wiser-dialog>
-    <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
-        <p>Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:</p>
-        <div class="form-row">
-            <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
-        </div>
-    </wiser-dialog>
-    <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een naam in'" ref="newEnvironmentPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: createNewEnvironment }]">
-        <p>Vul a.u.b. een naam in voor de nieuwe omgeving:</p>
-        <div class="form-row">
-            <input type="text" id="newEnvironmentName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newEnvironmentPromptValue" required>
-        </div>
-    </wiser-dialog>
+        <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een ID in'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]" @@open="onWiserIdPromptOpen">
+            <div class="form-row">
+                <input type="number" id="wiserId" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" @@keypress="onWiserIdFieldKeyPress" required>
+            </div>
+        </wiser-dialog>
+        <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
+            <p>Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:</p>
+            <div class="form-row">
+                <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
+            </div>
+        </wiser-dialog>
+        <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een naam in'" ref="newEnvironmentPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Aanmaken', primary: true, action: createNewEnvironment }]">
+            <p>Vul a.u.b. een naam in voor de nieuwe omgeving:</p>
+            <section class="full-error" v-if="createEnvironmentError">
+                <ins class="icon-line-alert"></ins>
+                <span v-html="createEnvironmentError"></span>
+            </section>
+            <div class="form-row">
+                <input type="text" id="newEnvironmentName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newEnvironmentPromptValue" required>
+            </div>
+        </wiser-dialog>
+    </div>
 </div>
 
 <script type="text/html" id="login-template">
