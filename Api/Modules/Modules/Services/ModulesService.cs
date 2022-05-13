@@ -93,8 +93,7 @@ namespace Api.Modules.Modules.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
             // Make sure that Wiser tables are up-to-date.
-            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-                {WiserTableNames.WiserItem, WiserTableNames.WiserEntityProperty, WiserTableNames.WiserModule});
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserItem, WiserTableNames.WiserEntityProperty, WiserTableNames.WiserModule });
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
@@ -144,10 +143,8 @@ namespace Api.Modules.Modules.Services
                 return new ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>(results);
             }
 
-            var onlyOneInstanceAllowedGlobal =
-                String.Equals(
-                    await objectsService.FindSystemObjectByDomainNameAsync("wiser_modules_OnlyOneInstanceAllowed",
-                        "false"), "true", StringComparison.OrdinalIgnoreCase);
+            var onlyOneInstanceAllowedGlobal = String.Equals(await objectsService.FindSystemObjectByDomainNameAsync("wiser_modules_OnlyOneInstanceAllowed",                                                                                                                     "false"), "true", StringComparison.OrdinalIgnoreCase);
+            
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var moduleId = dataRow.Field<int>("module_id");

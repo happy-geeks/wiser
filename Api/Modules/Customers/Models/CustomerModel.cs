@@ -29,9 +29,9 @@ namespace Api.Modules.Customers.Models
         public string Name { get; set; }
         
         /// <summary>
-        /// Gets or sets the information required to connecto to the live database of the customer.
+        /// Gets or sets the information required to connect to the database of the customer.
         /// </summary>
-        public ConnectionInformationModel LiveDatabase { get; set; }
+        public ConnectionInformationModel Database { get; set; }
         
         /// <summary>
         /// Gets or sets the encryption key for Wiser 2 data.
@@ -73,7 +73,7 @@ namespace Api.Modules.Customers.Models
 
             if (dataRow.Table.Columns.Contains("db_host"))
             {
-                result.LiveDatabase = new ConnectionInformationModel
+                result.Database = new ConnectionInformationModel
                 {
                     Password = dataRow.Field<string>("db_passencrypted"),
                     Username = dataRow.Field<string>("db_login"),

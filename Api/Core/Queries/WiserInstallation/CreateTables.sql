@@ -122,10 +122,10 @@ CREATE TABLE IF NOT EXISTS `wiser_field_templates`  (
 -- Table structure for wiser_history
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_history`  (
-  `id` bigint NOT NULL AUTO_INCREMENT,
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
   `action` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'added or changed',
   `tablename` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `item_id` int NOT NULL DEFAULT 0,
+  `item_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   `changed_on` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
   `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `field` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
