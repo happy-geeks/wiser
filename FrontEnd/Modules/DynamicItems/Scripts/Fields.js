@@ -3100,6 +3100,7 @@ export class Fields {
                             Wiser2.api({
                                 url: `${this.base.settings.wiserApiRoot}data-selectors/preview-for-html-editor`,
                                 method: "POST",
+                                contentType: "application/json",
                                 data: html
                             }).then((newHtml) => {
                                 html = newHtml;
