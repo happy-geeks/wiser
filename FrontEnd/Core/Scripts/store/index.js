@@ -25,7 +25,11 @@ import {
     TOGGLE_PIN_MODULE,
     CREATE_ENVIRONMENT,
     CREATE_ENVIRONMENT_SUCCESS,
-    CREATE_ENVIRONMENT_ERROR
+    CREATE_ENVIRONMENT_ERROR,
+    GET_ENVIRONMENTS, 
+    SYNCHRONISE_CHANGES_TO_PRODUCTION,
+    SYNCHRONISE_CHANGES_TO_PRODUCTION_SUCCESS,
+    SYNCHRONISE_CHANGES_TO_PRODUCTION_ERROR
 } from "./mutation-types";
 
 const baseModule = {
@@ -492,7 +496,8 @@ const customersModule = {
         title: null,
         validSubDomain: true,
         createEnvironmentError: null,
-        createEnvironmentResult: null
+        createEnvironmentResult: null,
+        environments: []
     }),
 
     mutations: {
@@ -517,6 +522,20 @@ const customersModule = {
         [CREATE_ENVIRONMENT_ERROR](state, error) {
             state.createEnvironmentResult = null;
             state.createEnvironmentError = error;
+        },
+
+        [GET_ENVIRONMENTS](state, environments) {
+            state.environments = environments;
+        },
+
+        [SYNCHRONISE_CHANGES_TO_PRODUCTION_SUCCESS](state, result) {
+            state.synchroniseChangesToProductionResult = result;
+            state.synchroniseChangesToProductionError = null;
+        },
+
+        [SYNCHRONISE_CHANGES_TO_PRODUCTION_ERROR](state, error) {
+            state.synchroniseChangesToProductionResult = null;
+            state.synchroniseChangesToProductionError = error;
         }
     },
 
@@ -541,6 +560,29 @@ const customersModule = {
                 }
             } else {
                 commit(CREATE_ENVIRONMENT_ERROR, result.message);
+            }
+            commit(END_REQUEST);
+        },
+        
+        async [GET_ENVIRONMENTS]({ commit }) {
+            commit(START_REQUEST);
+            const environmentsResponse = await main.customersService.getEnvironments();
+            commit(GET_ENVIRONMENTS, environmentsResponse.data);
+            commit(END_REQUEST);
+        },
+        
+        async [SYNCHRONISE_CHANGES_TO_PRODUCTION]({ commit }, id) {
+            commit(START_REQUEST);
+            const result = await main.customersService.synchroniseChangesToProduction(id);
+
+            if (result.success) {
+                if (result.data) {
+                    commit(SYNCHRONISE_CHANGES_TO_PRODUCTION_SUCCESS, result.data);
+                } else {
+                    commit(SYNCHRONISE_CHANGES_TO_PRODUCTION_ERROR, result.message);
+                }
+            } else {
+                commit(SYNCHRONISE_CHANGES_TO_PRODUCTION_ERROR, result.message);
             }
             commit(END_REQUEST);
         }

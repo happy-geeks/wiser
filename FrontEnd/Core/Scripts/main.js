@@ -23,7 +23,7 @@ import WiserDialog from "./components/wiser-dialog";
 import "../scss/main.scss";
 import "../scss/task-alerts.scss";
 
-import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, ACTIVATE_MODULE, LOAD_ENTITY_TYPES_OF_ITEM_ID, GET_CUSTOMER_TITLE, TOGGLE_PIN_MODULE, CREATE_ENVIRONMENT } from "./store/mutation-types";
+import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, ACTIVATE_MODULE, LOAD_ENTITY_TYPES_OF_ITEM_ID, GET_CUSTOMER_TITLE, TOGGLE_PIN_MODULE, CREATE_ENVIRONMENT, GET_ENVIRONMENTS, SYNCHRONISE_CHANGES_TO_PRODUCTION } from "./store/mutation-types";
 
 (() => {
     class Main {
@@ -95,6 +95,7 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         wiserEntityTypePromptValue: null,
                         markerWidget: this.markerWidget,
                         newEnvironmentPromptValue: null,
+                        wiserSyncToProductionPromptValue: null
                     };
                 },
                 created() {
@@ -158,6 +159,12 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                     },
                     createEnvironmentResult() {
                         return this.$store.state.customers.createEnvironmentResult;
+                    },
+                    environments() {
+                        return this.$store.state.customers.environments;
+                    },
+                    synchroniseChangesToProductionError() {
+                        return this.$store.state.customers.synchroniseChangesToProductionError;
                     }
                 },
                 components: {
@@ -271,6 +278,10 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         this.$refs.newEnvironmentPrompt.open();
                     },
 
+                    openWiserSyncToProductionPrompt() {
+                        this.$refs.wiserSyncToProductionPrompt.open();
+                    },
+
                     async openWiserItem() {
                         if (!this.wiserIdPromptValue || isNaN(parseInt(this.wiserIdPromptValue))) {
                             return false;
@@ -337,6 +348,15 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         await this.$store.dispatch(CREATE_ENVIRONMENT, this.newEnvironmentPromptValue);
                         return !this.createEnvironmentError;
                     },
+                    
+                    async synchroniseToProduction() {
+                        if (!this.wiserSyncToProductionPromptValue || !this.wiserSyncToProductionPromptValue.id) {
+                            return false;
+                        }
+                        
+                        await this.$store.dispatch(SYNCHRONISE_CHANGES_TO_PRODUCTION, this.wiserSyncToProductionPromptValue.id);
+                        return !this.synchroniseChangesToProductionError;
+                    },
 
                     onOpenModuleClick(event, module) {
                         event.preventDefault();
@@ -367,6 +387,13 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                     async onTogglePin(event, moduleId) {
                         event.preventDefault();
                         this.$store.dispatch(TOGGLE_PIN_MODULE, moduleId);
+                    },
+                    
+                    async onWiserSyncToProductionPromptOpen(sender) {
+                        await this.$store.dispatch(GET_ENVIRONMENTS);
+                        if (this.environments && this.environments.length === 1) {
+                            this.wiserSyncToProductionPromptValue = this.environments[0];
+                        }
                     }
                 }
             });

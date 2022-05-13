@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Models;
@@ -48,6 +49,17 @@ namespace Api.Modules.Customers.Services
                 {
                     cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
                     return await wiserCustomersService.GetSingleAsync(identity, includeDatabaseInformation);
+                }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<CustomerModel>> GetSingleAsync(int id, bool includeDatabaseInformation = false)
+        {
+            return await cache.GetOrAdd($"customer_{id}_{includeDatabaseInformation}",
+                async cacheEntry =>
+                {
+                    cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
+                    return await wiserCustomersService.GetSingleAsync(id, includeDatabaseInformation);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
 
@@ -133,6 +145,18 @@ namespace Api.Modules.Customers.Services
         public async Task<ServiceResult<CustomerModel>> CreateNewEnvironmentAsync(ClaimsIdentity identity, string name)
         {
             return await wiserCustomersService.CreateNewEnvironmentAsync(identity, name);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<CustomerModel>>> GetEnvironmentsAsync(ClaimsIdentity identity)
+        {
+            return await wiserCustomersService.GetEnvironmentsAsync(identity);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SynchroniseChangesToProductionAsync(ClaimsIdentity identity, int id)
+        {
+            return await wiserCustomersService.SynchroniseChangesToProductionAsync(identity, id);
         }
 
         #endregion

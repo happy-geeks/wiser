@@ -59,7 +59,8 @@
 
                     <ul class="sub-menu">
                         <li><a href="#" v-if="user.adminAccountId" @@click="openCustomerManagement()"><ins class="icon-line-user-plus"></ins><span>Klant toevoegen</span></a></li>
-                        <li><a href="#" @@click="openNewEnvironmentPromptPrompt()"><ins class="icon-line-user-plus"></ins><span>Nieuwe omgeving aanmaken</span></a></li>
+                        <li><a href="#" @@click="openNewEnvironmentPromptPrompt()"><ins class="icon-line-upload-cloud"></ins><span>Nieuwe omgeving aanmaken</span></a></li>
+                        <li><a href="#" @@click="openWiserSyncToProductionPrompt()"><ins class="icon-table-backup"></ins><span>Wijzigingen overzetten naar productie</span></a></li>
                         <li><a href="#" @@click="logout()"><ins class="icon-line-log-out"></ins><span>Uitloggen</span></a></li>
                     </ul>
                 </li>
@@ -107,6 +108,27 @@
             <div class="form-row">
                 <input type="text" id="newEnvironmentName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newEnvironmentPromptValue" required>
             </div>
+        </wiser-dialog>
+        <wiser-dialog :modal="true" :width="'400px'" :title="'Wijzigingen overzetten'" ref="wiserSyncToProductionPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Start', primary: true, action: synchroniseToProduction }]" @@open="onWiserSyncToProductionPromptOpen">
+            <div v-if="!environments || !environments.length">
+                <section class="full-error">
+                    <ins class="icon-line-alert"></ins>
+                    <span>U heeft nog geen andere omgevingen. Maak a.u.b. eerst een nieuwe omgeving aan via de optie "Nieuwe omgeving aanmaken".</span>
+                </section>
+            </div>
+            <div v-else-if="environments.length === 1">
+                <p>Wilt u alle wijzigingen van de omgeving '{{ (wiserSyncToProductionPromptValue || {}).name }}' overzetten naar de productieomgeving?</p>
+            </div>
+            <div v-else>
+                <p>Kies de omgeving waarvan de wijzigingen overgezet moeten worden naar productie:</p>
+                <div class="form-row">
+                    <dropdownlist :data-items="environments" :text-field="'name'" :data-item-key="'id'" v-model="wiserSyncToProductionPromptValue"></dropdownlist>
+                </div>
+            </div>
+            <section class="full-error" v-if="synchroniseChangesToProductionError">
+                <ins class="icon-line-alert"></ins>
+                <span v-html="synchroniseChangesToProductionError"></span>
+            </section>
         </wiser-dialog>
     </div>
 </div>

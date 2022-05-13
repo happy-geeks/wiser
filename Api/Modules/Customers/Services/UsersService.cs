@@ -516,7 +516,23 @@ namespace Api.Modules.Customers.Services
         /// <inheritdoc />
         public async Task<ServiceResult<UserModel>> GetUserDataAsync(ClaimsIdentity identity)
         {
+            return await GetUserDataAsync(this, identity);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<UserModel>> GetUserDataAsync(IUsersService usersService, ClaimsIdentity identity)
+        {
             var customer = await wiserCustomersService.GetSingleAsync(identity);
+            if (customer.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<UserModel>
+                {
+                    ErrorMessage = customer.ErrorMessage,
+                    ReasonPhrase = customer.ReasonPhrase,
+                    StatusCode = customer.StatusCode
+                };
+            }
+
             var encryptionKey = customer.ModelObject.EncryptionKey;
             var userId = IdentityHelpers.GetWiserUserId(identity);
 
@@ -526,10 +542,32 @@ namespace Api.Modules.Customers.Services
                 EncryptedCustomerId = customer.ModelObject.CustomerId.ToString().EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true),
                 ZeroEncrypted = "0".EncryptWithAesWithSalt(encryptionKey, true),
                 Id = userId,
-                EmailAddress = await GetUserEmailAddressAsync(userId)
+                EmailAddress = await usersService.GetUserEmailAddressAsync(userId),
+                CurrentEnvironmentName = customer.ModelObject.Name,
+                CurrentEnvironmentIsProductionEnvironment = customer.ModelObject.Id == customer.ModelObject.CustomerId
             };
-            
-            var wiserSettings = await GetWiserSettingsForUserAsync(encryptionKey);
+
+            if (result.CurrentEnvironmentIsProductionEnvironment)
+            {
+                result.ProductionEnvironmentName = result.CurrentEnvironmentName;
+            }
+            else
+            {
+                var productionCustomer = await wiserCustomersService.GetSingleAsync(customer.ModelObject.CustomerId);
+                if (productionCustomer.StatusCode != HttpStatusCode.OK)
+                {
+                    return new ServiceResult<UserModel>
+                    {
+                        ErrorMessage = productionCustomer.ErrorMessage,
+                        ReasonPhrase = productionCustomer.ReasonPhrase,
+                        StatusCode = productionCustomer.StatusCode
+                    };
+                }
+
+                result.ProductionEnvironmentName = productionCustomer.ModelObject.Name;
+            }
+
+            var wiserSettings = await usersService.GetWiserSettingsForUserAsync(encryptionKey);
             result.FilesRootId = wiserSettings.FilesRootId;
             result.ImagesRootId = wiserSettings.ImagesRootId;
             result.TemplatesRootId = wiserSettings.TemplatesRootId;

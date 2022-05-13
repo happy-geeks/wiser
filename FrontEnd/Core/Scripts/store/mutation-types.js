@@ -34,3 +34,7 @@ export const VALID_SUB_DOMAIN = "validSubDomain";
 export const CREATE_ENVIRONMENT = "createEnvironment";
 export const CREATE_ENVIRONMENT_SUCCESS = "createEnvironmentSuccess";
 export const CREATE_ENVIRONMENT_ERROR = "createEnvironmentError";
+export const GET_ENVIRONMENTS = "getEnvironments";
+export const SYNCHRONISE_CHANGES_TO_PRODUCTION = "synchroniseChangesToProduction";
+export const SYNCHRONISE_CHANGES_TO_PRODUCTION_SUCCESS = "synchroniseChangesToProductionSuccess";
+export const SYNCHRONISE_CHANGES_TO_PRODUCTION_ERROR = "synchroniseChangesToProductionError";

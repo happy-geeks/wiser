@@ -82,5 +82,32 @@ namespace Api.Modules.Customers.Controllers
         {
             return (await wiserCustomersService.CreateNewEnvironmentAsync((ClaimsIdentity)User.Identity, name)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Gets the environments for the authenticated user.
+        /// </summary>
+        /// <returns>A list of <see cref="CustomerModel"/>.</returns>
+        [HttpGet]
+        [ProducesResponseType(typeof(List<CustomerModel>), StatusCodes.Status200OK)]
+        [Authorize]
+        [Route("environments")]
+        public async Task<IActionResult> GetEnvironmentsAsync()
+        {
+            return (await wiserCustomersService.GetEnvironmentsAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Synchronise all changes done to wiser items, from a specific environment, to the production environment.
+        /// </summary>
+        /// <param name="id">The ID of the environment to copy the changes from.</param>
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [Authorize]
+        [Route("synchronise-changes/{id:int}")]
+        public async Task<IActionResult> SynchroniseChangesToProductionAsync(int id)
+        {
+            return (await wiserCustomersService.SynchroniseChangesToProductionAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
+        }
     }
 }

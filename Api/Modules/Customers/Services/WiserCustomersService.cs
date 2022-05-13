@@ -35,6 +35,18 @@ namespace Api.Modules.Customers.Services
         private readonly GclSettings gclSettings;
         private readonly ApiSettings apiSettings;
         private readonly IDatabaseConnection wiserDatabaseConnection;
+        
+        private readonly List<string> entityTypesToSkipWhenSynchronisingEnvironments = new()
+        {
+            GeeksCoreLibrary.Components.ShoppingBasket.Models.Constants.BasketEntityType,
+            GeeksCoreLibrary.Components.ShoppingBasket.Models.Constants.BasketLineEntityType,
+            GeeksCoreLibrary.Components.Account.Models.Constants.DefaultEntityType,
+            GeeksCoreLibrary.Components.Account.Models.Constants.DefaultSubAccountEntityType,
+            GeeksCoreLibrary.Components.OrderProcess.Models.Constants.OrderEntityType,
+            GeeksCoreLibrary.Components.OrderProcess.Models.Constants.OrderLineEntityType,
+            "relatie",
+            "klant"
+        };
 
         #endregion
 
@@ -92,6 +104,39 @@ namespace Api.Modules.Customers.Services
                 {
                     StatusCode = HttpStatusCode.NotFound,
                     ErrorMessage = $"Customer with sub domain '{subDomain}' not found.",
+                    ReasonPhrase = "Customer not found"
+                };
+            }
+
+            var result = CustomerModel.FromDataRow(customersDataTable.Rows[0]);
+            return new ServiceResult<CustomerModel>(result);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<CustomerModel>> GetSingleAsync(int id, bool includeDatabaseInformation = false)
+        {
+            // Get the customer data.
+            wiserDatabaseConnection.ClearParameters();
+            wiserDatabaseConnection.AddParameter("id", id);
+
+            var query = $@"SELECT
+                            id,
+                            customerid,
+                            name,
+                            encryption_key,
+                            subdomain,
+                            wiser_title
+                            {(includeDatabaseInformation ? ", db_host, db_login, db_passencrypted, db_port, db_dbname" : "")}
+                        FROM {ApiTableNames.WiserCustomers} 
+                        WHERE id = ?id";
+
+            var customersDataTable = await wiserDatabaseConnection.GetAsync(query);
+            if (customersDataTable.Rows.Count == 0)
+            {
+                return new ServiceResult<CustomerModel>
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"Customer with ID '{id}' not found.",
                     ReasonPhrase = "Customer not found"
                 };
             }
@@ -491,7 +536,8 @@ namespace Api.Modules.Customers.Services
                 await databaseHelpersService.CreateDatabaseAsync(databaseName);
 
                 // Create tables in new database.
-                var query = @"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES
+                var query = @"SELECT TABLE_NAME 
+                            FROM INFORMATION_SCHEMA.TABLES
                             WHERE TABLE_SCHEMA = ?currentSchema
                             AND TABLE_TYPE = 'BASE TABLE'
                             AND TABLE_NAME NOT LIKE '\_%'";
@@ -509,17 +555,6 @@ namespace Api.Modules.Customers.Services
                     WiserTableNames.AisLogs, 
                     "ais_serilog", 
                     "jcl_email"
-                };
-                var entityTypesToSkip = new List<string>
-                {
-                    GeeksCoreLibrary.Components.ShoppingBasket.Models.Constants.BasketEntityType,
-                    GeeksCoreLibrary.Components.ShoppingBasket.Models.Constants.BasketLineEntityType,
-                    GeeksCoreLibrary.Components.Account.Models.Constants.DefaultEntityType,
-                    GeeksCoreLibrary.Components.Account.Models.Constants.DefaultSubAccountEntityType,
-                    GeeksCoreLibrary.Components.OrderProcess.Models.Constants.OrderEntityType,
-                    GeeksCoreLibrary.Components.OrderProcess.Models.Constants.OrderLineEntityType,
-                    "relatie",
-                    "klant"
                 };
                 
                 // Create the tables in a new connection, because these cause implicit commits.
@@ -539,54 +574,76 @@ namespace Api.Modules.Customers.Services
                 }
 
                 // Fill the tables with data.
-                var entityTypesString = String.Join(",", entityTypesToSkip.Select(x => $"'{x}'"));
+                var entityTypesString = String.Join(",", entityTypesToSkipWhenSynchronisingEnvironments.Select(x => $"'{x}'"));
                 foreach (DataRow dataRow in dataTable.Rows)
                 {
                     var tableName = dataRow.Field<string>("TABLE_NAME");
 
-                    try
+                    // For Wiser tables, we don't want to copy customer data, so copy everything except data of certain entity types.
+                    if (tableName!.EndsWith(WiserTableNames.WiserItem, StringComparison.OrdinalIgnoreCase))
                     {
-                        // For Wiser tables, we don't want to copy customer data, so copy everything except data of certain entity types.
-                        if (tableName!.EndsWith(WiserTableNames.WiserItem, StringComparison.OrdinalIgnoreCase))
-                        {
-                            await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
-                                                                        SELECT * FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
-                                                                        WHERE entity_type NOT IN ('{String.Join("','", entityTypesToSkip)}')");
-                            continue;
-                        }
-
-                        if (tableName!.EndsWith(WiserTableNames.WiserItemDetail, StringComparison.OrdinalIgnoreCase))
-                        {
-                            var prefix = tableName.Replace(WiserTableNames.WiserItemDetail, "");
-                            await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
-                                                                        SELECT detail.* FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}` AS detail
-                                                                        JOIN `{currentCustomer.LiveDatabase.DatabaseName}`.`{prefix}{WiserTableNames.WiserItem}` AS item ON item.id = detail.item_id AND item.entity_type NOT IN ({entityTypesString})");
-                            continue;
-                        }
-
-                        if (tableName!.EndsWith(WiserTableNames.WiserItemFile, StringComparison.OrdinalIgnoreCase))
-                        {
-                            var prefix = tableName.Replace(WiserTableNames.WiserItemFile, "");
-                            await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
-                                                                        SELECT file.* FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}` AS file
-                                                                        JOIN `{currentCustomer.LiveDatabase.DatabaseName}`.`{prefix}{WiserTableNames.WiserItem}` AS item ON item.id = file.item_id AND item.entity_type NOT IN ({entityTypesString})");
-                            continue;
-                        }
-
-                        // Don't copy data from certain tables, such as log and archive tables.
-                        if (tablesToAlwaysLeaveEmpty.Any(t => String.Equals(t, tableName, StringComparison.OrdinalIgnoreCase))
-                            || tableName!.StartsWith("log_", StringComparison.OrdinalIgnoreCase)
-                            || tableName.EndsWith("_log", StringComparison.OrdinalIgnoreCase)
-                            || tableName.EndsWith(WiserTableNames.ArchiveSuffix))
-                        {
-                            continue;
-                        }
-
-                        await clientDatabaseConnection.ExecuteAsync($"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` SELECT * FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}`");
+                        await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
+                                                                    SELECT * FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
+                                                                    WHERE entity_type NOT IN ('{String.Join("','", entityTypesToSkipWhenSynchronisingEnvironments)}')");
+                        continue;
                     }
-                    catch (Exception exception)
+
+                    if (tableName!.EndsWith(WiserTableNames.WiserItemDetail, StringComparison.OrdinalIgnoreCase))
                     {
-                        throw new Exception($"Error while trying to fill table '{tableName}'", exception);
+                        var prefix = tableName.Replace(WiserTableNames.WiserItemDetail, "");
+                        await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
+                                                                    SELECT detail.* FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}` AS detail
+                                                                    JOIN `{currentCustomer.LiveDatabase.DatabaseName}`.`{prefix}{WiserTableNames.WiserItem}` AS item ON item.id = detail.item_id AND item.entity_type NOT IN ({entityTypesString})");
+                        continue;
+                    }
+
+                    if (tableName!.EndsWith(WiserTableNames.WiserItemFile, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var prefix = tableName.Replace(WiserTableNames.WiserItemFile, "");
+                        await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` 
+                                                                    SELECT file.* FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}` AS file
+                                                                    JOIN `{currentCustomer.LiveDatabase.DatabaseName}`.`{prefix}{WiserTableNames.WiserItem}` AS item ON item.id = file.item_id AND item.entity_type NOT IN ({entityTypesString})");
+                        continue;
+                    }
+
+                    // Don't copy data from certain tables, such as log and archive tables.
+                    if (tablesToAlwaysLeaveEmpty.Any(t => String.Equals(t, tableName, StringComparison.OrdinalIgnoreCase))
+                        || tableName!.StartsWith("log_", StringComparison.OrdinalIgnoreCase)
+                        || tableName.EndsWith("_log", StringComparison.OrdinalIgnoreCase)
+                        || tableName.EndsWith(WiserTableNames.ArchiveSuffix))
+                    {
+                        continue;
+                    }
+
+                    await clientDatabaseConnection.ExecuteAsync($"INSERT INTO `{newCustomer.LiveDatabase.DatabaseName}`.`{tableName}` SELECT * FROM `{currentCustomer.LiveDatabase.DatabaseName}`.`{tableName}`");
+                }
+                
+                // Add triggers to database, after inserting all data, so that the wiser_history table will still be empty.
+                // We use wiser_history to later synchronise all changes to production, so it needs to be empty before the user starts to make changes in the new environment.
+                query = $@"SELECT 
+                            TRIGGER_NAME,
+                            EVENT_MANIPULATION,
+                            EVENT_OBJECT_TABLE,
+	                        ACTION_STATEMENT,
+	                        ACTION_ORIENTATION,
+	                        ACTION_TIMING
+                        FROM information_schema.TRIGGERS
+                        WHERE TRIGGER_SCHEMA = ?currentSchema
+                        AND EVENT_OBJECT_TABLE NOT LIKE '\_%'";
+                dataTable = await clientDatabaseConnection.GetAsync(query);
+                
+                await using (var mysqlConnection = new MySqlConnection(GenerateConnectionStringFromCustomer(newCustomer)))
+                {
+                    await mysqlConnection.OpenAsync();
+                    await using (var command = mysqlConnection.CreateCommand())
+                    {
+                        foreach (DataRow dataRow in dataTable.Rows)
+                        {
+                            query = $@"CREATE TRIGGER `{dataRow.Field<string>("TRIGGER_NAME")}` {dataRow.Field<string>("ACTION_TIMING")} {dataRow.Field<string>("EVENT_MANIPULATION")} ON `{newCustomer.LiveDatabase.DatabaseName.ToMySqlSafeValue(false)}`.`{dataRow.Field<string>("EVENT_OBJECT_TABLE")}` FOR EACH {dataRow.Field<string>("ACTION_ORIENTATION")} {dataRow.Field<string>("ACTION_STATEMENT")}";
+                            
+                            command.CommandText = query;
+                            await command.ExecuteNonQueryAsync();
+                        }
                     }
                 }
 
@@ -608,11 +665,61 @@ namespace Api.Modules.Customers.Services
                 // so we can be sure that this database was created here and we can drop it again it something went wrong.
                 if (await databaseHelpersService.DatabaseExistsAsync(databaseName))
                 {
-                    //await databaseHelpersService.DropDatabaseAsync(databaseName);
+                    await databaseHelpersService.DropDatabaseAsync(databaseName);
                 }
 
                 throw;
             }
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<CustomerModel>>> GetEnvironmentsAsync(ClaimsIdentity identity)
+        {
+            var currentCustomer = (await GetSingleAsync(identity, true)).ModelObject;
+
+            var query = $@"SELECT id, name
+                        FROM {ApiTableNames.WiserCustomers}
+                        WHERE customerid = ?id
+                        AND id <> ?id";
+            
+            wiserDatabaseConnection.AddParameter("id", currentCustomer.CustomerId);
+            var dataTable = await wiserDatabaseConnection.GetAsync(query);
+            var results = new List<CustomerModel>();
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                results.Add(new CustomerModel
+                {
+                    Id = dataRow.Field<int>("id"),
+                    CustomerId = currentCustomer.CustomerId,
+                    Name = dataRow.Field<string>("name")
+                });
+            }
+
+            return new ServiceResult<List<CustomerModel>>(results);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SynchroniseChangesToProductionAsync(ClaimsIdentity identity, int id)
+        {
+            var currentCustomer = (await GetSingleAsync(identity, true)).ModelObject;
+            var otherCustomer = (await GetSingleAsync(id, true)).ModelObject;
+            
+            // Check to make sure someone is not trying to copy changes from an environment that does not belong to them.
+            if (otherCustomer == null || currentCustomer.CustomerId != otherCustomer.CustomerId)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+            
+            var entityTypesString = String.Join(",", entityTypesToSkipWhenSynchronisingEnvironments.Select(x => $"'{x}'"));
+            var dataTable = await clientDatabaseConnection.GetAsync($"SELECT * FROM {WiserTableNames.WiserHistory} ORDER BY id ASC");
+
+            return new ServiceResult<bool>
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
 
         #endregion

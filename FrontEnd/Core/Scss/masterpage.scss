@@ -1082,7 +1082,7 @@ body {
 
 /** Fix for CSS bug Kendo, dropdown inside a dialog will otherwise not be properly visible. **/
 .k-animation-container-shown {
-    z-index: 110 !important;
+    z-index: 1100 !important;
 }
 
 // Button to send feedback about bugs etc.
