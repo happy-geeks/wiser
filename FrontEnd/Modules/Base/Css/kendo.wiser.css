@@ -503,6 +503,9 @@
 	width: 24px;
 	min-width: 24px;
 }
+.k-scheduler-toolbar .k-button-icon .k-icon {
+    font-family: 'WebComponentsIcons' !important;
+}
 .k-button-icon.k-primary .k-icon {
     color: var(--white-color);
 }
