@@ -13,33 +13,33 @@
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
 </head>
-<body
-    data-wiser-api-root="@Model.ApiRoot"
-    data-wiser-api-v21-root="@Model.ApiRoot"
-    data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
-    data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
-    data-api-client-id="@Model.Settings.ApiClientId"
-    data-api-client-secret="@Model.Settings.ApiClientSecret"
-    data-sub-domain="@Model.SubDomain"
-    data-track-js-token="@Model.Settings.TrackJsToken">
-<div id="wiser">
-    <div id="window" class="import-module" style="margin: 0 auto; padding: 0;">
-        <div class="pane-content">
-            <div id="mainLoader" class="fullscreen-loader loading">
-                <div class="loader-icon">
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
+<body data-wiser-api-root="@Model.ApiRoot"
+      data-wiser-api-v21-root="@Model.ApiRoot"
+      data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
+      data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
+      data-api-client-id="@Model.Settings.ApiClientId"
+      data-api-client-secret="@Model.Settings.ApiClientSecret"
+      data-sub-domain="@Model.SubDomain"
+      data-track-js-token="@Model.Settings.TrackJsToken">
+    <div id="wiser">
+        <div id="window" class="import-module" style="margin: 0 auto; padding: 0;">
+            <div class="pane-content">
+                <div id="mainLoader" class="fullscreen-loader loading">
+                    <div class="loader-icon">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
                 </div>
-            </div>
 
-            <div id="ExportHtml"></div>
+                <div id="ExportHtml"></div>
+            </div>
         </div>
     </div>
-</div>
-    
-<script src="/scripts/Utils.min.js"></script>
-<script src="/scripts/Export.min.js"></script>
+
+    <script src="/scripts/Utils.min.js"></script>
+    <script src="/scripts/Base.min.js"></script>
+    <script src="/scripts/Export.min.js"></script>
 </body>
 </html>
