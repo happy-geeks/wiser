@@ -588,7 +588,7 @@ namespace Api.Modules.DataSelectors.Services
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
-            return await gclDataSelectorsService.GetJsonResponseAsync(data);
+            return await gclDataSelectorsService.GetJsonResponseAsync(data, true);
         }
     }
 }
