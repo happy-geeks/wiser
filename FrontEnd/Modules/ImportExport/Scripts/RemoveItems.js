@@ -172,7 +172,7 @@ export class RemoveItems {
                     dataValueField: "propertyName",
                     dataSource: entityProperties,
                     optionLabel: "Maak uw keuze...",
-                    template: "#: displayName # - Tab: #: tabName #"
+                    template: "#: displayName # # if (tabName != null && tabName !== '') { # - Tab: #: tabName # # } #"
                 });
             }
         } catch (exception) {

@@ -176,7 +176,7 @@ export class RemoveConnections {
                                 read: `${this.settings.wiserApiRoot}entity-properties/${options.model.entity}?onlyEntityTypesWithDisplayName=false&onlyEntityTypesWithPropertyName=true&addIdProperty=true`,
                             }
                         },
-                        template: "#: displayName # - Tab: #: tabName #"
+                        template: "#: displayName # # if (tabName != null && tabName !== '') { # - Tab: #: tabName # # } #"
                     });
                 }
             },
