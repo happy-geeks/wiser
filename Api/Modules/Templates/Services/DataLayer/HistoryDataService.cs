@@ -168,7 +168,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     UseInWiserHtmlEditors = Convert.ToBoolean(row["use_in_wiser_html_editors"]),
                     PreLoadQuery = row.Field<string>("pre_load_query"),
                     ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(row["return_not_found_when_pre_load_query_has_no_data"]),
-                    RoutineType = (RoutineTypes)row.Field<int>("return_type"),
+                    RoutineType = (RoutineTypes)row.Field<int>("routine_type"),
                     RoutineParameters = row.Field<string>("routine_parameters"),
                     RoutineReturnType = row.Field<string>("routine_return_type")
                 };
