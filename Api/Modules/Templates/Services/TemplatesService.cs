@@ -2350,7 +2350,7 @@ LIMIT 1";
             }
 
             var versionsAndPublished = await templateDataService.GetPublishedEnvironmentsAsync(templateId);
-            
+
             return new ServiceResult<PublishedEnvironmentModel>(PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
         }
 
@@ -2467,7 +2467,7 @@ LIMIT 1";
             {
                 throw new ArgumentException("The version is invalid");
             }
-            
+
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(templateId, currentPublished, newPublished);
@@ -2482,7 +2482,7 @@ LIMIT 1";
             {
                 throw new ArgumentException("TemplateData cannot be empty.");
             }
-            
+
             // Compile / minify (S)CSS, javascript and HTML.
             switch (template.Type)
             {
@@ -2532,7 +2532,7 @@ LIMIT 1";
                     template.MinifiedValue = template.EditorValue;
                     break;
             }
-            
+
             var jsLinks = template.LinkedTemplates?.LinkedJavascript?.Select(x => x.TemplateId).ToList();
             var scssLinks = template.LinkedTemplates?.LinkedScssTemplates?.Select(x => x.TemplateId).ToList();
             var allLinkedTemplates = new List<int>(jsLinks ?? new List<int>());
@@ -2570,8 +2570,8 @@ LIMIT 1";
             // Make sure the tables are up-to-date.
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
             {
-                WiserTableNames.WiserTemplate, 
-                WiserTableNames.WiserDynamicContent, 
+                WiserTableNames.WiserTemplate,
+                WiserTableNames.WiserDynamicContent,
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,
                 WiserTableNames.WiserPreviewProfiles,
@@ -2759,7 +2759,7 @@ LIMIT 1";
 
             requestModel.Url ??= HttpContextHelpers.GetBaseUri(httpContextAccessor.HttpContext);
             await SetupGclForPreviewAsync(identity, requestModel);
-            
+
             var html = await gclTemplatesService.GenerateDynamicContentHtmlAsync(component);
             return new ServiceResult<string>((string)html);
         }
@@ -2772,7 +2772,7 @@ LIMIT 1";
             {
                 return new ServiceResult<string>(outputHtml);
             }
-            
+
             var javascriptTemplates = new List<int>();
             var cssTemplates = new List<int>();
             var externalJavascript = new List<string>();
@@ -2787,10 +2787,10 @@ LIMIT 1";
             var ombouw = (!queryString.ContainsKey("ombouw") || !String.Equals(queryString["ombouw"].ToString(), "false", StringComparison.OrdinalIgnoreCase)) && !String.Equals(requestModel.PreviewVariables.FirstOrDefault(v => String.Equals(v.Key, "ombouw", StringComparison.OrdinalIgnoreCase))?.Value, "false", StringComparison.OrdinalIgnoreCase);
 
             var contentToWrite = new StringBuilder();
-            
+
             // Execute the pre load query before any replacements are being done and before any dynamic components are handled.
             await gclTemplatesService.ExecutePreLoadQueryAndRememberResultsAsync(new Template { PreLoadQuery = requestModel.TemplateSettings.PreLoadQuery });
-            
+
             // Header template.
             if (ombouw)
             {
@@ -2805,7 +2805,7 @@ LIMIT 1";
             {
                 contentToWrite.Append(await pagesService.GetGlobalFooter(requestModel.Url.ToString(), javascriptTemplates, cssTemplates));
             }
-            
+
             await SetupGclForPreviewAsync(identity, requestModel);
 
             outputHtml = contentToWrite.ToString();
@@ -2815,12 +2815,12 @@ LIMIT 1";
                 outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
                 outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
             }
-            
+
             if (requestModel.TemplateSettings.HandleDynamicContent)
             {
                 outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
             }
-            
+
             if (requestModel.TemplateSettings.HandleLogicBlocks)
             {
                 outputHtml = stringReplacementsService.EvaluateTemplate(outputHtml);
@@ -2833,7 +2833,7 @@ LIMIT 1";
 
             // Generate view model.
             var viewModel = await pagesService.CreatePageViewModelAsync(externalCss, cssTemplates, externalJavascript, javascriptTemplates, outputHtml);
-            
+
             // Determine main domain, using either the "maindomain" object or the "maindomain_wiser" object.
             var mainDomain = await objectsService.FindSystemObjectByDomainNameAsync("maindomain_wiser");
             if (String.IsNullOrWhiteSpace(mainDomain))
@@ -2877,7 +2877,7 @@ LIMIT 1";
             {
                 return new ServiceResult<string>($"A view with the name {viewResult.ViewName} could not be found");
             }
-                
+
             var viewDictionary = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
             {
                 Model = viewModel
@@ -2905,8 +2905,8 @@ LIMIT 1";
             // Make sure the tables are up-to-date.
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
             {
-                WiserTableNames.WiserTemplate, 
-                WiserTableNames.WiserDynamicContent, 
+                WiserTableNames.WiserTemplate,
+                WiserTableNames.WiserDynamicContent,
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,
                 WiserTableNames.WiserPreviewProfiles,
@@ -2923,7 +2923,7 @@ LIMIT 1";
                     StatusCode = HttpStatusCode.Conflict
                 };
             }
-            
+
             dataTable = await clientDatabaseConnection.GetAsync($"SELECT COUNT(*) FROM {WiserTableNames.WiserDynamicContent}");
             if (Convert.ToInt32(dataTable.Rows[0][0]) > 0)
             {
@@ -2947,41 +2947,42 @@ LIMIT 1";
             // Copy easy_templates to wiser_template, but only the versions that are actually still used, we don't need the entire history.
             var query = @"
 SELECT
-	IF(item.parent_id <= 0, NULL, item.parent_id) AS parent_id,
-	item.name AS template_name,
-	IFNULL(template.html, template.template) AS template_data,
-	template.html_minified AS template_data_minified,
+    IF(item.parent_id <= 0, NULL, item.parent_id) AS parent_id,
+    item.name AS template_name,
+    IFNULL(template.html, template.template) AS template_data,
+    template.html_minified AS template_data_minified,
     CONCAT_WS('/', '', parent9.name, parent8.name, parent7.name, parent6.name, parent5.name, parent4.name, parent3.name, parent2.name, parent1.name, '') AS path,
-	IFNULL(template.version, 1) AS version,
-	item.id AS template_id,
-	IFNULL(item.lastchangedate, item.createdon) AS changed_on,
-	IFNULL(item.lastchangedby, item.createdby) AS changed_by,
-	IF(template.istest = 1, 2, 0) + IF(template.isacceptance = 1, 4, 0) + IF(template.islive = 1, 8, 0) AS published_environment,
-	template.usecache AS use_cache,
-	template.cacheminutes AS cache_minutes,
-	template.handlerequest AS handle_request,
-	template.handlesession AS handle_session,
-	template.handleobjects AS handle_objects,
-	template.handlestandards AS handle_standards,
-	template.handletranslations AS handle_translations,
-	template.handledynamiccontent AS handle_dynamic_content,
-	template.handlelogicblocks AS handle_logic_blocks,
-	template.handlemutators AS handle_mutators,
-	template.issecure AS login_required,
-	template.securedsessionprefix AS login_session_prefix,
-	CONCAT_WS(',', template.jstemplates, template.csstemplates) AS linked_templates,
-	item.volgnr AS ordering,
-	template.pagemode AS insert_mode,
-	template.loadalways AS load_always,
-	template.urlregex AS url_regex,
-	template.externalfiles AS external_files,
-	template.groupingCreateObjectInsteadOfArray AS grouping_create_object_instead_of_array,
-	template.groupingprefix AS grouping_prefix,
-	template.groupingkey AS grouping_key,
-	template.groupingKeyColumnName AS grouping_key_column_name,
-	template.groupingValueColumnName AS grouping_value_column_name,
-	template.isscssincludetemplate AS is_scss_include_template,
-	template.useinwiserhtmleditors AS use_in_wiser_html_editors,
+    IFNULL(template.version, 1) AS version,
+    item.id AS template_id,
+    IFNULL(item.lastchangedate, item.createdon) AS changed_on,
+    IFNULL(item.lastchangedby, item.createdby) AS changed_by,
+    IF(template.istest = 1, 2, 0) + IF(template.isacceptance = 1, 4, 0) + IF(template.islive = 1, 8, 0) AS published_environment,
+    template.usecache AS use_cache,
+    template.cacheminutes AS cache_minutes,
+    template.handlerequest AS handle_request,
+    template.handlesession AS handle_session,
+    template.handleobjects AS handle_objects,
+    template.handlestandards AS handle_standards,
+    template.handletranslations AS handle_translations,
+    template.handledynamiccontent AS handle_dynamic_content,
+    template.handlelogicblocks AS handle_logic_blocks,
+    template.handlemutators AS handle_mutators,
+    template.issecure AS login_required,
+    template.securedsessionprefix AS login_session_prefix,
+    CONCAT_WS(',', template.jstemplates, template.csstemplates) AS linked_templates,
+    item.volgnr AS ordering,
+    template.pagemode AS insert_mode,
+    template.loadalways AS load_always,
+    template.urlregex AS url_regex,
+    template.externalfiles AS external_files,
+    template.groupingCreateObjectInsteadOfArray AS grouping_create_object_instead_of_array,
+    template.groupingprefix AS grouping_prefix,
+    template.groupingkey AS grouping_key,
+    template.groupingKeyColumnName AS grouping_key_column_name,
+    template.groupingValueColumnName AS grouping_value_column_name,
+    template.disableminifier AS disable_minifier,
+    template.isscssincludetemplate AS is_scss_include_template,
+    template.useinwiserhtmleditors AS use_in_wiser_html_editors,
     template.defaulttemplate AS wiser_cdn_templates,
     template.templatetype AS type,
     item.ismap AS is_directory
@@ -2997,14 +2998,14 @@ LEFT JOIN easy_items AS parent7 ON parent7.id = parent6.parent_id
 LEFT JOIN easy_items AS parent8 ON parent8.id = parent7.parent_id
 LEFT JOIN easy_items AS parent9 ON parent9.id = parent8.parent_id
 JOIN (
-	SELECT item.id, MIN(deployedVersion.version) AS version
-	FROM easy_items AS item
-	LEFT JOIN easy_templates AS template ON template.itemid = item.id
-	LEFT JOIN easy_templates AS deployedVersion ON deployedVersion.itemid = template.itemid AND 1 IN (deployedVersion.istest, deployedVersion.isacceptance, deployedVersion.islive)
-	WHERE item.moduleid = 143
-	AND item.deleted = 0
-	AND item.published = 1
-	GROUP BY item.id
+    SELECT item.id, MIN(deployedVersion.version) AS version
+    FROM easy_items AS item
+    LEFT JOIN easy_templates AS template ON template.itemid = item.id
+    LEFT JOIN easy_templates AS deployedVersion ON deployedVersion.itemid = template.itemid AND 1 IN (deployedVersion.istest, deployedVersion.isacceptance, deployedVersion.islive)
+    WHERE item.moduleid = 143
+    AND item.deleted = 0
+    AND item.published = 1
+    GROUP BY item.id
 ) AS lowestVersionToConvert ON lowestVersionToConvert.id = item.id AND (template.id IS NULL OR template.version >= lowestVersionToConvert.version)
 WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
 
@@ -3016,7 +3017,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 if (!reader.GetBoolean("is_directory"))
                 {
                     var path = reader.GetStringHandleNull("path");
-                    
+
                     if (path.Contains("/html/", StringComparison.OrdinalIgnoreCase))
                     {
                         templateType = TemplateTypes.Html;
@@ -3059,7 +3060,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
 
                 var content = reader.GetStringHandleNull("template_data");
                 var minifiedContent = reader.GetStringHandleNull("template_data_minified");
-                
+
                 // Convert dynamic components placeholders from Wiser 1 to Wiser 3 format.
                 if (templateType == TemplateTypes.Html)
                 {
@@ -3096,7 +3097,8 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 clientDatabaseConnection.AddParameter("ordering", reader.GetValue("ordering"));
                 clientDatabaseConnection.AddParameter("insert_mode", reader.GetValue("insert_mode"));
                 clientDatabaseConnection.AddParameter("load_always", reader.GetValue("load_always"));
-                clientDatabaseConnection.AddParameter("url_regex", reader.GetValue("url_regex"));
+                clientDatabaseConnection.AddParameter("disable_minifier", reader.GetValue("disable_minifier"));
+                clientDatabaseConnection.AddParameter("url_regex", urlRegex);
                 clientDatabaseConnection.AddParameter("external_files", externalFiles);
                 clientDatabaseConnection.AddParameter("grouping_create_object_instead_of_array", reader.GetValue("grouping_create_object_instead_of_array"));
                 clientDatabaseConnection.AddParameter("grouping_prefix", reader.GetValue("grouping_prefix"));
@@ -3161,40 +3163,40 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 case "JuiceControlLibrary.MLSimpleMenu":
                 case "JuiceControlLibrary.SimpleMenu":
                 case "JuiceControlLibrary.ProductModule":
-                    {
-                        viewComponentName = "Repeater";
-                        break;
-                    }
+                {
+                    viewComponentName = "Repeater";
+                    break;
+                }
                 case "JuiceControlLibrary.AccountWiser2":
-                    {
-                        viewComponentName = "Account";
-                        break;
-                    }
+                {
+                    viewComponentName = "Account";
+                    break;
+                }
                 case "JuiceControlLibrary.ShoppingBasket":
-                    {
-                        viewComponentName = "ShoppingBasket";
-                        break;
-                    }
+                {
+                    viewComponentName = "ShoppingBasket";
+                    break;
+                }
                 case "JuiceControlLibrary.WebPage":
-                    {
-                        viewComponentName = "WebPage";
-                        break;
-                    }
+                {
+                    viewComponentName = "WebPage";
+                    break;
+                }
                 case "JuiceControlLibrary.Pagination":
-                    {
-                        viewComponentName = "Pagination";
-                        break;
-                    }
+                {
+                    viewComponentName = "Pagination";
+                    break;
+                }
                 case "JuiceControlLibrary.DynamicFilter":
-                    {
-                        viewComponentName = "Filter";
-                        break;
-                    }
+                {
+                    viewComponentName = "Filter";
+                    break;
+                }
                 case "JuiceControlLibrary.Sendform":
-                    {
-                        viewComponentName = "WebForm";
-                        break;
-                    }
+                {
+                    viewComponentName = "WebForm";
+                    break;
+                }
                 case "JuiceControlLibrary.Configurator":
                 {
                     viewComponentName = "Configurator";
