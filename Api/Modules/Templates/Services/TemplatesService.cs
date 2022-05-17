@@ -2524,7 +2524,16 @@ LIMIT 1";
                         EvalTreatment = EvalTreatment.Ignore
                     };
 
-                    template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
+                    // Try to minify. Uglify is known to have various issues with minifying newer JavaScript features.
+                    try
+                    {
+                        template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
+                    }
+                    catch
+                    {
+                        // Use non-minified editor value as the minified value so the changes don't go lost.
+                        template.MinifiedValue = template.EditorValue;
+                    }
 
                     break;
                 case TemplateTypes.Html:
