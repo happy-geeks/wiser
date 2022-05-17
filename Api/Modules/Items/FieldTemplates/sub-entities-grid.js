@@ -754,6 +754,15 @@ function generateGrid(data, model, columns) {
             if (e.model.dirty) {
                 editCount++;
             }
+            
+            // This will remove the min and max attributes from a kendo numeric text box.
+            // For some reason, these numeric textboxes often get a min and max of 0, meaning that you can't enter any value other than 0.
+            // I was not able to figure out the cause of this, so I made this work around.
+            var kendoNumericTextBox = e.container.find("input[data-type=number]").data("kendoNumericTextBox");
+            if (kendoNumericTextBox) {
+                kendoNumericTextBox.min(null);
+                kendoNumericTextBox.max(null);
+            }
         },
         save: function(e) {
             if (options.refreshGridAfterInlineEdit) {
