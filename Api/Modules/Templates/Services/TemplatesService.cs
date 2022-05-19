@@ -43,6 +43,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
 using NUglify;
@@ -72,11 +73,12 @@ namespace Api.Modules.Templates.Services
         private readonly ITempDataProvider tempDataProvider;
         private readonly IObjectsService objectsService;
         private readonly IDatabaseHelpersService databaseHelpersService;
+        private readonly ILogger<TemplatesService> logger;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -92,6 +94,7 @@ namespace Api.Modules.Templates.Services
             this.tempDataProvider = tempDataProvider;
             this.objectsService = objectsService;
             this.databaseHelpersService = databaseHelpersService;
+            this.logger = logger;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -2531,10 +2534,11 @@ LIMIT 1";
                     {
                         template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
                     }
-                    catch
+                    catch (Exception exception)
                     {
                         // Use non-minified editor value as the minified value so the changes don't go lost.
                         template.MinifiedValue = template.EditorValue;
+                        logger.LogWarning(exception, $"An error occurred while trying to minify the JavaScript of template ID {template.TemplateId}");
                     }
 
                     break;
