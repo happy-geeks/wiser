@@ -128,6 +128,6 @@ namespace Api.Modules.Customers.Interfaces
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
         /// <param name="id">The ID of the environment to copy the changes from.</param>
-        Task<ServiceResult<bool>> SynchroniseChangesToProductionAsync(ClaimsIdentity identity, int id);
+        Task<ServiceResult<SynchroniseChangesToProductionResultModel>> SynchroniseChangesToProductionAsync(ClaimsIdentity identity, int id);
     }
 }

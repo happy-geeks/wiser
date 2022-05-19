@@ -93,7 +93,23 @@ namespace Api.Modules.Modules.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
             // Make sure that Wiser tables are up-to-date.
+            const string TriggersName = "wiser_triggers";
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserItem, WiserTableNames.WiserEntityProperty, WiserTableNames.WiserModule });
+            var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
+            
+            // Make sure that all triggers for Wiser tables are up-to-date.
+            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2022, 5, 19))
+            {
+                var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
+                await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
+                
+                // Update wiser_table_changes.
+                clientDatabaseConnection.AddParameter("tableName", TriggersName);
+                clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+                await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
+                                                            VALUES (?tableName, ?lastUpdate) 
+                                                            ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)");
+            }
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));

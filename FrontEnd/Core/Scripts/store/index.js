@@ -577,7 +577,17 @@ const customersModule = {
 
             if (result.success) {
                 if (result.data) {
-                    commit(SYNCHRONISE_CHANGES_TO_PRODUCTION_SUCCESS, result.data);
+                    if (result.data.errors && result.data.errors.length > 0) {
+                        let errorMessage;
+                        if (result.data.successfulChanges) {
+                            errorMessage = `Een deel van het overzetten is goed gegaan en een deel is fout gegaan. Er zijn ${result.data.successfulChanges} wijzigingen succesvol overgezet en de volgende fouten zijn opgetreden: ${result.data.errors.join("<br>")}`;
+                        } else {
+                            errorMessage = `Het overzetten is mislulkt. De volgende fouten zijn opgetreden: ${result.data.errors.join("<br>")}`;
+                        }
+                        commit(SYNCHRONISE_CHANGES_TO_PRODUCTION_ERROR, errorMessage);
+                    } else {
+                        commit(SYNCHRONISE_CHANGES_TO_PRODUCTION_SUCCESS, result.data);
+                    }
                 } else {
                     commit(SYNCHRONISE_CHANGES_TO_PRODUCTION_ERROR, result.message);
                 }

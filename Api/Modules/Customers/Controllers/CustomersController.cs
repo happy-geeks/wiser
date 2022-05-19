@@ -101,7 +101,7 @@ namespace Api.Modules.Customers.Controllers
         /// </summary>
         /// <param name="id">The ID of the environment to copy the changes from.</param>
         [HttpPost]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(SynchroniseChangesToProductionResultModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [Authorize]
         [Route("synchronise-changes/{id:int}")]

@@ -154,7 +154,7 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SynchroniseChangesToProductionAsync(ClaimsIdentity identity, int id)
+        public async Task<ServiceResult<SynchroniseChangesToProductionResultModel>> SynchroniseChangesToProductionAsync(ClaimsIdentity identity, int id)
         {
             return await wiserCustomersService.SynchroniseChangesToProductionAsync(identity, id);
         }

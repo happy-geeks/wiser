@@ -71,6 +71,45 @@ END;
 -- ----------------------------
 -- Triggers structure for table wiser_item
 -- ----------------------------
+DROP TRIGGER IF EXISTS `CreateItem`;
+CREATE TRIGGER `CreateItem` AFTER INSERT ON `wiser_item` FOR EACH ROW
+BEGIN
+    IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('CREATE_ITEM','wiser_item', NEW.id, IFNULL(@_username, USER()), '', '', '');
+        
+        IF IFNULL(NEW.`unique_uuid`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'unique_uuid',NULL,NEW.`unique_uuid`);
+        END IF;
+
+        IF IFNULL(NEW.`entity_type`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'entity_type',NULL,NEW.`entity_type`);
+        END IF;
+
+        IF IFNULL(NEW.`moduleid`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'moduleid',NULL,NEW.`moduleid`);
+        END IF;
+
+        IF IFNULL(NEW.`published_environment`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'published_environment',NULL,NEW.`published_environment`);
+        END IF;
+
+        IF IFNULL(NEW.`readonly`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'readonly',NULL,NEW.`readonly`);
+        END IF;
+
+        IF IFNULL(NEW.`title`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'title',NULL,NEW.`title`);
+        END IF;
+    END IF;
+END;
+
 DROP TRIGGER IF EXISTS `ItemUpdate`;
 CREATE TRIGGER `ItemUpdate` AFTER UPDATE ON `wiser_item` FOR EACH ROW
 BEGIN
@@ -162,7 +201,7 @@ DROP TRIGGER IF EXISTS `On_insert`;
 CREATE TRIGGER `On_insert` AFTER INSERT ON `wiser_itemlink` FOR EACH ROW BEGIN
 	IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('ADD_LINK', 'wiser_itemlink', NEW.destination_item_id, IFNULL(@_username, USER()), NEW.`type`, NULL, NEW.item_id);
+        VALUES ('ADD_LINK', 'wiser_itemlink', NEW.destination_item_id, IFNULL(@_username, USER()), CONCAT(IFNULL(NEW.`type`, '1'), ',', IFNULL(NEW.`ordering`, '0')), NULL, NEW.item_id);
     END IF;
 END;
 
@@ -170,16 +209,22 @@ DROP TRIGGER IF EXISTS `On_change`;
 CREATE TRIGGER `On_change` AFTER UPDATE ON `wiser_itemlink` FOR EACH ROW BEGIN
     IF IFNULL(@saveHistory, TRUE) = TRUE AND NEW.`destination_item_id` <> OLD.`destination_item_id` THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('CHANGE_LINK', 'wiser_itemlink', OLD.id, IFNULL(@_username, USER()), CONCAT_WS(',', NEW.`type`, 'destination'), OLD.destination_item_id, NEW.destination_item_id),
-        	   ('REMOVE_LINK', 'wiser_itemlink', OLD.item_id, IFNULL(@_username, USER()), CONCAT_WS(',', NEW.`type`, 'destination'), OLD.destination_item_id, NULL),
-        	   ('ADD_LINK', 'wiser_itemlink', NEW.item_id, IFNULL(@_username, USER()), CONCAT_WS(',', NEW.`type`, 'destination'), NULL, NEW.destination_item_id);
+        VALUES ('CHANGE_LINK', 'wiser_itemlink', OLD.id, IFNULL(@_username, USER()), 'destination_item_id', OLD.destination_item_id, NEW.destination_item_id);
     END IF;
     
     IF IFNULL(@saveHistory, TRUE) = TRUE AND NEW.`item_id` <> OLD.`item_id` THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('CHANGE_LINK', 'wiser_itemlink', OLD.id, IFNULL(@_username, USER()), CONCAT_WS(',', NEW.`type`, 'source'), OLD.item_id, NEW.item_id),
-        	   ('REMOVE_LINK', 'wiser_itemlink', OLD.destination_item_id, IFNULL(@_username, USER()), CONCAT_WS(',', NEW.`type`, 'source'), OLD.item_id, NULL),
-        	   ('ADD_LINK', 'wiser_itemlink', NEW.destination_item_id, IFNULL(@_username, USER()), CONCAT_WS(',', NEW.`type`, 'source'), NULL, NEW.item_id);
+        VALUES ('CHANGE_LINK', 'wiser_itemlink', OLD.id, IFNULL(@_username, USER()), 'item_id', OLD.item_id, NEW.item_id);
+    END IF;
+
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND NEW.`type` <> OLD.`type` THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('CHANGE_LINK', 'wiser_itemlink', OLD.id, IFNULL(@_username, USER()), 'type', OLD.type, NEW.type);
+    END IF;
+
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND NEW.`ordering` <> OLD.`ordering` THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('CHANGE_LINK', 'wiser_itemlink', OLD.id, IFNULL(@_username, USER()), 'ordering', OLD.ordering, NEW.ordering);
     END IF;
 END;
 
@@ -201,7 +246,7 @@ DROP TRIGGER IF EXISTS `addhistory`;
 CREATE TRIGGER `addhistory` AFTER INSERT ON `wiser_itemlinkdetail` FOR EACH ROW BEGIN
 	IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue, language_code, groupname)
-        VALUES ('UPDATE_ITEMLINK','wiser_itemlinkdetail',NEW.itemlink_id,IFNULL(@_username, USER()),NEW.`key`,'',CONCAT_WS('',NEW.`value`,NEW.`long_value`), NEW.language_code, NEW.groupname);
+        VALUES ('UPDATE_ITEMLINKDETAIL','wiser_itemlinkdetail',NEW.itemlink_id,IFNULL(@_username, USER()),NEW.`key`,'',CONCAT_WS('',NEW.`value`,NEW.`long_value`), NEW.language_code, NEW.groupname);
     END IF;
 END;
 
@@ -215,7 +260,7 @@ CREATE TRIGGER `updatehistory` AFTER UPDATE ON `wiser_itemlinkdetail` FOR EACH R
         SET newValue = CONCAT_WS('',NEW.`value`,NEW.`long_value`);
         IF newValue <> oldValue THEN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue, language_code, groupname)
-            VALUES ('UPDATE_ITEMLINK','wiser_itemlinkdetail',NEW.itemlink_id,IFNULL(@_username, USER()),NEW.`key`,oldValue,newValue, NEW.language_code, NEW.groupname);
+            VALUES ('UPDATE_ITEMLINKDETAIL','wiser_itemlinkdetail',NEW.itemlink_id,IFNULL(@_username, USER()),NEW.`key`,oldValue,newValue, NEW.language_code, NEW.groupname);
         END IF;
 	END IF;
 END;
@@ -224,7 +269,7 @@ DROP TRIGGER IF EXISTS `removehistory`;
 CREATE TRIGGER `removehistory` AFTER DELETE ON `wiser_itemlinkdetail` FOR EACH ROW BEGIN
 	IF IFNULL(@saveHistory, TRUE) = TRUE THEN
     	INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue, language_code, groupname)
-    	VALUES ('UPDATE_ITEMLINK','wiser_itemlinkdetail',OLD.itemlink_id,IFNULL(@_username, USER()),OLD.`key`,CONCAT_WS('',OLD.`value`,OLD.`long_value`),'', OLD.language_code, OLD.groupname);
+    	VALUES ('UPDATE_ITEMLINKDETAIL','wiser_itemlinkdetail',OLD.itemlink_id,IFNULL(@_username, USER()),OLD.`key`,CONCAT_WS('',OLD.`value`,OLD.`long_value`),'', OLD.language_code, OLD.groupname);
     END IF;
 END;
 
