@@ -938,19 +938,75 @@ const moduleSettings = {
                 $(routineParametersInput).data("CodeMirrorInstance", codeMirrorInstance);
             }
 
-            const dataSource = (this.templateSettings.externalFiles || []).map(url => { return { url: url } })
+            let externalFileOrder = 1;
+            const dataSource = (this.templateSettings.externalFiles || []).map(url => { return { __ordering: externalFileOrder++, url: url } })
             const externalFilesGridElement = $("#externalFiles");
             if (externalFilesGridElement.length > 0) {
                 externalFilesGridElement.kendoGrid({
                     height: 500,
-                    editable: true,
+                    editable: {
+                        createAt: "bottom"
+                    },
                     batch: true,
                     toolbar: ["create"],
                     columns: [
                         { field: "url" },
                         { command: "destroy", width: 140 }
                     ],
-                    dataSource: dataSource
+                    dataSource: dataSource,
+                    edit: function (e) {
+                        if (e.model.__ordering >= 0) return;
+                        const orderings = e.sender.dataSource.data().filter(i => i.hasOwnProperty("__ordering")).map(i => i.__ordering);
+                        const newOrdering = orderings.length > 0 ? orderings[orderings.length - 1] + 1 : 1;
+                        e.model.__ordering = newOrdering;
+                    }
+                });
+
+                const externalFilesGrid = $(externalFilesGridElement).getKendoGrid();
+                externalFilesGrid.table.kendoSortable({
+                    autoScroll: true,
+                    hint: function (element) {
+                        const table = externalFilesGrid.table.clone();
+                        const wrapperWidth = externalFilesGrid.wrapper.width();
+                        const wrapper = $('<div class="k-grid k-widget"></div>').width(wrapperWidth);
+
+                        table.find("thead").remove();
+                        table.find("tbody").empty();
+                        table.wrap(wrapper);
+                        table.append(element.clone().removeAttr("uid"));
+
+                        const hint = table.parent();
+                        return hint;
+                    },
+                    cursor: "move",
+                    placeholder: function (element) {
+                        return element.clone().addClass("k-state-hover").css("opacity", 0.65);
+                    },
+                    container: "#externalFiles",
+                    filter: ">tbody >tr",
+                    change: function (e) {
+                        // Kendo starts ordering with 0, but Wiser starts with 1.
+                        const oldIndex = e.oldIndex + 1; // The old position.
+                        const newIndex = e.newIndex + 1; // The new position.
+                        const view = externalFilesGrid.dataSource.view();
+                        const dataItem = externalFilesGrid.dataSource.getByUid(e.item.data("uid")); // Retrieve the moved dataItem.
+
+                        dataItem.__ordering = newIndex; // Update the order
+                        dataItem.dirty = true;
+
+                        // Shift the order of the records.
+                        if (oldIndex < newIndex) {
+                            for (let i = oldIndex + 1; i <= newIndex; i++) {
+                                view[i - 1].__ordering--;
+                                view[i - 1].dirty = true;
+                            }
+                        } else {
+                            for (let i = oldIndex - 1; i >= newIndex; i--) {
+                                view[i - 1].__ordering++;
+                                view[i - 1].dirty = true;
+                            }
+                        }
+                    }
                 });
             }
 
@@ -1411,7 +1467,11 @@ const moduleSettings = {
 
             const externalFilesGrid = $("#externalFiles").data("kendoGrid");
             if (externalFilesGrid) {
-                settings.externalFiles = externalFilesGrid.dataSource.data().map(d => d.url);
+                settings.externalFiles = externalFilesGrid.dataSource.data().sort((a, b) => {
+                    if (a.__ordering < b.__ordering) return -1;
+                    if (a.__ordering > b.__ordering) return 1;
+                    return 0;
+                }).map(d => d.url);
             }
 
             return settings;

@@ -207,8 +207,7 @@ namespace Api.Modules.Modules.Services
                     }
                     catch (JsonReaderException exception)
                     {
-                        logger.LogWarning(exception,
-                            $"An error occurred while parsing options JSON of module {rightsModel.ModuleId}");
+                        logger.LogWarning(exception, $"An error occurred while parsing options JSON of module {rightsModel.ModuleId}");
                     }
 
                     var onlyOneInstanceAllowed = optionsObject.Value<bool?>("onlyOneInstanceAllowed");
@@ -248,8 +247,7 @@ namespace Api.Modules.Modules.Services
                         }
                         catch (Exception exception)
                         {
-                            logger.LogWarning(exception,
-                                $"An error occurred while executing query of module {rightsModel.ModuleId}");
+                            logger.LogWarning(exception, $"An error occurred while executing query of module {rightsModel.ModuleId}");
                         }
 
                         rightsModel.IframeUrl = url;
@@ -425,8 +423,7 @@ namespace Api.Modules.Modules.Services
                             });
                             break;
                         default:
-                            throw new NotImplementedException(
-                                $"Trying to hard-code add module '{moduleId}' to list for admin account, but no case has been added for this module in the switch statement.");
+                            throw new NotImplementedException($"Trying to hard-code add module '{moduleId}' to list for admin account, but no case has been added for this module in the switch statement.");
                     }
                 }
             }
@@ -481,9 +478,7 @@ namespace Api.Modules.Modules.Services
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var moduleId = dataRow.Field<int>("id");
-                var userItemPermissions =
-                    await wiserItemsService.GetUserModulePermissions(moduleId,
-                        IdentityHelpers.GetWiserUserId(identity));
+                var userItemPermissions = await wiserItemsService.GetUserModulePermissions(moduleId, IdentityHelpers.GetWiserUserId(identity));
 
                 results.Add(new ModuleSettingsModel
                 {
@@ -520,8 +515,7 @@ namespace Api.Modules.Modules.Services
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
 
-            var query =
-                $@"SELECT id, custom_query, count_query, `options`, `name`, icon, color, type, `group` FROM wiser_module WHERE id = ?id";
+            var query = $@"SELECT id, custom_query, count_query, `options`, `name`, icon, color, type, `group` FROM {WiserTableNames.WiserModule} WHERE id = ?id";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count == 0)
@@ -542,7 +536,7 @@ namespace Api.Modules.Modules.Services
 
             var optionsJson = dataTable.Rows[0].Field<string>("options");
 
-            if (string.IsNullOrWhiteSpace(optionsJson))
+            if (String.IsNullOrWhiteSpace(optionsJson))
             {
                 return new ServiceResult<ModuleSettingsModel>(result);
             }
@@ -579,8 +573,7 @@ namespace Api.Modules.Modules.Services
         /// <inheritdoc />
         public async Task<ServiceResult<byte[]>> ExportAsync(int id, ClaimsIdentity identity)
         {
-            var gridResult =
-                await gridsService.GetOverviewGridDataAsync(id, new GridReadOptionsModel(), identity, true);
+            var gridResult = await gridsService.GetOverviewGridDataAsync(id, new GridReadOptionsModel(), identity, true);
             if (gridResult.StatusCode != HttpStatusCode.OK)
             {
                 return new ServiceResult<byte[]>

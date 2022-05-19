@@ -2962,41 +2962,42 @@ LIMIT 1";
             // Copy easy_templates to wiser_template, but only the versions that are actually still used, we don't need the entire history.
             var query = @"
 SELECT
-	IF(item.parent_id <= 0, NULL, item.parent_id) AS parent_id,
-	item.name AS template_name,
-	IFNULL(template.html, template.template) AS template_data,
-	template.html_minified AS template_data_minified,
+    IF(item.parent_id <= 0, NULL, item.parent_id) AS parent_id,
+    item.name AS template_name,
+    IFNULL(template.html, template.template) AS template_data,
+    template.html_minified AS template_data_minified,
     CONCAT_WS('/', '', parent9.name, parent8.name, parent7.name, parent6.name, parent5.name, parent4.name, parent3.name, parent2.name, parent1.name, '') AS path,
-	IFNULL(template.version, 1) AS version,
-	item.id AS template_id,
-	IFNULL(item.lastchangedate, item.createdon) AS changed_on,
-	IFNULL(item.lastchangedby, item.createdby) AS changed_by,
-	IF(template.istest = 1, 2, 0) + IF(template.isacceptance = 1, 4, 0) + IF(template.islive = 1, 8, 0) AS published_environment,
-	template.usecache AS use_cache,
-	template.cacheminutes AS cache_minutes,
-	template.handlerequest AS handle_request,
-	template.handlesession AS handle_session,
-	template.handleobjects AS handle_objects,
-	template.handlestandards AS handle_standards,
-	template.handletranslations AS handle_translations,
-	template.handledynamiccontent AS handle_dynamic_content,
-	template.handlelogicblocks AS handle_logic_blocks,
-	template.handlemutators AS handle_mutators,
-	template.issecure AS login_required,
-	template.securedsessionprefix AS login_session_prefix,
-	CONCAT_WS(',', template.jstemplates, template.csstemplates) AS linked_templates,
-	item.volgnr AS ordering,
-	template.pagemode AS insert_mode,
-	template.loadalways AS load_always,
-	template.urlregex AS url_regex,
-	template.externalfiles AS external_files,
-	template.groupingCreateObjectInsteadOfArray AS grouping_create_object_instead_of_array,
-	template.groupingprefix AS grouping_prefix,
-	template.groupingkey AS grouping_key,
-	template.groupingKeyColumnName AS grouping_key_column_name,
-	template.groupingValueColumnName AS grouping_value_column_name,
-	template.isscssincludetemplate AS is_scss_include_template,
-	template.useinwiserhtmleditors AS use_in_wiser_html_editors,
+    IFNULL(template.version, 1) AS version,
+    item.id AS template_id,
+    IFNULL(item.lastchangedate, item.createdon) AS changed_on,
+    IFNULL(item.lastchangedby, item.createdby) AS changed_by,
+    IF(template.istest = 1, 2, 0) + IF(template.isacceptance = 1, 4, 0) + IF(template.islive = 1, 8, 0) AS published_environment,
+    template.usecache AS use_cache,
+    template.cacheminutes AS cache_minutes,
+    template.handlerequest AS handle_request,
+    template.handlesession AS handle_session,
+    template.handleobjects AS handle_objects,
+    template.handlestandards AS handle_standards,
+    template.handletranslations AS handle_translations,
+    template.handledynamiccontent AS handle_dynamic_content,
+    template.handlelogicblocks AS handle_logic_blocks,
+    template.handlemutators AS handle_mutators,
+    template.issecure AS login_required,
+    template.securedsessionprefix AS login_session_prefix,
+    CONCAT_WS(',', template.jstemplates, template.csstemplates) AS linked_templates,
+    item.volgnr AS ordering,
+    template.pagemode AS insert_mode,
+    template.loadalways AS load_always,
+    template.urlregex AS url_regex,
+    template.externalfiles AS external_files,
+    template.groupingCreateObjectInsteadOfArray AS grouping_create_object_instead_of_array,
+    template.groupingprefix AS grouping_prefix,
+    template.groupingkey AS grouping_key,
+    template.groupingKeyColumnName AS grouping_key_column_name,
+    template.groupingValueColumnName AS grouping_value_column_name,
+    template.disableminifier AS disable_minifier,
+    template.isscssincludetemplate AS is_scss_include_template,
+    template.useinwiserhtmleditors AS use_in_wiser_html_editors,
     template.defaulttemplate AS wiser_cdn_templates,
     template.templatetype AS type,
     template.variables AS routine_parameters,
@@ -3013,14 +3014,14 @@ LEFT JOIN easy_items AS parent7 ON parent7.id = parent6.parent_id
 LEFT JOIN easy_items AS parent8 ON parent8.id = parent7.parent_id
 LEFT JOIN easy_items AS parent9 ON parent9.id = parent8.parent_id
 JOIN (
-	SELECT item.id, MIN(deployedVersion.version) AS version
-	FROM easy_items AS item
-	LEFT JOIN easy_templates AS template ON template.itemid = item.id
-	LEFT JOIN easy_templates AS deployedVersion ON deployedVersion.itemid = template.itemid AND 1 IN (deployedVersion.istest, deployedVersion.isacceptance, deployedVersion.islive)
-	WHERE item.moduleid = 143
-	AND item.deleted = 0
-	AND item.published = 1
-	GROUP BY item.id
+    SELECT item.id, MIN(deployedVersion.version) AS version
+    FROM easy_items AS item
+    LEFT JOIN easy_templates AS template ON template.itemid = item.id
+    LEFT JOIN easy_templates AS deployedVersion ON deployedVersion.itemid = template.itemid AND 1 IN (deployedVersion.istest, deployedVersion.isacceptance, deployedVersion.islive)
+    WHERE item.moduleid = 143
+    AND item.deleted = 0
+    AND item.published = 1
+    GROUP BY item.id
 ) AS lowestVersionToConvert ON lowestVersionToConvert.id = item.id AND (template.id IS NULL OR template.version >= lowestVersionToConvert.version)
 WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
 
@@ -3141,6 +3142,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 clientDatabaseConnection.AddParameter("ordering", reader.GetValue("ordering"));
                 clientDatabaseConnection.AddParameter("insert_mode", reader.GetValue("insert_mode"));
                 clientDatabaseConnection.AddParameter("load_always", reader.GetValue("load_always"));
+                clientDatabaseConnection.AddParameter("disable_minifier", reader.GetValue("disable_minifier"));
                 clientDatabaseConnection.AddParameter("url_regex", urlRegex);
                 clientDatabaseConnection.AddParameter("external_files", externalFiles);
                 clientDatabaseConnection.AddParameter("grouping_create_object_instead_of_array", reader.GetValue("grouping_create_object_instead_of_array"));

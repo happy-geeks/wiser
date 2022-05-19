@@ -163,6 +163,7 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRole", newVersion.LoginRole, oldVersion.LoginRole, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("insertMode", newVersion.InsertMode, oldVersion.InsertMode, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loadAlways", newVersion.LoadAlways, oldVersion.LoadAlways, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("disableMinifier", newVersion.DisableMinifier, oldVersion.DisableMinifier, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("urlRegex", newVersion.UrlRegex, oldVersion.UrlRegex, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("externalFiles", String.Join(";", newVersion.ExternalFiles ?? new List<string>()), String.Join(";", oldVersion.ExternalFiles ?? new List<string>()), historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingCreateObjectInsteadOfArray", newVersion.GroupingCreateObjectInsteadOfArray, oldVersion.GroupingCreateObjectInsteadOfArray, historyModel);
