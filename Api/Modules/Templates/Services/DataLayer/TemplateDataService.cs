@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Api.Modules.Kendo.Enums;
+using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
@@ -97,6 +98,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.ordering,
                                                                 template.insert_mode,
                                                                 template.load_always,
+                                                                template.disable_minifier,
                                                                 template.url_regex,
                                                                 template.external_files,
                                                                 template.grouping_create_object_instead_of_array,
@@ -107,7 +109,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.is_scss_include_template,
                                                                 template.use_in_wiser_html_editors,
                                                                 template.pre_load_query,
-                                                                template.return_not_found_when_pre_load_query_has_no_data
+                                                                template.return_not_found_when_pre_load_query_has_no_data,
+                                                                template.routine_type,
+                                                                template.routine_parameters,
+                                                                template.routine_return_type
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
                                                             WHERE template.template_id = ?templateId
                                                             AND template.removed = 0
@@ -149,6 +154,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                 Ordering = dataTable.Rows[0].Field<int>("ordering"),
                 InsertMode = dataTable.Rows[0].Field<ResourceInsertModes>("insert_mode"),
                 LoadAlways = Convert.ToBoolean(dataTable.Rows[0]["load_always"]),
+                DisableMinifier = Convert.ToBoolean(dataTable.Rows[0]["disable_minifier"]),
                 UrlRegex = dataTable.Rows[0].Field<string>("url_regex"),
                 ExternalFiles = dataTable.Rows[0].Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
                 GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(dataTable.Rows[0]["grouping_create_object_instead_of_array"]),
@@ -163,7 +169,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                     RawLinkList = dataTable.Rows[0].Field<string>("linked_templates")
                 },
                 PreLoadQuery = dataTable.Rows[0].Field<string>("pre_load_query"),
-                ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataTable.Rows[0]["return_not_found_when_pre_load_query_has_no_data"])
+                ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataTable.Rows[0]["return_not_found_when_pre_load_query_has_no_data"]),
+                RoutineType = (RoutineTypes)dataTable.Rows[0].Field<int>("routine_type"),
+                RoutineParameters = dataTable.Rows[0].Field<string>("routine_parameters"),
+                RoutineReturnType = dataTable.Rows[0].Field<string>("routine_return_type")
             };
 
             return templateData;
@@ -396,6 +405,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("ordering", ordering);
             clientDatabaseConnection.AddParameter("insertMode", (int)templateSettings.InsertMode);
             clientDatabaseConnection.AddParameter("loadAlways", templateSettings.LoadAlways);
+            clientDatabaseConnection.AddParameter("disableMinifier", templateSettings.DisableMinifier);
             clientDatabaseConnection.AddParameter("urlRegex", templateSettings.UrlRegex);
             clientDatabaseConnection.AddParameter("externalFiles", String.Join(";", templateSettings.ExternalFiles));
             clientDatabaseConnection.AddParameter("groupingCreateObjectInsteadOfArray", templateSettings.GroupingCreateObjectInsteadOfArray);
@@ -408,6 +418,9 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("templateLinks", templateLinks);
             clientDatabaseConnection.AddParameter("preLoadQuery", templateSettings.PreLoadQuery);
             clientDatabaseConnection.AddParameter("returnNotFoundWhenPreLoadQueryHasNoData", templateSettings.ReturnNotFoundWhenPreLoadQueryHasNoData);
+            clientDatabaseConnection.AddParameter("routineType", (int)templateSettings.RoutineType);
+            clientDatabaseConnection.AddParameter("routineParameters", templateSettings.RoutineParameters);
+            clientDatabaseConnection.AddParameter("routineReturnType", templateSettings.RoutineReturnType);
 
             return await clientDatabaseConnection.ExecuteAsync($@"
                 SET @VersionNumber = (SELECT MAX(version)+1 FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId GROUP BY template_id);
@@ -442,6 +455,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ordering,
                     insert_mode,
                     load_always,
+                    disable_minifier,
                     url_regex,
                     external_files,
                     grouping_create_object_instead_of_array,
@@ -452,7 +466,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                     is_scss_include_template,
                     use_in_wiser_html_editors,
                     pre_load_query,
-                    return_not_found_when_pre_load_query_has_no_data
+                    return_not_found_when_pre_load_query_has_no_data,
+                    routine_type,
+                    routine_parameters,
+                    routine_return_type
                 ) 
                 VALUES (
                     ?name,
@@ -485,6 +502,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ?ordering,
                     ?insertMode,
                     ?loadAlways,
+                    ?disableMinifier,
                     ?urlRegex,
                     ?externalFiles,
                     ?groupingCreateObjectInsteadOfArray,
@@ -495,7 +513,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ?isScssIncludeTemplate,
                     ?useInWiserHtmlEditors,
                     ?preLoadQuery,
-                    ?returnNotFoundWhenPreLoadQueryHasNoData
+                    ?returnNotFoundWhenPreLoadQueryHasNoData,
+                    ?routineType,
+                    ?routineParameters,
+                    ?routineReturnType
                 )");
         }
 
@@ -944,6 +965,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                                                                             template.ordering,
                                                                             template.insert_mode,
                                                                             template.load_always,
+                                                                            template.disable_minifier,
                                                                             template.url_regex,
                                                                             template.external_files,
                                                                             template.grouping_create_object_instead_of_array,
@@ -1005,6 +1027,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                     Ordering = dataRow.Field<int>("ordering"),
                     InsertMode = dataRow.Field<ResourceInsertModes>("insert_mode"),
                     LoadAlways = Convert.ToBoolean(dataRow["load_always"]),
+                    DisableMinifier = Convert.ToBoolean(dataRow["disable_minifier"]),
                     UrlRegex = dataRow.Field<string>("url_regex"),
                     ExternalFiles = dataRow.Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
                     GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(dataRow["grouping_create_object_instead_of_array"]),

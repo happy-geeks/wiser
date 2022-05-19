@@ -118,14 +118,14 @@
             </div>
             @foreach (var change in historyModel.TemplateChanges)
             {
-                if (change.Value.Key is bool booleanValue)
+                if (change.Value.Key is bool booleanNewValue && change.Value.Value is bool booleanOldValue)
                 {
                     <div class="col col-6 checkLine">
                         <div class="item" data-label-style="normal" data-label-width="0">
                             <span class="handler">&nbsp;</span>
                             <span class="inline">
                                 <label class="checkbox">
-                                    @if (booleanValue)
+                                    @if (booleanOldValue)
                                     {
                                         <input id="change.Key" name="change.Key" type="checkbox" checked="checked" disabled>
                                     }
@@ -143,7 +143,7 @@
                             <span class="handler">&nbsp;</span>
                             <span class="inline">
                                 <label class="checkbox">
-                                    @if (booleanValue)
+                                    @if (booleanNewValue)
                                     {
                                         <input id="change.Key" name="change.Key" type="checkbox" checked="checked" disabled>
                                     }

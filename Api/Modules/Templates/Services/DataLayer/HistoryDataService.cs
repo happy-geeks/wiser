@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Template;
@@ -99,6 +100,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 GROUP_CONCAT(CONCAT_WS(';', linkedTemplates.template_id, linkedTemplates.template_name, linkedTemplates.template_type)) AS linkedTemplates,
                                                                 template.insert_mode,
                                                                 template.load_always,
+                                                                template.disable_minifier,
                                                                 template.url_regex,
                                                                 template.external_files,
                                                                 template.grouping_create_object_instead_of_array,
@@ -109,7 +111,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.is_scss_include_template,
                                                                 template.use_in_wiser_html_editors,
                                                                 template.pre_load_query,
-                                                                template.return_not_found_when_pre_load_query_has_no_data
+                                                                template.return_not_found_when_pre_load_query_has_no_data,
+                                                                template.routine_type,
+                                                                template.routine_parameters,
+                                                                template.routine_return_type
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
 				                                            LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate WHERE linkedTemplate.removed = 0 GROUP BY template_id) AS linkedTemplates ON FIND_IN_SET(linkedTemplates.template_id, template.linked_templates)
                                                             WHERE template.template_id = ?templateId
@@ -153,6 +158,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     },
                     InsertMode = row.Field<ResourceInsertModes>("insert_mode"),
                     LoadAlways = Convert.ToBoolean(row["load_always"]),
+                    DisableMinifier = Convert.ToBoolean(row["disable_minifier"]),
                     UrlRegex = row.Field<string>("url_regex"),
                     ExternalFiles = row.Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
                     GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(row["grouping_create_object_instead_of_array"]),
@@ -163,7 +169,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                     IsScssIncludeTemplate = Convert.ToBoolean(row["is_scss_include_template"]),
                     UseInWiserHtmlEditors = Convert.ToBoolean(row["use_in_wiser_html_editors"]),
                     PreLoadQuery = row.Field<string>("pre_load_query"),
-                    ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(row["return_not_found_when_pre_load_query_has_no_data"])
+                    ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(row["return_not_found_when_pre_load_query_has_no_data"]),
+                    RoutineType = (RoutineTypes)row.Field<int>("routine_type"),
+                    RoutineParameters = row.Field<string>("routine_parameters"),
+                    RoutineReturnType = row.Field<string>("routine_return_type")
                 };
 
                 resultList.Add(templateData);
