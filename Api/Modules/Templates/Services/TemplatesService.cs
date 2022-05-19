@@ -13,6 +13,7 @@ using Api.Core.Interfaces;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Kendo.Enums;
+using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -42,6 +43,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Logging;
+using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
 using NUglify;
 using NUglify.JavaScript;
@@ -70,11 +73,12 @@ namespace Api.Modules.Templates.Services
         private readonly ITempDataProvider tempDataProvider;
         private readonly IObjectsService objectsService;
         private readonly IDatabaseHelpersService databaseHelpersService;
+        private readonly ILogger<TemplatesService> logger;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -90,6 +94,7 @@ namespace Api.Modules.Templates.Services
             this.tempDataProvider = tempDataProvider;
             this.objectsService = objectsService;
             this.databaseHelpersService = databaseHelpersService;
+            this.logger = logger;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -2359,7 +2364,7 @@ LIMIT 1";
             }
 
             var versionsAndPublished = await templateDataService.GetPublishedEnvironmentsAsync(templateId);
-            
+
             return new ServiceResult<PublishedEnvironmentModel>(PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
         }
 
@@ -2476,7 +2481,7 @@ LIMIT 1";
             {
                 throw new ArgumentException("The version is invalid");
             }
-            
+
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(templateId, currentPublished, newPublished);
@@ -2491,7 +2496,7 @@ LIMIT 1";
             {
                 throw new ArgumentException("TemplateData cannot be empty.");
             }
-            
+
             // Compile / minify (S)CSS, javascript and HTML.
             switch (template.Type)
             {
@@ -2533,7 +2538,17 @@ LIMIT 1";
                         EvalTreatment = EvalTreatment.Ignore
                     };
 
-                    template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
+                    // Try to minify. Uglify is known to have various issues with minifying newer JavaScript features.
+                    try
+                    {
+                        template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
+                    }
+                    catch (Exception exception)
+                    {
+                        // Use non-minified editor value as the minified value so the changes don't go lost.
+                        template.MinifiedValue = template.EditorValue;
+                        logger.LogWarning(exception, $"An error occurred while trying to minify the JavaScript of template ID {template.TemplateId}");
+                    }
 
                     break;
                 case TemplateTypes.Html:
@@ -2541,7 +2556,7 @@ LIMIT 1";
                     template.MinifiedValue = template.EditorValue;
                     break;
             }
-            
+
             var jsLinks = template.LinkedTemplates?.LinkedJavascript?.Select(x => x.TemplateId).ToList();
             var scssLinks = template.LinkedTemplates?.LinkedScssTemplates?.Select(x => x.TemplateId).ToList();
             var allLinkedTemplates = new List<int>(jsLinks ?? new List<int>());
@@ -2557,6 +2572,16 @@ LIMIT 1";
             }
 
             await templateDataService.SaveAsync(template, templateLinks, IdentityHelpers.GetUserName(identity, true));
+
+            if (template.Type == TemplateTypes.Routine)
+            {
+                // Also (re-)create the actual routine.
+                var (successful, errorMessage) = await CreateDatabaseRoutine(template.Name, template.RoutineType, template.RoutineParameters, template.RoutineReturnType, template.EditorValue);
+                if (!successful)
+                {
+                    throw new Exception($"The template saved successfully, but the routine could not be created due to a syntax error. Error:\n{errorMessage}");
+                }
+            }
 
             if (template.Type != TemplateTypes.Scss || !template.IsScssIncludeTemplate || skipCompilation)
             {
@@ -2579,8 +2604,8 @@ LIMIT 1";
             // Make sure the tables are up-to-date.
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
             {
-                WiserTableNames.WiserTemplate, 
-                WiserTableNames.WiserDynamicContent, 
+                WiserTableNames.WiserTemplate,
+                WiserTableNames.WiserDynamicContent,
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,
                 WiserTableNames.WiserPreviewProfiles,
@@ -2768,7 +2793,7 @@ LIMIT 1";
 
             requestModel.Url ??= HttpContextHelpers.GetBaseUri(httpContextAccessor.HttpContext);
             await SetupGclForPreviewAsync(identity, requestModel);
-            
+
             var html = await gclTemplatesService.GenerateDynamicContentHtmlAsync(component);
             return new ServiceResult<string>((string)html);
         }
@@ -2781,7 +2806,7 @@ LIMIT 1";
             {
                 return new ServiceResult<string>(outputHtml);
             }
-            
+
             var javascriptTemplates = new List<int>();
             var cssTemplates = new List<int>();
             var externalJavascript = new List<string>();
@@ -2796,10 +2821,10 @@ LIMIT 1";
             var ombouw = (!queryString.ContainsKey("ombouw") || !String.Equals(queryString["ombouw"].ToString(), "false", StringComparison.OrdinalIgnoreCase)) && !String.Equals(requestModel.PreviewVariables.FirstOrDefault(v => String.Equals(v.Key, "ombouw", StringComparison.OrdinalIgnoreCase))?.Value, "false", StringComparison.OrdinalIgnoreCase);
 
             var contentToWrite = new StringBuilder();
-            
+
             // Execute the pre load query before any replacements are being done and before any dynamic components are handled.
             await gclTemplatesService.ExecutePreLoadQueryAndRememberResultsAsync(new Template { PreLoadQuery = requestModel.TemplateSettings.PreLoadQuery });
-            
+
             // Header template.
             if (ombouw)
             {
@@ -2814,7 +2839,7 @@ LIMIT 1";
             {
                 contentToWrite.Append(await pagesService.GetGlobalFooter(requestModel.Url.ToString(), javascriptTemplates, cssTemplates));
             }
-            
+
             await SetupGclForPreviewAsync(identity, requestModel);
 
             outputHtml = contentToWrite.ToString();
@@ -2824,12 +2849,12 @@ LIMIT 1";
                 outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
                 outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
             }
-            
+
             if (requestModel.TemplateSettings.HandleDynamicContent)
             {
                 outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
             }
-            
+
             if (requestModel.TemplateSettings.HandleLogicBlocks)
             {
                 outputHtml = stringReplacementsService.EvaluateTemplate(outputHtml);
@@ -2842,7 +2867,7 @@ LIMIT 1";
 
             // Generate view model.
             var viewModel = await pagesService.CreatePageViewModelAsync(externalCss, cssTemplates, externalJavascript, javascriptTemplates, outputHtml);
-            
+
             // Determine main domain, using either the "maindomain" object or the "maindomain_wiser" object.
             var mainDomain = await objectsService.FindSystemObjectByDomainNameAsync("maindomain_wiser");
             if (String.IsNullOrWhiteSpace(mainDomain))
@@ -2886,7 +2911,7 @@ LIMIT 1";
             {
                 return new ServiceResult<string>($"A view with the name {viewResult.ViewName} could not be found");
             }
-                
+
             var viewDictionary = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
             {
                 Model = viewModel
@@ -2908,14 +2933,17 @@ LIMIT 1";
             return new ServiceResult<string>(finalResult);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Converts Wiser 1 templates to the Wiser 3 format.
+        /// </summary>
+        /// <returns></returns>
         public async Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplates()
         {
             // Make sure the tables are up-to-date.
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
             {
-                WiserTableNames.WiserTemplate, 
-                WiserTableNames.WiserDynamicContent, 
+                WiserTableNames.WiserTemplate,
+                WiserTableNames.WiserDynamicContent,
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,
                 WiserTableNames.WiserPreviewProfiles,
@@ -2932,7 +2960,7 @@ LIMIT 1";
                     StatusCode = HttpStatusCode.Conflict
                 };
             }
-            
+
             dataTable = await clientDatabaseConnection.GetAsync($"SELECT COUNT(*) FROM {WiserTableNames.WiserDynamicContent}");
             if (Convert.ToInt32(dataTable.Rows[0][0]) > 0)
             {
@@ -2956,43 +2984,45 @@ LIMIT 1";
             // Copy easy_templates to wiser_template, but only the versions that are actually still used, we don't need the entire history.
             var query = @"
 SELECT
-	IF(item.parent_id <= 0, NULL, item.parent_id) AS parent_id,
-	item.name AS template_name,
-	IFNULL(template.html, template.template) AS template_data,
-	template.html_minified AS template_data_minified,
+    IF(item.parent_id <= 0, NULL, item.parent_id) AS parent_id,
+    item.name AS template_name,
+    IFNULL(template.html, template.template) AS template_data,
+    template.html_minified AS template_data_minified,
     CONCAT_WS('/', '', parent9.name, parent8.name, parent7.name, parent6.name, parent5.name, parent4.name, parent3.name, parent2.name, parent1.name, '') AS path,
-	IFNULL(template.version, 1) AS version,
-	item.id AS template_id,
-	IFNULL(item.lastchangedate, item.createdon) AS changed_on,
-	IFNULL(item.lastchangedby, item.createdby) AS changed_by,
-	IF(template.istest = 1, 2, 0) + IF(template.isacceptance = 1, 4, 0) + IF(template.islive = 1, 8, 0) AS published_environment,
-	template.usecache AS use_cache,
-	template.cacheminutes AS cache_minutes,
-	template.handlerequest AS handle_request,
-	template.handlesession AS handle_session,
-	template.handleobjects AS handle_objects,
-	template.handlestandards AS handle_standards,
-	template.handletranslations AS handle_translations,
-	template.handledynamiccontent AS handle_dynamic_content,
-	template.handlelogicblocks AS handle_logic_blocks,
-	template.handlemutators AS handle_mutators,
-	template.issecure AS login_required,
-	template.securedsessionprefix AS login_session_prefix,
-	CONCAT_WS(',', template.jstemplates, template.csstemplates) AS linked_templates,
-	item.volgnr AS ordering,
-	template.pagemode AS insert_mode,
-	template.loadalways AS load_always,
-	template.urlregex AS url_regex,
-	template.externalfiles AS external_files,
-	template.groupingCreateObjectInsteadOfArray AS grouping_create_object_instead_of_array,
-	template.groupingprefix AS grouping_prefix,
-	template.groupingkey AS grouping_key,
-	template.groupingKeyColumnName AS grouping_key_column_name,
-	template.groupingValueColumnName AS grouping_value_column_name,
-	template.isscssincludetemplate AS is_scss_include_template,
-	template.useinwiserhtmleditors AS use_in_wiser_html_editors,
+    IFNULL(template.version, 1) AS version,
+    item.id AS template_id,
+    IFNULL(item.lastchangedate, item.createdon) AS changed_on,
+    IFNULL(item.lastchangedby, item.createdby) AS changed_by,
+    IF(template.istest = 1, 2, 0) + IF(template.isacceptance = 1, 4, 0) + IF(template.islive = 1, 8, 0) AS published_environment,
+    template.usecache AS use_cache,
+    template.cacheminutes AS cache_minutes,
+    template.handlerequest AS handle_request,
+    template.handlesession AS handle_session,
+    template.handleobjects AS handle_objects,
+    template.handlestandards AS handle_standards,
+    template.handletranslations AS handle_translations,
+    template.handledynamiccontent AS handle_dynamic_content,
+    template.handlelogicblocks AS handle_logic_blocks,
+    template.handlemutators AS handle_mutators,
+    template.issecure AS login_required,
+    template.securedsessionprefix AS login_session_prefix,
+    CONCAT_WS(',', template.jstemplates, template.csstemplates) AS linked_templates,
+    item.volgnr AS ordering,
+    template.pagemode AS insert_mode,
+    template.loadalways AS load_always,
+    template.urlregex AS url_regex,
+    template.externalfiles AS external_files,
+    template.groupingCreateObjectInsteadOfArray AS grouping_create_object_instead_of_array,
+    template.groupingprefix AS grouping_prefix,
+    template.groupingkey AS grouping_key,
+    template.groupingKeyColumnName AS grouping_key_column_name,
+    template.groupingValueColumnName AS grouping_value_column_name,
+    template.disableminifier AS disable_minifier,
+    template.isscssincludetemplate AS is_scss_include_template,
+    template.useinwiserhtmleditors AS use_in_wiser_html_editors,
     template.defaulttemplate AS wiser_cdn_templates,
     template.templatetype AS type,
+    template.variables AS routine_parameters,
     item.ismap AS is_directory
 FROM easy_items AS item
 LEFT JOIN easy_templates AS template ON template.itemid = item.id
@@ -3006,14 +3036,14 @@ LEFT JOIN easy_items AS parent7 ON parent7.id = parent6.parent_id
 LEFT JOIN easy_items AS parent8 ON parent8.id = parent7.parent_id
 LEFT JOIN easy_items AS parent9 ON parent9.id = parent8.parent_id
 JOIN (
-	SELECT item.id, MIN(deployedVersion.version) AS version
-	FROM easy_items AS item
-	LEFT JOIN easy_templates AS template ON template.itemid = item.id
-	LEFT JOIN easy_templates AS deployedVersion ON deployedVersion.itemid = template.itemid AND 1 IN (deployedVersion.istest, deployedVersion.isacceptance, deployedVersion.islive)
-	WHERE item.moduleid = 143
-	AND item.deleted = 0
-	AND item.published = 1
-	GROUP BY item.id
+    SELECT item.id, MIN(deployedVersion.version) AS version
+    FROM easy_items AS item
+    LEFT JOIN easy_templates AS template ON template.itemid = item.id
+    LEFT JOIN easy_templates AS deployedVersion ON deployedVersion.itemid = template.itemid AND 1 IN (deployedVersion.istest, deployedVersion.isacceptance, deployedVersion.islive)
+    WHERE item.moduleid = 143
+    AND item.deleted = 0
+    AND item.published = 1
+    GROUP BY item.id
 ) AS lowestVersionToConvert ON lowestVersionToConvert.id = item.id AND (template.id IS NULL OR template.version >= lowestVersionToConvert.version)
 WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
 
@@ -3025,7 +3055,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 if (!reader.GetBoolean("is_directory"))
                 {
                     var path = reader.GetStringHandleNull("path");
-                    
+
                     if (path.Contains("/html/", StringComparison.OrdinalIgnoreCase))
                     {
                         templateType = TemplateTypes.Html;
@@ -3050,6 +3080,10 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     {
                         templateType = TemplateTypes.Xml;
                     }
+                    else if (path.Contains("/routines/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        templateType = TemplateTypes.Routine;
+                    }
                 }
 
                 // Combine the wiser CDN files with the external files, because we don't use Wiser CDN anymore in Wiser 3.
@@ -3068,12 +3102,37 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
 
                 var content = reader.GetStringHandleNull("template_data");
                 var minifiedContent = reader.GetStringHandleNull("template_data_minified");
-                
+
                 // Convert dynamic components placeholders from Wiser 1 to Wiser 3 format.
                 if (templateType == TemplateTypes.Html)
                 {
                     content = ConvertDynamicComponentsFromLegacyToNewInHtml(content);
                     minifiedContent = ConvertDynamicComponentsFromLegacyToNewInHtml(minifiedContent);
+                }
+
+                var urlRegex = reader.GetStringHandleNull("url_regex");
+
+                // Handle routine settings.
+                var routineType = RoutineTypes.Unknown;
+                string routineParameters = null;
+                string routineReturnType = null;
+
+                if (templateType == TemplateTypes.Routine)
+                {
+                    var legacyType = reader.GetStringHandleNull("type");
+                    routineType = legacyType switch
+                    {
+                        "FUNCTION" => RoutineTypes.Function,
+                        "PROCEDURE" => RoutineTypes.Procedure,
+                        _ => routineType
+                    };
+
+                    routineParameters = reader.GetStringHandleNull("routine_parameters");
+                    // Old templates module used the "urlregex" field to store the return type.
+                    routineReturnType = urlRegex;
+
+                    // Set url_regex to null in Wiser 3 template for routine templates.
+                    urlRegex = null;
                 }
 
                 // TODO: Make method for converting legacy replacements (such as {title_htmlencode}) to GCL replacements (such as {title:HtmlEncode}).
@@ -3105,7 +3164,8 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 clientDatabaseConnection.AddParameter("ordering", reader.GetValue("ordering"));
                 clientDatabaseConnection.AddParameter("insert_mode", reader.GetValue("insert_mode"));
                 clientDatabaseConnection.AddParameter("load_always", reader.GetValue("load_always"));
-                clientDatabaseConnection.AddParameter("url_regex", reader.GetValue("url_regex"));
+                clientDatabaseConnection.AddParameter("disable_minifier", reader.GetValue("disable_minifier"));
+                clientDatabaseConnection.AddParameter("url_regex", urlRegex);
                 clientDatabaseConnection.AddParameter("external_files", externalFiles);
                 clientDatabaseConnection.AddParameter("grouping_create_object_instead_of_array", reader.GetValue("grouping_create_object_instead_of_array"));
                 clientDatabaseConnection.AddParameter("grouping_prefix", reader.GetValue("grouping_prefix"));
@@ -3114,6 +3174,9 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 clientDatabaseConnection.AddParameter("grouping_value_column_name", reader.GetValue("grouping_value_column_name"));
                 clientDatabaseConnection.AddParameter("is_scss_include_template", reader.GetValue("is_scss_include_template"));
                 clientDatabaseConnection.AddParameter("use_in_wiser_html_editors", reader.GetValue("use_in_wiser_html_editors"));
+                clientDatabaseConnection.AddParameter("routine_type", (int)routineType);
+                clientDatabaseConnection.AddParameter("routine_parameters", routineParameters);
+                clientDatabaseConnection.AddParameter("routine_return_type", routineReturnType);
                 await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserTemplate, 0);
 
                 // Convert dynamic content.
@@ -3170,40 +3233,40 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 case "JuiceControlLibrary.MLSimpleMenu":
                 case "JuiceControlLibrary.SimpleMenu":
                 case "JuiceControlLibrary.ProductModule":
-                    {
-                        viewComponentName = "Repeater";
-                        break;
-                    }
+                {
+                    viewComponentName = "Repeater";
+                    break;
+                }
                 case "JuiceControlLibrary.AccountWiser2":
-                    {
-                        viewComponentName = "Account";
-                        break;
-                    }
+                {
+                    viewComponentName = "Account";
+                    break;
+                }
                 case "JuiceControlLibrary.ShoppingBasket":
-                    {
-                        viewComponentName = "ShoppingBasket";
-                        break;
-                    }
+                {
+                    viewComponentName = "ShoppingBasket";
+                    break;
+                }
                 case "JuiceControlLibrary.WebPage":
-                    {
-                        viewComponentName = "WebPage";
-                        break;
-                    }
+                {
+                    viewComponentName = "WebPage";
+                    break;
+                }
                 case "JuiceControlLibrary.Pagination":
-                    {
-                        viewComponentName = "Pagination";
-                        break;
-                    }
+                {
+                    viewComponentName = "Pagination";
+                    break;
+                }
                 case "JuiceControlLibrary.DynamicFilter":
-                    {
-                        viewComponentName = "Filter";
-                        break;
-                    }
+                {
+                    viewComponentName = "Filter";
+                    break;
+                }
                 case "JuiceControlLibrary.Sendform":
-                    {
-                        viewComponentName = "WebForm";
-                        break;
-                    }
+                {
+                    viewComponentName = "WebForm";
+                    break;
+                }
                 case "JuiceControlLibrary.Configurator":
                 {
                     viewComponentName = "Configurator";
@@ -3315,6 +3378,85 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             if (httpContextAccessor.HttpContext != null && requestModel.Url != null && requestModel.Url.IsAbsoluteUri)
             {
                 httpContextAccessor.HttpContext.Items.Add(Constants.WiserUriOverrideForReplacements, requestModel.Url);
+            }
+        }
+
+        /// <summary>
+        /// Will attempt to create a FUNCTION or PROCEDURE in the client's database.
+        /// </summary>
+        /// <param name="templateName">The name of the template, which will server as the name of the routine.</param>
+        /// <param name="routineType">The type of the routine, which should be either <see cref="RoutineTypes.Function"/> or <see cref="RoutineTypes.Procedure"/>.</param>
+        /// <param name="parameters">A string that represent the input parameters. For procedures, OUT and INOUT parameters can also be defined.</param>
+        /// <param name="returnType">The data type that is expected. This is only if <paramref name="routineType"/> is set to <see cref="RoutineTypes.Function"/>.</param>
+        /// <param name="routineDefinition">The body of the routine.</param>
+        /// <returns><see langword="true"/> if the routine was successfully created; otherwise, <see langword="false"/>.</returns>
+        private async Task<(bool Successful, string ErrorMessage)> CreateDatabaseRoutine(string templateName, RoutineTypes routineType, string parameters, string returnType, string routineDefinition)
+        {
+            if (routineType == RoutineTypes.Unknown)
+            {
+                return (false, "Routine type 'Unknown' is not a valid routine type.");
+            }
+
+            var routineName = $"WISER_{templateName}";
+
+            // Check if routine exists.
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("routineName", routineName);
+            var getRoutineData = await clientDatabaseConnection.GetAsync(@"
+                SELECT COUNT(*) > 0 AS routine_exists
+                FROM information_schema.ROUTINES
+                WHERE ROUTINE_SCHEMA = DATABASE() AND ROUTINE_NAME = ?routineName");
+
+            var routineExists = getRoutineData.Rows.Count > 0 && Convert.ToBoolean(getRoutineData.Rows[0]["routine_exists"]);
+
+            var routineQueryBuilder = new StringBuilder();
+
+            // Only FUNCTION routines directly return data.
+            var returnsPart = routineType == RoutineTypes.Function ? $" RETURNS {returnType}" : String.Empty;
+
+            if (!routineDefinition.Trim().EndsWith(";"))
+            {
+                routineDefinition = $"{routineDefinition.Trim()};";
+            }
+
+            routineQueryBuilder.AppendLine($"CREATE DEFINER=CURRENT_USER {routineType.ToString("G").ToUpper()} `{routineName}` ({parameters}){returnsPart}");
+            routineQueryBuilder.AppendLine("    SQL SECURITY INVOKER");
+            routineQueryBuilder.AppendLine("BEGIN");
+            routineQueryBuilder.AppendLine("##############################################################################");
+            routineQueryBuilder.AppendLine("# NOTE: This routine was created in Wiser! Do not edit directly in database! #");
+            routineQueryBuilder.AppendLine("##############################################################################");
+            routineQueryBuilder.AppendLine(routineDefinition);
+            routineQueryBuilder.AppendLine("END");
+
+            var routineQuery = routineQueryBuilder.ToString();
+
+            try
+            {
+                // If the routine already exists, try to create a new one with a temporary name to check if creating the routine will not fail.
+                // That way, the old routine will remain intact.
+                if (routineExists)
+                {
+                    await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{routineName}_temp`; DROP PROCEDURE IF EXISTS `{routineName}_temp`;");
+                    await clientDatabaseConnection.ExecuteAsync(routineQuery.Replace($"`{routineName}`", $"`{routineName}_temp`"));
+                }
+
+                // Temp routine creation succeeded. Drop temp routine and current routine, and create the new routine.
+                await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{routineName}_temp`; DROP PROCEDURE IF EXISTS `{routineName}_temp`; DROP FUNCTION IF EXISTS `{routineName}`; DROP PROCEDURE IF EXISTS `{routineName}`;");
+                await clientDatabaseConnection.ExecuteAsync(routineQuery);
+
+                return (true, String.Empty);
+            }
+            catch (MySqlException mySqlException)
+            {
+                // Remove temporary routine if it was created (it has no use anymore).
+                await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{routineName}_temp`; DROP PROCEDURE IF EXISTS `{routineName}_temp`;");
+                // Only the message of the MySQL exception should be enough to determine what went wrong.
+                return (false, mySqlException.Message);
+            }
+            catch (Exception exception)
+            {
+                // Other exceptions; return entire exception.
+                return (false, exception.ToString());
             }
         }
     }

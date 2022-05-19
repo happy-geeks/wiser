@@ -40,6 +40,7 @@ namespace FrontEnd.Modules.Templates.Controllers
                 TemplateTypes.Query => "text/x-mysql",
                 TemplateTypes.Normal => "text",
                 TemplateTypes.Xml => "application/xml",
+                TemplateTypes.Routine => "text/x-mysql",
                 _ => throw new ArgumentOutOfRangeException(nameof(tabViewData.TemplateSettings.Type), tabViewData.TemplateSettings.Type.ToString())
             };
 
