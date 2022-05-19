@@ -13,6 +13,7 @@ using Api.Core.Interfaces;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Kendo.Enums;
+using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -42,6 +43,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
+using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
 using NUglify;
 using NUglify.JavaScript;
@@ -2549,6 +2551,16 @@ LIMIT 1";
 
             await templateDataService.SaveAsync(template, templateLinks, IdentityHelpers.GetUserName(identity, true));
 
+            if (template.Type == TemplateTypes.Routine)
+            {
+                // Also (re-)create the actual routine.
+                var (successful, errorMessage) = await CreateDatabaseRoutine(template.Name, template.RoutineType, template.RoutineParameters, template.RoutineReturnType, template.EditorValue);
+                if (!successful)
+                {
+                    throw new Exception($"The template saved successfully, but the routine could not be created due to a syntax error. Error:\n{errorMessage}");
+                }
+            }
+
             if (template.Type != TemplateTypes.Scss || !template.IsScssIncludeTemplate || skipCompilation)
             {
                 return new ServiceResult<bool>(true);
@@ -2899,7 +2911,10 @@ LIMIT 1";
             return new ServiceResult<string>(finalResult);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Converts Wiser 1 templates to the Wiser 3 format.
+        /// </summary>
+        /// <returns></returns>
         public async Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplates()
         {
             // Make sure the tables are up-to-date.
@@ -2985,6 +3000,7 @@ SELECT
     template.useinwiserhtmleditors AS use_in_wiser_html_editors,
     template.defaulttemplate AS wiser_cdn_templates,
     template.templatetype AS type,
+    template.variables AS routine_parameters,
     item.ismap AS is_directory
 FROM easy_items AS item
 LEFT JOIN easy_templates AS template ON template.itemid = item.id
@@ -3042,6 +3058,10 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     {
                         templateType = TemplateTypes.Xml;
                     }
+                    else if (path.Contains("/routines/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        templateType = TemplateTypes.Routine;
+                    }
                 }
 
                 // Combine the wiser CDN files with the external files, because we don't use Wiser CDN anymore in Wiser 3.
@@ -3066,6 +3086,31 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 {
                     content = ConvertDynamicComponentsFromLegacyToNewInHtml(content);
                     minifiedContent = ConvertDynamicComponentsFromLegacyToNewInHtml(minifiedContent);
+                }
+
+                var urlRegex = reader.GetStringHandleNull("url_regex");
+
+                // Handle routine settings.
+                var routineType = RoutineTypes.Unknown;
+                string routineParameters = null;
+                string routineReturnType = null;
+
+                if (templateType == TemplateTypes.Routine)
+                {
+                    var legacyType = reader.GetStringHandleNull("type");
+                    routineType = legacyType switch
+                    {
+                        "FUNCTION" => RoutineTypes.Function,
+                        "PROCEDURE" => RoutineTypes.Procedure,
+                        _ => routineType
+                    };
+
+                    routineParameters = reader.GetStringHandleNull("routine_parameters");
+                    // Old templates module used the "urlregex" field to store the return type.
+                    routineReturnType = urlRegex;
+
+                    // Set url_regex to null in Wiser 3 template for routine templates.
+                    urlRegex = null;
                 }
 
                 // TODO: Make method for converting legacy replacements (such as {title_htmlencode}) to GCL replacements (such as {title:HtmlEncode}).
@@ -3107,6 +3152,9 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 clientDatabaseConnection.AddParameter("grouping_value_column_name", reader.GetValue("grouping_value_column_name"));
                 clientDatabaseConnection.AddParameter("is_scss_include_template", reader.GetValue("is_scss_include_template"));
                 clientDatabaseConnection.AddParameter("use_in_wiser_html_editors", reader.GetValue("use_in_wiser_html_editors"));
+                clientDatabaseConnection.AddParameter("routine_type", (int)routineType);
+                clientDatabaseConnection.AddParameter("routine_parameters", routineParameters);
+                clientDatabaseConnection.AddParameter("routine_return_type", routineReturnType);
                 await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserTemplate, 0);
 
                 // Convert dynamic content.
@@ -3308,6 +3356,85 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             if (httpContextAccessor.HttpContext != null && requestModel.Url != null && requestModel.Url.IsAbsoluteUri)
             {
                 httpContextAccessor.HttpContext.Items.Add(Constants.WiserUriOverrideForReplacements, requestModel.Url);
+            }
+        }
+
+        /// <summary>
+        /// Will attempt to create a FUNCTION or PROCEDURE in the client's database.
+        /// </summary>
+        /// <param name="templateName">The name of the template, which will server as the name of the routine.</param>
+        /// <param name="routineType">The type of the routine, which should be either <see cref="RoutineTypes.Function"/> or <see cref="RoutineTypes.Procedure"/>.</param>
+        /// <param name="parameters">A string that represent the input parameters. For procedures, OUT and INOUT parameters can also be defined.</param>
+        /// <param name="returnType">The data type that is expected. This is only if <paramref name="routineType"/> is set to <see cref="RoutineTypes.Function"/>.</param>
+        /// <param name="routineDefinition">The body of the routine.</param>
+        /// <returns><see langword="true"/> if the routine was successfully created; otherwise, <see langword="false"/>.</returns>
+        private async Task<(bool Successful, string ErrorMessage)> CreateDatabaseRoutine(string templateName, RoutineTypes routineType, string parameters, string returnType, string routineDefinition)
+        {
+            if (routineType == RoutineTypes.Unknown)
+            {
+                return (false, "Routine type 'Unknown' is not a valid routine type.");
+            }
+
+            var routineName = $"WISER_{templateName}";
+
+            // Check if routine exists.
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("routineName", routineName);
+            var getRoutineData = await clientDatabaseConnection.GetAsync(@"
+                SELECT COUNT(*) > 0 AS routine_exists
+                FROM information_schema.ROUTINES
+                WHERE ROUTINE_SCHEMA = DATABASE() AND ROUTINE_NAME = ?routineName");
+
+            var routineExists = getRoutineData.Rows.Count > 0 && Convert.ToBoolean(getRoutineData.Rows[0]["routine_exists"]);
+
+            var routineQueryBuilder = new StringBuilder();
+
+            // Only FUNCTION routines directly return data.
+            var returnsPart = routineType == RoutineTypes.Function ? $" RETURNS {returnType}" : String.Empty;
+
+            if (!routineDefinition.Trim().EndsWith(";"))
+            {
+                routineDefinition = $"{routineDefinition.Trim()};";
+            }
+
+            routineQueryBuilder.AppendLine($"CREATE DEFINER=CURRENT_USER {routineType.ToString("G").ToUpper()} `{routineName}` ({parameters}){returnsPart}");
+            routineQueryBuilder.AppendLine("    SQL SECURITY INVOKER");
+            routineQueryBuilder.AppendLine("BEGIN");
+            routineQueryBuilder.AppendLine("##############################################################################");
+            routineQueryBuilder.AppendLine("# NOTE: This routine was created in Wiser! Do not edit directly in database! #");
+            routineQueryBuilder.AppendLine("##############################################################################");
+            routineQueryBuilder.AppendLine(routineDefinition);
+            routineQueryBuilder.AppendLine("END");
+
+            var routineQuery = routineQueryBuilder.ToString();
+
+            try
+            {
+                // If the routine already exists, try to create a new one with a temporary name to check if creating the routine will not fail.
+                // That way, the old routine will remain intact.
+                if (routineExists)
+                {
+                    await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{routineName}_temp`; DROP PROCEDURE IF EXISTS `{routineName}_temp`;");
+                    await clientDatabaseConnection.ExecuteAsync(routineQuery.Replace($"`{routineName}`", $"`{routineName}_temp`"));
+                }
+
+                // Temp routine creation succeeded. Drop temp routine and current routine, and create the new routine.
+                await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{routineName}_temp`; DROP PROCEDURE IF EXISTS `{routineName}_temp`; DROP FUNCTION IF EXISTS `{routineName}`; DROP PROCEDURE IF EXISTS `{routineName}`;");
+                await clientDatabaseConnection.ExecuteAsync(routineQuery);
+
+                return (true, String.Empty);
+            }
+            catch (MySqlException mySqlException)
+            {
+                // Remove temporary routine if it was created (it has no use anymore).
+                await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{routineName}_temp`; DROP PROCEDURE IF EXISTS `{routineName}_temp`;");
+                // Only the message of the MySQL exception should be enough to determine what went wrong.
+                return (false, mySqlException.Message);
+            }
+            catch (Exception exception)
+            {
+                // Other exceptions; return entire exception.
+                return (false, exception.ToString());
             }
         }
     }

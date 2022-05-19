@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Api.Modules.Kendo.Enums;
+using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
@@ -108,7 +109,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.is_scss_include_template,
                                                                 template.use_in_wiser_html_editors,
                                                                 template.pre_load_query,
-                                                                template.return_not_found_when_pre_load_query_has_no_data
+                                                                template.return_not_found_when_pre_load_query_has_no_data,
+                                                                template.routine_type,
+                                                                template.routine_parameters,
+                                                                template.routine_return_type
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
                                                             WHERE template.template_id = ?templateId
                                                             AND template.removed = 0
@@ -165,7 +169,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                     RawLinkList = dataTable.Rows[0].Field<string>("linked_templates")
                 },
                 PreLoadQuery = dataTable.Rows[0].Field<string>("pre_load_query"),
-                ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataTable.Rows[0]["return_not_found_when_pre_load_query_has_no_data"])
+                ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataTable.Rows[0]["return_not_found_when_pre_load_query_has_no_data"]),
+                RoutineType = (RoutineTypes)dataTable.Rows[0].Field<int>("routine_type"),
+                RoutineParameters = dataTable.Rows[0].Field<string>("routine_parameters"),
+                RoutineReturnType = dataTable.Rows[0].Field<string>("routine_return_type")
             };
 
             return templateData;
@@ -411,6 +418,9 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("templateLinks", templateLinks);
             clientDatabaseConnection.AddParameter("preLoadQuery", templateSettings.PreLoadQuery);
             clientDatabaseConnection.AddParameter("returnNotFoundWhenPreLoadQueryHasNoData", templateSettings.ReturnNotFoundWhenPreLoadQueryHasNoData);
+            clientDatabaseConnection.AddParameter("routineType", (int)templateSettings.RoutineType);
+            clientDatabaseConnection.AddParameter("routineParameters", templateSettings.RoutineParameters);
+            clientDatabaseConnection.AddParameter("routineReturnType", templateSettings.RoutineReturnType);
 
             return await clientDatabaseConnection.ExecuteAsync($@"
                 SET @VersionNumber = (SELECT MAX(version)+1 FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId GROUP BY template_id);
@@ -456,7 +466,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                     is_scss_include_template,
                     use_in_wiser_html_editors,
                     pre_load_query,
-                    return_not_found_when_pre_load_query_has_no_data
+                    return_not_found_when_pre_load_query_has_no_data,
+                    routine_type,
+                    routine_parameters,
+                    routine_return_type
                 ) 
                 VALUES (
                     ?name,
@@ -500,7 +513,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ?isScssIncludeTemplate,
                     ?useInWiserHtmlEditors,
                     ?preLoadQuery,
-                    ?returnNotFoundWhenPreLoadQueryHasNoData
+                    ?returnNotFoundWhenPreLoadQueryHasNoData,
+                    ?routineType,
+                    ?routineParameters,
+                    ?routineReturnType
                 )");
         }
 
