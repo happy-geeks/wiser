@@ -2432,7 +2432,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId)
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId)
         {
             if (templateId <= 0)
             {
@@ -2452,6 +2452,12 @@ LIMIT 1";
             }
 
             templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
+
+            if (templateData.Type == TemplateTypes.Xml && !String.IsNullOrWhiteSpace(templateData.EditorValue) && !templateData.EditorValue.StartsWith("<"))
+            {
+                templateData.EditorValue = templateData.EditorValue.DecryptWithAes((await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject, useSlowerButMoreSecureMethod: true);
+            }
+
             return new ServiceResult<TemplateSettingsModel>(templateData);
         }
 
@@ -2537,7 +2543,7 @@ LIMIT 1";
                         break;
                     }
 
-                    template.EditorValue = template.EditorValue.EncryptWithAes((await wiserCustomersService.GetEncryptionKey(identity)).ModelObject, useSlowerButMoreSecureMethod: true);
+                    template.EditorValue = template.EditorValue.EncryptWithAes((await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject, useSlowerButMoreSecureMethod: true);
 
                     break;
             }
@@ -2605,7 +2611,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(int templateId)
+        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId)
         {
             if (templateId <= 0)
             {
@@ -2632,7 +2638,7 @@ LIMIT 1";
             var overview = new TemplateHistoryOverviewModel
             {
                 TemplateId = templateId,
-                TemplateHistory = await historyService.GetVersionHistoryFromTemplate(templateId, dynamicContentHistory),
+                TemplateHistory = await historyService.GetVersionHistoryFromTemplate(identity, templateId, dynamicContentHistory),
                 PublishHistory = await historyService.GetPublishHistoryFromTemplate(templateId),
                 PublishedEnvironment = (await GetTemplateEnvironmentsAsync(templateId)).ModelObject
             };
@@ -2665,7 +2671,7 @@ LIMIT 1";
                 };
             }
 
-            var templateDataResponse = await GetTemplateSettingsAsync(id);
+            var templateDataResponse = await GetTemplateSettingsAsync(identity, id);
             if (templateDataResponse.StatusCode != HttpStatusCode.OK)
             {
                 return new ServiceResult<bool>
@@ -2712,7 +2718,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom)
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom)
         {
             var templates = new List<TemplateTreeViewModel>();
             var path = startFrom.Split(',');
@@ -2725,11 +2731,11 @@ LIMIT 1";
 
                 if (templateTree.HasChildren)
                 {
-                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(templateTree.TemplateId, remainingStartFrom)).ModelObject;
+                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom)).ModelObject;
                 }
                 else
                 {
-                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(templateTree.TemplateId)).ModelObject;
+                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(identity, templateTree.TemplateId)).ModelObject;
                 }
 
                 if (String.IsNullOrWhiteSpace(startFrom))

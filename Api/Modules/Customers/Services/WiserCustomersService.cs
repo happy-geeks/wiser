@@ -93,7 +93,7 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<string>> GetEncryptionKey(ClaimsIdentity identity)
+        public async Task<ServiceResult<string>> GetEncryptionKey(ClaimsIdentity identity, bool forceLiveKey = false)
         {
             var subDomain = IdentityHelpers.GetSubDomain(identity);
             if (IsMainDatabase(subDomain))
@@ -105,7 +105,7 @@ namespace Api.Modules.Customers.Services
             wiserDatabaseConnection.ClearParameters();
             wiserDatabaseConnection.AddParameter("name", subDomain);
 
-            var query = $@"SELECT {(IdentityHelpers.IsTestEnvironment(identity) ? "encryption_key_test" : "encryption_key")} AS encryption_key
+            var query = $@"SELECT {(IdentityHelpers.IsTestEnvironment(identity) && !forceLiveKey ? "encryption_key_test" : "encryption_key")} AS encryption_key
                         FROM {ApiTableNames.WiserCustomers} 
                         WHERE subdomain = ?name";
 
