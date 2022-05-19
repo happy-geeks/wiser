@@ -97,6 +97,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.ordering,
                                                                 template.insert_mode,
                                                                 template.load_always,
+                                                                template.disable_minifier,
                                                                 template.url_regex,
                                                                 template.external_files,
                                                                 template.grouping_create_object_instead_of_array,
@@ -149,6 +150,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                 Ordering = dataTable.Rows[0].Field<int>("ordering"),
                 InsertMode = dataTable.Rows[0].Field<ResourceInsertModes>("insert_mode"),
                 LoadAlways = Convert.ToBoolean(dataTable.Rows[0]["load_always"]),
+                DisableMinifier = Convert.ToBoolean(dataTable.Rows[0]["disable_minifier"]),
                 UrlRegex = dataTable.Rows[0].Field<string>("url_regex"),
                 ExternalFiles = dataTable.Rows[0].Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
                 GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(dataTable.Rows[0]["grouping_create_object_instead_of_array"]),
@@ -396,6 +398,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("ordering", ordering);
             clientDatabaseConnection.AddParameter("insertMode", (int)templateSettings.InsertMode);
             clientDatabaseConnection.AddParameter("loadAlways", templateSettings.LoadAlways);
+            clientDatabaseConnection.AddParameter("disableMinifier", templateSettings.DisableMinifier);
             clientDatabaseConnection.AddParameter("urlRegex", templateSettings.UrlRegex);
             clientDatabaseConnection.AddParameter("externalFiles", String.Join(";", templateSettings.ExternalFiles));
             clientDatabaseConnection.AddParameter("groupingCreateObjectInsteadOfArray", templateSettings.GroupingCreateObjectInsteadOfArray);
@@ -442,6 +445,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ordering,
                     insert_mode,
                     load_always,
+                    disable_minifier,
                     url_regex,
                     external_files,
                     grouping_create_object_instead_of_array,
@@ -485,6 +489,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ?ordering,
                     ?insertMode,
                     ?loadAlways,
+                    ?disableMinifier,
                     ?urlRegex,
                     ?externalFiles,
                     ?groupingCreateObjectInsteadOfArray,
@@ -944,6 +949,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                                                                             template.ordering,
                                                                             template.insert_mode,
                                                                             template.load_always,
+                                                                            template.disable_minifier,
                                                                             template.url_regex,
                                                                             template.external_files,
                                                                             template.grouping_create_object_instead_of_array,
@@ -1005,6 +1011,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                     Ordering = dataRow.Field<int>("ordering"),
                     InsertMode = dataRow.Field<ResourceInsertModes>("insert_mode"),
                     LoadAlways = Convert.ToBoolean(dataRow["load_always"]),
+                    DisableMinifier = Convert.ToBoolean(dataRow["disable_minifier"]),
                     UrlRegex = dataRow.Field<string>("url_regex"),
                     ExternalFiles = dataRow.Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
                     GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(dataRow["grouping_create_object_instead_of_array"]),
