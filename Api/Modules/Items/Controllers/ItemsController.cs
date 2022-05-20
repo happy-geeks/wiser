@@ -245,6 +245,7 @@ namespace Api.Modules.Items.Controllers
         /// <returns>A list of <see cref="FileModel"/> with file data.</returns>
         [HttpPost]
         [Route("{encryptedId}/upload")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Upload(string encryptedId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false)

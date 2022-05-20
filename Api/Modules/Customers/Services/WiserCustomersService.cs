@@ -789,6 +789,7 @@ namespace Api.Modules.Customers.Services
                     var newValue = dataRow.Field<string>("newvalue");
                     var languageCode = dataRow.Field<string>("language_code") ?? "";
                     var groupName = dataRow.Field<string>("groupname") ?? "";
+                    ulong? linkId = null;
 
                     try
                     {
@@ -804,8 +805,11 @@ namespace Api.Modules.Customers.Services
                                 destinationItemId = itemId;
                                 itemId = Convert.ToUInt64(oldValue);
                                 break;
+                            case "UPDATE_ITEMLINKDETAIL":
                             case "CHANGE_LINK":
                             {
+                                linkId = itemId;
+                                
                                 // When a link has been changed, it's possible that the ID of one of the items is changed.
                                 // It's also possible that this is a new link that the production database didn't have yet (and so the ID of the link will most likely be different).
                                 // Therefor we need to find the original item and destination IDs, so that we can use those to update the link in the production database.
@@ -856,6 +860,7 @@ namespace Api.Modules.Customers.Services
                         destinationItemId = GetMappedId(tableName, idMapping, destinationItemId).Value;
                         oldItemId = GetMappedId(tableName, idMapping, oldItemId);
                         oldDestinationItemId = GetMappedId(tableName, idMapping, oldDestinationItemId);
+                        linkId = GetMappedId(tableName, idMapping, linkId);
 
                         var isWiserItemChange = true;
 
@@ -1049,7 +1054,32 @@ namespace Api.Modules.Customers.Services
                             }
                             case "UPDATE_ITEMLINKDETAIL":
                             {
-                                throw new NotImplementedException();
+                                clientDatabaseConnection.AddParameter("linkId", linkId);
+                                clientDatabaseConnection.AddParameter("key", field);
+                                clientDatabaseConnection.AddParameter("languageCode", languageCode);
+                                clientDatabaseConnection.AddParameter("groupName", groupName);
+
+                                var query = queryPrefix;
+                                if (String.IsNullOrWhiteSpace(newValue))
+                                {
+                                    query += $@"DELETE FROM `{productionCustomer.Database.DatabaseName}`.`{tableName}`
+                                                WHERE itemlink_id = ?linkId
+                                                AND `key` = ?key
+                                                AND language_code = ?languageCode
+                                                AND groupname = ?groupName";
+                                }
+                                else
+                                {
+                                    var useLongValue = newValue.Length > 1000;
+                                    clientDatabaseConnection.AddParameter("value", useLongValue ? "" : newValue);
+                                    clientDatabaseConnection.AddParameter("longValue", useLongValue ? newValue : "");
+
+                                    query += $@"INSERT INTO `{productionCustomer.Database.DatabaseName}`.`{tableName}` (language_code, itemlink_id, groupname, `key`, value, long_value)
+                                                VALUES (?languageCode, ?linkId, ?groupName, ?key, ?value, ?longValue)
+                                                ON DUPLICATE KEY UPDATE groupname = VALUES(groupname), value = VALUES(value), long_value = VALUES(long_value)";
+                                }
+
+                                await clientDatabaseConnection.ExecuteAsync(query);
 
                                 break;
                             }
