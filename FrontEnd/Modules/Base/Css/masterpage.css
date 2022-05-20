@@ -210,6 +210,9 @@ ins {
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent {
     align-content: flex-start;
 }
+.k-window-content > .pane-content .k-tabstrip .dynamicTabContent .k-grid .k-grid-content {
+    flex-grow: 1;
+}
 #alert {
     display: none;
 }
@@ -385,25 +388,11 @@ ins {
 .gridview {
 	overflow: hidden;
 }
-.item.gridview:hover {
-    overflow: inherit;
-}
 .dynamicTabContent .gridview:only-child {
-    height: calc(100vh - 222px);
-    max-height: none !important;
+    height: calc(100vh - 230px);
 }
 .dynamicTabContent .gridview:only-child h4 {
     display: none;
-}
-.dynamicTabContent .gridview:only-child .k-grid {
-    margin: 0;
-    max-width: 100%;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-.dynamicTabContent .gridview:only-child .k-grid .k-grid-content {
-    flex-grow: 1;
 }
 .changeview {
     color: #ffffff;
@@ -538,6 +527,11 @@ ins {
 
 .close-panel span {
     font-size: 2rem;
+}
+
+#left-pane,
+#right-pane {
+    height: 100%;
 }
 
 #right-pane.info-active {
@@ -928,9 +922,12 @@ input:checked + .checkbox span:after,
     padding: 12px;
     position: absolute;
     top: 26px;
-    right: -8px;
-    width: 250px;
+    left: -8px;
+    width: 300px;
     z-index: 1001;
+}
+.info-link.right > span {
+    right: -8px;
 }
 .info:after,
 .info-link:after {
@@ -945,7 +942,6 @@ input:checked + .checkbox span:after,
     top: 18px;
     left: 9px;
 }
-
 .info:not(.no-hover):hover:before,
 .info:not(.no-hover):hover:after,
 .info-link:not(.no-hover):hover > span,
@@ -1181,4 +1177,71 @@ footer input ~ .meta-data li.meta-toggle label span:last-child {
 	.formview.full .item, .item {
 		min-width: 100%;
 	}
+}
+
+/* Grid styling - in case the grid is first or second child of its parent container */
+.k-window-content > .pane-content {
+    min-height: auto;
+}
+.k-window-content > .pane-content .k-tabstrip .k-content.k-state-active,
+.k-window-content > .pane-content .k-tabstrip .dynamicTabContent {
+ 	height: auto;
+}
+
+.k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview:last-child:nth-child(2),
+.k-window-content > .pane-content .k-tabstrip .dynamicTabContent script ~ .gridview:last-child:nth-child(3) {
+    height: 100%;
+    max-height: calc(100% - 138px);
+    display: flex;
+    flex-direction: column;
+}
+
+.k-window-content > .pane-content .k-tabstrip .dynamicTabContent script ~ .gridview:last-child:nth-child(3) .k-grid {
+	flex-basis: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+.dynamicTabContent .gridview:only-child .k-grid {
+    display: flex;
+    flex-direction: column;
+	height: calc(100% - 10px);
+}
+
+.k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview:not(:only-child) {
+    min-height: auto;
+    height: auto;
+}
+
+/* Grid styling - full screen */
+.pane-content.entity-container .k-tabstrip-wrapper {
+    height: 100%;
+    padding-top: 10px;
+}
+.pane-content.entity-container .k-tabstrip-wrapper,
+.pane-content.entity-container .k-tabstrip-wrapper .k-tabstrip {
+    height: calc(100% - 5px);
+}
+
+.pane-content.entity-container .k-tabstrip .k-tabstrip-items.hidden + .k-content.k-state-active {
+    height: 100%;
+    display: flex !important;
+    flex-direction: column;
+}
+
+.pane-content.entity-container .k-tabstrip .k-tabstrip-items.hidden + .k-content.k-state-active .formview:last-child:nth-child(2) {
+    flex-grow: 1;
+}
+
+.pane-content.entity-container .k-tabstrip .k-tabstrip-items.hidden + .k-content.k-state-active .formview:last-child:nth-child(2) .gridview,
+.pane-content.entity-container .k-tabstrip .k-tabstrip-items.hidden + .k-content.k-state-active .formview:last-child:nth-child(2) .gridview .k-grid {
+    height: 100%;
+    max-height: 100%;
+}
+
+.pane-content.entity-container .editMenu {
+    position: absolute;
+}
+
+body.gridViewMode {
 }

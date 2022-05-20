@@ -1,17 +1,22 @@
 ﻿@using GeeksCoreLibrary.Modules.Templates.Enums
 @model FrontEnd.Modules.Templates.Models.DevelopmentTabViewModel
-<div class="formview full developmentContainer">
+<div class="formview full developmentContainer @Model.TemplateSettings.Type.ToString()Tab">
     <partial name="Partials/PublishedEnvironments" model="@Model.TemplateSettings" />
 
-    <partial name="Partials/TemplateEditor" model="@Model"/>
-    
+    @if (Model.TemplateSettings.Type == TemplateTypes.Routine)
+    {
+        <partial name="Partials/RoutineDefinition" model="@Model.TemplateSettings" />
+    }
+
+    <partial name="Partials/TemplateEditor" model="@Model" />
+
     @if (Model.TemplateSettings.Type == TemplateTypes.Html)
     {
-        <partial name="Partials/LinkedTemplates" model="@Model.LinkedTemplates"/>
+        <partial name="Partials/LinkedTemplates" model="@Model.LinkedTemplates" />
     }
-    
+
     @if (!String.IsNullOrWhiteSpace(Model.SettingsPartial))
     {
-        <partial name="Partials/AdvancedSettings" model="@Model"/>
+        <partial name="Partials/AdvancedSettings" model="@Model" />
     }
 </div>

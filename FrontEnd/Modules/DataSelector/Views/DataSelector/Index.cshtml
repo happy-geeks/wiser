@@ -41,10 +41,6 @@
                         <div class="form-hint"><span>Zorgt ervoor dat talen apart geladen worden</span></div>
                     </div>
 
-                    <div class="item" id="modulesHolder">
-                        <h4><label>Selecteer module</label></h4>
-                    </div>
-
                     <div class="item">
                         <h4><label>Entiteit van het type</label></h4>
                         <select id="selectEntity" class="drop-down-list" data-option-label="Maak uw keuze..." data-data-text-field="text" data-data-value-field="value"></select>
@@ -109,24 +105,24 @@
 
                 @if (!Model.EmbedOptions.Contains("no-toolbar", StringComparer.OrdinalIgnoreCase))
                 {
-                <div class="item fixed">
-                    @if (!Model.EmbedOptions.Contains("no-save-button", StringComparer.OrdinalIgnoreCase))
-                    {
-                    <button type="button" class="kendoButton k-primary" id="saveButton" data-icon="save"><span>Opslaan</span></button>
-                    }
-                    <button type="button" class="kendoButton k-button k-blue" id="loadButton" data-icon="upload"><span>Laden</span></button>
-                    <button type="button" class="kendoButton k-button k-blue" id="viewJsonResultButton" data-icon="eye"><span>Toon resultaat</span></button>
-                    <button type="button" class="kendoButton k-button k-blue" id="viewQueryButton" data-icon="eye"><span>Toon query</span></button>
-                    <button type="button" class="kendoButton k-button k-blue" id="viewJsonRequestButton" data-icon="eye"><span>Toon JSON</span></button>
-                    <button type="button" class="kendoButton k-button k-blue" id="newButton" data-icon="file"><span>Nieuw</span></button>
+                    <div class="item fixed">
+                        @if (!Model.EmbedOptions.Contains("no-save-button", StringComparer.OrdinalIgnoreCase))
+                        {
+                            <button type="button" class="kendoButton k-primary" id="saveButton" data-icon="save"><span>Opslaan</span></button>
+                        }
+                        <button type="button" class="kendoButton k-button k-blue" id="loadButton" data-icon="upload"><span>Laden</span></button>
+                        <button type="button" class="kendoButton k-button k-blue" id="viewJsonResultButton" data-icon="eye"><span>Toon resultaat</span></button>
+                        <button type="button" class="kendoButton k-button k-blue" id="viewQueryButton" data-icon="eye"><span>Toon query</span></button>
+                        <button type="button" class="kendoButton k-button k-blue" id="viewJsonRequestButton" data-icon="eye"><span>Toon JSON</span></button>
+                        <button type="button" class="kendoButton k-button k-blue" id="newButton" data-icon="file"><span>Nieuw</span></button>
 
-                    <div id="viewResult">
-                        <ins id="resultClose" class="icon-close"></ins>
-                        <pre></pre>
-                        <textarea id="jsonText"></textarea>
-                        <textarea id="queryText"></textarea>
+                        <div id="viewResult">
+                            <ins id="resultClose" class="icon-close"></ins>
+                            <pre></pre>
+                            <textarea id="jsonText"></textarea>
+                            <textarea id="queryText"></textarea>
+                        </div>
                     </div>
-                </div>
                 }
             </div>
         </div>
@@ -421,6 +417,7 @@
     </script>
 
     <script src="/scripts/Utils.min.js"></script>
+    <script src="/scripts/Base.min.js"></script>
     <script src="/scripts/DataSelectorConnection.min.js"></script>
     <script src="/scripts/DataSelectorDataLoad.min.js"></script>
     <script src="/scripts/DataSelector.min.js"></script>

@@ -408,7 +408,7 @@ function generateGrid(data, model, columns) {
 									continue;
 								} else if (key === "__ordering") {
 									if (dynamicItems.fieldTemplateFlags.enableSubEntitiesGridsOrdering) {
-										itemModel.details.push({ "key": key, "value": transportOptions.data[key], "is_link_property": true, "item_link_id": transportOptions.data.linkId });
+										itemModel.details.push({ "key": key, "value": transportOptions.data[key], "isLinkProperty": true, "itemLinkId": transportOptions.data.link_id });
 									}
 									continue;
 								}
@@ -443,7 +443,7 @@ function generateGrid(data, model, columns) {
 									}
 								}
 								
-								itemModel.details.push({ "key": key, "value": transportOptions.data[key], "is_link_property": isLinkProperty, "item_link_id": transportOptions.data.linkId });
+								itemModel.details.push({ "key": key, "value": transportOptions.data[key], "isLinkProperty": isLinkProperty, "itemLinkId": transportOptions.data.linkId });
 							}
 						}
                         
@@ -753,6 +753,15 @@ function generateGrid(data, model, columns) {
             // Therefor we update the editCount, so that the dataBound event re-focusses this cell so that the user can keep editting.
             if (e.model.dirty) {
                 editCount++;
+            }
+            
+            // This will remove the min and max attributes from a kendo numeric text box.
+            // For some reason, these numeric textboxes often get a min and max of 0, meaning that you can't enter any value other than 0.
+            // I was not able to figure out the cause of this, so I made this work around.
+            var kendoNumericTextBox = e.container.find("input[data-type=number]").data("kendoNumericTextBox");
+            if (kendoNumericTextBox) {
+                kendoNumericTextBox.min(null);
+                kendoNumericTextBox.max(null);
             }
         },
         save: function(e) {

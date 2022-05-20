@@ -3,12 +3,12 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <PackageId>HappyGeeks.Wiser.Api</PackageId>
-    <Version>3.0.6</Version>
+    <Version>3.0.8</Version>
     <Authors>Happy Geeks B.V.</Authors>
     <Company>Happy Geeks B.V.</Company>
     <Product>Wiser API</Product>
 	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
-	<AssemblyVersion>3.0.6.0</AssemblyVersion>
+	<AssemblyVersion>3.0.8.0</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -96,6 +96,7 @@
     <EmbeddedResource Include="Modules\Items\FieldTemplates\auto-increment.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\chart.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\chart.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\checkbox-switch.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\checkbox.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\checkbox.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\color-picker.html" />
@@ -124,6 +125,7 @@
     <EmbeddedResource Include="Modules\Items\FieldTemplates\item-linker.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\linked-item.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\linked-item.js" />
+    <EmbeddedResource Include="Modules\Items\FieldTemplates\multiselect-checkBoxGroup.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\multiselect.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\multiselect.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\numeric-input.html" />
@@ -145,7 +147,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="1.4.18" />
+    <PackageReference Include="GeeksCoreLibrary" Version="1.5.0" />
     <PackageReference Include="IdentityServer4" Version="4.1.2" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.16.0" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.16.0" />

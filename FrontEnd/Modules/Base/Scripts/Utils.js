@@ -82,8 +82,10 @@ export class Modules {
 
             return result;
         } catch (exception) {
-            console.error("Error while getting module settings", exception);
-            kendo.alert("Er is iets fout gegaan met het ophalen van de instellingen voor deze module. Neem a.u.b. contact op met ons.");
+            if (exception.status !== 404) {
+                console.error("Error while getting module settings", exception);
+                kendo.alert("Er is iets fout gegaan met het ophalen van de instellingen voor deze module. Neem a.u.b. contact op met ons.");
+            }
             return {};
         }
     }

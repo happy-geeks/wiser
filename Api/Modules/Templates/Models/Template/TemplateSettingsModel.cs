@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Models.Other;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 using Newtonsoft.Json;
@@ -42,6 +43,7 @@ namespace Api.Modules.Templates.Models.Template
         public string LoginUserType { get; set; }
         public string LoginSessionPrefix { get; set; }
         public string LoginRole { get; set; }
+        public string LoginRedirectUrl { get; set; }
         public string PreLoadQuery { get; set; }
 
         // Css/Scss/Js settings.
@@ -61,6 +63,11 @@ namespace Api.Modules.Templates.Models.Template
         public string GroupingKey { get; set; }
         public string GroupingKeyColumnName { get; set; }
         public string GroupingValueColumnName { get; set; }
+
+        // Routine settings.
+        public RoutineTypes RoutineType { get; set; }
+        public string RoutineParameters { get; set; }
+        public string RoutineReturnType { get; set; }
 
         public Dictionary<string, object> Changes { get; set; }
         

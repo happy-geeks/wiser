@@ -3019,7 +3019,7 @@ export class Fields {
         const originalOptions = editor.options.pasteCleanup;
         editor.options.pasteCleanup.none = true;
         editor.options.pasteCleanup.span = false;
-        editor.exec("inserthtml", { value: `<table cellpadding="0" cellspacing="0" class="dyn-content content k-table" data-item-id="${itemId}"><tbody><tr><td><div class="dyn-content-info">item ID: ${itemId}</div>${html}</td></tr></tbody></table>` });
+        editor.exec("inserthtml", { value: `<!-- Start entity block with id ${itemId} -->${html}<!-- End entity block with id ${itemId} -->` });
         editor.options.pasteCleanup.none = originalOptions.none;
         editor.options.pasteCleanup.span = originalOptions.span;
     }
@@ -3100,6 +3100,7 @@ export class Fields {
                             Wiser2.api({
                                 url: `${this.base.settings.wiserApiRoot}data-selectors/preview-for-html-editor`,
                                 method: "POST",
+                                contentType: "application/json",
                                 data: html
                             }).then((newHtml) => {
                                 html = newHtml;

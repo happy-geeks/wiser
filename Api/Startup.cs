@@ -200,10 +200,7 @@ namespace Api
             }
             else
             {
-                // TODO!
-                System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-                identityServerBuilder.AddDeveloperSigningCredential();
-                //identityServerBuilder.AddSigningCredential($"CN={Configuration.GetValue<string>("WiserApi:SigningCredentialCertificateName")}");
+                identityServerBuilder.AddSigningCredential(Configuration.GetValue<string>("Api:SigningCredentialCertificate"));
             }
 
             services.AddAuthentication("Bearer")

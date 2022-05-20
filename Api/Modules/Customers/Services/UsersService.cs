@@ -167,7 +167,7 @@ namespace Api.Modules.Customers.Services
             }
             
             var result = AdminAccountModel.FromDataRow(dataTable.Rows[0]);
-            result.EncryptedId = result.Id.ToString().EncryptWithAes(apiSettings.AdminUsersEncryptionKey);
+            result.EncryptedId = result.Id.ToString().EncryptWithAes(apiSettings.AdminUsersEncryptionKey, useSlowerButMoreSecureMethod: true);
             
             return new ServiceResult<AdminAccountModel>(result);
         }
@@ -439,7 +439,12 @@ namespace Api.Modules.Customers.Services
 
             await ResetFailedLoginAttemptAsync(user.Username);
 
-            return new ServiceResult<ValidateCookieModel>(new ValidateCookieModel { Success = true, MessageOrValue = userId.ToString().EncryptWithAes(apiSettings.AdminUsersEncryptionKey), UserData = user });
+            return new ServiceResult<ValidateCookieModel>(new ValidateCookieModel
+            {
+                Success = true, 
+                MessageOrValue = userId.ToString().EncryptWithAes(apiSettings.AdminUsersEncryptionKey, useSlowerButMoreSecureMethod: true), 
+                UserData = user
+            });
         }
 
         /// <inheritdoc />
@@ -765,7 +770,7 @@ namespace Api.Modules.Customers.Services
                 return false;
             }
             
-            UInt64.TryParse(encryptedAdminAccountId.DecryptWithAes(apiSettings.AdminUsersEncryptionKey), out var decryptedAdminAccountId);
+            UInt64.TryParse(encryptedAdminAccountId.DecryptWithAes(apiSettings.AdminUsersEncryptionKey, useSlowerButMoreSecureMethod: true), out var decryptedAdminAccountId);
 
             return (await ValidateAdminAccountIdAsync(decryptedAdminAccountId, identity)).ModelObject;
         }
