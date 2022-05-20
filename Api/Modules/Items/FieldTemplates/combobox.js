@@ -81,8 +81,8 @@ if (typeof options.dataSource === "string") {
     options.dataSource.transport.read = (kendoReadOptions) => {
         var searchAddition = "";
 
-        if (kendoReadOptions.filter && kendoReadOptions.filter.filters && kendoReadOptions.filter.filters.length){
-            searchAddition = "&search=" + encodeURIComponent(kendoReadOptions.filter.filters[0].value);
+        if (kendoReadOptions.data && kendoReadOptions.data.filter && kendoReadOptions.data.filter.filters && kendoReadOptions.data.filter.filters.length){
+            searchAddition = "&search=" + encodeURIComponent(kendoReadOptions.data.filter.filters[0].value);
         }
         else if (options.minLength <= 0) {
             searchAddition = "&search=";

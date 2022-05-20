@@ -186,6 +186,7 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRole", newVersion.LoginRole, oldVersion.LoginRole, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("insertMode", newVersion.InsertMode, oldVersion.InsertMode, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loadAlways", newVersion.LoadAlways, oldVersion.LoadAlways, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("disableMinifier", newVersion.DisableMinifier, oldVersion.DisableMinifier, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("urlRegex", newVersion.UrlRegex, oldVersion.UrlRegex, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("externalFiles", String.Join(";", newVersion.ExternalFiles ?? new List<string>()), String.Join(";", oldVersion.ExternalFiles ?? new List<string>()), historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingCreateObjectInsteadOfArray", newVersion.GroupingCreateObjectInsteadOfArray, oldVersion.GroupingCreateObjectInsteadOfArray, historyModel);
@@ -197,6 +198,9 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("useInWiserHtmlEditors", newVersion.UseInWiserHtmlEditors, oldVersion.UseInWiserHtmlEditors, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("preLoadQuery", newVersion.PreLoadQuery, oldVersion.PreLoadQuery, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("returnNotFoundWhenPreLoadQueryHasNoData", newVersion.ReturnNotFoundWhenPreLoadQueryHasNoData, oldVersion.ReturnNotFoundWhenPreLoadQueryHasNoData, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("routineType", newVersion.RoutineType, oldVersion.RoutineType, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("routineParameters", newVersion.RoutineParameters, oldVersion.RoutineParameters, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("routineReturnType", newVersion.RoutineReturnType, oldVersion.RoutineReturnType, historyModel);
 
             var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);

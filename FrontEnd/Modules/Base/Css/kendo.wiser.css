@@ -412,7 +412,8 @@
 	padding: 16px;
 }
 .k-window-titlebar .k-window-title {
-    font: 24px/43px "AvantGardeGothic-Bk", sans-serif;
+    font: 24px/43px var(--title-txt);
+	font-weight: 400;
     padding-right: 16px;
 }
 @media (min-width: 1025px) {
@@ -421,8 +422,9 @@
     }
 }
 .k-window-titlebar .k-window-title strong {
-    font: 24px/43px "AvantGardeGothic-Bd", sans-serif;
-    margin-left: 12px;
+	font: 24px/43px var(--title-txt);
+	font-weight: 700;
+	margin-left: 12px;
 }
 @media (min-width: 1025px) {
     .k-window-titlebar .k-window-title strong {
@@ -478,7 +480,8 @@
 	box-shadow: none;
 	color: var(--white-color);
 	content: attr(aria-label);
-	font: 18px/32px "AvantGardeGothic-Bd", sans-serif;
+	font: 18px/32px var(--title-txt);
+	font-weight: 700;
 	opacity: 1;
 	padding-left: 5px;
 	position: relative;
@@ -502,6 +505,9 @@
 	overflow: visible !important;
 	width: 24px;
 	min-width: 24px;
+}
+.k-scheduler-toolbar .k-button-icon .k-icon {
+    font-family: 'WebComponentsIcons' !important;
 }
 .k-button-icon.k-primary .k-icon {
     color: var(--white-color);
@@ -551,13 +557,14 @@
 /* KENDO - BUTTONS */
 
 .btn {
-    transition: 200ms all ease-in-out;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    font: 18px/32px "AvantGardeGothic-Bd", sans-serif;
-    padding: 5px 15px;
-    white-space: nowrap;
+	transition: 200ms all ease-in-out;
+	border: none;
+	border-radius: 3px;
+	cursor: pointer;
+	font: 18px/32px var(--title-txt);
+	font-weight: 700;
+	padding: 5px 15px;
+	white-space: nowrap;
 }
 .btn.btn-primary {
     background-color: var(--primary-color);
