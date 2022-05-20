@@ -107,7 +107,7 @@ namespace Api.Modules.Items.Controllers
         /// <returns>The rendered HTML for the item.</returns>
         [HttpGet]
         [Route("{itemId}/block")]
-        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetHtmlBlockAsync(ulong itemId, [FromQuery]string entityType = null)
         {
             return (await itemsService.GetHtmlForWiserEntityAsync(itemId, (ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
