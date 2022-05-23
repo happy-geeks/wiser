@@ -245,6 +245,7 @@ namespace Api.Modules.Items.Controllers
         /// <returns>A list of <see cref="FileModel"/> with file data.</returns>
         [HttpPost]
         [Route("{encryptedId}/upload")]
+        [Consumes("multipart/form-data")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
