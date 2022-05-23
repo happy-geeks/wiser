@@ -1,5 +1,6 @@
 ﻿import { DateTime } from "luxon";
 import "./Processing.js";
+import {ref} from "vue";
 window.$ = require("jquery");
 
 /**
@@ -273,8 +274,10 @@ export class Wiser2 {
         }
 
         const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
-        const user = JSON.parse(localStorage.getItem("userData"));
-        if (settings.url.indexOf("/connect/token") === -1 && (!accessTokenExpires || new Date(accessTokenExpires) <= new Date())) {
+        let user = JSON.parse(localStorage.getItem("userData"));
+        let currentDate = new Date();
+        currentDate.setSeconds(currentDate.getSeconds() - 5);
+        if (settings.url.indexOf("/connect/token") === -1 && (!accessTokenExpires || new Date(accessTokenExpires) <= currentDate)) {
             if (!user || !user.refresh_token) {
                 console.error("No refresh token found!");
 
@@ -289,38 +292,54 @@ export class Wiser2 {
             const wiserSettings = document.body.dataset;
             
             // Create a promise for the refresh token, so that other requests know we're already busy getting one. They will then wait for this to finish.
-            wiserMainWindow.wiserApiRefreshTokenPromise = new Promise(async (resolve) => {
-                const refreshTokenResult = await $.ajax({
-                    url: wiserSettings.wiserApiAuthenticationUrl,
-                    method: "POST",
-                    data: {
-                        "grant_type": "refresh_token",
-                        "refresh_token": user.refresh_token,
-                        "subDomain": wiserSettings.subDomain,
-                        "client_id": wiserSettings.apiClientId,
-                        "client_secret": wiserSettings.apiClientSecret,
-                        "isTestEnvironment": wiserSettings.isTestEnvironment
-                    }
-                });
+            wiserMainWindow.wiserApiRefreshTokenPromise = new Promise(async (resolve, reject) => {
+                try {
+                    const refreshTokenResult = await $.ajax({
+                        url: wiserSettings.wiserApiAuthenticationUrl,
+                        method: "POST",
+                        data: {
+                            "grant_type": "refresh_token",
+                            "refresh_token": user.refresh_token,
+                            "subDomain": wiserSettings.subDomain,
+                            "client_id": wiserSettings.apiClientId,
+                            "client_secret": wiserSettings.apiClientSecret,
+                            "isTestEnvironment": wiserSettings.isTestEnvironment
+                        }
+                    });
 
-                refreshTokenResult.expiresOn = new Date(new Date().getTime() + (refreshTokenResult.expires_in * 1000));
-                refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true;
+                    refreshTokenResult.expiresOn = new Date(new Date().getTime() + (refreshTokenResult.expires_in * 1000));
+                    refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true;
 
-                localStorage.setItem("accessToken", refreshTokenResult.access_token);
-                localStorage.setItem("accessTokenExpiresOn", refreshTokenResult.expiresOn);
-                localStorage.setItem("userData", JSON.stringify(Object.assign({}, user, refreshTokenResult)));
+                    localStorage.setItem("accessToken", refreshTokenResult.access_token);
+                    localStorage.setItem("accessTokenExpiresOn", refreshTokenResult.expiresOn);
+                    user = Object.assign({}, user, refreshTokenResult);
+                    localStorage.setItem("userData", JSON.stringify(user));
 
-                // Add logged in user access token to default authorization headers for all jQuery ajax requests.
-                $.ajaxSetup({
-                    headers: { "Authorization": `Bearer ${refreshTokenResult.access_token}` }
-                });
+                    // Add logged in user access token to default authorization headers for all jQuery ajax requests.
+                    $.ajaxSetup({
+                        headers: {"Authorization": `Bearer ${refreshTokenResult.access_token}`}
+                    });
 
-                resolve(refreshTokenResult);
+                    resolve(refreshTokenResult);
+                } catch (exception) {
+                    console.error("Error occurred while trying to get a new token.", exception);
+                    reject(exception);
+                }
             });
 
             // Of course we also need to wait until we have the new auth token, otherwise the code below will be executed too early.
             const timeoutPromise = new Promise((res) => setTimeout(() => res("TIMEOUT"), 1000));
             await Promise.race([wiserMainWindow.wiserApiRefreshTokenPromise, timeoutPromise]);
+        }
+        
+        // Double check if the current ajax setup has the correct token set.
+        // It can happen that this still has an old token when someone is working in multiple browser tabs at the same time,
+        // If the token gets refreshed in tab X, it will not update the ajax setup in tab Y, so we need to do that now.
+        const currentAjaxSetup = $.ajaxSetup();
+        if (!currentAjaxSetup.headers || currentAjaxSetup.headers.Authorization !== `Bearer ${user.access_token}`) {
+            $.ajaxSetup({
+                headers: {"Authorization": `Bearer ${user.access_token}`}
+            });
         }
 
         return $.ajax(settings).fail((jqXhr, textStatus, errorThrown) => {
@@ -335,7 +354,6 @@ export class Wiser2 {
                 if (window.parent && window.parent.main && window.parent.main.vueApp) {
                     window.parent.main.vueApp.logout();
                 }
-                return;
             }
         });
     }
