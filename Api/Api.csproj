@@ -3,12 +3,12 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <PackageId>HappyGeeks.Wiser.Api</PackageId>
-    <Version>3.0.8</Version>
+    <Version>3.0.9</Version>
     <Authors>Happy Geeks B.V.</Authors>
     <Company>Happy Geeks B.V.</Company>
     <Product>Wiser API</Product>
 	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
-	<AssemblyVersion>3.0.8.0</AssemblyVersion>
+	<AssemblyVersion>3.0.9.0</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
