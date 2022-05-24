@@ -275,7 +275,7 @@ namespace Api.Modules.Grids.Services
                 }
                 case EntityGridModes.TaskHistory:
                 {
-                    results.Columns.Add(new GridColumn {Field = "due_date", Title = "Due-date", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
+                    results.Columns.Add(new GridColumn {Field = "due_date", Title = "Due-date", Format = "{0:dd MMMM yyyy}"});
                     results.Columns.Add(new GridColumn {Field = "sender", Title = "Verzonden door"});
                     results.Columns.Add(new GridColumn {Field = "receiver", Title = "Verzonden aan"});
                     results.Columns.Add(new GridColumn {Field = "content", Title = "Tekst", Width = "600px"});
