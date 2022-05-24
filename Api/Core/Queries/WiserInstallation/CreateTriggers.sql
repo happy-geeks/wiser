@@ -1,5 +1,22 @@
 SET NAMES utf8mb4 COLLATE utf8mb4_general_ci;
 
+# Drop old triggers with old names, originally we had trigger names that weren't very consistent and sometimes not logical either, so we changed them.
+DROP TRIGGER IF EXISTS `CreateItem`;
+DROP TRIGGER IF EXISTS `UpdateItem`;
+DROP TRIGGER IF EXISTS `DeleteItem`;
+DROP TRIGGER IF EXISTS `toevoeging`;
+DROP TRIGGER IF EXISTS `wijziging`;
+DROP TRIGGER IF EXISTS `verwijdering`;
+DROP TRIGGER IF EXISTS `On_insert`;
+DROP TRIGGER IF EXISTS `On_change`;
+DROP TRIGGER IF EXISTS `On_remove`;
+DROP TRIGGER IF EXISTS `addhistory`;
+DROP TRIGGER IF EXISTS `updatehistory`;
+DROP TRIGGER IF EXISTS `removehistory`;
+DROP TRIGGER IF EXISTS `On_insert_file`;
+DROP TRIGGER IF EXISTS `On_change_file`;
+DROP TRIGGER IF EXISTS `On_remove_file`;
+
 -- ----------------------------
 -- Triggers structure for table wiser_entityproperty
 -- ----------------------------
@@ -71,8 +88,8 @@ END;
 -- ----------------------------
 -- Triggers structure for table wiser_item
 -- ----------------------------
-DROP TRIGGER IF EXISTS `CreateItem`;
-CREATE TRIGGER `CreateItem` AFTER INSERT ON `wiser_item` FOR EACH ROW
+DROP TRIGGER IF EXISTS `ItemInsert`;
+CREATE TRIGGER `ItemInsert` AFTER INSERT ON `wiser_item` FOR EACH ROW
 BEGIN
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
@@ -146,8 +163,8 @@ BEGIN
 	END IF;
 END;
 
-DROP TRIGGER IF EXISTS `DeleteItem`;
-CREATE TRIGGER `DeleteItem` AFTER DELETE ON `wiser_item` FOR EACH ROW
+DROP TRIGGER IF EXISTS `ItemDelete`;
+CREATE TRIGGER `ItemDelete` AFTER DELETE ON `wiser_item` FOR EACH ROW
 BEGIN
 	DELETE d.* FROM wiser_itemlink l JOIN wiser_itemlinkdetail AS d ON d.itemlink_id = l.id WHERE l.item_id = OLD.id OR l.destination_item_id = OLD.id;
 	DELETE FROM wiser_itemlink WHERE (item_id = OLD.id OR destination_item_id = OLD.id) AND OLD.id > 0;
@@ -156,23 +173,23 @@ BEGIN
 	
 	IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('DELETE_ITEM','wiser_item', OLD.id, IFNULL(@_username, USER()), '', '', '');
+        VALUES ('DELETE_ITEM','wiser_item', OLD.id, IFNULL(@_username, USER()), OLD.entity_type, '', '');
     END IF;
 END;
 
 -- ----------------------------
 -- Triggers structure for table wiser_itemdetail
 -- ----------------------------
-DROP TRIGGER IF EXISTS `toevoeging`;
-CREATE TRIGGER `toevoeging` AFTER INSERT ON `wiser_itemdetail` FOR EACH ROW BEGIN
+DROP TRIGGER IF EXISTS `DetailInsert`;
+CREATE TRIGGER `DetailInsert` AFTER INSERT ON `wiser_itemdetail` FOR EACH ROW BEGIN
 	IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
         VALUES ('UPDATE_ITEM','wiser_itemdetail', NEW.item_id, IFNULL(@_username, USER()), NEW.`key`, '', CONCAT_WS('', NEW.`value`, NEW.`long_value`), NEW.language_code, NEW.groupname);
     END IF;
 END;
 
-DROP TRIGGER IF EXISTS `wijziging`;
-CREATE TRIGGER `wijziging` AFTER UPDATE ON `wiser_itemdetail` FOR EACH ROW BEGIN
+DROP TRIGGER IF EXISTS `DetailUpdate`;
+CREATE TRIGGER `DetailUpdate` AFTER UPDATE ON `wiser_itemdetail` FOR EACH ROW BEGIN
     DECLARE oldValue MEDIUMTEXT;
     DECLARE newValue MEDIUMTEXT;
 	
@@ -186,8 +203,8 @@ CREATE TRIGGER `wijziging` AFTER UPDATE ON `wiser_itemdetail` FOR EACH ROW BEGIN
     END IF;
 END;
 
-DROP TRIGGER IF EXISTS `verwijdering`;
-CREATE TRIGGER `verwijdering` AFTER DELETE ON `wiser_itemdetail` FOR EACH ROW BEGIN
+DROP TRIGGER IF EXISTS `DetailDelete`;
+CREATE TRIGGER `DetailDelete` AFTER DELETE ON `wiser_itemdetail` FOR EACH ROW BEGIN
 	IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
         VALUES ('UPDATE_ITEM', 'wiser_itemdetail', OLD.item_id, IFNULL(@_username, USER()), OLD.`key`, CONCAT_WS('', OLD.`value`, OLD.`long_value`), '', OLD.language_code, OLD.groupname);
@@ -197,16 +214,16 @@ END;
 -- ----------------------------
 -- Triggers structure for table wiser_itemlink
 -- ----------------------------
-DROP TRIGGER IF EXISTS `On_insert`;
-CREATE TRIGGER `On_insert` AFTER INSERT ON `wiser_itemlink` FOR EACH ROW BEGIN
+DROP TRIGGER IF EXISTS `LinkInsert`;
+CREATE TRIGGER `LinkInsert` AFTER INSERT ON `wiser_itemlink` FOR EACH ROW BEGIN
 	IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('ADD_LINK', 'wiser_itemlink', NEW.destination_item_id, IFNULL(@_username, USER()), CONCAT(IFNULL(NEW.`type`, '1'), ',', IFNULL(NEW.`ordering`, '0')), NULL, NEW.item_id);
     END IF;
 END;
 
-DROP TRIGGER IF EXISTS `On_change`;
-CREATE TRIGGER `On_change` AFTER UPDATE ON `wiser_itemlink` FOR EACH ROW BEGIN
+DROP TRIGGER IF EXISTS `LinkUpdate`;
+CREATE TRIGGER `LinkUpdate` AFTER UPDATE ON `wiser_itemlink` FOR EACH ROW BEGIN
     IF IFNULL(@saveHistory, TRUE) = TRUE AND NEW.`destination_item_id` <> OLD.`destination_item_id` THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('CHANGE_LINK', 'wiser_itemlink', OLD.id, IFNULL(@_username, USER()), 'destination_item_id', OLD.destination_item_id, NEW.destination_item_id);
@@ -228,8 +245,8 @@ CREATE TRIGGER `On_change` AFTER UPDATE ON `wiser_itemlink` FOR EACH ROW BEGIN
     END IF;
 END;
 
-DROP TRIGGER IF EXISTS `On_remove`;
-CREATE TRIGGER `On_remove` AFTER DELETE ON `wiser_itemlink` FOR EACH ROW BEGIN
+DROP TRIGGER IF EXISTS `linkDelete`;
+CREATE TRIGGER `linkDelete` AFTER DELETE ON `wiser_itemlink` FOR EACH ROW BEGIN
 	DELETE FROM wiser_itemlinkdetail WHERE itemlink_id = OLD.id;
 	DELETE FROM wiser_itemfile WHERE itemlink_id = OLD.id;
     
@@ -242,16 +259,16 @@ END;
 -- ----------------------------
 -- Triggers structure for table wiser_itemlinkdetail
 -- ----------------------------
-DROP TRIGGER IF EXISTS `addhistory`;
-CREATE TRIGGER `addhistory` AFTER INSERT ON `wiser_itemlinkdetail` FOR EACH ROW BEGIN
+DROP TRIGGER IF EXISTS `LinkDetailInsert`;
+CREATE TRIGGER `LinkDetailInsert` AFTER INSERT ON `wiser_itemlinkdetail` FOR EACH ROW BEGIN
 	IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue, language_code, groupname)
         VALUES ('UPDATE_ITEMLINKDETAIL','wiser_itemlinkdetail',NEW.itemlink_id,IFNULL(@_username, USER()),NEW.`key`,'',CONCAT_WS('',NEW.`value`,NEW.`long_value`), NEW.language_code, NEW.groupname);
     END IF;
 END;
 
-DROP TRIGGER IF EXISTS `updatehistory`;
-CREATE TRIGGER `updatehistory` AFTER UPDATE ON `wiser_itemlinkdetail` FOR EACH ROW BEGIN
+DROP TRIGGER IF EXISTS `LinkDetailUpdate`;
+CREATE TRIGGER `LinkDetailUpdate` AFTER UPDATE ON `wiser_itemlinkdetail` FOR EACH ROW BEGIN
     DECLARE oldValue MEDIUMTEXT;
     DECLARE newValue MEDIUMTEXT;
     
@@ -265,8 +282,8 @@ CREATE TRIGGER `updatehistory` AFTER UPDATE ON `wiser_itemlinkdetail` FOR EACH R
 	END IF;
 END;
 
-DROP TRIGGER IF EXISTS `removehistory`;
-CREATE TRIGGER `removehistory` AFTER DELETE ON `wiser_itemlinkdetail` FOR EACH ROW BEGIN
+DROP TRIGGER IF EXISTS `LinkDetailDelete`;
+CREATE TRIGGER `LinkDetailDelete` AFTER DELETE ON `wiser_itemlinkdetail` FOR EACH ROW BEGIN
 	IF IFNULL(@saveHistory, TRUE) = TRUE THEN
     	INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue, language_code, groupname)
     	VALUES ('UPDATE_ITEMLINKDETAIL','wiser_itemlinkdetail',OLD.itemlink_id,IFNULL(@_username, USER()),OLD.`key`,CONCAT_WS('',OLD.`value`,OLD.`long_value`),'', OLD.language_code, OLD.groupname);
@@ -276,16 +293,61 @@ END;
 -- ----------------------------
 -- Triggers structure for table wiser_itemfile
 -- ----------------------------
-DROP TRIGGER IF EXISTS `On_insert_file`;
-CREATE TRIGGER `On_insert_file` AFTER INSERT ON `wiser_itemfile` FOR EACH ROW BEGIN
+DROP TRIGGER IF EXISTS `FileInsert`;
+CREATE TRIGGER `FileInsert` AFTER INSERT ON `wiser_itemfile` FOR EACH ROW BEGIN
 	IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('ADD_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), IFNULL(NEW.property_name, ''), NULL, CONCAT_WS(',', NEW.item_id, NEW.itemlink_id));
+        VALUES ('ADD_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), IFNULL(NEW.property_name, ''), IF(IFNULL(NEW.item_id, 0) > 0, 'item_id', 'itemlink_id'), IF(IFNULL(NEW.item_id, 0) > 0, NEW.item_id, NEW.itemlink_id));
+
+        IF IFNULL(NEW.content_type, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'content_type', NULL, NEW.content_type);
+        END IF;
+
+        IF NEW.content IS NOT NULL THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'content_length', '0 bytes', CONCAT(FORMAT(OCTET_LENGTH(NEW.content), 0, 'nl-NL'), ' bytes'));
+        END IF;
+
+        IF IFNULL(NEW.content_url, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'content_url', NULL, NEW.content_url);
+        END IF;
+
+        IF IFNULL(NEW.width, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'width', NULL, NEW.width);
+        END IF;
+
+        IF IFNULL(NEW.height, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'height', NULL, NEW.height);
+        END IF;
+
+        IF IFNULL(NEW.file_name, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'file_name', NULL, NEW.file_name);
+        END IF;
+
+        IF IFNULL(NEW.extension, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'extension', NULL, NEW.extension);
+        END IF;
+
+        IF IFNULL(NEW.title, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'title', NULL, NEW.title);
+        END IF;
+
+        IF IFNULL(NEW.property_name, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'property_name', NULL, NEW.property_name);
+        END IF;
     END IF;
 END;
 
-DROP TRIGGER IF EXISTS `On_change_file`;
-CREATE TRIGGER `On_change_file` AFTER UPDATE ON `wiser_itemfile` FOR EACH ROW BEGIN
+DROP TRIGGER IF EXISTS `FileUpdate`;
+CREATE TRIGGER `FileUpdate` AFTER UPDATE ON `wiser_itemfile` FOR EACH ROW BEGIN
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
 		IF NEW.item_id <> OLD.item_id THEN
 			INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
@@ -299,7 +361,7 @@ CREATE TRIGGER `On_change_file` AFTER UPDATE ON `wiser_itemfile` FOR EACH ROW BE
 		
 		IF NEW.content <> OLD.content THEN
 			INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-			VALUES ('UPDATE_FILE', 'wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'content_type', CONCAT(FORMAT(OCTET_LENGTH(OLD.content), 0, 'nl-NL'), ' bytes'), CONCAT(FORMAT(OCTET_LENGTH(NEW.content), 0, 'nl-NL'), ' bytes'));
+			VALUES ('UPDATE_FILE', 'wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'content_length', CONCAT(FORMAT(OCTET_LENGTH(OLD.content), 0, 'nl-NL'), ' bytes'), CONCAT(FORMAT(OCTET_LENGTH(NEW.content), 0, 'nl-NL'), ' bytes'));
 		END IF;
 		
 		IF NEW.content_url <> OLD.content_url THEN
@@ -344,11 +406,11 @@ CREATE TRIGGER `On_change_file` AFTER UPDATE ON `wiser_itemfile` FOR EACH ROW BE
     END IF;
 END;
 
-DROP TRIGGER IF EXISTS `On_remove_file`;
-CREATE TRIGGER `On_remove_file` AFTER DELETE ON `wiser_itemfile` FOR EACH ROW BEGIN
+DROP TRIGGER IF EXISTS `FileDelete`;
+CREATE TRIGGER `FileDelete` AFTER DELETE ON `wiser_itemfile` FOR EACH ROW BEGIN
 	IF IFNULL(@saveHistory, TRUE) = TRUE THEN
     	INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('DELETE_FILE', 'wiser_itemfile', OLD.id, IFNULL(@_username, USER()), OLD.property_name, NULL, CONCAT_WS(',', OLD.item_id, OLD.itemlink_id));
+        VALUES ('DELETE_FILE', 'wiser_itemfile', OLD.id, IFNULL(@_username, USER()), IFNULL(OLD.property_name, ''), IF(IFNULL(OLD.item_id, 0) > 0, 'item_id', 'itemlink_id'), IF(IFNULL(OLD.item_id, 0) > 0, OLD.item_id, OLD.itemlink_id));
     END IF;
 END;
 
@@ -508,127 +570,132 @@ CREATE TRIGGER `EntityInsert` AFTER INSERT ON `wiser_entity` FOR EACH ROW BEGIN
 
     IF IFNULL(NEW.`name`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'name', NULL, NEW.`name`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'name', NULL, NEW.`name`);
     END IF;
 
     IF IFNULL(NEW.`module_id`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'module_id', NULL, NEW.`module_id`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'module_id', NULL, NEW.`module_id`);
     END IF;
 
     IF IFNULL(NEW.`accepted_childtypes`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'accepted_childtypes', NULL, NEW.`accepted_childtypes`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'accepted_childtypes', NULL, NEW.`accepted_childtypes`);
     END IF;
 
     IF IFNULL(NEW.`icon`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'icon', NULL, NEW.`icon`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'icon', NULL, NEW.`icon`);
     END IF;
 
     IF IFNULL(NEW.`icon_add`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'icon_add', NULL, NEW.`icon_add`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'icon_add', NULL, NEW.`icon_add`);
     END IF;
 
     IF IFNULL(NEW.`icon_expanded`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'icon_expanded', NULL, NEW.`icon_expanded`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'icon_expanded', NULL, NEW.`icon_expanded`);
     END IF;
 
     IF IFNULL(NEW.`show_in_tree_view`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'show_in_tree_view', NULL, NEW.`show_in_tree_view`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'show_in_tree_view', NULL, NEW.`show_in_tree_view`);
     END IF;
 
     IF IFNULL(NEW.`query_after_insert`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'query_after_insert', NULL, NEW.`query_after_insert`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'query_after_insert', NULL, NEW.`query_after_insert`);
     END IF;
 
     IF IFNULL(NEW.`query_after_update`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'query_after_update', NULL, NEW.`query_after_update`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'query_after_update', NULL, NEW.`query_after_update`);
     END IF;
 
     IF IFNULL(NEW.`query_before_update`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'query_before_update', NULL, NEW.`query_before_update`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'query_before_update', NULL, NEW.`query_before_update`);
     END IF;
 
     IF IFNULL(NEW.`query_before_delete`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'query_before_delete', NULL, NEW.`query_before_delete`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'query_before_delete', NULL, NEW.`query_before_delete`);
     END IF;
 
     IF IFNULL(NEW.`color`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'color', NULL, NEW.`color`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'color', NULL, NEW.`color`);
     END IF;
 
     IF IFNULL(NEW.`show_in_search`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'show_in_search', NULL, NEW.`show_in_search`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'show_in_search', NULL, NEW.`show_in_search`);
     END IF;
 
     IF IFNULL(NEW.`show_overview_tab`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'show_overview_tab', NULL, NEW.`show_overview_tab`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'show_overview_tab', NULL, NEW.`show_overview_tab`);
     END IF;
 
     IF IFNULL(NEW.`save_title_as_seo`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'save_title_as_seo', NULL, NEW.`save_title_as_seo`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'save_title_as_seo', NULL, NEW.`save_title_as_seo`);
     END IF;
 
     IF IFNULL(NEW.`api_after_insert`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'api_after_insert', NULL, NEW.`api_after_insert`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'api_after_insert', NULL, NEW.`api_after_insert`);
     END IF;
 
     IF IFNULL(NEW.`api_after_update`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'api_after_update', NULL, NEW.`api_after_update`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'api_after_update', NULL, NEW.`api_after_update`);
     END IF;
 
     IF IFNULL(NEW.`api_before_update`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'api_before_update', NULL, NEW.`api_before_update`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'api_before_update', NULL, NEW.`api_before_update`);
     END IF;
 
     IF IFNULL(NEW.`api_before_delete`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'api_before_delete', NULL, NEW.`api_before_delete`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'api_before_delete', NULL, NEW.`api_before_delete`);
     END IF;
 
     IF IFNULL(NEW.`show_title_field`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'show_title_field', NULL, NEW.`show_title_field`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'show_title_field', NULL, NEW.`show_title_field`);
     END IF;
 
     IF IFNULL(NEW.`friendly_name`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'friendly_name', NULL, NEW.`friendly_name`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'friendly_name', NULL, NEW.`friendly_name`);
     END IF;
 
     IF IFNULL(NEW.`default_ordering`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'default_ordering', NULL, NEW.`default_ordering`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'default_ordering', NULL, NEW.`default_ordering`);
     END IF;
 
     IF IFNULL(NEW.`save_history`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'save_history', NULL, NEW.`save_history`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'save_history', NULL, NEW.`save_history`);
     END IF;
 
     IF IFNULL(NEW.`enable_multiple_environments`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'enable_multiple_environments', NULL, NEW.`enable_multiple_environments`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'enable_multiple_environments', NULL, NEW.`enable_multiple_environments`);
+    END IF;
+
+    IF IFNULL(NEW.`use_dedicated_table`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'use_dedicated_table', NULL, NEW.`use_dedicated_table`);
     END IF;
 
     IF IFNULL(NEW.`dedicated_table_prefix`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'dedicated_table_prefix', NULL, NEW.`dedicated_table_prefix`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'dedicated_table_prefix', NULL, NEW.`dedicated_table_prefix`);
     END IF;
 END;
 
@@ -752,6 +819,11 @@ CREATE TRIGGER `EntityUpdate` AFTER UPDATE ON `wiser_entity` FOR EACH ROW BEGIN
     IF IFNULL(NEW.`enable_multiple_environments`, '') <> IFNULL(OLD.`enable_multiple_environments`, '') THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'enable_multiple_environments', OLD.`enable_multiple_environments`, NEW.`enable_multiple_environments`);
+    END IF;
+
+    IF IFNULL(NEW.`use_dedicated_table`, '') <> IFNULL(OLD.`use_dedicated_table`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'use_dedicated_table', NULL, NEW.`use_dedicated_table`);
     END IF;
 	
     IF IFNULL(NEW.`dedicated_table_prefix`, '') <> IFNULL(OLD.`dedicated_table_prefix`, '') THEN

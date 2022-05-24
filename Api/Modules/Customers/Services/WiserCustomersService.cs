@@ -782,33 +782,41 @@ namespace Api.Modules.Customers.Services
                     var historyId = Convert.ToUInt64(dataRow["id"]);
                     var action = dataRow.Field<string>("action").ToUpperInvariant();
                     var tableName = dataRow.Field<string>("tablename") ?? "";
-                    var originalItemId = Convert.ToUInt64(dataRow["item_id"]);
-                    var itemId = originalItemId;
+                    var originalObjectId = Convert.ToUInt64(dataRow["item_id"]);
+                    var originalItemId = originalObjectId;
+                    var itemId = originalObjectId;
                     var field = dataRow.Field<string>("field");
                     var oldValue = dataRow.Field<string>("oldvalue");
                     var newValue = dataRow.Field<string>("newvalue");
                     var languageCode = dataRow.Field<string>("language_code") ?? "";
                     var groupName = dataRow.Field<string>("groupname") ?? "";
                     ulong? linkId = null;
+                    ulong? originalLinkId = null;
+                    ulong? originalFileId = null;
+                    ulong? fileId = null;
+                    ulong? entityId = null;
+                    var entityType = "";
+                    
+                    // Variables for item link changes.
+                    var destinationItemId = 0UL;
+                    ulong? oldItemId = null;
+                    ulong? oldDestinationItemId = null;
 
                     try
                     {
-                        // Variables for item link changes.
-                        var destinationItemId = 0UL;
-                        ulong? oldItemId = null;
-                        ulong? oldDestinationItemId = null;
-
                         // Make sure we have the correct item ID. For some actions, the item id is saved in a different column.
                         switch (action)
                         {
                             case "REMOVE_LINK":
                                 destinationItemId = itemId;
                                 itemId = Convert.ToUInt64(oldValue);
+                                originalItemId = itemId;
                                 break;
                             case "UPDATE_ITEMLINKDETAIL":
                             case "CHANGE_LINK":
                             {
                                 linkId = itemId;
+                                originalLinkId = linkId;
                                 
                                 // When a link has been changed, it's possible that the ID of one of the items is changed.
                                 // It's also possible that this is a new link that the production database didn't have yet (and so the ID of the link will most likely be different).
@@ -829,6 +837,7 @@ namespace Api.Modules.Customers.Services
                                 }
 
                                 itemId = Convert.ToUInt64(linkDataTable.Rows[0]["item_id"]);
+                                originalItemId = itemId;
                                 destinationItemId = Convert.ToUInt64(linkDataTable.Rows[0]["destination_item_id"]);
 
                                 switch (field)
@@ -841,6 +850,7 @@ namespace Api.Modules.Customers.Services
                                     case "item_id":
                                         oldItemId = Convert.ToUInt64(oldValue);
                                         itemId = Convert.ToUInt64(newValue);
+                                        originalItemId = itemId;
                                         oldDestinationItemId = destinationItemId;
                                         break;
                                 }
@@ -850,7 +860,27 @@ namespace Api.Modules.Customers.Services
                             case "ADD_LINK":
                                 destinationItemId = itemId;
                                 itemId = Convert.ToUInt64(newValue);
+                                originalItemId = itemId;
 
+                                break;
+                            case "ADD_FILE":
+                            case "UPDATE_FILE":
+                            case "DELETE_FILE":
+                                fileId = itemId;
+                                originalFileId = fileId;
+                                itemId = String.Equals(oldValue, "item_id", StringComparison.OrdinalIgnoreCase) ? UInt64.Parse(newValue) : 0;
+                                originalItemId = itemId;
+                                linkId = String.Equals(oldValue, "itemlink_id", StringComparison.OrdinalIgnoreCase) ? UInt64.Parse(newValue) : 0;
+                                originalLinkId = linkId;
+                                
+                                break;
+                            case "DELETE_ITEM":
+                                entityType = field;
+                                break;
+                            case "INSERT_ENTITY":
+                            case "UPDATE_ENTITY":
+                            case "DELETE_ENTITY":
+                                entityId = originalObjectId;
                                 break;
                         }
 
@@ -861,17 +891,18 @@ namespace Api.Modules.Customers.Services
                         oldItemId = GetMappedId(tableName, idMapping, oldItemId);
                         oldDestinationItemId = GetMappedId(tableName, idMapping, oldDestinationItemId);
                         linkId = GetMappedId(tableName, idMapping, linkId);
+                        fileId = GetMappedId(tableName, idMapping, fileId);
+                        entityId = GetMappedId(tableName, idMapping, entityId);
 
                         var isWiserItemChange = true;
 
                         // Figure out the entity type of the item that was updated, so that we can check if we need to do anything with it.
                         // We don't want to synchronise certain entity types, such as users, relations and baskets.
-                        var entityType = "";
                         if (entityTypes.ContainsKey(itemId))
                         {
                             entityType = entityTypes[itemId];
                         }
-                        else
+                        else if (String.IsNullOrWhiteSpace(entityType))
                         {
                             // Check if this item is saved in a dedicated table with a certain prefix.
                             var tablePrefix = "";
@@ -886,6 +917,10 @@ namespace Api.Modules.Customers.Services
                             else if (tableName.EndsWith(WiserTableNames.WiserItemFile, StringComparison.OrdinalIgnoreCase))
                             {
                                 tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemFile, "");
+                                if (originalItemId == 0)
+                                {
+                                    isWiserItemChange = false;
+                                }
                             }
                             else if (tableName.EndsWith(WiserTableNames.WiserItemLink, StringComparison.OrdinalIgnoreCase))
                             {
@@ -895,27 +930,27 @@ namespace Api.Modules.Customers.Services
                             {
                                 tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemLinkDetail, "");
                             }
-                            else if (String.Equals(tableName, WiserTableNames.WiserPermission, StringComparison.OrdinalIgnoreCase)
-                                     || String.Equals(tableName, WiserTableNames.WiserUserRoles, StringComparison.OrdinalIgnoreCase))
+                            else
                             {
                                 isWiserItemChange = false;
                             }
-                            else
-                            {
-                                // Skip any other tables, we don't want to synchronise wiser_entitypropert, wiser_query etc.
-                                continue;
-                            }
 
-                            if (isWiserItemChange)
+                            if (isWiserItemChange && originalItemId > 0)
                             {
                                 clientDatabaseConnection.AddParameter("itemId", originalItemId);
                                 var getEntityTypeQuery = $"SELECT entity_type FROM `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{tablePrefix}{WiserTableNames.WiserItem}` WHERE id = ?itemId";
                                 var itemDataTable = await clientDatabaseConnection.GetAsync(getEntityTypeQuery);
                                 if (itemDataTable.Rows.Count == 0)
                                 {
-                                    logger.LogWarning($"Could not find item with ID '{itemId}', so skipping it...");
-                                    result.Errors.Add($"Item met ID '{itemId}' kon niet gevonden worden.");
-                                    continue;
+                                    // If item doesn't exist, check the archive table, it might have been deleted.
+                                    getEntityTypeQuery = $"SELECT entity_type FROM `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix}` WHERE id = ?itemId";
+                                    itemDataTable = await clientDatabaseConnection.GetAsync(getEntityTypeQuery);
+                                    if (itemDataTable.Rows.Count == 0)
+                                    {
+                                        logger.LogWarning($"Could not find item with ID '{originalItemId}', so skipping it...");
+                                        result.Errors.Add($"Item met ID '{originalItemId}' kon niet gevonden worden.");
+                                        continue;
+                                    }
                                 }
 
                                 entityType = itemDataTable.Rows[0].Field<string>("entity_type");
@@ -929,14 +964,11 @@ namespace Api.Modules.Customers.Services
                             continue;
                         }
 
-                        clientDatabaseConnection.AddParameter("entityType", entityType);
-
                         // Update the item in the production environment.
                         switch (action)
                         {
                             case "CREATE_ITEM":
                             {
-                                // Item doesn't exist yet, create it (wiser_history does not show the creation of new items).
                                 var query = $@"{queryPrefix}
                                             INSERT INTO `{productionCustomer.Database.DatabaseName}`.`{tableName}` (entity_type) VALUES ('')";
                                 var newItemId = Convert.ToUInt64(await clientDatabaseConnection.InsertRecordAsync(query));
@@ -948,6 +980,7 @@ namespace Api.Modules.Customers.Services
                             }
                             case "UPDATE_ITEM" when tableName.EndsWith(WiserTableNames.WiserItemDetail, StringComparison.OrdinalIgnoreCase):
                             {
+                                clientDatabaseConnection.AddParameter("itemId", itemId);
                                 clientDatabaseConnection.AddParameter("key", field);
                                 clientDatabaseConnection.AddParameter("languageCode", languageCode);
                                 clientDatabaseConnection.AddParameter("groupName", groupName);
@@ -978,6 +1011,7 @@ namespace Api.Modules.Customers.Services
                             }
                             case "UPDATE_ITEM" when tableName.EndsWith(WiserTableNames.WiserItem, StringComparison.OrdinalIgnoreCase):
                             {
+                                clientDatabaseConnection.AddParameter("itemId", itemId);
                                 clientDatabaseConnection.AddParameter("newValue", newValue);
                                 var query = $@"{queryPrefix}
                                             UPDATE `{productionCustomer.Database.DatabaseName}`.`{tableName}` 
@@ -989,6 +1023,8 @@ namespace Api.Modules.Customers.Services
                             }
                             case "DELETE_ITEM":
                             {
+                                clientDatabaseConnection.AddParameter("itemId", itemId);
+                                clientDatabaseConnection.AddParameter("entityType", entityType);
                                 var query = $@"{queryPrefix} CALL DeleteWiser2Item(?itemId, ?entityType);";
                                 await clientDatabaseConnection.ExecuteAsync(query);
 
@@ -1016,15 +1052,15 @@ namespace Api.Modules.Customers.Services
                                     continue;
                                 }
 
-                                var originalLinkId = getLinkIdDataTable.Rows[0].Field<ulong>("id");
+                                originalLinkId = getLinkIdDataTable.Rows[0].Field<ulong>("id");
 
                                 query = $@"{queryPrefix}
                                         INSERT IGNORE INTO `{productionCustomer.Database.DatabaseName}`.`{tableName}` (item_id, destination_item_id, ordering, type)
                                         VALUES (?itemId, ?destinationItemId, ?ordering, ?type);";
-                                var newLinkId = Convert.ToUInt64(await clientDatabaseConnection.InsertRecordAsync(query));
+                                linkId = Convert.ToUInt64(await clientDatabaseConnection.InsertRecordAsync(query));
 
                                 // Map the item ID from wiser_history to the ID of the newly created item, locally and in database.
-                                await AddIdMapping(idMapping, tableName, originalLinkId, newLinkId, selectedEnvironmentCustomer);
+                                await AddIdMapping(idMapping, tableName, originalLinkId.Value, linkId.Value, selectedEnvironmentCustomer);
 
                                 break;
                             }
@@ -1033,11 +1069,13 @@ namespace Api.Modules.Customers.Services
                                 clientDatabaseConnection.AddParameter("oldItemId", oldItemId);
                                 clientDatabaseConnection.AddParameter("oldDestinationItemId", oldDestinationItemId);
                                 clientDatabaseConnection.AddParameter("newValue", newValue);
+                                clientDatabaseConnection.AddParameter("type", field);
                                 var query = $@"{queryPrefix}
                                             UPDATE `{productionCustomer.Database.DatabaseName}`.`{tableName}` 
                                             SET `{field.ToMySqlSafeValue(false)}` = ?newValue
                                             WHERE item_id = ?oldItemId
-                                            AND destination_item_id = ?oldDestinationItemId";
+                                            AND destination_item_id = ?oldDestinationItemId
+                                            AND type = ?type";
                                 await clientDatabaseConnection.ExecuteAsync(query);
                                 break;
                             }
@@ -1045,10 +1083,12 @@ namespace Api.Modules.Customers.Services
                             {
                                 clientDatabaseConnection.AddParameter("oldItemId", oldItemId);
                                 clientDatabaseConnection.AddParameter("oldDestinationItemId", oldDestinationItemId);
+                                clientDatabaseConnection.AddParameter("type", field);
                                 var query = $@"{queryPrefix}
                                             DELETE FROM `{productionCustomer.Database.DatabaseName}`.`{tableName}`
                                             WHERE item_id = ?oldItemId
-                                            AND destination_item_id = ?oldDestinationItemId";
+                                            AND destination_item_id = ?oldDestinationItemId
+                                            AND type = ?type";
                                 await clientDatabaseConnection.ExecuteAsync(query);
                                 break;
                             }
@@ -1085,56 +1125,90 @@ namespace Api.Modules.Customers.Services
                             }
                             case "ADD_FILE":
                             {
-                                throw new NotImplementedException();
+                                // oldValue contains either "item_id" or "itemlink_id", to indicate which of these columns is used for the ID that is saved in newValue.
+                                clientDatabaseConnection.AddParameter("fileItemId", newValue);
+                                
+                                var query = $@"{queryPrefix}
+                                            INSERT INTO `{productionCustomer.Database.DatabaseName}`.`{tableName}` (`{oldValue.ToMySqlSafeValue(false)}`) VALUES (?fileItemId)";
+                                var newFileId = Convert.ToUInt64(await clientDatabaseConnection.InsertRecordAsync(query));
+
+                                // Map the item ID from wiser_history to the ID of the newly created item, locally and in database.
+                                await AddIdMapping(idMapping, tableName, originalObjectId, newFileId, selectedEnvironmentCustomer);
 
                                 break;
                             }
                             case "UPDATE_FILE":
                             {
-                                throw new NotImplementedException();
+                                clientDatabaseConnection.AddParameter("fileId", fileId);
+                                clientDatabaseConnection.AddParameter("originalFileId", originalFileId);
+                                
+                                if (String.Equals(field, "content_length", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    // If the content length has been updated, we need to get the actual content from wiser_itemfile.
+                                    // We don't save the content bytes in wiser_history, because then the history table would become too huge.
+                                    var query = $@"{queryPrefix}
+                                                UPDATE `{productionCustomer.Database.DatabaseName}`.`{tableName}`
+                                                SET content = (SELECT content FROM `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{tableName}` WHERE id = ?originalFileId)
+                                                WHERE id = ?fileId";
+                                    await clientDatabaseConnection.ExecuteAsync(query);
+                                }
+                                else
+                                {
+                                    clientDatabaseConnection.AddParameter("newValue", newValue);
+                                    
+                                    var query = $@"{queryPrefix}
+                                                UPDATE `{productionCustomer.Database.DatabaseName}`.`{tableName}` 
+                                                SET `{field.ToMySqlSafeValue(false)}` = ?newValue
+                                                WHERE id = ?fileId";
+                                    await clientDatabaseConnection.ExecuteAsync(query);
+                                }
 
                                 break;
                             }
                             case "DELETE_FILE":
                             {
-                                throw new NotImplementedException();
+                                clientDatabaseConnection.AddParameter("itemId", newValue);
+                                
+                                var query = $@"{queryPrefix}
+                                            DELETE FROM `{productionCustomer.Database.DatabaseName}`.`{tableName}`
+                                            WHERE `{oldValue.ToMySqlSafeValue(false)}` = ?itemId";
+                                await clientDatabaseConnection.ExecuteAsync(query);
 
                                 break;
                             }
-                            case "INSERT_PERMISSION":
+                            case "INSERT_ENTITY":
                             {
-                                throw new NotImplementedException();
+                                var query = $@"{queryPrefix}
+                                            INSERT INTO `{productionCustomer.Database.DatabaseName}`.`{tableName}` (`name`) VALUES ('')";
+                                var newEntityId = Convert.ToUInt64(await clientDatabaseConnection.InsertRecordAsync(query));
+
+                                // Map the item ID from wiser_history to the ID of the newly created item, locally and in database.
+                                await AddIdMapping(idMapping, tableName, originalObjectId, newEntityId, selectedEnvironmentCustomer);
 
                                 break;
                             }
-                            case "UPDATE_PERMISSION":
+                            case "UPDATE_ENTITY":
                             {
-                                throw new NotImplementedException();
+                                clientDatabaseConnection.AddParameter("entityId", entityId);
+                                clientDatabaseConnection.AddParameter("newValue", newValue);
+
+                                var query = $@"{queryPrefix}
+                                                UPDATE `{productionCustomer.Database.DatabaseName}`.`{tableName}` 
+                                                SET `{field.ToMySqlSafeValue(false)}` = ?newValue
+                                                WHERE id = ?entityId";
+                                await clientDatabaseConnection.ExecuteAsync(query);
 
                                 break;
                             }
-                            case "DELETE_PERMISSION":
+                            case "DELETE_ENTITY":
                             {
-                                throw new NotImplementedException();
-
-                                break;
-                            }
-                            case "INSERT_USER_ROLE":
-                            {
-                                throw new NotImplementedException();
-
-                                break;
-                            }
-                            case "UPDATE_USER_ROLE":
-                            {
-                                throw new NotImplementedException();
-
-                                break;
-                            }
-                            case "DELETE_USER_ROLE":
-                            {
-                                throw new NotImplementedException();
-
+                                clientDatabaseConnection.AddParameter("entityId", entityId);
+                                
+                                var query = $@"{queryPrefix}
+                                            DELETE FROM `{productionCustomer.Database.DatabaseName}`.`{tableName}`
+                                            WHERE `id` = ?entityId";
+                                await clientDatabaseConnection.ExecuteAsync(query);
+                                
                                 break;
                             }
                             default:
