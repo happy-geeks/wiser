@@ -234,7 +234,7 @@ function generateGrid(data, model, columns) {
         : { 
             name: "add", 
             text: "Nieuw", 
-            template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onNewSubEntityClick(\"{itemIdEncrypted}\", \"" + options.entityType + "\", \"\\#overviewGrid{propertyIdWithSuffix}\", " + !options.hideTitleColumn + ", \"" + (options.linkTypeNumber || "") + "\")'><span class='k-icon k-i-file-add'></span>" + options.entityType + " toevoegen</a>" 
+            template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onNewSubEntityClick(\"{itemIdEncrypted}\", \"" + options.entityType + "\", \"\\#overviewGrid{propertyIdWithSuffix}\", " + !options.hideTitleColumn + ", \"" + (options.linkTypeNumber || "") + "\")'><span class='k-icon k-i-file-add'></span>" + window.dynamicItems.getEntityTypeFriendlyName(options.entityType) + " toevoegen</a>" 
         });
     }
     
@@ -242,7 +242,7 @@ function generateGrid(data, model, columns) {
         toolbar.push({ 
             name: "link", 
             text: "Koppelen", 
-            template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onLinkSubEntityClick(\"{itemIdEncrypted}\", {itemId}, \"" + options.entityType + "\", \"\\#overviewGrid{propertyIdWithSuffix}\", \"" + (options.linkTypeNumber || "") + "\", " + (options.hideIdColumn || false) + ", " + (options.hideLinkIdColumn || false) + ", " + (options.hideTypeColumn || false) + ", " + (options.hideEnvironmentColumn || false) + ", " + (options.hideTitleColumn || false) + ", {propertyId}, \"" + JSON.stringify(options).replace(/"/g, '\\"') + "\")'><span class='k-icon k-i-link-horizontal'></span>" + options.entityType + " koppelen</a>" 
+            template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onLinkSubEntityClick(\"{itemIdEncrypted}\", {itemId}, \"" + options.entityType + "\", \"\\#overviewGrid{propertyIdWithSuffix}\", \"" + (options.linkTypeNumber || "") + "\", " + (options.hideIdColumn || false) + ", " + (options.hideLinkIdColumn || false) + ", " + (options.hideTypeColumn || false) + ", " + (options.hideEnvironmentColumn || false) + ", " + (options.hideTitleColumn || false) + ", {propertyId}, \"" + JSON.stringify(options).replace(/"/g, '\\"') + "\")'><span class='k-icon k-i-link-horizontal'></span>" + window.dynamicItems.getEntityTypeFriendlyName(options.entityType) + " koppelen</a>" 
         });
     }
     

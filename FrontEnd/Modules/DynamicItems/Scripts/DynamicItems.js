@@ -49,10 +49,6 @@ const moduleSettings = {
             this.grids = null;
             this.fields = null;
 
-            this.newItemId = null;
-            this.selectedItem = null;
-            this.selectedItemTitle = null;
-
             // Kendo components.
             this.notification = null;
             this.mainSplitter = null;
@@ -64,6 +60,10 @@ const moduleSettings = {
 
             // Other.
             this.mainLoader = null;
+            this.newItemId = null;
+            this.selectedItem = null;
+            this.selectedItemTitle = null;
+            this.allEntityTypes = [];
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -88,6 +88,7 @@ const moduleSettings = {
             };
             Object.assign(this.settings, settings);
 
+            // Enumerations.
             this.permissionsEnum = Object.freeze({
                 read: 1 << 0,
                 create: 1 << 1,
@@ -167,11 +168,17 @@ const moduleSettings = {
                 });
             }
 
+            // Get user data from local storage.
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `Admin (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
+            if (!this.settings.wiserApiRoot.endsWith("/")) {
+                this.settings.wiserApiRoot += "/";
+            }
+
+            // Get user data from API.
             const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
@@ -181,13 +188,18 @@ const moduleSettings = {
             this.settings.templatesRootId = userData.templatesRootId;
             this.settings.mainDomain = userData.mainDomain;
 
-            if (!this.settings.wiserApiRoot.endsWith("/")) {
-                this.settings.wiserApiRoot += "/";
-            }
-
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.htmlEditorCssUrl = `${this.settings.wiserApiRoot}templates/css-for-html-editors?encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&isTest=${this.base.settings.isTestEnvironment}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&username=${encodeURIComponent(this.base.settings.username)}&userType=${encodeURIComponent(this.base.settings.userType)}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`
+            
+            // Get list of all entity types, so we can show friendly names wherever we need to and don't have to get them from database via different places.
+            try {
+                this.allEntityTypes = (await Wiser2.api({ url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false` })) || [];
+            } catch (exception) {
+                console.error("Error occurred while trying to load all entity types", exception);
+                this.allEntityTypes = [];
+            }
 
+            // Get extra module settings.
             const extraModuleSettings = await Modules.getModuleSettings(this.settings.wiserApiRoot, this.settings.moduleId);
             Object.assign(this.settings, extraModuleSettings.options);
             let permissions = Object.assign({}, extraModuleSettings);
@@ -1707,11 +1719,16 @@ const moduleSettings = {
                 }
 
                 const environmentLabel = this.base.parseEnvironments(itemMetaData.publishedEnvironment);
+                
+                let friendlyEntityName = this.getEntityTypeFriendlyName(itemMetaData.entityType);
+                if (friendlyEntityName !== itemMetaData.entityType) {
+                    friendlyEntityName += ` (${itemMetaData.entityType})`;
+                }
 
                 const metaDataListElement = metaDataContainer.find(".meta-data").removeClass("hidden");
                 metaDataListElement.find(".id").html(itemMetaData.id);
                 metaDataListElement.find(".title").html(itemMetaData.title || "(leeg)");
-                metaDataListElement.find(".entity-type").html(itemMetaData.entityType);
+                metaDataListElement.find(".entity-type").html(friendlyEntityName);
                 metaDataListElement.find(".published-environment").html(environmentLabel.join(", "));
                 metaDataListElement.find(".read-only").html(itemMetaData.readonly);
                 metaDataListElement.find(".added-by").html(itemMetaData.addedBy);
@@ -2047,8 +2064,7 @@ const moduleSettings = {
          * @return {any} An array with all the available entity types.
          */
         async getAvailableEntityTypes(parentId) {
-            const names = await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}entity-types/${encodeURIComponent(this.settings.moduleId)}?parentId=${encodeURIComponent(parentId)}` });
-            return names.map(name => { return { name: name }; });
+            return await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}entity-types/${encodeURIComponent(this.settings.moduleId)}?parentId=${encodeURIComponent(parentId)}` });
         }
 
         /**
@@ -2078,6 +2094,36 @@ const moduleSettings = {
         async getApiAction(actionType, entityType) {
             const result = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_API_ACTION?entityType=${encodeURIComponent(entityType)}&actionType=${encodeURIComponent(actionType)}` });
             return !result || !result.length ? 0 : result[0].apiConnectionId || 0;
+        }
+
+        /**
+         * Gets the friendly name of the specified entity type. If there is no friendly name, the input will be returned.
+         * @param {string} entityType The name of the entity type to get the friendly name of.
+         * @param {number} moduleId Optional: If an entity exists in multiple modules, you can enter the ID of the module here. Default value is the ID of the currently opened module.
+         * @returns {string} The friendly name to show to the user.
+         */
+        getEntityTypeFriendlyName(entityType, moduleId = 0) {
+            if (!entityType) {
+                return entityType;
+            }
+
+            moduleId = moduleId || this.settings.moduleId;
+            
+            let entityTypes = this.allEntityTypes.filter(e => e.id === entityType);
+            if (entityTypes.length === 0) {
+                return entityType;
+            }
+            
+            if (entityTypes.length === 1 || !moduleId) {
+                return entityTypes[0].displayName || entityType;
+            }
+
+            const entityTypeForModule = entityTypes.find(e => e.moduleId === moduleId);
+            if (!entityTypeForModule) {
+                return entityTypes[0].displayName || entityType;
+            }
+            
+            return entityTypeForModule.displayName || entityType;
         }
     }
 

@@ -152,7 +152,8 @@ export class RemoveConnections {
                         dataValueField: "id",
                         filter: "contains",
                         optionLabel: "Kies een entiteit",
-                        dataSource: entityNames
+                        dataSource: entityNames,
+                        template: "#: displayName # # if(moduleName) { `(moduleName)` } #"
                     });
                 }
             },

@@ -1825,19 +1825,19 @@ export class Windows {
                         case "id":
                             column.hidden = this.searchGridSettings.hideIdColumn || false;
                             break;
-                        case "linkId":
+                        case "link_id":
                             column.hidden = this.searchGridSettings.hideLinkIdColumn || false;
                             break;
-                        case "entityType":
+                        case "entity_type":
                             column.hidden = this.searchGridSettings.hideTypeColumn || false;
                             break;
-                        case "publishedEnvironment":
+                        case "published_environment":
                             column.hidden = this.searchGridSettings.hideEnvironmentColumn || false;
                             break;
                         case "name":
                             column.hidden = this.searchGridSettings.hideTitleColumn || false;
                             break;
-                        case "encryptedId":
+                        case "encrypted_id":
                         case "encryptedid":
                             column.hidden = true;
                             break;
@@ -1878,7 +1878,6 @@ export class Windows {
                                 }
 
                                 transportOptions.data.firstLoad = currentFilters !== previousFilters;
-                                transportOptions.data.pageSize = transportOptions.data.pageSize;
                                 transportOptions.data.take = transportOptions.data.pageSize;
                                 previousFilters = currentFilters;
 

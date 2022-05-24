@@ -1106,7 +1106,7 @@ export class Grids {
         }
 
         this.base.windows.searchItemsWindow.maximize().open();
-        this.base.windows.searchItemsWindow.title(`${entityType} zoeken en koppelen`);
+        this.base.windows.searchItemsWindow.title(`${this.base.getEntityTypeFriendlyName(entityType)} zoeken en koppelen`);
         this.base.windows.initializeSearchItemsGrid(entityType, encryptedParentId, propertyId, gridOptions);
         $.extend(this.base.windows.searchItemsWindowSettings, {
             parentId: encryptedParentId,
@@ -1150,7 +1150,7 @@ export class Grids {
             // Create the new item.
             const createItemResult = await this.base.createItem(entityType, parentId, "", linkTypeNumber);
             if (createItemResult) {
-                await this.base.windows.loadItemInWindow(true, createItemResult.itemIdPlain, createItemResult.itemId, entityType, null, showTitleField, senderGrid, { hideTitleColumn: !showTitleField }, createItemResult.linkId, `Nieuw(e) ${entityType} aanmaken`);
+                await this.base.windows.loadItemInWindow(true, createItemResult.itemIdPlain, createItemResult.itemId, entityType, null, showTitleField, senderGrid, { hideTitleColumn: !showTitleField }, createItemResult.linkId, `Nieuw(e) ${this.base.getEntityTypeFriendlyName(entityType)} aanmaken`);
             }
         } catch (exception) {
             console.error(exception);

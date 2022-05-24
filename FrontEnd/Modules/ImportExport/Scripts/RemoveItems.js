@@ -126,7 +126,8 @@ export class RemoveItems {
                     change: function (e) {
                         me.loadEntityProperties(this.value(), true);
                     },
-                    optionLabel: "Maak uw keuze..."
+                    optionLabel: "Maak uw keuze...",
+                    template: "#: displayName # # if(typeof(moduleName) !== 'undefined' && moduleName) { # (#: moduleName #) # } #"
                 });
 
                 await this.loadEntityProperties("<none>", false, context);
