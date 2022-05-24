@@ -2373,7 +2373,13 @@ export class Fields {
                             ],
                             stylesheets: [
                                 this.base.settings.htmlEditorCssUrl
-                            ]
+                            ],
+                            serialization: {
+                                custom: this.onHtmlEditorSerialization
+                            },
+                            deserialization: {
+                                custom: this.onHtmlEditorDeserialization
+                            }
                         }).data("kendoEditor");
                     }
 
@@ -2675,7 +2681,13 @@ export class Fields {
                                     ],
                                     stylesheets: [
                                         this.base.settings.htmlEditorCssUrl
-                                    ]
+                                    ],
+                                    serialization: {
+                                        custom: this.onHtmlEditorSerialization
+                                    },
+                                    deserialization: {
+                                        custom: this.onHtmlEditorDeserialization
+                                    }
                                 }).data("kendoEditor");
 
                                 emailBodyEditor.value(currentEmailData.body || "");
@@ -3211,6 +3223,24 @@ export class Fields {
                     break;
                 }
         }
+    }
+
+    /**
+     * Event that gets called when the Kendo editor serializes it's contents. 
+     * @param html The HTML contents of the editor.
+     * @returns {*} The HTML contents of the editor.
+     */
+    onHtmlEditorSerialization(html) {
+        return html.replace(/\[>\]([\w]+)\[<\]/g, "{$1}");
+    }
+
+    /**
+     * Event that gets called when the Kendo editor deserializes it's contents.
+     * @param html The HTML contents of the editor.
+     * @returns {*} The HTML contents of the editor.
+     */
+    onHtmlEditorDeserialization(html) {
+        return html.replace(/{([\w]+)}/g, "[>]$1[<]");
     }
 
     /**

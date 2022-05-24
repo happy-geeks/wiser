@@ -852,7 +852,17 @@ const moduleSettings = {
                         htmlSourceTool,
                         "formatting",
                         "cleanFormatting"
-                    ]
+                    ],
+                    serialization: {
+                        custom: function(html) {
+                            return html.replace(/\[>\]([\w]+)\[<\]/g, "{$1}");
+                        }
+                    },
+                    deserialization: {
+                        custom: function(html) {
+                            return html.replace(/{([\w]+)}/g, "[>]$1[<]");
+                        }
+                    }
                 }).data("kendoEditor");
             } else {
                 // Initialize Code Mirror.

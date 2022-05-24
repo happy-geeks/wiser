@@ -59,17 +59,18 @@ var options = $.extend(true, {
 		msTags: true,
 		none: false,
 		span: true,
-        custom: function(html) {
-            if (typeof Strings.cleanupHtml === "function") {
-                html = Strings.cleanupHtml(html);
-            }
-            return html;
-        }
+        custom: Strings.cleanupHtml
 	},
 	stylesheets: [
         window.dynamicItems.settings.htmlEditorCssUrl
 	],
-	keyup: function(event) { window.dynamicItems.fields.onHtmlEditorKeyUp.call(window.dynamicItems.fields, event, this); }
+	keyup: function(event) { window.dynamicItems.fields.onHtmlEditorKeyUp.call(window.dynamicItems.fields, event, this); },
+    serialization: {
+        custom: window.dynamicItems.fields.onHtmlEditorSerialization
+    },
+    deserialization: {
+        custom: window.dynamicItems.fields.onHtmlEditorDeserialization
+    }
 }, {options});
 
 var tools = [];
