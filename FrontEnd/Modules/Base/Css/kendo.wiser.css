@@ -1539,13 +1539,13 @@ k-filter-menu .k-autocomplete,
 }
 .k-input[readonly], 
 textarea[readonly],
-.item.readonly .k-input {
+.item.readonly .k-dropdown .k-input {
 	border: 1px solid var(--medium-color) !important;
 	background: var(--handle-bg-color) !important;
 	color: var(--lighter-txt);
 	pointer-events: none;
 }
-.item.readonly .k-select .k-i-arrow-60-down {
+.item.readonly .k-select {
 	display: none;
 }
 .item.readonly .k-dropdown-wrap {
