@@ -37,7 +37,7 @@ export class Dialogs {
             ]
         }).data("kendoDialog");
 
-        this.newItemDialog.element.keyup((event) => {
+        this.newItemDialog.element.find("#newItemNameField").keyup((event) => {
             if (!event.key || event.key.toLowerCase() !== "enter") {
                 return;
             }
@@ -46,8 +46,8 @@ export class Dialogs {
         });
 
         this.newItemDialogEntityTypeDropDown = $("#newItemEntityTypeField").kendoDropDownList({
-            dataTextField: "name",
-            dataValueField: "name",
+            dataTextField: "displayName",
+            dataValueField: "id",
             dataBound: this.onNewItemDialogEntityTypeDropDownDataBound.bind(this),
             dataSource: []
         }).data("kendoDropDownList");
@@ -171,8 +171,10 @@ export class Dialogs {
         this.newItemDialog.element.data("linkTypeNumber", linkTypeNumber);
         this.newItemDialog.element.data("moduleId", moduleId);
         this.newItemDialog.element.data("kendoComponent", kendoComponent);
+        
+        const hasOnlyOneOption = this.newItemDialogEntityTypeDropDown.dataSource.data().length === 1;
 
-        if (skipInitialDialog || (skipName && this.newItemDialogEntityTypeDropDown.dataSource.data().length === 1)) {
+        if (skipInitialDialog || (skipName && hasOnlyOneOption)) {
             this.createItem(skipName, skipInitialDialog);
             return;
         }
@@ -183,8 +185,13 @@ export class Dialogs {
         if (skipName) {
             return;
         }
-
-        newItemNameField.focus();
+        
+        if (!hasOnlyOneOption) {
+            this.newItemDialogEntityTypeDropDown.focus();
+            this.newItemDialogEntityTypeDropDown.open();
+        } else {
+            newItemNameField.focus();
+        }
     }
 
     /**
@@ -271,12 +278,12 @@ export class Dialogs {
         const hasMoreThanOneItem = data.length > 1;
         $("#newItemEntityTypeContainer").toggle(hasMoreThanOneItem);
         if (data.length > 0) {
-            this.newItemDialogEntityTypeDropDown.value(data[0].name);
+            this.newItemDialogEntityTypeDropDown.value(data[0].id);
         }
 
         let title = "Nieuw item aanmaken";
-        if (!hasMoreThanOneItem) {
-            title = `Nieuw(e) ${data[0].name} aanmaken`;
+        if (data.length === 1) {
+            title = `Nieuw(e) ${data[0].displayName} aanmaken`;
         }
         if (this.base.selectedItem) {
             title += ` onder '${this.base.selectedItem.name || this.base.selectedItem.title}'`;

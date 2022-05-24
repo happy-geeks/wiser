@@ -39,8 +39,9 @@ namespace Api.Modules.EntityTypes.Services
             var result = new List<EntityTypeModel>();
             var query = $@"SELECT 
 	                        entity.name, 
-	                        CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', entity.name, entity.friendly_name), IF(module.`name` IS NULL, '', CONCAT(' (', module.`name`, ')'))) AS displayName,
-	                        entity.module_id
+	                        IF(entity.friendly_name IS NULL OR entity.friendly_name = '', entity.name, entity.friendly_name) AS displayName,
+	                        entity.module_id,
+                            module.`name` AS moduleName
                         FROM {WiserTableNames.WiserEntity} AS entity
                         LEFT JOIN {WiserTableNames.WiserModule} AS module ON module.id = entity.module_id
                         WHERE entity.`name` <> ''
@@ -55,15 +56,13 @@ namespace Api.Modules.EntityTypes.Services
                 return new ServiceResult<List<EntityTypeModel>>(result);
             }
 
-            foreach (DataRow dataRow in dataTable.Rows)
+            result.AddRange(dataTable.Rows.Cast<DataRow>().Select(dataRow => new EntityTypeModel
             {
-                result.Add(new EntityTypeModel
-                {
-                    DisplayName = dataRow.Field<string>("displayName"),
-                    Id = dataRow.Field<string>("name"),
-                    ModuleId = dataRow.Field<int>("module_id")
-                });
-            }
+                DisplayName = dataRow.Field<string>("displayName"), 
+                Id = dataRow.Field<string>("name"), 
+                ModuleId = dataRow.Field<int>("module_id"), 
+                ModuleName = dataRow.Field<string>("moduleName")
+            }));
 
             return new ServiceResult<List<EntityTypeModel>>(result);
         }
@@ -84,7 +83,7 @@ namespace Api.Modules.EntityTypes.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<string>>> GetAvailableEntityTypesAsync(ClaimsIdentity identity, int moduleId, string parentId = null)
+        public async Task<ServiceResult<List<EntityTypeModel>>> GetAvailableEntityTypesAsync(ClaimsIdentity identity, int moduleId, string parentId = null)
         {
             ulong actualParentId;
             if (String.IsNullOrWhiteSpace(parentId))
@@ -101,24 +100,31 @@ namespace Api.Modules.EntityTypes.Services
             clientDatabaseConnection.AddParameter("moduleId", moduleId);
             clientDatabaseConnection.AddParameter("parentId", actualParentId);
 
-            var result = new List<string>();
-            var query = $@"SELECT DISTINCT(e2.name) AS name
-                            FROM {WiserTableNames.WiserEntity} e
-                            LEFT JOIN {WiserTableNames.WiserItem} i ON i.entity_type = e.name AND i.moduleid = e.module_id
-                            JOIN {WiserTableNames.WiserEntity} e2 ON e2.module_id = ?moduleId AND e2.name <> '' AND FIND_IN_SET(e2.name, e.accepted_childtypes)
-                            WHERE e.module_id = ?moduleId
-                            AND ((?parentId = 0 AND e.name = '') OR (?parentId > 0 AND i.id = ?parentId))
-                            ORDER BY e2.name";
+            var result = new List<EntityTypeModel>();
+            var query = $@"SELECT 
+                                childEntity.name, 
+                                IF(childEntity.friendly_name IS NULL OR childEntity.friendly_name = '', childEntity.name, childEntity.friendly_name) AS displayName
+                            FROM {WiserTableNames.WiserEntity} AS entity
+                            LEFT JOIN {WiserTableNames.WiserItem} AS item ON item.entity_type = entity.name AND item.moduleid = entity.module_id
+                            JOIN {WiserTableNames.WiserEntity} AS childEntity ON childEntity.module_id = ?moduleId AND childEntity.name <> '' AND FIND_IN_SET(childEntity.name, entity.accepted_childtypes)
+                            WHERE entity.module_id = ?moduleId
+                            AND ((?parentId = 0 AND entity.name = '') OR (?parentId > 0 AND item.id = ?parentId))
+                            GROUP BY childEntity.name
+                            ORDER BY childEntity.name";
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             if (dataTable.Rows.Count == 0)
             {
-                return new ServiceResult<List<string>>(result);
+                return new ServiceResult<List<EntityTypeModel>>(result);
             }
 
-            result.AddRange(dataTable.Rows.Cast<DataRow>().Select(dataRow => dataRow.Field<string>("name")));
+            result.AddRange(dataTable.Rows.Cast<DataRow>().Select(dataRow => new EntityTypeModel
+            {
+                Id = dataRow.Field<string>("name"),
+                DisplayName = dataRow.Field<string>("displayName")
+            }));
 
-            return new ServiceResult<List<string>>(result);
+            return new ServiceResult<List<EntityTypeModel>>(result);
         }
     }
 }

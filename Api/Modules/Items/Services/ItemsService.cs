@@ -1095,12 +1095,13 @@ namespace Api.Modules.Items.Services
                 var htmlTemplate = dataRow.Field<string>("html_template");
                 var scriptTemplate = dataRow.Field<string>("script_template");
                 var fieldType = dataRow.Field<string>("field_type");
+                var isReadOnly = Convert.ToBoolean(dataRow["readonly"]) || (userItemPermissions & AccessRights.Update) != AccessRights.Update;
 
                 // Get mode, some fields have different modes and need different HTML for different modes.
                 var options = dataRow.Field<string>("options")?.ReplaceCaseInsensitive("{itemId}", itemId.ToString());
                 var optionsObject = JObject.Parse(String.IsNullOrWhiteSpace(options) ? "{}" : options);
                 var fieldMode = "";
-                var containerCssClass = "";
+                var containerCssClasses = new List<string>();
                 if (optionsObject.ContainsKey("mode"))
                 {
                     fieldMode = optionsObject.Value<string>("mode");
@@ -1109,11 +1110,18 @@ namespace Api.Modules.Items.Services
                 switch (fieldMode)
                 {
                     case "switch":
-                        containerCssClass = "checkbox-adv large";
+                        containerCssClasses.Add("checkbox-adv");
+                        containerCssClasses.Add("large");
                         break;
                     case "checkBoxGroup":
-                        containerCssClass = "row checkbox-full-container";
+                        containerCssClasses.Add("row");
+                        containerCssClasses.Add("checkbox-full-container");
                         break;
+                }
+
+                if (isReadOnly)
+                {
+                    containerCssClasses.Add("readonly");
                 }
 
                 if (String.IsNullOrWhiteSpace(htmlTemplate))
@@ -1411,7 +1419,7 @@ namespace Api.Modules.Items.Services
                         .Replace("{saveOnChange}", Convert.ToBoolean(dataRow["save_on_change"]).ToString().ToLowerInvariant())
                         .Replace("{itemLinkId}", dataRow["itemLinkId"]?.ToString() ?? "")
                         .Replace("{required}", Convert.ToBoolean(dataRow["mandatory"]) ? "required" : "")
-                        .Replace("{readonly}", Convert.ToBoolean(dataRow["readonly"]) || (userItemPermissions & AccessRights.Update) != AccessRights.Update ? "readonly disabled" : "")
+                        .Replace("{readonly}", isReadOnly ? "readonly disabled" : "")
                         .Replace("{pattern}", String.IsNullOrWhiteSpace(regExValidation) ? ".*" : regExValidation)
                         .Replace("{languageCode}", languageCode)
                         .Replace("{inputType}", inputType)
@@ -1425,7 +1433,7 @@ namespace Api.Modules.Items.Services
                         .Replace("{labelStyle}", labelStyle)
                         .Replace("{labelWidth}", labelWidth)
                         .Replace("{fieldMode}", fieldMode)
-                        .Replace("{containerCssClass}", containerCssClass)
+                        .Replace("{containerCssClass}", String.Join(" ", containerCssClasses))
                         .Replace("{default_value}", valueToReplace);
                 }
 
