@@ -1461,15 +1461,18 @@ export class Fields {
                             switch ((parameter.fieldType || "").toLowerCase()) {
                                 case "datetime":
                                     await require("@progress/kendo-ui/js/kendo.datetimepicker.js");
-                                    dialog.element.find("input").addClass("dateTimeField").kendoDateTimePicker(options);
+                                    const dateTimePicker = dialog.element.find("input").addClass("dateTimeField").kendoDateTimePicker(options).data("kendoDateTimePicker");
+                                    setTimeout(() => { dateTimePicker.open(); }, 100);
                                     break;
                                 case "date":
                                     await require("@progress/kendo-ui/js/kendo.datepicker.js");
-                                    dialog.element.find("input").addClass("dateTimeField").kendoDatePicker(options);
+                                    const datePicker = dialog.element.find("input").addClass("dateTimeField").kendoDatePicker(options).data("kendoDatePicker");
+                                    setTimeout(() => { datePicker.open(); }, 100);
                                     break;
                                 case "time":
                                     await require("@progress/kendo-ui/js/kendo.timepicker.js");
-                                    dialog.element.find("input").addClass("dateTimeField").kendoTimePicker(options);
+                                    const timePicker = dialog.element.find("input").addClass("dateTimeField").kendoTimePicker(options).data("kendoTimePicker");
+                                    setTimeout(() => { timePicker.open(); }, 100);
                                     break;
                                 case "number":
                                     await require("@progress/kendo-ui/js/kendo.numerictextbox.js");
