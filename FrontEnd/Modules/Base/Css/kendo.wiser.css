@@ -1537,11 +1537,19 @@ k-filter-menu .k-autocomplete,
 .readOnly > h4 {
 	color: var(--read-only-color);
 }
-.k-input[readonly], textarea[readonly] {
+.k-input[readonly], 
+textarea[readonly],
+.item.readonly .k-input {
 	border: 1px solid var(--medium-color) !important;
 	background: var(--handle-bg-color) !important;
 	color: var(--lighter-txt);
 	pointer-events: none;
+}
+.item.readonly .k-select .k-i-arrow-60-down {
+	display: none;
+}
+.item.readonly .k-dropdown-wrap {
+	cursor: auto;
 }
 .checkbox input[readonly], .radio input[readonly] {
 	pointer-events: none;
