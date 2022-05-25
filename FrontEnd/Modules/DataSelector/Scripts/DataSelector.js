@@ -313,7 +313,7 @@ const moduleSettings = {
             selectEntity.bind("change", () => {
                 this.selectedEntityType = selectEntity.value();
 
-                const connection = $(this.mainConnection).data("connection");
+                const connection = $(this.mainConnection.container).data("connection");
                 connection.updateAvailableProperties().then(() => {
                     // Update the data sources of the main scopes and field selection.
                     const connectionBlock = this.container.querySelector(".connectionBlock");
@@ -424,6 +424,17 @@ const moduleSettings = {
                 }
             }
 
+            // Update field aliases for items already in the data source.
+            dataItems.forEach((dataItem) => {
+                const item = baseDataSource.find((property) => {
+                    return property.entityName === dataItem.entityName && property[valueProperty] === dataItem[valueProperty];
+                });
+                if (item) {
+                    console.log("item", item);
+                    dataItem.set("fieldAlias", item.fieldAlias);
+                }
+            });
+
             // Determine items that need to be added. These are items that are in the new data source, but are not present in the widget.
             baseDataSource.filter((property) => {
                 const item = dataItems.filter((dataItem) => {
@@ -516,10 +527,36 @@ const moduleSettings = {
             });
 
             if (alsoUpdateSortAndGroupingOptions) {
-                // Also update sorting options select and group by select, which use the same fields.
-                this.updateWidgetDataSource($("#sorting").getKendoMultiSelect(), this.selectedFields, true);
-                this.updateWidgetDataSource($("#groupBy").getKendoMultiSelect(), this.selectedFields, true);
+                if (this.mainConnection) {
+                    const allProperties = this.#getAllProperties(this.mainConnection);
+
+                    allProperties.forEach((dataItem) => {
+                        const selectedField = this.selectedFields.filter((property) => {
+                            return property.entityName === dataItem.entityName && property.value === dataItem.value;
+                        });
+
+                        if (selectedField.length === 0 || !selectedField[0].fieldAlias) return;
+
+                        dataItem.fieldAlias = selectedField[0].fieldAlias;
+                    });
+
+                    // Also update sorting options select and group by select, which use the same fields.
+                    this.updateWidgetDataSource($("#sorting").getKendoMultiSelect(), allProperties, true);
+                    this.updateWidgetDataSource($("#groupBy").getKendoMultiSelect(), allProperties, true);
+                }
             }
+        }
+
+        #getAllProperties(connection) {
+            let allProperties = [];
+
+            // Starting from the main connection.
+            allProperties = allProperties.concat(connection.availableProperties);
+            connection.container.querySelectorAll("div.connectionBlock").forEach((container) => {
+                allProperties = allProperties.concat(this.#getAllProperties($(container).data("connection")));
+            });
+
+            return allProperties;
         }
 
         updateAvailableLinkTypes() {
@@ -569,7 +606,7 @@ const moduleSettings = {
         addConnection(parentContainer, isMainConnection = false) {
             const connection = new Connection(this, parentContainer, isMainConnection);
             connection.initialize();
-            return connection.container;
+            return connection;
         }
 
         initializeWindow() {

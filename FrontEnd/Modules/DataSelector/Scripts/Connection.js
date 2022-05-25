@@ -215,8 +215,6 @@
                 return;
             }
 
-            console.log("connectionBlock:", connectionBlock);
-
             let linkType;
             if (this.isMainConnection) {
                 linkType = this.dataSelector.selectedLinkType;
@@ -448,7 +446,7 @@
                     $(connectionBlock).remove();
                 } else {
                     if (connectionBlock === undefined || connectionBlock === null) {
-                        connectionBlock = this.dataSelector.addConnection(inputRow.get(0));
+                        connectionBlock = this.dataSelector.addConnection(inputRow.get(0)).container;
                         $(connectionBlock).data("linkedToPropertySelect", e.sender);
                     }
 
