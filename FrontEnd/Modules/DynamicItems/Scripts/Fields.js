@@ -826,7 +826,7 @@ export class Fields {
         }
 
         // Get the item details so that those values can be used as variables in a string.
-        const itemDetails = !itemId ? { encryptedId: this.base.settings.zeroEncrypted } : (await this.base.getItemDetails(itemId))[0];
+        const itemDetails = !itemId ? { encryptedId: this.base.settings.zeroEncrypted } : (await this.base.getItemDetails(itemId));
 
         const userParametersWithValues = {};
         const success = await this.executeActionButtonActions(actionDetails.actions, userParametersWithValues, itemDetails, propertyId, selectedItems, senderGrid.element);
@@ -878,8 +878,19 @@ export class Fields {
 
             event.sender.element.addClass("loading");
 
+            // Try to determine the entity type. If this button is located within a window, that window element
+            // might have the entity type set as one of its data properties.
+            let entityType;
+            const window = event.sender.element.closest("div.k-window-content");
+            if (window) {
+                entityType = window.data("entityType");
+                if (!entityType && window.data("entityTypeDetails")) {
+                    window.data("entityTypeDetails").entityType;
+                }
+            }
+
             // Get the item details so that those values can be used as variables in a string.
-            const itemDetails = (await this.base.getItemDetails(itemId))[0];
+            const itemDetails = (await this.base.getItemDetails(itemId, entityType));
 
             // Execute all actions that are configured for this button.
             const userParametersWithValues = {};
@@ -1874,6 +1885,7 @@ export class Fields {
                     case "openWindow": {
                         let windowItemId = action.itemId || "{itemId}";
                         let windowLinkId = action.linkId || "{linkId}";
+                        let windowEntityType = action.entityType || null;
 
                         // The queryActionResult are from a previously executed query. This way you can combine the actions executeQuery(Once) and openWindow to open a newly created or updated item.
                         if (queryActionResult) {
@@ -1888,7 +1900,7 @@ export class Fields {
                             break;
                         }
 
-                        const windowItemDetails = (await this.base.getItemDetails(windowItemId))[0];
+                        const windowItemDetails = (await this.base.getItemDetails(windowItemId, windowEntityType));
 
                         const itemId = windowItemDetails.id || windowItemDetails.itemId || windowItemDetails.itemid || windowItemDetails.item_id;
                         const encryptedId = windowItemDetails.encryptedId || windowItemDetails.encrypted_id || windowItemDetails.encryptedid;
@@ -1937,7 +1949,7 @@ export class Fields {
 
                         const templateDetails = await this.base.getItemDetails(userParametersWithValues.contentItemId || action.contentItemId);
 
-                        if (!templateDetails || !templateDetails.length) {
+                        if (!templateDetails) {
                             kendo.alert(`Er werd geprobeerd om actie type '${action.type}' uit te voeren, echter kon de template voor het bestand niet gevonden worden. Neem a.u.b. contact op met ons.`);
                             break;
                         }
@@ -2036,7 +2048,7 @@ export class Fields {
                             }
                         }
 
-                        await this.initializeGenerateFileWindow(allUrls, templateDetails[0], emailData, action, element, userParametersWithValues, itemId, linkId, propertyId, selectedItems);
+                        await this.initializeGenerateFileWindow(allUrls, templateDetails, emailData, action, element, userParametersWithValues, itemId, linkId, propertyId, selectedItems);
 
                         break;
                     }

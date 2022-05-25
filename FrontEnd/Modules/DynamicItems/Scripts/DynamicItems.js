@@ -2013,10 +2013,12 @@ const moduleSettings = {
         /**
          * Get all properties / fields from a single item.
          * @param {any} itemId The ID of the item to get the details of.
+         * @param {string} entityType The entity type of the item.
          * @returns {Promise} A promise, which will return an array with 1 item. That item will contain it's basic properties and a property called "property_" which contains an object with all fields and their values.
          */
-        async getItemDetails(itemId) {
-            return Wiser2.api({ url: `${this.settings.serviceRoot}/GET_ITEM_DETAILS?itemId=${encodeURIComponent(itemId)}` });
+        async getItemDetails(itemId, entityType) {
+            const entityTypeUrlPart = entityType ? `?entityType=${encodeURIComponent(entityType)}` : "";
+            return Wiser2.api({ url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/details/${entityTypeUrlPart}` });
         }
 
         /**

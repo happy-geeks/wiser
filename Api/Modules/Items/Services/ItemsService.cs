@@ -1495,6 +1495,26 @@ namespace Api.Modules.Items.Services
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<WiserItemModel>> GetItemDetailsAsync(string encryptedId, ClaimsIdentity identity, string entityType = null)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var (success, _, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Read, userId, onlyCheckAccessRights: true, entityType: entityType);
+
+            if (!success)
+            {
+                return new ServiceResult<WiserItemModel>();
+            }
+
+            var result = await wiserItemsService.GetItemDetailsAsync(itemId, entityType: entityType);
+            result.EncryptedId = await wiserCustomersService.EncryptValue(result.Id, identity);
+
+            // If the user is not allowed to read this item, return an empty result.
+            return new ServiceResult<WiserItemModel>(result);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<ItemMetaDataModel>> GetItemMetaDataAsync(string encryptedId, ClaimsIdentity identity, string entityType = null)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
