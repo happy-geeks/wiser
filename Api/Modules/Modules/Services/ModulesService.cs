@@ -163,6 +163,8 @@ namespace Api.Modules.Modules.Services
                 var canUpdate = (permissionsBitMask & AccessRights.Update) == AccessRights.Update;
                 var canDelete = (permissionsBitMask & AccessRights.Delete) == AccessRights.Delete;
 
+                var hasCustomQuery = !String.IsNullOrWhiteSpace(dataRow.Field<string>("custom_query"));
+
                 if (String.IsNullOrWhiteSpace(groupName))
                 {
                     groupName = DefaultModulesGroupName;
@@ -192,6 +194,7 @@ namespace Api.Modules.Modules.Services
                 rightsModel.Pinned = pinnedModules.Contains(moduleId);
                 rightsModel.AutoLoad = autoLoadModules.Contains(moduleId);
                 rightsModel.PinnedGroup = PinnedModulesGroupName;
+                rightsModel.HasCustomQuery = hasCustomQuery;
 
                 if (String.IsNullOrWhiteSpace(rightsModel.Icon))
                 {
@@ -592,7 +595,12 @@ namespace Api.Modules.Modules.Services
                 var newObject = new JObject();
                 foreach (var column in columns)
                 {
-                    newObject.Add(new JProperty(column.Title, item[column.Field]));
+                    if (String.IsNullOrWhiteSpace(column.Field))
+                    {
+                        continue;
+                    }
+
+                    newObject.Add(new JProperty(column.Title, item[column.Field.ToLowerInvariant()]));
                 }
 
                 newData.Add(newObject);
