@@ -17,6 +17,7 @@
     <Content Remove="Modules\Templates\DataLayer\**" />
     <EmbeddedResource Remove="Modules\Templates\DataLayer\**" />
     <None Remove="Modules\Templates\DataLayer\**" />
+    <None Include="wwwroot\ContentBuilder\plugins\WiserDataSelector\plugin.js" />
   </ItemGroup>
 
   <ItemGroup>
