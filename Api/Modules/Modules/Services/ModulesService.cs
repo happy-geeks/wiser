@@ -630,7 +630,7 @@ namespace Api.Modules.Modules.Services
                             SET `id` = ?new_id,
                                 `custom_query` = ?custom_query,
                                 `count_query` = ?count_query,
-                                `options` = ?options,
+                                IF(?options != '' AND ?options IS NOT NULL, JSON_VALID(?options), ''),
                                 `name` = ?name,
                                 `icon` = ?icon,
                                 `color` = ?color,
