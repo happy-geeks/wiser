@@ -35,7 +35,6 @@ export class EntityTab {
     * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
     */
     async setupBindings() {
-
         // add an entity property
         $(".addBtn").kendoButton({
             click: (e) => {
@@ -197,19 +196,21 @@ export class EntityTab {
         let qs = {
             entityName: name
         };
+        var me = this;
+            $.ajax({
+                url: `${this.base.settings.serviceRoot}/INSERT_ENTITY${Utils.toQueryString(qs, true)}`,
+                contentType: 'application/json',
+                method: "POST"
+            })
+            .done(async function() {
+                me.base.showNotification("notification", `Item succesvol toegevoegd`, "success");
+                await me.reloadEntityList(true);
 
-        $.post(`${this.base.settings.serviceRoot}/INSERT_ENTITY${Utils.toQueryString(qs, true)}`)
-            .done(() => {
-                this.base.showNotification("notification", `Item succesvol toegevoegd`, "success");
-
-                this.reloadEntityList(true);
-
-                // Select the new entity
-                setTimeout(() => {
-                    this.entitiesCombobox.select((dataItem) => {
+                me.entitiesCombobox.one("dataBound", () => {
+                    me.entitiesCombobox.select((dataItem) => {
                         return dataItem.name === name;
-                }); }, 600);
-                
+                    });
+                });
             })
             .fail(() => {
                 this.base.showNotification("notification", `Item is niet succesvol toegevoegd, probeer het opnieuw`, "error");
