@@ -977,7 +977,7 @@ namespace Api.Modules.Items.Services
             var itemIsFromArchive = false;
             var query = $@"SET SESSION group_concat_max_len = 1000000;
                                 SELECT e.tab_name, e.group_name, e.inputtype AS field_type, t.html_template, e.display_name, e.property_name, e.options, e.module_id,
-    	                            e.explanation, d.long_value, d.`value`, e.default_value, e.id, e.width, e.height, e.css, e.extended_explanation, e.label_style, e.label_width,
+    	                            e.explanation, d.long_value, d.`value`, e.default_value, e.id, e.width, e.height, e.css, e.extended_explanation, e.label_style, e.label_width, e.access_key,
     	                            e.depends_on_field, e.depends_on_operator, e.depends_on_value, IFNULL(e.depends_on_action, 'toggle-visibility') AS depends_on_action, e.ordering, t.script_template,
     	                            e.save_on_change, files.JSON AS filesJSON, 0 AS itemLinkId, e.regex_validation, e.mandatory, e.language_code,
     	                            # A user can have multiple roles. So we need to check if they have at least one role that has update rights. If it doesn't, then the field should be readonly.
@@ -1010,7 +1010,7 @@ namespace Api.Modules.Items.Services
                                 UNION ALL
                                 
                                 SELECT 'Velden vanuit koppeling' AS tab_name, e.group_name, e.inputtype AS field_type, t.html_template, e.display_name, e.property_name, e.options, e.module_id,
-    	                            e.explanation, d.long_value, d.`value`, e.default_value, e.id, e.width, e.height, e.css, e.extended_explanation, e.label_style, e.label_width,
+    	                            e.explanation, d.long_value, d.`value`, e.default_value, e.id, e.width, e.height, e.css, e.extended_explanation, e.label_style, e.label_width, e.access_key,
     	                            e.depends_on_field, e.depends_on_operator, e.depends_on_value, IFNULL(e.depends_on_action, 'toggle-visibility') AS depends_on_action, e.ordering, t.script_template,
     	                            e.save_on_change, files.JSON AS filesJSON, il.id AS itemLinkId, e.regex_validation, e.mandatory, e.language_code,
     	                            # A user can have multiple roles. So we need to check if they have at least one role that has update rights. If it doesn't, then the field should be readonly.
@@ -1176,6 +1176,7 @@ namespace Api.Modules.Items.Services
                 var hasExtendedExplanation = !String.IsNullOrWhiteSpace(explanation) && Convert.ToBoolean(dataRow["extended_explanation"]);
                 var labelStyle = dataRow.Field<string>("label_style") ?? "";
                 var labelWidth = labelStyle == "normal" ? "0" : dataRow.Field<string>("label_width") ?? "";
+                var accessKey = dataRow.Field<string>("access_key") ?? "";
 
                 if (!String.IsNullOrWhiteSpace(filesJson))
                 {
@@ -1432,6 +1433,7 @@ namespace Api.Modules.Items.Services
                         .Replace("{infoIconClass}", hasExtendedExplanation ? "" : "hidden")
                         .Replace("{labelStyle}", labelStyle)
                         .Replace("{labelWidth}", labelWidth)
+                        .Replace("{accessKey}", accessKey)
                         .Replace("{fieldMode}", fieldMode)
                         .Replace("{containerCssClass}", String.Join(" ", containerCssClasses))
                         .Replace("{default_value}", valueToReplace);
