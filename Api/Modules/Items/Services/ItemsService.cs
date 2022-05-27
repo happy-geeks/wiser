@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -18,6 +19,8 @@ using Api.Modules.Customers.Interfaces;
 using Api.Modules.EntityTypes.Models;
 using Api.Modules.Items.Interfaces;
 using Api.Modules.Items.Models;
+using DocumentFormat.OpenXml.Drawing.Diagrams;
+using DocumentFormat.OpenXml.ExtendedProperties;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Exceptions;
@@ -1100,6 +1103,38 @@ namespace Api.Modules.Items.Services
                 // Get mode, some fields have different modes and need different HTML for different modes.
                 var options = dataRow.Field<string>("options")?.ReplaceCaseInsensitive("{itemId}", itemId.ToString());
                 var optionsObject = JObject.Parse(String.IsNullOrWhiteSpace(options) ? "{}" : options);
+
+                if (fieldType == "sub-entities-grid")
+                {
+                    if (optionsObject.ContainsKey("toolbar"))
+                    {
+                        var toolbar = optionsObject.Value<JObject>("toolbar");
+                        if (toolbar.ContainsKey("customActions"))
+                        {
+                            var customActions = toolbar.Value<JArray>("customActions").ToList();
+                           var deletedCustomActions = new List<JToken>();
+                            foreach (var customAction in customActions)
+                            {
+                                var rolesToken = customAction.SelectToken("roles"); ;
+                                if (rolesToken == null) continue; // No roles defined = access
+
+                                var roles = rolesToken.Values<string>().ToList();
+                                var hasRole = false;
+                                foreach (var role in roles)
+                                {
+                                    if (IdentityHelpers.HasRole(identity, role)) hasRole = true;
+                                }
+                                if (hasRole) continue;
+                                deletedCustomActions.Add(customAction);
+                            }
+
+                            foreach (var deletedCustomAction in deletedCustomActions)
+                            {
+                                customActions.Remove(deletedCustomAction);
+                            }
+                        }
+                    }
+                }
                 var fieldMode = "";
                 var containerCssClasses = new List<string>();
                 if (optionsObject.ContainsKey("mode"))
