@@ -119,7 +119,7 @@ export class RemoveItems {
             if (!entityTypes || !entityTypes.length) {
                 $(context).find("#EntityTypesContainer").hide();
             } else {
-                $(context).find("#EntityTypesContainer").kendoDropDownList({
+                $(context).find("#EntityTypesContainer").kendoComboBox({
                     dataTextField: "displayName",
                     dataValueField: "id",
                     dataSource: entityTypes,
@@ -202,7 +202,7 @@ export class RemoveItems {
                 return;
             }
 
-            let entityName = $(context).find("#EntityTypesContainer").data("kendoDropDownList").value();
+            let entityName = $(context).find("#EntityTypesContainer").data("kendoComboBox").value();
             let propertyName = $(context).find("#EntityPropertiesContainer").data("kendoDropDownList").value();
 
             if (entityName === "") {
