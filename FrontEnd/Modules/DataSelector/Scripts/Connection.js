@@ -22,6 +22,14 @@
             $(this.container).data("connection", this);
         }
 
+        getPrefix() {
+            const parentConnection = this.parentContainer.closest(".connectionBlock");
+            if (parentConnection === null) {
+                return "main_";
+            }
+
+        }
+
         createHtml() {
             const block = $(document.getElementById("connectionTemplate").innerHTML);
             $(this.parentContainer).append(block);
@@ -195,6 +203,16 @@
             // Create clone of "response" so it doesn't use the reference value, but a completely new object.
             // Although it's also possible to use "[...response]", this JSON trick works better as it also clones deep properties.
             this.availableProperties = JSON.parse(JSON.stringify(response));
+
+            if (!this.isMainConnection) {
+                this.availableProperties.splice(4, 0, {
+                    value: "item_ordering",
+                    entityName: entityType,
+                    displayName: "Ordering",
+                    propertyName: "item_ordering",
+                    languageCode: ""
+                });
+            }
 
             // Create a "unique value" for every property, based on the normal value.
             // A few inputs use this, like the group by input, order by input, and having inputs.

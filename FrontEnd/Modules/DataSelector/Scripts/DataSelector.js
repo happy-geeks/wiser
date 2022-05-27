@@ -424,7 +424,7 @@ const moduleSettings = {
                 }
             }
 
-            // Update field aliases for items already in the data source.
+            /*// Update field aliases for items already in the data source.
             dataItems.forEach((dataItem) => {
                 const item = baseDataSource.find((property) => {
                     return property.entityName === dataItem.entityName && property[valueProperty] === dataItem[valueProperty];
@@ -433,7 +433,7 @@ const moduleSettings = {
                     console.log("item", item);
                     dataItem.set("fieldAlias", item.fieldAlias);
                 }
-            });
+            });*/
 
             // Determine items that need to be added. These are items that are in the new data source, but are not present in the widget.
             baseDataSource.filter((property) => {
@@ -527,7 +527,11 @@ const moduleSettings = {
             });
 
             if (alsoUpdateSortAndGroupingOptions) {
-                if (this.mainConnection) {
+                // Also update sorting options select and group by select, which use the same fields.
+                this.updateWidgetDataSource($("#sorting").getKendoMultiSelect(), this.selectedFields, true);
+                this.updateWidgetDataSource($("#groupBy").getKendoMultiSelect(), this.selectedFields, true);
+
+                /*if (this.mainConnection) {
                     const allProperties = this.#getAllProperties(this.mainConnection);
 
                     allProperties.forEach((dataItem) => {
@@ -543,7 +547,7 @@ const moduleSettings = {
                     // Also update sorting options select and group by select, which use the same fields.
                     this.updateWidgetDataSource($("#sorting").getKendoMultiSelect(), allProperties, true);
                     this.updateWidgetDataSource($("#groupBy").getKendoMultiSelect(), allProperties, true);
-                }
+                }*/
             }
         }
 
