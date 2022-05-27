@@ -148,6 +148,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="GeeksCoreLibrary" Version="2.0.0" />
     <PackageReference Include="IdentityServer4" Version="4.1.2" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.18.2" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.18.2" />
@@ -173,10 +174,6 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\GeeksCoreLibrary\GeeksCoreLibrary\GeeksCoreLibrary.csproj" />
   </ItemGroup>
 
 </Project>
