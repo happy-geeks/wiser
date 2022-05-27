@@ -43,7 +43,7 @@ namespace Api.Modules.DigitalOcean.Services
             var tokenUri = $"https://cloud.digitalocean.com/v1/oauth/token?client_id={Uri.EscapeDataString(digitalOceanSettings.ClientId)}&grant_type=authorization_code&code={Uri.EscapeDataString(code)}&client_secret={Uri.EscapeDataString(digitalOceanSettings.ClientSecret)}&redirect_uri={Uri.EscapeUriString(callBackUrl)}";
             
             var restClient = new RestClient(tokenUri);
-            var restRequest = new RestRequest(Method.Post);
+            var restRequest = new RestRequest("", Method.Post);
             var response = await restClient.ExecuteAsync(restRequest);
 
             return response.Content;

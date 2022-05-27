@@ -33,8 +33,14 @@ namespace Api.Modules.Barcodes.Controllers
             using var qrGenerator = new QRCodeGenerator();
             
             using var qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
-            using var qrCode = new QRCode(qrCodeData);
-            using var qrCodeImage = new Bitmap(qrCode.GetGraphic(20), new Size(size, size));
+            using var qrCode = new PngByteQRCode(qrCodeData);
+            var pngBytes = qrCode.GetGraphic(20);
+            Bitmap qrCodeImage;
+            using (var memoryStream = new MemoryStream(pngBytes))
+            {
+                var image = Image.FromStream(memoryStream);
+                qrCodeImage = new Bitmap(image, new Size(size, size));
+            }
 
             // The FileResult will close the stream when it is finished using it.
             var outputStream = new MemoryStream();
