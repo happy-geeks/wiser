@@ -172,7 +172,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(row["return_not_found_when_pre_load_query_has_no_data"]),
                     RoutineType = (RoutineTypes)row.Field<int>("routine_type"),
                     RoutineParameters = row.Field<string>("routine_parameters"),
-                    RoutineReturnType = row.Field<string>("routine_return_type")
+                    RoutineReturnType = row.Field<string>("routine_return_type"),
+                    IsDefaultHeader = Convert.ToBoolean(row["is_default_header"]),
+                    IsDefaultFooter = Convert.ToBoolean(row["is_default_footer"]),
+                    DefaultHeaderFooterRegex = row.Field<string>("default_header_footer_regex")
                 };
 
                 resultList.Add(templateData);

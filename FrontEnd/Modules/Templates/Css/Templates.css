@@ -276,6 +276,7 @@
     width: 100%;
 }
 
+.header-footer-regex-panel,
 .user-check-panel,
 .object-grouping-panel {
     transition: 200ms ease-in-out;
@@ -284,6 +285,8 @@
     overflow: hidden;
 }
 
+#templateIsDefaultHeader ~ .header-footer-regex-panel,
+#templateIsDefaultFooter ~ .header-footer-regex-panel,
 #loginRequired:checked ~ .user-check-panel,
 #groupingCreateObjectInsteadOfArray:checked ~ .object-grouping-panel {
     max-height: 2000px;

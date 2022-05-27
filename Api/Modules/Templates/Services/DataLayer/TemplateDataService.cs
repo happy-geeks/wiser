@@ -172,7 +172,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                 ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataTable.Rows[0]["return_not_found_when_pre_load_query_has_no_data"]),
                 RoutineType = (RoutineTypes)dataTable.Rows[0].Field<int>("routine_type"),
                 RoutineParameters = dataTable.Rows[0].Field<string>("routine_parameters"),
-                RoutineReturnType = dataTable.Rows[0].Field<string>("routine_return_type")
+                RoutineReturnType = dataTable.Rows[0].Field<string>("routine_return_type"),
+                IsDefaultHeader = Convert.ToBoolean(dataTable.Rows[0]["is_default_header"]),
+                IsDefaultFooter = Convert.ToBoolean(dataTable.Rows[0]["is_default_footer"]),
+                DefaultHeaderFooterRegex = dataTable.Rows[0].Field<string>("default_header_footer_regex")
             };
 
             return templateData;
@@ -421,6 +424,9 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("routineType", (int)templateSettings.RoutineType);
             clientDatabaseConnection.AddParameter("routineParameters", templateSettings.RoutineParameters);
             clientDatabaseConnection.AddParameter("routineReturnType", templateSettings.RoutineReturnType);
+            clientDatabaseConnection.AddParameter("isDefaultHeader", templateSettings.IsDefaultHeader);
+            clientDatabaseConnection.AddParameter("isDefaultFooter", templateSettings.IsDefaultFooter);
+            clientDatabaseConnection.AddParameter("defaultHeaderFooterRegex", templateSettings.DefaultHeaderFooterRegex);
 
             return await clientDatabaseConnection.ExecuteAsync($@"
                 SET @VersionNumber = (SELECT MAX(version)+1 FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId GROUP BY template_id);
@@ -469,7 +475,9 @@ namespace Api.Modules.Templates.Services.DataLayer
                     return_not_found_when_pre_load_query_has_no_data,
                     routine_type,
                     routine_parameters,
-                    routine_return_type
+                    routine_return_type,
+                    is_default_header,
+                    is_default_footer
                 ) 
                 VALUES (
                     ?name,
@@ -516,7 +524,9 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ?returnNotFoundWhenPreLoadQueryHasNoData,
                     ?routineType,
                     ?routineParameters,
-                    ?routineReturnType
+                    ?routineReturnType,
+                    ?isDefaultHeader,
+                    ?isDefaultFooter
                 )");
         }
 
@@ -1029,7 +1039,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                     LoadAlways = Convert.ToBoolean(dataRow["load_always"]),
                     DisableMinifier = Convert.ToBoolean(dataRow["disable_minifier"]),
                     UrlRegex = dataRow.Field<string>("url_regex"),
-                    ExternalFiles = dataRow.Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
+                    ExternalFiles = dataRow.Field<string>("external_files")?.Split(new [] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
                     GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(dataRow["grouping_create_object_instead_of_array"]),
                     GroupingPrefix = dataRow.Field<string>("grouping_prefix"),
                     GroupingKey = dataRow.Field<string>("grouping_key"),
