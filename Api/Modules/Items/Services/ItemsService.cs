@@ -1504,15 +1504,15 @@ namespace Api.Modules.Items.Services
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
             var (success, _, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Read, userId, onlyCheckAccessRights: true, entityType: entityType);
 
+            // If the user is not allowed to read this item, return an empty result.
             if (!success)
             {
                 return new ServiceResult<WiserItemModel>();
             }
 
-            var result = await wiserItemsService.GetItemDetailsAsync(itemId, entityType: entityType);
+            var result = await wiserItemsService.GetItemDetailsAsync(itemId, entityType: entityType, skipPermissionsCheck: true);
             result.EncryptedId = await wiserCustomersService.EncryptValue(result.Id, identity);
 
-            // If the user is not allowed to read this item, return an empty result.
             return new ServiceResult<WiserItemModel>(result);
         }
 
