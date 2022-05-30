@@ -855,7 +855,7 @@ const moduleSettings = {
                     ],
                     serialization: {
                         custom: function(html) {
-                            return html.replace(/\[>\]([\w]+)\[<\]/g, "{$1}");
+                            return html.replace(/\[(>|&gt;)\]([\w]+)\[(<|&lt;)\]/g, "{$2}");
                         }
                     },
                     deserialization: {
