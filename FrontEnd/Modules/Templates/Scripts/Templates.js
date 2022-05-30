@@ -797,6 +797,60 @@ const moduleSettings = {
             }
         }
 
+        async checkDefaultHeaderOrFooterConflict(templateId, isDefaultHeader, isDefaultFooter, defaultHeaderFooterRegex) {
+            if (!isDefaultHeader && !isDefaultFooter) {
+                return false;
+            }
+
+            const process = `checkDefaultHeaderOrFooterConflict_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                const promises = [];
+
+                if (isDefaultHeader) {
+                    promises.push(Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}templates/${templateId}/check-default-header-conflict`,
+                        data: {
+                            regexString: defaultHeaderFooterRegex
+                        },
+                        dataType: "json",
+                        method: "GET"
+                    }));
+                }
+                if (isDefaultFooter) {
+                    promises.push(Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}templates/${templateId}/check-default-footer-conflict`,
+                        data: {
+                            regexString: defaultHeaderFooterRegex
+                        },
+                        dataType: "json",
+                        method: "GET"
+                    }));
+                }
+
+                const result = await Promise.all(promises);
+                let hasConflict = false;
+                const conflictedWith = [];
+
+                result.forEach((conflict) => {
+                    if (!conflict) return;
+
+                    hasConflict = true;
+                    conflictedWith.push(conflict);
+                });
+
+                return {
+                    hasConflict: hasConflict,
+                    conflictedWith: conflictedWith
+                };
+            } catch (exception) {
+                console.error('hiero', exception);
+                kendo.alert(`Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.<br>${exception.responseText || exception}`);
+                window.processing.removeProcess(process);
+            }
+        }
+
         //Initializes the kendo components on the deployment tab. These are seperated from other components since these can be reloaded by the application.
         async initKendoDeploymentTab() {
             $("#deployLive, #deployAccept, #deployTest").kendoButton();
@@ -1500,8 +1554,26 @@ const moduleSettings = {
             let success = true;
 
             try {
-                this.saving = true;
                 const data = this.getCurrentTemplateSettings();
+
+                // Check if there's a conflict if the template is marked as default header and/or footer.
+                const defaultHeaderCheckbox = document.getElementById("isDefaultHeader");
+                const defaultFooterCheckbox = document.getElementById("isDefaultFooter");
+                if (defaultHeaderCheckbox && defaultFooterCheckbox) {
+                    const defaultHeaderFooterRegexInput = document.getElementById("defaultHeaderFooterRegex");
+                    const conflictCheck = await this.checkDefaultHeaderOrFooterConflict(data.templateId, defaultHeaderCheckbox.checked, defaultFooterCheckbox.checked, defaultHeaderFooterRegexInput.value);
+
+                    console.log("pre-check", defaultHeaderCheckbox.checked, defaultFooterCheckbox.checked, defaultHeaderFooterRegexInput.value);
+                    console.log("conflictCheck", conflictCheck);
+
+                    if (conflictCheck.hasConflict) {
+                        kendo.alert(`Er is al een standaard header en/of footer met deze regex. Conflicterende template(s): ${conflictCheck.conflictedWith.join(", ")}`);
+                        window.processing.removeProcess(process);
+                        return false;
+                    }
+                }
+
+                this.saving = true;
 
                 const response = await Wiser2.api({
                     url: `${this.settings.wiserApiRoot}templates/${data.templateId}`,

@@ -285,8 +285,8 @@
     overflow: hidden;
 }
 
-#templateIsDefaultHeader ~ .header-footer-regex-panel,
-#templateIsDefaultFooter ~ .header-footer-regex-panel,
+#isDefaultHeader:checked ~ .header-footer-regex-panel,
+#isDefaultFooter:checked ~ .header-footer-regex-panel,
 #loginRequired:checked ~ .user-check-panel,
 #groupingCreateObjectInsteadOfArray:checked ~ .object-grouping-panel {
     max-height: 2000px;

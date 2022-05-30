@@ -112,7 +112,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.return_not_found_when_pre_load_query_has_no_data,
                                                                 template.routine_type,
                                                                 template.routine_parameters,
-                                                                template.routine_return_type
+                                                                template.routine_return_type,
+                                                                template.is_default_header,
+                                                                template.is_default_footer,
+                                                                template.default_header_footer_regex
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
                                                             WHERE template.template_id = ?templateId
                                                             AND template.removed = 0

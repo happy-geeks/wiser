@@ -380,5 +380,33 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.GeneratePreviewAsync((ClaimsIdentity)User.Identity, requestModel)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Checks if there's already a template marked as a default header with the given regex.
+        /// </summary>
+        /// <param name="templateId">ID of the current template, or 0 if it's a new template.</param>
+        /// <param name="regexString">The regex string of the template.</param>
+        /// <returns>A ValueTuple containing a bool that confirms if there's a conflict, and a string with the name of the template that it conflicts with if there's a conflict.</returns>
+        [HttpGet]
+        [Route("{templateId:int}/check-default-header-conflict")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CheckDefaultHeaderConflict(int templateId, string regexString)
+        {
+            return (await templatesService.CheckDefaultHeaderConflict(templateId, regexString)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Checks if there's already a template marked as a default footer with the given regex.
+        /// </summary>
+        /// <param name="templateId">ID of the current template, or 0 if it's a new template.</param>
+        /// <param name="regexString">The regex string of the template.</param>
+        /// <returns>A ValueTuple containing a bool that confirms if there's a conflict, and a string with the name of the template that it conflicts with if there's a conflict.</returns>
+        [HttpGet]
+        [Route("{templateId:int}/check-default-footer-conflict")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CheckDefaultFooterConflict(int templateId, string regexString)
+        {
+            return (await templatesService.CheckDefaultFooterConflict(templateId, regexString)).GetHttpResponseMessage();
+        }
     }
 }
