@@ -199,17 +199,17 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Checks if there's a conflict with another template that's also marked as a default header with the given regex.
         /// </summary>
-        /// <param name="templateId">ID of the current template, or 0 if it's a new template.</param>
+        /// <param name="templateId">ID of the current template.</param>
         /// <param name="regexString">The regular expression that can filter whether the default header should be used.</param>
-        /// <returns>A ValueTuple containing a bool that confirms if there's a conflict, and a string with the name of the template that it conflicts with if there's a conflict.</returns>
+        /// <returns>A string with the name of the template that this template conflicts with, or an empty string if there's no conflict.</returns>
         Task<ServiceResult<string>> CheckDefaultHeaderConflict(int templateId, string regexString);
 
         /// <summary>
         /// Checks if there's a conflict with another template that's also marked as a default footer with the given regex.
         /// </summary>
-        /// <param name="templateId">ID of the current template, or 0 if it's a new template.</param>
+        /// <param name="templateId">ID of the current template.</param>
         /// <param name="regexString">The regular expression that can filter whether the default footer should be used.</param>
-        /// <returns>A ValueTuple containing a bool that confirms if there's a conflict, and a string with the name of the template that it conflicts with if there's a conflict.</returns>
+        /// <returns>A string with the name of the template that this template conflicts with, or an empty string if there's no conflict.</returns>
         Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString);
     }
 }

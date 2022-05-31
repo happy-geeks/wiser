@@ -2939,20 +2939,23 @@ LIMIT 1";
         /// <summary>
         /// The function used by <see cref="CheckDefaultHeaderConflict"/> and <see cref="CheckDefaultFooterConflict"/>.
         /// </summary>
-        /// <param name="type">The type to check. Should be either 'header' or 'footer'.</param>
-        /// <param name="templateId">ID of the current template, or 0 if it's a new template.</param>
+        /// <param name="type">The type to check. It should be either 'header' or 'footer'.</param>
+        /// <param name="templateId">ID of the current template.</param>
         /// <param name="regexString">The regex to be used in the check.</param>
-        /// <returns>A ValueTuple containing a bool that confirms if there's a conflict, and a string with the name of the template that it conflicts with if there's a conflict.</returns>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <returns>A string with the name of the template that this template conflicts with, or an empty string if there's no conflict.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">When <paramref name="type"/> is <see langword="null"/> or does not equal to either "header" or "footer".</exception>
         private async Task<ServiceResult<string>> InternalCheckDefaultHeaderOrFooterConflict(string type, int templateId, string regexString)
         {
-            if (!type.InList("header", "footer"))
+            // Validate the type. It can only be either "header" or "footer".
+            if (String.IsNullOrWhiteSpace(type) || !type.InList("header", "footer"))
             {
-                throw new ArgumentOutOfRangeException(nameof(type), $"Argument '{nameof(type)}' had invalid value. Should be 'header' or 'footer'.");
+                throw new ArgumentOutOfRangeException(nameof(type), $"Argument '{nameof(type)}' has an invalid value. Should be either \"header\" or \"footer\".");
             }
 
+            // Create the name of the field that needs to be checked.
             var fieldName = $"is_default_{type}";
 
+            // Add template ID parameter. This is used by the query to make sure templates don't conflict with themselves.
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("templateId", templateId);
@@ -2960,10 +2963,12 @@ LIMIT 1";
             string regexWherePart;
             if (String.IsNullOrWhiteSpace(regexString))
             {
+                // If regexString is null or empty, the field in the table should also be null or empty.
                 regexWherePart = " AND (template.default_header_footer_regex IS NULL OR TRIM(template.default_header_footer_regex) = '')";
             }
             else
             {
+                // If regexString is set to a non-null and non-empty string, the string needs to be an exact match.
                 clientDatabaseConnection.AddParameter("regexString", regexString);
                 regexWherePart = " AND template.default_header_footer_regex = ?regexString";
             }
@@ -2978,7 +2983,7 @@ LIMIT 1";
 
             var result = await clientDatabaseConnection.GetAsync(query);
             return result.Rows.Count == 0
-                ? new ServiceResult<string>(null)
+                ? new ServiceResult<string>(String.Empty)
                 : new ServiceResult<string>(result.Rows[0].Field<string>("template_name"));
         }
 
