@@ -146,6 +146,8 @@
     <EmbeddedResource Include="Modules\Items\FieldTemplates\textbox.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\timeline.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\timeline.js" />
+    <None Remove="Core\Queries\WiserInstallation\StoredProcedures.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\StoredProcedures.sql" />
   </ItemGroup>
 
   <ItemGroup>

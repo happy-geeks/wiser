@@ -124,6 +124,21 @@ BEGIN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'title',NULL,NEW.`title`);
         END IF;
+
+        IF IFNULL(NEW.`original_item_id`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'original_item_id',NULL,NEW.`original_item_id`);
+        END IF;
+
+        IF IFNULL(NEW.`parent_item_id`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'parent_item_id',NULL,NEW.`parent_item_id`);
+        END IF;
+
+        IF IFNULL(NEW.`ordering`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'ordering',NULL,NEW.`ordering`);
+        END IF;
     END IF;
 END;
 
@@ -160,6 +175,21 @@ BEGIN
 			INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
 			VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'title',OLD.`title`,NEW.`title`);
 		END IF;
+
+        IF IFNULL(NEW.`original_item_id`, '') <> IFNULL(OLD.`original_item_id`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'original_item_id',OLD.`original_item_id`,NEW.`original_item_id`);
+        END IF;
+
+        IF IFNULL(NEW.`parent_item_id`, '') <> IFNULL(OLD.`parent_item_id`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'parent_item_id',OLD.`parent_item_id`,NEW.`parent_item_id`);
+        END IF;
+
+        IF IFNULL(NEW.`ordering`, '') <> IFNULL(OLD.`ordering`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'ordering',OLD.`ordering`,NEW.`ordering`);
+        END IF;
 	END IF;
 END;
 
