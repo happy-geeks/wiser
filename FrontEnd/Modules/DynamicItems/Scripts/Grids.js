@@ -1062,14 +1062,14 @@ export class Grids {
             }
 
             if (!title || !itemId || !entityType) {
-                const itemDetails = (await this.base.getItemDetails(encryptedId))[0];
+                const itemDetails = (await this.base.getItemDetails(encryptedId, entityType));
                 if (!itemDetails) {
                     kendo.alert("Er is geen item gevonden met het id in de geselecteerde regel. Waarschijnlijk is dit geen geldig ID. Neem a.u.b. contact op met ons.");
                     return;
                 }
 
                 title = title || itemDetails.title;
-                itemId = itemId || itemDetails.id || itemDetails.itemId || itemDetails.itemId;
+                itemId = itemId || itemDetails.id || itemDetails.itemId;
                 entityType = entityType || itemDetails.entityType;
             }
         }
@@ -1106,7 +1106,7 @@ export class Grids {
         }
 
         this.base.windows.searchItemsWindow.maximize().open();
-        this.base.windows.searchItemsWindow.title(`${entityType} zoeken en koppelen`);
+        this.base.windows.searchItemsWindow.title(`${this.base.getEntityTypeFriendlyName(entityType)} zoeken en koppelen`);
         this.base.windows.initializeSearchItemsGrid(entityType, encryptedParentId, propertyId, gridOptions);
         $.extend(this.base.windows.searchItemsWindowSettings, {
             parentId: encryptedParentId,
@@ -1150,7 +1150,7 @@ export class Grids {
             // Create the new item.
             const createItemResult = await this.base.createItem(entityType, parentId, "", linkTypeNumber);
             if (createItemResult) {
-                await this.base.windows.loadItemInWindow(true, createItemResult.itemIdPlain, createItemResult.itemId, entityType, null, showTitleField, senderGrid, { hideTitleColumn: !showTitleField }, createItemResult.linkId, `Nieuw(e) ${entityType} aanmaken`);
+                await this.base.windows.loadItemInWindow(true, createItemResult.itemIdPlain, createItemResult.itemId, entityType, null, showTitleField, senderGrid, { hideTitleColumn: !showTitleField }, createItemResult.linkId, `Nieuw(e) ${this.base.getEntityTypeFriendlyName(entityType)} aanmaken`);
             }
         } catch (exception) {
             console.error(exception);
@@ -1196,7 +1196,7 @@ export class Grids {
                 return;
             }
 
-            selectedItemDetails = (await this.base.getItemDetails(itemId))[0] || {};
+            selectedItemDetails = (await this.base.getItemDetails(itemId)) || {};
             encryptedId = selectedItemDetails.encryptedId || selectedItemDetails.encrypted_id || selectedItemDetails.encryptedid;
         }
 

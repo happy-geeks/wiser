@@ -23,11 +23,15 @@
 
     <script id="vue-config" type="application/json">
     {
-        "apiBase": "@Model.ApiRoot",
-        "subDomain": "@Model.SubDomain",
+        "apiBase": "@Model.Settings.ApiBaseUrl",
+        "subDomain": "@Model.SubDomain" ,
         "isTestEnvironment": @Model.IsTestEnvironment.ToString().ToLowerInvariant(),
         "wiser1BaseUrl": "@Model.Wiser1BaseUrl",
-        "trackJsToken": "@Model.Settings.TrackJsToken"
+        "loadPartnerStyle": @Model.LoadPartnerStyle.ToString().ToLowerInvariant(),
+        "apiClientId": "@Model.Settings.ApiClientId",
+        "apiClientSecret": "@Model.Settings.ApiClientSecret",
+        "trackJsToken": "@Model.Settings.TrackJsToken",
+        "markerIoToken": "@Model.Settings.MarkerIoToken"
     }
     </script>
     <script type="module" src="/scripts/ContentBuilder.min.js"></script>

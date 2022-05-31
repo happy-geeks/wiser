@@ -43,7 +43,7 @@ namespace Api.Modules.DigitalOcean.Services
             var tokenUri = $"https://cloud.digitalocean.com/v1/oauth/token?client_id={Uri.EscapeDataString(digitalOceanSettings.ClientId)}&grant_type=authorization_code&code={Uri.EscapeDataString(code)}&client_secret={Uri.EscapeDataString(digitalOceanSettings.ClientSecret)}&redirect_uri={Uri.EscapeUriString(callBackUrl)}";
             
             var restClient = new RestClient(tokenUri);
-            var restRequest = new RestRequest(Method.POST);
+            var restRequest = new RestRequest("", Method.Post);
             var response = await restClient.ExecuteAsync(restRequest);
 
             return response.Content;
@@ -52,7 +52,7 @@ namespace Api.Modules.DigitalOcean.Services
         /// <inheritdoc />
         public async Task<GetDatabasesResponseModel> DatabaseListAsync(string accessToken)
         {
-            var apiResponse = await ProcessRequestAsync(Method.GET, "databases", accessToken);
+            var apiResponse = await ProcessRequestAsync(Method.Get, "databases", accessToken);
             return JsonConvert.DeserializeObject<GetDatabasesResponseModel>(apiResponse);
         }
 
@@ -76,7 +76,7 @@ namespace Api.Modules.DigitalOcean.Services
             };
 
             //Retrieve the cluster
-            var apiResponse = await ProcessRequestAsync(Method.GET, $"databases/{databaseCluster}", accessToken);
+            var apiResponse = await ProcessRequestAsync(Method.Get, $"databases/{databaseCluster}", accessToken);
             var clusterInfo = JsonConvert.DeserializeObject<GetDatabaseResponseModel>(apiResponse);
             databaseInfo.Cluster = clusterInfo;
 

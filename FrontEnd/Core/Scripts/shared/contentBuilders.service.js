@@ -12,7 +12,7 @@ export default class ContentBuildersService extends BaseService {
         const result = {};
 
         try {
-            const response = await this.base.api.get(`/content-builder/html?itemId=${encodeURIComponent(itemId)}&languageCode=${encodeURIComponent(languageCode)}&propertyName=${encodeURIComponent(propertyName)}`);
+            const response = await this.base.api.get(`/api/v3/content-builder/html?itemId=${encodeURIComponent(itemId)}&languageCode=${encodeURIComponent(languageCode)}&propertyName=${encodeURIComponent(propertyName)}`);
             result.success = true;
             result.data = response.data;
         } catch (error) {
@@ -48,7 +48,7 @@ export default class ContentBuildersService extends BaseService {
         const result = {};
 
         try {
-            const response = await this.base.api.get(`/content-builder/snippets`);
+            const response = await this.base.api.get(`/api/v3/content-builder/snippets`);
             result.success = true;
 
             const customerSnippets = response.data;

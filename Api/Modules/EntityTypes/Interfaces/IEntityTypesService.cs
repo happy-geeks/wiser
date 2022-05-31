@@ -36,6 +36,6 @@ namespace Api.Modules.EntityTypes.Interfaces
         /// <param name="moduleId">The ID of the module.</param>
         /// <param name="parentId">Optional: The ID of the parent. Set to 0 or skip to use the root.</param>
         /// <returns>A list of available entity names.</returns>
-        Task<ServiceResult<List<string>>> GetAvailableEntityTypesAsync(ClaimsIdentity identity, int moduleId, string parentId = null);
+        Task<ServiceResult<List<EntityTypeModel>>> GetAvailableEntityTypesAsync(ClaimsIdentity identity, int moduleId, string parentId = null);
     }
 }

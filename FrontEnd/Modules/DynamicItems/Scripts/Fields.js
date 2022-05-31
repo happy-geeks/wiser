@@ -826,7 +826,7 @@ export class Fields {
         }
 
         // Get the item details so that those values can be used as variables in a string.
-        const itemDetails = !itemId ? { encryptedId: this.base.settings.zeroEncrypted } : (await this.base.getItemDetails(itemId))[0];
+        const itemDetails = !itemId ? { encryptedId: this.base.settings.zeroEncrypted } : (await this.base.getItemDetails(itemId));
 
         const userParametersWithValues = {};
         const success = await this.executeActionButtonActions(actionDetails.actions, userParametersWithValues, itemDetails, propertyId, selectedItems, senderGrid.element);
@@ -878,8 +878,19 @@ export class Fields {
 
             event.sender.element.addClass("loading");
 
+            // Try to determine the entity type. If this button is located within a window, that window element
+            // might have the entity type set as one of its data properties.
+            let entityType;
+            const window = event.sender.element.closest("div.k-window-content");
+            if (window) {
+                entityType = window.data("entityType");
+                if (!entityType && window.data("entityTypeDetails")) {
+                    window.data("entityTypeDetails").entityType;
+                }
+            }
+
             // Get the item details so that those values can be used as variables in a string.
-            const itemDetails = (await this.base.getItemDetails(itemId))[0];
+            const itemDetails = (await this.base.getItemDetails(itemId, entityType));
 
             // Execute all actions that are configured for this button.
             const userParametersWithValues = {};
@@ -1461,15 +1472,18 @@ export class Fields {
                             switch ((parameter.fieldType || "").toLowerCase()) {
                                 case "datetime":
                                     await require("@progress/kendo-ui/js/kendo.datetimepicker.js");
-                                    dialog.element.find("input").addClass("dateTimeField").kendoDateTimePicker(options);
+                                    const dateTimePicker = dialog.element.find("input").addClass("dateTimeField").kendoDateTimePicker(options).data("kendoDateTimePicker");
+                                    setTimeout(() => { dateTimePicker.open(); }, 100);
                                     break;
                                 case "date":
                                     await require("@progress/kendo-ui/js/kendo.datepicker.js");
-                                    dialog.element.find("input").addClass("dateTimeField").kendoDatePicker(options);
+                                    const datePicker = dialog.element.find("input").addClass("dateTimeField").kendoDatePicker(options).data("kendoDatePicker");
+                                    setTimeout(() => { datePicker.open(); }, 100);
                                     break;
                                 case "time":
                                     await require("@progress/kendo-ui/js/kendo.timepicker.js");
-                                    dialog.element.find("input").addClass("dateTimeField").kendoTimePicker(options);
+                                    const timePicker = dialog.element.find("input").addClass("dateTimeField").kendoTimePicker(options).data("kendoTimePicker");
+                                    setTimeout(() => { timePicker.open(); }, 100);
                                     break;
                                 case "number":
                                     await require("@progress/kendo-ui/js/kendo.numerictextbox.js");
@@ -1871,6 +1885,7 @@ export class Fields {
                     case "openWindow": {
                         let windowItemId = action.itemId || "{itemId}";
                         let windowLinkId = action.linkId || "{linkId}";
+                        let windowEntityType = action.entityType || null;
 
                         // The queryActionResult are from a previously executed query. This way you can combine the actions executeQuery(Once) and openWindow to open a newly created or updated item.
                         if (queryActionResult) {
@@ -1885,7 +1900,7 @@ export class Fields {
                             break;
                         }
 
-                        const windowItemDetails = (await this.base.getItemDetails(windowItemId))[0];
+                        const windowItemDetails = (await this.base.getItemDetails(windowItemId, windowEntityType));
 
                         const itemId = windowItemDetails.id || windowItemDetails.itemId || windowItemDetails.itemid || windowItemDetails.item_id;
                         const encryptedId = windowItemDetails.encryptedId || windowItemDetails.encrypted_id || windowItemDetails.encryptedid;
@@ -1934,7 +1949,7 @@ export class Fields {
 
                         const templateDetails = await this.base.getItemDetails(userParametersWithValues.contentItemId || action.contentItemId);
 
-                        if (!templateDetails || !templateDetails.length) {
+                        if (!templateDetails) {
                             kendo.alert(`Er werd geprobeerd om actie type '${action.type}' uit te voeren, echter kon de template voor het bestand niet gevonden worden. Neem a.u.b. contact op met ons.`);
                             break;
                         }
@@ -2033,7 +2048,7 @@ export class Fields {
                             }
                         }
 
-                        await this.initializeGenerateFileWindow(allUrls, templateDetails[0], emailData, action, element, userParametersWithValues, itemId, linkId, propertyId, selectedItems);
+                        await this.initializeGenerateFileWindow(allUrls, templateDetails, emailData, action, element, userParametersWithValues, itemId, linkId, propertyId, selectedItems);
 
                         break;
                     }
@@ -2370,7 +2385,13 @@ export class Fields {
                             ],
                             stylesheets: [
                                 this.base.settings.htmlEditorCssUrl
-                            ]
+                            ],
+                            serialization: {
+                                custom: this.onHtmlEditorSerialization
+                            },
+                            deserialization: {
+                                custom: this.onHtmlEditorDeserialization
+                            }
                         }).data("kendoEditor");
                     }
 
@@ -2672,7 +2693,13 @@ export class Fields {
                                     ],
                                     stylesheets: [
                                         this.base.settings.htmlEditorCssUrl
-                                    ]
+                                    ],
+                                    serialization: {
+                                        custom: this.onHtmlEditorSerialization
+                                    },
+                                    deserialization: {
+                                        custom: this.onHtmlEditorDeserialization
+                                    }
                                 }).data("kendoEditor");
 
                                 emailBodyEditor.value(currentEmailData.body || "");
@@ -3208,6 +3235,24 @@ export class Fields {
                     break;
                 }
         }
+    }
+
+    /**
+     * Event that gets called when the Kendo editor serializes it's contents. 
+     * @param html The HTML contents of the editor.
+     * @returns {*} The HTML contents of the editor.
+     */
+    onHtmlEditorSerialization(html) {
+        return html.replace(/\[(>|&gt;)\]([\w]+)\[(<|&lt;)\]/g, "{$2}");
+    }
+
+    /**
+     * Event that gets called when the Kendo editor deserializes it's contents.
+     * @param html The HTML contents of the editor.
+     * @returns {*} The HTML contents of the editor.
+     */
+    onHtmlEditorDeserialization(html) {
+        return html.replace(/{([\w]+)}/g, "[>]$1[<]");
     }
 
     /**

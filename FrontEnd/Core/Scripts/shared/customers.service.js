@@ -16,7 +16,7 @@ export default class CustomersService extends BaseService {
             result.data = response.data;
         } catch (error) {
             result.success = false;
-            console.error("Error customer exists check", error.toJSON());
+            console.error("Error customer exists check", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             result.message = "Er is een onbekende fout opgetreden tijdens het controleren of deze klant al bestaat. Probeer het a.u.b. nogmaals of neem contact op met ons.";
 
             if (error.response) {
@@ -52,7 +52,7 @@ export default class CustomersService extends BaseService {
             result.data = response.data;
         } catch (error) {
             result.success = false;
-            console.error("Error customer get title", error.toJSON());
+            console.error("Error customer get title", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de naam van deze klant.";
 
             if (error.response) {
@@ -89,7 +89,7 @@ export default class CustomersService extends BaseService {
             result.data = response.data;
         } catch (error) {
             result.success = false;
-            console.error("Error create customer", error.toJSON());
+            console.error("Error create customer", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             result.message = "Er is een onbekende fout opgetreden tijdens het aanmaken van deze klant. Probeer het a.u.b. nogmaals of neem contact op met ons.";
 
             if (error.response) {
@@ -140,7 +140,7 @@ export default class CustomersService extends BaseService {
         } catch (error) {
             result.success = false;
             result.data = [];
-            console.error("Error create customer", error.toJSON());
+            console.error("Error create customer", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de clusters. Heb je de juiste access token ingevuld? Probeer het a.u.b. nogmaals of neem contact op met ons.";
 
             if (error.response) {
@@ -187,7 +187,7 @@ export default class CustomersService extends BaseService {
             result.message = response.data.error;
         } catch (error) {
             result.success = false;
-            console.error("Error create customer", error.toJSON());
+            console.error("Error create customer", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             result.message = "Er is een onbekende fout opgetreden tijdens het aanmaken van de database voor deze klant. Probeer het a.u.b. nogmaals of neem contact op met ons.";
 
             if (error.response) {

@@ -83,6 +83,21 @@ namespace Api.Modules.Items.Controllers
         }
 
         /// <summary>
+        /// Gets all details of an item.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item.</param>
+        /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("{encryptedId}/details")]
+        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetItemDetailsAsync(string encryptedId, [FromQuery]string entityType = null)
+        {
+            return (await itemsService.GetItemDetailsAsync(encryptedId, (ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
         /// Get the meta data of an item. This is data such as the title, entity type, last change date etc.
         /// </summary>
         /// <param name="encryptedId">The encrypted ID of the item.</param>

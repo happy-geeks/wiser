@@ -46,7 +46,7 @@ namespace Api.Modules.EntityTypes.Controllers
         }
         
         /// <summary>
-        /// Gets the settings for an entity type. These settings will be cached for 1 hour.
+        /// Gets the settings for an entity type.
         /// </summary>
         /// <param name="entityType">The name of the entity type.</param>
         /// <param name="moduleId">Optional: The ID of the module, in case the entity type has different settings for different modules.</param>
@@ -68,7 +68,7 @@ namespace Api.Modules.EntityTypes.Controllers
         /// <returns>A list of available entity names.</returns>
         [HttpGet]
         [Route("{moduleId:int}")]
-        [ProducesResponseType(typeof(List<string>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<EntityTypeModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAvailableEntityTypesAsync(int moduleId, string parentId = null)
         {
             return (await entityTypesService.GetAvailableEntityTypesAsync((ClaimsIdentity)User.Identity, moduleId, parentId)).GetHttpResponseMessage();

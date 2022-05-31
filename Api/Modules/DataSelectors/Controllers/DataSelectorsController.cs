@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Api.Modules.DataSelectors.Interfaces;
 using Api.Modules.DataSelectors.Models;
+using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -196,6 +197,13 @@ namespace Api.Modules.DataSelectors.Controllers
         {
             using var reader = new StreamReader(Request.Body, Encoding.UTF8);
             var html = await reader.ReadToEndAsync();
+            
+            // Workaround for Axios, couldn't find a way to have it not add quotes around the HTML.
+            if (html.StartsWith("\"") && html.EndsWith("\""))
+            {
+                html = JsonConvert.DeserializeObject<string>(html);
+            }
+
             var output = await gclDataSelectorsService.ReplaceAllDataSelectorsAsync(html);
             return Content(output, MediaTypeNames.Text.Html);
         }

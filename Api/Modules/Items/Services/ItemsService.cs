@@ -977,7 +977,7 @@ namespace Api.Modules.Items.Services
             var itemIsFromArchive = false;
             var query = $@"SET SESSION group_concat_max_len = 1000000;
                                 SELECT e.tab_name, e.group_name, e.inputtype AS field_type, t.html_template, e.display_name, e.property_name, e.options, e.module_id,
-    	                            e.explanation, d.long_value, d.`value`, e.default_value, e.id, e.width, e.height, e.css, e.extended_explanation, e.label_style, e.label_width,
+    	                            e.explanation, d.long_value, d.`value`, e.default_value, e.id, e.width, e.height, e.css, e.extended_explanation, e.label_style, e.label_width, e.access_key,
     	                            e.depends_on_field, e.depends_on_operator, e.depends_on_value, IFNULL(e.depends_on_action, 'toggle-visibility') AS depends_on_action, e.ordering, t.script_template,
     	                            e.save_on_change, files.JSON AS filesJSON, 0 AS itemLinkId, e.regex_validation, e.mandatory, e.language_code,
     	                            # A user can have multiple roles. So we need to check if they have at least one role that has update rights. If it doesn't, then the field should be readonly.
@@ -1010,7 +1010,7 @@ namespace Api.Modules.Items.Services
                                 UNION ALL
                                 
                                 SELECT 'Velden vanuit koppeling' AS tab_name, e.group_name, e.inputtype AS field_type, t.html_template, e.display_name, e.property_name, e.options, e.module_id,
-    	                            e.explanation, d.long_value, d.`value`, e.default_value, e.id, e.width, e.height, e.css, e.extended_explanation, e.label_style, e.label_width,
+    	                            e.explanation, d.long_value, d.`value`, e.default_value, e.id, e.width, e.height, e.css, e.extended_explanation, e.label_style, e.label_width, e.access_key,
     	                            e.depends_on_field, e.depends_on_operator, e.depends_on_value, IFNULL(e.depends_on_action, 'toggle-visibility') AS depends_on_action, e.ordering, t.script_template,
     	                            e.save_on_change, files.JSON AS filesJSON, il.id AS itemLinkId, e.regex_validation, e.mandatory, e.language_code,
     	                            # A user can have multiple roles. So we need to check if they have at least one role that has update rights. If it doesn't, then the field should be readonly.
@@ -1095,12 +1095,13 @@ namespace Api.Modules.Items.Services
                 var htmlTemplate = dataRow.Field<string>("html_template");
                 var scriptTemplate = dataRow.Field<string>("script_template");
                 var fieldType = dataRow.Field<string>("field_type");
+                var isReadOnly = Convert.ToBoolean(dataRow["readonly"]) || (userItemPermissions & AccessRights.Update) != AccessRights.Update;
 
                 // Get mode, some fields have different modes and need different HTML for different modes.
                 var options = dataRow.Field<string>("options")?.ReplaceCaseInsensitive("{itemId}", itemId.ToString());
                 var optionsObject = JObject.Parse(String.IsNullOrWhiteSpace(options) ? "{}" : options);
                 var fieldMode = "";
-                var containerCssClass = "";
+                var containerCssClasses = new List<string>();
                 if (optionsObject.ContainsKey("mode"))
                 {
                     fieldMode = optionsObject.Value<string>("mode");
@@ -1109,11 +1110,18 @@ namespace Api.Modules.Items.Services
                 switch (fieldMode)
                 {
                     case "switch":
-                        containerCssClass = "checkbox-adv large";
+                        containerCssClasses.Add("checkbox-adv");
+                        containerCssClasses.Add("large");
                         break;
                     case "checkBoxGroup":
-                        containerCssClass = "row checkbox-full-container";
+                        containerCssClasses.Add("row");
+                        containerCssClasses.Add("checkbox-full-container");
                         break;
+                }
+
+                if (isReadOnly)
+                {
+                    containerCssClasses.Add("readonly");
                 }
 
                 if (String.IsNullOrWhiteSpace(htmlTemplate))
@@ -1168,6 +1176,7 @@ namespace Api.Modules.Items.Services
                 var hasExtendedExplanation = !String.IsNullOrWhiteSpace(explanation) && Convert.ToBoolean(dataRow["extended_explanation"]);
                 var labelStyle = dataRow.Field<string>("label_style") ?? "";
                 var labelWidth = labelStyle == "normal" ? "0" : dataRow.Field<string>("label_width") ?? "";
+                var accessKey = dataRow.Field<string>("access_key") ?? "";
 
                 if (!String.IsNullOrWhiteSpace(filesJson))
                 {
@@ -1411,7 +1420,7 @@ namespace Api.Modules.Items.Services
                         .Replace("{saveOnChange}", Convert.ToBoolean(dataRow["save_on_change"]).ToString().ToLowerInvariant())
                         .Replace("{itemLinkId}", dataRow["itemLinkId"]?.ToString() ?? "")
                         .Replace("{required}", Convert.ToBoolean(dataRow["mandatory"]) ? "required" : "")
-                        .Replace("{readonly}", Convert.ToBoolean(dataRow["readonly"]) || (userItemPermissions & AccessRights.Update) != AccessRights.Update ? "readonly disabled" : "")
+                        .Replace("{readonly}", isReadOnly ? "readonly disabled" : "")
                         .Replace("{pattern}", String.IsNullOrWhiteSpace(regExValidation) ? ".*" : regExValidation)
                         .Replace("{languageCode}", languageCode)
                         .Replace("{inputType}", inputType)
@@ -1424,8 +1433,9 @@ namespace Api.Modules.Items.Services
                         .Replace("{infoIconClass}", hasExtendedExplanation ? "" : "hidden")
                         .Replace("{labelStyle}", labelStyle)
                         .Replace("{labelWidth}", labelWidth)
+                        .Replace("{accessKey}", accessKey)
                         .Replace("{fieldMode}", fieldMode)
-                        .Replace("{containerCssClass}", containerCssClass)
+                        .Replace("{containerCssClass}", String.Join(" ", containerCssClasses))
                         .Replace("{default_value}", valueToReplace);
                 }
 
@@ -1484,6 +1494,26 @@ namespace Api.Modules.Items.Services
             }
 
             return new ServiceResult<ItemHtmlAndScriptModel>(results);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<WiserItemModel>> GetItemDetailsAsync(string encryptedId, ClaimsIdentity identity, string entityType = null)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var (success, _, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Read, userId, onlyCheckAccessRights: true, entityType: entityType);
+
+            // If the user is not allowed to read this item, return an empty result.
+            if (!success)
+            {
+                return new ServiceResult<WiserItemModel>();
+            }
+
+            var result = await wiserItemsService.GetItemDetailsAsync(itemId, entityType: entityType, skipPermissionsCheck: true);
+            result.EncryptedId = await wiserCustomersService.EncryptValue(result.Id, identity);
+
+            return new ServiceResult<WiserItemModel>(result);
         }
 
         /// <inheritdoc />
