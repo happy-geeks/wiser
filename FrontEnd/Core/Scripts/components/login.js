@@ -105,6 +105,11 @@ export default {
                 this.loginForm.selectedUser = "";
                 this.loginForm.password = "";
             }
+            else {
+                this.loginForm.selectedUser = this.users[0].username;
+                console.log('eerste waarde:' + this.users[0].username);
+                console.log('selectedUser in loginForm:' + this.loginForm.selectedUser);
+            }
         },
 
         logout() {
