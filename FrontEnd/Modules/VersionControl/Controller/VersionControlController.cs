@@ -1,23 +1,23 @@
-using System;
+﻿using System;
 using FrontEnd.Core.Interfaces;
-using FrontEnd.Modules.DynamicItems.Models;
+using FrontEnd.Modules.VersionControl.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FrontEnd.Modules.DynamicItems.Controllers
+namespace FrontEnd.Modules.VersionControl.Controller
 {
-    [Area("DynamicItems"), Route("Modules/DynamicItems")]
-    public class DynamicItemsController : Controller
+    [Area("VersionControl"), Route("Modules/VersionControl")]
+    public class VersionControlController : Microsoft.AspNetCore.Mvc.Controller
     {
         private readonly IBaseService baseService;
 
-        public DynamicItemsController(IBaseService baseService)
+        public VersionControlController(IBaseService baseService)
         {
             this.baseService = baseService;
         }
-        
-        public IActionResult Index([FromQuery]DynamicItemsViewModel viewModel)
+
+        public IActionResult Index([FromQuery]VersionControlViewModel viewModel)
         {
-            viewModel ??= new DynamicItemsViewModel();
+            viewModel ??= new VersionControlViewModel();
             var defaultModel = baseService.CreateBaseViewModel();
 
             viewModel.Settings = defaultModel.Settings;
@@ -37,6 +37,13 @@ namespace FrontEnd.Modules.DynamicItems.Controllers
             if (viewModel.IframeMode)
             {
                 viewModel.BodyCssClass = "iframe";
+            }
+
+
+           
+            if (viewModel.ModuleId == 0)
+            {
+                viewModel.ModuleId = 6001;
             }
             Console.WriteLine("Test");
             return View(viewModel);
