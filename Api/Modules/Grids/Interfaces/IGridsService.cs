@@ -80,5 +80,14 @@ namespace Api.Modules.Grids.Interfaces
         /// <param name="data">The new data for the row.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
         Task<ServiceResult<bool>> DeleteDataAsync(int propertyId, string encryptedId, Dictionary<string, object> data, ClaimsIdentity identity);
+
+        /// <summary>
+        /// Delete a row in a grid.
+        /// </summary>
+        /// <param name="moduleId">The ID of the module where you want to get the grid data from.</param>
+        /// <param name="gridData">Data that will get the data of the grid and create it.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="isForExport"></param>
+        Task<ServiceResult<GridSettingsAndDataModel>> GetGridDataAsync(int moduleId, ModuleGridDataSettings gridData, ClaimsIdentity identity, bool isForExport = false);
     }
 }
