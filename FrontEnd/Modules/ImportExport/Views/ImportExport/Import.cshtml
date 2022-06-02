@@ -12,6 +12,11 @@
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
+    <style>
+        #wiser, #import-upload {
+            display: none;
+        }
+    </style>
 </head>
 <body data-wiser-api-root="@Model.ApiRoot"
       data-wiser-api-v21-root="@Model.ApiRoot"

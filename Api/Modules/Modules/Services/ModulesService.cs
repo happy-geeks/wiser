@@ -94,7 +94,15 @@ namespace Api.Modules.Modules.Services
 
             // Make sure that Wiser tables are up-to-date.
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-                {WiserTableNames.WiserItem, WiserTableNames.WiserEntityProperty, WiserTableNames.WiserModule});
+            {
+                WiserTableNames.WiserItem,
+                WiserTableNames.WiserItemDetail,
+                WiserTableNames.WiserEntityProperty,
+                WiserTableNames.WiserModule,
+                WiserTableNames.WiserItemFile,
+                WiserTableNames.WiserItemLink,
+                WiserTableNames.WiserItemLinkDetail
+            });
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));

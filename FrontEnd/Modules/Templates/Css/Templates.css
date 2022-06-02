@@ -1,9 +1,7 @@
 ﻿@import "../../Base/scss/base.scss";
 
-#createNewItemDialog,
-#addDynamicContentToHtmlDialog,
-#htmlSourceWindow {
-    display: none;
+#wiser {
+    display: block;
 }
 
 .k-dialog #createNewItemDialog,

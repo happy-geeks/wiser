@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -17,10 +16,9 @@ using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.EntityTypes.Models;
+using Api.Modules.Files.Interfaces;
 using Api.Modules.Items.Interfaces;
 using Api.Modules.Items.Models;
-using DocumentFormat.OpenXml.Drawing.Diagrams;
-using DocumentFormat.OpenXml.ExtendedProperties;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Exceptions;
@@ -53,11 +51,12 @@ namespace Api.Modules.Items.Services
         private readonly ILogger<ItemsService> logger;
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly IApiReplacementsService apiReplacementsService;
+        private readonly IFilesService filesService;
 
         /// <summary>
         /// Creates a new instance of <see cref="ItemsService"/>.
         /// </summary>
-        public ItemsService(Templates.Interfaces.ITemplatesService templatesService, IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, IWiserItemsService wiserItemsService, IJsonService jsonService, ILogger<ItemsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService)
+        public ItemsService(Templates.Interfaces.ITemplatesService templatesService, IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, IWiserItemsService wiserItemsService, IJsonService jsonService, ILogger<ItemsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService, IFilesService filesService)
         {
             this.templatesService = templatesService;
             this.wiserCustomersService = wiserCustomersService;
@@ -68,6 +67,7 @@ namespace Api.Modules.Items.Services
             this.logger = logger;
             this.stringReplacementsService = stringReplacementsService;
             this.apiReplacementsService = apiReplacementsService;
+            this.filesService = filesService;
         }
 
         /// <inheritdoc />
@@ -992,7 +992,7 @@ namespace Api.Modules.Items.Services
                                 LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail}{{0}} d ON d.item_id = ?itemId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
                                 # TODO: Find a more efficient way to load images and files?
                                 LEFT JOIN (
-                                    SELECT item_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'added_on', added_on, 'content_url', IFNULL(content_url, ''))), ']') AS json
+                                    SELECT item_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'added_on', added_on, 'content_url', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
                                     FROM {WiserTableNames.WiserItemFile}{{0}}
                                     WHERE item_id = ?itemId
                                     GROUP BY property_name
@@ -1026,7 +1026,7 @@ namespace Api.Modules.Items.Services
                                 LEFT JOIN {WiserTableNames.WiserItemLinkDetail}{{0}} d ON d.itemlink_id = ?itemLinkId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
                                 # TODO: Find a more efficient way to load images and files?
                                 LEFT JOIN (
-                                    SELECT itemlink_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'added_on', added_on, 'content_url', IFNULL(content_url, ''))), ']') AS json
+                                    SELECT itemlink_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'added_on', added_on, 'content_url', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
                                     FROM {WiserTableNames.WiserItemFile}{{0}}
                                     WHERE itemlink_id = ?itemLinkId
                                     GROUP BY property_name
@@ -1219,6 +1219,9 @@ namespace Api.Modules.Items.Services
                     var parsedFilesJson = JToken.Parse(filesJson);
                     jsonService.EncryptValuesInJson(parsedFilesJson, encryptionKey, new List<string> { "itemId" });
                     filesJson = parsedFilesJson.ToString();
+                    
+                    // Fix the ordering of the files in this field, to prevent problems with changing the ordering later.
+                    await filesService.FixOrderingAsync(itemId, itemLinkId, propertyName);
                 }
 
                 var extraAttributes = "";
