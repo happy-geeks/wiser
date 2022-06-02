@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -18,6 +19,8 @@ using Api.Modules.Customers.Interfaces;
 using Api.Modules.EntityTypes.Models;
 using Api.Modules.Items.Interfaces;
 using Api.Modules.Items.Models;
+using DocumentFormat.OpenXml.Drawing.Diagrams;
+using DocumentFormat.OpenXml.ExtendedProperties;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Exceptions;
@@ -152,7 +155,7 @@ namespace Api.Modules.Items.Services
             pagedResult.TotalNumberOfPages = Convert.ToInt32(Math.Ceiling((decimal)pagedResult.TotalNumberOfRecords / pagedRequest.PageSize));
             pagedResult.PageNumber = pagedRequest.Page;
             pagedResult.PageSize = pagedRequest.PageSize;
-            
+
             var currentUrl = HttpContextHelpers.GetOriginalRequestUri(httpContextAccessor.HttpContext);
             if (pagedResult.TotalNumberOfPages > pagedRequest.Page)
             {
@@ -280,14 +283,14 @@ namespace Api.Modules.Items.Services
             {
                 throw new ArgumentNullException(nameof(encryptedParentId));
             }
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
             var parentId = await wiserCustomersService.DecryptValue<ulong>(encryptedParentId, identity);
             var username = IdentityHelpers.GetUserName(identity);
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
-            
+
             WiserItemDuplicationResultModel result;
             try
             {
@@ -313,12 +316,12 @@ namespace Api.Modules.Items.Services
             {
                 throw new ArgumentNullException(nameof(encryptedId));
             }
-            
+
             try
             {
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
                 await clientDatabaseConnection.BeginTransactionAsync();
-                
+
                 var originalItemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
                 var item = await wiserItemsService.GetItemDetailsAsync(originalItemId);
 
@@ -329,7 +332,7 @@ namespace Api.Modules.Items.Services
                         StatusCode = HttpStatusCode.NotFound
                     };
                 }
-                
+
                 var userId = IdentityHelpers.GetWiserUserId(identity);
                 var (success, _, userItemPermissions) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(item.Id, EntityActions.Update, userId, onlyCheckAccessRights: true, entityType: item.EntityType);
                 if (!success)
@@ -546,7 +549,7 @@ namespace Api.Modules.Items.Services
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var username = IdentityHelpers.GetUserName(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
-            
+
             ulong parentId = 0;
             if (!String.IsNullOrWhiteSpace(encryptedParentId))
             {
@@ -591,7 +594,7 @@ namespace Api.Modules.Items.Services
             {
                 throw new ArgumentNullException(nameof(encryptedId));
             }
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var username = IdentityHelpers.GetUserName(identity);
@@ -608,7 +611,7 @@ namespace Api.Modules.Items.Services
 
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
-            
+
             try
             {
                 item = await wiserItemsService.UpdateAsync(itemId, item, userId, username, encryptionKey);
@@ -625,7 +628,7 @@ namespace Api.Modules.Items.Services
 
             return new ServiceResult<WiserItemModel>(item);
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> DeleteAsync(string encryptedId, ClaimsIdentity identity, bool undelete = false, string entityType = null)
         {
@@ -633,7 +636,7 @@ namespace Api.Modules.Items.Services
             {
                 throw new ArgumentNullException(nameof(encryptedId));
             }
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var username = IdentityHelpers.GetUserName(identity);
@@ -642,7 +645,7 @@ namespace Api.Modules.Items.Services
             {
                 throw new ArgumentException("Id must be greater than zero.");
             }
-            
+
             try
             {
                 await wiserItemsService.DeleteAsync(itemId, undelete, username, userId, entityType: entityType);
@@ -670,7 +673,7 @@ namespace Api.Modules.Items.Services
             {
                 throw new ArgumentNullException(nameof(encryptedId));
             }
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var username = IdentityHelpers.GetUserName(identity);
@@ -679,7 +682,7 @@ namespace Api.Modules.Items.Services
             {
                 throw new ArgumentException("Id must be greater than zero.");
             }
-            
+
             var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, isNewItem ? EntityActions.Create : EntityActions.Update, IdentityHelpers.GetWiserUserId(identity), item);
             if (!success)
             {
@@ -690,7 +693,7 @@ namespace Api.Modules.Items.Services
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
-        
+
             if (String.IsNullOrWhiteSpace(item?.EntityType))
             {
                 var newItem = await wiserItemsService.GetItemDetailsAsync(itemId);
@@ -813,7 +816,7 @@ namespace Api.Modules.Items.Services
             actionQuery = actionQuery.ReplaceCaseInsensitive("{encryptedId}", encryptedId.ToMySqlSafeValue(false));
             actionQuery = actionQuery.ReplaceCaseInsensitive("'{itemId}'", "?itemId").ReplaceCaseInsensitive("{itemId}", "?itemId");
             actionQuery = apiReplacementsService.DoIdentityReplacements(actionQuery, identity, true);
-            
+
             detailsQuery = detailsQuery.ReplaceCaseInsensitive("{itemId:decrypt(true)}", "?itemId");
             detailsQuery = apiReplacementsService.DoIdentityReplacements(detailsQuery, identity, true);
 
@@ -952,7 +955,7 @@ namespace Api.Modules.Items.Services
                     ReasonPhrase = "Invalid item ID."
                 };
             }
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var (success, _, userItemPermissions) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Read, IdentityHelpers.GetWiserUserId(identity), onlyCheckAccessRights: true, entityType: entityType);
 
@@ -968,7 +971,7 @@ namespace Api.Modules.Items.Services
             results.CanCreate = (userItemPermissions & AccessRights.Create) == AccessRights.Create;
             results.CanWrite = (userItemPermissions & AccessRights.Update) == AccessRights.Update;
             results.CanDelete = (userItemPermissions & AccessRights.Delete) == AccessRights.Delete;
-            
+
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("itemId", itemId);
             clientDatabaseConnection.AddParameter("userId", userId);
@@ -977,7 +980,7 @@ namespace Api.Modules.Items.Services
             var itemIsFromArchive = false;
             var query = $@"SET SESSION group_concat_max_len = 1000000;
                                 SELECT e.tab_name, e.group_name, e.inputtype AS field_type, t.html_template, e.display_name, e.property_name, e.options, e.module_id,
-    	                            e.explanation, d.long_value, d.`value`, e.default_value, e.id, e.width, e.height, e.css, e.extended_explanation, e.label_style, e.label_width,
+    	                            e.explanation, d.long_value, d.`value`, e.default_value, e.id, e.width, e.height, e.css, e.extended_explanation, e.label_style, e.label_width, e.access_key,
     	                            e.depends_on_field, e.depends_on_operator, e.depends_on_value, IFNULL(e.depends_on_action, 'toggle-visibility') AS depends_on_action, e.ordering, t.script_template,
     	                            e.save_on_change, files.JSON AS filesJSON, 0 AS itemLinkId, e.regex_validation, e.mandatory, e.language_code,
     	                            # A user can have multiple roles. So we need to check if they have at least one role that has update rights. If it doesn't, then the field should be readonly.
@@ -1010,7 +1013,7 @@ namespace Api.Modules.Items.Services
                                 UNION ALL
                                 
                                 SELECT 'Velden vanuit koppeling' AS tab_name, e.group_name, e.inputtype AS field_type, t.html_template, e.display_name, e.property_name, e.options, e.module_id,
-    	                            e.explanation, d.long_value, d.`value`, e.default_value, e.id, e.width, e.height, e.css, e.extended_explanation, e.label_style, e.label_width,
+    	                            e.explanation, d.long_value, d.`value`, e.default_value, e.id, e.width, e.height, e.css, e.extended_explanation, e.label_style, e.label_width, e.access_key,
     	                            e.depends_on_field, e.depends_on_operator, e.depends_on_value, IFNULL(e.depends_on_action, 'toggle-visibility') AS depends_on_action, e.ordering, t.script_template,
     	                            e.save_on_change, files.JSON AS filesJSON, il.id AS itemLinkId, e.regex_validation, e.mandatory, e.language_code,
     	                            # A user can have multiple roles. So we need to check if they have at least one role that has update rights. If it doesn't, then the field should be readonly.
@@ -1042,7 +1045,7 @@ namespace Api.Modules.Items.Services
                                 GROUP BY id
                                 
                                 ORDER BY ordering";
-            
+
             // First check the normal wiser_item table.
             var dataTable = await clientDatabaseConnection.GetAsync(String.Format(query, ""));
 
@@ -1100,6 +1103,39 @@ namespace Api.Modules.Items.Services
                 // Get mode, some fields have different modes and need different HTML for different modes.
                 var options = dataRow.Field<string>("options")?.ReplaceCaseInsensitive("{itemId}", itemId.ToString());
                 var optionsObject = JObject.Parse(String.IsNullOrWhiteSpace(options) ? "{}" : options);
+
+                //Manipulate customActions based on Role if necessary
+                if (fieldType == "sub-entities-grid")
+                {
+                    if (optionsObject.ContainsKey("toolbar"))
+                    {
+                        var toolbar = optionsObject.Value<JObject>("toolbar");
+                        if (toolbar.ContainsKey("customActions"))
+                        {
+                            var customActions = toolbar.Value<JArray>("customActions");
+                            var deletedCustomActions = new List<JToken>();
+                            foreach (var customAction in customActions)
+                            {
+                                var rolesToken = customAction.SelectToken("roles"); ;
+                                if (rolesToken == null) continue; // No roles defined = access
+
+                                var roles = rolesToken.Values<string>().ToList();
+                                var hasRole = false;
+                                foreach (var role in roles)
+                                {
+                                    if (IdentityHelpers.HasRole(identity, role)) hasRole = true;
+                                }
+                                if (hasRole) continue;
+                                deletedCustomActions.Add(customAction);
+                            }
+
+                            foreach (var deletedCustomAction in deletedCustomActions)
+                            {
+                                customActions.Remove(deletedCustomAction);
+                            }
+                        }
+                    }
+                }
                 var fieldMode = "";
                 var containerCssClasses = new List<string>();
                 if (optionsObject.ContainsKey("mode"))
@@ -1126,7 +1162,7 @@ namespace Api.Modules.Items.Services
 
                 if (String.IsNullOrWhiteSpace(htmlTemplate))
                 {
-                    var nameWithoutMode = $"{fieldType}.html"; 
+                    var nameWithoutMode = $"{fieldType}.html";
                     var name = $"{fieldType}{(String.IsNullOrWhiteSpace(fieldMode) ? "" : $"-{fieldMode}")}.html";
 
                     if (!fieldTemplates.ContainsKey(name))
@@ -1176,6 +1212,7 @@ namespace Api.Modules.Items.Services
                 var hasExtendedExplanation = !String.IsNullOrWhiteSpace(explanation) && Convert.ToBoolean(dataRow["extended_explanation"]);
                 var labelStyle = dataRow.Field<string>("label_style") ?? "";
                 var labelWidth = labelStyle == "normal" ? "0" : dataRow.Field<string>("label_width") ?? "";
+                var accessKey = dataRow.Field<string>("access_key") ?? "";
 
                 if (!String.IsNullOrWhiteSpace(filesJson))
                 {
@@ -1270,28 +1307,28 @@ namespace Api.Modules.Items.Services
                         break;
 
                     case "qr":
-                    {
-                        var customQueryResult = await ExecuteCustomQueryAsync(encryptedId, propertyId, new Dictionary<string, object>(), await wiserCustomersService.EncryptValue("0", identity), identity, userId);
-                        var property = (JProperty)customQueryResult?.ModelObject?.OtherData?.FirstOrDefault()?.FirstOrDefault();
-                        if (!String.IsNullOrWhiteSpace(property?.Name))
                         {
-                            var size = 0;
-                            if (optionsObject.ContainsKey(WiserItemsService.SizeKey))
+                            var customQueryResult = await ExecuteCustomQueryAsync(encryptedId, propertyId, new Dictionary<string, object>(), await wiserCustomersService.EncryptValue("0", identity), identity, userId);
+                            var property = (JProperty)customQueryResult?.ModelObject?.OtherData?.FirstOrDefault()?.FirstOrDefault();
+                            if (!String.IsNullOrWhiteSpace(property?.Name))
                             {
-                                size = optionsObject[WiserItemsService.SizeKey].Value<int>();
+                                var size = 0;
+                                if (optionsObject.ContainsKey(WiserItemsService.SizeKey))
+                                {
+                                    size = optionsObject[WiserItemsService.SizeKey].Value<int>();
+                                }
+
+                                if (size <= 0)
+                                {
+                                    size = 250;
+                                }
+
+                                var url = property.Value.Value<string>() ?? "";
+                                value = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host.Value}/api/v3/barcodes/qr?text={Uri.EscapeDataString(url)}&size={size}";
                             }
 
-                            if (size <= 0)
-                            {
-                                size = 250;
-                            }
-
-                            var url = property.Value.Value<string>() ?? "";
-                            value = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host.Value}/api/v3/barcodes/qr?text={Uri.EscapeDataString(url)}&size={size}";
+                            break;
                         }
-
-                        break;
-                    }
                     case "htmleditor":
                         value = await wiserItemsService.ReplaceHtmlForViewingAsync(value);
                         longValue = await wiserItemsService.ReplaceHtmlForViewingAsync(longValue);
@@ -1301,26 +1338,26 @@ namespace Api.Modules.Items.Services
                         value = value.HtmlEncode();
                         break;
                     case "iframe":
-                    {
-                        if (String.IsNullOrWhiteSpace(defaultValue))
                         {
-                            break;
-                        }
+                            if (String.IsNullOrWhiteSpace(defaultValue))
+                            {
+                                break;
+                            }
 
-                        var customQueryResult = await ExecuteCustomQueryAsync(encryptedId, propertyId, new Dictionary<string, object>(), await wiserCustomersService.EncryptValue("0", identity), identity, userId);
-                        if (customQueryResult.ModelObject is not { Success: true })
-                        {
-                            break;
-                        }
+                            var customQueryResult = await ExecuteCustomQueryAsync(encryptedId, propertyId, new Dictionary<string, object>(), await wiserCustomersService.EncryptValue("0", identity), identity, userId);
+                            if (customQueryResult.ModelObject is not { Success: true })
+                            {
+                                break;
+                            }
 
-                        if (customQueryResult.ModelObject.OtherData.FirstOrDefault() is not JObject jObject)
-                        {
+                            if (customQueryResult.ModelObject.OtherData.FirstOrDefault() is not JObject jObject)
+                            {
+                                break;
+                            }
+
+                            value = stringReplacementsService.DoReplacements(defaultValue, jObject.ToObject<Dictionary<string, object>>());
                             break;
                         }
-                        
-                        value = stringReplacementsService.DoReplacements(defaultValue, jObject.ToObject<Dictionary<string, object>>());
-                        break;
-                    }
                 }
 
                 // Setup any extra CSS for the field.
@@ -1432,6 +1469,7 @@ namespace Api.Modules.Items.Services
                         .Replace("{infoIconClass}", hasExtendedExplanation ? "" : "hidden")
                         .Replace("{labelStyle}", labelStyle)
                         .Replace("{labelWidth}", labelWidth)
+                        .Replace("{accessKey}", accessKey)
                         .Replace("{fieldMode}", fieldMode)
                         .Replace("{containerCssClass}", String.Join(" ", containerCssClasses))
                         .Replace("{default_value}", valueToReplace);
@@ -1495,6 +1533,26 @@ namespace Api.Modules.Items.Services
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<WiserItemModel>> GetItemDetailsAsync(string encryptedId, ClaimsIdentity identity, string entityType = null)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var (success, _, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Read, userId, onlyCheckAccessRights: true, entityType: entityType);
+
+            // If the user is not allowed to read this item, return an empty result.
+            if (!success)
+            {
+                return new ServiceResult<WiserItemModel>();
+            }
+
+            var result = await wiserItemsService.GetItemDetailsAsync(itemId, entityType: entityType, skipPermissionsCheck: true);
+            result.EncryptedId = await wiserCustomersService.EncryptValue(result.Id, identity);
+
+            return new ServiceResult<WiserItemModel>(result);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<ItemMetaDataModel>> GetItemMetaDataAsync(string encryptedId, ClaimsIdentity identity, string entityType = null)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -1508,7 +1566,7 @@ namespace Api.Modules.Items.Services
             {
                 return new ServiceResult<ItemMetaDataModel>();
             }
-            
+
             var result = new ItemMetaDataModel
             {
                 CanRead = (userItemPermissions & AccessRights.Read) == AccessRights.Read,
@@ -1520,7 +1578,7 @@ namespace Api.Modules.Items.Services
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("itemId", itemId);
             clientDatabaseConnection.AddParameter("userId", userId);
-            
+
             var query = $@"SELECT
 	                        item.id,
                             item.original_item_id,
@@ -1567,7 +1625,7 @@ namespace Api.Modules.Items.Services
                 // If we get to this point, the item was found in the archive, which means it has been deleted.
                 result.Removed = true;
             }
-            
+
             result.Id = itemId;
             result.EncryptedId = encryptedId;
             result.OriginalItemId = await wiserCustomersService.EncryptValue(Convert.ToString(dataTable.Rows[0]["original_item_id"]), identity);
@@ -1581,7 +1639,7 @@ namespace Api.Modules.Items.Services
             result.ChangedOn = dataTable.Rows[0].Field<DateTime?>("changed_on");
             result.ChangedBy = dataTable.Rows[0].Field<string>("changed_by");
             result.EnableMultipleEnvironments = Convert.ToBoolean(dataTable.Rows[0]["enable_multiple_environments"]);
-            
+
             return new ServiceResult<ItemMetaDataModel>(result);
         }
 
@@ -1647,7 +1705,7 @@ namespace Api.Modules.Items.Services
             var result = await stringReplacementsService.DoAllReplacementsAsync(template, dataRow, removeUnknownVariables: false);
             return new ServiceResult<string>(result);
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<List<EntityTypeModel>>> GetPossibleEntityTypesAsync(ulong itemId, ClaimsIdentity identity)
         {
@@ -1658,7 +1716,7 @@ namespace Api.Modules.Items.Services
                                                                     FROM {WiserTableNames.WiserEntity}
                                                                     GROUP BY name
                                                                     ORDER BY IFNULL(friendly_name, name) ASC");
-            
+
             var results = new List<EntityTypeModel>();
             if (dataTable.Rows.Count == 0)
             {
@@ -1702,7 +1760,7 @@ namespace Api.Modules.Items.Services
             clientDatabaseConnection.AddParameter("parentId", parentId);
             clientDatabaseConnection.AddParameter("linkType", linkType);
 
-            var moduleIdClause = moduleId <= 0 ? "" : "AND item.moduleid = ?moduleId"; 
+            var moduleIdClause = moduleId <= 0 ? "" : "AND item.moduleid = ?moduleId";
 
             // Fix the ordering of items, because when people import items, they often don't set the order number correctly.
             // So we do that first here, to make sure they're all set correctly, otherwise moving items to a different position in the tree view won't work properly.
@@ -1822,7 +1880,7 @@ namespace Api.Modules.Items.Services
                     Checked = Convert.ToInt32(dataRow["checked"]) > 0
                 });
             }
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("moduleId", moduleId);
@@ -1895,7 +1953,7 @@ namespace Api.Modules.Items.Services
                     AddItem(dataRow);
                 }
             }
-            
+
             // If there are no entities that use item_parent_id from wiser_item with the given parent, just return the results.
             if (parentId > 0)
             {
@@ -2065,7 +2123,7 @@ namespace Api.Modules.Items.Services
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> MoveItemAsync(ClaimsIdentity identity, string encryptedSourceId, string encryptedDestinationId, string position, string encryptedSourceParentId, string encryptedDestinationParentId, string sourceEntityType, string destinationEntityType, int moduleId)
         {
-            if (String.IsNullOrWhiteSpace(encryptedSourceId) 
+            if (String.IsNullOrWhiteSpace(encryptedSourceId)
                 || String.IsNullOrWhiteSpace(encryptedDestinationId)
                 || String.IsNullOrWhiteSpace(position)
                 || String.IsNullOrWhiteSpace(encryptedSourceParentId)
@@ -2080,14 +2138,14 @@ namespace Api.Modules.Items.Services
                     ReasonPhrase = "The parameters encryptedSourceId, encryptedDestinationId, position, encryptedSourceParentId, encryptedDestinationParentId, sourceEntityType and destinationEntityType need to have a value"
                 };
             }
-            
+
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             var sourceId = wiserCustomersService.DecryptValue<ulong>(encryptedSourceId, customer);
             var destinationId = wiserCustomersService.DecryptValue<ulong>(encryptedDestinationId, customer);
             var sourceParentId = wiserCustomersService.DecryptValue<ulong>(encryptedSourceParentId, customer);
             var destinationParentId = wiserCustomersService.DecryptValue<ulong>(encryptedDestinationParentId, customer);
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(sourceId, EntityActions.Update, userId, entityType: sourceEntityType);
             if (!success)
@@ -2259,7 +2317,7 @@ namespace Api.Modules.Items.Services
                 throw;
             }
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> AddMultipleLinksAsync(ClaimsIdentity identity, List<string> encryptedSourceIds, List<string> encryptedDestinationIds, int linkType, string sourceEntityType = null)
         {
@@ -2269,7 +2327,7 @@ namespace Api.Modules.Items.Services
             var sourceIds = encryptedSourceIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
             var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
             var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType);
-            
+
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("linkType", linkType);
 
@@ -2305,7 +2363,7 @@ namespace Api.Modules.Items.Services
                 StatusCode = HttpStatusCode.NoContent
             };
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> RemoveMultipleLinksAsync(ClaimsIdentity identity, List<string> encryptedSourceIds, List<string> encryptedDestinationIds, int linkType, string sourceEntityType = null)
         {
@@ -2318,7 +2376,7 @@ namespace Api.Modules.Items.Services
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("linkType", linkType);
-            
+
             string query;
             if (linkTypeSettings.UseItemParentId)
             {
@@ -2331,7 +2389,7 @@ namespace Api.Modules.Items.Services
                         ReasonPhrase = "Received more or less than 1 destination item ID for a link type that is set to use parent_item_id, this is not possible."
                     };
                 }
-                
+
                 query = $@"UPDATE {tablePrefix}{WiserTableNames.WiserItem} SET parent_item_id = 0 WHERE id IN ({String.Join(",", sourceIds)})";
             }
             else

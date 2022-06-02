@@ -180,5 +180,17 @@ namespace Api.Modules.Templates.Services
         {
             return await templatesService.GeneratePreviewAsync(identity, requestModel);
         }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> CheckDefaultHeaderConflict(int templateId, string regexString)
+        {
+            return await templatesService.CheckDefaultHeaderConflict(templateId, regexString);
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString)
+        {
+            return await templatesService.CheckDefaultFooterConflict(templateId, regexString);
+        }
     }
 }

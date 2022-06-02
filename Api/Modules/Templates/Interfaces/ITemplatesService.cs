@@ -142,7 +142,7 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="name">The name to give the template that will be created.</param>
         /// <param name="parent">The id of the parent template of the template that will be created.</param>
         /// <param name="type">The type of the new template that will be created.</param>
-        /// <param name="editorValue"> The optional editorValue of the template, this can be used for importing files.
+        /// <param name="editorValue"> The optional editorValue of the template, this can be used for importing files.</param>
         /// <returns>The id of the newly created template. This can be used to update the interface accordingly.</returns>
         Task<ServiceResult<TemplateTreeViewModel>> CreateAsync(ClaimsIdentity identity, string name, int parent, TemplateTypes type, string editorValue = "");
 
@@ -195,5 +195,21 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
         /// <returns>The HTML of the template as it would look on the website.</returns>
         Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel);
+
+        /// <summary>
+        /// Checks if there's a conflict with another template that's also marked as a default header with the given regex.
+        /// </summary>
+        /// <param name="templateId">ID of the current template.</param>
+        /// <param name="regexString">The regular expression that can filter whether the default header should be used.</param>
+        /// <returns>A string with the name of the template that this template conflicts with, or an empty string if there's no conflict.</returns>
+        Task<ServiceResult<string>> CheckDefaultHeaderConflict(int templateId, string regexString);
+
+        /// <summary>
+        /// Checks if there's a conflict with another template that's also marked as a default footer with the given regex.
+        /// </summary>
+        /// <param name="templateId">ID of the current template.</param>
+        /// <param name="regexString">The regular expression that can filter whether the default footer should be used.</param>
+        /// <returns>A string with the name of the template that this template conflicts with, or an empty string if there's no conflict.</returns>
+        Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString);
     }
 }

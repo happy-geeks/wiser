@@ -1062,14 +1062,14 @@ export class Grids {
             }
 
             if (!title || !itemId || !entityType) {
-                const itemDetails = (await this.base.getItemDetails(encryptedId))[0];
+                const itemDetails = (await this.base.getItemDetails(encryptedId, entityType));
                 if (!itemDetails) {
                     kendo.alert("Er is geen item gevonden met het id in de geselecteerde regel. Waarschijnlijk is dit geen geldig ID. Neem a.u.b. contact op met ons.");
                     return;
                 }
 
                 title = title || itemDetails.title;
-                itemId = itemId || itemDetails.id || itemDetails.itemId || itemDetails.itemId;
+                itemId = itemId || itemDetails.id || itemDetails.itemId;
                 entityType = entityType || itemDetails.entityType;
             }
         }
@@ -1196,7 +1196,7 @@ export class Grids {
                 return;
             }
 
-            selectedItemDetails = (await this.base.getItemDetails(itemId))[0] || {};
+            selectedItemDetails = (await this.base.getItemDetails(itemId)) || {};
             encryptedId = selectedItemDetails.encryptedId || selectedItemDetails.encrypted_id || selectedItemDetails.encryptedid;
         }
 
