@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Api.Modules.Templates.Models.Other;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
+using Api.Modules.VersionControl.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
 namespace Api.Modules.VersionControl.Service.DataLayer
@@ -40,6 +42,128 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             }
 
             return versionList;
+        }
+
+
+        public async Task<VersionControlModel> GetCurrentPublishedEnvironment(int templateId, int version)
+        {
+            var query = "SELECT t.template_id, t.version, t.published_environment FROM wiser_template t WHERE t.template_id = ?templateId AND t.published_environment != 0";
+
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("templateId", templateId);
+            clientDatabaseConnection.AddParameter("version", version);
+
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+
+
+            if (dataTable.Rows.Count != 0)
+            {
+
+
+                var versionControlModel = new VersionControlModel()
+                {
+                    TemplateId = Convert.ToInt32(dataTable.Rows[0]["template_id"]),
+                    PublishedEnvironments = new PublishedEnvironmentModel()
+                    {
+                        VersionList = new List<int>()
+                    }
+                    //Version = Convert.ToInt32(dataTable.Rows[0]["version"]),
+                };
+
+
+                foreach (DataRow template in dataTable.Rows)
+                {
+                    Console.WriteLine(template["published_environment"]);
+
+                    //PublishedEnvironmentModel publishedEnvironment = new PublishedEnvironmentModel();
+
+
+                    if (Convert.ToInt32(template["published_environment"]) == 2)
+                    {
+                        versionControlModel.PublishedEnvironments.TestVersion = 1;
+                        versionControlModel.PublishedEnvironments.VersionList.Add(Convert.ToInt32(dataTable.Rows[0]["version"]));
+
+                    }
+                    else if (Convert.ToInt32(template["published_environment"]) == 4)
+                    {
+                        versionControlModel.PublishedEnvironments.AcceptVersion = 1;
+                        versionControlModel.PublishedEnvironments.VersionList.Add(Convert.ToInt32(dataTable.Rows[0]["version"]));
+                    }
+                    else if (Convert.ToInt32(template["published_environment"]) == 8)
+                    {
+                        versionControlModel.PublishedEnvironments.AcceptVersion = 1;
+                        versionControlModel.PublishedEnvironments.VersionList.Add(Convert.ToInt32(dataTable.Rows[0]["version"]));
+                    }
+
+                }
+
+
+                return versionControlModel;
+
+            }
+            else
+            {
+                return null;
+            }
+
+        }
+
+        public async Task<bool> CreateNewTemplateCommit(TemplateCommitModel templateCommitModel)
+        {
+
+
+            var query = $@"INSERT INTO dev_template_live (commitid,itemid,version) VALUES (?commitid,?itemid,?version)";
+
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("commitid", templateCommitModel.CommitId);
+            clientDatabaseConnection.AddParameter("itemid", templateCommitModel.TemplateId);
+            clientDatabaseConnection.AddParameter("version", templateCommitModel.Version);
+
+
+
+
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+
+
+
+            return true;
+
+
+
+        }
+
+        public async Task<bool> UpdateTemplateCommit(TemplateCommitModel templateCommitModel)
+        {
+            var query = $@"UPDATE dev_template_live SET islive = ?islive, isacceptance = ?isacceptance, istest = ?istest WHERE itemid = ?itemid AND version = ?version";
+
+            clientDatabaseConnection.ClearParameters();
+
+            clientDatabaseConnection.AddParameter("islive", templateCommitModel.IsLive);
+            clientDatabaseConnection.AddParameter("isacceptance", templateCommitModel.IsAcceptance);
+            clientDatabaseConnection.AddParameter("istest", templateCommitModel.IsTest);
+
+            clientDatabaseConnection.AddParameter("itemid", templateCommitModel.TemplateId);
+            clientDatabaseConnection.AddParameter("version", templateCommitModel.Version);
+
+
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+
+
+
+            return true;
+        }
+
+        public async Task<bool> UpdatePublishEnvironmentTemplate(int templateId, int publishNumber)
+        {
+            var query = $@"UPDATE wiser_template SET published_environment = ?publishNumber WHERE id = ?templateId";
+
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("publishNumber", publishNumber);
+            clientDatabaseConnection.AddParameter("templateId", templateId);
+
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+
+            return true;
         }
     }
 }

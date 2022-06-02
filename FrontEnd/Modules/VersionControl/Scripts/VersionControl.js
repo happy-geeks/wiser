@@ -350,7 +350,7 @@ const moduleSettings = {
             });*/
 
             $(".environment_dynamic_content_history").kendoButton({
-                click: this.HistoryDynamicCOntent.bind(this),
+                click: this.HistoryDynamicContent.bind(this),
                 icon: "save"
             });
 
@@ -442,6 +442,7 @@ const moduleSettings = {
             
             
         }
+
 
 
 
@@ -555,8 +556,42 @@ const moduleSettings = {
 
         }
 
-        async HistoryDynamicCOntent(event) {
+        async HistoryDynamicContent(event) {
+
+            //get all selected fields
+            const templateTable = document.querySelector("#historyGridId");
+            const templateSelected = templateTable.querySelectorAll(".k-state-selected");
+
+            var DynamicContentList = [];
+            var DynamicContentListResults = [];
+
+            const dynamicContentTable = document.querySelector("#historyDynamicContentGridId");
+            const dynamicContentSelected = dynamicContentTable.querySelectorAll(".k-state-selected");
+
             var envioronmentbuttonValue = event.event.target.value;
+
+            for (const [key, value] of Object.entries(templateSelected)) {
+
+                var templateVersionId = value.querySelector('[data-field="template_id"]').innerHTML;
+                var version = value.querySelector('[data-field="version"]').innerHTML;
+
+
+                await this.template.PublishTemplate(templateVersionId, envioronmentbuttonValue, version);
+
+            }
+
+            for (const [key, value] of Object.entries(dynamicContentSelected)) {
+
+                var dynamicContentId = value.querySelector('[data-field="content_id"]').innerHTML;
+                var version = value.querySelector('[data-field="version"]').innerHTML;
+               
+
+                await this.PublishDynamicContent(dynamicContentId, envioronmentbuttonValue, version);
+            }
+
+
+
+            /*
             //GET THE DYNAMIC CONTENT ID
             var dynamicContentId = this.getSelectedDynamicContentId("#historyDynamicContentGridId");
             var version = document.querySelector(".k-state-selected").querySelector('[data-field="version"]').innerHTML;
@@ -581,7 +616,7 @@ const moduleSettings = {
 
  
 
-            document.location.reload();
+            document.location.reload();*/
         }
 
 
@@ -810,8 +845,8 @@ const moduleSettings = {
 
             }
 
+            console.log(DynamicContentList);
 
-            
             //selected Environment choices
             const selectedChoices = this.getSlectedDeployment();
 
@@ -936,8 +971,6 @@ const moduleSettings = {
                     var alreadySelected = false;
 
 
-
-
                     for (const [key, value2] of Object.entries(dynamicContentSelected)) {
                         var dynamicContentSelectedId = value2.querySelector('[data-field="content_id"]').innerHTML;
                         var dynamicContentSelectedVersion = value2.querySelector('[data-field="version"]').innerHTML;
@@ -1019,14 +1052,14 @@ const moduleSettings = {
         async onCommitSelectedItemsWithDynamicContentItems() {
             console.log("action :: Templates gecommit met dynamic content");
             this.onCommitSelectedAndRelatedDynamicConent();
-            //document.location.reload();
+            document.location.reload();
         }
 
 
         async onCommitOnlySelectedItems() {
             console.log("action :: Templates committet zonder dynamic content");
             this.onCommitSelectedOnly();
-           // document.location.reload();
+            document.location.reload();
         }
 
 
@@ -1038,6 +1071,7 @@ const moduleSettings = {
             const templateSelected1 = templateTable1.querySelectorAll(".k-state-selected");
 
             var DynamicContentList = [];
+            var DynamicContentListResults = [];
 
             const dynamicContentTable = document.querySelector("#dynamicContentGrid");
             const dynamicContentSelected = dynamicContentTable.querySelectorAll(".k-state-selected");
@@ -1047,7 +1081,7 @@ const moduleSettings = {
 
                 var templateVersionId = value.querySelector('[data-field="template_id"]').innerHTML;
 
-                var DynamicContentListResults = await this.DynamicContentInTemplates(templateVersionId);
+                DynamicContentListResults = await this.DynamicContentInTemplates(templateVersionId);
 
                 DynamicContentList.push(DynamicContentListResults);
 
@@ -1055,21 +1089,23 @@ const moduleSettings = {
             }
 
 
-
+    
+            
+            
             for (const [key, value] of Object.entries(DynamicContentListResults)) {
                 var dynamicContentInTemplateId = value["id"];
                 var dynamicContentInTemplateVersion = value["version"];
 
                 console.log(value);
+
                 console.log(dynamicContentInTemplateId);
-                console.log(dynamicContentInTemplateVersion);
+                console.log(dynamicContentInTemplateVersion); 
+
 
 
                 var alreadySelected = false;
 
-                    
-
-
+                
                 for (const [key, value2] of Object.entries(dynamicContentSelected)) {
                     var dynamicContentSelectedId = value2.querySelector('[data-field="content_id"]').innerHTML;
                     var dynamicContentSelectedVersion = value2.querySelector('[data-field="version"]').innerHTML;
@@ -1174,7 +1210,7 @@ const moduleSettings = {
 
             try {
                 const createCommit = await Wiser2.api({
-                    url: `${this.base.settings.wiserApiRoot}VersionControl/${dynamicContentId}/publishDyamicContent/${environment}/${version}`,
+                    url: `${this.base.settings.wiserApiRoot}VersionControl/${dynamicContentId}/publish-dynamic-content/${environment}/${version}`,
                     method: "POST",
                     contentType: "application/json",
                 });

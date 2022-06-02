@@ -40,6 +40,7 @@ using React;
 using React.AspNet;
 using Serilog;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using IDynamicContentServiceVersionControl = Api.Modules.VersionControl.Interfaces.IDynamicContentServiceVersionControl;
 
 namespace Api
 {
@@ -249,6 +250,12 @@ namespace Api
 
             services.AddTransient<ITemplateContainerService, TemplateContainerService>();
             services.AddTransient<ITemplateContainerDataService, TemplateContainerDataService>();
+
+            services.AddTransient<IDynamicContentServiceVersionControl, DynamicContentServiceVersionControl>();
+            services.AddTransient<IDynamicContentDataServiceVersionControl, DynamicContentDataServiceVersionControl>();
+
+            services.AddTransient<ICommitService, CommitService>();
+            services.AddTransient<ICommitDataService, CommitDataService>();
 
             // Add JavaScriptEngineSwitcher services to the services container.
             services.AddJsEngineSwitcher(options => options.DefaultEngineName = ChakraCoreJsEngine.EngineName).AddChakraCore();

@@ -10,12 +10,8 @@ namespace Api.Modules.VersionControl.Models
     {
         public int id { get; set; }
         public string Description { get; set; }
-
         public int AsanaId { get; set; }
-
         public DateTime AddedOn { get; set; }
-
-
         public string ChangedBy { get; set; }
     }
 }

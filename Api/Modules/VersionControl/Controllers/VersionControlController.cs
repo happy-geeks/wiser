@@ -19,7 +19,7 @@ using Api.Modules.Kendo.Models;
 namespace Api.Modules.VersionControl.Controllers
 {
     /// <summary>
-    /// Controller for getting or doing things with templates from the version control module in Wiser.
+    /// Controller for getting or doing things with templates and dynamic content from the version control module in Wiser.
     /// </summary>
     [Route("api/v3/[controller]"), ApiController, Authorize]
     public class VersionControlController : Controller
@@ -27,17 +27,21 @@ namespace Api.Modules.VersionControl.Controllers
         private readonly IVersionControlService _versionControlService;
         private readonly ITemplatesService templatesService;
         private readonly IGridsService gridsService;
+        private readonly ITemplateContainerService versionControlTemplateService;
+        private readonly IDynamicContentServiceVersionControl dynamicContentService;
+        private readonly ICommitService commitService;
 
-
-            private readonly ITemplateContainerService versionControlTemplateService;
-
-
-        public VersionControlController(IVersionControlService versionControlService, ITemplatesService templatesService, IGridsService gridsService, ITemplateContainerService templateService)
+        /// <summary>
+        /// Creates a new instance of <see cref="VersionControlController"/>.
+        /// </summary>
+        public VersionControlController(IVersionControlService versionControlService, ITemplatesService templatesService, IGridsService gridsService, ITemplateContainerService templateService, IDynamicContentServiceVersionControl dynamicContentService, ICommitService commitService)
         {
             this._versionControlService = versionControlService;
             this.templatesService = templatesService;
             this.gridsService = gridsService;
             this.versionControlTemplateService = templateService;
+            this.dynamicContentService = dynamicContentService;
+            this.commitService = commitService;
         }
 
         /*[HttpPost, Route("{templateId:int}"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
@@ -48,15 +52,14 @@ namespace Api.Modules.VersionControl.Controllers
         }*/
 
         /// <summary>
-        /// 
+        /// Creates new commit and adds it to the database
         /// </summary>
-        /// <param name="templateId"></param>
         /// <param name="commitModel"></param>
         /// <returns></returns>
         [HttpPut, ProducesResponseType(typeof(CreateCommitModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateNewCommit(CreateCommitModel commitModel)
         {
-            return (await _versionControlService.CreateCommit(commitModel)).GetHttpResponseMessage();
+            return (await commitService.CreateCommit(commitModel)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -68,7 +71,7 @@ namespace Api.Modules.VersionControl.Controllers
         [HttpPut, Route("{templateId:int}"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateNewCommitItem(int templateId, CommitItemModel commitItemModel)
         {
-            return (await _versionControlService.CreateCommitItem(templateId, commitItemModel))
+            return (await commitService.CreateCommitItem(templateId, commitItemModel))
                 .GetHttpResponseMessage();
         }
 
@@ -81,11 +84,11 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetCommit()
         {
-            return (await _versionControlService.GetCommit()).GetHttpResponseMessage();
+            return (await commitService.GetCommit()).GetHttpResponseMessage();
         }
 
         /// <summary>
-        /// Creates new template and commit row in database
+        /// Adds new row to the database that connects the template to the commit
         /// </summary>
         /// <param name="templateCommitModel"></param>
         /// <returns></returns>
@@ -93,16 +96,10 @@ namespace Api.Modules.VersionControl.Controllers
         public async Task<IActionResult> CreateNewTemplateCommit(TemplateCommitModel templateCommitModel)
         {
 
-            return (await _versionControlService.CreateNewTemplateCommit(templateCommitModel)).GetHttpResponseMessage();
+            return (await versionControlTemplateService.CreateNewTemplateCommit(templateCommitModel)).GetHttpResponseMessage();
         }
 
-        [HttpPut, Route("update-template"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        public async Task<IActionResult> UpdateTemplate(TemplateCommitModel templateCommitModel)
-        {
-
-            return (await _versionControlService.UpdateTemplateCommit(templateCommitModel)).GetHttpResponseMessage();
-        }
-
+       
         /// <summary>
         /// Updates the environment of the template
         /// </summary>
@@ -112,20 +109,19 @@ namespace Api.Modules.VersionControl.Controllers
         [HttpPut, Route("{templateId:int}/{publishNumber:int}"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdatePublishEnvironmentTemplate(int templateId, int publishNumber)
         {
-            return (await _versionControlService.UpdatePublishEnvironmentTemplate(templateId,publishNumber)).GetHttpResponseMessage();
+            return (await versionControlTemplateService.UpdatePublishEnvironmentTemplate(templateId,publishNumber)).GetHttpResponseMessage();
         }
 
         /// <summary>
-        /// 
+        /// Updates the published environment of the Template
         /// </summary>
-        /// <param name="templateId"></param>
-        /// <param name="environment"></param>
-        /// <param name="version"></param>
+        /// <param name="templateId">The ID of the template</param>
+        /// <param name="environment">Name of the enviornment to publish to.</param>
+        /// <param name="version">The version of the template.</param>
         /// <returns></returns>
         [HttpPost, Route("{templateId:int}/publish/{environment}/{version:int}"), ProducesResponseType(typeof(LinkedTemplatesModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> PublishToEnvironmentAsync(int templateId, string environment, int version)
-        {
-            
+        {  
 
             var currentPublished = await templatesService.GetTemplateEnvironmentsAsync(templateId);
             return currentPublished.StatusCode != HttpStatusCode.OK
@@ -139,6 +135,7 @@ namespace Api.Modules.VersionControl.Controllers
         /// </summary>
         /// <param name="id">The ID of the module.</param>
         /// <param name="gridData">The data for the Kendo UI grid.</param>
+        /// <param name="gridDivId">The ID of the div you want this grid to be shown.</param>
         [HttpPost, Route("{id:int}/overview-grid"), ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> OverviewGridAsync(int id, ModuleGridDataSettings gridData, string gridDivId)
         {
@@ -147,14 +144,22 @@ namespace Api.Modules.VersionControl.Controllers
             //(id,gridData, (ClaimsIdentity)User.Identity),gridDivId).
         }
 
+        /*
         [HttpGet, Route("PublishedTemplateVersion")]
         [ProducesResponseType(typeof(Dictionary<int,int>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetPublishedTemplateIdAndVersion()
         {
             return (await _versionControlService.GetPublishedTemplateIdAndVersion()).GetHttpResponseMessage();
-        }
+        }*/
         
+
+        /// <summary>
+        /// Gets the templates that have a lower version than the given one
+        /// </summary>
+        /// <param name="templateId">The ID of the template</param>
+        /// <param name="version"> The version of the template</param>
+        /// <returns>Returns a Dictionary with all the templates that have a lower version than the given one</returns>
         [HttpGet, Route("{templateId:int}/{version:int}")]
         [ProducesResponseType(typeof(Dictionary<int, int>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -163,14 +168,27 @@ namespace Api.Modules.VersionControl.Controllers
             return (await versionControlTemplateService.GetTemplatesWithLowerVersion(templateId, version)).GetHttpResponseMessage();
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="templateId"></param>
+        /// <param name="version"></param>
+        /// <returns></returns>
         [HttpGet, Route("current-published-enviornments/{templateId:int}/{version:int}")]
         [ProducesResponseType(typeof(VersionControlModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetCurrentPublishedEnvironments(int templateId,int version)
         {
-            return (await _versionControlService.GetCurrentPublishedEnvironment(templateId, version)).GetHttpResponseMessage();
+            return (await versionControlTemplateService.GetCurrentPublishedEnvironment(templateId, version)).GetHttpResponseMessage();
         }
 
+
+        /// <summary>
+        /// Gets all the templates of the given commit
+        /// </summary>
+        /// <param name="commitId">The ID of the Commit</param>
+        /// <returns>Returns all the templates of the commit in a list</returns>
         [HttpGet, Route("templates-of-commit/{commitId:int}")]
         [ProducesResponseType(typeof(List<VersionControlModel>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -179,6 +197,11 @@ namespace Api.Modules.VersionControl.Controllers
             return (await _versionControlService.GetTemplatesFromCommit(commitId)).GetHttpResponseMessage();
         }
 
+        /// <summary>
+        /// Gets all the dynamic content of the given commit
+        /// </summary>
+        /// <param name="commitId"></param>
+        /// <returns>Returns all the dynamic content of the commit in a list</returns>
         [HttpGet, Route("dynamic_content-of-commit/{commitId:int}")]
         [ProducesResponseType(typeof(List<VersionControlModel>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -189,39 +212,72 @@ namespace Api.Modules.VersionControl.Controllers
 
 
         //DYNAMIC CONTENT
+
+
+        /// <summary>
+        /// Gets the dynamic content with the given ID and Version.
+        /// </summary>
+        /// <param name="contentId">The ID of the dynamic content.</param>
+        /// <param name="version">The version of the dynamic content</param>
+        /// <returns></returns>
         [HttpGet, Route("dynamic-Content/{contentId:int}/{version:int}")]
         [ProducesResponseType(typeof(DynamicContentModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetDynamicContent(int contentId, int version)
         {
-            return (await _versionControlService.GetDynamicContent(contentId, version)).GetHttpResponseMessage();
+            return (await dynamicContentService.GetDynamicContent(contentId, version)).GetHttpResponseMessage();
         }
 
+        /// <summary>
+        /// Adds new row to the database that connects the dynamic content to the commit
+        /// </summary>
+        /// <param name="dynamicContentCommitModel"></param>
+        /// <returns></returns>
         [HttpPut, Route("dynamic-content-commit"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateDynamicContentCommit(DynamicContentCommitModel dynamicContentCommitModel)
         {
 
-            return (await _versionControlService.CreateNewDynamicContentCommit(dynamicContentCommitModel)).GetHttpResponseMessage();
+            return (await dynamicContentService.CreateNewDynamicContentCommit(dynamicContentCommitModel)).GetHttpResponseMessage();
         }
 
-        [HttpPost, Route("{dynamicContentId:int}/publishDyamicContent/{environment}/{version:int}"), ProducesResponseType(typeof(PublishedEnvironmentModel), StatusCodes.Status200OK)]
+        /// <summary>
+        /// Publishes the dynamic content to the given environment
+        /// </summary>
+        /// <param name="dynamicContentId">The ID of the dynamic content</param>
+        /// <param name="environment">The environment to publish to</param>
+        /// <param name="version">The version of the dynamic content</param>
+        /// <returns></returns>
+        [HttpPost, Route("{dynamicContentId:int}/publish-dynamic-content/{environment}/{version:int}"), ProducesResponseType(typeof(PublishedEnvironmentModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPublishedEnvironmentsDynamicContentAsync(int dynamicContentId, string environment, int version)
         {
-            var currentPublished = await _versionControlService.GetDynamicContentEnvironmentsAsync(dynamicContentId);
+            var currentPublished = await dynamicContentService.GetDynamicContentEnvironmentsAsync(dynamicContentId);
             return currentPublished.StatusCode != HttpStatusCode.OK
                 ? currentPublished.GetHttpResponseMessage()
-                : (await _versionControlService.PublishDynamicContentToEnvironmentAsync((ClaimsIdentity)User.Identity, dynamicContentId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
+                : (await dynamicContentService.PublishDynamicContentToEnvironmentAsync((ClaimsIdentity)User.Identity, dynamicContentId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
         }
 
         
+
+        /// <summary>
+        /// Gets all the dynamic content that have a lower version than the given one.
+        /// </summary>
+        /// <param name="contentId">The ID of the dynamic content</param>
+        /// <param name="version">The version of the dynamic content</param>
+        /// <returns>Returns all the dynamic with a lower version in a Dictionary</returns>
         [HttpGet, Route("dynamic-content/lower-versions/{contentId:int}/{version:int}")]
         [ProducesResponseType(typeof(Dictionary<int, int>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetDynamicContentWithLowerVersion(int contentId, int version)
         {
-            return (await _versionControlService.GetDynamicContentWithLowerVersion(contentId, version)).GetHttpResponseMessage();
+            return (await dynamicContentService.GetDynamicContentWithLowerVersion(contentId, version)).GetHttpResponseMessage();
         }
 
+
+        /// <summary>
+        /// Gets the dynamic content that are part of the given template
+        /// </summary>
+        /// <param name="templateId">the ID of the template</param>
+        /// <returns>Returns all the dynamic content that are linked to the given template in a list of dynamic content</returns>
         [HttpGet, Route("dynamic-content-in-template/{templateId:int}")]
         [ProducesResponseType(typeof(List<DynamicContentModel>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -230,6 +286,11 @@ namespace Api.Modules.VersionControl.Controllers
             return (await _versionControlService.GetDynamicContentInTemplate(templateId)).GetHttpResponseMessage();
         }
 
+        /// <summary>
+        /// Gets all the settings of the grids from the given module
+        /// </summary>
+        /// <param name="moduleId">The ID of the module</param>
+        /// <returns>Returns all the settings of the grids in a list.</returns>
         [HttpGet, Route("module-gird-settings/{moduleId:int}")]
         [ProducesResponseType(typeof(List<ModuleGridSettings>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
