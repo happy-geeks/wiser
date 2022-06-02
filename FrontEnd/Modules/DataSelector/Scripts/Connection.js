@@ -204,12 +204,20 @@
             // Although it's also possible to use "[...response]", this JSON trick works better as it also clones deep properties.
             this.availableProperties = JSON.parse(JSON.stringify(response));
 
+            this.availableProperties.splice(4, 0, {
+                value: "item_ordering",
+                entityName: entityType,
+                displayName: "Ordering (van item)",
+                propertyName: "item_ordering",
+                languageCode: ""
+            });
+
             if (!this.isMainConnection) {
-                this.availableProperties.splice(4, 0, {
-                    value: "item_ordering",
+                this.availableProperties.splice(5, 0, {
+                    value: "link_ordering",
                     entityName: entityType,
-                    displayName: "Ordering",
-                    propertyName: "item_ordering",
+                    displayName: "Ordering (van koppeling)",
+                    propertyName: "link_ordering",
                     languageCode: ""
                 });
             }
