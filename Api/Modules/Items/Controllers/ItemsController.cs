@@ -262,6 +262,7 @@ namespace Api.Modules.Items.Controllers
         [Route("{encryptedId}/upload")]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [Consumes("multipart/form-data")]
         public async Task<IActionResult> Upload(string encryptedId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false)
         {
             var form = await Request.ReadFormAsync();
