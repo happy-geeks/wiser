@@ -684,27 +684,17 @@ const moduleSettings = {
         }
 
         async onCommitSelectedOnly() {
-            //return;
-            //get alll selected items
-            //selected templates
+            
             const templateTable = document.querySelector("#gridView");
             const templateSelected = templateTable.querySelectorAll(".k-state-selected");
 
 
-            console.log(templateTable);
-            console.log(templateSelected);
-
-
-            //selected dynamische content
-            //NOG IMPLEMENTEREN
+            
             const dynamicContentTable = document.querySelector("#dynamicContentGrid");
             const dynamicContentSelected = dynamicContentTable.querySelectorAll(".k-state-selected");
 
 
-
-
-
-            //selected Environment choices
+      
             const selectedChoices = this.getSlectedDeployment();
 
             var isTest = false;
@@ -732,9 +722,7 @@ const moduleSettings = {
             }
 
 
-
-            //Commit message
-            //return this commit message
+            
             var commitMessage = this.getCommitMessage();
             if (commitMessage == "") {
                 kendo.alert("Voer een commit message in");
@@ -742,17 +730,16 @@ const moduleSettings = {
             }
 
 
-            /* if (templateVersionId == null) {
-                 kendo.alert("Selecteer een template.");
-                 return;
-             }*/
+            if (templateVersionId == null) {
+                kendo.alert("Selecteer een template.");
+                return;
+            }
 
 
             await this.commit.CreateNewCommit(commitMessage, "Admin");
             var createdCommit = await this.commit.GetCommitWithId()
             var commitId = createdCommit['id'];
-            console.log(createdCommit);
-            console.log(commitId);
+       
 
             for (const [key, value] of Object.entries(templateSelected)) {
 
@@ -760,20 +747,19 @@ const moduleSettings = {
 
                 var templateVersionId = value.querySelector('[data-field="template_id"]').innerHTML;
                 var version = value.querySelector('[data-field="version"]').innerHTML;
-                // var templateData = await this.getSelectedTemplateWithIdAndVersion(templateVersionId, version);
-                //var templateId = templateData['templateId'];
+              
 
                 console.log(value);
                 console.log(templateVersionId);
                 console.log(version);
 
 
-                //gets lower version of the template
+
                 var lowerVersionTemplates = await this.template.GetTemplatesWithLowerVersion(templateVersionId, version);
 
 
 
-                //console.log(Object.keys(lowerVersionTemplates).length);
+  
 
 
                 for (const [key, value] of Object.entries(lowerVersionTemplates)) {
@@ -791,15 +777,10 @@ const moduleSettings = {
 
                 var dynamicContentId = value.querySelector('[data-field="content_id"]').innerHTML;
                 var version = value.querySelector('[data-field="version"]').innerHTML;
-                //var templateData = await this.getSelectedTemplateWithIdAndVersion(dynamicContentId, version);
-                //var templateId = templateData['templateId'];
 
-                //gets lower version of the template
+
                 var lowerVersionDynamicContent = await this.GetDynamicContentWithLowerVersion(dynamicContentId, version);
 
-
-
-                console.log(Object.keys(lowerVersionDynamicContent).length);
 
 
                 for (const [key, value] of Object.entries(lowerVersionDynamicContent)) {
@@ -815,19 +796,12 @@ const moduleSettings = {
         }
 
         async onCommitSelectedAndRelatedDynamicConent() {
-            //foreach template selected
-            //check for related content
-
-
-            //get alll selected items
-            //selected templates
+            
             const templateTable = document.querySelector("#gridView");
             const templateSelected = templateTable.querySelectorAll(".k-state-selected");
 
 
 
-            //selected dynamische content
-            //NOG IMPLEMENTEREN
             const dynamicContentTable = document.querySelector("#dynamicContentGrid");
             const dynamicContentSelected = dynamicContentTable.querySelectorAll(".k-state-selected");
 
@@ -1096,11 +1070,6 @@ const moduleSettings = {
                 var dynamicContentInTemplateId = value["id"];
                 var dynamicContentInTemplateVersion = value["version"];
 
-                console.log(value);
-
-                console.log(dynamicContentInTemplateId);
-                console.log(dynamicContentInTemplateVersion); 
-
 
 
                 var alreadySelected = false;
@@ -1110,8 +1079,6 @@ const moduleSettings = {
                     var dynamicContentSelectedId = value2.querySelector('[data-field="content_id"]').innerHTML;
                     var dynamicContentSelectedVersion = value2.querySelector('[data-field="version"]').innerHTML;
 
-                    console.log(dynamicContentSelectedId);
-                    console.log(dynamicContentSelectedVersion);
 
                     if (dynamicContentInTemplateId == dynamicContentSelectedId && dynamicContentInTemplateVersion == dynamicContentSelectedVersion) {
                         //al geselecteerd
