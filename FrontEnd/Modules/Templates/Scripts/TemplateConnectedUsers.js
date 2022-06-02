@@ -4,7 +4,7 @@ export class TemplateConnectedUsers {
     constructor(base) {
         this.base = base;
         this.connectedUsers = {
-            templates: null
+            templates: {}
         };
 
         this.connection = new signalR.HubConnectionBuilder().withUrl("/templatesHub").build();
@@ -15,15 +15,24 @@ export class TemplateConnectedUsers {
     }
 
     add(templateId, user) {
-        this.connection.invoke("AddUser", templateId, user).catch(err => console.error(err));
+        this.connection.invoke("AddUser", templateId, user).then(() => {
+            this.#notifyUsersUpdate(templateId);
+        }).catch(err => console.error(err));
     }
 
     remove(templateId, user) {
-        this.connection.invoke("RemoveUser", templateId, user).catch(err => console.error(err));
+        this.connection.invoke("RemoveUser", templateId, user).then(() => {
+            this.#notifyUsersUpdate(templateId);
+        }).catch(err => console.error(err));
     }
 
     async getCurrentUsers(templateId) {
         return await this.connection.invoke("GetUsersInTemplate", templateId);
+    }
+
+    #rebuildConnectedUsers(templateId) {
+        // TODO
+        
     }
 
     #userOpenedTemplate(templateId, user) {
@@ -51,5 +60,12 @@ export class TemplateConnectedUsers {
 
         // Remove user from the array.
         this.connectedUsers.templates[key].splice(index, 1);
+    }
+
+    #notifyUsersUpdate(templateId) {
+        const event = new CustomEvent("TemplateConnectedUsers:UsersUpdate", {
+            detail: this.connectedUsers.templates[`template_${templateId}`]
+        })
+        document.dispatchEvent(event);
     }
 }

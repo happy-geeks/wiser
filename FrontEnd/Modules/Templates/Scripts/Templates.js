@@ -1442,6 +1442,10 @@ const moduleSettings = {
                 event.preventDefault();
             });
             $(".window-content #left-pane div.k-content").on("drop", this.onDropFile.bind(this));
+            
+            document.addEventListener("TemplateConnectedUsers:UsersUpdate", (event) => {
+                console.log("Connected users:", event.detail);
+            });
         }
 
         /**
