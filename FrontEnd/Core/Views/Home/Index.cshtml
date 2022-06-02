@@ -1,6 +1,11 @@
 ﻿@using FrontEnd.Core.Models
 
 @model BaseViewModel
+<style>
+    [v-cloak] {
+        display: none;
+    }
+</style>
 <!-- Current Wiser version: @Model.WiserVersion?.ToString() -->
 <div id="app" v-cloak :class="{ loading: mainLoader }">
     <header v-if="user.loggedIn && !requirePasswordChange">

@@ -1,6 +1,7 @@
 ﻿@import "../../Base/scss/base.scss";
 
 #wiser {
+    display: block;
     height: 100%;
 }
 .searching .pane-content {

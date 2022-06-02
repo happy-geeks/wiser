@@ -5,26 +5,9 @@ html, body {
     min-height: 100%;
 }
 
-    body.iframe #left-pane,
-    body.iframe .pane-content > header,
-    body.iframe .k-splitbar,
-    body.iframe #alert-first,
-    #itemWindow_template,
-    #previewFrame,
-    #sendMailDialog,
-    #htmlSourceWindow,
-    #maximizeEditorWindow,
-    #contentBuilderWindow,
-    #maximizeEditorWindow,
-    #imagesUploaderWindow,
-    #filesUploaderWindow,
-    #templatesUploaderWindow,
-    #infoPanel_template,
-    #maximizeSubEntitiesGridWindow,
-    #changeImageDataDialog,
-    #dataSelectorTemplateDialog {
-        display: none;
-    }
+#mainScreenForm {
+    display: block;
+}
 
 dl {
     border-left: 1px solid var(--dark-bd-color);
