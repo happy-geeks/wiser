@@ -22,6 +22,14 @@
             $(this.container).data("connection", this);
         }
 
+        getPrefix() {
+            const parentConnection = this.parentContainer.closest(".connectionBlock");
+            if (parentConnection === null) {
+                return "main_";
+            }
+
+        }
+
         createHtml() {
             const block = $(document.getElementById("connectionTemplate").innerHTML);
             $(this.parentContainer).append(block);
@@ -196,6 +204,24 @@
             // Although it's also possible to use "[...response]", this JSON trick works better as it also clones deep properties.
             this.availableProperties = JSON.parse(JSON.stringify(response));
 
+            this.availableProperties.splice(4, 0, {
+                value: "item_ordering",
+                entityName: entityType,
+                displayName: "Ordering (van item)",
+                propertyName: "item_ordering",
+                languageCode: ""
+            });
+
+            if (!this.isMainConnection) {
+                this.availableProperties.splice(5, 0, {
+                    value: "link_ordering",
+                    entityName: entityType,
+                    displayName: "Ordering (van koppeling)",
+                    propertyName: "link_ordering",
+                    languageCode: ""
+                });
+            }
+
             // Create a "unique value" for every property, based on the normal value.
             // A few inputs use this, like the group by input, order by input, and having inputs.
             this.availableProperties.forEach((property) => {
@@ -214,8 +240,6 @@
             if (!this.isMainConnection && !connectionBlock) {
                 return;
             }
-
-            console.log("connectionBlock:", connectionBlock);
 
             let linkType;
             if (this.isMainConnection) {
@@ -448,7 +472,7 @@
                     $(connectionBlock).remove();
                 } else {
                     if (connectionBlock === undefined || connectionBlock === null) {
-                        connectionBlock = this.dataSelector.addConnection(inputRow.get(0));
+                        connectionBlock = this.dataSelector.addConnection(inputRow.get(0)).container;
                         $(connectionBlock).data("linkedToPropertySelect", e.sender);
                     }
 

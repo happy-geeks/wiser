@@ -167,6 +167,11 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                             event.preventDefault();
                             this.openWiserIdPrompt();
                         }
+                        // Open MarkerToScreen (Bug reporting) prompt when the user presses CTRL+B.
+                        if (event.ctrlKey && event.key === "b") {
+                            event.preventDefault();
+                            this.openMarkerIoScreen();
+                        }
                     },
 
                     handleBodyClick(event) {

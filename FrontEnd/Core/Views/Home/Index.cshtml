@@ -45,12 +45,6 @@
                 <div class="ico-item" v-if="modules.find(m => m.moduleId === 709)">
                     <ins class="icon-line-search" @@click="openModule(709)"></ins>
                 </div>
-                <div class="ico-item" title="Bug melden!" v-if="markerIoEnabled" @@click="openMarkerIoScreen()">
-                    <ins class="icon-line-bug"></ins>
-                </div>
-                <div class="ico-item">
-                    <ins class="icon-line-database-search" @@click="openWiserIdPrompt"></ins>
-                </div>
                 <task-alerts ref="taskAlerts"></task-alerts>
             </li>
 
@@ -63,6 +57,8 @@
 
                 <ul class="sub-menu">
                     <li><a href="#" v-if="user.adminAccountId" @@click="openCustomerManagement()"><ins class="icon-line-user-plus"></ins><span>Klant toevoegen</span></a></li>
+                    <li><a href="#" @@click="openMarkerIoScreen()"><ins class="icon-line-bug"></ins><span>Bug melden! (CTRL+B)</span></a></li>
+                    <li><a href="#" @@click="openWiserIdPrompt"><ins class="icon-line-database-search"></ins><span>Wiser item openen (CTRL+O)</span></a></li>
                     <li><a href="#" @@click="logout()"><ins class="icon-line-log-out"></ins><span>Uitloggen</span></a></li>
                 </ul>
             </li>
