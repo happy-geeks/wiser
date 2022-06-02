@@ -109,6 +109,7 @@ var initialize = function() {
     container.find(".k-upload-files").kendoSortable({
         cursor: "move",
         autoScroll: true,
+        container: "#container_{propertyIdWithSuffix} .k-upload-files",
         hint: function(element) {
             return element.clone().addClass("hint");
         },

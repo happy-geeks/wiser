@@ -55,6 +55,7 @@ if (readonly === true) {
 container.find(".imagesContainer").kendoSortable({
     cursor: "move",
     autoScroll: true,
+    container: "#container_{propertyIdWithSuffix} .imagesContainer",
     hint: function (element) {
         return element.clone().addClass("hint");
     },
