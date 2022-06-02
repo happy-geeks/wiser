@@ -2,6 +2,7 @@
 import { Wiser2 } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import { Preview } from "./Preview.js";
+import { TemplateConnectedUsers } from "./TemplateConnectedUsers.js";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -89,6 +90,7 @@ const moduleSettings = {
             // Other.
             this.mainLoader = null;
             this.preview = new Preview(this);
+            this.connectedUsers = new TemplateConnectedUsers(this);
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -631,6 +633,8 @@ const moduleSettings = {
 
                 await Promise.all(promises);
                 window.processing.removeProcess(process);
+
+                this.connectedUsers.add(id, this.base.settings.username);
 
                 // Only load dynamic content and previews for HTML templates.
                 const isHtmlTemplate = this.templateSettings.type.toUpperCase() === "HTML";
