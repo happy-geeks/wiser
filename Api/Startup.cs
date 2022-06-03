@@ -35,7 +35,6 @@ using Newtonsoft.Json.Serialization;
 using React;
 using React.AspNet;
 using Serilog;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Api
 {
