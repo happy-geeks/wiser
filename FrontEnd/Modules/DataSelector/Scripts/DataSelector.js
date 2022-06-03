@@ -313,7 +313,7 @@ const moduleSettings = {
             selectEntity.bind("change", () => {
                 this.selectedEntityType = selectEntity.value();
 
-                const connection = $(this.mainConnection).data("connection");
+                const connection = $(this.mainConnection.container).data("connection");
                 connection.updateAvailableProperties().then(() => {
                     // Update the data sources of the main scopes and field selection.
                     const connectionBlock = this.container.querySelector(".connectionBlock");
@@ -569,7 +569,7 @@ const moduleSettings = {
         addConnection(parentContainer, isMainConnection = false) {
             const connection = new Connection(this, parentContainer, isMainConnection);
             connection.initialize();
-            return connection.container;
+            return connection;
         }
 
         initializeWindow() {

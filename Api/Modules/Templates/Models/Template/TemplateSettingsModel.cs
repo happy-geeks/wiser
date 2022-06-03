@@ -45,6 +45,9 @@ namespace Api.Modules.Templates.Models.Template
         public string LoginRole { get; set; }
         public string LoginRedirectUrl { get; set; }
         public string PreLoadQuery { get; set; }
+        public bool IsDefaultHeader { get; set; }
+        public bool IsDefaultFooter { get; set; }
+        public string DefaultHeaderFooterRegex { get; set; }
 
         // Css/Scss/Js settings.
         public ResourceInsertModes InsertMode { get; set; }

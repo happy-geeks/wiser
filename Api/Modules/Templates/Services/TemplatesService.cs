@@ -2932,6 +2932,69 @@ LIMIT 1";
             finalResult = finalResult.ReplaceCaseInsensitive("<head>", $"<head><base href='{AddMainDomainToUrl("/", mainDomain)}'>");
             return new ServiceResult<string>(finalResult);
         }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> CheckDefaultHeaderConflict(int templateId, string regexString)
+        {
+            return await InternalCheckDefaultHeaderOrFooterConflict("header", templateId, regexString);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString)
+        {
+            return await InternalCheckDefaultHeaderOrFooterConflict("footer", templateId, regexString);
+        }
+
+        /// <summary>
+        /// The function used by <see cref="CheckDefaultHeaderConflict"/> and <see cref="CheckDefaultFooterConflict"/>.
+        /// </summary>
+        /// <param name="type">The type to check. It should be either 'header' or 'footer'.</param>
+        /// <param name="templateId">ID of the current template.</param>
+        /// <param name="regexString">The regex to be used in the check.</param>
+        /// <returns>A string with the name of the template that this template conflicts with, or an empty string if there's no conflict.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">When <paramref name="type"/> is <see langword="null"/> or does not equal to either "header" or "footer".</exception>
+        private async Task<ServiceResult<string>> InternalCheckDefaultHeaderOrFooterConflict(string type, int templateId, string regexString)
+        {
+            // Validate the type. It can only be either "header" or "footer".
+            if (String.IsNullOrWhiteSpace(type) || !type.InList("header", "footer"))
+            {
+                throw new ArgumentOutOfRangeException(nameof(type), $"Argument '{nameof(type)}' has an invalid value. Should be either \"header\" or \"footer\".");
+            }
+
+            // Create the name of the field that needs to be checked.
+            var fieldName = $"is_default_{type}";
+
+            // Add template ID parameter. This is used by the query to make sure templates don't conflict with themselves.
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("templateId", templateId);
+
+            string regexWherePart;
+            if (String.IsNullOrWhiteSpace(regexString))
+            {
+                // If regexString is null or empty, the field in the table should also be null or empty.
+                regexWherePart = " AND (template.default_header_footer_regex IS NULL OR TRIM(template.default_header_footer_regex) = '')";
+            }
+            else
+            {
+                // If regexString is set to a non-null and non-empty string, the string needs to be an exact match.
+                clientDatabaseConnection.AddParameter("regexString", regexString);
+                regexWherePart = " AND template.default_header_footer_regex = ?regexString";
+            }
+
+            var query = $@"
+                SELECT template.template_name
+                FROM {WiserTableNames.WiserTemplate} AS template
+                JOIN (SELECT template_id, MAX(version) AS maxVersion FROM {WiserTableNames.WiserTemplate} GROUP BY template_id) AS maxVersion ON template.template_id = maxVersion.template_id AND template.version = maxVersion.maxVersion
+                WHERE template.template_type = 1 AND template.removed = 0 AND template.`{fieldName}` = 1 AND template.template_id <> ?templateId {regexWherePart}
+                GROUP BY template.template_id
+                LIMIT 1";
+
+            var result = await clientDatabaseConnection.GetAsync(query);
+            return result.Rows.Count == 0
+                ? new ServiceResult<string>(String.Empty)
+                : new ServiceResult<string>(result.Rows[0].Field<string>("template_name"));
+        }
 
         /// <summary>
         /// Converts Wiser 1 templates to the Wiser 3 format.

@@ -1,9 +1,7 @@
 ﻿@import "../../Base/scss/base.scss";
 
-#createNewItemDialog,
-#addDynamicContentToHtmlDialog,
-#htmlSourceWindow {
-    display: none;
+#wiser {
+    display: block;
 }
 
 .k-dialog #createNewItemDialog,
@@ -276,6 +274,7 @@
     width: 100%;
 }
 
+.header-footer-regex-panel,
 .user-check-panel,
 .object-grouping-panel {
     transition: 200ms ease-in-out;
@@ -284,6 +283,8 @@
     overflow: hidden;
 }
 
+#isDefaultHeader:checked ~ .header-footer-regex-panel,
+#isDefaultFooter:checked ~ .header-footer-regex-panel,
 #loginRequired:checked ~ .user-check-panel,
 #groupingCreateObjectInsteadOfArray:checked ~ .object-grouping-panel {
     max-height: 2000px;

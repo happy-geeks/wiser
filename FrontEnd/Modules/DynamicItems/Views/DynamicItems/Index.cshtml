@@ -12,6 +12,31 @@
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
+    
+    <style>
+        #mainScreenForm,
+        body.iframe #left-pane,
+        body.iframe .pane-content > header,
+        body.iframe .k-splitbar,
+        body.iframe #alert-first,
+        #itemWindow_template,
+        #previewFrame,
+        #sendMailDialog,
+        #htmlSourceWindow,
+        #maximizeEditorWindow,
+        #contentBuilderWindow,
+        #maximizeEditorWindow,
+        #imagesUploaderWindow,
+        #filesUploaderWindow,
+        #templatesUploaderWindow,
+        #infoPanel_template,
+        #maximizeSubEntitiesGridWindow,
+        #changeImageDataDialog,
+        #dataSelectorTemplateDialog,
+        #searchItemsWindow {
+            display: none;
+        }
+    </style>
 </head>
 
 <body class="@Model.BodyCssClass"
