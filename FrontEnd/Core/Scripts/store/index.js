@@ -1,5 +1,5 @@
 ﻿import { createStore } from "vuex";
-import { START_REQUEST, END_REQUEST, AUTH_REQUEST, AUTH_LIST, AUTH_SUCCESS, AUTH_ERROR, AUTH_LOGOUT, MODULES_LOADED, OPEN_MODULE, ACTIVATE_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, MODULES_REQUEST, LOAD_ENTITY_TYPES_OF_ITEM_ID, FORGOT_PASSWORD, RESET_PASSWORD_SUCCESS, RESET_PASSWORD_ERROR, CHANGE_PASSWORD, CHANGE_PASSWORD_SUCCESS, CHANGE_PASSWORD_ERROR, GET_CUSTOMER_TITLE, VALID_SUB_DOMAIN, TOGGLE_PIN_MODULE } from "./mutation-types";
+import { START_REQUEST, END_REQUEST, AUTH_REQUEST, AUTH_LIST, AUTH_SUCCESS, AUTH_ERROR, AUTH_LOGOUT, MODULES_LOADED, OPEN_MODULE, ACTIVATE_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, MODULES_REQUEST, LOAD_ENTITY_TYPES_OF_ITEM_ID, FORGOT_PASSWORD, RESET_PASSWORD_SUCCESS, RESET_PASSWORD_ERROR, CHANGE_PASSWORD_LOGIN, CHANGE_PASSWORD_SUCCESS, CHANGE_PASSWORD_ERROR, GET_CUSTOMER_TITLE, VALID_SUB_DOMAIN, TOGGLE_PIN_MODULE, CHANGE_PASSWORD } from "./mutation-types";
 
 const baseModule = {
     state: () => ({
@@ -94,7 +94,7 @@ const loginModule = {
         [RESET_PASSWORD_ERROR]: (state) => {
             state.loginMessage = "Er is iets mis gegaan. Probeer het later a.u.b. opnieuw.";
         },
-        [CHANGE_PASSWORD]: (state) => {
+        [CHANGE_PASSWORD_LOGIN]: (state) => {
             state.loginMessage = "";
         },
         [CHANGE_PASSWORD_SUCCESS]: (state) => {
@@ -203,17 +203,13 @@ const loginModule = {
             }
         },
 
-        async [CHANGE_PASSWORD]({ commit }, data = {}) {
-            commit(CHANGE_PASSWORD);
+        async [CHANGE_PASSWORD_LOGIN]({ commit }, data = {}) {
+            commit(CHANGE_PASSWORD_LOGIN);
 
             const result = await main.usersService.changePassword(data.user);
 
             if (result.response) {
-                if (result.response) {
-                    commit(CHANGE_PASSWORD_SUCCESS);
-                } else {
-                    commit(CHANGE_PASSWORD_ERROR, result.error);
-                }
+                commit(CHANGE_PASSWORD_SUCCESS);
             } else {
                 commit(CHANGE_PASSWORD_ERROR, result.error);
             }
@@ -462,6 +458,37 @@ const modulesModule = {
     getters: {}
 };
 
+const usersModule = {
+    state: () => ({
+        changePasswordError: null
+    }),
+
+    mutations: {
+        [RESET_PASSWORD_SUCCESS]: (state, message) => {
+            state.changePasswordError = null;
+        },
+        [CHANGE_PASSWORD_ERROR]: (state, message) => {
+            state.changePasswordError = message;
+        }
+    },
+
+    actions: {
+        async [CHANGE_PASSWORD]({ commit }, data = {}) {
+            commit(START_REQUEST);
+            const result = await main.usersService.changePassword(data);
+            commit(END_REQUEST);
+
+            if (result.response) {
+                commit(RESET_PASSWORD_SUCCESS);
+            } else {
+                commit(CHANGE_PASSWORD_ERROR, result.error);
+            }
+        }
+    },
+
+    getters: {}
+};
+
 const customersModule = {
     state: () => ({
         title: null,
@@ -530,6 +557,7 @@ export default createStore({
         login: loginModule,
         modules: modulesModule,
         customers: customersModule,
+        users: usersModule,
         items: itemsModule
     }
 });

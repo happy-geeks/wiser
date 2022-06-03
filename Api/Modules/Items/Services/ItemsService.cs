@@ -1167,13 +1167,17 @@ namespace Api.Modules.Items.Services
 
                     if (!fieldTemplates.ContainsKey(name))
                     {
-                        if (fieldTemplates.ContainsKey(nameWithoutMode))
+                        var contents = ReadTextResourceFromAssembly(name);
+                        if (!String.IsNullOrWhiteSpace(contents))
+                        {
+                            fieldTemplates.Add(name, contents);
+                        }
+                        else if (fieldTemplates.ContainsKey(nameWithoutMode))
                         {
                             name = nameWithoutMode;
                         }
                         else
                         {
-                            var contents = ReadTextResourceFromAssembly(name);
                             if (String.IsNullOrWhiteSpace(contents))
                             {
                                 name = nameWithoutMode;
