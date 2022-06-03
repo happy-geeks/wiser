@@ -449,15 +449,13 @@ const moduleSettings = {
             console.log(this.settings.username);
             console.log(this.settings.username);
             var envioronmentbuttonValue = event.event.target.value;
-            //GET THE DYNAMIC CONTENT ID
+
+
+
             var commitGrid = document.querySelector("#deploygrid");
             var commits = commitGrid.querySelectorAll(".k-state-selected");
 
 
-            console.log("DEPLOY");
-          
-            console.log(envioronmentbuttonValue);
-            console.log(commits);
 
 
             for (const [key, value] of Object.entries(commits)) {
@@ -469,8 +467,7 @@ const moduleSettings = {
                 var templates = await this.template.GetTemplatesFromCommit(commitId);
                 var dynamicContent = await this.GetDynamicContentFromCommit(commitId);
 
-                console.log(templates);
-                console.log(dynamicContent);
+              
 
                 for (const [key, value] of Object.entries(templates)) {
 
@@ -662,19 +659,11 @@ const moduleSettings = {
                 var version = value.querySelector('[data-field="version"]').innerHTML;
               
 
-                console.log(value);
-                console.log(templateVersionId);
-                console.log(version);
-
-
-
+            
                 var lowerVersionTemplates = await this.template.GetTemplatesWithLowerVersion(templateVersionId, version);
 
 
-
-  
-
-
+                
                 for (const [key, value] of Object.entries(lowerVersionTemplates)) {
                     await this.commit.PutTemplateCommit(commitId, value, key, publishEnviornment);
                 }
