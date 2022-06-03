@@ -339,10 +339,7 @@ const moduleSettings = {
                 icon: "save"
             });
 
-            $(".evironment_deploy_template_history").kendoButton({
-                click: this.HistoryTemplatesRevert.bind(this),
-                icon: "save"
-            });
+            
             /*
             $(".environment_dynamic_content, .environment_dynamic_content, .environment_dynamic_content").kendoButton({
                 click: this.DeployDynamicContent.bind(this),
@@ -489,72 +486,13 @@ const moduleSettings = {
                 console.log(templates);
             }
 
-            //haal de hoogste versie template op van deze commit
+            document.location.reload();
+
             
 
-
-
-            //haal de hoogste versie dynamic content op van deze commit
-
-
-            //var templateData = await this.getSelectedTemplateWithIdAndVersion(templateVersionId, version);
-            //var templateId =  templateData['templateId'];
-
-            //console.log(templateId);
-
-            //zet template naar de omgeving
-      
-            //await this.PublishTemplate(templateVersionId, envioronmentbuttonValue, version);
-
-
-            //voeg aanpassing toe aan de log
-            //await this.CreatePublishLog(templateVersionId, envioronmentbuttonValue, version);
-                
-           // console.log(event.event.target.value);
-            //console.log(version);
-
-            //document.location.reload();
-
         }
-
-        async DeployDynamicContent(event) {
-            var envioronmentbuttonValue = event.event.target.value;
-            //GET THE DYNAMIC CONTENT ID
-            var dynamicContentId = this.getSelectedDynamicContentId("#DynamicContentDeployGrid");
-            var version = document.querySelector(".k-state-selected").innerHTML;
-
         
 
-
-            console.log(envioronmentbuttonValue);
-            console.log(dynamicContentId);
-            console.log(version);
-
-
-
-            //var templateData = await this.getSelectedTemplateWithIdAndVersion(templateVersionId, version);
-            //var templateId =  templateData['templateId'];
-
-            //console.log(templateId);
-
-            //zet template naar de omgeving
-
-            // PUBLISH THE DYNAMIC CONTENT NOT THE TEMPLATE
-            //await this.PublishDynamicContent(dynamicContentId, envioronmentbuttonValue, version);
-
-
-            //voeg aanpassing toe aan de log
-            //await this.CreatePublishLog(templateVersionId, envioronmentbuttonValue, version);
-
-            // console.log(event.event.target.value);
-            //console.log(version);
-
-           // document.location.reload();
-        }
-
-        async HistoryTemplatesRevert(event) {
-
-        }
 
         async HistoryDynamicContent(event) {
 
@@ -589,34 +527,8 @@ const moduleSettings = {
                 await this.PublishDynamicContent(dynamicContentId, envioronmentbuttonValue, version);
             }
 
+            document.location.reload();
 
-
-            /*
-            //GET THE DYNAMIC CONTENT ID
-            var dynamicContentId = this.getSelectedDynamicContentId("#historyDynamicContentGridId");
-            var version = document.querySelector(".k-state-selected").querySelector('[data-field="version"]').innerHTML;
-
-
-
-
-            console.log(envioronmentbuttonValue);
-            console.log(dynamicContentId);
-            console.log(version);
-
-            //var templateData = await this.getSelectedTemplateWithIdAndVersion(templateVersionId, version);
-            //var templateId =  templateData['templateId'];
-
-            //console.log(templateId);
-
-            //zet template naar de omgeving
-
-            // PUBLISH THE DYNAMIC CONTENT NOT THE TEMPLATE
-            await this.PublishDynamicContent(dynamicContentId, envioronmentbuttonValue, version);
-
-
- 
-
-            document.location.reload();*/
         }
 
 
@@ -729,11 +641,12 @@ const moduleSettings = {
                 return;
             }
 
+            console.log(templateSelected);
 
-            if (templateVersionId == null) {
+            /*if (templateVersionId == null) {
                 kendo.alert("Selecteer een template.");
                 return;
-            }
+            }*/
 
 
             await this.commit.CreateNewCommit(commitMessage, "Admin");
@@ -792,7 +705,7 @@ const moduleSettings = {
 
                 await this.PublishDynamicContent(dynamicContentId, publishEnviornment, version);
             }
-
+            document.location.reload();
         }
 
         async onCommitSelectedAndRelatedDynamicConent() {
@@ -818,7 +731,7 @@ const moduleSettings = {
                 DynamicContentList.push(DynamicContentListResults);
 
             }
-
+            console.log("Dynamic content list");
             console.log(DynamicContentList);
 
             //selected Environment choices
@@ -876,8 +789,7 @@ const moduleSettings = {
 
                 var templateVersionId = value.querySelector('[data-field="template_id"]').innerHTML;
                 var version = value.querySelector('[data-field="version"]').innerHTML;
-                // var templateData = await this.getSelectedTemplateWithIdAndVersion(templateVersionId, version);
-                //var templateId = templateData['templateId'];
+                
 
 
 
@@ -929,7 +841,7 @@ const moduleSettings = {
 
 
 
-
+            console.log(DynamicContentList);
             for (const [key, value] of Object.entries(DynamicContentList)) {
 
                 var dynamicContentFromTemplate = value;
@@ -977,8 +889,7 @@ const moduleSettings = {
             //DynamicContentList
             for (const [key, value] of Object.entries(DynamicContentList)) {
 
-                var dynamicConentItemFromTemplate = value;
-                
+             
 
    
                 var dynamicContent = value
@@ -1007,13 +918,14 @@ const moduleSettings = {
                         }
     
     
-                        await this.PutDynamicContentCommit(commitId, dynamicContentId, version, publishEnviornment);
+                       await this.PutDynamicContentCommit(commitId, dynamicContentId, version, publishEnviornment);
     
-                        await this.PublishDynamicContent(dynamicContentId, publishEnviornment, version);
+                       await this.PublishDynamicContent(dynamicContentId, publishEnviornment, version);
                     }
                 }
                 
             }
+            document.location.reload();
         }
 
 
@@ -1026,14 +938,14 @@ const moduleSettings = {
         async onCommitSelectedItemsWithDynamicContentItems() {
             console.log("action :: Templates gecommit met dynamic content");
             this.onCommitSelectedAndRelatedDynamicConent();
-            document.location.reload();
+         
         }
 
 
         async onCommitOnlySelectedItems() {
             console.log("action :: Templates committet zonder dynamic content");
             this.onCommitSelectedOnly();
-            document.location.reload();
+           
         }
 
 
@@ -1059,7 +971,7 @@ const moduleSettings = {
 
                 DynamicContentList.push(DynamicContentListResults);
 
-              //  await this.commit.PutTemplateCommit(commitId, value, key, publishEnviornment);
+             
             }
 
 

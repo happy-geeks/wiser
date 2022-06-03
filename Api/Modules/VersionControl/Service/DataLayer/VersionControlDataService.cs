@@ -152,7 +152,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
         public async Task<List<DynamicContentModel>> GetDynamicContentInTemplate(int templateId)
         {
-            var query = $@"SELECT * FROM wiser_template_dynamic_content wtdc LEFT JOIN wiser_dynamic_content dc ON  dc.content_id = wtdc.content_id WHERE dc.version = (SELECT MAX(version) FROM wiser_dynamic_content dc2 WHERE dc2.content_id = dc.content_id) AND destination_template_id = ?templateId";
+            var query = $@"SELECT * FROM wiser_template_dynamic_content wtdc LEFT JOIN wiser_dynamic_content dc ON  dc.content_id = wtdc.content_id WHERE dc.version = (SELECT MAX(version) FROM wiser_dynamic_content dc2 WHERE dc2.content_id = dc.content_id) AND destination_template_id = ?templateId AND NOT EXISTS(SELECT * FROM wiser_commit_dynamic_content wcdc WHERE wcdc.dynamic_content_id = dc.content_id and wcdc.version = dc.version)      ";
             clientDatabaseConnection.ClearParameters();
 
             clientDatabaseConnection.AddParameter("templateId", templateId);
