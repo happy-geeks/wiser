@@ -391,6 +391,9 @@ ins {
 .dynamicTabContent > .gridview:only-child {
     height: calc(100vh - 293px);
 }
+.popup-container .dynamicTabContent > .gridview:only-child {
+	height: calc(100vh - 230px);
+}
 .dynamicTabContent > .gridview:only-child h4 {
     display: none;
 }
@@ -1205,7 +1208,7 @@ footer input ~ .meta-data li.meta-toggle label span:last-child {
 .dynamicTabContent .gridview:only-child .k-grid {
     display: flex;
     flex-direction: column;
-	height: calc(100% - 10px);
+	height: calc(100% - 20px);
 }
 
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview:not(:only-child) {

@@ -579,7 +579,7 @@ export class Grids {
                 contentType: "application/json"
             });
 
-            sessionStorage.setItem(key, value || "[]");
+            sessionStorage.setItem(key, value || "");
         }
         
         return value;
