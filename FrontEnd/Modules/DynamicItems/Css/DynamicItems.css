@@ -85,6 +85,10 @@ body.iframe #alert-pane {
     display: none;
 }
 
+#gridView .k-loading-mask {
+    display: none;
+}
+
 body.gridViewMode:not(.iframe) #gridView {
     display: block;
 }
