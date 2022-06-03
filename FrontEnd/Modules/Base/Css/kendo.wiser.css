@@ -1422,7 +1422,6 @@ k-filter-menu .k-autocomplete,
 }
 .handler ~ .k-grid {
 	margin: 5px 0;
-	max-width: calc(100% - 35px);
 }
 .formview.compact .handler ~ .k-grid {
 	max-width: calc(100% - 255px);

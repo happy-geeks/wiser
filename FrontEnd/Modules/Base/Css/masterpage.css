@@ -388,10 +388,10 @@ ins {
 .gridview {
 	overflow: hidden;
 }
-.dynamicTabContent .gridview:only-child {
-    height: calc(100vh - 230px);
+.dynamicTabContent > .gridview:only-child {
+    height: calc(100vh - 293px);
 }
-.dynamicTabContent .gridview:only-child h4 {
+.dynamicTabContent > .gridview:only-child h4 {
     display: none;
 }
 .changeview {

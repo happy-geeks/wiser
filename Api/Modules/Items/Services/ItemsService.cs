@@ -1524,7 +1524,15 @@ namespace Api.Modules.Items.Services
                 {
                     foreach (var group in tab.Groups)
                     {
-                        tab.HtmlTemplateBuilder.Append($"<div class=\"item-group\"><h3>{group.Name.HtmlEncode()}</h3>");
+                        if (String.IsNullOrEmpty(group.Name))
+                        {
+                            tab.HtmlTemplateBuilder.Append($"<div class=\"item-group\">");
+                        }
+                        else
+                        {
+                            tab.HtmlTemplateBuilder.Append($"<div class=\"item-group\"><h3>{group.Name.HtmlEncode()}</h3>");
+                        }
+
                         tab.HtmlTemplateBuilder.Append(group.HtmlTemplateBuilder);
                         tab.HtmlTemplateBuilder.Append("</div>");
                         tab.ScriptTemplateBuilder.Append(group.ScriptTemplateBuilder);
