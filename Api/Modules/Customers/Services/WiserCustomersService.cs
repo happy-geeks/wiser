@@ -17,13 +17,10 @@ using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Models;
-using GeeksCoreLibrary.Modules.Databases.Helpers;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MultiSafepay.Model;
 using MySql.Data.MySqlClient;
-using Serilog.Core;
 
 namespace Api.Modules.Customers.Services
 {
@@ -181,8 +178,6 @@ namespace Api.Modules.Customers.Services
             
             return new ServiceResult<string>(customersDataTable.Rows[0].Field<string>("encryption_key"));
         }
-
-        #region Wiser users data/settings
         
         /// <inheritdoc />
         public async Task<T> DecryptValue<T>(string encryptedValue, ClaimsIdentity identity)
@@ -730,15 +725,31 @@ namespace Api.Modules.Customers.Services
             }
 
             var result = new SynchroniseChangesToProductionResultModel();
+
+            var productionConnection = new MySqlConnection(GenerateConnectionStringFromCustomer(productionCustomer));
+            var environmentConnection = new MySqlConnection(GenerateConnectionStringFromCustomer(selectedEnvironmentCustomer));
+            await productionConnection.OpenAsync();
+            await environmentConnection.OpenAsync();
+            var productionTransaction = await productionConnection.BeginTransactionAsync();
+            var environmentTransaction = await environmentConnection.BeginTransactionAsync();
+            var sqlParameters = new Dictionary<string, object>();
+            
             try
             {
-
                 // Create the wiser_id_mappings table, in the selected environment, if it doesn't exist yet.
                 // We need it to map IDs of the selected environment to IDs of the production environment, because they are not always the same.
                 await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserIdMappings}, selectedEnvironmentCustomer.Database.DatabaseName);
-
+                
                 // Get all history since last synchronisation.
-                var dataTable = await clientDatabaseConnection.GetAsync($"SELECT * FROM `{selectedEnvironmentCustomer.Database.DatabaseName}`.{WiserTableNames.WiserHistory} ORDER BY id ASC");
+                var dataTable = new DataTable();
+                await using (var environmentCommand = environmentConnection.CreateCommand())
+                {
+                    environmentCommand.CommandText = $"SELECT * FROM `{WiserTableNames.WiserHistory}` ORDER BY id ASC";
+                    using var environmentAdapter = new MySqlDataAdapter(environmentCommand);
+                    await environmentAdapter.FillAsync(dataTable);
+                }
+
+                // Srt saveHistory and username parameters for all queries.
                 var queryPrefix = @"SET @saveHistory = TRUE; SET @_username = ?username; ";
                 var username = $"{IdentityHelpers.GetUserName(identity, true)} (Sync from {selectedEnvironmentCustomer.Name})";
                 if (username.Length > 50)
@@ -751,18 +762,46 @@ namespace Api.Modules.Customers.Services
                     }
                 }
 
-                clientDatabaseConnection.AddParameter("username", username);
+                sqlParameters.Add("username", username);
 
                 // We need to lock all tables we're going to use, to make sure no other changes can be done while we're busy synchronising.
-                var tablesToLock = new List<string>();
+                var tablesToLock = new List<string> { WiserTableNames.WiserHistory };
                 foreach (DataRow dataRow in dataTable.Rows)
                 {
-                    tablesToLock.Add(dataRow.Field<string>("tablename"));
+                    var tableName = dataRow.Field<string>("tablename");
+                    if (String.IsNullOrWhiteSpace(tableName) || tablesToLock.Contains(tableName))
+                    {
+                        continue;
+                    }
+                    
+                    tablesToLock.Add(tableName);
+                    if (WiserTableNames.TablesWithArchive.Any(table => tableName.EndsWith(table, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        tablesToLock.Add($"{tableName}{WiserTableNames.ArchiveSuffix}");
+                    }
+
+                    // If we have a table that has an ID from wiser_item, then always lock wiser_item as well, because we will read from it later.
+                    var originalItemId = Convert.ToUInt64(dataRow["item_id"]);
+                    var (tablePrefix, isWiserItemChange) = GetTablePrefix(tableName, originalItemId);
+                    var wiserItemTableName = $"{tablePrefix}{WiserTableNames.WiserItem}";
+                    if (isWiserItemChange && originalItemId > 0 && !tablesToLock.Contains(wiserItemTableName))
+                    {
+                        tablesToLock.Add(wiserItemTableName);
+                        tablesToLock.Add($"{wiserItemTableName}{WiserTableNames.ArchiveSuffix}");
+                    }
                 }
 
-                // Start a transaction and then lock the tables we're going to use, to be sure that other processes don't mess up our synchronisation.
-                await clientDatabaseConnection.BeginTransactionAsync();
-                await clientDatabaseConnection.ExecuteAsync($"LOCK TABLES {String.Join(", ", tablesToLock.Select(table => $"`{productionCustomer.Database.DatabaseName}`.`{table}` WRITE, `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{table}` WRITE"))}");
+                // Lock the tables we're going to use, to be sure that other processes don't mess up our synchronisation.
+                await using (var productionCommand = productionConnection.CreateCommand())
+                {
+                    productionCommand.CommandText = $"LOCK TABLES {String.Join(", ", tablesToLock.Select(table => $"{table} WRITE"))}";
+                    await productionCommand.ExecuteNonQueryAsync();
+                }
+                await using (var environmentCommand = environmentConnection.CreateCommand())
+                {
+                    environmentCommand.CommandText = $"LOCK TABLES {WiserTableNames.WiserIdMappings} WRITE, {String.Join(", ", tablesToLock.Select(table => $"{table} WRITE"))}";
+                    await environmentCommand.ExecuteNonQueryAsync();
+                }
 
                 // This is to cache the entity types for all changed items, so that we don't have to execute a query for every changed detail of the same item.
                 var entityTypes = new Dictionary<ulong, string>();
@@ -770,20 +809,26 @@ namespace Api.Modules.Customers.Services
                 // This is to map one item ID to another. This is needed because when someone creates a new item in the other environment, that ID could already exist in the production environment.
                 // So we need to map the ID that is saved in wiser_history to the new ID of the item that we create in the production environment.
                 var idMapping = new Dictionary<string, Dictionary<ulong, ulong>>();
-                var idMappingQuery = $@"SELECT table_name, our_id, production_id FROM `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{WiserTableNames.WiserIdMappings}`";
-                var idMappingDatatable = await clientDatabaseConnection.GetAsync(idMappingQuery);
-                foreach (DataRow dataRow in idMappingDatatable.Rows)
+                await using (var environmentCommand = environmentConnection.CreateCommand())
                 {
-                    var tableName = dataRow.Field<string>("table_name");
-                    var ourId = dataRow.Field<ulong>("our_id");
-                    var productionId = dataRow.Field<ulong>("production_id");
-
-                    if (!idMapping.ContainsKey(tableName!))
+                    environmentCommand.CommandText = $@"SELECT table_name, our_id, production_id FROM `{WiserTableNames.WiserIdMappings}`";
+                    using var environmentAdapter = new MySqlDataAdapter(environmentCommand);
+                    
+                    var idMappingDatatable = new DataTable();
+                    await environmentAdapter.FillAsync(idMappingDatatable);
+                    foreach (DataRow dataRow in idMappingDatatable.Rows)
                     {
-                        idMapping.Add(tableName, new Dictionary<ulong, ulong>());
-                    }
+                        var tableName = dataRow.Field<string>("table_name");
+                        var ourId = dataRow.Field<ulong>("our_id");
+                        var productionId = dataRow.Field<ulong>("production_id");
 
-                    idMapping[tableName][ourId] = productionId;
+                        if (!idMapping.ContainsKey(tableName!))
+                        {
+                            idMapping.Add(tableName, new Dictionary<ulong, ulong>());
+                        }
+
+                        idMapping[tableName][ourId] = productionId;
+                    }
                 }
 
                 // Start synchronising all history items one by one.
@@ -832,24 +877,31 @@ namespace Api.Modules.Customers.Services
                                 // When a link has been changed, it's possible that the ID of one of the items is changed.
                                 // It's also possible that this is a new link that the production database didn't have yet (and so the ID of the link will most likely be different).
                                 // Therefor we need to find the original item and destination IDs, so that we can use those to update the link in the production database.
-                                clientDatabaseConnection.AddParameter("linkId", itemId);
-                                var query = $@"SELECT item_id, destination_item_id FROM `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{WiserTableNames.WiserItemLink}` WHERE id = ?linkId";
-                                var linkDataTable = await clientDatabaseConnection.GetAsync(query);
-                                if (linkDataTable.Rows.Count == 0)
+                                sqlParameters["linkId"] = itemId;
+                                
+                                await using (var environmentCommand = environmentConnection.CreateCommand())
                                 {
-                                    query = $@"SELECT item_id, destination_item_id FROM `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{WiserTableNames.WiserItemLink}`{WiserTableNames.ArchiveSuffix} WHERE id = ?linkId";
-                                    linkDataTable = await clientDatabaseConnection.GetAsync(query);
+                                    AddParametersToCommand(sqlParameters, environmentCommand);
+                                    environmentCommand.CommandText = $@"SELECT item_id, destination_item_id FROM `{WiserTableNames.WiserItemLink}` WHERE id = ?linkId";
+                                    var linkDataTable = new DataTable();
+                                    using var environmentAdapter = new MySqlDataAdapter(environmentCommand);
+                                    await environmentAdapter.FillAsync(linkDataTable);
                                     if (linkDataTable.Rows.Count == 0)
                                     {
-                                        // This should never happen, but just in case the ID somehow doesn't exist anymore, log a warning and continue on to the next item.
-                                        logger.LogWarning($"Could not find link with id '{itemId}' in database '{selectedEnvironmentCustomer.Database.DatabaseName}'. Skipping this history record in synchronisation to production.");
-                                        continue;
+                                        environmentCommand.CommandText = $@"SELECT item_id, destination_item_id FROM `{WiserTableNames.WiserItemLink}{WiserTableNames.ArchiveSuffix}` WHERE id = ?linkId";
+                                        await environmentAdapter.FillAsync(linkDataTable);
+                                        if (linkDataTable.Rows.Count == 0)
+                                        {
+                                            // This should never happen, but just in case the ID somehow doesn't exist anymore, log a warning and continue on to the next item.
+                                            logger.LogWarning($"Could not find link with id '{itemId}' in database '{selectedEnvironmentCustomer.Database.DatabaseName}'. Skipping this history record in synchronisation to production.");
+                                            continue;
+                                        }
                                     }
-                                }
 
-                                itemId = Convert.ToUInt64(linkDataTable.Rows[0]["item_id"]);
-                                originalItemId = itemId;
-                                destinationItemId = Convert.ToUInt64(linkDataTable.Rows[0]["destination_item_id"]);
+                                    itemId = Convert.ToUInt64(linkDataTable.Rows[0]["item_id"]);
+                                    originalItemId = itemId;
+                                    destinationItemId = Convert.ToUInt64(linkDataTable.Rows[0]["destination_item_id"]);
+                                }
 
                                 switch (field)
                                 {
@@ -916,46 +968,23 @@ namespace Api.Modules.Customers.Services
                         else if (String.IsNullOrWhiteSpace(entityType))
                         {
                             // Check if this item is saved in a dedicated table with a certain prefix.
-                            var tablePrefix = "";
-                            if (tableName.EndsWith(WiserTableNames.WiserItem, StringComparison.OrdinalIgnoreCase))
-                            {
-                                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItem, "");
-                            }
-                            else if (tableName.EndsWith(WiserTableNames.WiserItemDetail, StringComparison.OrdinalIgnoreCase))
-                            {
-                                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemDetail, "");
-                            }
-                            else if (tableName.EndsWith(WiserTableNames.WiserItemFile, StringComparison.OrdinalIgnoreCase))
-                            {
-                                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemFile, "");
-                                if (originalItemId == 0)
-                                {
-                                    isWiserItemChange = false;
-                                }
-                            }
-                            else if (tableName.EndsWith(WiserTableNames.WiserItemLink, StringComparison.OrdinalIgnoreCase))
-                            {
-                                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemLink, "");
-                            }
-                            else if (tableName.EndsWith(WiserTableNames.WiserItemLinkDetail, StringComparison.OrdinalIgnoreCase))
-                            {
-                                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemLinkDetail, "");
-                            }
-                            else
-                            {
-                                isWiserItemChange = false;
-                            }
+                            var (tablePrefix, wiserItemChange) = GetTablePrefix(tableName, originalItemId);
+                            isWiserItemChange = wiserItemChange;
 
                             if (isWiserItemChange && originalItemId > 0)
                             {
-                                clientDatabaseConnection.AddParameter("itemId", originalItemId);
-                                var getEntityTypeQuery = $"SELECT entity_type FROM `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{tablePrefix}{WiserTableNames.WiserItem}` WHERE id = ?itemId";
-                                var itemDataTable = await clientDatabaseConnection.GetAsync(getEntityTypeQuery);
+                                sqlParameters["itemId"] = originalItemId;
+                                var itemDataTable = new DataTable();
+                                await using var environmentCommand = environmentConnection.CreateCommand();
+                                AddParametersToCommand(sqlParameters, environmentCommand);
+                                environmentCommand.CommandText = $"SELECT entity_type FROM `{tablePrefix}{WiserTableNames.WiserItem}` WHERE id = ?itemId";
+                                using var environmentAdapter = new MySqlDataAdapter(environmentCommand);
+                                await environmentAdapter.FillAsync(itemDataTable);
                                 if (itemDataTable.Rows.Count == 0)
                                 {
                                     // If item doesn't exist, check the archive table, it might have been deleted.
-                                    getEntityTypeQuery = $"SELECT entity_type FROM `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix}` WHERE id = ?itemId";
-                                    itemDataTable = await clientDatabaseConnection.GetAsync(getEntityTypeQuery);
+                                    environmentCommand.CommandText = $"SELECT entity_type FROM `{tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix}` WHERE id = ?itemId";
+                                    await environmentAdapter.FillAsync(itemDataTable);
                                     if (itemDataTable.Rows.Count == 0)
                                     {
                                         logger.LogWarning($"Could not find item with ID '{originalItemId}', so skipping it...");
@@ -980,28 +1009,33 @@ namespace Api.Modules.Customers.Services
                         {
                             case "CREATE_ITEM":
                             {
-                                var newItemId = await GenerateNewId(tableName, productionCustomer, selectedEnvironmentCustomer);
-                                var query = $@"{queryPrefix}
-INSERT INTO `{productionCustomer.Database.DatabaseName}`.`{tableName}` (id, entity_type) VALUES (?newId, '')";
-                                clientDatabaseConnection.AddParameter("newId", newItemId);
-                                await clientDatabaseConnection.InsertRecordAsync(query);
+                                var newItemId = await GenerateNewId(tableName, productionConnection, environmentConnection);
+                                sqlParameters["newId"] = newItemId;
+                                
+                                await using var productionCommand = productionConnection.CreateCommand();
+                                AddParametersToCommand(sqlParameters, productionCommand);
+                                productionCommand.CommandText = $@"{queryPrefix}
+INSERT INTO `{tableName}` (id, entity_type) VALUES (?newId, '')";
+                                await productionCommand.ExecuteNonQueryAsync();
 
                                 // Map the item ID from wiser_history to the ID of the newly created item, locally and in database.
-                                await AddIdMapping(idMapping, tableName, originalItemId, newItemId, selectedEnvironmentCustomer);
+                                await AddIdMapping(idMapping, tableName, originalItemId, newItemId, environmentConnection);
 
                                 break;
                             }
                             case "UPDATE_ITEM" when tableName.EndsWith(WiserTableNames.WiserItemDetail, StringComparison.OrdinalIgnoreCase):
                             {
-                                clientDatabaseConnection.AddParameter("itemId", itemId);
-                                clientDatabaseConnection.AddParameter("key", field);
-                                clientDatabaseConnection.AddParameter("languageCode", languageCode);
-                                clientDatabaseConnection.AddParameter("groupName", groupName);
+                                sqlParameters["itemId"] = itemId;
+                                sqlParameters["key"] = field;
+                                sqlParameters["languageCode"] = languageCode;
+                                sqlParameters["groupName"] = groupName;
 
-                                var query = queryPrefix;
+                                await using var productionCommand = productionConnection.CreateCommand();
+                                AddParametersToCommand(sqlParameters, productionCommand);
+                                productionCommand.CommandText = queryPrefix;
                                 if (String.IsNullOrWhiteSpace(newValue))
                                 {
-                                    query += $@"DELETE FROM `{productionCustomer.Database.DatabaseName}`.`{tableName}`
+                                    productionCommand.CommandText += $@"DELETE FROM `{tableName}`
 WHERE item_id = ?itemId
 AND `key` = ?key
 AND language_code = ?languageCode
@@ -1010,36 +1044,43 @@ AND groupname = ?groupName";
                                 else
                                 {
                                     var useLongValue = newValue.Length > 1000;
-                                    clientDatabaseConnection.AddParameter("value", useLongValue ? "" : newValue);
-                                    clientDatabaseConnection.AddParameter("longValue", useLongValue ? newValue : "");
+                                    sqlParameters["value"] = useLongValue ? "" : newValue;
+                                    sqlParameters["longValue"] = useLongValue ? newValue : "";
 
-                                    query += $@"INSERT INTO `{productionCustomer.Database.DatabaseName}`.`{tableName}` (language_code, item_id, groupname, `key`, value, long_value)
+                                    AddParametersToCommand(sqlParameters, productionCommand);
+                                    productionCommand.CommandText += $@"INSERT INTO `{tableName}` (language_code, item_id, groupname, `key`, value, long_value)
 VALUES (?languageCode, ?itemId, ?groupName, ?key, ?value, ?longValue)
 ON DUPLICATE KEY UPDATE groupname = VALUES(groupname), value = VALUES(value), long_value = VALUES(long_value)";
                                 }
 
-                                await clientDatabaseConnection.ExecuteAsync(query);
+                                await productionCommand.ExecuteNonQueryAsync();
 
                                 break;
                             }
                             case "UPDATE_ITEM" when tableName.EndsWith(WiserTableNames.WiserItem, StringComparison.OrdinalIgnoreCase):
                             {
-                                clientDatabaseConnection.AddParameter("itemId", itemId);
-                                clientDatabaseConnection.AddParameter("newValue", newValue);
-                                var query = $@"{queryPrefix}
-UPDATE `{productionCustomer.Database.DatabaseName}`.`{tableName}` 
+                                sqlParameters["itemId"] = itemId;
+                                sqlParameters["newValue"] = newValue;
+                                
+                                await using var productionCommand = productionConnection.CreateCommand();
+                                AddParametersToCommand(sqlParameters, productionCommand);
+                                productionCommand.CommandText = $@"{queryPrefix}
+UPDATE `{tableName}` 
 SET `{field.ToMySqlSafeValue(false)}` = ?newValue
 WHERE id = ?itemId";
-                                await clientDatabaseConnection.ExecuteAsync(query);
+                                await productionCommand.ExecuteNonQueryAsync();
 
                                 break;
                             }
                             case "DELETE_ITEM":
                             {
-                                clientDatabaseConnection.AddParameter("itemId", itemId);
-                                clientDatabaseConnection.AddParameter("entityType", entityType);
-                                var query = $@"{queryPrefix} CALL DeleteWiser2Item(?itemId, ?entityType);";
-                                await clientDatabaseConnection.ExecuteAsync(query);
+                                sqlParameters["itemId"] = itemId;
+                                sqlParameters["entityType"] = entityType;
+                                
+                                await using var productionCommand = productionConnection.CreateCommand();
+                                AddParametersToCommand(sqlParameters, productionCommand);
+                                productionCommand.CommandText = $@"{queryPrefix} CALL DeleteWiser2Item(?itemId, ?entityType);";
+                                await productionCommand.ExecuteNonQueryAsync();
 
                                 break;
                             }
@@ -1048,76 +1089,91 @@ WHERE id = ?itemId";
                                 var split = field.Split(',');
                                 var type = split[0];
                                 var ordering = split.Length > 1 ? split[1] : "0";
-                                clientDatabaseConnection.AddParameter("itemId", itemId);
-                                clientDatabaseConnection.AddParameter("originalItemId", originalItemId);
-                                clientDatabaseConnection.AddParameter("destinationItemId", destinationItemId);
-                                clientDatabaseConnection.AddParameter("originalDestinationItemId", originalDestinationItemId);
-                                clientDatabaseConnection.AddParameter("type", type);
-                                clientDatabaseConnection.AddParameter("ordering", ordering);
+                                sqlParameters["itemId"] = itemId;
+                                sqlParameters["originalItemId"] = originalItemId;
+                                sqlParameters["ordering"] = ordering;
+                                sqlParameters["destinationItemId"] = destinationItemId;
+                                sqlParameters["originalDestinationItemId"] = originalDestinationItemId;
+                                sqlParameters["type"] = type;
 
                                 // Get the original link ID, so we can map it to the new one.
-                                var query = $@"SELECT id FROM `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{tableName}` WHERE item_id = ?originalItemId AND destination_item_id = ?originalDestinationItemId AND type = ?type";
-                                var getLinkIdDataTable = await clientDatabaseConnection.GetAsync(query);
-                                if (getLinkIdDataTable.Rows.Count == 0)
+                                await using (var environmentCommand = environmentConnection.CreateCommand())
                                 {
-                                    logger.LogWarning($"Could not find link ID with itemId = {originalItemId}, destinationItemId = {originalDestinationItemId} and type = {type}");
-                                    result.Errors.Add($"Kan koppeling-ID met itemId = {originalItemId}, destinationItemId = {originalDestinationItemId} and type = {type} niet vinden");
-                                    continue;
+                                    AddParametersToCommand(sqlParameters, environmentCommand);
+                                    environmentCommand.CommandText = $@"SELECT id FROM `{tableName}` WHERE item_id = ?originalItemId AND destination_item_id = ?originalDestinationItemId AND type = ?type";
+                                    var getLinkIdDataTable = new DataTable();
+                                    using var environmentAdapter = new MySqlDataAdapter(environmentCommand);
+                                    await environmentAdapter.FillAsync(getLinkIdDataTable);
+                                    if (getLinkIdDataTable.Rows.Count == 0)
+                                    {
+                                        logger.LogWarning($"Could not find link ID with itemId = {originalItemId}, destinationItemId = {originalDestinationItemId} and type = {type}");
+                                        result.Errors.Add($"Kan koppeling-ID met itemId = {originalItemId}, destinationItemId = {originalDestinationItemId} and type = {type} niet vinden");
+                                        continue;
+                                    }
+
+                                    originalLinkId = Convert.ToUInt64(getLinkIdDataTable.Rows[0]["id"]);
+                                    linkId = await GenerateNewId(tableName, productionConnection, environmentConnection);
                                 }
 
-                                originalLinkId = Convert.ToUInt64(getLinkIdDataTable.Rows[0]["id"]);
-                                linkId = await GenerateNewId(tableName, productionCustomer, selectedEnvironmentCustomer);
-
-                                query = $@"{queryPrefix}
-INSERT IGNORE INTO `{productionCustomer.Database.DatabaseName}`.`{tableName}` (id, item_id, destination_item_id, ordering, type)
+                                sqlParameters["newId"] = linkId;
+                                await using var productionCommand = productionConnection.CreateCommand();
+                                AddParametersToCommand(sqlParameters, productionCommand);
+                                productionCommand.CommandText = $@"{queryPrefix}
+INSERT IGNORE INTO `{tableName}` (id, item_id, destination_item_id, ordering, type)
 VALUES (?newId, ?itemId, ?destinationItemId, ?ordering, ?type);";
-                                clientDatabaseConnection.AddParameter("newId", linkId);
-                                await clientDatabaseConnection.InsertRecordAsync(query);
+                                await productionCommand.ExecuteNonQueryAsync();
 
                                 // Map the item ID from wiser_history to the ID of the newly created item, locally and in database.
-                                await AddIdMapping(idMapping, tableName, originalLinkId.Value, linkId.Value, selectedEnvironmentCustomer);
+                                await AddIdMapping(idMapping, tableName, originalLinkId.Value, linkId.Value, environmentConnection);
 
                                 break;
                             }
                             case "CHANGE_LINK":
                             {
-                                clientDatabaseConnection.AddParameter("oldItemId", oldItemId);
-                                clientDatabaseConnection.AddParameter("oldDestinationItemId", oldDestinationItemId);
-                                clientDatabaseConnection.AddParameter("newValue", newValue);
-                                clientDatabaseConnection.AddParameter("type", field);
-                                var query = $@"{queryPrefix}
-UPDATE `{productionCustomer.Database.DatabaseName}`.`{tableName}` 
+                                sqlParameters["oldItemId"] = oldItemId;
+                                sqlParameters["oldDestinationItemId"] = oldDestinationItemId;
+                                sqlParameters["newValue"] = newValue;
+                                sqlParameters["type"] = field;
+                                
+                                await using var productionCommand = productionConnection.CreateCommand();
+                                AddParametersToCommand(sqlParameters, productionCommand);
+                                productionCommand.CommandText = $@"{queryPrefix}
+UPDATE `{tableName}` 
 SET `{field.ToMySqlSafeValue(false)}` = ?newValue
 WHERE item_id = ?oldItemId
 AND destination_item_id = ?oldDestinationItemId
 AND type = ?type";
-                                await clientDatabaseConnection.ExecuteAsync(query);
+                                await productionCommand.ExecuteNonQueryAsync();
                                 break;
                             }
                             case "REMOVE_LINK":
                             {
-                                clientDatabaseConnection.AddParameter("oldItemId", oldItemId);
-                                clientDatabaseConnection.AddParameter("oldDestinationItemId", oldDestinationItemId);
-                                clientDatabaseConnection.AddParameter("type", field);
-                                var query = $@"{queryPrefix}
-DELETE FROM `{productionCustomer.Database.DatabaseName}`.`{tableName}`
+                                sqlParameters["oldItemId"] = oldItemId;
+                                sqlParameters["oldDestinationItemId"] =  oldDestinationItemId;
+                                sqlParameters["type"] = field;
+                                
+                                await using var productionCommand = productionConnection.CreateCommand();
+                                AddParametersToCommand(sqlParameters, productionCommand);
+                                productionCommand.CommandText = $@"{queryPrefix}
+DELETE FROM `{tableName}`
 WHERE item_id = ?oldItemId
 AND destination_item_id = ?oldDestinationItemId
 AND type = ?type";
-                                await clientDatabaseConnection.ExecuteAsync(query);
+                                await productionCommand.ExecuteNonQueryAsync();
                                 break;
                             }
                             case "UPDATE_ITEMLINKDETAIL":
                             {
-                                clientDatabaseConnection.AddParameter("linkId", linkId);
-                                clientDatabaseConnection.AddParameter("key", field);
-                                clientDatabaseConnection.AddParameter("languageCode", languageCode);
-                                clientDatabaseConnection.AddParameter("groupName", groupName);
+                                sqlParameters["linkId"] = linkId;
+                                sqlParameters["key"] = field;
+                                sqlParameters["languageCode"] = languageCode;
+                                sqlParameters["groupName"] = groupName;
 
-                                var query = queryPrefix;
+                                await using var productionCommand = productionConnection.CreateCommand();
+                                productionCommand.CommandText = queryPrefix;
                                 if (String.IsNullOrWhiteSpace(newValue))
                                 {
-                                    query += $@"DELETE FROM `{productionCustomer.Database.DatabaseName}`.`{tableName}`
+                                    productionCommand.CommandText += $@"DELETE FROM `{tableName}`
 WHERE itemlink_id = ?linkId
 AND `key` = ?key
 AND language_code = ?languageCode
@@ -1126,109 +1182,139 @@ AND groupname = ?groupName";
                                 else
                                 {
                                     var useLongValue = newValue.Length > 1000;
-                                    clientDatabaseConnection.AddParameter("value", useLongValue ? "" : newValue);
-                                    clientDatabaseConnection.AddParameter("longValue", useLongValue ? newValue : "");
+                                    sqlParameters["value"] = useLongValue ? "" : newValue;
+                                    sqlParameters["longValue"] = useLongValue ? newValue : "";
 
-                                    query += $@"INSERT INTO `{productionCustomer.Database.DatabaseName}`.`{tableName}` (language_code, itemlink_id, groupname, `key`, value, long_value)
+                                    productionCommand.CommandText += $@"INSERT INTO `{tableName}` (language_code, itemlink_id, groupname, `key`, value, long_value)
 VALUES (?languageCode, ?linkId, ?groupName, ?key, ?value, ?longValue)
 ON DUPLICATE KEY UPDATE groupname = VALUES(groupname), value = VALUES(value), long_value = VALUES(long_value)";
                                 }
 
-                                await clientDatabaseConnection.ExecuteAsync(query);
+                                AddParametersToCommand(sqlParameters, productionCommand);
+                                await productionCommand.ExecuteNonQueryAsync();
 
                                 break;
                             }
                             case "ADD_FILE":
                             {
                                 // oldValue contains either "item_id" or "itemlink_id", to indicate which of these columns is used for the ID that is saved in newValue.
-                                clientDatabaseConnection.AddParameter("fileItemId", newValue);
-                                var newFileId = await GenerateNewId(tableName, productionCustomer, selectedEnvironmentCustomer);
+                                var newFileId = await GenerateNewId(tableName, productionConnection, environmentConnection);
+                                sqlParameters["fileItemId"] = newValue;
+                                sqlParameters["newId"] = newFileId;
 
-                                var query = $@"{queryPrefix}
-INSERT INTO `{productionCustomer.Database.DatabaseName}`.`{tableName}` (id, `{oldValue.ToMySqlSafeValue(false)}`) 
+                                await using var productionCommand = productionConnection.CreateCommand();
+                                AddParametersToCommand(sqlParameters, productionCommand);
+                                productionCommand.CommandText = $@"{queryPrefix}
+INSERT INTO `{tableName}` (id, `{oldValue.ToMySqlSafeValue(false)}`) 
 VALUES (?newId, ?fileItemId)";
-                                clientDatabaseConnection.AddParameter("newId", newFileId);
-                                await clientDatabaseConnection.InsertRecordAsync(query);
+                                await productionCommand.ExecuteReaderAsync();
 
                                 // Map the item ID from wiser_history to the ID of the newly created item, locally and in database.
-                                await AddIdMapping(idMapping, tableName, originalObjectId, newFileId, selectedEnvironmentCustomer);
+                                await AddIdMapping(idMapping, tableName, originalObjectId, newFileId, environmentConnection);
 
                                 break;
                             }
                             case "UPDATE_FILE":
                             {
-                                clientDatabaseConnection.AddParameter("fileId", fileId);
-                                clientDatabaseConnection.AddParameter("originalFileId", originalFileId);
+                                sqlParameters["fileId"] = fileId;
+                                sqlParameters["originalFileId"] = originalFileId;
 
                                 if (String.Equals(field, "content_length", StringComparison.OrdinalIgnoreCase))
                                 {
                                     // If the content length has been updated, we need to get the actual content from wiser_itemfile.
                                     // We don't save the content bytes in wiser_history, because then the history table would become too huge.
-                                    var query = $@"{queryPrefix}
-UPDATE `{productionCustomer.Database.DatabaseName}`.`{tableName}`
-SET content = (SELECT content FROM `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{tableName}` WHERE id = ?originalFileId)
+                                    byte[] file = null;
+                                    await using (var environmentCommand = environmentConnection.CreateCommand())
+                                    {
+                                        AddParametersToCommand(sqlParameters, environmentCommand);
+                                        environmentCommand.CommandText = $"SELECT content FROM `{tableName}` WHERE id = ?originalFileId";
+                                        await using var productionReader = await environmentCommand.ExecuteReaderAsync();
+                                        if (await productionReader.ReadAsync())
+                                        {
+                                            file = (byte[]) productionReader.GetValue(0);
+                                        }
+                                    }
+
+                                    sqlParameters["contents"] = file;
+                                    
+                                    await using var productionCommand = productionConnection.CreateCommand();
+                                    AddParametersToCommand(sqlParameters, productionCommand);
+                                    productionCommand.CommandText = $@"{queryPrefix}
+UPDATE `{tableName}`
+SET content = ?content
 WHERE id = ?fileId";
-                                    await clientDatabaseConnection.ExecuteAsync(query);
+                                    await productionCommand.ExecuteNonQueryAsync();
                                 }
                                 else
                                 {
-                                    clientDatabaseConnection.AddParameter("newValue", newValue);
+                                    sqlParameters["newValue"] = newValue;
 
-                                    var query = $@"{queryPrefix}
-UPDATE `{productionCustomer.Database.DatabaseName}`.`{tableName}` 
+                                    await using var productionCommand = productionConnection.CreateCommand();
+                                    AddParametersToCommand(sqlParameters, productionCommand);
+                                    productionCommand.CommandText = $@"{queryPrefix}
+UPDATE `{tableName}` 
 SET `{field.ToMySqlSafeValue(false)}` = ?newValue
 WHERE id = ?fileId";
-                                    await clientDatabaseConnection.ExecuteAsync(query);
+                                    await productionCommand.ExecuteNonQueryAsync();
                                 }
 
                                 break;
                             }
                             case "DELETE_FILE":
                             {
-                                clientDatabaseConnection.AddParameter("itemId", newValue);
+                                sqlParameters["itemId"] = newValue;
 
-                                var query = $@"{queryPrefix}
-DELETE FROM `{productionCustomer.Database.DatabaseName}`.`{tableName}`
+                                await using var productionCommand = productionConnection.CreateCommand();
+                                AddParametersToCommand(sqlParameters, productionCommand);
+                                productionCommand.CommandText = $@"{queryPrefix}
+DELETE FROM `{tableName}`
 WHERE `{oldValue.ToMySqlSafeValue(false)}` = ?itemId";
-                                await clientDatabaseConnection.ExecuteAsync(query);
+                                await productionCommand.ExecuteReaderAsync();
 
                                 break;
                             }
                             case "INSERT_ENTITY":
                             {
-                                var newEntityId = await GenerateNewId(tableName, productionCustomer, selectedEnvironmentCustomer);
-                                var query = $@"{queryPrefix}
-INSERT INTO `{productionCustomer.Database.DatabaseName}`.`{tableName}` (id, `name`) 
+                                var newEntityId = await GenerateNewId(tableName, productionConnection, environmentConnection);
+                                sqlParameters["newId"] = newEntityId;
+                                
+                                await using var productionCommand = productionConnection.CreateCommand();
+                                AddParametersToCommand(sqlParameters, productionCommand);
+                                productionCommand.CommandText = $@"{queryPrefix}
+INSERT INTO `{tableName}` (id, `name`) 
 VALUES (?newId, '')";
-                                clientDatabaseConnection.AddParameter("newId", newEntityId);
-                                await clientDatabaseConnection.InsertRecordAsync(query);
+                                await productionCommand.ExecuteNonQueryAsync();
 
                                 // Map the item ID from wiser_history to the ID of the newly created item, locally and in database.
-                                await AddIdMapping(idMapping, tableName, originalObjectId, newEntityId, selectedEnvironmentCustomer);
+                                await AddIdMapping(idMapping, tableName, originalObjectId, newEntityId, environmentConnection);
 
                                 break;
                             }
                             case "UPDATE_ENTITY":
                             {
-                                clientDatabaseConnection.AddParameter("entityId", entityId);
-                                clientDatabaseConnection.AddParameter("newValue", newValue);
+                                sqlParameters["entityId"] = entityId;
+                                sqlParameters["newValue"] = newValue;
 
-                                var query = $@"{queryPrefix}
-UPDATE `{productionCustomer.Database.DatabaseName}`.`{tableName}` 
+                                await using var productionCommand = productionConnection.CreateCommand();
+                                AddParametersToCommand(sqlParameters, productionCommand);
+                                productionCommand.CommandText = $@"{queryPrefix}
+UPDATE `{tableName}` 
 SET `{field.ToMySqlSafeValue(false)}` = ?newValue
 WHERE id = ?entityId";
-                                await clientDatabaseConnection.ExecuteAsync(query);
+                                await productionCommand.ExecuteNonQueryAsync();
 
                                 break;
                             }
                             case "DELETE_ENTITY":
                             {
-                                clientDatabaseConnection.AddParameter("entityId", entityId);
+                                sqlParameters["entityId"] = entityId;
 
-                                var query = $@"{queryPrefix}
-DELETE FROM `{productionCustomer.Database.DatabaseName}`.`{tableName}`
+                                await using var productionCommand = productionConnection.CreateCommand();
+                                AddParametersToCommand(sqlParameters, productionCommand);
+                                productionCommand.CommandText = $@"{queryPrefix}
+DELETE FROM `{tableName}`
 WHERE `id` = ?entityId";
-                                await clientDatabaseConnection.ExecuteAsync(query);
+                                await productionCommand.ExecuteNonQueryAsync();
 
                                 break;
                             }
@@ -1251,10 +1337,12 @@ WHERE `id` = ?entityId";
                     // Clear wiser_history in the selected environment, so that next time we can just sync all changes again.
                     if (historyItemsSynchronised.Any())
                     {
-                        await clientDatabaseConnection.ExecuteAsync($"DELETE FROM `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{WiserTableNames.WiserHistory}` WHERE id IN ({String.Join(",", historyItemsSynchronised)})");
+                        await using var environmentCommand = environmentConnection.CreateCommand();
+                        environmentCommand.CommandText = $"DELETE FROM `{WiserTableNames.WiserHistory}` WHERE id IN ({String.Join(",", historyItemsSynchronised)})";
+                        await environmentCommand.ExecuteNonQueryAsync();
                     }
 
-                    await EqualizeMappedIds(selectedEnvironmentCustomer);
+                    await EqualizeMappedIds(environmentConnection);
                 }
                 catch (Exception exception)
                 {
@@ -1262,27 +1350,107 @@ WHERE `id` = ?entityId";
                     result.Errors.Add($"Er is iets fout gegaan tijdens het opruimen na de synchronisatie. Het wordt aangeraden om deze omgeving niet meer te gebruiken voor synchroniseren naar productie, anders kunnen dingen dubbel gescynchroniseerd worden. U kunt wel een nieuwe omgeving maken en vanuit daar weer verder werken. De fout was: {exception.Message}");
                 }
 
+                // Always commit, so we keep our progress.
+                await environmentTransaction.CommitAsync();
+                await productionTransaction.CommitAsync();
             }
             finally
             {
                 // Make sure we always unlock all tables when we're done, no matter what happens.
-                await clientDatabaseConnection.ExecuteAsync("UNLOCK TABLES");
-                // Always commit, so we keep our progress.
-                await clientDatabaseConnection.CommitTransactionAsync();
+                await using (var environmentCommand = environmentConnection.CreateCommand())
+                {
+                    environmentCommand.CommandText = "UNLOCK TABLES";
+                    await environmentCommand.ExecuteNonQueryAsync();
+                }
+
+                await using (var productionCommand = productionConnection.CreateCommand())
+                {
+                    productionCommand.CommandText = "UNLOCK TABLES";
+                    await productionCommand.ExecuteNonQueryAsync();
+                }
+
+                // Dispose and cleanup.
+                await environmentTransaction.DisposeAsync();
+                await productionTransaction.DisposeAsync();
+                
+                await environmentConnection.CloseAsync();
+                await productionConnection.CloseAsync();
+                
+                await environmentConnection.DisposeAsync();
+                await productionConnection.DisposeAsync();
             }
 
             return new ServiceResult<SynchroniseChangesToProductionResultModel>(result);
         }
 
         /// <summary>
+        /// Get the prefix for a wiser item table.
+        /// </summary>
+        /// <param name="tableName">The full name of the table.</param>
+        /// <param name="originalItemId">The original item ID.</param>
+        /// <returns>The table prefix and whether or not this is something connected to an item from [prefix]wiser_item.</returns>
+        private static (string tablePrefix, bool isWiserItemChange) GetTablePrefix(string tableName, ulong originalItemId)
+        {
+            var isWiserItemChange = true;
+            var tablePrefix = "";
+            if (tableName.EndsWith(WiserTableNames.WiserItem, StringComparison.OrdinalIgnoreCase))
+            {
+                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItem, "");
+            }
+            else if (tableName.EndsWith(WiserTableNames.WiserItemDetail, StringComparison.OrdinalIgnoreCase))
+            {
+                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemDetail, "");
+            }
+            else if (tableName.EndsWith(WiserTableNames.WiserItemFile, StringComparison.OrdinalIgnoreCase))
+            {
+                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemFile, "");
+                if (originalItemId == 0)
+                {
+                    isWiserItemChange = false;
+                }
+            }
+            else if (tableName.EndsWith(WiserTableNames.WiserItemLink, StringComparison.OrdinalIgnoreCase))
+            {
+                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemLink, "");
+            }
+            else if (tableName.EndsWith(WiserTableNames.WiserItemLinkDetail, StringComparison.OrdinalIgnoreCase))
+            {
+                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemLinkDetail, "");
+            }
+            else
+            {
+                isWiserItemChange = false;
+            }
+
+            return (tablePrefix, isWiserItemChange);
+        }
+
+        /// <summary>
+        /// Add all parameters from a dictionary to a <see cref="MySqlCommand"/>.
+        /// </summary>
+        /// <param name="parameters">The dictionary with the parameters.</param>
+        /// <param name="command">The database command.</param>
+        private static void AddParametersToCommand(Dictionary<string, object> parameters, MySqlCommand command)
+        {
+            command.Parameters.Clear();
+            foreach (var parameter in parameters)
+            {
+                command.Parameters.AddWithValue(parameter.Key, parameter.Value);
+            }
+        }
+
+        /// <summary>
         /// This will update IDs of items/files/etc in the selected environment so that they all will have the same ID as in the production environment.
         /// </summary>
-        /// <param name="selectedEnvironmentCustomer">The selected environment.</param>
-        private async Task EqualizeMappedIds(CustomerModel selectedEnvironmentCustomer)
+        /// <param name="environmentConnection">The database connection to the selected environment.</param>
+        private async Task EqualizeMappedIds(MySqlConnection environmentConnection)
         {
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT * FROM 
-`{selectedEnvironmentCustomer.Database.DatabaseName}`.`{WiserTableNames.WiserIdMappings}` 
-ORDER BY id DESC");
+            await using var command = environmentConnection.CreateCommand();
+            command.CommandText = $@"SELECT * FROM `{WiserTableNames.WiserIdMappings}` ORDER BY id DESC";
+            var dataTable = new DataTable();
+            using var adapter = new MySqlDataAdapter(command);
+            await adapter.FillAsync(dataTable);
+            
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var mappingRowId = dataRow.Field<ulong>("id");
@@ -1290,71 +1458,71 @@ ORDER BY id DESC");
                 var ourId = dataRow.Field<ulong>("our_id");
                 var productionId = dataRow.Field<ulong>("production_id");
                 
-                clientDatabaseConnection.AddParameter("mappingRowId", mappingRowId);
-                clientDatabaseConnection.AddParameter("ourId", ourId);
-                clientDatabaseConnection.AddParameter("productionId", productionId);
+                command.Parameters.AddWithValue("mappingRowId", mappingRowId);
+                command.Parameters.AddWithValue("ourId", ourId);
+                command.Parameters.AddWithValue("productionId", productionId);
                 
                 if (tableName.EndsWith(WiserTableNames.WiserItem, StringComparison.OrdinalIgnoreCase))
                 {
                     var tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItem, "");
-                    var query = $@"SET @saveHistory = FALSE;
+                    command.CommandText = $@"SET @saveHistory = FALSE;
 
 -- Update the ID of the item itself.
-UPDATE `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{tablePrefix}{WiserTableNames.WiserItem}`
+UPDATE `{tablePrefix}{WiserTableNames.WiserItem}`
 SET id = ?productionId
 WHERE id = ?ourId;
 
 -- Update all original IDs of items that are using this ID.
-UPDATE `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{tablePrefix}{WiserTableNames.WiserItem}`
+UPDATE `{tablePrefix}{WiserTableNames.WiserItem}`
 SET original_item_id = ?productionId
 WHERE original_item_id = ?ourId;
 
 -- Update all parent IDs of items that are using this ID.
-UPDATE `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{tablePrefix}{WiserTableNames.WiserItem}`
+UPDATE `{tablePrefix}{WiserTableNames.WiserItem}`
 SET parent_item_id = ?productionId
 WHERE parent_item_id = ?ourId;
 
 -- Update item details to use the new ID.
-UPDATE `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{tablePrefix}{WiserTableNames.WiserItemDetail}`
+UPDATE `{tablePrefix}{WiserTableNames.WiserItemDetail}`
 SET item_id = ?productionId
 WHERE item_id = ?ourId;
 
 -- Update item files to use the new ID.
-UPDATE `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{WiserTableNames.WiserItemFile}`
+UPDATE `{WiserTableNames.WiserItemFile}`
 SET item_id = ?productionId
 WHERE item_id = ?ourId;
 
 -- Update item links to use the new ID.
-UPDATE `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{WiserTableNames.WiserItemLink}`
+UPDATE `{WiserTableNames.WiserItemLink}`
 SET item_id = ?productionId
 WHERE item_id = ?ourId;
 
 -- Update item links to use the new ID.
-UPDATE `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{WiserTableNames.WiserItemLink}`
+UPDATE `{WiserTableNames.WiserItemLink}`
 SET destination_item_id = ?productionId
 WHERE destination_item_id = ?ourId;";
-                    await clientDatabaseConnection.ExecuteAsync(query);
+                    await command.ExecuteNonQueryAsync();
                 }
                 else if (tableName.EndsWith(WiserTableNames.WiserItemFile, StringComparison.OrdinalIgnoreCase) || tableName.EndsWith(WiserTableNames.WiserEntity, StringComparison.OrdinalIgnoreCase))
                 {
-                    var query = $@"SET @saveHistory = FALSE;
-UPDATE `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{tableName.ToMySqlSafeValue(false)}` 
+                    command.CommandText = $@"SET @saveHistory = FALSE;
+UPDATE `{tableName.ToMySqlSafeValue(false)}` 
 SET id = ?productionId 
 WHERE id = ?ourId;";
-                    await clientDatabaseConnection.ExecuteAsync(query);
+                    await command.ExecuteNonQueryAsync();
                 }
                 else if (tableName.EndsWith(WiserTableNames.WiserItemLink, StringComparison.OrdinalIgnoreCase))
                 {
-                    var query = $@"SET @saveHistory = FALSE;
+                    command.CommandText = $@"SET @saveHistory = FALSE;
 
-UPDATE `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{WiserTableNames.WiserItemLink}` 
+UPDATE `{WiserTableNames.WiserItemLink}` 
 SET id = ?productionId 
 WHERE id = ?ourId;
 
-UPDATE `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{WiserTableNames.WiserItemLinkDetail}` 
+UPDATE `{WiserTableNames.WiserItemLinkDetail}` 
 SET link_id = ?productionId 
 WHERE link_id = ?ourId;";
-                    await clientDatabaseConnection.ExecuteAsync(query);
+                    await command.ExecuteNonQueryAsync();
                 }
                 else
                 {
@@ -1362,7 +1530,8 @@ WHERE link_id = ?ourId;";
                 }
                 
                 // Delete the row when we succeeded in updating the ID.
-                await clientDatabaseConnection.ExecuteAsync($"DELETE FROM `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{WiserTableNames.WiserIdMappings}` WHERE id = ?mappingRowId");
+                command.CommandText = $"DELETE FROM `{WiserTableNames.WiserIdMappings}` WHERE id = ?mappingRowId";
+                await command.ExecuteNonQueryAsync();
             }
         }
 
@@ -1371,24 +1540,33 @@ WHERE link_id = ?ourId;";
         /// This is to make sure that the new ID will not exist anywhere yet, to prevent later synchronisation problems.
         /// </summary>
         /// <param name="tableName">The name of the table.</param>
-        /// <param name="productionCustomer">The data for the production customer / database.</param>
-        /// <param name="selectedEnvironmentCustomer">The data for the selected environment customer / database.</param>
+        /// <param name="productionConnection">The connection to the production database.</param>
+        /// <param name="environmentConnection">The connection to the environment database.</param>
         /// <returns>The new ID that should be used for the first new item to be inserted into this table.</returns>
-        private async Task<ulong> GenerateNewId(string tableName, CustomerModel productionCustomer, CustomerModel selectedEnvironmentCustomer)
+        private async Task<ulong> GenerateNewId(string tableName, MySqlConnection productionConnection, MySqlConnection environmentConnection)
         {
-            var query = $@"SELECT MAX(x.maxId) AS maxId
-FROM (
-	SELECT MAX(id) AS maxId FROM `{productionCustomer.Database.DatabaseName}`.`{tableName}`
-	UNION ALL
-	SELECT MAX(id) AS maxId FROM `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{tableName}`
-) AS x";
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
-            if (dataTable.Rows.Count == 0)
+            await using var productionCommand = productionConnection.CreateCommand();
+            await using var environmentCommand = environmentConnection.CreateCommand();
+            
+            productionCommand.CommandText = $"SELECT MAX(id) AS maxId FROM `{tableName}`";
+            environmentCommand.CommandText = $"SELECT MAX(id) AS maxId FROM `{tableName}`";
+
+            var maxProductionId = 0UL;
+            var maxEnvironmentId = 0UL;
+            
+            await using var productionReader = await productionCommand.ExecuteReaderAsync();
+            if (await productionReader.ReadAsync())
             {
-                return 1;
+                maxProductionId = Convert.ToUInt64(productionReader.GetValue(0));
+            }
+            await using var environmentReader = await environmentCommand.ExecuteReaderAsync();
+            if (await environmentReader.ReadAsync())
+            {
+                maxEnvironmentId = Convert.ToUInt64(environmentReader.GetValue(0));
             }
 
-            return Convert.ToUInt64(dataTable.Rows[0]["maxId"]) + 1;
+
+            return Math.Max(maxProductionId, maxEnvironmentId) + 1;
         }
 
         /// <summary>
@@ -1398,8 +1576,8 @@ FROM (
         /// <param name="tableName">The table that the ID belongs to.</param>
         /// <param name="originalItemId">The ID of the item in the selected environment.</param>
         /// <param name="newItemId">The ID of the item in the production environment.</param>
-        /// <param name="selectedEnvironmentCustomer">The selected environment.</param>
-        private async Task AddIdMapping(IDictionary<string, Dictionary<ulong, ulong>> idMappings, string tableName, ulong originalItemId, ulong newItemId, CustomerModel selectedEnvironmentCustomer)
+        /// <param name="environmentConnection">The database connection to the selected environment.</param>
+        private async Task AddIdMapping(IDictionary<string, Dictionary<ulong, ulong>> idMappings, string tableName, ulong originalItemId, ulong newItemId, MySqlConnection environmentConnection)
         {
             if (!idMappings.ContainsKey(tableName))
             {
@@ -1407,13 +1585,15 @@ FROM (
             }
 
             idMappings[tableName].Add(originalItemId, newItemId);
-            var query = $@"INSERT INTO `{selectedEnvironmentCustomer.Database.DatabaseName}`.`{WiserTableNames.WiserIdMappings}` 
+            await using var environmentCommand = environmentConnection.CreateCommand();
+            environmentCommand.CommandText = $@"INSERT INTO `{WiserTableNames.WiserIdMappings}` 
 (table_name, our_id, production_id)
 VALUES (?tableName, ?ourId, ?productionId)";
-            clientDatabaseConnection.AddParameter("tableName", tableName);
-            clientDatabaseConnection.AddParameter("ourId", originalItemId);
-            clientDatabaseConnection.AddParameter("productionId", newItemId);
-            await clientDatabaseConnection.ExecuteAsync(query);
+            
+            environmentCommand.Parameters.AddWithValue("tableName", tableName);
+            environmentCommand.Parameters.AddWithValue("ourId", originalItemId);
+            environmentCommand.Parameters.AddWithValue("productionId", newItemId);
+            await environmentCommand.ExecuteNonQueryAsync();
         }
 
         /// <summary>
@@ -1442,8 +1622,6 @@ VALUES (?tableName, ?ourId, ?productionId)";
 
             return id;
         }
-
-        #endregion
 
         #region Private functions
 
