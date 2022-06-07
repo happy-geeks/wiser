@@ -126,8 +126,9 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Search for a template.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="searchValue">The value to search for.</param>
-        Task<ServiceResult<List<SearchResultModel>>> SearchAsync(string searchValue);
+        Task<ServiceResult<List<SearchResultModel>>> SearchAsync(ClaimsIdentity identity, string searchValue);
 
         /// <summary>
         /// Retrieve the history of the template. This will include changes made to dynamic content between the releases of templates and the publishes to different environments from this template. This data is collected and combined in a TemnplateHistoryOverviewModel

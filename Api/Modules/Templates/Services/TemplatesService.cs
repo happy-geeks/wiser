@@ -2466,11 +2466,7 @@ LIMIT 1";
             }
 
             templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
-
-            if (templateData.Type == TemplateTypes.Xml && !String.IsNullOrWhiteSpace(templateData.EditorValue) && !templateData.EditorValue.StartsWith("<"))
-            {
-                templateData.EditorValue = templateData.EditorValue.DecryptWithAes((await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject, useSlowerButMoreSecureMethod: true);
-            }
+            templateDataService.DecryptEditorValueIfEncrypted((await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject, templateData);
 
             return new ServiceResult<TemplateSettingsModel>(templateData);
         }
@@ -2639,9 +2635,10 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(string searchValue)
+        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(ClaimsIdentity identity, string searchValue)
         {
-            return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchValue));
+	        var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+            return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchValue, encryptionKey));
         }
 
         /// <inheritdoc />

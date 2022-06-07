@@ -28,15 +28,17 @@ namespace Api.Modules.Templates.Services
         private readonly IDynamicContentDataService dataService;
         private readonly IHistoryDataService historyDataService;
         private readonly IWiserCustomersService wiserCustomersService;
+        private readonly ITemplateDataService templateDataService;
 
         /// <summary>
         /// Creates a new instance of <see cref="HistoryService"/>.
         /// </summary>
-        public HistoryService(IDynamicContentDataService dataService, IHistoryDataService historyDataService, IWiserCustomersService wiserCustomersService)
+        public HistoryService(IDynamicContentDataService dataService, IHistoryDataService historyDataService, IWiserCustomersService wiserCustomersService, ITemplateDataService templateDataService)
         {
             this.dataService = dataService;
             this.historyDataService = historyDataService;
             this.wiserCustomersService = wiserCustomersService;
+            this.templateDataService = templateDataService;
         }
 
         /// <inheritdoc />
@@ -108,13 +110,13 @@ namespace Api.Modules.Templates.Services
             var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
             var rawTemplateModels = await historyDataService.GetTemplateHistoryAsync(templateId);
 
-            DecryptEditorValueIfEncrypted(encryptionKey, rawTemplateModels[0]);
+            templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, rawTemplateModels[0]);
 
             var templateHistory = new List<TemplateHistoryModel>();
 
             for (var i = 0; i + 1 < rawTemplateModels.Count; i++)
             {
-                DecryptEditorValueIfEncrypted(encryptionKey, rawTemplateModels[i + 1]);
+                templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, rawTemplateModels[i + 1]);
 
                 var historyModel = GenerateHistoryModelForTemplates(rawTemplateModels[i], rawTemplateModels[i + 1]);
 
@@ -135,19 +137,6 @@ namespace Api.Modules.Templates.Services
             //Add entry for first version with no changes
             templateHistory.Add(new TemplateHistoryModel(rawTemplateModels.Last().TemplateId, rawTemplateModels.Last().Version, rawTemplateModels.Last().ChangedOn, rawTemplateModels.Last().ChangedBy));
             return templateHistory;
-        }
-
-        /// <summary>
-        /// Decrypt editor values that have been encrypted.
-        /// </summary>
-        /// <param name="encryptionKey">The key used for encryption.</param>
-        /// <param name="rawTemplateModel">The <see cref="TemplateSettingsModel"/> to perform the decryption on.</param>
-        private void DecryptEditorValueIfEncrypted(string encryptionKey, TemplateSettingsModel rawTemplateModel)
-        {
-            if (rawTemplateModel.Type == TemplateTypes.Xml && !String.IsNullOrWhiteSpace(rawTemplateModel.EditorValue) && !rawTemplateModel.EditorValue.StartsWith("<"))
-            {
-                rawTemplateModel.EditorValue = rawTemplateModel.EditorValue.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
-            }
         }
         
         /// <inheritdoc />

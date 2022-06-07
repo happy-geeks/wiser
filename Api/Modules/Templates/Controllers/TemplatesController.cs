@@ -282,7 +282,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(List<SearchResultModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> SearchAsync(string searchValue)
         {
-            return (await templatesService.SearchAsync(searchValue)).GetHttpResponseMessage();
+            return (await templatesService.SearchAsync((ClaimsIdentity)User.Identity, searchValue)).GetHttpResponseMessage();
         }
         
         /// <summary>
