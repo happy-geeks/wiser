@@ -1,5 +1,13 @@
 ﻿@import "../../Base/scss/base.scss";
 
+#wiser {
+    display: block;
+}
+
+#MainTabStrip.k-widget {
+    display: block;
+}
+
 .hidden {
     display: none;
 }

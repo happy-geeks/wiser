@@ -110,20 +110,6 @@ export class ModuleTab {
             }
         }).data("kendoComboBox");
 
-        this.moduleColor = $("#moduleColor").kendoComboBox({
-            placeholder: "Maak uw keuze...",
-            clearButton: false,
-            dataSource: [
-                { text: "Blauw", value: "blue" },
-                { text: "Oranje", value: "orange" },
-                { text: "Geel", value: "yellow" },
-                { text: "Groen", value: "green" },
-                { text: "Rood", value: "red" }
-            ],
-            dataTextField: "text",
-            dataValueField: "value"
-        }).data("kendoComboBox");
-
         this.moduleType = $("#moduleType").kendoComboBox({
             placeholder: "Maak uw keuze...",
             clearButton: false,
@@ -209,7 +195,6 @@ export class ModuleTab {
         document.getElementById("moduleId").value = "";
         document.getElementById("moduleName").value = "";
         document.getElementById("moduleIcon").value = "";
-        document.getElementById("moduleColor").value = "";
         document.getElementById("moduleType").value = "";
         document.getElementById("moduleGroup").value = "";
         document.getElementById("moduleCustomQuery").value = "";
@@ -217,7 +202,6 @@ export class ModuleTab {
         document.getElementById("moduleOptions").value = "";
 
         this.moduleType.select("");
-        this.moduleColor.select("");
         this.moduleIcon.select("");
 
         this.moduleCustomQuery.setValue("");
@@ -231,10 +215,6 @@ export class ModuleTab {
 
         this.moduleIcon.select((dataItem) => {
             return dataItem.value === resultSet.icon;
-        });
-        
-        this.moduleColor.select((dataItem) => {
-            return dataItem.value === resultSet.color;
         });
         
         this.moduleType.select((dataItem) => {
@@ -265,11 +245,13 @@ export class ModuleTab {
                         this.moduleOptions.getValue(),
                         document.getElementById("moduleName").value,
                         (this.moduleIcon.dataItem()) ? this.moduleIcon.dataItem().value : "",
-                        (this.moduleColor.dataItem()) ? this.moduleColor.dataItem().value : "",
                         (this.moduleType.dataItem()) ? this.moduleType.dataItem().value : "",
                         document.getElementById("moduleGroup").value
                     );
-
+                    if (moduleSettingsModel.errors.length > 0) {
+                        this.base.showNotification("notification", `Controleer de instellingen van de module, er zijn ${moduleSettingsModel.errors.length} fout(en) gevonden: ${moduleSettingsModel.errors.join(", ")}`, "error");
+                        return;
+                    }
                     this.updateModule(this.moduleCombobox.dataItem().id, moduleSettingsModel);
                 } else {
                     this.base.showNotification("notification", `ID van de module moet een nummerieke waarde zijn!`, "error");

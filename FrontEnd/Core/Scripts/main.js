@@ -23,7 +23,21 @@ import WiserDialog from "./components/wiser-dialog";
 import "../scss/main.scss";
 import "../scss/task-alerts.scss";
 
-import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, ACTIVATE_MODULE, LOAD_ENTITY_TYPES_OF_ITEM_ID, GET_CUSTOMER_TITLE, TOGGLE_PIN_MODULE, CREATE_ENVIRONMENT, GET_ENVIRONMENTS, SYNCHRONISE_CHANGES_TO_PRODUCTION } from "./store/mutation-types";
+import {
+    AUTH_LOGOUT,
+    AUTH_REQUEST,
+    OPEN_MODULE,
+    CLOSE_MODULE,
+    CLOSE_ALL_MODULES,
+    ACTIVATE_MODULE,
+    LOAD_ENTITY_TYPES_OF_ITEM_ID,
+    GET_CUSTOMER_TITLE,
+    TOGGLE_PIN_MODULE,
+    CHANGE_PASSWORD,
+    CREATE_ENVIRONMENT, 
+    GET_ENVIRONMENTS, 
+    SYNCHRONISE_CHANGES_TO_PRODUCTION
+} from "./store/mutation-types";
 
 (() => {
     class Main {
@@ -94,6 +108,9 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         wiserIdPromptValue: null,
                         wiserEntityTypePromptValue: null,
                         markerWidget: this.markerWidget,
+                        changePasswordPromptOldPasswordValue: null,
+                        changePasswordPromptNewPasswordValue: null,
+                        changePasswordPromptNewPasswordRepeatValue: null,
                         newEnvironmentPromptValue: null,
                         wiserSyncToProductionPromptValue: null
                     };
@@ -154,6 +171,9 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                     validSubDomain() {
                         return this.$store.state.customers.validSubDomain;
                     },
+                    changePasswordError() {
+                        return this.$store.state.users.changePasswordError;
+                    },
                     createEnvironmentError() {
                         return this.$store.state.customers.createEnvironmentError;
                     },
@@ -180,6 +200,11 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                         if (event.ctrlKey && event.key === "o") {
                             event.preventDefault();
                             this.openWiserIdPrompt();
+                        }
+                        // Open MarkerToScreen (Bug reporting) prompt when the user presses CTRL+B.
+                        if (event.ctrlKey && event.key === "b") {
+                            event.preventDefault();
+                            this.openMarkerIoScreen();
                         }
                     },
 
@@ -272,6 +297,10 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
 
                     openWiserEntityTypePrompt() {
                         this.$refs.wiserEntityTypePrompt.open();
+                    },
+
+                    openChangePasswordPrompt() {
+                        this.$refs.changePasswordPrompt.open();
                     },
 
                     openNewEnvironmentPromptPrompt() {
@@ -387,6 +416,17 @@ import { AUTH_LOGOUT, AUTH_REQUEST, OPEN_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES
                     async onTogglePin(event, moduleId) {
                         event.preventDefault();
                         this.$store.dispatch(TOGGLE_PIN_MODULE, moduleId);
+                    },
+                    
+                    async changePassword() {
+                        await this.$store.dispatch(CHANGE_PASSWORD,
+                            {
+                                oldPassword: this.changePasswordPromptOldPasswordValue,
+                                newPassword: this.changePasswordPromptNewPasswordValue,
+                                newPasswordRepeat: this.changePasswordPromptNewPasswordRepeatValue
+                            });
+                        
+                        return !this.$store.state.users.changePasswordError;
                     },
                     
                     async onWiserSyncToProductionPromptOpen(sender) {

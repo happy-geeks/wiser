@@ -650,7 +650,7 @@ namespace Api.Modules.Customers.Services
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
             clientDatabaseConnection.AddParameter("key", uniqueKey);
-            clientDatabaseConnection.AddParameter("settings", settings.ToString(Formatting.None));
+            clientDatabaseConnection.AddParameter("settings", settings?.ToString(Formatting.None));
 
             var query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, groupname, `key`, long_value)
                         VALUES (?userId, '{UserGridSettingsGroupName}', ?key, ?settings)

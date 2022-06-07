@@ -12,7 +12,7 @@ export const AUTH_DATA = "authenticationUserData";
 export const FORGOT_PASSWORD = "forgotPassword";
 export const RESET_PASSWORD_SUCCESS = "resetPasswordSuccess";
 export const RESET_PASSWORD_ERROR = "resetPasswordError";
-export const CHANGE_PASSWORD = "changePassword";
+export const CHANGE_PASSWORD_LOGIN = "changePasswordLogin";
 export const CHANGE_PASSWORD_SUCCESS = "changePasswordSuccess";
 export const CHANGE_PASSWORD_ERROR = "changePasswordError";
 
@@ -38,3 +38,6 @@ export const GET_ENVIRONMENTS = "getEnvironments";
 export const SYNCHRONISE_CHANGES_TO_PRODUCTION = "synchroniseChangesToProduction";
 export const SYNCHRONISE_CHANGES_TO_PRODUCTION_SUCCESS = "synchroniseChangesToProductionSuccess";
 export const SYNCHRONISE_CHANGES_TO_PRODUCTION_ERROR = "synchroniseChangesToProductionError";
+
+// Users module.
+export const CHANGE_PASSWORD = "changePassword";

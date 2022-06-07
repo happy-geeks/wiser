@@ -18,6 +18,7 @@ import {
     RESET_PASSWORD_SUCCESS,
     RESET_PASSWORD_ERROR,
     CHANGE_PASSWORD,
+    CHANGE_PASSWORD_LOGIN,
     CHANGE_PASSWORD_SUCCESS,
     CHANGE_PASSWORD_ERROR,
     GET_CUSTOMER_TITLE,
@@ -125,7 +126,7 @@ const loginModule = {
         [RESET_PASSWORD_ERROR]: (state) => {
             state.loginMessage = "Er is iets mis gegaan. Probeer het later a.u.b. opnieuw.";
         },
-        [CHANGE_PASSWORD]: (state) => {
+        [CHANGE_PASSWORD_LOGIN]: (state) => {
             state.loginMessage = "";
         },
         [CHANGE_PASSWORD_SUCCESS]: (state) => {
@@ -232,17 +233,13 @@ const loginModule = {
             }
         },
 
-        async [CHANGE_PASSWORD]({ commit }, data = {}) {
-            commit(CHANGE_PASSWORD);
+        async [CHANGE_PASSWORD_LOGIN]({ commit }, data = {}) {
+            commit(CHANGE_PASSWORD_LOGIN);
 
             const result = await main.usersService.changePassword(data.user);
 
             if (result.response) {
-                if (result.response) {
-                    commit(CHANGE_PASSWORD_SUCCESS);
-                } else {
-                    commit(CHANGE_PASSWORD_ERROR, result.error);
-                }
+                commit(CHANGE_PASSWORD_SUCCESS);
             } else {
                 commit(CHANGE_PASSWORD_ERROR, result.error);
             }
@@ -491,6 +488,37 @@ const modulesModule = {
     getters: {}
 };
 
+const usersModule = {
+    state: () => ({
+        changePasswordError: null
+    }),
+
+    mutations: {
+        [RESET_PASSWORD_SUCCESS]: (state, message) => {
+            state.changePasswordError = null;
+        },
+        [CHANGE_PASSWORD_ERROR]: (state, message) => {
+            state.changePasswordError = message;
+        }
+    },
+
+    actions: {
+        async [CHANGE_PASSWORD]({ commit }, data = {}) {
+            commit(START_REQUEST);
+            const result = await main.usersService.changePassword(data);
+            commit(END_REQUEST);
+
+            if (result.response) {
+                commit(RESET_PASSWORD_SUCCESS);
+            } else {
+                commit(CHANGE_PASSWORD_ERROR, result.error);
+            }
+        }
+    },
+
+    getters: {}
+};
+
 const customersModule = {
     state: () => ({
         title: null,
@@ -635,6 +663,7 @@ export default createStore({
         login: loginModule,
         modules: modulesModule,
         customers: customersModule,
+        users: usersModule,
         items: itemsModule
     }
 });

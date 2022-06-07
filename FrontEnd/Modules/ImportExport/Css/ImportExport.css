@@ -1,5 +1,9 @@
 ﻿@import "../../Base/scss/base.scss";
 
+#wiser, #tabstrip.k-widget {
+    display: block;
+}
+
 #dataSelectorContainer > iframe {
     width: 100%;
     min-height: 1000px;

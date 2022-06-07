@@ -93,7 +93,10 @@ namespace Api.Modules.Modules.Services
 
             // Make sure that Wiser tables are up-to-date.
             const string TriggersName = "wiser_triggers";
-            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserItem, WiserTableNames.WiserEntityProperty, WiserTableNames.WiserModule });
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserItem,WiserTableNames.WiserItemDetail, WiserTableNames.WiserEntityProperty, WiserTableNames.WiserModule ,
+                WiserTableNames.WiserItemFile,
+                WiserTableNames.WiserItemLink,
+                WiserTableNames.WiserItemLinkDetail});
             var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
             
             // Make sure that all triggers for Wiser tables are up-to-date.
@@ -632,7 +635,7 @@ namespace Api.Modules.Modules.Services
                             SET `id` = ?new_id,
                                 `custom_query` = ?custom_query,
                                 `count_query` = ?count_query,
-                                `options` = ?options,
+                                `options` = IF(?options != '' AND ?options IS NOT NULL AND JSON_VALID(?options), ?options, ''),
                                 `name` = ?name,
                                 `icon` = ?icon,
                                 `color` = ?color,

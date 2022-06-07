@@ -2909,12 +2909,6 @@ export class Fields {
             },
             icon: "template-manager"
         });
-        htmlWindow.find(".addDynamicContent").kendoButton({
-            click: () => {
-                this.onHtmlEditorDynamicContentExec(event, null, itemId, codeMirrorInstance);
-            },
-            icon: "css"
-        });
 
         htmlWindow.find(".k-primary").kendoButton({
             click: () => {

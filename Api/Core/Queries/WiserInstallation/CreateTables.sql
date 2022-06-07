@@ -233,7 +233,7 @@ CREATE TABLE IF NOT EXISTS `wiser_itemdetail_archive`  (
 -- NOTE: When changing columns, make sure to also change the triggers for this table!
 CREATE TABLE IF NOT EXISTS `wiser_itemfile`  (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `item_id` bigint NOT NULL DEFAULT 0 COMMENT 'let op: dit is het item_id van de content',
+  `item_id` bigint UNSIGNED NOT NULL DEFAULT 0 COMMENT 'let op: dit is het item_id van de content',
   `content_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `content` longblob NULL,
   `content_url` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
@@ -245,7 +245,7 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile`  (
   `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `property_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'De naam van het veld waar deze afbeelding bijhoort',
-  `itemlink_id` bigint NOT NULL DEFAULT 0,
+  `itemlink_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   `protected` tinyint NOT NULL DEFAULT 0 COMMENT 'Stel in op 1 om alleen toe te staan dat het bestand wordt opgehaald via een versleutelde id',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `item_id`(`item_id`, `content_type`) USING BTREE,
@@ -270,9 +270,10 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile_archive`  (
   `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `property_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'De naam van het veld waar deze afbeelding bijhoort',
   `itemlink_id` bigint NOT NULL DEFAULT 0,
+  `ordering` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `item_id`(`item_id`, `content_type`) USING BTREE,
-  INDEX `idx_itemlinkid`(`itemlink_id`) USING BTREE
+  INDEX `idx_item_id`(`item_id`, `property_name`) USING BTREE,
+  INDEX `idx_item_link_id`(`itemlink_id`, `property_name`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------

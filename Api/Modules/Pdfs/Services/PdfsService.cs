@@ -52,7 +52,7 @@ namespace Api.Modules.Pdfs.Services
 
             if (data.SaveInDatabase)
             {
-                var saveResult = await filesService.SaveFileAsync(identity, pdfResult.FileContents, MediaTypeNames.Application.Pdf, pdfResult.FileDownloadName, "TEMPORARY_FILE_FROM_WISER");
+                var saveResult = await filesService.SaveAsync(identity, pdfResult.FileContents, MediaTypeNames.Application.Pdf, pdfResult.FileDownloadName, "TEMPORARY_FILE_FROM_WISER");
                 if (saveResult.StatusCode != HttpStatusCode.OK)
                 {
                     return new ServiceResult<string>
