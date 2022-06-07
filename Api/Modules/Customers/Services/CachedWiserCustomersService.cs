@@ -52,14 +52,14 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<string>> GetEncryptionKey(ClaimsIdentity identity)
+        public async Task<ServiceResult<string>> GetEncryptionKey(ClaimsIdentity identity, bool forceLiveKey = false)
         {
             var subDomain = IdentityHelpers.GetSubDomain(identity);
             return await cache.GetOrAdd($"encryption_key_{subDomain}",
                 async cacheEntry =>
                 {
                     cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
-                    return await wiserCustomersService.GetEncryptionKey(identity);
+                    return await wiserCustomersService.GetEncryptionKey(identity, forceLiveKey);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
 

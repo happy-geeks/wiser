@@ -2446,7 +2446,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId)
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId)
         {
             if (templateId <= 0)
             {
@@ -2466,6 +2466,8 @@ LIMIT 1";
             }
 
             templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
+            templateDataService.DecryptEditorValueIfEncrypted((await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject, templateData);
+
             return new ServiceResult<TemplateSettingsModel>(templateData);
         }
 
@@ -2555,6 +2557,15 @@ LIMIT 1";
                     template.EditorValue = await wiserItemsService.ReplaceHtmlForSavingAsync(template.EditorValue);
                     template.MinifiedValue = template.EditorValue;
                     break;
+                case TemplateTypes.Xml:
+                    if (!template.EditorValue.StartsWith("<Configuration>") && !template.EditorValue.StartsWith("<OAuthConfiguration>"))
+                    {
+                        break;
+                    }
+
+                    template.EditorValue = template.EditorValue.EncryptWithAes((await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject, useSlowerButMoreSecureMethod: true);
+
+                    break;
             }
 
             var jsLinks = template.LinkedTemplates?.LinkedJavascript?.Select(x => x.TemplateId).ToList();
@@ -2624,13 +2635,14 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(string searchValue)
+        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(ClaimsIdentity identity, string searchValue)
         {
-            return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchValue));
+	        var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+            return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchValue, encryptionKey));
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(int templateId)
+        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId)
         {
             if (templateId <= 0)
             {
@@ -2657,7 +2669,7 @@ LIMIT 1";
             var overview = new TemplateHistoryOverviewModel
             {
                 TemplateId = templateId,
-                TemplateHistory = await historyService.GetVersionHistoryFromTemplate(templateId, dynamicContentHistory),
+                TemplateHistory = await historyService.GetVersionHistoryFromTemplate(identity, templateId, dynamicContentHistory),
                 PublishHistory = await historyService.GetPublishHistoryFromTemplate(templateId),
                 PublishedEnvironment = (await GetTemplateEnvironmentsAsync(templateId)).ModelObject
             };
@@ -2690,7 +2702,7 @@ LIMIT 1";
                 };
             }
 
-            var templateDataResponse = await GetTemplateSettingsAsync(id);
+            var templateDataResponse = await GetTemplateSettingsAsync(identity, id);
             if (templateDataResponse.StatusCode != HttpStatusCode.OK)
             {
                 return new ServiceResult<bool>
@@ -2737,7 +2749,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom)
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom)
         {
             var templates = new List<TemplateTreeViewModel>();
             var path = startFrom.Split(',');
@@ -2750,11 +2762,11 @@ LIMIT 1";
 
                 if (templateTree.HasChildren)
                 {
-                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(templateTree.TemplateId, remainingStartFrom)).ModelObject;
+                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom)).ModelObject;
                 }
                 else
                 {
-                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(templateTree.TemplateId)).ModelObject;
+                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(identity, templateTree.TemplateId)).ModelObject;
                 }
 
                 if (String.IsNullOrWhiteSpace(startFrom))

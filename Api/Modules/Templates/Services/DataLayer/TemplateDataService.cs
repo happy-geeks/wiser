@@ -11,6 +11,7 @@ using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Enums;
@@ -569,7 +570,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<List<SearchResultModel>> SearchAsync(string searchValue)
+        public async Task<List<SearchResultModel>> SearchAsync(string searchValue, string encryptionKey)
         {
             var searchForId = false;
             if (searchValue.StartsWith("#"))
@@ -707,9 +708,66 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             var results = allItems.Where(i => i.ParentId == 0).ToList();
             AddChildren(results);
 
+            // If an ID was searched return the results.
+            if (searchForId)
+            {
+                return results;
+            }
+
+            // Load all XML templates to check the search value in encrypted templates.
+            query = $@"SELECT template.template_id, template.template_data
+                        FROM {WiserTableNames.WiserTemplate} AS template
+                        LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+                        WHERE template.template_type = {(int)TemplateTypes.Xml}
+                        AND template.removed = 0
+                        AND otherVersion.id IS NULL";
+
+            dataTable = await clientDatabaseConnection.GetAsync(query);
+            
+            // Local function to add unique results to the all items collection.
+            void AddEncryptedTemplates(List<SearchResultModel> currentLevel)
+            {
+                foreach (var result in currentLevel)
+                {
+                    if (!allItems.Any(i => i.TemplateId == result.TemplateId))
+                    {
+                        allItems.Add(result);
+                    }
+                    
+                    AddEncryptedTemplates(result.ChildNodes.Cast<SearchResultModel>().ToList());
+                }
+            }
+
+            var encryptedTemplatesAdded = false;
+
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                var templateId = dataRow.Field<int>("template_id");
+                var templateData = dataRow.Field<string>("template_data");
+                
+                // Non encrypted templates are already checked by thr query and can be skipped.
+                if (allItems.Any(i => i.TemplateId == templateId) || String.IsNullOrWhiteSpace(templateData) || templateData.StartsWith("<") || templateData.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true).IndexOf(searchValue, StringComparison.OrdinalIgnoreCase) == -1)
+                {
+                    continue;
+                }
+
+                var searchResults = await SearchAsync($"#{templateId}", encryptionKey);
+                AddEncryptedTemplates(searchResults);
+                encryptedTemplatesAdded = true;
+            }
+            
+            
+            if (!encryptedTemplatesAdded)
+            {
+                return results;
+            }
+            
+            // Reset the result with the added values from the encrypted templates.
+            results = allItems.Where(i => i.ParentId == 0).ToList();
+            AddChildren(results);
+
             return results;
         }
-
 
         /// <inheritdoc/>
         public async Task<int> CreateAsync(string name, int parent, TemplateTypes type, string username, string editorValue)
@@ -1124,6 +1182,15 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             await clientDatabaseConnection.ExecuteAsync(query);
 
             return true;
+        }
+        
+        /// <inheritdoc />
+        public void DecryptEditorValueIfEncrypted(string encryptionKey, TemplateSettingsModel rawTemplateModel)
+        {
+            if (rawTemplateModel.Type == TemplateTypes.Xml && !String.IsNullOrWhiteSpace(rawTemplateModel.EditorValue) && !rawTemplateModel.EditorValue.StartsWith("<"))
+            {
+                rawTemplateModel.EditorValue = rawTemplateModel.EditorValue.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
+            }
         }
     }
 }

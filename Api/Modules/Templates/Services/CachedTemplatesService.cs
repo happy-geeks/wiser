@@ -86,9 +86,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId)
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId)
         {
-            return await templatesService.GetTemplateSettingsAsync(templateId);
+            return await templatesService.GetTemplateSettingsAsync(identity, templateId);
         }
 
         /// <inheritdoc />
@@ -128,15 +128,15 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(string searchValue)
+        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(ClaimsIdentity identity, string searchValue)
         {
-            return await templatesService.SearchAsync(searchValue);
+            return await templatesService.SearchAsync(identity, searchValue);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(int templateId)
+        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId)
         {
-            return await templatesService.GetTemplateHistoryAsync(templateId);
+            return await templatesService.GetTemplateHistoryAsync(identity, templateId);
         }
 
         /// <inheritdoc />
@@ -158,9 +158,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom)
+        public Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom)
         {
-            return templatesService.GetEntireTreeViewStructureAsync(parentId, startFrom);
+            return templatesService.GetEntireTreeViewStructureAsync(identity, parentId, startFrom);
         }
 
         /// <inheritdoc />
