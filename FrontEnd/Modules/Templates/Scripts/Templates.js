@@ -797,6 +797,73 @@ const moduleSettings = {
             }
         }
 
+        /**
+         * Checks if the current template will conflict with another template based on the default header/footer settings.
+         * @param {number} templateId The current template's ID.
+         * @param {boolean} isDefaultHeader Whether this template should act as a default header.
+         * @param {boolean} isDefaultFooter Whether this template should act as a default footer.
+         * @param {string} defaultHeaderFooterRegex The regular expression that will be used to check the URL to limit which pages can use this default header and/or footer.
+         * @returns {Object} An object with keys "hasConflict" (boolean) and "conflictedWith" (a string array).
+         */
+        async checkDefaultHeaderOrFooterConflict(templateId, isDefaultHeader, isDefaultFooter, defaultHeaderFooterRegex) {
+            if (!isDefaultHeader && !isDefaultFooter) {
+                return false;
+            }
+
+            const process = `checkDefaultHeaderOrFooterConflict_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                const promises = [];
+
+                // Add promises based on parameters.
+                if (isDefaultHeader) {
+                    promises.push(Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}templates/${templateId}/check-default-header-conflict`,
+                        data: {
+                            regexString: defaultHeaderFooterRegex
+                        },
+                        dataType: "json",
+                        method: "GET"
+                    }));
+                }
+                if (isDefaultFooter) {
+                    promises.push(Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}templates/${templateId}/check-default-footer-conflict`,
+                        data: {
+                            regexString: defaultHeaderFooterRegex
+                        },
+                        dataType: "json",
+                        method: "GET"
+                    }));
+                }
+
+                // Result will be an array of responses.
+                const result = await Promise.all(promises);
+                let hasConflict = false;
+                const conflictedWith = [];
+
+                // The value of "conflict" will be the name of a template that this template will conflict with.
+                result.forEach((conflict) => {
+                    if (typeof conflict !== "string" || conflict === "") return;
+
+                    hasConflict = true;
+                    conflictedWith.push(conflict);
+                });
+
+                window.processing.removeProcess(process);
+
+                // Return whether there's a conflict and which template(s) this template conflicts with.
+                return {
+                    hasConflict: hasConflict,
+                    conflictedWith: conflictedWith
+                };
+            } catch (exception) {
+                kendo.alert(`Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.<br>${exception.responseText || exception}`);
+                window.processing.removeProcess(process);
+            }
+        }
+
         //Initializes the kendo components on the deployment tab. These are seperated from other components since these can be reloaded by the application.
         async initKendoDeploymentTab() {
             $("#deployLive, #deployAccept, #deployTest").kendoButton();
@@ -852,7 +919,17 @@ const moduleSettings = {
                         htmlSourceTool,
                         "formatting",
                         "cleanFormatting"
-                    ]
+                    ],
+                    serialization: {
+                        custom: function(html) {
+                            return html.replace(/\[(>|&gt;)\]([\w]+)\[(<|&lt;)\]/g, "{$2}");
+                        }
+                    },
+                    deserialization: {
+                        custom: function(html) {
+                            return html.replace(/{([\w]+)}/g, "[>]$1[<]");
+                        }
+                    }
                 }).data("kendoEditor");
             } else {
                 // Initialize Code Mirror.
@@ -1490,8 +1567,24 @@ const moduleSettings = {
             let success = true;
 
             try {
-                this.saving = true;
                 const data = this.getCurrentTemplateSettings();
+
+                // Check if there's a conflict if the template is marked as default header and/or footer.
+                const defaultHeaderCheckbox = document.getElementById("isDefaultHeader");
+                const defaultFooterCheckbox = document.getElementById("isDefaultFooter");
+                if (defaultHeaderCheckbox && defaultFooterCheckbox) {
+                    const defaultHeaderFooterRegexInput = document.getElementById("defaultHeaderFooterRegex");
+                    const conflictCheck = await this.checkDefaultHeaderOrFooterConflict(data.templateId, defaultHeaderCheckbox.checked, defaultFooterCheckbox.checked, defaultHeaderFooterRegexInput.value);
+
+                    if (conflictCheck.hasConflict) {
+                        kendo.alert(`Er is al een standaard header en/of footer met dezelfde regex. Conflicterende template(s): ${conflictCheck.conflictedWith.join(", ")}`);
+                        window.processing.removeProcess(process);
+                        return false;
+                    }
+                }
+
+                // No conflicts, continue saving.
+                this.saving = true;
 
                 const response = await Wiser2.api({
                     url: `${this.settings.wiserApiRoot}templates/${data.templateId}`,

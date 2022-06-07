@@ -1,5 +1,5 @@
 ﻿<script id="fileTemplate_{propertyIdWithSuffix}" type="text/x-kendo-template">
-    <div class="fileContainer" data-file-id="#= files[0].fileId || files[0].fileId #" data-item-id="#= files[0].itemId || files[0].itemId #" data-name="#= name #" data-title="#= files[0].title #">
+    <div class="fileContainer" data-file-id="#= files[0].fileId || files[0].fileId #" data-item-id="#= files[0].itemId || files[0].item_id #" data-name="#= name #" data-title="#= files[0].title #">
         <span class="k-file-extension-wrapper">
             <span class="k-file-extension">#= files[0].extension #</span>
         </span>
@@ -35,7 +35,7 @@
     </div>
 </script>
 
-<div class="item" style="{style}" id="container_{propertyIdWithSuffix}" data-property-id="{propertyId}" data-item-id="{itemId}" data-depends-on-field="{dependsOnField}" data-depends-on-operator="{dependsOnOperator}" data-depends-on-value="{dependsOnValue}" data-depends-on-action="{dependsOnAction}" data-property-name="{propertyName}" data-item-link-id="{itemLinkId}" data-language-code="{languageCode}" data-width="{width}" data-encrypted-item-id="{itemIdEncrypted}" data-save-on-change="{saveOnChange}" data-label-style="{labelStyle}" data-label-width="{labelWidth}">
+<div class="item {containerCssClass}" style="{style}" id="container_{propertyIdWithSuffix}" data-property-id="{propertyId}" data-item-id="{itemId}" data-depends-on-field="{dependsOnField}" data-depends-on-operator="{dependsOnOperator}" data-depends-on-value="{dependsOnValue}" data-depends-on-action="{dependsOnAction}" data-property-name="{propertyName}" data-item-link-id="{itemLinkId}" data-language-code="{languageCode}" data-width="{width}" data-encrypted-item-id="{itemIdEncrypted}" data-save-on-change="{saveOnChange}" data-label-style="{labelStyle}" data-label-width="{labelWidth}" data-input-type="file-upload">
     <span class="handler">&nbsp;</span>
     <h4 class="{titleClass}">
         <label for="field_{propertyIdWithSuffix}">{title}</label>

@@ -9,6 +9,13 @@ import { createApp, ref } from "vue";
 import * as axios from "axios";
 
 import ContentBuildersService from "../../../Core/Scripts/shared/contentBuilders.service";
+import {AUTH_LOGOUT, AUTH_REQUEST} from "../../../Core/Scripts/store/mutation-types";
+import store from "../../../Core/Scripts/store";
+import UsersService from "../../../Core/Scripts/shared/users.service";
+import ModulesService from "../../../Core/Scripts/shared/modules.service";
+import CustomersService from "../../../Core/Scripts/shared/customers.service";
+import ItemsService from "../../../Core/Scripts/shared/items.service";
+import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.service";
 
 (() => {
     class Main {
@@ -16,7 +23,12 @@ import ContentBuildersService from "../../../Core/Scripts/shared/contentBuilders
             this.vueApp = null;
             this.appSettings = null;
 
+            this.usersService = new UsersService(this);
+            this.modulesService = new ModulesService(this);
+            this.customersService = new CustomersService(this);
+            this.itemsService = new ItemsService(this);
             this.contentBuildersService = new ContentBuildersService(this);
+            this.dataSelectorsService = new DataSelectorsService(this);
 
             // Fire event on page ready for direct actions
             document.addEventListener("DOMContentLoaded", () => {
@@ -43,6 +55,20 @@ import ContentBuildersService from "../../../Core/Scripts/shared/contentBuilders
 
             this.api.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("accessToken")}`;
 
+            this.api.interceptors.response.use(undefined, async (error) => {
+                // Automatically re-authenticate with refresh token if login token expired or logout if that doesn't work or it is otherwise invalid.
+                if (error.response.status === 401) {
+                    // If we ever get an unauthorized, logout the user.
+                    if (error.response.config.url === "/connect/token") {
+                        this.vueApp.$store.dispatch(AUTH_LOGOUT);
+                    } else {
+                        await this.vueApp.$store.dispatch(AUTH_REQUEST, { gotUnauthorized: true });
+                    }
+                }
+
+                return Promise.reject(error);
+            });
+
             this.initVue();
         }
 
@@ -55,8 +81,7 @@ import ContentBuildersService from "../../../Core/Scripts/shared/contentBuilders
                         html: "",
                         base64Handler: "/upload",
                         largerImageHandler: "/upload",
-                        imageSelect: "/images.html",
-                        snippetFile: "/ContentBuilder/assets/minimalist-blocks/content.js"
+                        imageSelect: "/images.html"
                     };
                 },
                 async created() {
@@ -73,15 +98,20 @@ import ContentBuildersService from "../../../Core/Scripts/shared/contentBuilders
                     this.contentBuilder = new ContentBuilder({
                         container: ".container",
                         scriptPath: "/ContentBuilder/scripts/",
-                        pluginPath: "/ContentBuilder/scripts/",
+                        pluginPath: "/ContentBuilder/",
                         modulePath: "/ContentBuilder/assets/modules/",
                         fontAssetPath: "/ContentBuilder/assets/fonts/",
                         assetPath: "/ContentBuilder/assets/",
                         snippetOpen: true,
                         toolbar: "top",
+                        snippetUrl: "/ContentBuilder/assets/minimalist-blocks/content.js",
+                        snippetPath: "",
                         snippetData: "/ContentBuilder/assets/minimalist-blocks/snippetlist.html",
                         snippetCategories: snippetCategories,
                         defaultSnippetCategory: snippetCategories[0][0],
+                        plugins: [
+                            { name: 'WiserDataSelector', showInMainToolbar: true, showInElementToolbar: true }
+                        ],
                         onImageBrowseClick: () => {
                             window.parent.dynamicItems.fields.onHtmlEditorImageExec(null, null, null, this.contentBuilder);
                         }
@@ -104,6 +134,9 @@ import ContentBuildersService from "../../../Core/Scripts/shared/contentBuilders
                     }
                 }
             });
+
+            // Let Vue know about our store.
+            this.vueApp.use(store);
 
             // Mount our app to the main HTML element.
             this.vueApp = this.vueApp.mount("#app");

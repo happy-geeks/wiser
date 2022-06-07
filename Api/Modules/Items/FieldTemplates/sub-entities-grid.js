@@ -195,7 +195,7 @@ if (customQueryGrid) {
     }
 }
     
-function generateGrid(data, model, columns) {
+async function generateGrid(data, model, columns) {
     var toolbar = [];
     if (!options.toolbar || !options.toolbar.hideExportButton) {
         toolbar.push({
@@ -227,29 +227,29 @@ function generateGrid(data, model, columns) {
             template: '<div class="counterContainer"><span class="counter">0</span> <span class="plural">resultaten</span><span class="singular" style="display: none;">resultaat</span></div>'
         });
     }
-    
+
     if (!readonly && (!options.toolbar || !options.toolbar.hideCreateButton)) {
         toolbar.push(options.fieldGroupName || (customQueryGrid && (!options.entityType || options.hasCustomInsertQuery))
-        ? "create" 
-        : { 
-            name: "add", 
-            text: "Nieuw", 
-            template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onNewSubEntityClick(\"{itemIdEncrypted}\", \"" + options.entityType + "\", \"\\#overviewGrid{propertyIdWithSuffix}\", " + !options.hideTitleColumn + ", \"" + (options.linkTypeNumber || "") + "\")'><span class='k-icon k-i-file-add'></span>" + options.entityType + " toevoegen</a>" 
-        });
+            ? "create"
+            : {
+                name: "add",
+                text: "Nieuw",
+                template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onNewSubEntityClick(\"{itemIdEncrypted}\", \"" + options.entityType + "\", \"\\#overviewGrid{propertyIdWithSuffix}\", " + !options.hideTitleColumn + ", \"" + (options.linkTypeNumber || "") + "\")'><span class='k-icon k-i-file-add'></span>" + window.dynamicItems.getEntityTypeFriendlyName(options.entityType) + " toevoegen</a>"
+            });
     }
-    
+
     if (!readonly && options.entityType && (!options.toolbar || !options.toolbar.hideLinkButton)) {
-        toolbar.push({ 
-            name: "link", 
-            text: "Koppelen", 
-            template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onLinkSubEntityClick(\"{itemIdEncrypted}\", {itemId}, \"" + options.entityType + "\", \"\\#overviewGrid{propertyIdWithSuffix}\", \"" + (options.linkTypeNumber || "") + "\", " + (options.hideIdColumn || false) + ", " + (options.hideLinkIdColumn || false) + ", " + (options.hideTypeColumn || false) + ", " + (options.hideEnvironmentColumn || false) + ", " + (options.hideTitleColumn || false) + ", {propertyId}, \"" + JSON.stringify(options).replace(/"/g, '\\"') + "\")'><span class='k-icon k-i-link-horizontal'></span>" + options.entityType + " koppelen</a>" 
+        toolbar.push({
+            name: "link",
+            text: "Koppelen",
+            template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onLinkSubEntityClick(\"{itemIdEncrypted}\", {itemId}, \"" + options.entityType + "\", \"\\#overviewGrid{propertyIdWithSuffix}\", \"" + (options.linkTypeNumber || "") + "\", " + (options.hideIdColumn || false) + ", " + (options.hideLinkIdColumn || false) + ", " + (options.hideTypeColumn || false) + ", " + (options.hideEnvironmentColumn || false) + ", " + (options.hideTitleColumn || false) + ", {propertyId}, \"" + JSON.stringify(options).replace(/"/g, '\\"') + "\")'><span class='k-icon k-i-link-horizontal'></span>" + window.dynamicItems.getEntityTypeFriendlyName(options.entityType) + " koppelen</a>"
         });
     }
-    
+
     if (options.toolbar && options.toolbar.customActions && options.toolbar.customActions.length > 0) {
         dynamicItems.grids.addCustomActionsToToolbar("#overviewGrid{propertyIdWithSuffix}", "{itemIdEncrypted}", "{propertyId}", toolbar, options.toolbar.customActions);
     }
-    
+
     if (columns && columns.length) {
         for (var i = 0; i < columns.length; i++) {
             (function () {
@@ -258,18 +258,20 @@ function generateGrid(data, model, columns) {
                 if (column.field) {
                     column.field = column.field.toLowerCase();
                 }
-                
+
                 if (typeof column.editable === "boolean") {
-                    column.editable = function(event) { return editable; };
+                    column.editable = function (event) {
+                        return editable;
+                    };
                 } else if (column.editable) {
                     console.warn("Column '" + (column.field || "") + "' has an invalid value in property 'editable':", column.editable);
                     delete column.editable;
                 }
-                
+
                 if (!column.editor) {
                     return;
                 }
-                
+
                 column.editor = window.dynamicItems.grids[columns[i].editor];
             }());
         }
@@ -285,7 +287,7 @@ function generateGrid(data, model, columns) {
         editable = false;
     } else if (options.editable) {
         editable = options.editable;
-    } else if(options.fieldGroupName) {
+    } else if (options.fieldGroupName) {
         editable = "incell";
     } else {
         editable = {
@@ -294,32 +296,32 @@ function generateGrid(data, model, columns) {
             mode: "incell"
         };
     }
-    
+
     var dataBindingType;
     var kendoGridOptions = $.extend(true, {
         dataSource: {
             autoSync: true,
             serverFiltering: !!options.serverFiltering,
-			sort: customQueryGrid ? undefined : { field: "__ordering", dir: "asc" },
+            sort: customQueryGrid ? undefined : {field: "__ordering", dir: "asc"},
             transport: {
-                read: function(transportOptions) {
+                read: function (transportOptions) {
                     try {
                         loader.addClass("loading");
-                        
+
                         if (isFirstLoad) {
                             transportOptions.success(data);
                             isFirstLoad = false;
                             loader.removeClass("loading");
                             return;
                         }
-                        
+
                         if (customQueryGrid) {
                             Wiser2.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids-with-filters/{propertyId}" + linkTypeParameter,
                                 method: "POST",
                                 contentType: "application/json",
                                 data: JSON.stringify(transportOptions.data)
-                            }).then(function(customQueryResults) {
+                            }).then(function (customQueryResults) {
                                 if (customQueryResults.data) {
                                     for (var i = 0; i < customQueryResults.data.length; i++) {
                                         var row = customQueryResults.data[i];
@@ -328,9 +330,10 @@ function generateGrid(data, model, columns) {
                                         }
                                     }
                                 }
+
                                 transportOptions.success(customQueryResults.data);
                                 loader.removeClass("loading");
-                            }).catch(function(error) {
+                            }).catch(function (error) {
                                 transportOptions.error(error);
                                 loader.removeClass("loading");
                             });
@@ -340,29 +343,29 @@ function generateGrid(data, model, columns) {
                                 method: "POST",
                                 contentType: "application/json",
                                 data: JSON.stringify(transportOptions.data)
-                            }).then(function(gridSettings) {
+                            }).then(function (gridSettings) {
                                 transportOptions.success(gridSettings.data);
                                 loader.removeClass("loading");
-                            }).catch(function(error) {
+                            }).catch(function (error) {
                                 transportOptions.error(error);
                                 loader.removeClass("loading");
                             });
                         }
-                    } catch(exception) {
+                    } catch (exception) {
                         console.error(exception);
                         loader.removeClass("loading");
                         kendo.alert("Er is iets fout gegaan tijdens het laden van het veld '{title}'. Probeer het a.u.b. nogmaals door de pagina te verversen, of neem contact op met ons.");
                         transportOptions.error(exception);
                     }
                 },
-                update: function(transportOptions) {
+                update: function (transportOptions) {
                     try {
                         if (readonly === true) {
                             return;
                         }
-                        
+
                         loader.addClass("loading");
-                        
+
                         if (customQueryGrid) {
                             Wiser2.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
@@ -370,11 +373,11 @@ function generateGrid(data, model, columns) {
                                 contentType: "application/json",
                                 dataType: "json",
                                 data: JSON.stringify(transportOptions.data)
-                            }).then(function(result) {
+                            }).then(function (result) {
                                 // notify the data source that the request succeeded
                                 transportOptions.success(result);
                                 loader.removeClass("loading");
-                            }).catch(function(jqXHR, textStatus, errorThrown) {
+                            }).catch(function (jqXHR, textStatus, errorThrown) {
                                 console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
                                 loader.removeClass("loading");
                                 // notify the data source that the request failed
@@ -382,89 +385,99 @@ function generateGrid(data, model, columns) {
                                 // notify the data source that the request failed
                                 transportOptions.error(jqXHR);
                             });
-                            
+
                             return;
                         }
-                        
+
                         let itemModel = {
                             title: transportOptions.data.name,
                             details: []
                         };
-                        
-						var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id;
-						if (options.fieldGroupName) {
-							encryptedId = "{itemIdEncrypted}";
-							transportOptions.data.groupName = options.fieldGroupName;
-							itemModel.details.push(transportOptions.data);
-						} else {
-							var nonFieldProperties = ["id", "published_environment", "encrypted_id", "entity_type", "link_id", "link_type", "link_type_number", "encryptedId", "added_on", "added_by", "changed_on", "changed_by"];
-							for (var key in transportOptions.data) {
-								if (!transportOptions.data.hasOwnProperty(key) || nonFieldProperties.indexOf(key) > -1) {
-									continue;
-								}
-								
-								if (key === "name" || key === "title") {
-									itemModel.title = transportOptions.data[key];
-									continue;
-								} else if (key === "__ordering") {
-									if (dynamicItems.fieldTemplateFlags.enableSubEntitiesGridsOrdering) {
-										itemModel.details.push({ "key": key, "value": transportOptions.data[key], "isLinkProperty": true, "itemLinkId": transportOptions.data.link_id });
-									}
-									continue;
-								}
-								
-								if (kendoComponent && kendoComponent.columns) {
-									for (var i = 0; i < kendoComponent.columns.length; i++) {
-										var column = kendoComponent.columns[i];
-										if ((column.field + "_input") !== key || !column.values || !column.values.length) {
-											continue;
-										}
-										
-										for (var i2 = 0; i2 < column.values.length; i2++) {
-											var columnDataItem = column.values[i2];
-											if (transportOptions.data[key.replace("_input", "")] !== columnDataItem.value) {
-												continue;
-											}
-											
-											transportOptions.data[key] = columnDataItem.text || value;
-										}
-									}
-								}
-								
-								var isLinkProperty = false;
-								if (columns && columns.length) {
-									for (var i = 0; i < columns.length; i++) {
-										if (columns[i].field !== key) {
-											continue;
-										}
-										
-										isLinkProperty = columns[i].isLinkProperty === true;
-										break;
-									}
-								}
-								
-								itemModel.details.push({ "key": key, "value": transportOptions.data[key], "isLinkProperty": isLinkProperty, "itemLinkId": transportOptions.data.linkId });
-							}
-						}
-                        
+
+                        var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id;
+                        if (options.fieldGroupName) {
+                            encryptedId = "{itemIdEncrypted}";
+                            transportOptions.data.groupName = options.fieldGroupName;
+                            itemModel.details.push(transportOptions.data);
+                        } else {
+                            var nonFieldProperties = ["id", "published_environment", "encrypted_id", "entity_type", "link_id", "link_type", "link_type_number", "encryptedId", "added_on", "added_by", "changed_on", "changed_by"];
+                            for (var key in transportOptions.data) {
+                                if (!transportOptions.data.hasOwnProperty(key) || nonFieldProperties.indexOf(key) > -1) {
+                                    continue;
+                                }
+
+                                if (key === "name" || key === "title") {
+                                    itemModel.title = transportOptions.data[key];
+                                    continue;
+                                } else if (key === "__ordering") {
+                                    if (dynamicItems.fieldTemplateFlags.enableSubEntitiesGridsOrdering) {
+                                        itemModel.details.push({
+                                            "key": key,
+                                            "value": transportOptions.data[key],
+                                            "isLinkProperty": true,
+                                            "itemLinkId": transportOptions.data.link_id
+                                        });
+                                    }
+                                    continue;
+                                }
+
+                                if (kendoComponent && kendoComponent.columns) {
+                                    for (var i = 0; i < kendoComponent.columns.length; i++) {
+                                        var column = kendoComponent.columns[i];
+                                        if ((column.field + "_input") !== key || !column.values || !column.values.length) {
+                                            continue;
+                                        }
+
+                                        for (var i2 = 0; i2 < column.values.length; i2++) {
+                                            var columnDataItem = column.values[i2];
+                                            if (transportOptions.data[key.replace("_input", "")] !== columnDataItem.value) {
+                                                continue;
+                                            }
+
+                                            transportOptions.data[key] = columnDataItem.text || value;
+                                        }
+                                    }
+                                }
+
+                                var isLinkProperty = false;
+                                if (columns && columns.length) {
+                                    for (var i = 0; i < columns.length; i++) {
+                                        if (columns[i].field !== key) {
+                                            continue;
+                                        }
+
+                                        isLinkProperty = columns[i].isLinkProperty === true;
+                                        break;
+                                    }
+                                }
+
+                                itemModel.details.push({
+                                    "key": key,
+                                    "value": transportOptions.data[key],
+                                    "isLinkProperty": isLinkProperty,
+                                    "itemLinkId": transportOptions.data.linkId
+                                });
+                            }
+                        }
+
                         Wiser2.api({
                             url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
                             method: "PUT",
                             contentType: "application/json",
                             dataType: "json",
                             data: JSON.stringify(itemModel)
-                        }).then(function(result) {
-							if (transportOptions.data && transportOptions.data.details) {
-								for (var i = 0; i < transportOptions.data.details.length; i++) {
-									var currentField = transportOptions.data.details[i];
-									if (currentField.key !== "__ordering") {
-										continue;
-									}
-									
-									transportOptions.data.__ordering = currentField.value;
-								}
-							}
-							
+                        }).then(function (result) {
+                            if (transportOptions.data && transportOptions.data.details) {
+                                for (var i = 0; i < transportOptions.data.details.length; i++) {
+                                    var currentField = transportOptions.data.details[i];
+                                    if (currentField.key !== "__ordering") {
+                                        continue;
+                                    }
+
+                                    transportOptions.data.__ordering = currentField.value;
+                                }
+                            }
+
                             // notify the data source that the request succeeded
                             transportOptions.success(transportOptions.data);
                             if (options.fieldGroupName) {
@@ -472,153 +485,153 @@ function generateGrid(data, model, columns) {
                                 kendoComponent.dataSource.read();
                             }
                             loader.removeClass("loading");
-                        }).catch(function(jqXHR, textStatus, errorThrown) {
+                        }).catch(function (jqXHR, textStatus, errorThrown) {
                             console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
                             loader.removeClass("loading");
                             // notify the data source that the request failed
                             kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
                             transportOptions.error(jqXHR);
                         });
-                    } catch(exception) {
+                    } catch (exception) {
                         console.error(exception);
                         loader.removeClass("loading");
                         kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
                         transportOptions.error(exception);
                     }
                 },
-                create: function(transportOptions) {
+                create: function (transportOptions) {
                     try {
                         if (readonly === true) {
                             return;
                         }
-						
+
                         if (options.fieldGroupName) {
-							let itemModel = {
-								details: []
-							};
-							var encryptedId = "{itemIdEncrypted}";
-							transportOptions.data.groupName = options.fieldGroupName;
-							itemModel.details.push(transportOptions.data);
-							
-							Wiser2.api({
-								url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
-								method: "PUT",
-								contentType: "application/json",
-								dataType: "json",
-								data: JSON.stringify(itemModel)
-							}).then(function(result) {
-								if (transportOptions.data && transportOptions.data.details) {
-									for (var i = 0; i < transportOptions.data.details.length; i++) {
-										var currentField = transportOptions.data.details[i];
-										if (currentField.key !== "__ordering") {
-											continue;
-										}
-										
-										transportOptions.data.__ordering = currentField.value;
-									}
-								}
-								
-								// notify the data source that the request succeeded
-								transportOptions.success(transportOptions.data);
-								loader.removeClass("loading");
-							}).catch(function(jqXHR, textStatus, errorThrown) {
-								console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
-								loader.removeClass("loading");
-								// notify the data source that the request failed
-								kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
-								transportOptions.error(jqXHR);
-							});
-						} else if (customQueryGrid) {
+                            let itemModel = {
+                                details: []
+                            };
+                            var encryptedId = "{itemIdEncrypted}";
+                            transportOptions.data.groupName = options.fieldGroupName;
+                            itemModel.details.push(transportOptions.data);
+
+                            Wiser2.api({
+                                url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
+                                method: "PUT",
+                                contentType: "application/json",
+                                dataType: "json",
+                                data: JSON.stringify(itemModel)
+                            }).then(function (result) {
+                                if (transportOptions.data && transportOptions.data.details) {
+                                    for (var i = 0; i < transportOptions.data.details.length; i++) {
+                                        var currentField = transportOptions.data.details[i];
+                                        if (currentField.key !== "__ordering") {
+                                            continue;
+                                        }
+
+                                        transportOptions.data.__ordering = currentField.value;
+                                    }
+                                }
+
+                                // notify the data source that the request succeeded
+                                transportOptions.success(transportOptions.data);
+                                loader.removeClass("loading");
+                            }).catch(function (jqXHR, textStatus, errorThrown) {
+                                console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
+                                loader.removeClass("loading");
+                                // notify the data source that the request failed
+                                kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
+                                transportOptions.error(jqXHR);
+                            });
+                        } else if (customQueryGrid) {
                             loader.addClass("loading");
-                            
+
                             Wiser2.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
                                 method: "POST",
                                 contentType: "application/json",
                                 dataType: "json",
                                 data: JSON.stringify(transportOptions.data)
-                            }).then(function(result) {
+                            }).then(function (result) {
                                 // notify the data source that the request succeeded
                                 transportOptions.success(result);
                                 loader.removeClass("loading");
-                            }).catch(function(jqXHR, textStatus, errorThrown) {
+                            }).catch(function (jqXHR, textStatus, errorThrown) {
                                 // notify the data source that the request failed
                                 transportOptions.error(jqXHR);
                                 loader.removeClass("loading");
                                 kendo.alert("Er is iets fout gegaan tijdens het aanmaken van een item.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
                             });
                         }
-                    } catch(exception) {
+                    } catch (exception) {
                         console.error(exception);
                         loader.removeClass("loading");
                         kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
                         transportOptions.error(exception);
                     }
                 },
-                destroy: function(transportOptions) {
+                destroy: function (transportOptions) {
                     try {
                         if (readonly === true) {
                             return;
                         }
-                        
+
                         if (options.fieldGroupName) {
-							let itemModel = {
-								details: []
-							};
-							var encryptedId = "{itemIdEncrypted}";
-							transportOptions.data.groupName = options.fieldGroupName;
-							transportOptions.data.value = null;
-							itemModel.details.push(transportOptions.data);
-							
-							Wiser2.api({
-								url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
-								method: "PUT",
-								contentType: "application/json",
-								dataType: "json",
-								data: JSON.stringify(itemModel)
-							}).then(function(result) {
-								if (transportOptions.data && transportOptions.data.details) {
-									for (var i = 0; i < transportOptions.data.details.length; i++) {
-										var currentField = transportOptions.data.details[i];
-										if (currentField.key !== "__ordering") {
-											continue;
-										}
-										
-										transportOptions.data.__ordering = currentField.value;
-									}
-								}
-								
-								// notify the data source that the request succeeded
-								transportOptions.success(transportOptions.data);
-								loader.removeClass("loading");
-							}).catch(function(jqXHR, textStatus, errorThrown) {
-								console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
-								loader.removeClass("loading");
-								// notify the data source that the request failed
-								kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
-								transportOptions.error(jqXHR);
-							});
-						} else if (customQueryGrid) {
+                            let itemModel = {
+                                details: []
+                            };
+                            var encryptedId = "{itemIdEncrypted}";
+                            transportOptions.data.groupName = options.fieldGroupName;
+                            transportOptions.data.value = null;
+                            itemModel.details.push(transportOptions.data);
+
+                            Wiser2.api({
+                                url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
+                                method: "PUT",
+                                contentType: "application/json",
+                                dataType: "json",
+                                data: JSON.stringify(itemModel)
+                            }).then(function (result) {
+                                if (transportOptions.data && transportOptions.data.details) {
+                                    for (var i = 0; i < transportOptions.data.details.length; i++) {
+                                        var currentField = transportOptions.data.details[i];
+                                        if (currentField.key !== "__ordering") {
+                                            continue;
+                                        }
+
+                                        transportOptions.data.__ordering = currentField.value;
+                                    }
+                                }
+
+                                // notify the data source that the request succeeded
+                                transportOptions.success(transportOptions.data);
+                                loader.removeClass("loading");
+                            }).catch(function (jqXHR, textStatus, errorThrown) {
+                                console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
+                                loader.removeClass("loading");
+                                // notify the data source that the request failed
+                                kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
+                                transportOptions.error(jqXHR);
+                            });
+                        } else if (customQueryGrid) {
                             loader.addClass("loading");
-                            
+
                             Wiser2.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
                                 method: "DELETE",
                                 contentType: "application/json",
                                 dataType: "json",
                                 data: JSON.stringify(transportOptions.data)
-                            }).then(function(result) {
+                            }).then(function (result) {
                                 // notify the data source that the request succeeded
                                 transportOptions.success(result);
                                 loader.removeClass("loading");
-                            }).catch(function(jqXHR, textStatus, errorThrown) {
+                            }).catch(function (jqXHR, textStatus, errorThrown) {
                                 // notify the data source that the request failed
                                 transportOptions.error(jqXHR);
                                 loader.removeClass("loading");
                                 kendo.alert("Er is iets fout gegaan tijdens het verwijderen van deze regel.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
                             });
                         }
-                    } catch(exception) {
+                    } catch (exception) {
                         console.error(exception);
                         loader.removeClass("loading");
                         kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
@@ -665,12 +678,12 @@ function generateGrid(data, model, columns) {
         },
         filterMenuInit: window.dynamicItems.grids.onFilterMenuInit,
         filterMenuOpen: window.dynamicItems.grids.onFilterMenuOpen,
-        columnHide: window.dynamicItems.grids.saveGridViewState.bind(window.dynamicItems.grids, "sub_entities_grid_columns_{propertyId}"),
-        columnShow: window.dynamicItems.grids.saveGridViewState.bind(window.dynamicItems.grids, "sub_entities_grid_columns_{propertyId}"),
-        excelExport: function(e) {
+        columnHide: (event) => window.dynamicItems.grids.saveGridViewColumnsState("sub_entities_grid_columns_{propertyId}", event.sender),
+        columnShow: (event) => window.dynamicItems.grids.saveGridViewColumnsState("sub_entities_grid_columns_{propertyId}", event.sender),
+        excelExport: function (e) {
             loader.removeClass("loading");
         },
-        dataBinding: function(e) {
+        dataBinding: function (e) {
             dataBindingType = e.action;
 
             // Remember the current selected cell, because the focus will be lost after the data has been bound.
@@ -680,19 +693,19 @@ function generateGrid(data, model, columns) {
                 rowIndex = current.parent().index();
             }
         },
-        dataBound: function(event) {
+        dataBound: function (event) {
             // To hide toolbar buttons that require a row to be selected.
             dynamicItems.grids.onGridSelectionChange(event);
 
             // Setup any progress bars.
-            event.sender.tbody.find(".progress").each(function(e) {
+            event.sender.tbody.find(".progress").each(function (e) {
                 var row = $(this).closest("tr");
                 var columnIndex = $(this).closest("td").index();
                 if (columnIndex < 0 || columnIndex >= columns.length) {
                     console.warn("Found progress bar in column " + columnIndex.toString() + " but couldn't find the corresponding column in grid.options.columns.");
                     return;
                 }
-                
+
                 var column = columns[columnIndex];
                 var model = event.sender.dataItem(row);
                 var value = parseInt(model[column.field]) || 0;
@@ -702,15 +715,15 @@ function generateGrid(data, model, columns) {
                     max: column.progressBarSettings.maxProgress || 100,
                     value: value
                 }).data("kendoProgressBar");
-                
+
                 if (!column.progressBarSettings.progressColors || !column.progressBarSettings.progressColors.length) {
                     return;
                 }
-                
-                var progressColors = column.progressBarSettings.progressColors.sort(function(a, b) {
+
+                var progressColors = column.progressBarSettings.progressColors.sort(function (a, b) {
                     return b.max - a.max;
                 });
-                                
+
                 for (var i = 0; i < progressColors.length; i++) {
                     var progressColor = progressColors[i];
                     if (value <= progressColor.max) {
@@ -721,19 +734,19 @@ function generateGrid(data, model, columns) {
                     }
                 }
             });
-            
+
             // Show the amount of results in the toolbar.
             const totalCount = event.sender.dataSource.total();
             const counterContainer = event.sender.element.find(".k-grid-toolbar .counterContainer");
             counterContainer.find(".counter").html(kendo.toString(totalCount, "n0"));
             counterContainer.find(".plural").toggle(totalCount !== 1);
             counterContainer.find(".singular").toggle(totalCount === 1);
-                        
+
             // If cellIndex is unknown, or the user did not start editting a new cell (which means they just unfocussed the grid), do nothing.
-            if (isNaN(cellIndex) ||  editCount < 1) {
+            if (isNaN(cellIndex) || editCount < 1) {
                 return;
             }
-            
+
             // Re-focus en edit the cell that was previously selected.
             var cellToFocus = event.sender.tbody.children().eq(rowIndex).children().eq(cellIndex);
             event.sender.current(cellToFocus);
@@ -743,18 +756,18 @@ function generateGrid(data, model, columns) {
                 return;
             }
             rowIndex = cellIndex = null;
-            
+
             // Reset the edit count back to 0.
             editCount = 0;
         },
-        edit: function(e) {
+        edit: function (e) {
             // If the model is dirty, it means there is a change in the current data row.
             // If that is the case while this edit event is called, it means that the user changed a value and then started editting again.
             // Therefor we update the editCount, so that the dataBound event re-focusses this cell so that the user can keep editting.
             if (e.model.dirty) {
                 editCount++;
             }
-            
+
             // This will remove the min and max attributes from a kendo numeric text box.
             // For some reason, these numeric textboxes often get a min and max of 0, meaning that you can't enter any value other than 0.
             // I was not able to figure out the cause of this, so I made this work around.
@@ -764,11 +777,16 @@ function generateGrid(data, model, columns) {
                 kendoNumericTextBox.max(null);
             }
         },
-        save: function(e) {
+        save: function (e) {
             if (options.refreshGridAfterInlineEdit) {
-                e.sender.one("dataBound", function() {
+                e.sender.one("dataBound", function () {
                     e.sender.dataSource.read();
                 });
+            }
+        },
+        filter: function (event) {
+            if (options.keepFiltersState !== false) {
+                dynamicItems.grids.saveGridViewState("sub_entities_grid_filters_{propertyId}", kendo.stringify(event.filter));
             }
         },
         change: dynamicItems.grids.onGridSelectionChange.bind(dynamicItems.grids)
@@ -779,9 +797,10 @@ function generateGrid(data, model, columns) {
     kendoGridOptions.toolbar = toolbar.length === 0 ? null : toolbar;
     kendoGridOptions.columns = columns;
 
-    kendoComponent = field.kendoGrid(kendoGridOptions).data("kendoGrid");
+    await window.dynamicItems.grids.loadGridViewColumnsState("sub_entities_grid_columns_{propertyId}", kendoGridOptions);
+    await window.dynamicItems.grids.loadGridViewFiltersState("sub_entities_grid_filters_{propertyId}", kendoGridOptions);
 
-    window.dynamicItems.grids.loadGridViewState("sub_entities_grid_columns_{propertyId}", kendoComponent);
+    kendoComponent = field.kendoGrid(kendoGridOptions).data("kendoGrid");
 
     kendoComponent.thead.kendoTooltip({
         filter: "th",
@@ -792,64 +811,68 @@ function generateGrid(data, model, columns) {
     });
 
     if (!options.disableOpeningOfItems) {
-        field.on("dblclick", "tbody tr[data-uid] td", function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options); });
+        field.on("dblclick", "tbody tr[data-uid] td", function (event) {
+            window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options);
+        });
     }
-    
-    kendoComponent.element.find(".k-grid-excel").click(function(event) { loader.addClass("loading"); });
 
-	dynamicItems.grids.attachSelectionCounter(field[0]);
-	
-	if (!customQueryGrid && dynamicItems.fieldTemplateFlags.enableSubEntitiesGridsOrdering) {
+    kendoComponent.element.find(".k-grid-excel").click(function (event) {
+        loader.addClass("loading");
+    });
+
+    dynamicItems.grids.attachSelectionCounter(field[0]);
+
+    if (!customQueryGrid && dynamicItems.fieldTemplateFlags.enableSubEntitiesGridsOrdering) {
         kendoComponent.table.kendoSortable({
             autoScroll: true,
-			hint: function(element) {
-				var table = kendoComponent.table.clone(); // Clone the Grid table.
-				var wrapperWidth = kendoComponent.wrapper.width(); // Get the Grid width.
-				var wrapper = $("<div class='k-grid k-widget'></div>").width(wrapperWidth);
-				var hint;
+            hint: function (element) {
+                var table = kendoComponent.table.clone(); // Clone the Grid table.
+                var wrapperWidth = kendoComponent.wrapper.width(); // Get the Grid width.
+                var wrapper = $("<div class='k-grid k-widget'></div>").width(wrapperWidth);
+                var hint;
 
-				table.find("thead").remove(); // Remove the Grid header from the hint.
-				table.find("tbody").empty(); // Remove the existing rows from the hint.
-				table.wrap(wrapper); // Wrap the table
-				table.append(element.clone().removeAttr("uid")); // Append the dragged element.
+                table.find("thead").remove(); // Remove the Grid header from the hint.
+                table.find("tbody").empty(); // Remove the existing rows from the hint.
+                table.wrap(wrapper); // Wrap the table
+                table.append(element.clone().removeAttr("uid")); // Append the dragged element.
 
-				hint = table.parent(); // Get the wrapper.
+                hint = table.parent(); // Get the wrapper.
 
-				return hint; // Return the hint element.
-			},
-			cursor: "move",
-			placeholder: function(element) {
-				return element.clone().addClass("k-state-hover").css("opacity", 0.65);
-			},
-			container: "#overviewGrid{propertyIdWithSuffix}",
-			filter: ">tbody >tr",
-			change: function(e) {
-				// Kendo starts ordering with 0, but wiser starts with 1.
-				var oldIndex = e.oldIndex + 1; // The old position.
-				var newIndex = e.newIndex + 1; // The new position.
-				var view = kendoComponent.dataSource.view();
-				var dataItem = kendoComponent.dataSource.getByUid(e.item.data("uid")); // Retrieve the moved dataItem.
+                return hint; // Return the hint element.
+            },
+            cursor: "move",
+            placeholder: function (element) {
+                return element.clone().addClass("k-state-hover").css("opacity", 0.65);
+            },
+            container: "#overviewGrid{propertyIdWithSuffix}",
+            filter: ">tbody >tr",
+            change: function (e) {
+                // Kendo starts ordering with 0, but wiser starts with 1.
+                var oldIndex = e.oldIndex + 1; // The old position.
+                var newIndex = e.newIndex + 1; // The new position.
+                var view = kendoComponent.dataSource.view();
+                var dataItem = kendoComponent.dataSource.getByUid(e.item.data("uid")); // Retrieve the moved dataItem.
 
-				dataItem.__ordering = newIndex; // Update the order
-				dataItem.dirty = true;
+                dataItem.__ordering = newIndex; // Update the order
+                dataItem.dirty = true;
 
-				// Shift the order of the records.
-				if (oldIndex < newIndex) {
-					for (var i = oldIndex + 1; i <= newIndex; i++) {
-						view[i-1].__ordering--;
-						view[i-1].dirty = true;
-					}
-				} else {
-					for (var i = oldIndex - 1; i >= newIndex; i--) {
-						view[i-1].__ordering++;
-						view[i-1].dirty = true;
-					}
-				}
+                // Shift the order of the records.
+                if (oldIndex < newIndex) {
+                    for (var i = oldIndex + 1; i <= newIndex; i++) {
+                        view[i - 1].__ordering--;
+                        view[i - 1].dirty = true;
+                    }
+                } else {
+                    for (var i = oldIndex - 1; i >= newIndex; i--) {
+                        view[i - 1].__ordering++;
+                        view[i - 1].dirty = true;
+                    }
+                }
 
-				kendoComponent.dataSource.sync();
-			}
-		});
-	}
+                kendoComponent.dataSource.sync();
+            }
+        });
+    }
 
     {customScript}
 }

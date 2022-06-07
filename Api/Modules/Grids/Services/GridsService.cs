@@ -275,7 +275,7 @@ namespace Api.Modules.Grids.Services
                 }
                 case EntityGridModes.TaskHistory:
                 {
-                    results.Columns.Add(new GridColumn {Field = "due_date", Title = "Due-date", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
+                    results.Columns.Add(new GridColumn {Field = "due_date", Title = "Due-date", Format = "{0:dd MMMM yyyy}"});
                     results.Columns.Add(new GridColumn {Field = "sender", Title = "Verzonden door"});
                     results.Columns.Add(new GridColumn {Field = "receiver", Title = "Verzonden aan"});
                     results.Columns.Add(new GridColumn {Field = "content", Title = "Tekst", Width = "600px"});
@@ -810,7 +810,7 @@ namespace Api.Modules.Grids.Services
                         results.Columns.Add(new GridColumn {Selectable = true, Width = "55px"});
                         results.Columns.Add(new GridColumn {Field = "id", Title = "ID", Width = "80px", Filterable = filterable});
                         results.Columns.Add(new GridColumn {Field = "link_id", Title = "Koppel-ID", Width = "55px", Filterable = filterable});
-                        results.Columns.Add(new GridColumn {Field = "entity_type", Title = "Type", Width = "100px", Filterable = filterable});
+                        results.Columns.Add(new GridColumn {Field = "entity_type", Title = "Type", Width = "100px", Filterable = filterable, Template = "#: window.dynamicItems.getEntityTypeFriendlyName(entity_type) #"});
                         results.Columns.Add(new GridColumn {Field = "published_environment", Title = "Gepubliceerde omgeving", Width = "50px", Template = "<ins title='#: published_environment #' class='icon-#: published_environment #'></ins>"});
                         results.Columns.Add(new GridColumn {Field = "title", Title = "Naam", Filterable = filterable});
                     }

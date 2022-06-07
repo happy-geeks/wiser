@@ -82,5 +82,10 @@
         /// Gets or sets the iframe URL. Only applicable for modules of type "Iframe".
         /// </summary>
         public string IframeUrl { get; set; }
+
+        /// <summary>
+        /// Gets or sets if the module has a custom query, this is used to determine if the module can be exported.
+        /// </summary>
+        public bool HasCustomQuery { get; set; }
     }
 }

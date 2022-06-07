@@ -148,7 +148,7 @@ export class Grids {
             window.processing.addProcess(initialProcess);
             let gridViewSettings = $.extend({}, this.base.settings.gridViewSettings);
             let gridDataResult;
-            let previousFilters = null;
+            let previousFilters = gridViewSettings.keepFiltersState === false ? null : await this.loadGridViewState(`main_grid_filters_${this.base.settings.moduleId}`);
 
             const usingDataSelector = !!gridViewSettings.dataSelectorId;
             if (usingDataSelector) {
@@ -181,7 +181,10 @@ export class Grids {
                     firstLoad: true
                 };
 
-                if (gridViewSettings.dataSource && gridViewSettings.dataSource.filter) {
+                if (previousFilters) {
+                    options.filter = JSON.parse(previousFilters);
+                }
+                else if (gridViewSettings.dataSource && gridViewSettings.dataSource.filter) {
                     options.filter = gridViewSettings.dataSource.filter;
                     previousFilters = JSON.stringify(options.filter);
                 }
@@ -375,6 +378,7 @@ export class Grids {
                 }
             }
 
+            let filtersChanged = false;
             const finalGridViewSettings = $.extend(true, {
                 dataSource: {
                     serverPaging: !usingDataSelector && !gridViewSettings.clientSidePaging,
@@ -407,7 +411,8 @@ export class Grids {
                                 }
 
                                 transportOptions.data.firstLoad = this.mainGridForceRecount || currentFilters !== previousFilters;
-                                transportOptions.data.pageSize = transportOptions.data.pageSize;
+                                filtersChanged = currentFilters !== previousFilters;
+                                transportOptions.data.pageSize = transportOptions.data.page_size || transportOptions.data.pageSize;
                                 previousFilters = currentFilters;
                                 this.mainGridForceRecount = false;
 
@@ -457,9 +462,9 @@ export class Grids {
                     filterable: true,
                     allPages: true
                 },
-                columnHide: this.saveGridViewState.bind(this, `main_grid_columns_${this.base.settings.moduleId}`),
-                columnShow: this.saveGridViewState.bind(this, `main_grid_columns_${this.base.settings.moduleId}`),
-                dataBound: (event) => {
+                columnHide: (event) => this.saveGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, event.sender),
+                columnShow: (event) => this.saveGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, event.sender),
+                dataBound: async (event) => {
                     const totalCount = event.sender.dataSource.total();
                     const counterContainer = event.sender.element.find(".k-grid-toolbar .counterContainer");
                     counterContainer.find(".counter").html(kendo.toString(totalCount, "n0"));
@@ -468,6 +473,10 @@ export class Grids {
 
                     // To hide toolbar buttons that require a row to be selected.
                     this.onGridSelectionChange(event);
+
+                    if (gridViewSettings.keepFiltersState !== false && filtersChanged) {
+                        await this.saveGridViewFiltersState(`main_grid_filters_${this.base.settings.moduleId}`, event.sender);
+                    }
                 },
                 change: this.onGridSelectionChange.bind(this),
                 resizable: true,
@@ -477,16 +486,20 @@ export class Grids {
                 },
                 filterable: filterable,
                 filterMenuInit: this.onFilterMenuInit.bind(this),
-                filterMenuOpen: this.onFilterMenuOpen.bind(this)
+                filterMenuOpen: this.onFilterMenuOpen.bind(this),
             }, gridViewSettings);
 
             finalGridViewSettings.selectable = gridViewSettings.selectable || false;
             finalGridViewSettings.toolbar = toolbar.length === 0 ? null : toolbar;
             finalGridViewSettings.columns = columns;
 
-            this.mainGrid = $("#gridView").kendoGrid(finalGridViewSettings).data("kendoGrid");
+            if (previousFilters) {
+                finalGridViewSettings.dataSource.filter = JSON.parse(previousFilters);
+            }
 
-            await this.loadGridViewState(`main_grid_columns_${this.base.settings.moduleId}`, this.mainGrid);
+            await this.loadGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, finalGridViewSettings);
+
+            this.mainGrid = $("#gridView").kendoGrid(finalGridViewSettings).data("kendoGrid");
 
             if (!disableOpeningOfItems) {
                 this.mainGrid.element.on("dblclick", "tbody tr[data-uid] td", (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }); });
@@ -499,23 +512,63 @@ export class Grids {
         }
     }
 
-    async saveGridViewState(key, event) {
+    /**
+     * Save the column state of a grid. Depending on the settings, users can hide/show whichever columns in a grid that they want.
+     * This method is to save that state so that the user's choices will be remembered.
+     * @param key The key/name of the state that is being saved. This should be an unique key for every grid.
+     * @param grid The grid to get the state of.
+     * @returns {Promise<void>}
+     */
+    async saveGridViewColumnsState(key, grid) {
         try {
-            const dataToSave = kendo.stringify(event.sender.getOptions().columns);
-            sessionStorage.setItem(key, dataToSave);
-            await Wiser2.api({
-                url: `${this.base.settings.wiserApiRoot}users/grid-settings/${encodeURIComponent(key)}`,
-                method: "POST",
-                contentType: "application/json",
-                data: dataToSave
-            });
+            const dataToSave = kendo.stringify(grid.getOptions().columns);
+            await this.saveGridViewState(key, dataToSave);
         } catch (exception) {
             kendo.alert("Er is iets fout gegaan tijdens het opslaan van de instellingen voor dit grid. Probeer het nogmaals, of neem contact op met ons.");
             console.error(exception);
         }
     }
 
-    async loadGridViewState(key, grid) {
+    /**
+     * Save the filter state of a grid. Depending on the settings, users can hide/show whichever columns in a grid that they want.
+     * This method is to save that state so that the user's choices will be remembered.
+     * @param key The key/name of the state that is being saved. This should be an unique key for every grid.
+     * @param grid The grid to get the state of.
+     * @returns {Promise<void>}
+     */
+    async saveGridViewFiltersState(key, grid) {
+        try {
+            const filter = grid.dataSource.filter();
+            const dataToSave = !filter ? null : kendo.stringify(filter);
+            await this.saveGridViewState(key, dataToSave);
+        } catch (exception) {
+            kendo.alert("Er is iets fout gegaan tijdens het opslaan van de instellingen voor dit grid. Probeer het nogmaals, of neem contact op met ons.");
+            console.error(exception);
+        }
+    }
+
+    /**
+     * Save a certain state of a grid view in session storage and in database.
+     * @param key The key/name of the state that is being saved. This should be an unique key for every grid. 
+     * @param dataToSave The stringified state data to save.
+     * @returns {Promise<void>} The promise of the request.
+     */
+    async saveGridViewState(key, dataToSave) {
+        sessionStorage.setItem(key, dataToSave);
+        return Wiser2.api({
+            url: `${this.base.settings.wiserApiRoot}users/grid-settings/${encodeURIComponent(key)}`,
+            method: "POST",
+            contentType: "application/json",
+            data: dataToSave
+        });
+    }
+
+    /**
+     * Load a state for a grid. Will return the state as a string, that can be parsed as JSON.
+     * @param key The name/key of the state to load.
+     * @returns {Promise<string>} The state as a stringified JSON object.
+     */
+    async loadGridViewState(key) {
         let value;
         
         value = sessionStorage.getItem(key);
@@ -526,15 +579,28 @@ export class Grids {
                 contentType: "application/json"
             });
 
-            sessionStorage.setItem(key, value || "[]");
+            sessionStorage.setItem(key, value || "");
         }
+        
+        return value;
+    }
+
+    /**
+     * Load the saved state of columns back into a grid. Depending on the settings, users can hide/show whichever columns in a grid that they want.
+     * This method is to save that state so that the user's choices will be remembered. 
+     * This method should be called BEFORE the grid is being initialized.
+     * @param key The name/key of the state to load.
+     * @param gridOptions The options object for the grid to load the state into.
+     * @returns {Promise<void>}
+     */
+    async loadGridViewColumnsState(key, gridOptions) {
+        const value = await this.loadGridViewState(key);
 
         if (!value) {
             return;
         }
 
         const columns = JSON.parse(value);
-        const gridOptions = grid.getOptions();
         if (!gridOptions || !gridOptions.columns || !gridOptions.columns.length) {
             return;
         }
@@ -547,8 +613,23 @@ export class Grids {
 
             column.hidden = savedColumn[0].hidden;
         }
+    }
 
-        grid.setOptions(gridOptions);
+    /**
+     * Load the saved state of filters back into a grid.
+     * This method is to save that state so that the user's choices will be remembered.
+     * @param key The name/key of the state to load.
+     * @param gridOptions The options object for the grid to load the state into.
+     * @returns {Promise<void>}
+     */
+    async loadGridViewFiltersState(key, gridOptions) {
+        const value = await this.loadGridViewState(key);
+
+        if (!value) {
+            return;
+        }
+
+        gridOptions.dataSource.filter = JSON.parse(value);
     }
 
     async initializeItemsGrid(options, field, loader, itemId, height = undefined, propertyId = 0, extraData = null) {
@@ -1062,14 +1143,14 @@ export class Grids {
             }
 
             if (!title || !itemId || !entityType) {
-                const itemDetails = (await this.base.getItemDetails(encryptedId))[0];
+                const itemDetails = (await this.base.getItemDetails(encryptedId, entityType));
                 if (!itemDetails) {
                     kendo.alert("Er is geen item gevonden met het id in de geselecteerde regel. Waarschijnlijk is dit geen geldig ID. Neem a.u.b. contact op met ons.");
                     return;
                 }
 
                 title = title || itemDetails.title;
-                itemId = itemId || itemDetails.id || itemDetails.itemId || itemDetails.itemId;
+                itemId = itemId || itemDetails.id || itemDetails.itemId;
                 entityType = entityType || itemDetails.entityType;
             }
         }
@@ -1106,7 +1187,7 @@ export class Grids {
         }
 
         this.base.windows.searchItemsWindow.maximize().open();
-        this.base.windows.searchItemsWindow.title(`${entityType} zoeken en koppelen`);
+        this.base.windows.searchItemsWindow.title(`${this.base.getEntityTypeFriendlyName(entityType)} zoeken en koppelen`);
         this.base.windows.initializeSearchItemsGrid(entityType, encryptedParentId, propertyId, gridOptions);
         $.extend(this.base.windows.searchItemsWindowSettings, {
             parentId: encryptedParentId,
@@ -1150,7 +1231,7 @@ export class Grids {
             // Create the new item.
             const createItemResult = await this.base.createItem(entityType, parentId, "", linkTypeNumber);
             if (createItemResult) {
-                await this.base.windows.loadItemInWindow(true, createItemResult.itemIdPlain, createItemResult.itemId, entityType, null, showTitleField, senderGrid, { hideTitleColumn: !showTitleField }, createItemResult.linkId, `Nieuw(e) ${entityType} aanmaken`);
+                await this.base.windows.loadItemInWindow(true, createItemResult.itemIdPlain, createItemResult.itemId, entityType, null, showTitleField, senderGrid, { hideTitleColumn: !showTitleField }, createItemResult.linkId, `Nieuw(e) ${this.base.getEntityTypeFriendlyName(entityType)} aanmaken`);
             }
         } catch (exception) {
             console.error(exception);
@@ -1196,7 +1277,7 @@ export class Grids {
                 return;
             }
 
-            selectedItemDetails = (await this.base.getItemDetails(itemId))[0] || {};
+            selectedItemDetails = (await this.base.getItemDetails(itemId)) || {};
             encryptedId = selectedItemDetails.encryptedId || selectedItemDetails.encrypted_id || selectedItemDetails.encryptedid;
         }
 

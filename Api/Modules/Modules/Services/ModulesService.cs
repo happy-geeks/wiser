@@ -94,7 +94,15 @@ namespace Api.Modules.Modules.Services
 
             // Make sure that Wiser tables are up-to-date.
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-                {WiserTableNames.WiserItem, WiserTableNames.WiserEntityProperty, WiserTableNames.WiserModule});
+            {
+                WiserTableNames.WiserItem,
+                WiserTableNames.WiserItemDetail,
+                WiserTableNames.WiserEntityProperty,
+                WiserTableNames.WiserModule,
+                WiserTableNames.WiserItemFile,
+                WiserTableNames.WiserItemLink,
+                WiserTableNames.WiserItemLinkDetail
+            });
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
@@ -144,10 +152,7 @@ namespace Api.Modules.Modules.Services
                 return new ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>(results);
             }
 
-            var onlyOneInstanceAllowedGlobal =
-                String.Equals(
-                    await objectsService.FindSystemObjectByDomainNameAsync("wiser_modules_OnlyOneInstanceAllowed",
-                        "false"), "true", StringComparison.OrdinalIgnoreCase);
+            var onlyOneInstanceAllowedGlobal = String.Equals(await objectsService.FindSystemObjectByDomainNameAsync("wiser_modules_OnlyOneInstanceAllowed", "false"), "true", StringComparison.OrdinalIgnoreCase);
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var moduleId = dataRow.Field<int>("module_id");
@@ -162,6 +167,8 @@ namespace Api.Modules.Modules.Services
                 var canCreate = (permissionsBitMask & AccessRights.Create) == AccessRights.Create;
                 var canUpdate = (permissionsBitMask & AccessRights.Update) == AccessRights.Update;
                 var canDelete = (permissionsBitMask & AccessRights.Delete) == AccessRights.Delete;
+
+                var hasCustomQuery = !String.IsNullOrWhiteSpace(dataRow.Field<string>("custom_query"));
 
                 if (String.IsNullOrWhiteSpace(groupName))
                 {
@@ -178,8 +185,7 @@ namespace Api.Modules.Modules.Services
                     results.Add(groupName, new List<ModuleAccessRightsModel>());
                 }
 
-                var rightsModel = results[groupName].FirstOrDefault(r => r.ModuleId == moduleId) ??
-                                  new ModuleAccessRightsModel {ModuleId = moduleId};
+                var rightsModel = results[groupName].FirstOrDefault(r => r.ModuleId == moduleId) ?? new ModuleAccessRightsModel {ModuleId = moduleId};
 
                 rightsModel.CanRead = rightsModel.CanRead || canRead;
                 rightsModel.CanCreate = rightsModel.CanCreate || canCreate;
@@ -192,6 +198,7 @@ namespace Api.Modules.Modules.Services
                 rightsModel.Pinned = pinnedModules.Contains(moduleId);
                 rightsModel.AutoLoad = autoLoadModules.Contains(moduleId);
                 rightsModel.PinnedGroup = PinnedModulesGroupName;
+                rightsModel.HasCustomQuery = hasCustomQuery;
 
                 if (String.IsNullOrWhiteSpace(rightsModel.Icon))
                 {
@@ -211,10 +218,7 @@ namespace Api.Modules.Modules.Services
                     }
 
                     var onlyOneInstanceAllowed = optionsObject.Value<bool?>("onlyOneInstanceAllowed");
-                    rightsModel.OnlyOneInstanceAllowed =
-                        (onlyOneInstanceAllowedGlobal &&
-                         (!onlyOneInstanceAllowed.HasValue || onlyOneInstanceAllowed.Value)) ||
-                        (onlyOneInstanceAllowed.HasValue && onlyOneInstanceAllowed.Value);
+                    rightsModel.OnlyOneInstanceAllowed = (onlyOneInstanceAllowedGlobal && (!onlyOneInstanceAllowed.HasValue || onlyOneInstanceAllowed.Value)) || (onlyOneInstanceAllowed.HasValue && onlyOneInstanceAllowed.Value);
 
                     if (rightsModel.Type.Equals("Iframe", StringComparison.OrdinalIgnoreCase))
                     {
@@ -229,14 +233,10 @@ namespace Api.Modules.Modules.Services
                             var moduleQuery = dataRow.Field<string>("custom_query");
                             if (!String.IsNullOrWhiteSpace(moduleQuery))
                             {
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId}",
-                                    IdentityHelpers.GetWiserUserId(identity).ToString());
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{username}",
-                                    IdentityHelpers.GetUserName(identity) ?? "");
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userEmailAddress}",
-                                    IdentityHelpers.GetEmailAddress(identity) ?? "");
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userType}",
-                                    IdentityHelpers.GetRoles(identity) ?? "");
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId}", IdentityHelpers.GetWiserUserId(identity).ToString());
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity) ?? "");
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
 
                                 var moduleDataTable = await clientDatabaseConnection.GetAsync(moduleQuery);
                                 if (moduleDataTable.Rows.Count > 0)
@@ -260,8 +260,7 @@ namespace Api.Modules.Modules.Services
             // Make sure that we add certain modules for admins, even if those modules don't exist in wiser_module for this customer.
             if (isAdminAccount)
             {
-                foreach (var moduleId in modulesForAdmins.Where(moduleId =>
-                             !results.Any(g => g.Value.Any(m => m.ModuleId == moduleId))))
+                foreach (var moduleId in modulesForAdmins.Where(moduleId => !results.Any(g => g.Value.Any(m => m.ModuleId == moduleId))))
                 {
                     string groupName;
                     var isPinned = pinnedModules.Contains(moduleId);
@@ -282,7 +281,7 @@ namespace Api.Modules.Modules.Services
                                 CanDelete = true,
                                 CanRead = true,
                                 CanWrite = true,
-                                Icon = "controls",
+                                Icon = "line-sliders",
                                 ModuleId = moduleId,
                                 Name = "Stamgegevens",
                                 Type = "DynamicItems",
@@ -348,7 +347,7 @@ namespace Api.Modules.Modules.Services
                                 CanDelete = true,
                                 CanRead = true,
                                 CanWrite = true,
-                                Icon = "database",
+                                Icon = "line-settings",
                                 ModuleId = moduleId,
                                 Name = "Wiser beheer",
                                 Type = "Admin",
@@ -370,7 +369,7 @@ namespace Api.Modules.Modules.Services
                                 CanDelete = true,
                                 CanRead = true,
                                 CanWrite = true,
-                                Icon = "database",
+                                Icon = "im-ex",
                                 ModuleId = moduleId,
                                 Name = "Import/export",
                                 Type = "ImportExport",
@@ -592,7 +591,12 @@ namespace Api.Modules.Modules.Services
                 var newObject = new JObject();
                 foreach (var column in columns)
                 {
-                    newObject.Add(new JProperty(column.Title, item[column.Field]));
+                    if (String.IsNullOrWhiteSpace(column.Field))
+                    {
+                        continue;
+                    }
+
+                    newObject.Add(new JProperty(column.Title, item[column.Field.ToLowerInvariant()]));
                 }
 
                 newData.Add(newObject);
@@ -622,7 +626,7 @@ namespace Api.Modules.Modules.Services
                             SET `id` = ?new_id,
                                 `custom_query` = ?custom_query,
                                 `count_query` = ?count_query,
-                                `options` = ?options,
+                                `options` = IF(?options != '' AND ?options IS NOT NULL AND JSON_VALID(?options), ?options, ''),
                                 `name` = ?name,
                                 `icon` = ?icon,
                                 `color` = ?color,

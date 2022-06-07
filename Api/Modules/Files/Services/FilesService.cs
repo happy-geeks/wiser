@@ -93,6 +93,9 @@ namespace Api.Modules.Files.Services
                 {
                     throw new NotImplementedException("Tiny PNG not supported yet.");
                 }
+                
+                // Fix ordering of files.
+                await FixOrderingAsync(itemId, itemLinkId, propertyName);
 
                 var result = new List<FileModel>();
 
@@ -114,7 +117,7 @@ namespace Api.Modules.Files.Services
                         throw new NotImplementedException("Tiny PNG not supported yet.");
                     }
 
-                    var fileResult = await SaveFileAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId);
+                    var fileResult = await SaveAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId);
                     if (fileResult.StatusCode != HttpStatusCode.OK)
                     {
                         return new ServiceResult<List<FileModel>>
@@ -145,9 +148,9 @@ namespace Api.Modules.Files.Services
                 throw;
             }
         }
-        
+
         /// <inheritdoc />
-        public async Task<ServiceResult<FileModel>> SaveFileAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0)
+        public async Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0)
         {
             var fileExtension = Path.GetExtension(fileName);
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -243,13 +246,22 @@ namespace Api.Modules.Files.Services
                 }
             }
             
-            var isTest = IdentityHelpers.IsTestEnvironment(identity);
             var username = IdentityHelpers.GetUserName(identity);
             databaseConnection.AddParameter("file_name", fileName);
             databaseConnection.AddParameter("extension", Path.GetExtension(fileName));
             databaseConnection.AddParameter("added_by", username ?? "");
             databaseConnection.AddParameter("title", title ?? "");
             databaseConnection.AddParameter("property_name", propertyName);
+
+            var ordering = 1;
+            var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemlink_id" : "item_id = ?item_id";
+            var query = $@"SELECT IFNULL(MAX(ordering), 0) AS maxOrdering FROM {WiserTableNames.WiserItemFile} WHERE {whereClause} AND property_name = ?property_name";
+            var dataTable = await databaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count > 0)
+            {
+                ordering = Convert.ToInt32(dataTable.Rows[0]["maxOrdering"]) + 1;
+            }
+            databaseConnection.AddParameter("ordering", ordering);
 
             var result = new FileModel
             {
@@ -266,7 +278,7 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetFileAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId)
+        public async Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId)
         {
             if (String.IsNullOrWhiteSpace(encryptedItemId))
             {
@@ -356,7 +368,7 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> DeleteFileAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId = 0)
+        public async Task<ServiceResult<bool>> DeleteAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId = 0)
         {
             if (String.IsNullOrWhiteSpace(encryptedItemId))
             {
@@ -448,7 +460,7 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> RenameFileAsync(string encryptedItemId, int fileId, string newName, ClaimsIdentity identity, ulong itemLinkId = 0)
+        public async Task<ServiceResult<bool>> RenameAsync(string encryptedItemId, int fileId, string newName, ClaimsIdentity identity, ulong itemLinkId = 0)
         {
             if (String.IsNullOrWhiteSpace(encryptedItemId))
             {
@@ -492,7 +504,7 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> UpdateFileTitleAsync(string encryptedItemId, int fileId, string newTitle, ClaimsIdentity identity, ulong itemLinkId = 0)
+        public async Task<ServiceResult<bool>> UpdateTitleAsync(string encryptedItemId, int fileId, string newTitle, ClaimsIdentity identity, ulong itemLinkId = 0)
         {
             if (String.IsNullOrWhiteSpace(encryptedItemId))
             {
@@ -536,7 +548,7 @@ namespace Api.Modules.Files.Services
         }
         
         /// <inheritdoc />
-        public async Task<ServiceResult<FileModel>> AddFileUrl(string encryptedItemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId)
+        public async Task<ServiceResult<FileModel>> AddUrlAsync(string encryptedItemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId)
         {
             if (String.IsNullOrWhiteSpace(encryptedItemId))
             {
@@ -597,6 +609,98 @@ namespace Api.Modules.Files.Services
             file.FileId = await databaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserItemFile, 0);
 
             return new ServiceResult<FileModel>(file);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> UpdateOrderingAsync(ClaimsIdentity identity, int fileId, int previousPosition, int newPosition, ulong itemId, string propertyName, ulong itemLinkId = 0)
+        {
+            await databaseConnection.EnsureOpenConnectionForReadingAsync();
+            
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId);
+            if (!success)
+            {
+                return new ServiceResult<bool>
+                {
+                    ErrorMessage = errorMessage,
+                    ReasonPhrase = errorMessage,
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+            
+            if (newPosition == previousPosition)
+            {
+                // Don't need to do anything if the position isn't changed.
+                return new ServiceResult<bool>(true);
+            }
+
+            databaseConnection.AddParameter("fileId", fileId);
+            databaseConnection.AddParameter("previousPosition", previousPosition);
+            databaseConnection.AddParameter("newPosition", newPosition);
+            databaseConnection.AddParameter("itemId", itemId);
+            databaseConnection.AddParameter("propertyName", propertyName);
+            databaseConnection.AddParameter("itemLinkId", itemLinkId);
+            
+            var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemLinkId" : "item_id = ?itemId";
+
+            string query;
+            if (newPosition < previousPosition)
+            {
+                // Increase the ordering of all files that come later than the new position and earlier than the previous position.
+                query = $@"UPDATE {WiserTableNames.WiserItemFile} 
+SET ordering = ordering + 1
+WHERE {whereClause}
+AND property_name = ?propertyName
+AND ordering >= ?newPosition
+AND ordering < ?previousPosition";
+                await databaseConnection.ExecuteAsync(query);
+            }
+            else
+            {
+                // Lower the ordering of all files that come later than the previous position and earlier than the new position.
+                query = $@"UPDATE {WiserTableNames.WiserItemFile} 
+SET ordering = ordering - 1
+WHERE {whereClause}
+AND property_name = ?propertyName
+AND ordering > ?previousPosition
+AND ordering <= ?newPosition";
+                await databaseConnection.ExecuteAsync(query);
+            }
+
+            // Move the file to the new position.
+            query = $@"UPDATE {WiserTableNames.WiserItemFile} SET ordering = ?newPosition WHERE id = ?fileId";
+            await databaseConnection.ExecuteAsync(query);
+
+            return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task FixOrderingAsync(ulong itemId, ulong itemLinkId, string propertyName)
+        {
+            databaseConnection.AddParameter("itemId", itemId);
+            databaseConnection.AddParameter("itemLinkId", itemLinkId);
+            databaseConnection.AddParameter("propertyName", propertyName);
+            var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemLinkId" : "item_id = ?itemId";
+            var query = $@"SET @orderingNumber = 0;
+
+UPDATE {WiserTableNames.WiserItemFile} AS file
+JOIN (
+	SELECT 
+		x.id,
+		(@orderingNumber := @orderingNumber + 1) AS ordering
+	FROM (
+		SELECT
+			id
+		FROM {WiserTableNames.WiserItemFile}
+		WHERE {whereClause}
+		AND property_name = ?propertyName
+		ORDER BY ordering ASC
+	) AS x
+) AS ordering ON ordering.id = file.id
+SET file.ordering = ordering.ordering
+WHERE {whereClause}
+AND property_name = ?propertyName";
+            await databaseConnection.ExecuteAsync(query);
         }
 
         private async Task<(string UploadDirectory, List<FtpSettingsModel> FtpSettings)> GetFtpSettingsAsync(ClaimsIdentity identity, ulong itemLinkId, string propertyName, ulong itemId)
