@@ -222,14 +222,14 @@ export default class CustomersService extends BaseService {
             result.data = response.data;
         } catch (error) {
             result.success = false;
-            console.error("Error create customer", error.toJSON());
+            console.error("Error create customer", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             
             let errorMessage = error.message;
             if (error.response && error.response.data && error.response.data.error) {
                 errorMessage = error.response.data.error;
-            } else if (error.response.data) {
+            } else if (error.response && error.response.data) {
                 errorMessage = error.response.data;
-            } else if (error.response.statusText) {
+            } else if (error.response && error.response.statusText) {
                 errorMessage = error.response.statusText;
             }
             result.message = `Er is iets fout gegaan tijdens het aanmaken van deze omgeving. Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br>${errorMessage}`;
@@ -265,7 +265,7 @@ export default class CustomersService extends BaseService {
             result.data = response.data;
         } catch (error) {
             result.success = false;
-            console.error("Error customer get environments", error.toJSON());
+            console.error("Error customer get environments", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de beschikbare omgevingen.";
 
             if (error.response) {
@@ -301,14 +301,14 @@ export default class CustomersService extends BaseService {
             result.data = response.data;
         } catch (error) {
             result.success = false;
-            console.error("Error synchronise environment", error.toJSON());
+            console.error("Error synchronise environment", typeof(error.toJSON) === "function" ? error.toJSON() : error);
 
             let errorMessage = error.message;
             if (error.response && error.response.data && error.response.data.error) {
                 errorMessage = error.response.data.error;
-            } else if (error.response.data) {
+            } else if (error.response && error.response.data) {
                 errorMessage = error.response.data;
-            } else if (error.response.statusText) {
+            } else if (error.response && error.response.statusText) {
                 errorMessage = error.response.statusText;
             }
             result.message = `Er is iets fout gegaan tijdens het overzetten van de wijzigingen. Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br>${errorMessage}`;
