@@ -791,6 +791,30 @@ namespace Api.Modules.Customers.Services
                     }
                 }
 
+                // Add tables from wiser_id_mappings to tables to lock.
+                await using (var command = environmentConnection.CreateCommand())
+                {
+                    command.CommandText = $@"SELECT DISTINCT table_name FROM `{WiserTableNames.WiserIdMappings}`";
+                    var mappingDataTable = new DataTable();
+                    using var adapter = new MySqlDataAdapter(command);
+                    await adapter.FillAsync(mappingDataTable);
+                    foreach (DataRow dataRow in mappingDataTable.Rows)
+                    {
+                        var tableName = dataRow.Field<string>("table_name");
+                        if (String.IsNullOrWhiteSpace(tableName) || tablesToLock.Contains(tableName))
+                        {
+                            continue;
+                        }
+                        
+                        tablesToLock.Add(tableName);
+                        
+                        if (WiserTableNames.TablesWithArchive.Any(table => tableName.EndsWith(table, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            tablesToLock.Add($"{tableName}{WiserTableNames.ArchiveSuffix}");
+                        }
+                    }
+                }
+
                 // Lock the tables we're going to use, to be sure that other processes don't mess up our synchronisation.
                 await using (var productionCommand = productionConnection.CreateCommand())
                 {
@@ -839,6 +863,7 @@ namespace Api.Modules.Customers.Services
                     var action = dataRow.Field<string>("action").ToUpperInvariant();
                     var tableName = dataRow.Field<string>("tablename") ?? "";
                     var originalObjectId = Convert.ToUInt64(dataRow["item_id"]);
+                    var objectId = originalObjectId;
                     var originalItemId = originalObjectId;
                     var itemId = originalObjectId;
                     var field = dataRow.Field<string>("field");
@@ -850,7 +875,6 @@ namespace Api.Modules.Customers.Services
                     ulong? originalLinkId = null;
                     ulong? originalFileId = null;
                     ulong? fileId = null;
-                    ulong? entityId = null;
                     var entityType = "";
 
                     // Variables for item link changes.
@@ -940,11 +964,6 @@ namespace Api.Modules.Customers.Services
                             case "DELETE_ITEM":
                                 entityType = field;
                                 break;
-                            case "INSERT_ENTITY":
-                            case "UPDATE_ENTITY":
-                            case "DELETE_ENTITY":
-                                entityId = originalObjectId;
-                                break;
                         }
 
                         // Did we map the item ID to something else? Then use that new ID.
@@ -955,7 +974,7 @@ namespace Api.Modules.Customers.Services
                         oldDestinationItemId = GetMappedId(tableName, idMapping, oldDestinationItemId);
                         linkId = GetMappedId(tableName, idMapping, linkId);
                         fileId = GetMappedId(tableName, idMapping, fileId);
-                        entityId = GetMappedId(tableName, idMapping, entityId);
+                        objectId = GetMappedId(tableName, idMapping, objectId) ?? 0;
 
                         var isWiserItemChange = true;
 
@@ -1274,15 +1293,35 @@ WHERE `{oldValue.ToMySqlSafeValue(false)}` = ?itemId";
                                 break;
                             }
                             case "INSERT_ENTITY":
+                            case "INSERT_ENTITYPROPERTY":
+                            case "INSERT_QUERY":
+                            case "INSERT_MODULE":
+                            case "INSERT_DATA_SELECTOR":
+                            case "INSERT_PERMISSION":
+                            case "INSERT_USER_ROLE":
+                            case "INSERT_FIELD_TEMPLATE":
+                            case "INSERT_LINK_SETTING":
+                            case "INSERT_API_CONNECTION":
                             {
                                 var newEntityId = await GenerateNewId(tableName, productionConnection, environmentConnection);
                                 sqlParameters["newId"] = newEntityId;
                                 
                                 await using var productionCommand = productionConnection.CreateCommand();
                                 AddParametersToCommand(sqlParameters, productionCommand);
-                                productionCommand.CommandText = $@"{queryPrefix}
+
+                                if (tableName.Equals(WiserTableNames.WiserEntity, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    productionCommand.CommandText = $@"{queryPrefix}
 INSERT INTO `{tableName}` (id, `name`) 
 VALUES (?newId, '')";
+                                }
+                                else
+                                {
+                                    productionCommand.CommandText = $@"{queryPrefix}
+INSERT INTO `{tableName}` (id) 
+VALUES (?newId)";
+                                }
+
                                 await productionCommand.ExecuteNonQueryAsync();
 
                                 // Map the item ID from wiser_history to the ID of the newly created item, locally and in database.
@@ -1291,8 +1330,17 @@ VALUES (?newId, '')";
                                 break;
                             }
                             case "UPDATE_ENTITY":
+                            case "UPDATE_ENTITYPROPERTY":
+                            case "UPDATE_QUERY":
+                            case "UPDATE_DATA_SELECTOR":
+                            case "UPDATE_MODULE":
+                            case "UPDATE_PERMISSION":
+                            case "UPDATE_USER_ROLE":
+                            case "UPDATE_FIELD_TEMPLATE":
+                            case "UPDATE_LINK_SETTING":
+                            case "UPDATE_API_CONNECTION":
                             {
-                                sqlParameters["entityId"] = entityId;
+                                sqlParameters["id"] = objectId;
                                 sqlParameters["newValue"] = newValue;
 
                                 await using var productionCommand = productionConnection.CreateCommand();
@@ -1300,20 +1348,29 @@ VALUES (?newId, '')";
                                 productionCommand.CommandText = $@"{queryPrefix}
 UPDATE `{tableName}` 
 SET `{field.ToMySqlSafeValue(false)}` = ?newValue
-WHERE id = ?entityId";
+WHERE id = ?id";
                                 await productionCommand.ExecuteNonQueryAsync();
 
                                 break;
                             }
                             case "DELETE_ENTITY":
+                            case "DELETE_ENTITYPROPERTY":
+                            case "DELETE_QUERY":
+                            case "DELETE_DATA_SELECTOR":
+                            case "DELETE_MODULE":
+                            case "DELETE_PERMISSION":
+                            case "DELETE_USER_ROLE":
+                            case "DELETE_FIELD_TEMPLATE":
+                            case "DELETE_LINK_SETTING":
+                            case "DELETE_API_CONNECTION":
                             {
-                                sqlParameters["entityId"] = entityId;
+                                sqlParameters["id"] = objectId;
 
                                 await using var productionCommand = productionConnection.CreateCommand();
                                 AddParametersToCommand(sqlParameters, productionCommand);
                                 productionCommand.CommandText = $@"{queryPrefix}
 DELETE FROM `{tableName}`
-WHERE `id` = ?entityId";
+WHERE `id` = ?id";
                                 await productionCommand.ExecuteNonQueryAsync();
 
                                 break;
@@ -1526,7 +1583,12 @@ WHERE link_id = ?ourId;";
                 }
                 else
                 {
-                    throw new Exception($"Unknown table for equalizing mapped IDs: {tableName}");
+                    command.CommandText = $@"SET @saveHistory = FALSE;
+
+UPDATE `{tableName}` 
+SET id = ?productionId 
+WHERE id = ?ourId;";
+                    await command.ExecuteNonQueryAsync();
                 }
                 
                 // Delete the row when we succeeded in updating the ID.
