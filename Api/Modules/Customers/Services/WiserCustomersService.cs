@@ -962,6 +962,7 @@ namespace Api.Modules.Customers.Services
 
                                 break;
                             case "DELETE_ITEM":
+                            case "UNDELETE_ITEM":
                                 entityType = field;
                                 break;
                         }
@@ -1102,6 +1103,10 @@ WHERE id = ?itemId";
                                 await productionCommand.ExecuteNonQueryAsync();
 
                                 break;
+                            }
+                            case "UNDELETE_ITEM":
+                            {
+                                throw new NotImplementedException("Undelete items not supported yet.");
                             }
                             case "ADD_LINK":
                             {

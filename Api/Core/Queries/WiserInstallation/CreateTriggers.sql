@@ -1359,6 +1359,11 @@ CREATE TRIGGER `LinkSettingInsert` AFTER INSERT ON `wiser_link` FOR EACH ROW BEG
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_LINK_SETTING', 'wiser_link', NEW.id, IFNULL(@_username, USER()), 'use_item_parent_id', NULL, NEW.`use_item_parent_id`);
     END IF;
+
+    IF IFNULL(NEW.`use_dedicated_table`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_LINK_SETTING', 'wiser_link', NEW.id, IFNULL(@_username, USER()), 'use_dedicated_table', NULL, NEW.`use_dedicated_table`);
+    END IF;
 END;
 
 DROP TRIGGER IF EXISTS `LinkSettingUpdate`;
@@ -1411,6 +1416,11 @@ CREATE TRIGGER `LinkSettingUpdate` AFTER UPDATE ON `wiser_link` FOR EACH ROW BEG
     IF IFNULL(NEW.`use_item_parent_id`, '') <> IFNULL(OLD.`use_item_parent_id`, '') THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_LINK_SETTING', 'wiser_link', NEW.id, IFNULL(@_username, USER()), 'use_item_parent_id', OLD.`use_item_parent_id`, NEW.`use_item_parent_id`);
+    END IF;
+
+    IF IFNULL(NEW.`use_dedicated_table`, '') <> IFNULL(OLD.`use_dedicated_table`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_LINK_SETTING', 'wiser_link', NEW.id, IFNULL(@_username, USER()), 'use_dedicated_table', OLD.`use_dedicated_table`, NEW.`use_dedicated_table`);
     END IF;
 END;
 

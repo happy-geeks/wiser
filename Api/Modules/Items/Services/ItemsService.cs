@@ -977,6 +977,7 @@ namespace Api.Modules.Items.Services
             clientDatabaseConnection.AddParameter("userId", userId);
             clientDatabaseConnection.AddParameter("itemLinkId", itemLinkId);
 
+            // TODO: Link type table prefix and also set link type in field html attributes
             var itemIsFromArchive = false;
             var query = $@"SET SESSION group_concat_max_len = 1000000;
                                 SELECT e.tab_name, e.group_name, e.inputtype AS field_type, t.html_template, e.display_name, e.property_name, e.options, e.module_id,
@@ -1384,9 +1385,10 @@ namespace Api.Modules.Items.Services
                     var currentItemIsDestinationId = optionsObject.Value<bool>("currentItemIsDestinationId");
                     var linkTypeNumber = optionsObject.Value<int>("linkTypeNumber");
                     var limit = fieldType.Equals("combobox") ? "LIMIT 1" : "";
+                    var linkTablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(linkTypeNumber);
 
                     var linkValueQuery = $@"SELECT {(currentItemIsDestinationId ? "item_id" : "destination_item_id")} AS result
-                                            FROM {WiserTableNames.WiserItemLink} 
+                                            FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} 
                                             WHERE {(currentItemIsDestinationId ? "destination_item_id" : "item_id")} = ?itemId 
                                             AND type = ?linkTypeNumber
                                             {limit}";

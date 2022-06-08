@@ -93,14 +93,20 @@ namespace Api.Modules.Modules.Services
 
             // Make sure that Wiser tables are up-to-date.
             const string TriggersName = "wiser_triggers";
-            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserItem,WiserTableNames.WiserItemDetail, WiserTableNames.WiserEntityProperty, WiserTableNames.WiserModule ,
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { 
+                WiserTableNames.WiserItem,
+                WiserTableNames.WiserItemDetail,
+                WiserTableNames.WiserEntityProperty,
+                WiserTableNames.WiserModule ,
                 WiserTableNames.WiserItemFile,
                 WiserTableNames.WiserItemLink,
-                WiserTableNames.WiserItemLinkDetail});
+                WiserTableNames.WiserItemLinkDetail,
+                WiserTableNames.WiserLink
+            });
             var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
             
             // Make sure that all triggers for Wiser tables are up-to-date.
-            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2022, 6, 7))
+            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2022, 6, 8))
             {
                 var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
                 await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
