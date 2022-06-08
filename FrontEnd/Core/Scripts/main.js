@@ -286,6 +286,22 @@ import {
                         this.$refs.changePasswordPrompt.open();
                     },
 
+                    openWiserBranchesPrompt() {
+                        this.$refs.wiserBranchesPrompt.open();
+                    },
+
+                    openCreateBranchPrompt() {
+                        this.$refs.wiserCreateBranchPrompt.open();
+                    },
+
+                    openMergeBranchPrompt() {
+                        this.$refs.wiserMergeBranchPrompt.open();
+                    },
+
+                    openMergeConflictsPrompt() {
+                        this.$refs.wiserMergeConflictsPrompt.open();
+                    },
+
                     async openWiserItem() {
                         if (!this.wiserIdPromptValue || isNaN(parseInt(this.wiserIdPromptValue))) {
                             return false;
@@ -384,6 +400,18 @@ import {
                             });
                         
                         return !this.$store.state.users.changePasswordError;
+                    },
+                    
+                    createBranch() {
+                        alert("Branch aanmaken");
+                    },
+
+                    mergeBranch() {
+                        alert("Branch terugzetten");
+                    },
+
+                    handleMergeConflicts() {
+                        alert("Conflicten verwerken");
                     }
                 }
             });
