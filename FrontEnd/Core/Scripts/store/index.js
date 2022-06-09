@@ -1,6 +1,5 @@
 ﻿import { createStore } from "vuex";
 import { START_REQUEST, END_REQUEST, AUTH_REQUEST, AUTH_LIST, AUTH_SUCCESS, AUTH_ERROR, AUTH_LOGOUT, MODULES_LOADED, OPEN_MODULE, ACTIVATE_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, MODULES_REQUEST, LOAD_ENTITY_TYPES_OF_ITEM_ID, FORGOT_PASSWORD, RESET_PASSWORD_SUCCESS, RESET_PASSWORD_ERROR, CHANGE_PASSWORD, CHANGE_PASSWORD_SUCCESS, CHANGE_PASSWORD_ERROR, GET_CUSTOMER_TITLE, VALID_SUB_DOMAIN, TOGGLE_PIN_MODULE } from "./mutation-types";
-import { toggleMenuActive, toggleMenuVisibility } from "../main";
 
 const baseModule = {
     state: () => ({
@@ -269,10 +268,15 @@ const modulesModule = {
             }
 
             if (!hasAutoload) {
-                toggleMenuActive(true);
+                if (document.body.classList.contains("on-canvas")) {
+                    document.body.classList.add("menu-active");
+                    document.body.classList.remove("on-canvas");
+                }            
             } else {
-                toggleMenuActive(false);
-                toggleMenuVisibility(true);
+                if (document.body.classList.contains("off-canvas")) {
+                    document.body.classList.remove("off-canvas");
+                    document.body.classList.add("on-canvas");
+                }
             }
             console.log('hasAutoload:' + hasAutoload);
         },
