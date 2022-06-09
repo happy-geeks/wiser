@@ -274,7 +274,6 @@ const modulesModule = {
                     document.body.classList.add("on-canvas");
                 }
             }
-            console.log('hasAutoload:' + hasAutoload);
         },
 
         [OPEN_MODULE]: (state, module) => {
