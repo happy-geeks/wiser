@@ -1050,6 +1050,7 @@ SET @_show_title_field = '{showTitleField}';
 SET @_friendly_name = '{friendlyName}';
 SET @_save_history = '{saveHistory}';
 SET @_default_ordering = '{defaultOrdering}';
+SET @_dedicated_table_prefix = '{dedicatedTablePrefix}';
 
 SET @_show_in_tree_view = IF(@_show_in_tree_view = TRUE OR @_show_in_tree_view = 'true', 1, 0);
 SET @_show_in_search = IF(@_show_in_search = TRUE OR @_show_in_search = 'true', 1, 0);
@@ -1058,32 +1059,40 @@ SET @_save_title_as_seo = IF(@_save_title_as_seo = TRUE OR @_save_title_as_seo =
 SET @_show_title_field = IF(@_show_title_field = TRUE OR @_show_title_field = 'true', 1, 0);
 SET @_save_history = IF(@_save_history = TRUE OR @_save_history = 'true', 1, 0);
 
-UPDATE wiser_entity SET 
-	 module_id = @_module_id,
-	 name= @_name,
-	 accepted_childtypes = @_accepted_childtypes,
-	 icon = @_icon,
-	 icon_add = @_icon_add,
-	 icon_expanded = @_icon_expanded,
-	 show_in_tree_view = @_show_in_tree_view,
-	 query_after_insert = @_query_after_insert,
-	 query_after_update = @_query_after_update,
-	 query_before_update = @_query_before_update,
-	 query_before_delete = @_query_before_delete,
-	 color = @_color,
-	 show_in_search = @_show_in_search,
-	 show_overview_tab = @_show_overview_tab,
-	 save_title_as_seo = @_save_title_as_seo,
-	 #api_after_insert = @_api_after_insert,
-	 #api_after_update = @_api_after_update,
-	 #api_before_update = @_api_before_update,
-	 #api_before_delete = @_api_before_delete,
-	 show_title_field = @_show_title_field,
-	 friendly_name = @_friendly_name,
-	 save_history = @_save_history,
-	 default_ordering = @_default_ordering
-WHERE id = @_id
-LIMIT 1;
+SET @_name_changed = (SELECT `name` != @_name FROM wiser_entity WHERE id = @_id);
+SET @_name_old = (SELECT `name`  FROM wiser_entity WHERE id = @_id);
+
+UPDATE wiser_entity e
+LEFT JOIN wiser_entity accepted ON accepted.accepted_childtypes LIKE CONCAT('%',@_name_old,'%') AND @_name_changed
+LEFT JOIN wiser_entityproperty propertyOption ON REPLACE(`options` , ' ', '') LIKE CONCAT('%""entityType"":""',@_name_old,'""%') AND @_name_changed
+SET 
+     accepted.accepted_childtypes = REPLACE(accepted.accepted_childtypes, @_name_old, @_name),
+     propertyOption.`options` = REPLACE(propertyOption.`options`, @_name_old, @_name),
+	 e.module_id = @_module_id,
+	 e.name= @_name,
+	 e.accepted_childtypes = @_accepted_childtypes,
+	 e.icon = @_icon,
+	 e.icon_add = @_icon_add,
+	 e.icon_expanded = @_icon_expanded,
+	 e.show_in_tree_view = @_show_in_tree_view,
+	 e.query_after_insert = @_query_after_insert,
+	 e.query_after_update = @_query_after_update,
+	 e.query_before_update = @_query_before_update,
+	 e.query_before_delete = @_query_before_delete,
+	 e.color = @_color,
+	 e.show_in_search = @_show_in_search,
+	 e.show_overview_tab = @_show_overview_tab,
+	 e.save_title_as_seo = @_save_title_as_seo,
+	 #e.api_after_insert = @_api_after_insert,
+	 #e.api_after_update = @_api_after_update,
+	 #e.api_before_update = @_api_before_update,
+	 #e.api_before_delete = @_api_before_delete,
+	 e.show_title_field = @_show_title_field,
+	 e.friendly_name = @_friendly_name,
+	 e.save_history = @_save_history,
+	 e.default_ordering = @_default_ordering,
+     e.dedicated_table_prefix = @_dedicated_table_prefix
+WHERE e.id = @_id;
 ");
                 TemplateQueryStrings.Add("SAVE_INITIAL_VALUES", @"SET @_entity_name = '{entityName}';
 SET @_tab_name = '{tabName}';
@@ -2437,7 +2446,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId)
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId)
         {
             if (templateId <= 0)
             {
@@ -2457,6 +2466,8 @@ LIMIT 1";
             }
 
             templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
+            templateDataService.DecryptEditorValueIfEncrypted((await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject, templateData);
+
             return new ServiceResult<TemplateSettingsModel>(templateData);
         }
 
@@ -2546,6 +2557,15 @@ LIMIT 1";
                     template.EditorValue = await wiserItemsService.ReplaceHtmlForSavingAsync(template.EditorValue);
                     template.MinifiedValue = template.EditorValue;
                     break;
+                case TemplateTypes.Xml:
+                    if (!template.EditorValue.StartsWith("<Configuration>") && !template.EditorValue.StartsWith("<OAuthConfiguration>"))
+                    {
+                        break;
+                    }
+
+                    template.EditorValue = template.EditorValue.EncryptWithAes((await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject, useSlowerButMoreSecureMethod: true);
+
+                    break;
             }
 
             var jsLinks = template.LinkedTemplates?.LinkedJavascript?.Select(x => x.TemplateId).ToList();
@@ -2615,13 +2635,14 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(string searchValue)
+        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(ClaimsIdentity identity, string searchValue)
         {
-            return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchValue));
+	        var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+            return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchValue, encryptionKey));
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(int templateId)
+        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId)
         {
             if (templateId <= 0)
             {
@@ -2648,7 +2669,7 @@ LIMIT 1";
             var overview = new TemplateHistoryOverviewModel
             {
                 TemplateId = templateId,
-                TemplateHistory = await historyService.GetVersionHistoryFromTemplate(templateId, dynamicContentHistory),
+                TemplateHistory = await historyService.GetVersionHistoryFromTemplate(identity, templateId, dynamicContentHistory),
                 PublishHistory = await historyService.GetPublishHistoryFromTemplate(templateId),
                 PublishedEnvironment = (await GetTemplateEnvironmentsAsync(templateId)).ModelObject
             };
@@ -2681,7 +2702,7 @@ LIMIT 1";
                 };
             }
 
-            var templateDataResponse = await GetTemplateSettingsAsync(id);
+            var templateDataResponse = await GetTemplateSettingsAsync(identity, id);
             if (templateDataResponse.StatusCode != HttpStatusCode.OK)
             {
                 return new ServiceResult<bool>
@@ -2728,7 +2749,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom)
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom)
         {
             var templates = new List<TemplateTreeViewModel>();
             var path = startFrom.Split(',');
@@ -2741,11 +2762,11 @@ LIMIT 1";
 
                 if (templateTree.HasChildren)
                 {
-                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(templateTree.TemplateId, remainingStartFrom)).ModelObject;
+                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom)).ModelObject;
                 }
                 else
                 {
-                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(templateTree.TemplateId)).ModelObject;
+                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(identity, templateTree.TemplateId)).ModelObject;
                 }
 
                 if (String.IsNullOrWhiteSpace(startFrom))

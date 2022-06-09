@@ -86,8 +86,9 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// Searches for a template.
         /// </summary>
         /// <param name="searchValue">What to search for.</param>
+        /// <param name="encryptionKey">The key used for encryption.</param>
         /// <returns></returns>
-        Task<List<SearchResultModel>> SearchAsync(string searchValue);
+        Task<List<SearchResultModel>> SearchAsync(string searchValue, string encryptionKey);
 
         /// <summary>
         /// Creates an empty template with the given name, type and parent template.
@@ -161,5 +162,12 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="username">The name of the authenticated user.</param>
         /// <param name="alsoDeleteChildren">Optional: Whether or not to also delete all children of this template. Default value is <see langword="true"/>.</param>
         Task<bool> DeleteAsync(int templateId, string username, bool alsoDeleteChildren = true);
+
+        /// <summary>
+        /// Decrypt editor values that have been encrypted.
+        /// </summary>
+        /// <param name="encryptionKey">The key used for encryption.</param>
+        /// <param name="rawTemplateModel">The <see cref="TemplateSettingsModel"/> to perform the decryption on.</param>
+        void DecryptEditorValueIfEncrypted(string encryptionKey, TemplateSettingsModel rawTemplateModel);
     }
 }
