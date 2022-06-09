@@ -31,7 +31,7 @@ Wiser v3. This includes the API and the front-end projects.
     "PusherAppId": "", // Some modules use pusher to send notifications to users. Enter the app ID for pusher here if you want to use that.
     "PusherAppKey": "", // The app key for pusher.
     "PusherAppSecret": "", // The app secret for pusher.
-    "PusherSalt": "" // A salt to use when hashing event IDs for pusher.,
+    "PusherSalt": "", // A salt to use when hashing event IDs for pusher.,
     "SigningCredentialCertificate": "" // The fully qualified name of the certificate in the store of the server, of the certificate to use for IdentityServer4 (OAUTH2) authentication.
   },
   "DigitalOcean": {
