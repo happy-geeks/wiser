@@ -153,6 +153,10 @@ const moduleSettings = {
 
             await this.initializeKendoComponents();
             this.bindEvents();
+
+            // Start the SignalR connection.
+            await this.connectedUsers.init();
+
             window.processing.removeProcess(process);
 
             window.addEventListener("beforeunload", async (event) => {
@@ -634,6 +638,11 @@ const moduleSettings = {
                 await Promise.all(promises);
                 window.processing.removeProcess(process);
 
+                // Add user to the connected users (uses SignalR).
+                if (this.connectedUsers.currentTemplateId > 0) {
+                    this.connectedUsers.remove(this.connectedUsers.currentTemplateId, this.base.settings.username);
+                }
+                this.connectedUsers.currentTemplateId = id;
                 this.connectedUsers.add(id, this.base.settings.username);
 
                 // Only load dynamic content and previews for HTML templates.
@@ -1437,14 +1446,18 @@ const moduleSettings = {
             document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
 
             document.getElementById("searchForm").addEventListener("submit", this.onSearchFormSubmit.bind(this));
-          
+
             $(".window-content #left-pane div.k-content").on("dragover", (event) => {
                 event.preventDefault();
             });
             $(".window-content #left-pane div.k-content").on("drop", this.onDropFile.bind(this));
-            
+
             document.addEventListener("TemplateConnectedUsers:UsersUpdate", (event) => {
-                console.log("Connected users:", event.detail);
+                console.log("TemplateConnectedUsers:UsersUpdate", event.detail)
+                document.querySelectorAll("div.connected-users").forEach(div => {
+                    const list = div.querySelector("div.connected-users-list");
+                    list.innerHTML = event.detail.join(", ");
+                });
             });
         }
 

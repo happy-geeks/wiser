@@ -1,71 +1,59 @@
 ﻿require("@microsoft/signalr/dist/browser/signalr.min.js");
 
 export class TemplateConnectedUsers {
+    #connection;
+
     constructor(base) {
         this.base = base;
-        this.connectedUsers = {
-            templates: {}
-        };
-
-        this.connection = new signalR.HubConnectionBuilder().withUrl("/templatesHub").build();
-        this.connection.on("UserOpenedTemplate", this.#userOpenedTemplate.bind(this));
-        this.connection.on("UserClosedTemplate", this.#userClosedTemplate.bind(this));
-
-        this.connection.start();
+        // The current template ID that is being tracked.
+        this.currentTemplateId = 0;
     }
 
-    add(templateId, user) {
-        this.connection.invoke("AddUser", templateId, user).then(() => {
+    async init() {
+        this.#connection = new signalR.HubConnectionBuilder().withUrl("/templatesHub").build();
+        this.#connection.on("UserOpenedTemplate", this.#userOpenedTemplate.bind(this));
+        this.#connection.on("UserClosedTemplate", this.#userClosedTemplate.bind(this));
+        await this.#connection.start();
+    }
+
+    add(templateId, username) {
+        this.#connection.invoke("AddUserAsync", templateId, username).then(() => {
             this.#notifyUsersUpdate(templateId);
         }).catch(err => console.error(err));
     }
 
-    remove(templateId, user) {
-        this.connection.invoke("RemoveUser", templateId, user).then(() => {
+    remove(templateId, username) {
+        this.#connection.invoke("RemoveUserAsync", templateId, username).then(() => {
             this.#notifyUsersUpdate(templateId);
         }).catch(err => console.error(err));
     }
 
-    async getCurrentUsers(templateId) {
-        return await this.connection.invoke("GetUsersInTemplate", templateId);
+    async #getCurrentUsers(templateId) {
+        return await this.#connection.invoke("GetUsersInTemplate", templateId);
     }
 
-    #rebuildConnectedUsers(templateId) {
-        // TODO
-        
+    #userOpenedTemplate(templateId) {
+        if (templateId !== -1 && templateId !== this.currentTemplateId) return;
+
+        this.#notifyUsersUpdate(templateId);
     }
 
-    #userOpenedTemplate(templateId, user) {
-        const key = `template_${templateId}`;
-        if (!this.connectedUsers.templates.hasOwnProperty(key)) {
-            this.connectedUsers.templates[key] = [];
-        }
+    #userClosedTemplate(templateId) {
+        if (templateId !== -1 && templateId !== this.currentTemplateId) return;
 
-        if (!this.connectedUsers.templates[key].includes(user)) {
-            this.connectedUsers.templates[key].push(user);
-        }
-    }
-
-    #userClosedTemplate(templateId, user) {
-        const key = `template_${templateId}`;
-
-        // Check if template ID array exists.
-        if (!this.connectedUsers.templates.hasOwnProperty(key)) {
-            return;
-        }
-
-        // Find user in the array.
-        const index = this.connectedUsers.templates[key].findIndex(u => u === user);
-        if (index === -1) return;
-
-        // Remove user from the array.
-        this.connectedUsers.templates[key].splice(index, 1);
+        this.#notifyUsersUpdate(templateId);
     }
 
     #notifyUsersUpdate(templateId) {
-        const event = new CustomEvent("TemplateConnectedUsers:UsersUpdate", {
-            detail: this.connectedUsers.templates[`template_${templateId}`]
-        })
-        document.dispatchEvent(event);
+        this.#getCurrentUsers(templateId !== -1 ? templateId : this.currentTemplateId).then((usersList) => {
+            const users = [];
+            usersList.forEach(user => {
+                users.push(user.username);
+            });
+            const event = new CustomEvent("TemplateConnectedUsers:UsersUpdate", {
+                detail: users
+            })
+            document.dispatchEvent(event);
+        });
     }
 }
