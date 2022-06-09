@@ -97,6 +97,9 @@ CREATE TABLE IF NOT EXISTS `wiser_entityproperty`  (
   `extended_explanation` tinyint NOT NULL DEFAULT 0,
   `label_style` enum('normal','inline', 'float') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `label_width` enum('0','10','20','30','40','50') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `enable_aggregation` tinyint NOT NULL DEFAULT 0,
+  `aggregate_options` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `access_key` varchar(1) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_unique`(`entity_name`, `property_name`, `language_code`, `link_type`, `display_name`) USING BTREE,
   INDEX `idx_module_entity`(`module_id`, `entity_name`) USING BTREE,
@@ -230,7 +233,6 @@ CREATE TABLE IF NOT EXISTS `wiser_itemdetail_archive`  (
 -- ----------------------------
 -- Table structure for wiser_itemfile
 -- ----------------------------
--- NOTE: When changing columns, make sure to also change the triggers for this table!
 CREATE TABLE IF NOT EXISTS `wiser_itemfile`  (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `item_id` bigint UNSIGNED NOT NULL DEFAULT 0 COMMENT 'let op: dit is het item_id van de content',
@@ -247,6 +249,7 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile`  (
   `property_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'De naam van het veld waar deze afbeelding bijhoort',
   `itemlink_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   `protected` tinyint NOT NULL DEFAULT 0 COMMENT 'Stel in op 1 om alleen toe te staan dat het bestand wordt opgehaald via een versleutelde id',
+  `ordering` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `item_id`(`item_id`, `content_type`) USING BTREE,
   INDEX `idx_itemlinkid`(`itemlink_id`) USING BTREE
@@ -789,5 +792,14 @@ CREATE TABLE IF NOT EXISTS `wiser_template_publish_log`  (
     PRIMARY KEY (`id`) USING BTREE,
     INDEX `idx_template_id`(`template_id` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_table_changes
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_table_changes`  (
+    `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    `last_update` datetime NOT NULL,
+    PRIMARY KEY (`name`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 SET FOREIGN_KEY_CHECKS = 1;
