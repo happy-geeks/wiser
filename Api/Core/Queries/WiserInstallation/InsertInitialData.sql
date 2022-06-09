@@ -59,7 +59,6 @@ INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_user_ro
 INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_api_connection', NOW());
 INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_communication', NOW());
 INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_communication_generated', NOW());
-INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_data_selector', NOW());
 INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('easy_objects', NOW());
 INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_import', NOW());
 INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_import_log', NOW());
