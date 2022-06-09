@@ -235,7 +235,8 @@ const modulesModule = {
             if (!modules) {
                 return;
             }
-            
+
+            var hasAutoload = false;
             for (let groupName in modules) {
                 if (!modules.hasOwnProperty(groupName)) {
                     continue;
@@ -255,6 +256,22 @@ const modulesModule = {
 
                     state.allModules.push(module);
                     moduleGroup.modules.push(module);
+
+                    if (module.autoLoad) {
+                        hasAutoload = true;
+                    }
+                }
+            }
+
+            if (!hasAutoload) {
+                if (document.body.classList.contains("on-canvas")) {
+                    document.body.classList.add("menu-active");
+                    document.body.classList.remove("on-canvas");
+                }            
+            } else {
+                if (document.body.classList.contains("off-canvas")) {
+                    document.body.classList.remove("off-canvas");
+                    document.body.classList.add("on-canvas");
                 }
             }
         },

@@ -105,6 +105,9 @@ export default {
                 this.loginForm.selectedUser = "";
                 this.loginForm.password = "";
             }
+            else {
+                this.loginForm.selectedUser = this.users[0];
+            }
         },
 
         logout() {
