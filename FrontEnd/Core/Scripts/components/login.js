@@ -110,10 +110,6 @@ export default {
             }
         },
 
-        handleChange(event) {
-            this.value = event.value;
-        },
-
         logout() {
             this.$store.dispatch(AUTH_LOGOUT);
         },
