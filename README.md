@@ -73,6 +73,7 @@ server=;port=;uid=;pwd=;database=;pooling=true;Convert Zero Datetime=true;CharSe
 Note the options that are added at the end of the connection string, Wiser will not work properly without these options.
 
 ## Installation script
+The installation script creates a new database schema and then creates several tables in that database. For it to work, you'll need a database user that has enough permissions to do all this.
 To setup this database, you can open a PowerShell or CMD window in the directory that contains the `Api.csproj` file and run the following command:
 ```
 npm run setup:mysql -- --host=host --database=database --user=user --password=password
