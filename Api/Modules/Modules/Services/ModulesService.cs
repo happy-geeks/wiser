@@ -101,7 +101,9 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserModule,
                 WiserTableNames.WiserItemFile,
                 WiserTableNames.WiserItemLink,
-                WiserTableNames.WiserItemLinkDetail
+                WiserTableNames.WiserItemLinkDetail,
+                WiserTableNames.WiserDataSelector,
+                WiserTableNames.WiserTemplate
             });
 
             clientDatabaseConnection.ClearParameters();
