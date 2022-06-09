@@ -6,50 +6,6 @@ SET @customerId = ?newCustomerId;
 INSERT INTO `wiser_roles` VALUES (1, 'Admin');
 
 -- ----------------------------
--- Records of system_tablechanges
--- ----------------------------
-INSERT INTO `system_tablechanges` VALUES (1, 'dev_commit', NOW());
-INSERT INTO `system_tablechanges` VALUES (2, 'dev_commit_item', NOW());
-INSERT INTO `system_tablechanges` VALUES (3, 'dev_history', NOW());
-INSERT INTO `system_tablechanges` VALUES (4, 'dev_template_live', NOW());
-INSERT INTO `system_tablechanges` VALUES (5, 'easy_dynamiccontent', NOW());
-INSERT INTO `system_tablechanges` VALUES (6, 'easy_items', NOW());
-INSERT INTO `system_tablechanges` VALUES (7, 'easy_objects', NOW());
-INSERT INTO `system_tablechanges` VALUES (8, 'objecttypes', NOW());
-INSERT INTO `system_tablechanges` VALUES (9, 'wiser_user_roles', NOW());
-INSERT INTO `system_tablechanges` VALUES (10, 'wiser_entityproperty', NOW());
-INSERT INTO `system_tablechanges` VALUES (11, 'wiser_permission', NOW());
-INSERT INTO `system_tablechanges` VALUES (12, 'wiser_link', NOW());
-INSERT INTO `system_tablechanges` VALUES (13, 'wiser_entity', NOW());
-INSERT INTO `system_tablechanges` VALUES (14, 'wiser_query', NOW());
-INSERT INTO `system_tablechanges` VALUES (15, 'wiser_data_selector', NOW());
-INSERT INTO `system_tablechanges` VALUES (16, 'wiser_login_attempts', NOW());
-INSERT INTO `system_tablechanges` VALUES (17, 'wiser_user_auth_token', NOW());
-INSERT INTO `system_tablechanges` VALUES (18, 'wiser_module', NOW());
-INSERT INTO `system_tablechanges` VALUES (19, 'wiser_ordering', NOW());
-INSERT INTO `system_tablechanges` VALUES (20, 'easy_templates', NOW());
-INSERT INTO `system_tablechanges` VALUES (21, 'wiser_itemfile', NOW());
-INSERT INTO `system_tablechanges` VALUES (22, 'easy_seo', NOW());
-INSERT INTO `system_tablechanges` VALUES (23, 'wiser_communication', NOW());
-INSERT INTO `system_tablechanges` VALUES (24, 'wiser_communication_generated', NOW());
-INSERT INTO `system_tablechanges` VALUES (25, 'wiser_import', NOW());
-INSERT INTO `system_tablechanges` VALUES (26, 'wiser_import_log', NOW());
-INSERT INTO `system_tablechanges` VALUES (27, 'wiser_item_archive', NOW());
-INSERT INTO `system_tablechanges` VALUES (28, 'wiser_itemdetail_archive', NOW());
-INSERT INTO `system_tablechanges` VALUES (29, 'wiser_itemfile_archive', NOW());
-INSERT INTO `system_tablechanges` VALUES (30, 'wiser_itemlink_archive', NOW());
-INSERT INTO `system_tablechanges` VALUES (31, 'wiser_itemlinkdetail_archive', NOW());
-
--- ----------------------------
--- Records of easy_items
--- ----------------------------
-INSERT INTO `easy_items` VALUES (1, @customerId, 143, 'CSS', 1, 0, 0, 0, 1, 1, 'css', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-INSERT INTO `easy_items` VALUES (5, @customerId, 143, 'SCSS', 1, 0, 1, 0, 1, 1, 'scss', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-INSERT INTO `easy_items` VALUES (2, @customerId, 143, 'HTML', 1, 0, 2, 0, 1, 1, 'html', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-INSERT INTO `easy_items` VALUES (3, @customerId, 143, 'QUERY', 1, 0, 3, 0, 1, 1, 'query', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-INSERT INTO `easy_items` VALUES (4, @customerId, 143, 'SCRIPTS', 1, 0, 4, 0, 1, 1, 'scripts', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-
--- ----------------------------
 -- Records of easy_objects
 -- ----------------------------
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'autoredirectmaindomain','true');
@@ -57,36 +13,19 @@ INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'requiress
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'seomodule','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'redirectRequiresTrailingSlash','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'redirectRequiresLowerCase','true');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'seo_dont_use_meta_keywords','true');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'searchSystemObjectsFromSpecificToGeneral','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'fixed_url_active','false');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'multilanguage','false');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'global_meta_title_suffix','{siteName}');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'maindomain_wiser','{hostLive}');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'maindomain','{hostLive}');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'IsTestDomain_{hostTest}','true');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'minify_html','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'javascriptmovetobottom','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'wiser_save_images_relative','true');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2CHECKOUT_AddOrderIdsToPspSuccessUrl_nopsp','true');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'TrackJSEnable','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'always_add_canonical_to_self','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'include_parameters_canonical','pagenr');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'canonical_path_end','/filter/');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'robotstxt','User-agent: *\r\nAllow: /\r\nDisallow: /checkout/*\r\nDisallow: /account/\r\nDisallow: /winkelmandje/\r\nSitemap: <sitemap url>');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'IsWiser2CustomerWithoutRemovedColumn','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2ImagesRootId','3');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2FilesRootId','4');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2TemplatesRootId','5');
-
--- ----------------------------
--- Records of easy_files
--- ----------------------------
-INSERT IGNORE INTO `easy_files` (ItemId, Name, IsDirectory) VALUES (1, 'images', 1);
-INSERT IGNORE INTO `easy_files` (ItemId, Name, IsDirectory) VALUES (2, 'documents', 1);
-INSERT IGNORE INTO `easy_files` (ItemId, Name, IsDirectory) VALUES (3, 'templates', 1);
-INSERT IGNORE INTO `easy_files` (ItemId, Name, IsDirectory) VALUES (4, 'flash', 1);
-INSERT IGNORE INTO `easy_files` (ItemId, Name, IsDirectory) VALUES (5, 'media', 1);
 
 -- ----------------------------
 -- Records of wiser_module
