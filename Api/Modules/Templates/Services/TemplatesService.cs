@@ -665,9 +665,12 @@ LIMIT {skip}, {take}");
                 TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_ADMIN", @"SELECT id, entity_name AS entityName, tab_name AS tabName, display_name AS displayName, ordering FROM wiser_entityproperty
 WHERE tab_name = '{tabName}' AND entity_name = '{entityName}'
 ORDER BY ordering ASC");
-                TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT id , name FROM wiser_entity
-WHERE name != ''
-ORDER BY name ASC;");
+                TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
+	entity.id,
+	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(entity.friendly_name, IF(entity.name = '', 'ROOT', entity.name))) AS name 
+FROM wiser_entity AS entity
+LEFT JOIN wiser_module AS module ON module.id = entity.module_id
+ORDER BY module.name ASC, entity.module_id ASC, entity.name ASC");
                 TemplateQueryStrings.Add("GET_LANGUAGE_CODES", @"SELECT
     language_code AS text,
     language_code AS `value`
