@@ -101,7 +101,14 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserModule,
                 WiserTableNames.WiserItemFile,
                 WiserTableNames.WiserItemLink,
-                WiserTableNames.WiserItemLinkDetail
+                WiserTableNames.WiserItemLinkDetail,
+                WiserTableNames.WiserDataSelector,
+                WiserTableNames.WiserTemplate,
+                WiserTableNames.WiserDynamicContent,
+                WiserTableNames.WiserTemplateDynamicContent,
+                WiserTableNames.WiserTemplatePublishLog,
+                WiserTableNames.WiserPreviewProfiles,
+                WiserTableNames.WiserDynamicContentPublishLog
             });
 
             clientDatabaseConnection.ClearParameters();
@@ -461,7 +468,6 @@ namespace Api.Modules.Modules.Services
                         JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
                         JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
                         JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
-                        LEFT JOIN {WiserTableNames.WiserOrdering} AS ordering ON ordering.user_id = user_role.user_id AND ordering.module_id = permission.module_id
                         WHERE user_role.user_id = ?userId
                         GROUP BY permission.module_id
                         ORDER BY permission.module_id, permission.permissions;";

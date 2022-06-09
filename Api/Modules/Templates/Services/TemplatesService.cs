@@ -196,18 +196,21 @@ namespace Api.Modules.Templates.Services
 
             // Get stylesheets that are marked to load on every page.
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var dataTable = await clientDatabaseConnection.GetAsync(@"SELECT t.itemid, IF(t.templatetype = 'scss', t.html_minified, t.template) AS template, i.volgnr, t.development
-                                                                        FROM easy_templates t
-                                                                        JOIN (SELECT MAX(version) AS version, itemid FROM easy_templates GROUP BY itemid) t2 ON t2.itemid = t.itemid AND t2.version = t.version
-                                                                        JOIN easy_items i ON i.id = t.itemid AND i.moduleid = 143
-                                                                        WHERE t.templatetype IN ('css', 'scss') AND (t.loadalways=1 OR useinwiserhtmleditors=1)
-                                                                        ORDER BY volgnr, development DESC");
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT
+	template.template_id,
+	template.template_data_minified
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+WHERE (template.use_in_wiser_html_editors = 1 OR template.load_always = 1)
+AND template.template_type IN (2, 3)
+AND otherVersion.id IS NULL
+ORDER BY template.ordering ASC");
 
             if (dataTable.Rows.Count > 0)
             {
                 foreach (DataRow dataRow in dataTable.Rows)
                 {
-                    outputCss.Append(dataRow.Field<string>("template"));
+                    outputCss.Append(dataRow.Field<string>("template_data_minified"));
                 }
             }
 
@@ -245,24 +248,6 @@ namespace Api.Modules.Templates.Services
                 else if (!String.IsNullOrWhiteSpace(mainDomainWiser))
                 {
                     domainName = $"{(requireSsl ? "https" : "http")}://{mainDomainWiser}/";
-                }
-            }
-
-            // Get stylesheets from Wiser.
-            dataTable = await clientDatabaseConnection.GetAsync(@"SELECT t.template
-                                                                       FROM easy_templates t
-                                                                       JOIN (
-	                                                                       SELECT i.id, MAX(t.version) AS v
-	                                                                       FROM easy_templates t
-	                                                                       JOIN easy_items i ON t.itemid = i.id AND i.moduleid = 143 AND i.name IN('shopwarepro', 'wiser')
-	                                                                       GROUP BY i.id
-                                                                       ) v ON v.v = t.version AND v.id = t.itemid");
-
-            if (dataTable.Rows.Count > 0)
-            {
-                foreach (DataRow dataRow in dataTable.Rows)
-                {
-                    outputCss.Append(dataRow.Field<string>("template"));
                 }
             }
 
@@ -680,9 +665,12 @@ LIMIT {skip}, {take}");
                 TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_ADMIN", @"SELECT id, entity_name AS entityName, tab_name AS tabName, display_name AS displayName, ordering FROM wiser_entityproperty
 WHERE tab_name = '{tabName}' AND entity_name = '{entityName}'
 ORDER BY ordering ASC");
-                TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT id , name FROM wiser_entity
-WHERE name != ''
-ORDER BY name ASC;");
+                TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
+	entity.id,
+	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(entity.friendly_name, IF(entity.name = '', 'ROOT', entity.name))) AS name 
+FROM wiser_entity AS entity
+LEFT JOIN wiser_module AS module ON module.id = entity.module_id
+ORDER BY module.name ASC, entity.module_id ASC, entity.name ASC");
                 TemplateQueryStrings.Add("GET_LANGUAGE_CODES", @"SELECT
     language_code AS text,
     language_code AS `value`

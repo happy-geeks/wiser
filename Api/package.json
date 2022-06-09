@@ -3,7 +3,7 @@
   "version": "3.0.0",
   "author": "Happy Geeks B.V.",
   "scripts": {
-    "setup:mysql": "npm link & node Scripts/setup-mysql.js"
+    "setup:mysql": "npm install & npm link & node Scripts/setup-mysql.js"
   },
   "dependencies": {
     "cli-color": "^2.0.1",
