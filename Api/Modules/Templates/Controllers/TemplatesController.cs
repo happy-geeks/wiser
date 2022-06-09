@@ -115,7 +115,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(TemplateHistoryOverviewModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetHistoryAsync(int templateId)
         {
-            return (await templatesService.GetTemplateHistoryAsync(templateId)).GetHttpResponseMessage();
+            return (await templatesService.GetTemplateHistoryAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -154,7 +154,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(TemplateSettingsModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSettingsAsync(int templateId)
         {
-            return (await templatesService.GetTemplateSettingsAsync(templateId)).GetHttpResponseMessage();
+            return (await templatesService.GetTemplateSettingsAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -282,7 +282,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(List<SearchResultModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> SearchAsync(string searchValue)
         {
-            return (await templatesService.SearchAsync(searchValue)).GetHttpResponseMessage();
+            return (await templatesService.SearchAsync((ClaimsIdentity)User.Identity, searchValue)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -365,7 +365,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(List<TemplateTreeViewModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetEntireTreeViewStructureAsync(string startFrom = "")
         {
-            return (await templatesService.GetEntireTreeViewStructureAsync(0, startFrom)).GetHttpResponseMessage();
+            return (await templatesService.GetEntireTreeViewStructureAsync((ClaimsIdentity)User.Identity, 0, startFrom)).GetHttpResponseMessage();
         }
         
         /// <summary>

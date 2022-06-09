@@ -380,7 +380,7 @@ namespace Api.Modules.DataSelectors.Services
                 data.Settings.Insecure = false;
             }
 
-            var (itemsRequest, statusCode, error) = await gclDataSelectorsService.InitializeItemsRequestAsync(data);
+            var (itemsRequest, statusCode, error) = await gclDataSelectorsService.InitializeItemsRequestAsync(data, true);
             if (statusCode != HttpStatusCode.OK)
             {
                 return new ServiceResult<string>

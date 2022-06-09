@@ -12,7 +12,7 @@ export const AUTH_DATA = "authenticationUserData";
 export const FORGOT_PASSWORD = "forgotPassword";
 export const RESET_PASSWORD_SUCCESS = "resetPasswordSuccess";
 export const RESET_PASSWORD_ERROR = "resetPasswordError";
-export const CHANGE_PASSWORD = "changePassword";
+export const CHANGE_PASSWORD_LOGIN = "changePasswordLogin";
 export const CHANGE_PASSWORD_SUCCESS = "changePasswordSuccess";
 export const CHANGE_PASSWORD_ERROR = "changePasswordError";
 
@@ -31,3 +31,6 @@ export const LOAD_ENTITY_TYPES_OF_ITEM_ID = "loadEntityTypesOfItemId";
 // Customers module.
 export const GET_CUSTOMER_TITLE = "getCustomerTitle";
 export const VALID_SUB_DOMAIN = "validSubDomain";
+
+// Users module.
+export const CHANGE_PASSWORD = "changePassword";

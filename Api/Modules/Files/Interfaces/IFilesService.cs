@@ -40,7 +40,7 @@ namespace Api.Modules.Files.Interfaces
         /// <param name="itemId">Optional: The ID of the item the file should be linked to.</param>
         /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
         /// <returns>A list of <see cref="FileModel"/> with file data.</returns>
-        Task<ServiceResult<FileModel>> SaveFileAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0);
+        Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0);
 
         /// <summary>
         /// Gets a file of an item.
@@ -50,7 +50,7 @@ namespace Api.Modules.Files.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
         /// <returns>The content type, contents and URL of the file.</returns>
-        Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetFileAsync(string itemId, int fileId, ClaimsIdentity identity, ulong itemLinkId);
+        Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(string itemId, int fileId, ClaimsIdentity identity, ulong itemLinkId);
 
         /// <summary>
         /// Deletes a file.
@@ -59,7 +59,7 @@ namespace Api.Modules.Files.Interfaces
         /// <param name="fileId">The ID of the file.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
-        Task<ServiceResult<bool>> DeleteFileAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId = 0);
+        Task<ServiceResult<bool>> DeleteAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId = 0);
         
         /// <summary>
         /// Change the name of a file.
@@ -69,7 +69,7 @@ namespace Api.Modules.Files.Interfaces
         /// <param name="newName">The new name of the file.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
-        Task<ServiceResult<bool>> RenameFileAsync(string encryptedItemId, int fileId, string newName, ClaimsIdentity identity, ulong itemLinkId = 0);
+        Task<ServiceResult<bool>> RenameAsync(string encryptedItemId, int fileId, string newName, ClaimsIdentity identity, ulong itemLinkId = 0);
 
         /// <summary>
         /// Change the title/description of a file.
@@ -79,7 +79,7 @@ namespace Api.Modules.Files.Interfaces
         /// <param name="newTitle">The new title/description of the file.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
-        Task<ServiceResult<bool>> UpdateFileTitleAsync(string encryptedItemId, int fileId, string newTitle, ClaimsIdentity identity, ulong itemLinkId = 0);
+        Task<ServiceResult<bool>> UpdateTitleAsync(string encryptedItemId, int fileId, string newTitle, ClaimsIdentity identity, ulong itemLinkId = 0);
 
         /// <summary>
         /// Adds an URL to an external file.
@@ -90,6 +90,27 @@ namespace Api.Modules.Files.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
         /// <returns>The <see cref="FileModel">FileModel</see> of the new file.</returns>
-        Task<ServiceResult<FileModel>> AddFileUrl(string encryptedItemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId);
+        Task<ServiceResult<FileModel>> AddUrlAsync(string encryptedItemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId = 0);
+
+        /// <summary>
+        /// Updates the ordering of a file.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="fileId">The ID of the file to update.</param>
+        /// <param name="previousPosition">The current ordering number.</param>
+        /// <param name="newPosition">The new ordering number.</param>
+        /// <param name="itemId">The ID of the item the file is linked to.</param>
+        /// <param name="propertyName">The name of the property that contains the file upload.</param>
+        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
+        Task<ServiceResult<bool>> UpdateOrderingAsync(ClaimsIdentity identity, int fileId, int previousPosition, int newPosition, ulong itemId, string propertyName, ulong itemLinkId = 0);
+
+        /// <summary>
+        /// Make sure all files of the given item/link ID and property name have correct order numbers.
+        /// For example, if there are 3 files that all have the number "0", they will be changes to 1, 2 and 3.
+        /// </summary>
+        /// <param name="itemId">The ID of the item the files belong to.</param>
+        /// <param name="itemLinkId">The ID of the link, if the files belong to an item link.</param>
+        /// <param name="propertyName">The name of the property the files belong to.</param>
+        Task FixOrderingAsync(ulong itemId, ulong itemLinkId, string propertyName);
     }
 }

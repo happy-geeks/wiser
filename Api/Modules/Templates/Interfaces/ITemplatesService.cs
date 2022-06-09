@@ -65,13 +65,14 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="templateId">The id of the template to retrieve the data from.</param>
         /// <returns>A <see cref="TemplateSettingsModel"/> containing the current template data of the template with the given id.</returns>
         Task<ServiceResult<TemplateSettingsModel>> GetTemplateMetaDataAsync(int templateId);
-		
+
         /// <summary>
         /// Get the latest version for a given template.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="templateId">The id of the template.</param>
         /// <returns>A <see cref="TemplateSettingsModel"/> containing the template data of the latest version.</returns>
-        Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId);
+        Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId);
         
         /// <summary>
         /// Get the template environments. This will retrieve a list of versions and their published environments and convert it to a PublishedEnvironmentModel 
@@ -125,15 +126,17 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Search for a template.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="searchValue">The value to search for.</param>
-        Task<ServiceResult<List<SearchResultModel>>> SearchAsync(string searchValue);
-        
+        Task<ServiceResult<List<SearchResultModel>>> SearchAsync(ClaimsIdentity identity, string searchValue);
+
         /// <summary>
         /// Retrieve the history of the template. This will include changes made to dynamic content between the releases of templates and the publishes to different environments from this template. This data is collected and combined in a TemnplateHistoryOverviewModel
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="templateId">The id of the template to retrieve the history from.</param>
         /// <returns>A TemplateHistoryOverviewModel containing a list of templatehistorymodels and a list of publishlogmodels. The model contains base info and a list of changes made within the version and its sub components (e.g. dynamic content, publishes).</returns>
-        Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(int templateId);
+        Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId);
 
         /// <summary>
         /// Creates an empty template with the given name, type and parent template.
@@ -166,10 +169,11 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Gets the tree view including template settings of all templates.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="parentId">The ID of the parent item.</param>
         /// <param name="startFrom">Set the place from which to start the tree view, folders separated by comma.</param>
         /// <returns></returns>
-        Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom);
+        Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom);
 
         /// <summary>
         /// Deletes a template. This will not actually delete it from the database, but add a new version with removed = 1 instead.

@@ -15,6 +15,14 @@
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
+    <style>
+        #wiser,
+        #createNewItemDialog,
+        #addDynamicContentToHtmlDialog,
+        #htmlSourceWindow {
+            display: none;
+        }
+    </style>
 </head>
 <body class="@Model.BodyCssClass"
       data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
