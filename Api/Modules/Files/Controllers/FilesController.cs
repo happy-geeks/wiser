@@ -30,18 +30,14 @@ namespace Api.Modules.Files.Controllers
     [Produces(MediaTypeNames.Application.Json)]
     public class FilesController : Controller
     {
-        private readonly IItemsService itemsService;
-        private readonly IGridsService gridsService;
         private readonly IFilesService filesService;
         private readonly GclSettings gclSettings;
 
         /// <summary>
         /// Initializes a new instance of <see cref="ItemsController"/>.
         /// </summary>
-        public FilesController(IItemsService itemsService, IGridsService gridsService, IFilesService filesService, IOptions<GclSettings> gclSettings)
+        public FilesController(IFilesService filesService, IOptions<GclSettings> gclSettings)
         {
-            this.itemsService = itemsService;
-            this.gridsService = gridsService;
             this.filesService = filesService;
             this.gclSettings = gclSettings.Value;
         }
@@ -58,6 +54,7 @@ namespace Api.Modules.Files.Controllers
         /// <returns>A list of <see cref="FileModel"/> with file data.</returns>
         [HttpPost]
         [Route("~/api/v3/items/{encryptedId}/upload")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [Consumes("multipart/form-data")]
