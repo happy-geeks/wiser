@@ -689,7 +689,7 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    `is_scss_include_template` tinyint(1) NOT NULL DEFAULT 0,
    `use_in_wiser_html_editors` tinyint(1) NOT NULL DEFAULT 0,
    `pre_load_query` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-   `cache_location` int NOT NULL,
+   `cache_location` int NOT NULL DEFAULT 0,
    `return_not_found_when_pre_load_query_has_no_data` tinyint(1) NOT NULL DEFAULT 0,
    `cache_regex` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
    `routine_type` int NOT NULL DEFAULT 0 COMMENT 'For routine templates only',
