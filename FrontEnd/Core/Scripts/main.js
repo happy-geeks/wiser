@@ -303,12 +303,20 @@ import {
                         this.$refs.changePasswordPrompt.open();
                     },
 
-                    openNewEnvironmentPromptPrompt() {
-                        this.$refs.newEnvironmentPrompt.open();
+                    openWiserBranchesPrompt() {
+                        this.$refs.wiserBranchesPrompt.open();
                     },
 
-                    openWiserSyncToProductionPrompt() {
-                        this.$refs.wiserSyncToProductionPrompt.open();
+                    openCreateBranchPrompt() {
+                        this.$refs.wiserCreateBranchPrompt.open();
+                    },
+
+                    openMergeBranchPrompt() {
+                        this.$refs.wiserMergeBranchPrompt.open();
+                    },
+
+                    openMergeConflictsPrompt() {
+                        this.$refs.wiserMergeConflictsPrompt.open();
                     },
 
                     async openWiserItem() {
@@ -427,6 +435,18 @@ import {
                             });
                         
                         return !this.$store.state.users.changePasswordError;
+                    },
+                    
+                    createBranch() {
+                        alert("Branch aanmaken");
+                    },
+
+                    mergeBranch() {
+                        alert("Branch terugzetten");
+                    },
+
+                    handleMergeConflicts() {
+                        alert("Conflicten verwerken");
                     },
                     
                     async onWiserSyncToProductionPromptOpen(sender) {
