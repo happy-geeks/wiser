@@ -24,13 +24,13 @@ import {
     GET_CUSTOMER_TITLE,
     VALID_SUB_DOMAIN,
     TOGGLE_PIN_MODULE,
-    CREATE_ENVIRONMENT,
-    CREATE_ENVIRONMENT_SUCCESS,
-    CREATE_ENVIRONMENT_ERROR,
-    GET_ENVIRONMENTS, 
-    SYNCHRONISE_CHANGES_TO_PRODUCTION,
-    SYNCHRONISE_CHANGES_TO_PRODUCTION_SUCCESS,
-    SYNCHRONISE_CHANGES_TO_PRODUCTION_ERROR
+    CREATE_BRANCH,
+    CREATE_BRANCH_SUCCESS,
+    CREATE_BRANCH_ERROR,
+    GET_BRANCHES,
+    MERGE_BRANCH,
+    MERGE_BRANCH_ERROR,
+    MERGE_BRANCH_SUCCESS
 } from "./mutation-types";
 
 const baseModule = {
@@ -540,9 +540,9 @@ const customersModule = {
     state: () => ({
         title: null,
         validSubDomain: true,
-        createEnvironmentError: null,
-        createEnvironmentResult: null,
-        environments: []
+        createBranchError: null,
+        createBranchResult: null,
+        branches: []
     }),
 
     mutations: {
@@ -557,30 +557,6 @@ const customersModule = {
 
         [VALID_SUB_DOMAIN](state, valid) {
             state.validSubDomain = valid;
-        },
-        
-        [CREATE_ENVIRONMENT_SUCCESS](state, result) {
-            state.createEnvironmentResult = result;
-            state.createEnvironmentError = null;
-        },
-
-        [CREATE_ENVIRONMENT_ERROR](state, error) {
-            state.createEnvironmentResult = null;
-            state.createEnvironmentError = error;
-        },
-
-        [GET_ENVIRONMENTS](state, environments) {
-            state.environments = environments;
-        },
-
-        [SYNCHRONISE_CHANGES_TO_PRODUCTION_SUCCESS](state, result) {
-            state.synchroniseChangesToProductionResult = result;
-            state.synchroniseChangesToProductionError = null;
-        },
-
-        [SYNCHRONISE_CHANGES_TO_PRODUCTION_ERROR](state, error) {
-            state.synchroniseChangesToProductionResult = null;
-            state.synchroniseChangesToProductionError = error;
         }
     },
 
@@ -590,55 +566,6 @@ const customersModule = {
             const titleResponse = await main.customersService.getTitle(subDomain);
             commit(GET_CUSTOMER_TITLE, titleResponse.data);
             commit(VALID_SUB_DOMAIN, titleResponse.statusCode !== 404);
-            commit(END_REQUEST);
-        },
-        
-        async [CREATE_ENVIRONMENT]({ commit }, name) {
-            commit(START_REQUEST);
-            const result = await main.customersService.createNewEnvironment(name);
-
-            if (result.success) {
-                if (result.data) {
-                    commit(CREATE_ENVIRONMENT_SUCCESS, result.data);
-                } else {
-                    commit(CREATE_ENVIRONMENT_ERROR, result.message);
-                }
-            } else {
-                commit(CREATE_ENVIRONMENT_ERROR, result.message);
-            }
-            commit(END_REQUEST);
-        },
-        
-        async [GET_ENVIRONMENTS]({ commit }) {
-            commit(START_REQUEST);
-            const environmentsResponse = await main.customersService.getEnvironments();
-            commit(GET_ENVIRONMENTS, environmentsResponse.data);
-            commit(END_REQUEST);
-        },
-        
-        async [SYNCHRONISE_CHANGES_TO_PRODUCTION]({ commit }, id) {
-            commit(START_REQUEST);
-            const result = await main.customersService.synchroniseChangesToProduction(id);
-
-            if (result.success) {
-                if (result.data) {
-                    if (result.data.errors && result.data.errors.length > 0) {
-                        let errorMessage;
-                        if (result.data.successfulChanges) {
-                            errorMessage = `Een deel van het overzetten is goed gegaan en een deel is fout gegaan. Er zijn ${result.data.successfulChanges} wijzigingen succesvol overgezet en de volgende fouten zijn opgetreden: ${result.data.errors.join("<br>")}`;
-                        } else {
-                            errorMessage = `Het overzetten is mislulkt. De volgende fouten zijn opgetreden: ${result.data.errors.join("<br>")}`;
-                        }
-                        commit(SYNCHRONISE_CHANGES_TO_PRODUCTION_ERROR, errorMessage);
-                    } else {
-                        commit(SYNCHRONISE_CHANGES_TO_PRODUCTION_SUCCESS, result.data);
-                    }
-                } else {
-                    commit(SYNCHRONISE_CHANGES_TO_PRODUCTION_ERROR, result.message);
-                }
-            } else {
-                commit(SYNCHRONISE_CHANGES_TO_PRODUCTION_ERROR, result.message);
-            }
             commit(END_REQUEST);
         }
     },
@@ -669,6 +596,93 @@ const itemsModule = {
     getters: {}
 };
 
+const branchesModule = {
+    state: () => ({
+        createBranchError: null,
+        createBranchResult: null,
+        branches: []
+    }),
+
+    mutations: {
+        [CREATE_BRANCH_SUCCESS](state, result) {
+            state.createBranchResult = result;
+            state.createBranchError = null;
+        },
+
+        [CREATE_BRANCH_ERROR](state, error) {
+            state.createBranchResult = null;
+            state.createBranchError = error;
+        },
+
+        [GET_BRANCHES](state, branches) {
+            state.branches = branches;
+        },
+
+        [MERGE_BRANCH_SUCCESS](state, result) {
+            state.mergeBranchResult = result;
+            state.mergeBranchError = null;
+        },
+
+        [MERGE_BRANCH_ERROR](state, error) {
+            state.mergeBranchResult = null;
+            state.mergeBranchError = error;
+        }
+    },
+
+    actions: {
+        async [CREATE_BRANCH]({ commit }, name) {
+            commit(START_REQUEST);
+            const result = await main.branchesService.create(name);
+
+            if (result.success) {
+                if (result.data) {
+                    commit(CREATE_BRANCH_SUCCESS, result.data);
+                } else {
+                    commit(CREATE_BRANCH_ERROR, result.message);
+                }
+            } else {
+                commit(CREATE_BRANCH_ERROR, result.message);
+            }
+            commit(END_REQUEST);
+        },
+
+        async [GET_BRANCHES]({ commit }) {
+            commit(START_REQUEST);
+            const branchesResponse = await main.branchesService.get();
+            commit(GET_BRANCHES, branchesResponse.data);
+            commit(END_REQUEST);
+        },
+
+        async [MERGE_BRANCH]({ commit }, id) {
+            commit(START_REQUEST);
+            const result = await main.branchesService.merge(id);
+
+            if (result.success) {
+                if (result.data) {
+                    if (result.data.errors && result.data.errors.length > 0) {
+                        let errorMessage;
+                        if (result.data.successfulChanges) {
+                            errorMessage = `Een deel van het overzetten is goed gegaan en een deel is fout gegaan. Er zijn ${result.data.successfulChanges} wijzigingen succesvol overgezet en de volgende fouten zijn opgetreden: ${result.data.errors.join("<br>")}`;
+                        } else {
+                            errorMessage = `Het overzetten is mislulkt. De volgende fouten zijn opgetreden: ${result.data.errors.join("<br>")}`;
+                        }
+                        commit(MERGE_BRANCH_ERROR, errorMessage);
+                    } else {
+                        commit(MERGE_BRANCH_SUCCESS, result.data);
+                    }
+                } else {
+                    commit(MERGE_BRANCH_ERROR, result.message);
+                }
+            } else {
+                commit(MERGE_BRANCH_ERROR, result.message);
+            }
+            commit(END_REQUEST);
+        }
+    },
+
+    getters: {}
+};
+
 export default createStore({
     // Do not enable strict mode when deploying for production! 
     // Strict mode runs a synchronous deep watcher on the state tree for detecting inappropriate mutations, and it can be quite expensive when you make large amount of mutations to the state. 
@@ -681,6 +695,7 @@ export default createStore({
         modules: modulesModule,
         customers: customersModule,
         users: usersModule,
-        items: itemsModule
+        items: itemsModule,
+        branches: branchesModule
     }
 });

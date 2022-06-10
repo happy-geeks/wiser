@@ -142,21 +142,15 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> CreateNewEnvironmentAsync(ClaimsIdentity identity, string name)
+        public async Task CreateOrUpdateCustomerAsync(CustomerModel customer)
         {
-            return await wiserCustomersService.CreateNewEnvironmentAsync(identity, name);
+            await wiserCustomersService.CreateOrUpdateCustomerAsync(customer);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<CustomerModel>>> GetEnvironmentsAsync(ClaimsIdentity identity)
+        public string GenerateConnectionStringFromCustomer(CustomerModel customer, bool passwordIsEncrypted = true)
         {
-            return await wiserCustomersService.GetEnvironmentsAsync(identity);
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<SynchroniseChangesToProductionResultModel>> SynchroniseChangesToProductionAsync(ClaimsIdentity identity, int id)
-        {
-            return await wiserCustomersService.SynchroniseChangesToProductionAsync(identity, id);
+            return wiserCustomersService.GenerateConnectionStringFromCustomer(customer, passwordIsEncrypted);
         }
 
         #endregion

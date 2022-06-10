@@ -214,10 +214,10 @@ export default class CustomersService extends BaseService {
      * @param {any} name The name for the new environment.
      * @returns {any} The information about the new environment.
      */
-    async createNewEnvironment(name) {
+    async createBranch(name) {
         const result = {};
         try {
-            const response = await this.base.api.post(`/api/v3/wiser-customers/create-new-environment/${encodeURIComponent(name)}`);
+            const response = await this.base.api.post(`/api/v3/wiser-customers/create-branch/${encodeURIComponent(name)}`);
             result.success = true;
             result.data = response.data;
         } catch (error) {
@@ -255,11 +255,11 @@ export default class CustomersService extends BaseService {
      * Gets the different environments for this customer.
      * @returns {any} An array with all environments.
      */
-    async getEnvironments() {
+    async getBranches() {
         const result = {};
 
         try {
-            const response = await this.base.api.get(`/api/v3/wiser-customers/environments`);
+            const response = await this.base.api.get(`/api/v3/wiser-customers/branches`);
             result.success = true;
             result.statusCode = 200;
             result.data = response.data;
@@ -293,15 +293,15 @@ export default class CustomersService extends BaseService {
      * @param {int} id The id of the environment to synchronise.
      * @returns {any} The result of the synchronisation.
      */
-    async synchroniseChangesToProduction(id) {
+    async mergeBranch(id) {
         const result = {};
         try {
-            const response = await this.base.api.post(`/api/v3/wiser-customers/synchronise-changes/${encodeURIComponent(id)}`);
+            const response = await this.base.api.post(`/api/v3/wiser-customers/merge-branch/${encodeURIComponent(id)}`);
             result.success = true;
             result.data = response.data;
         } catch (error) {
             result.success = false;
-            console.error("Error synchronise environment", typeof(error.toJSON) === "function" ? error.toJSON() : error);
+            console.error("Error merging branch", typeof(error.toJSON) === "function" ? error.toJSON() : error);
 
             let errorMessage = error.message;
             if (error.response && error.response.data && error.response.data.error) {

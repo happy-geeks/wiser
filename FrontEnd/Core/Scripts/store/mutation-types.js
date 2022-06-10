@@ -31,13 +31,13 @@ export const LOAD_ENTITY_TYPES_OF_ITEM_ID = "loadEntityTypesOfItemId";
 // Customers module.
 export const GET_CUSTOMER_TITLE = "getCustomerTitle";
 export const VALID_SUB_DOMAIN = "validSubDomain";
-export const CREATE_ENVIRONMENT = "createEnvironment";
-export const CREATE_ENVIRONMENT_SUCCESS = "createEnvironmentSuccess";
-export const CREATE_ENVIRONMENT_ERROR = "createEnvironmentError";
-export const GET_ENVIRONMENTS = "getEnvironments";
-export const SYNCHRONISE_CHANGES_TO_PRODUCTION = "synchroniseChangesToProduction";
-export const SYNCHRONISE_CHANGES_TO_PRODUCTION_SUCCESS = "synchroniseChangesToProductionSuccess";
-export const SYNCHRONISE_CHANGES_TO_PRODUCTION_ERROR = "synchroniseChangesToProductionError";
+export const CREATE_BRANCH = "createBranch";
+export const CREATE_BRANCH_SUCCESS = "createBranchSuccess";
+export const CREATE_BRANCH_ERROR = "createBranchError";
+export const GET_BRANCHES = "getBranches";
+export const MERGE_BRANCH = "mergeBranch";
+export const MERGE_BRANCH_SUCCESS = "mergeBranchSuccess";
+export const MERGE_BRANCH_ERROR = "mergeBranchError";
 
 // Users module.
 export const CHANGE_PASSWORD = "changePassword";

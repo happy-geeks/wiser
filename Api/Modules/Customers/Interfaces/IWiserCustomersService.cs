@@ -109,26 +109,16 @@ namespace Api.Modules.Customers.Interfaces
         bool IsMainDatabase(string subDomain);
 
         /// <summary>
-        /// Creates a new environment for the authenticated customer.
-        /// This will create a new database schema on the same server/cluster and then fill it with part of the data from the original database.
+        /// Inserts or updates a customer in the database, based on <see cref="CustomerModel.Id"/>.
         /// </summary>
-        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
-        /// <param name="name">The name of the environment</param>
-        Task<ServiceResult<CustomerModel>> CreateNewEnvironmentAsync(ClaimsIdentity identity, string name);
+        /// <param name="customer">The customer to add or update.</param>
+        Task CreateOrUpdateCustomerAsync(CustomerModel customer);
 
         /// <summary>
-        /// Gets the environments for the authenticated user.
+        /// Generates a connection string for a customer.
         /// </summary>
-        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
-        /// <returns>A list of <see cref="CustomerModel"/>.</returns>
-        Task<ServiceResult<List<CustomerModel>>> GetEnvironmentsAsync(ClaimsIdentity identity);
-
-        /// <summary>
-        /// Synchronise all changes done to wiser items, from a specific environment, to the production environment.
-        /// This will look in wiser_history for what has been changed, copy those changes to production and then clear the history.
-        /// </summary>
-        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
-        /// <param name="id">The ID of the environment to copy the changes from.</param>
-        Task<ServiceResult<SynchroniseChangesToProductionResultModel>> SynchroniseChangesToProductionAsync(ClaimsIdentity identity, int id);
+        /// <param name="customer">The customer.</param>
+        /// <param name="passwordIsEncrypted">Whether the password is saved encrypted in the <see cref="CustomerModel"/>.</param>
+        string GenerateConnectionStringFromCustomer(CustomerModel customer, bool passwordIsEncrypted = true);
     }
 }

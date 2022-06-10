@@ -12,6 +12,7 @@ import UsersService from "./shared/users.service";
 import ModulesService from "./shared/modules.service";
 import CustomersService from "./shared/customers.service";
 import ItemsService from "./shared/items.service";
+import BranchesService from "./shared/branches.service";
 
 import store from "./store/index";
 import login from "./components/login";
@@ -34,9 +35,9 @@ import {
     GET_CUSTOMER_TITLE,
     TOGGLE_PIN_MODULE,
     CHANGE_PASSWORD,
-    CREATE_ENVIRONMENT, 
-    GET_ENVIRONMENTS, 
-    SYNCHRONISE_CHANGES_TO_PRODUCTION
+    CREATE_BRANCH,
+    GET_BRANCHES, 
+    MERGE_BRANCH
 } from "./store/mutation-types";
 
 (() => {
@@ -49,6 +50,7 @@ import {
             this.modulesService = new ModulesService(this);
             this.customersService = new CustomersService(this);
             this.itemsService = new ItemsService(this);
+            this.branchesService = new BranchesService(this);
 
             // Fire event on page ready for direct actions
             document.addEventListener("DOMContentLoaded", () => {
@@ -111,8 +113,8 @@ import {
                         changePasswordPromptOldPasswordValue: null,
                         changePasswordPromptNewPasswordValue: null,
                         changePasswordPromptNewPasswordRepeatValue: null,
-                        newEnvironmentPromptValue: null,
-                        wiserSyncToProductionPromptValue: null
+                        createBranchPromptValue: null,
+                        selectedBranchValue: null
                     };
                 },
                 created() {
@@ -174,17 +176,17 @@ import {
                     changePasswordError() {
                         return this.$store.state.users.changePasswordError;
                     },
-                    createEnvironmentError() {
-                        return this.$store.state.customers.createEnvironmentError;
+                    createBranchError() {
+                        return this.$store.state.branches.createBranchError;
                     },
-                    createEnvironmentResult() {
-                        return this.$store.state.customers.createEnvironmentResult;
+                    createBranchResult() {
+                        return this.$store.state.branches.createBranchResult;
                     },
-                    environments() {
-                        return this.$store.state.customers.environments;
+                    branches() {
+                        return this.$store.state.branches.branches;
                     },
-                    synchroniseChangesToProductionError() {
-                        return this.$store.state.customers.synchroniseChangesToProductionError;
+                    mergeBranchError() {
+                        return this.$store.state.branches.mergeBranchError;
                     }
                 },
                 components: {
@@ -291,31 +293,38 @@ import {
                         });
                     },
 
-                    openWiserIdPrompt() {
+                    openWiserIdPrompt(event) {
+                        event.preventDefault();
                         this.$refs.wiserIdPrompt.open();
                     },
 
-                    openWiserEntityTypePrompt() {
+                    openWiserEntityTypePrompt(event) {
+                        event.preventDefault();
                         this.$refs.wiserEntityTypePrompt.open();
                     },
 
-                    openChangePasswordPrompt() {
+                    openChangePasswordPrompt(event) {
+                        event.preventDefault();
                         this.$refs.changePasswordPrompt.open();
                     },
 
-                    openWiserBranchesPrompt() {
+                    openWiserBranchesPrompt(event) {
+                        event.preventDefault();
                         this.$refs.wiserBranchesPrompt.open();
                     },
 
-                    openCreateBranchPrompt() {
+                    openCreateBranchPrompt(event) {
+                        event.preventDefault();
                         this.$refs.wiserCreateBranchPrompt.open();
                     },
 
-                    openMergeBranchPrompt() {
+                    openMergeBranchPrompt(event) {
+                        event.preventDefault();
                         this.$refs.wiserMergeBranchPrompt.open();
                     },
 
-                    openMergeConflictsPrompt() {
+                    openMergeConflictsPrompt(event) {
+                        event.preventDefault();
                         this.$refs.wiserMergeConflictsPrompt.open();
                     },
 
@@ -377,24 +386,6 @@ import {
                         this.markerWidget.capture("fullscreen");
                     },
 
-                    async createNewEnvironment() {
-                        if (!this.newEnvironmentPromptValue) {
-                            return false;
-                        }
-                        
-                        await this.$store.dispatch(CREATE_ENVIRONMENT, this.newEnvironmentPromptValue);
-                        return !this.createEnvironmentError;
-                    },
-                    
-                    async synchroniseToProduction() {
-                        if (!this.wiserSyncToProductionPromptValue || !this.wiserSyncToProductionPromptValue.id) {
-                            return false;
-                        }
-                        
-                        await this.$store.dispatch(SYNCHRONISE_CHANGES_TO_PRODUCTION, this.wiserSyncToProductionPromptValue.id);
-                        return !this.synchroniseChangesToProductionError;
-                    },
-
                     onOpenModuleClick(event, module) {
                         event.preventDefault();
                         this.openModule(module);
@@ -437,22 +428,32 @@ import {
                         return !this.$store.state.users.changePasswordError;
                     },
                     
-                    createBranch() {
-                        alert("Branch aanmaken");
+                    async createBranch() {
+                        if (!this.createBranchPromptValue) {
+                            return false;
+                        }
+
+                        await this.$store.dispatch(CREATE_BRANCH, this.createBranchPromptValue);
+                        return !this.createBranchError;
                     },
 
-                    mergeBranch() {
-                        alert("Branch terugzetten");
+                    async mergeBranch() {
+                        if (!this.selectedBranchValue || !this.selectedBranchValue.id) {
+                            return false;
+                        }
+
+                        await this.$store.dispatch(MERGE_BRANCH, this.selectedBranchValue.id);
+                        return !this.mergeBranchError;
                     },
 
                     handleMergeConflicts() {
                         alert("Conflicten verwerken");
                     },
                     
-                    async onWiserSyncToProductionPromptOpen(sender) {
-                        await this.$store.dispatch(GET_ENVIRONMENTS);
-                        if (this.environments && this.environments.length === 1) {
-                            this.wiserSyncToProductionPromptValue = this.environments[0];
+                    async onWiserMergeBranchPromptOpen(sender) {
+                        await this.$store.dispatch(GET_BRANCHES);
+                        if (this.branches && this.branches.length === 1) {
+                            this.selectedBranchValue = this.branches[0];
                         }
                     }
                 }
