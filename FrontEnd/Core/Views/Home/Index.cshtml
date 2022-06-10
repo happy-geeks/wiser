@@ -113,34 +113,36 @@
 
             <div class="error" v-if="changePasswordError">{{ changePasswordError }}</div>
         </wiser-dialog>
-        <wiser-dialog class="branches-dialog" :modal="true" :width="'1200px'" :title="'Wiser branches'" ref="wiserBranchesPrompt" :visible="false" :actions="[]">
+        <wiser-dialog class="branches-dialog" :modal="true" :width="'1200px'" :title="'Wiser branches'" ref="wiserBranchesPrompt" :visible="false" :actions="[]" @@open="onWiserBranchesPromptOpen">
             <div class="container">
                 <div class="row equal">
                     <div class="col col-6">
-                        <p class="left half">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis nisl augue, consectetur eget tempus ut, rhoncus a dolor. 
-                            Cras erat libero, iaculis vitae mauris et, molestie laoreet magna. Sed at quam quis enim ullamcorper fringilla. Morbi rhoncus nulla nulla, 
-                            et viverra ligula venenatis eget. Cras blandit sagittis nibh lacinia gravida. Sed pretium nisi vel felis imperdiet elementum. Curabitur 
-                            posuere leo nec tortor eleifend scelerisque. Fusce ac dictum erat, nec convallis risus. Integer purus felis, consectetur at mauris vitae, 
-                            efficitur mattis sem. Pellentesque quis pulvinar neque. Aliquam condimentum non nulla non tristique. Maecenas nisl mauris, volutpat vitae 
-                            leo sed, malesuada tempor ipsum. Aliquam quis eros nec diam ultrices molestie. Vestibulum ante ipsum primis in faucibus orci luctus et 
-                            ultrices posuere cubilia curae; Etiam nec purus dui.</p>
+                        <h2>Branch maken</h2>
+                        <p v-if="isMainBranch">
+                            Hier kan een nieuwe branch gemaakt worden. Een branch is een (deel-)kopie van uw database. 
+                            Dit kan gebruikt worden om wijzigingen in Wiser op een veilige manier door te voeren en te testen in een aparte omgeving.
+                            Nadat u klaar bent met testen, kunt u de wijzigingen in een branch weer terugzetten naar de productie-omgeving. 
+                        </p>
+                        <p v-else>
+                            U zit op dit moment niet op de hoofd-branch (productie-omgeving). Het is niet mogelijk om vanaf deze branch een nieuwe branch aan te maken.
+                            Log a.u.b. in op de hoofd-branch indien u een nieuwe branch wilt maken.
+                        </p>
 
-                            <button class="btn btn-primary" @@click="openCreateBranchPrompt">Nieuwe branch maken</button>
+                        <button v-if="isMainBranch" class="btn btn-primary" @@click="openCreateBranchPrompt">Nieuwe branch maken</button>
                     </div>
                     <div class="col col-6">
-                        <p class="right half">Integer in sollicitudin dolor. Mauris sed massa ex. Integer justo quam, bibendum quis neque id, auctor ornare tellus. 
-                            Sed vitae nisi condimentum, tincidunt ligula ac, sagittis ipsum. Pellentesque arcu metus, ullamcorper in congue vel, convallis facilisis nunc. 
-                            Aliquam elementum est mauris, non vulputate odio ornare in. Cras libero lacus, pharetra id est nec, convallis laoreet tortor. Quisque sodales 
-                            nunc feugiat, tempor nisi non, interdum quam. Quisque ut urna ipsum. Donec et elit fermentum, commodo odio a, vulputate odio. Etiam vitae massa 
-                            at diam convallis tincidunt sit amet sit amet est. Curabitur id dui ut est eleifend accumsan vitae faucibus sapien. Phasellus imperdiet facilisis 
-                            elit sit amet mattis.</p>
+                        <h2>Branch terugzetten</h2>
+                        <p>
+                            Hiermee kunnen wijzigingen die in een branch gedaan zijn, overgezet worden naar de productie-omgeving. U kunt dan kiezen welke wijzigingen doorgezet moeten worden, dat hoeft niet per se alles te zijn.
+                            Het is niet mogelijk om verschillende branches samen te voegen. Het samenvoegen gaat altijd van een branch naar de productie-omgeving.
+                        </p>
 
-                            <button class="btn btn-primary" @@click="openMergeBranchPrompt">Bestaande branch mergen</button>
+                        <button class="btn btn-primary" @@click="openMergeBranchPrompt">Bestaande branch terugzetten naar productie</button>
                     </div>
                 </div>
             </div>
         </wiser-dialog>
-        <wiser-dialog class="branches-dialog" :modal="true" :width="'1200px'" :title="'Branch maken'" ref="wiserCreateBranchPrompt" :visible="false" :actions="[]">
+        <wiser-dialog class="branches-dialog" :modal="true" :width="'1200px'" :title="'Branch maken'" ref="wiserCreateBranchPrompt" :visible="false" :actions="[]" @@open="onWiserCreateBranchPromptOpen">
             <div class="container stretch">
                 <div class="row no-scroll">
                     <div class="col col-12 form-row">
@@ -160,243 +162,76 @@
                         <div class="fixed-table">
                             <table>
                                 <thead>
-                                    <tr>
-                                        <th>Item</th>
-                                        <th>Aantal</th>
-                                        <th>Wat</th>
-                                        <th></th>
-                                    </tr>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Aantal</th>
+                                    <th>Wat</th>
+                                    <th></th>
+                                </tr>
                                 </thead>
-                                <tbody>
+                                <tbody  v-if="!entitiesForBranches || !entitiesForBranches.length">
+                                    <tr>
+                                        <td colspan="4">Geen entiteiten gevonden. Neem a.u.b. contact op met ons.</td>
+                                    </tr>
+                                </tbody>
+                                <tbody v-else>
                                     <tr>
                                         <td>Alle onderstaande</td>
-                                        <td>100000</td>
+                                        <td>{{ totalAmountOfItemsForCreatingBranch }}</td>
                                         <td>
-                                            <select>
-                                                <option selected>Alles</option>
-                                                <option>Random X items</option>
-                                                <option>Laatste X items</option>
-                                                <option>Alles wat toegevoegd is voor X</option>
-                                                <option>Alles wat toegevoegd is na X</option>
-                                                <option>Alles wat toegevoegd is tussen X en Y</option>
-                                            </select>
-                                        </td>
-                                        <td class="extra"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Adres</td>
-                                        <td>100000</td>
-                                        <td>
-                                            <select>
-                                                <option>Alles</option>
-                                                <option>Random X items</option>
-                                                <option selected>Laatste X items</option>
-                                                <option>Alles wat toegevoegd is voor X</option>
-                                                <option>Alles wat toegevoegd is na X</option>
-                                                <option>Alles wat toegevoegd is tussen X en Y</option>
+                                            <select v-model="entityCopySettings.all">
+                                                <option value="-1"></option>
+                                                <option value="0">Alles</option>
+                                                <option value="2">Random X items</option>
+                                                <option value="3">Laatste X items</option>
+                                                <option value="4">Alles wat toegevoegd is voor X</option>
+                                                <option value="5">Alles wat toegevoegd is na X</option>
+                                                <option value="6">Alles wat toegevoegd is tussen X en Y</option>
                                             </select>
                                         </td>
                                         <td class="extra">
-                                            <label>
+                                            <label class="number-of-items" v-if="entityCopySettings.all == 2 || entityCopySettings.all == 3">
                                                 <span>Aantal items:</span>
                                                 <input type="number" value="" class="error" />
                                             </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Basket</td>
-                                        <td>100000</td>
-                                        <td>
-                                            <select>
-                                                <option>Alles</option>
-                                                <option>Random X items</option>
-                                                <option selected>Laatste X items</option>
-                                                <option>Alles wat toegevoegd is voor X</option>
-                                                <option>Alles wat toegevoegd is na X</option>
-                                                <option>Alles wat toegevoegd is tussen X en Y</option>
-                                            </select>
-                                        </td>
-                                        <td class="extra">
-                                            <label>
-                                                <span>Aantal items:</span>
-                                                <input type="number" value="1000" class="" />
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Basketline</td>
-                                        <td>100000</td>
-                                        <td>
-                                            <select>
-                                                <option>Alles</option>
-                                                <option>Random X items</option>
-                                                <option>Laatste X items</option>
-                                                <option selected>Alles wat toegevoegd is voor X</option>
-                                                <option>Alles wat toegevoegd is na X</option>
-                                                <option>Alles wat toegevoegd is tussen X en Y</option>
-                                            </select>
-                                        </td>
-                                        <td class="extra">
-                                            <label>
+                                            <label class="single-date" v-if="entityCopySettings.all == 4 || entityCopySettings.all == 5">
                                                 <span>Datum:</span>
                                                 <input type="date" value="" class="" />
                                             </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Factuur</td>
-                                        <td>100000</td>
-                                        <td>
-                                            <select>
-                                                <option selected>Alles</option>
-                                                <option>Random X items</option>
-                                                <option>Laatste X items</option>
-                                                <option>Alles wat toegevoegd is voor X</option>
-                                                <option>Alles wat toegevoegd is na X</option>
-                                                <option>Alles wat toegevoegd is tussen X en Y</option>
-                                            </select>
-                                        </td>
-                                        <td class="extra"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Klant</td>
-                                        <td>100000</td>
-                                        <td>
-                                            <select>
-                                                <option selected>Alles</option>
-                                                <option>Random X items</option>
-                                                <option>Laatste X items</option>
-                                                <option>Alles wat toegevoegd is voor X</option>
-                                                <option>Alles wat toegevoegd is na X</option>
-                                                <option>Alles wat toegevoegd is tussen X en Y</option>
-                                            </select>
-                                        </td>
-                                        <td class="extra"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Order</td>
-                                        <td>100000</td>
-                                        <td>
-                                            <select>
-                                                <option selected>Alles</option>
-                                                <option>Random X items</option>
-                                                <option>Laatste X items</option>
-                                                <option>Alles wat toegevoegd is voor X</option>
-                                                <option>Alles wat toegevoegd is na X</option>
-                                                <option>Alles wat toegevoegd is tussen X en Y</option>
-                                            </select>
-                                        </td>
-                                        <td class="extra"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Orderregel</td>
-                                        <td>100000</td>
-                                        <td>
-                                            <select>
-                                                <option selected>Alles</option>
-                                                <option>Random X items</option>
-                                                <option>Laatste X items</option>
-                                                <option>Alles wat toegevoegd is voor X</option>
-                                                <option>Alles wat toegevoegd is na X</option>
-                                                <option>Alles wat toegevoegd is tussen X en Y</option>
-                                            </select>
-                                        </td>
-                                        <td class="extra"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Product</td>
-                                        <td>100000</td>
-                                        <td>
-                                            <select>
-                                                <option selected>Alles</option>
-                                                <option>Random X items</option>
-                                                <option>Laatste X items</option>
-                                                <option>Alles wat toegevoegd is voor X</option>
-                                                <option>Alles wat toegevoegd is na X</option>
-                                                <option selected>Alles wat toegevoegd is tussen X en Y</option>
-                                            </select>
-                                        </td>
-                                        <td class="extra">
-                                            <div>
+                                            <div class="date-range" v-if="entityCopySettings.all == 6">
                                                 <input type="date" value="" class="" />
                                                 <input type="date" value="" class="" />
                                             </div>
                                         </td>
                                     </tr>
-                                    <tr>
-                                        <td>Productfilter</td>
-                                        <td>100000</td>
+                                    <tr v-for="entity in entitiesForBranches" :key="entity.id">
+                                        <td>{{ entity.displayName }}</td>
+                                        <td>{{ entity.totalItems }}</td>
                                         <td>
-                                            <select>
-                                                <option selected>Alles</option>
-                                                <option>Random X items</option>
-                                                <option>Laatste X items</option>
-                                                <option>Alles wat toegevoegd is voor X</option>
-                                                <option>Alles wat toegevoegd is na X</option>
-                                                <option>Alles wat toegevoegd is tussen X en Y</option>
+                                            <select v-model="entityCopySettings[entity.id]" v-if="entityCopySettings.all == -1">
+                                                <option value="0">Alles</option>
+                                                <option value="1">Niets</option>
+                                                <option value="2">Random X items</option>
+                                                <option value="3">Laatste X items</option>
+                                                <option value="4">Alles wat toegevoegd is voor X</option>
+                                                <option value="5">Alles wat toegevoegd is na X</option>
+                                                <option value="6">Alles wat toegevoegd is tussen X en Y</option>
                                             </select>
                                         </td>
-                                        <td class="extra"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Q</td>
-                                        <td>100000</td>
-                                        <td>
-                                            <select>
-                                                <option selected>Alles</option>
-                                                <option>Random X items</option>
-                                                <option>Laatste X items</option>
-                                                <option>Alles wat toegevoegd is voor X</option>
-                                                <option>Alles wat toegevoegd is na X</option>
-                                                <option>Alles wat toegevoegd is tussen X en Y</option>
-                                            </select>
+                                        <td class="extra">
+                                            <label class="number-of-items" v-if="entityCopySettings.all == -1 && (entityCopySettings[entity.id] == 2 || entityCopySettings[entity.id] == 3)">
+                                                <span>Aantal items:</span>
+                                                <input type="number" value="" class="error" />
+                                            </label>
+                                            <label class="single-date" v-if="entityCopySettings.all == -1 && (entityCopySettings[entity.id] == 4 || entityCopySettings[entity.id] == 5)">
+                                                <span>Datum:</span>
+                                                <input type="date" value="" class="" />
+                                            </label>
+                                            <div class="date-range" v-if="entityCopySettings.all == -1 && entityCopySettings[entity.id] == 6">
+                                                <input type="date" value="" class="" />
+                                                <input type="date" value="" class="" />
+                                            </div>
                                         </td>
-                                        <td class="extra"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>R</td>
-                                        <td>100000</td>
-                                        <td>
-                                            <select>
-                                                <option selected>Alles</option>
-                                                <option>Random X items</option>
-                                                <option>Laatste X items</option>
-                                                <option>Alles wat toegevoegd is voor X</option>
-                                                <option>Alles wat toegevoegd is na X</option>
-                                                <option>Alles wat toegevoegd is tussen X en Y</option>
-                                            </select>
-                                        </td>
-                                        <td class="extra"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>S</td>
-                                        <td>100000</td>
-                                        <td>
-                                            <select>
-                                                <option selected>Alles</option>
-                                                <option>Random X items</option>
-                                                <option>Laatste X items</option>
-                                                <option>Alles wat toegevoegd is voor X</option>
-                                                <option>Alles wat toegevoegd is na X</option>
-                                                <option>Alles wat toegevoegd is tussen X en Y</option>
-                                            </select>
-                                        </td>
-                                        <td class="extra"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>T</td>
-                                        <td>100000</td>
-                                        <td>
-                                            <select>
-                                                <option selected>Alles</option>
-                                                <option>Random X items</option>
-                                                <option>Laatste X items</option>
-                                                <option>Alles wat toegevoegd is voor X</option>
-                                                <option>Alles wat toegevoegd is na X</option>
-                                                <option>Alles wat toegevoegd is tussen X en Y</option>
-                                            </select>
-                                        </td>
-                                        <td class="extra"></td>
                                     </tr>
                                 </tbody>
                             </table>

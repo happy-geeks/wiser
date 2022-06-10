@@ -31,6 +31,11 @@ export const LOAD_ENTITY_TYPES_OF_ITEM_ID = "loadEntityTypesOfItemId";
 // Customers module.
 export const GET_CUSTOMER_TITLE = "getCustomerTitle";
 export const VALID_SUB_DOMAIN = "validSubDomain";
+
+// Users module.
+export const CHANGE_PASSWORD = "changePassword";
+
+// Branches module.
 export const CREATE_BRANCH = "createBranch";
 export const CREATE_BRANCH_SUCCESS = "createBranchSuccess";
 export const CREATE_BRANCH_ERROR = "createBranchError";
@@ -38,6 +43,5 @@ export const GET_BRANCHES = "getBranches";
 export const MERGE_BRANCH = "mergeBranch";
 export const MERGE_BRANCH_SUCCESS = "mergeBranchSuccess";
 export const MERGE_BRANCH_ERROR = "mergeBranchError";
-
-// Users module.
-export const CHANGE_PASSWORD = "changePassword";
+export const GET_ENTITIES_FOR_BRANCHES = "getEntitiesForBranches";
+export const IS_MAIN_BRANCH = "isMainBranch";

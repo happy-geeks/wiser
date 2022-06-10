@@ -337,6 +337,14 @@ namespace Api.Modules.Branches.Services
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<bool>> IsMainBranchAsync(ClaimsIdentity identity)
+        {
+            var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
+
+            return new ServiceResult<bool>(currentCustomer.Id == currentCustomer.CustomerId);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<SynchroniseChangesToProductionResultModel>> MergeAsync(ClaimsIdentity identity, int id)
         {
             // Get the data for the different environments.

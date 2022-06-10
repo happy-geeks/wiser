@@ -27,6 +27,13 @@ namespace Api.Modules.Branches.Interfaces
         Task<ServiceResult<List<CustomerModel>>> GetAsync(ClaimsIdentity identity);
 
         /// <summary>
+        /// Gets whether the current branch is the main branch.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
+        /// <returns>A boolean indicating whether the current branch is the main branch.</returns>
+        Task<ServiceResult<bool>> IsMainBranchAsync(ClaimsIdentity identity);
+
+        /// <summary>
         /// Synchronise all changes done to wiser items, from a specific environment, to the production environment.
         /// This will look in wiser_history for what has been changed, copy those changes to production and then clear the history.
         /// </summary>

@@ -51,6 +51,19 @@ namespace Api.Modules.Branches.Controllers
         {
             return (await branchesService.GetAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Gets whether the current branch is the main branch.
+        /// </summary>
+        /// <returns>A boolean indicating whether the current branch is the main branch.</returns>
+        [HttpGet]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [Authorize]
+        [Route("is-main")]
+        public async Task<IActionResult> IsMainBranchAsync()
+        {
+            return (await branchesService.IsMainBranchAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
         
         /// <summary>
         /// Merge all changes done to wiser items, from a specific branch, to the main branch.

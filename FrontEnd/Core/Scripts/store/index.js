@@ -30,7 +30,9 @@ import {
     GET_BRANCHES,
     MERGE_BRANCH,
     MERGE_BRANCH_ERROR,
-    MERGE_BRANCH_SUCCESS
+    MERGE_BRANCH_SUCCESS,
+    GET_ENTITIES_FOR_BRANCHES,
+    IS_MAIN_BRANCH
 } from "./mutation-types";
 
 const baseModule = {
@@ -600,7 +602,9 @@ const branchesModule = {
     state: () => ({
         createBranchError: null,
         createBranchResult: null,
-        branches: []
+        branches: [],
+        entities: [],
+        isMainBranch: false
     }),
 
     mutations: {
@@ -626,6 +630,14 @@ const branchesModule = {
         [MERGE_BRANCH_ERROR](state, error) {
             state.mergeBranchResult = null;
             state.mergeBranchError = error;
+        },
+
+        [GET_ENTITIES_FOR_BRANCHES](state, entities) {
+            state.entities = entities;
+        },
+
+        [IS_MAIN_BRANCH](state, isMainBranch) {
+            state.isMainBranch = isMainBranch;
         }
     },
 
@@ -676,6 +688,20 @@ const branchesModule = {
             } else {
                 commit(MERGE_BRANCH_ERROR, result.message);
             }
+            commit(END_REQUEST);
+        },
+
+        async [GET_ENTITIES_FOR_BRANCHES]({ commit }) {
+            commit(START_REQUEST);
+            const entitiesResponse = await main.branchesService.getEntities();
+            commit(GET_ENTITIES_FOR_BRANCHES, entitiesResponse.data);
+            commit(END_REQUEST);
+        },
+
+        async [IS_MAIN_BRANCH]({ commit }) {
+            commit(START_REQUEST);
+            const entitiesResponse = await main.branchesService.isMainBranch();
+            commit(IS_MAIN_BRANCH, entitiesResponse.data);
             commit(END_REQUEST);
         }
     },

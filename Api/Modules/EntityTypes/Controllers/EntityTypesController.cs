@@ -36,13 +36,15 @@ namespace Api.Modules.EntityTypes.Controllers
         /// <summary>
         /// Gets all available entity types.
         /// </summary>
-        /// <param name="onlyEntityTypesWithDisplayName">Optional: Set to <see langword="false"/> to get all entity types, or <see langword="true"/> to get only entity types that have a display name.</param>
+        /// <param name="onlyEntityTypesWithDisplayName">Optional: Set to false to get all entity types, or true to get only entity types that have a display name.</param>
+        /// <param name="includeCount">Optional: Whether to count how many items of each entity type exist in the database.</param>
+        /// <param name="skipEntitiesWithoutItems">Optional: Whether to skip entities that have no items. Only works when includeCount is set to true.</param>
         /// <returns>A list of all available entity types.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(List<EntityTypeModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAsync(bool onlyEntityTypesWithDisplayName = false)
+        public async Task<IActionResult> GetAsync(bool onlyEntityTypesWithDisplayName = false, bool includeCount = false, bool skipEntitiesWithoutItems = false)
         {
-            return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, onlyEntityTypesWithDisplayName)).GetHttpResponseMessage();
+            return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, onlyEntityTypesWithDisplayName, includeCount, skipEntitiesWithoutItems)).GetHttpResponseMessage();
         }
         
         /// <summary>

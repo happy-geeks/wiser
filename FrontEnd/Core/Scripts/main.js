@@ -37,7 +37,9 @@ import {
     CHANGE_PASSWORD,
     CREATE_BRANCH,
     GET_BRANCHES, 
-    MERGE_BRANCH
+    MERGE_BRANCH,
+    GET_ENTITIES_FOR_BRANCHES,
+    IS_MAIN_BRANCH
 } from "./store/mutation-types";
 
 (() => {
@@ -114,7 +116,10 @@ import {
                         changePasswordPromptNewPasswordValue: null,
                         changePasswordPromptNewPasswordRepeatValue: null,
                         createBranchPromptValue: null,
-                        selectedBranchValue: null
+                        selectedBranchValue: null,
+                        entityCopySettings: {
+                            all: -1
+                        }
                     };
                 },
                 created() {
@@ -187,6 +192,17 @@ import {
                     },
                     mergeBranchError() {
                         return this.$store.state.branches.mergeBranchError;
+                    },
+                    entitiesForBranches() {
+                        return this.$store.state.branches.entities;
+                    },
+                    totalAmountOfItemsForCreatingBranch() {
+                        return this.$store.state.branches.entities.reduce((accumulator, entity) => {
+                            return accumulator + entity.totalItems;
+                        }, 0);
+                    },
+                    isMainBranch() {
+                        return this.$store.state.branches.isMainBranch;
                     }
                 },
                 components: {
@@ -386,6 +402,39 @@ import {
                         this.markerWidget.capture("fullscreen");
                     },
 
+                    async changePassword() {
+                        await this.$store.dispatch(CHANGE_PASSWORD,
+                            {
+                                oldPassword: this.changePasswordPromptOldPasswordValue,
+                                newPassword: this.changePasswordPromptNewPasswordValue,
+                                newPasswordRepeat: this.changePasswordPromptNewPasswordRepeatValue
+                            });
+
+                        return !this.$store.state.users.changePasswordError;
+                    },
+
+                    async createBranch() {
+                        if (!this.createBranchPromptValue) {
+                            return false;
+                        }
+
+                        await this.$store.dispatch(CREATE_BRANCH, this.createBranchPromptValue);
+                        return !this.createBranchError;
+                    },
+
+                    async mergeBranch() {
+                        if (!this.selectedBranchValue || !this.selectedBranchValue.id) {
+                            return false;
+                        }
+
+                        await this.$store.dispatch(MERGE_BRANCH, this.selectedBranchValue.id);
+                        return !this.mergeBranchError;
+                    },
+
+                    handleMergeConflicts() {
+                        alert("Conflicten verwerken");
+                    },
+
                     onOpenModuleClick(event, module) {
                         event.preventDefault();
                         this.openModule(module);
@@ -417,43 +466,21 @@ import {
                         this.$store.dispatch(TOGGLE_PIN_MODULE, moduleId);
                     },
                     
-                    async changePassword() {
-                        await this.$store.dispatch(CHANGE_PASSWORD,
-                            {
-                                oldPassword: this.changePasswordPromptOldPasswordValue,
-                                newPassword: this.changePasswordPromptNewPasswordValue,
-                                newPasswordRepeat: this.changePasswordPromptNewPasswordRepeatValue
-                            });
-                        
-                        return !this.$store.state.users.changePasswordError;
+                    async onWiserBranchesPromptOpen() {
+                        await this.$store.dispatch(IS_MAIN_BRANCH);
                     },
                     
-                    async createBranch() {
-                        if (!this.createBranchPromptValue) {
-                            return false;
-                        }
-
-                        await this.$store.dispatch(CREATE_BRANCH, this.createBranchPromptValue);
-                        return !this.createBranchError;
-                    },
-
-                    async mergeBranch() {
-                        if (!this.selectedBranchValue || !this.selectedBranchValue.id) {
-                            return false;
-                        }
-
-                        await this.$store.dispatch(MERGE_BRANCH, this.selectedBranchValue.id);
-                        return !this.mergeBranchError;
-                    },
-
-                    handleMergeConflicts() {
-                        alert("Conflicten verwerken");
-                    },
-                    
-                    async onWiserMergeBranchPromptOpen(sender) {
+                    async onWiserMergeBranchPromptOpen(sender) {                        
                         await this.$store.dispatch(GET_BRANCHES);
                         if (this.branches && this.branches.length === 1) {
                             this.selectedBranchValue = this.branches[0];
+                        }
+                    },
+                    
+                    async onWiserCreateBranchPromptOpen() {
+                        await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
+                        for (let entity of this.entitiesForBranches) {
+                            this.entityCopySettings[entity.id] = 0;
                         }
                     }
                 }

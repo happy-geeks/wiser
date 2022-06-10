@@ -10,6 +10,7 @@ using Api.Modules.Customers.Interfaces;
 using Api.Modules.EntityTypes.Interfaces;
 using Api.Modules.EntityTypes.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
@@ -34,20 +35,21 @@ namespace Api.Modules.EntityTypes.Services
         }
         
         /// <inheritdoc />
-        public async Task<ServiceResult<List<EntityTypeModel>>> GetAsync(ClaimsIdentity identity, bool onlyEntityTypesWithDisplayName = true)
+        public async Task<ServiceResult<List<EntityTypeModel>>> GetAsync(ClaimsIdentity identity, bool onlyEntityTypesWithDisplayName = true, bool includeCount = false, bool skipEntitiesWithoutItems = false)
         {
             var result = new List<EntityTypeModel>();
             var query = $@"SELECT 
-	                        entity.name, 
-	                        IF(entity.friendly_name IS NULL OR entity.friendly_name = '', entity.name, entity.friendly_name) AS displayName,
-	                        entity.module_id,
-                            module.`name` AS moduleName
-                        FROM {WiserTableNames.WiserEntity} AS entity
-                        LEFT JOIN {WiserTableNames.WiserModule} AS module ON module.id = entity.module_id
-                        WHERE entity.`name` <> ''
-                        {(onlyEntityTypesWithDisplayName ? "AND entity.friendly_name IS NOT NULL AND entity.friendly_name <> ''" : "")}
-                        GROUP BY entity.`name`
-                        ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', entity.name, entity.friendly_name), IF(module.`name` IS NULL, '', CONCAT(' (', module.`name`, ')'))) ASC";
+	entity.name, 
+	IF(entity.friendly_name IS NULL OR entity.friendly_name = '', entity.name, entity.friendly_name) AS displayName,
+	entity.module_id,
+    module.`name` AS moduleName,
+    entity.dedicated_table_prefix
+FROM {WiserTableNames.WiserEntity} AS entity
+LEFT JOIN {WiserTableNames.WiserModule} AS module ON module.id = entity.module_id
+WHERE entity.`name` <> ''
+{(onlyEntityTypesWithDisplayName ? "AND entity.friendly_name IS NOT NULL AND entity.friendly_name <> ''" : "")}
+GROUP BY entity.`name`
+ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', entity.name, entity.friendly_name), IF(module.`name` IS NULL, '', CONCAT(' (', module.`name`, ')'))) ASC";
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var dataTable = await clientDatabaseConnection.GetAsync(query);
@@ -56,13 +58,42 @@ namespace Api.Modules.EntityTypes.Services
                 return new ServiceResult<List<EntityTypeModel>>(result);
             }
 
-            result.AddRange(dataTable.Rows.Cast<DataRow>().Select(dataRow => new EntityTypeModel
+            // First add all entity types to the results list.
+            result.AddRange(dataTable.Rows.Cast<DataRow>()
+                            .Select(dataRow => new EntityTypeModel
+                            {
+                                DisplayName = dataRow.Field<string>("displayName"),
+                                Id = dataRow.Field<string>("name"),
+                                ModuleId = dataRow.Field<int>("module_id"),
+                                ModuleName = dataRow.Field<string>("moduleName"),
+                                DedicatedTablePrefix = wiserItemsService.GetTablePrefixForEntity(new EntitySettingsModel {DedicatedTablePrefix = dataRow.Field<string>("dedicated_table_prefix")})
+                            }));
+
+            // Then count the amount of items per entity type.
+            if (includeCount)
             {
-                DisplayName = dataRow.Field<string>("displayName"), 
-                Id = dataRow.Field<string>("name"), 
-                ModuleId = dataRow.Field<int>("module_id"), 
-                ModuleName = dataRow.Field<string>("moduleName")
-            }));
+                // Group all entities by table prefix, so that we can build one query per wiser_item table.
+                foreach (var group in result.GroupBy(entity => entity.DedicatedTablePrefix))
+                {
+                    //  Count the amount of entity types per type per table.
+                    query = $@"SELECT entity_type, COUNT(*) AS totalItems 
+FROM {group.Key}{WiserTableNames.WiserItem} 
+WHERE entity_type IN ({String.Join(", ", group.Select(entity => entity.Id.ToMySqlSafeValue(true)))})
+GROUP BY entity_type";
+                    
+                    var countDataTable = await clientDatabaseConnection.GetAsync(query);
+                    foreach (DataRow dataRow in countDataTable.Rows)
+                    {
+                        var entityType = dataRow.Field<String>("entity_type");
+                        group.Single(entity => String.Equals(entity.Id, entityType, StringComparison.OrdinalIgnoreCase)).TotalItems = Convert.ToInt32(dataRow["totalItems"]);
+                    }
+                }
+            }
+
+            if (includeCount && skipEntitiesWithoutItems)
+            {
+                result = result.Where(entity => entity.TotalItems is > 0).ToList();
+            }
 
             return new ServiceResult<List<EntityTypeModel>>(result);
         }
