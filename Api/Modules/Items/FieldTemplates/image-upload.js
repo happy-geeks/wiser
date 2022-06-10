@@ -12,7 +12,7 @@ var options = {options};
 
 options = $.extend({
     async: {
-        saveUrl: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/upload?propertyName=" + encodeURIComponent("{propertyName}") + "&itemLinkId={itemLinkId}&useTinyPng=" + (options.useTinyPng === true).toString(),
+        saveUrl: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/upload?propertyName=" + encodeURIComponent("{propertyName}") + "&itemLinkId={itemLinkId}&useTinyPng=" + (options.useTinyPng === true).toString() + "&useCloudFlare=" + (options.useCloudFlare === true).toString(),
         withCredentials: false,
         removeUrl: "remove"
     },

@@ -55,17 +55,18 @@ namespace Api.Modules.Files.Controllers
         /// <param name="title">The title/description of the file.</param>
         /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
         /// <param name="useTinyPng">Optional: Whether to use tiny PNG to compress image files, one or more image files are being uploaded.</param>
+        /// <param name="useCloudFlare">Optional: Whether to use CloudFlare to store image files.</param>
         /// <returns>A list of <see cref="FileModel"/> with file data.</returns>
         [HttpPost]
         [Route("~/api/v3/items/{encryptedId}/upload")]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> Upload(string encryptedId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false)
+        public async Task<IActionResult> Upload(string encryptedId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false, [FromQuery] bool useCloudFlare = false)
         {
             var form = await Request.ReadFormAsync();
 
-            var result = await filesService.UploadAsync(encryptedId, propertyName, title, form.Files, (ClaimsIdentity)User.Identity, itemLinkId, useTinyPng);
+            var result = await filesService.UploadAsync(encryptedId, propertyName, title, form.Files, (ClaimsIdentity)User.Identity, itemLinkId, useTinyPng, useCloudFlare);
             return result.GetHttpResponseMessage();
         }
 

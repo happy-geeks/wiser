@@ -47,7 +47,7 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<FileModel>>> UploadAsync(string encryptedId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false)
+        public async Task<ServiceResult<List<FileModel>>> UploadAsync(string encryptedId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false, bool useCloudFlare = false)
         {
             if (String.IsNullOrWhiteSpace(encryptedId))
             {
@@ -93,7 +93,7 @@ namespace Api.Modules.Files.Services
                 {
                     throw new NotImplementedException("Tiny PNG not supported yet.");
                 }
-                
+
                 // Fix ordering of files.
                 await FixOrderingAsync(itemId, itemLinkId, propertyName);
 
