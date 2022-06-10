@@ -32,8 +32,9 @@ namespace Api.Modules.Customers.Interfaces
         /// Get the encryption key for a customer via <see cref="ClaimsIdentity"/>.
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user to check for rights.</param>
-        /// <returns>The encryption key as string..</returns>
-        Task<ServiceResult<string>> GetEncryptionKey(ClaimsIdentity identity);
+        /// <param name="forceLiveKey">Always give back the live encryption key, even on the test environment.</param>
+        /// <returns>The encryption key as string.</returns>
+        Task<ServiceResult<string>> GetEncryptionKey(ClaimsIdentity identity, bool forceLiveKey = false);
         
         /// <summary>
         /// Decrypts a value using the encryption key that is saved for the customer.

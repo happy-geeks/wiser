@@ -1,14 +1,4 @@
 -- ----------------------------
--- Records of easy_items
--- ----------------------------
-INSERT INTO `easy_items` VALUES (6, @customerId, 143, 'ShoppingBasket', 2, 3, 1, 0, 1, 1, 'query', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-INSERT INTO `easy_items` VALUES (7, @customerId, 143, 'BasketExtraLineFields', 3, 6, 1, 0, 0, 1, 'query', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-INSERT INTO `easy_items` VALUES (8, @customerId, 143, 'BasketExtraMainFields', 3, 6, 2, 0, 0, 1, 'query', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-INSERT INTO `easy_items` VALUES (9, @customerId, 143, 'BasketExtraMainFieldsForConfirmationEmail', 3, 6, 3, 0, 0, 1, 'query', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-INSERT INTO `easy_items` VALUES (10, @customerId, 143, 'BasketExtraLineFieldsForConfirmationEmail', 3, 6, 4, 0, 0, 1, 'query', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-INSERT INTO `easy_items` VALUES (11, @customerId, 143, 'AfterConvertBasketToOrder', 3, 6, 5, 0, 0, 1, 'query', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-
--- ----------------------------
 -- Land entiteit
 -- ----------------------------
 INSERT IGNORE INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('country', 700, '', 'icon-earth', 'icon-earth');
@@ -95,22 +85,18 @@ INSERT IGNORE INTO `wiser_itemlink` (item_id, destination_item_id, ordering, typ
 INSERT IGNORE INTO `wiser_item`(`unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES ('', 'vatrate', 700, 4, 0, 'Nul tarief', NOW(), 'Systeem', NULL, '');
 SET @vatRateId  = LAST_INSERT_ID();
 INSERT IGNORE INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@vatRateid, @vatRateDirectoryId, 1);
-#INSERT IGNORE INTO `wiser_itemdetail`(`item_id`, `key`, `value`) VALUES (@vatRateId, 'code', '1');
 INSERT IGNORE INTO `wiser_itemdetail`(`item_id`, `key`, `value`) VALUES (@vatRateId, 'description', 'zerorate');
 INSERT IGNORE INTO `wiser_item`(`unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES ('', 'vatrate', 700, 4, 0, 'Verlaagd tarief', NOW(), 'Systeem', NULL, '');
 SET @vatRateId  = LAST_INSERT_ID();
 INSERT IGNORE INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@vatRateid, @vatRateDirectoryId, 1);
-#INSERT IGNORE INTO `wiser_itemdetail`(`item_id`, `key`, `value`) VALUES (@vatRateId, 'code', '3');
 INSERT IGNORE INTO `wiser_itemdetail`(`item_id`, `key`, `value`) VALUES (@vatRateId, 'description', 'reducedrate');
 INSERT IGNORE INTO `wiser_item`(`unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES ('', 'vatrate', 700, 4, 0, 'Extra verlaagd tarief', NOW(), 'Systeem', NULL, '');
 SET @vatRateId  = LAST_INSERT_ID();
 INSERT IGNORE INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@vatRateid, @vatRateDirectoryId, 1);
-#INSERT IGNORE INTO `wiser_itemdetail`(`item_id`, `key`, `value`) VALUES (@vatRateId, 'code', '4');
 INSERT IGNORE INTO `wiser_itemdetail`(`item_id`, `key`, `value`) VALUES (@vatRateId, 'description', 'superreducedrate');
 INSERT IGNORE INTO `wiser_item`(`unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES ('', 'vatrate', 700, 4, 0, 'Standaard tarief', NOW(), 'Systeem', NULL, '');
 SET @vatRateId  = LAST_INSERT_ID();
 INSERT IGNORE INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@vatRateid, @vatRateDirectoryId, 1);
-#INSERT IGNORE INTO `wiser_itemdetail`(`item_id`, `key`, `value`) VALUES (@vatRateId, 'code', '2');
 INSERT IGNORE INTO `wiser_itemdetail`(`item_id`, `key`, `value`) VALUES (@vatRateId, 'description', 'standardrate');
 
 -- ----------------------------
@@ -155,7 +141,6 @@ INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2CHECKOU
 -- ----------------------------
 INSERT IGNORE INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `dedicated_table_prefix`) VALUES ('basket', 5000, '', '', '','basket');
 INSERT IGNORE INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `dedicated_table_prefix`) VALUES ('basketline', 5000, '', '', '','basket');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2CHECKOUT_AutoClearBasketsOnThankYouPage',"true");
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (5002, 'basket', 'basketline', 'Shopping cart line', 0, 0, 'one-to-one', 'none', 1);
 
 -- ----------------------------
@@ -173,9 +158,10 @@ INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `link_type`, `vi
 INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `link_type`, `visible_in_overview`, `overview_fieldtype`, `overview_width`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `regex_validation`, `mandatory`, `readonly`, `default_value`, `automation`, `css`, `width`, `height`, `options`, `data_query`, `action_query`, `search_query`, `search_count_query`, `grid_delete_query`, `grid_insert_query`, `grid_update_query`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `extended_explanation`, `label_style`, `label_width`) VALUES (0, 'mailtemplate', 0, 0, '', 100, '', '', 'input', 'Onderwerp', 'subject', NULL, 2, '', 0, 0, NULL, '', '', 100, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', NULL, 0, NULL, 0, 0, NULL, NULL);
 INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `link_type`, `visible_in_overview`, `overview_fieldtype`, `overview_width`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `regex_validation`, `mandatory`, `readonly`, `default_value`, `automation`, `css`, `width`, `height`, `options`, `data_query`, `action_query`, `search_query`, `search_count_query`, `grid_delete_query`, `grid_insert_query`, `grid_update_query`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `extended_explanation`, `label_style`, `label_width`) VALUES (0, 'mailtemplate', 0, 0, '', 100, '', '', 'HTMLeditor', 'Template', 'template', NULL, 3, '', 0, 0, NULL, '', '', 100, 600, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', NULL, 0, NULL, 0, 0, NULL, NULL);
 INSERT IGNORE INTO `wiser_item`(`unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES ('', 'map', 700, 4, 0, 'Templates', NOW(), 'Systeem', NULL, '');
-INSERT IGNORE INTO `wiser_itemlink` (item_id, destination_item_id, ordering, type) VALUES (LAST_INSERT_ID(), 0, 1, 1);
+SET @templatesDirectoryId = LAST_INSERT_ID();
+INSERT IGNORE INTO `wiser_itemlink` (item_id, destination_item_id, ordering, type) VALUES (templatesDirectoryId, 0, 1, 1);
 INSERT IGNORE INTO `wiser_item`(`unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES ('', 'mailtemplate', 700, 4, 0, 'Bestelmail', NOW(), 'Systeem', NULL, '');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'PSP_mailtemplate',LAST_INSERT_ID());
+INSERT IGNORE INTO `wiser_itemlink` (item_id, destination_item_id, ordering, type) VALUES (LAST_INSERT_ID(), templatesDirectoryId, 1, 1);
 
 -- ----------------------------
 -- Languages
