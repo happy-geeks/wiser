@@ -93,6 +93,7 @@ namespace Api.Modules.Grids.Services
             var versionJoinClause = "";
             var versionWhereClause = "";
             var tablePrefix = "";
+            var linkTablePrefix = "";
             if (!String.IsNullOrWhiteSpace(entityType) && !String.Equals(entityType, "all", StringComparison.OrdinalIgnoreCase) && !String.Equals(entityType, "undefined", StringComparison.OrdinalIgnoreCase))
             {
                 var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync(entityType);
@@ -112,6 +113,7 @@ namespace Api.Modules.Grids.Services
             {
                 var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkTypeNumber, currentItemIsSourceId ? null : entityType, currentItemIsSourceId ? entityType : null);
                 useItemParentId = linkTypeSettings.UseItemParentId;
+                linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
             }
             
             // Find out if there are custom queries for the grid.
@@ -1215,7 +1217,7 @@ namespace Api.Modules.Grids.Services
                             else
                             {
                                 countQuery = $@"SELECT COUNT(DISTINCT i.id)
-                                                FROM {WiserTableNames.WiserItemLink} il
+                                                FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} il
                                                 JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = il.{(currentItemIsSourceId ? "destination_item_id" : "item_id")} {(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")} {(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}
                                                 {{filters}}
 
@@ -1252,7 +1254,7 @@ namespace Api.Modules.Grids.Services
                                                     i.changed_on,
                                                     i.changed_by,
                                                     il.ordering AS `{WiserItemsService.LinkOrderingFieldName}`
-                                                FROM {WiserTableNames.WiserItemLink} il
+                                                FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} il
                                                 JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = il.{(currentItemIsSourceId ? "destination_item_id" : "item_id")} {(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")} {(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}
 
                                                 {{filters}}
@@ -1297,7 +1299,7 @@ namespace Api.Modules.Grids.Services
                                                     i.changed_on,
                                                     i.changed_by,
                                                     il.ordering AS `{WiserItemsService.LinkOrderingFieldName}`
-                                                FROM {WiserTableNames.WiserItemLink} il
+                                                FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} il
                                                 JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = il.{(currentItemIsSourceId ? "destination_item_id" : "item_id")} {(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")} {(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}
 
                                                 {{filters}}
@@ -1310,7 +1312,7 @@ namespace Api.Modules.Grids.Services
 	                                            LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
 
                                                 JOIN {WiserTableNames.WiserEntityProperty} p ON p.link_type = il.type AND p.visible_in_overview = 1
-                                                JOIN {WiserTableNames.WiserItemLinkDetail} id ON id.itemlink_id = il.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input'))))
+                                                JOIN {linkTablePrefix}{WiserTableNames.WiserItemLinkDetail} id ON id.itemlink_id = il.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input'))))
 
                                                 WHERE il.{(currentItemIsSourceId ? "item_id" : "destination_item_id")} = ?itemId
                                                 {versionWhereClause}

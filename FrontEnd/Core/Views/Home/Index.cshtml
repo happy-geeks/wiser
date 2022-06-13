@@ -113,7 +113,7 @@
 
             <div class="error" v-if="changePasswordError">{{ changePasswordError }}</div>
         </wiser-dialog>
-        <wiser-dialog class="branches-dialog" :modal="true" :width="'1200px'" :title="'Wiser branches'" ref="wiserBranchesPrompt" :visible="false" :actions="[]" @@open="onWiserBranchesPromptOpen">
+        <wiser-dialog class="branches-dialog" :modal="true" :width="'1200px'" ref="wiserBranchesPrompt" :visible="false" :actions="[]" @@open="onWiserBranchesPromptOpen">
             <div class="container">
                 <div class="row equal">
                     <div class="col col-6">

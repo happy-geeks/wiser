@@ -52,11 +52,12 @@ namespace Api.Modules.Items.Services
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly IApiReplacementsService apiReplacementsService;
         private readonly IFilesService filesService;
+        private readonly IDatabaseHelpersService databaseHelpersService;
 
         /// <summary>
         /// Creates a new instance of <see cref="ItemsService"/>.
         /// </summary>
-        public ItemsService(Templates.Interfaces.ITemplatesService templatesService, IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, IWiserItemsService wiserItemsService, IJsonService jsonService, ILogger<ItemsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService, IFilesService filesService)
+        public ItemsService(Templates.Interfaces.ITemplatesService templatesService, IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, IWiserItemsService wiserItemsService, IJsonService jsonService, ILogger<ItemsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService, IFilesService filesService, IDatabaseHelpersService databaseHelpersService)
         {
             this.templatesService = templatesService;
             this.wiserCustomersService = wiserCustomersService;
@@ -68,6 +69,7 @@ namespace Api.Modules.Items.Services
             this.stringReplacementsService = stringReplacementsService;
             this.apiReplacementsService = apiReplacementsService;
             this.filesService = filesService;
+            this.databaseHelpersService = databaseHelpersService;
         }
 
         /// <inheritdoc />
@@ -359,6 +361,7 @@ namespace Api.Modules.Items.Services
                 var username = IdentityHelpers.GetUserName(identity);
                 var customer = await wiserCustomersService.GetSingleAsync(identity);
                 var encryptionKey = customer.ModelObject.EncryptionKey;
+                var allLinkSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
 
                 var query = $@"SELECT other.id, current.original_item_id, other.published_environment
                             FROM {tablePrefix}{WiserTableNames.WiserItem} AS current
@@ -456,15 +459,32 @@ namespace Api.Modules.Items.Services
                 // Copy links.
                 var linksToKeep = new List<ulong>();
                 query = $@"SELECT
-                            link.id,
-                            link.type,
-                            link.destination_item_id,
-                            link.item_id
-                        FROM {WiserTableNames.WiserItemLink} AS link
-                        JOIN {tablePrefix}{WiserTableNames.WiserItem} AS item1 ON item1.id = link.item_id
-                        JOIN {tablePrefix}{WiserTableNames.WiserItem} AS item2 ON item2.id = link.destination_item_id
-                        WHERE link.item_id = ?id
-                        OR link.destination_item_id = ?id";
+    link.id,
+    link.type,
+    link.destination_item_id,
+    link.item_id
+FROM {WiserTableNames.WiserItemLink} AS link
+JOIN {tablePrefix}{WiserTableNames.WiserItem} AS item1 ON item1.id = link.item_id
+JOIN {tablePrefix}{WiserTableNames.WiserItem} AS item2 ON item2.id = link.destination_item_id
+WHERE link.item_id = ?id
+OR link.destination_item_id = ?id";
+
+                foreach (var linkSettings in allLinkSettings.Where(l => String.Equals(l.SourceEntityType, item.EntityType, StringComparison.OrdinalIgnoreCase) || String.Equals(l.SourceEntityType, item.EntityType, StringComparison.OrdinalIgnoreCase)))
+                {
+                    var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkSettings);
+                    query += $@"
+UNION ALL
+SELECT
+    link.id,
+    link.type,
+    link.destination_item_id,
+    link.item_id
+FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link
+JOIN {tablePrefix}{WiserTableNames.WiserItem} AS item1 ON item1.id = link.item_id
+JOIN {tablePrefix}{WiserTableNames.WiserItem} AS item2 ON item2.id = link.destination_item_id
+WHERE link.item_id = ?id
+OR link.destination_item_id = ?id";
+                }
 
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("id", originalItemId);
@@ -494,6 +514,7 @@ namespace Api.Modules.Items.Services
                         // Add the new link.
                         var newLinkId = await wiserItemsService.AddItemLinkAsync(linkedItemId, destinationItemId, type, userId: userId, username: username);
                         linksToKeep.Add(newLinkId);
+                        var linkTablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(type);
 
                         // Add the link details.
                         clientDatabaseConnection.AddParameter("previousLinkId", previousLinkId);
@@ -504,9 +525,9 @@ namespace Api.Modules.Items.Services
                         await clientDatabaseConnection.ExecuteAsync($@"SET @_username = ?username;
                                                                     SET @_userId = ?userId;
                                                                     SET @saveHistory = ?saveHistoryJcl;
-                                                                    INSERT INTO {WiserTableNames.WiserItemLinkDetail} (language_code, itemlink_id, groupname, `key`, value, long_value)
+                                                                    INSERT INTO {linkTablePrefix}{WiserTableNames.WiserItemLinkDetail} (language_code, itemlink_id, groupname, `key`, value, long_value)
                                                                     SELECT language_code, ?newLinkId, groupname, `key`, value, long_value
-                                                                    FROM {WiserTableNames.WiserItemLinkDetail}
+                                                                    FROM {linkTablePrefix}{WiserTableNames.WiserItemLinkDetail}
                                                                     WHERE itemlink_id = ?previousLinkId
                                                                     ON DUPLICATE KEY UPDATE value = VALUES(value), long_value = VALUES(long_value), groupname = VALUES(groupname)");
                     }
@@ -518,7 +539,15 @@ namespace Api.Modules.Items.Services
                     var wherePart = !linksToKeep.Any() ? "" : $" AND link.id NOT IN ({String.Join(",", linksToKeep)})";
                     clientDatabaseConnection.ClearParameters();
                     clientDatabaseConnection.AddParameter("id", item.Id);
-                    await clientDatabaseConnection.ExecuteAsync($@"DELETE FROM {WiserTableNames.WiserItemLink} AS link WHERE (link.item_id = ?id OR link.destination_item_id = ?id) {wherePart}");
+
+                    query = $@"DELETE FROM {WiserTableNames.WiserItemLink} AS link WHERE (link.item_id = ?id OR link.destination_item_id = ?id) {wherePart};";
+                    foreach (var linkSettings in allLinkSettings.Where(l => String.Equals(l.SourceEntityType, item.EntityType, StringComparison.OrdinalIgnoreCase) || String.Equals(l.SourceEntityType, item.EntityType, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkSettings);
+                        query += $@"
+DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link.item_id = ?id OR link.destination_item_id = ?id) {wherePart};";
+                    }
+                    await clientDatabaseConnection.ExecuteAsync(query);
                 }
 
                 await clientDatabaseConnection.CommitTransactionAsync();
@@ -940,7 +969,7 @@ namespace Api.Modules.Items.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<ItemHtmlAndScriptModel>> GetItemHtmlAsync(string encryptedId, ClaimsIdentity identity, string propertyIdSuffix = null, ulong itemLinkId = 0, string entityType = null)
+        public async Task<ServiceResult<ItemHtmlAndScriptModel>> GetItemHtmlAsync(string encryptedId, ClaimsIdentity identity, string propertyIdSuffix = null, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
         {
             var results = new ItemHtmlAndScriptModel();
             var userId = IdentityHelpers.GetWiserUserId(identity);
@@ -966,6 +995,17 @@ namespace Api.Modules.Items.Services
             }
 
             var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+            var linkTablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(linkType);
+            var wiserItemFileTable = WiserTableNames.WiserItemFile;
+            var wiserItemFileTableForLink = WiserTableNames.WiserItemFile;
+            if (!String.IsNullOrWhiteSpace(tablePrefix) && await databaseHelpersService.TableExistsAsync($"{tablePrefix}{WiserTableNames.WiserItemFile}"))
+            {
+                wiserItemFileTable = $"{tablePrefix}{WiserTableNames.WiserItemFile}";
+            }
+            if (!String.IsNullOrWhiteSpace(linkTablePrefix) && await databaseHelpersService.TableExistsAsync($"{linkTablePrefix}{WiserTableNames.WiserItemFile}"))
+            {
+                wiserItemFileTableForLink = $"{linkTablePrefix}{WiserTableNames.WiserItemFile}";
+            }
 
             results.CanRead = (userItemPermissions & AccessRights.Read) == AccessRights.Read;
             results.CanCreate = (userItemPermissions & AccessRights.Create) == AccessRights.Create;
@@ -977,7 +1017,6 @@ namespace Api.Modules.Items.Services
             clientDatabaseConnection.AddParameter("userId", userId);
             clientDatabaseConnection.AddParameter("itemLinkId", itemLinkId);
 
-            // TODO: Link type table prefix and also set link type in field html attributes
             var itemIsFromArchive = false;
             var query = $@"SET SESSION group_concat_max_len = 1000000;
                                 SELECT e.tab_name, e.group_name, e.inputtype AS field_type, t.html_template, e.display_name, e.property_name, e.options, e.module_id,
@@ -994,7 +1033,7 @@ namespace Api.Modules.Items.Services
                                 # TODO: Find a more efficient way to load images and files?
                                 LEFT JOIN (
                                     SELECT item_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'added_on', added_on, 'content_url', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
-                                    FROM {WiserTableNames.WiserItemFile}{{0}}
+                                    FROM {wiserItemFileTable}{WiserTableNames.WiserItemFile}{{0}}
                                     WHERE item_id = ?itemId
                                     GROUP BY property_name
                                 ) files ON files.item_id = i.id AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND files.property_name = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND files.property_name = e.display_name))
@@ -1022,13 +1061,13 @@ namespace Api.Modules.Items.Services
     	                            e.custom_script, permission.permissions, i.readonly AS itemIsReadOnly
                                 FROM {WiserTableNames.WiserEntityProperty} e
                                 JOIN {tablePrefix}{WiserTableNames.WiserItem}{{0}} i ON i.id = ?itemId
-                                JOIN {WiserTableNames.WiserItemLink}{{0}} il ON il.id = ?itemLinkId AND il.type = e.link_type
+                                JOIN {linkTablePrefix}{WiserTableNames.WiserItemLink}{{0}} il ON il.id = ?itemLinkId AND il.type = e.link_type
                                 LEFT JOIN {WiserTableNames.WiserFieldTemplates} t ON t.field_type = e.inputtype
-                                LEFT JOIN {WiserTableNames.WiserItemLinkDetail}{{0}} d ON d.itemlink_id = ?itemLinkId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
+                                LEFT JOIN {linkTablePrefix}{WiserTableNames.WiserItemLinkDetail}{{0}} d ON d.itemlink_id = ?itemLinkId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
                                 # TODO: Find a more efficient way to load images and files?
                                 LEFT JOIN (
                                     SELECT itemlink_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'added_on', added_on, 'content_url', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
-                                    FROM {WiserTableNames.WiserItemFile}{{0}}
+                                    FROM {wiserItemFileTableForLink}{WiserTableNames.WiserItemFile}{{0}}
                                     WHERE itemlink_id = ?itemLinkId
                                     GROUP BY property_name
                                 ) files ON files.itemlink_id = il.id AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND files.property_name = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND files.property_name = e.display_name))
@@ -1385,10 +1424,10 @@ namespace Api.Modules.Items.Services
                     var currentItemIsDestinationId = optionsObject.Value<bool>("currentItemIsDestinationId");
                     var linkTypeNumber = optionsObject.Value<int>("linkTypeNumber");
                     var limit = fieldType.Equals("combobox") ? "LIMIT 1" : "";
-                    var linkTablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(linkTypeNumber);
+                    var linkTablePrefixForSaving = await wiserItemsService.GetTablePrefixForLinkAsync(linkTypeNumber);
 
                     var linkValueQuery = $@"SELECT {(currentItemIsDestinationId ? "item_id" : "destination_item_id")} AS result
-                                            FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} 
+                                            FROM {linkTablePrefixForSaving}{WiserTableNames.WiserItemLink} 
                                             WHERE {(currentItemIsDestinationId ? "destination_item_id" : "item_id")} = ?itemId 
                                             AND type = ?linkTypeNumber
                                             {limit}";
@@ -1481,6 +1520,7 @@ namespace Api.Modules.Items.Services
                         .Replace("{accessKey}", accessKey)
                         .Replace("{fieldMode}", fieldMode)
                         .Replace("{containerCssClass}", String.Join(" ", containerCssClasses))
+                        .Replace("{linkType}", linkType.ToString())
                         .Replace("{default_value}", valueToReplace);
                 }
 
@@ -1510,6 +1550,7 @@ namespace Api.Modules.Items.Services
                         .Replace("{height}", height <= 0 ? "" : height.ToString())
                         .Replace("{userItemPermissions}", ((int)userItemPermissions).ToString())
                         .Replace("{fieldMode}", fieldMode)
+                        .Replace("{linkType}", linkType.ToString())
                         .Replace("{default_value}", $"'{HttpUtility.JavaScriptStringEncode(defaultValue)}'");
                 }
 

@@ -543,13 +543,13 @@ namespace Api.Modules.Branches.Services
                                 await using (var environmentCommand = environmentConnection.CreateCommand())
                                 {
                                     AddParametersToCommand(sqlParameters, environmentCommand);
-                                    environmentCommand.CommandText = $@"SELECT item_id, destination_item_id FROM `{WiserTableNames.WiserItemLink}` WHERE id = ?linkId";
+                                    environmentCommand.CommandText = $@"SELECT item_id, destination_item_id FROM `{tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemLinkDetail, WiserTableNames.WiserItemLink)}` WHERE id = ?linkId";
                                     var linkDataTable = new DataTable();
                                     using var environmentAdapter = new MySqlDataAdapter(environmentCommand);
                                     await environmentAdapter.FillAsync(linkDataTable);
                                     if (linkDataTable.Rows.Count == 0)
                                     {
-                                        environmentCommand.CommandText = $@"SELECT item_id, destination_item_id FROM `{WiserTableNames.WiserItemLink}{WiserTableNames.ArchiveSuffix}` WHERE id = ?linkId";
+                                        environmentCommand.CommandText = $@"SELECT item_id, destination_item_id FROM `{tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemLinkDetail, WiserTableNames.WiserItemLink)}{WiserTableNames.ArchiveSuffix}` WHERE id = ?linkId";
                                         await environmentAdapter.FillAsync(linkDataTable);
                                         if (linkDataTable.Rows.Count == 0)
                                         {
@@ -1212,13 +1212,14 @@ WHERE id = ?ourId;";
                 }
                 else if (tableName.EndsWith(WiserTableNames.WiserItemLink, StringComparison.OrdinalIgnoreCase))
                 {
+                    var tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemLink, "");
                     command.CommandText = $@"SET @saveHistory = FALSE;
 
-UPDATE `{WiserTableNames.WiserItemLink}` 
+UPDATE `{tablePrefix}{WiserTableNames.WiserItemLink}` 
 SET id = ?productionId 
 WHERE id = ?ourId;
 
-UPDATE `{WiserTableNames.WiserItemLinkDetail}` 
+UPDATE `{tablePrefix}{WiserTableNames.WiserItemLinkDetail}` 
 SET link_id = ?productionId 
 WHERE link_id = ?ourId;";
                     await command.ExecuteNonQueryAsync();
