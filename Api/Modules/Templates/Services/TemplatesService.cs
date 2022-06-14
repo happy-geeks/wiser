@@ -2423,7 +2423,6 @@ LIMIT 1";
             {
                 return new ServiceResult<TemplateSettingsModel>
                 {
-                    ReasonPhrase = templateEnvironmentsResult.ReasonPhrase,
                     ErrorMessage = templateEnvironmentsResult.ErrorMessage,
                     StatusCode = templateEnvironmentsResult.StatusCode
                 };
@@ -2447,7 +2446,6 @@ LIMIT 1";
             {
                 return new ServiceResult<TemplateSettingsModel>
                 {
-                    ReasonPhrase = templateEnvironmentsResult.ReasonPhrase,
                     ErrorMessage = templateEnvironmentsResult.ErrorMessage,
                     StatusCode = templateEnvironmentsResult.StatusCode
                 };
@@ -2643,8 +2641,7 @@ LIMIT 1";
                 return new ServiceResult<TemplateHistoryOverviewModel>
                 {
                     StatusCode = dynamicContentOverview.StatusCode,
-                    ErrorMessage = dynamicContentOverview.ErrorMessage,
-                    ReasonPhrase = dynamicContentOverview.ReasonPhrase
+                    ErrorMessage = dynamicContentOverview.ErrorMessage
                 };
             }
 
@@ -2696,8 +2693,7 @@ LIMIT 1";
                 return new ServiceResult<bool>
                 {
                     StatusCode = templateDataResponse.StatusCode,
-                    ErrorMessage = templateDataResponse.ErrorMessage,
-                    ReasonPhrase = templateDataResponse.ReasonPhrase
+                    ErrorMessage = templateDataResponse.ErrorMessage
                 };
             }
 
@@ -2707,8 +2703,7 @@ LIMIT 1";
                 return new ServiceResult<bool>
                 {
                     StatusCode = linkedTemplatesResponse.StatusCode,
-                    ErrorMessage = linkedTemplatesResponse.ErrorMessage,
-                    ReasonPhrase = linkedTemplatesResponse.ReasonPhrase
+                    ErrorMessage = linkedTemplatesResponse.ErrorMessage
                 };
             }
 

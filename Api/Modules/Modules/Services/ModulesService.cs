@@ -599,7 +599,6 @@ namespace Api.Modules.Modules.Services
                 return new ServiceResult<byte[]>
                 {
                     ErrorMessage = gridResult.ErrorMessage,
-                    ReasonPhrase = gridResult.ReasonPhrase,
                     StatusCode = gridResult.StatusCode
                 };
             }

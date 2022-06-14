@@ -94,8 +94,7 @@ namespace Api.Modules.Customers.Services
                 return new ServiceResult<CustomerModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Customer with sub domain '{subDomain}' not found.",
-                    ReasonPhrase = "Customer not found"
+                    ErrorMessage = $"Customer with sub domain '{subDomain}' not found."
                 };
             }
 
@@ -127,8 +126,7 @@ namespace Api.Modules.Customers.Services
                 return new ServiceResult<CustomerModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Customer with ID '{id}' not found.",
-                    ReasonPhrase = "Customer not found"
+                    ErrorMessage = $"Customer with ID '{id}' not found."
                 };
             }
 
@@ -159,8 +157,7 @@ namespace Api.Modules.Customers.Services
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Customer with sub domain '{subDomain}' not found.",
-                    ReasonPhrase = "Customer not found"
+                    ErrorMessage = $"Customer with sub domain '{subDomain}' not found."
                 };
             }
             
@@ -366,8 +363,7 @@ namespace Api.Modules.Customers.Services
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "No sub domain given",
-                    ReasonPhrase = "No sub domain given"
+                    ErrorMessage = "No sub domain given"
                 };
             }
 
@@ -382,8 +378,7 @@ namespace Api.Modules.Customers.Services
                     return new ServiceResult<string>
                     {
                         StatusCode = HttpStatusCode.NotFound,
-                        ErrorMessage = "No customer found with this sub domain",
-                        ReasonPhrase = "No customer found with this sub domain"
+                        ErrorMessage = "No customer found with this sub domain"
                     };
                 }
 

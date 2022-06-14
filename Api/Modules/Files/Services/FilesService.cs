@@ -66,7 +66,6 @@ namespace Api.Modules.Files.Services
                 return new ServiceResult<List<FileModel>>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ReasonPhrase = "No files found in the request",
                     ErrorMessage = "No files found in the request"
                 };
             }
@@ -80,7 +79,6 @@ namespace Api.Modules.Files.Services
                     return new ServiceResult<List<FileModel>>
                     {
                         ErrorMessage = errorMessage,
-                        ReasonPhrase = errorMessage,
                         StatusCode = HttpStatusCode.Forbidden
                     };
                 }
@@ -123,8 +121,7 @@ namespace Api.Modules.Files.Services
                         return new ServiceResult<List<FileModel>>
                         {
                             StatusCode = fileResult.StatusCode,
-                            ErrorMessage = fileResult.ErrorMessage,
-                            ReasonPhrase = fileResult.ReasonPhrase
+                            ErrorMessage = fileResult.ErrorMessage
                         };
                     }
 
@@ -140,8 +137,7 @@ namespace Api.Modules.Files.Services
                     return new ServiceResult<List<FileModel>>
                     {
                         StatusCode = HttpStatusCode.BadRequest,
-                        ErrorMessage = "File is to large for database.",
-                        ReasonPhrase = "File is to large for database."
+                        ErrorMessage = "File is to large for database."
                     };
                 }
 
@@ -219,8 +215,7 @@ namespace Api.Modules.Files.Services
                         return new ServiceResult<FileModel>
                         {
                             StatusCode = HttpStatusCode.InternalServerError,
-                            ErrorMessage = errorMessage,
-                            ReasonPhrase = errorMessage
+                            ErrorMessage = errorMessage
                         };
                     }
 
@@ -240,8 +235,7 @@ namespace Api.Modules.Files.Services
                     return new ServiceResult<FileModel>
                     {
                         StatusCode = HttpStatusCode.InternalServerError,
-                        ErrorMessage = errorMessage,
-                        ReasonPhrase = errorMessage
+                        ErrorMessage = errorMessage
                     };
                 }
             }
@@ -307,8 +301,7 @@ namespace Api.Modules.Files.Services
                 return new ServiceResult<(string ContentType, byte[] Data, string Url)>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = "File not found",
-                    ReasonPhrase = "File not found"
+                    ErrorMessage = "File not found"
                 };
             }
 
@@ -327,8 +320,7 @@ namespace Api.Modules.Files.Services
                 return new ServiceResult<(string ContentType, byte[] Data, string Url)>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = "File not found",
-                    ReasonPhrase = "File not found"
+                    ErrorMessage = "File not found"
                 };
             }
             
@@ -395,7 +387,6 @@ namespace Api.Modules.Files.Services
                 return new ServiceResult<bool>
                 {
                     ErrorMessage = errorMessage,
-                    ReasonPhrase = errorMessage,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -489,7 +480,6 @@ namespace Api.Modules.Files.Services
                 return new ServiceResult<bool>
                 {
                     ErrorMessage = errorMessage,
-                    ReasonPhrase = errorMessage,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -533,7 +523,6 @@ namespace Api.Modules.Files.Services
                 return new ServiceResult<bool>
                 {
                     ErrorMessage = errorMessage,
-                    ReasonPhrase = errorMessage,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -566,7 +555,6 @@ namespace Api.Modules.Files.Services
                 return new ServiceResult<FileModel>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ReasonPhrase = "No files found in the request",
                     ErrorMessage = "No files found in the request"
                 };
             }
@@ -580,7 +568,6 @@ namespace Api.Modules.Files.Services
                 return new ServiceResult<FileModel>
                 {
                     ErrorMessage = errorMessage,
-                    ReasonPhrase = errorMessage,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -623,7 +610,6 @@ namespace Api.Modules.Files.Services
                 return new ServiceResult<bool>
                 {
                     ErrorMessage = errorMessage,
-                    ReasonPhrase = errorMessage,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }

@@ -16,6 +16,7 @@ using Api.Modules.Customers.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
+using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -30,6 +31,7 @@ namespace Api.Modules.Branches.Services
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<BranchesService> logger;
+        private readonly IWiserItemsService wiserItemsService;
         private readonly IDatabaseConnection wiserDatabaseConnection;
         
         private readonly List<string> entityTypesToSkipWhenSynchronisingEnvironments = new()
@@ -47,12 +49,13 @@ namespace Api.Modules.Branches.Services
         /// <summary>
         /// Creates a new instance of <see cref="BranchesService"/>.
         /// </summary>
-        public BranchesService(IWiserCustomersService wiserCustomersService, IDatabaseConnection connection, IDatabaseHelpersService databaseHelpersService, ILogger<BranchesService> logger)
+        public BranchesService(IWiserCustomersService wiserCustomersService, IDatabaseConnection connection, IDatabaseHelpersService databaseHelpersService, ILogger<BranchesService> logger, IWiserItemsService wiserItemsService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.clientDatabaseConnection = connection;
             this.databaseHelpersService = databaseHelpersService;
             this.logger = logger;
+            this.wiserItemsService = wiserItemsService;
 
             if (clientDatabaseConnection is ClientDatabaseConnection databaseConnection)
             {
@@ -68,7 +71,6 @@ namespace Api.Modules.Branches.Services
                 return new ServiceResult<CustomerModel>
                 {
                     ErrorMessage = "Name is empty",
-                    ReasonPhrase = "Name is empty",
                     StatusCode = HttpStatusCode.BadRequest
                 };
             }
@@ -115,7 +117,6 @@ namespace Api.Modules.Branches.Services
                 return new ServiceResult<CustomerModel>
                 {
                     ErrorMessage = customerExists.ErrorMessage,
-                    ReasonPhrase = customerExists.ReasonPhrase,
                     StatusCode = customerExists.StatusCode
                 };
             }
@@ -125,8 +126,7 @@ namespace Api.Modules.Branches.Services
                 return new ServiceResult<CustomerModel>
                 {
                     StatusCode = HttpStatusCode.Conflict,
-                    ErrorMessage = $"Een omgeving met de naam '{name}' bestaat al.",
-                    ReasonPhrase = $"Een omgeving met de naam '{name}' bestaat al."
+                    ErrorMessage = $"Een omgeving met de naam '{name}' bestaat al."
                 };
             }
 
@@ -136,8 +136,7 @@ namespace Api.Modules.Branches.Services
                 return new ServiceResult<CustomerModel>
                 {
                     StatusCode = HttpStatusCode.Conflict,
-                    ErrorMessage = $"We hebben geprobeerd een database aan te maken met de naam '{databaseName}', echter bestaat deze al. Kies a.u.b. een andere omgevingsnaam, of neem contact op met ons.",
-                    ReasonPhrase = $"We hebben geprobeerd een database aan te maken met de naam '{databaseName}', echter bestaat deze al. Kies a.u.b. een andere omgevingsnaam, of neem contact op met ons."
+                    ErrorMessage = $"We hebben geprobeerd een database aan te maken met de naam '{databaseName}', echter bestaat deze al. Kies a.u.b. een andere omgevingsnaam, of neem contact op met ons."
                 };
             }
 
@@ -543,6 +542,8 @@ namespace Api.Modules.Branches.Services
                                 await using (var environmentCommand = environmentConnection.CreateCommand())
                                 {
                                     AddParametersToCommand(sqlParameters, environmentCommand);
+                                    
+                                    // Replace wiser_itemlinkdetail with wiser_itemlink because we need to get the source and destination from [prefix]wiser_itemlink, even if this is an update for [prefix]wiser_itemlinkdetail.
                                     environmentCommand.CommandText = $@"SELECT item_id, destination_item_id FROM `{tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemLinkDetail, WiserTableNames.WiserItemLink)}` WHERE id = ?linkId";
                                     var linkDataTable = new DataTable();
                                     using var environmentAdapter = new MySqlDataAdapter(environmentCommand);
@@ -1163,6 +1164,14 @@ WHERE `id` = ?id";
                 
                 if (tableName.EndsWith(WiserTableNames.WiserItem, StringComparison.OrdinalIgnoreCase))
                 {
+                    command.CommandText = $@"SELECT entity_type FROM `{tableName}` WHERE id = ?ourId";
+                    var entityTypeDataTable = new DataTable();
+                    await adapter.FillAsync(entityTypeDataTable);
+                    var entityType = entityTypeDataTable.Rows[0].Field<string>("entity_type");
+                    var allLinkTypeSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
+                    var LinkTypesWithSource = allLinkTypeSettings.Where(l => String.Equals(l.SourceEntityType, entityType, StringComparison.OrdinalIgnoreCase)).ToList();
+                    var LinkTypesWithDestination = allLinkTypeSettings.Where(l => String.Equals(l.DestinationEntityType, entityType, StringComparison.OrdinalIgnoreCase)).ToList();
+                    
                     var tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItem, "");
                     command.CommandText = $@"SET @saveHistory = FALSE;
 
@@ -1187,19 +1196,56 @@ SET item_id = ?productionId
 WHERE item_id = ?ourId;
 
 -- Update item files to use the new ID.
-UPDATE `{WiserTableNames.WiserItemFile}`
+UPDATE `{tablePrefix}{WiserTableNames.WiserItemFile}`
 SET item_id = ?productionId
-WHERE item_id = ?ourId;
+WHERE item_id = ?ourId;";
 
+                    // We need to check if there are any dedicated wiser_itemlink tables such as 123_wiser_itemlink and update the ID of the item in there.
+                    // If there are no dedicated tables, just update it in the main wiser_itemlink table.
+                    // This first block for links where the source item is the current item.
+                    if (!LinkTypesWithSource.Any())
+                    {
+                        command.CommandText += $@"
 -- Update item links to use the new ID.
 UPDATE `{WiserTableNames.WiserItemLink}`
 SET item_id = ?productionId
-WHERE item_id = ?ourId;
+WHERE item_id = ?ourId;";
+                    }
+                    else
+                    {
+                        foreach (var linkTypeSetting in LinkTypesWithSource)
+                        {
+                            var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSetting);
+                            command.CommandText += $@"
+-- Update item links to use the new ID.
+UPDATE `{linkTablePrefix}{WiserTableNames.WiserItemLink}`
+SET item_id = ?productionId
+WHERE item_id = ?ourId;";
+                        }
+                    }
 
+                    // This second block is for links where the destination is the current item.
+                    if (!LinkTypesWithDestination.Any())
+                    {
+                        command.CommandText += $@"
 -- Update item links to use the new ID.
 UPDATE `{WiserTableNames.WiserItemLink}`
 SET destination_item_id = ?productionId
 WHERE destination_item_id = ?ourId;";
+                    }
+                    else
+                    {
+                        foreach (var linkTypeSetting in LinkTypesWithDestination)
+                        {
+                            var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSetting);
+                            command.CommandText += $@"
+-- Update item links to use the new ID.
+UPDATE `{linkTablePrefix}{WiserTableNames.WiserItemLink}`
+SET destination_item_id = ?productionId
+WHERE destination_item_id = ?ourId;";
+                        }
+                    }
+
                     await command.ExecuteNonQueryAsync();
                 }
                 else if (tableName.EndsWith(WiserTableNames.WiserItemFile, StringComparison.OrdinalIgnoreCase) || tableName.EndsWith(WiserTableNames.WiserEntity, StringComparison.OrdinalIgnoreCase))
@@ -1221,7 +1267,11 @@ WHERE id = ?ourId;
 
 UPDATE `{tablePrefix}{WiserTableNames.WiserItemLinkDetail}` 
 SET link_id = ?productionId 
-WHERE link_id = ?ourId;";
+WHERE link_id = ?ourId;
+
+UPDATE `{tablePrefix}{WiserTableNames.WiserItemFile}` 
+SET itemlink_id = ?productionId 
+WHERE itemlink_id = ?ourId;";
                     await command.ExecuteNonQueryAsync();
                 }
                 else

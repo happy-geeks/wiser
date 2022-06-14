@@ -105,8 +105,7 @@ namespace Api.Modules.Queries.Services
                 return new ServiceResult<QueryModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Wiser query with ID '{id}' does not exist.",
-                    ReasonPhrase = $"Wiser query with ID '{id}' does not exist."
+                    ErrorMessage = $"Wiser query with ID '{id}' does not exist."
                 };
             }
                 
@@ -132,8 +131,7 @@ namespace Api.Modules.Queries.Services
                 return new ServiceResult<QueryModel>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "'Description' must contain a value.",
-                    ReasonPhrase = "'Description' must contain a value."
+                    ErrorMessage = "'Description' must contain a value."
                 };
             }
 
@@ -175,8 +173,7 @@ namespace Api.Modules.Queries.Services
                     return new ServiceResult<QueryModel>
                     {
                         StatusCode = HttpStatusCode.Conflict,
-                        ErrorMessage = $"An entry already exists with {nameof(queryModel.Query)} = '{queryModel.Query}', {nameof(queryModel.Description)} = '{queryModel.Description}' and {nameof(queryModel.ShowInExportModule)} = '{queryModel.ShowInExportModule}'",
-                        ReasonPhrase = "And entry already exists with this data."
+                        ErrorMessage = $"An entry already exists with {nameof(queryModel.Query)} = '{queryModel.Query}', {nameof(queryModel.Description)} = '{queryModel.Description}' and {nameof(queryModel.ShowInExportModule)} = '{queryModel.ShowInExportModule}'"
                     };
                 }
 
@@ -194,8 +191,7 @@ namespace Api.Modules.Queries.Services
                 return new ServiceResult<bool>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Either 'Query' or 'Description' must contain a value.",
-                    ReasonPhrase = "Either 'Query' or 'Description' must contain a value."
+                    ErrorMessage = "Either 'Query' or 'Description' must contain a value."
                 };
             }
             
@@ -206,7 +202,6 @@ namespace Api.Modules.Queries.Services
                 return new ServiceResult<bool>
                 {
                     ErrorMessage = queryResult.ErrorMessage,
-                    ReasonPhrase = queryResult.ReasonPhrase,
                     StatusCode = queryResult.StatusCode
                 };
             }
@@ -244,7 +239,6 @@ namespace Api.Modules.Queries.Services
                 return new ServiceResult<bool>
                 {
                     ErrorMessage = queryResult.ErrorMessage,
-                    ReasonPhrase = queryResult.ReasonPhrase,
                     StatusCode = queryResult.StatusCode
                 };
             }

@@ -367,6 +367,7 @@ namespace Api.Modules.Items.Controllers
 
         /// <summary>
         /// Get all items for a tree view for a specific parent.
+        /// This method does not work with dedicated tables for entity types or link types, because we can't know beforehand what entity types and link types a tree view will contain, so we have no way to know which dedicated tables to use.
         /// </summary>
         /// <param name="moduleId">The ID of the module.</param>
         /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>

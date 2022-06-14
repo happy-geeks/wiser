@@ -303,7 +303,6 @@ namespace Api.Modules.Items.Services
                 return new ServiceResult<WiserItemDuplicationResultModel>
                 {
                     ErrorMessage = exception.Message,
-                    ReasonPhrase = exception.Message,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -352,8 +351,7 @@ namespace Api.Modules.Items.Services
                     return new ServiceResult<WiserItemModel>
                     {
                         StatusCode = HttpStatusCode.BadRequest,
-                        ErrorMessage = $"Multiple environments functionality is disabled for entity type '{item.EntityType}'.",
-                        ReasonPhrase = $"Multiple environments functionality is disabled for entity type '{item.EntityType}'."
+                        ErrorMessage = $"Multiple environments functionality is disabled for entity type '{item.EntityType}'."
                     };
                 }
 
@@ -456,9 +454,13 @@ namespace Api.Modules.Items.Services
                     await wiserItemsService.SaveAsync(item, userId: userId, username: username, encryptionKey: encryptionKey);
                 }
 
+                var linksWithDedicatedTables = allLinkSettings.Where(l => String.Equals(l.SourceEntityType, item.EntityType, StringComparison.OrdinalIgnoreCase) || String.Equals(l.SourceEntityType, item.EntityType, StringComparison.OrdinalIgnoreCase)).ToList();
+
                 // Copy links.
                 var linksToKeep = new List<ulong>();
-                query = $@"SELECT
+                if (!linksWithDedicatedTables.Any())
+                {
+                    query = $@"SELECT
     link.id,
     link.type,
     link.destination_item_id,
@@ -468,13 +470,14 @@ JOIN {tablePrefix}{WiserTableNames.WiserItem} AS item1 ON item1.id = link.item_i
 JOIN {tablePrefix}{WiserTableNames.WiserItem} AS item2 ON item2.id = link.destination_item_id
 WHERE link.item_id = ?id
 OR link.destination_item_id = ?id";
-
-                foreach (var linkSettings in allLinkSettings.Where(l => String.Equals(l.SourceEntityType, item.EntityType, StringComparison.OrdinalIgnoreCase) || String.Equals(l.SourceEntityType, item.EntityType, StringComparison.OrdinalIgnoreCase)))
+                }
+                else
                 {
-                    var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkSettings);
-                    query += $@"
-UNION ALL
-SELECT
+                    var linkQueryBuilder = new List<string>();
+                    foreach (var linkSettings in linksWithDedicatedTables)
+                    {
+                        var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkSettings);
+                        linkQueryBuilder.Add($@"SELECT
     link.id,
     link.type,
     link.destination_item_id,
@@ -483,7 +486,10 @@ FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link
 JOIN {tablePrefix}{WiserTableNames.WiserItem} AS item1 ON item1.id = link.item_id
 JOIN {tablePrefix}{WiserTableNames.WiserItem} AS item2 ON item2.id = link.destination_item_id
 WHERE link.item_id = ?id
-OR link.destination_item_id = ?id";
+OR link.destination_item_id = ?id");
+                    }
+
+                    query = String.Join(" UNION ALL ", linkQueryBuilder);
                 }
 
                 clientDatabaseConnection.ClearParameters();
@@ -540,13 +546,20 @@ OR link.destination_item_id = ?id";
                     clientDatabaseConnection.ClearParameters();
                     clientDatabaseConnection.AddParameter("id", item.Id);
 
-                    query = $@"DELETE FROM {WiserTableNames.WiserItemLink} AS link WHERE (link.item_id = ?id OR link.destination_item_id = ?id) {wherePart};";
-                    foreach (var linkSettings in allLinkSettings.Where(l => String.Equals(l.SourceEntityType, item.EntityType, StringComparison.OrdinalIgnoreCase) || String.Equals(l.SourceEntityType, item.EntityType, StringComparison.OrdinalIgnoreCase)))
+                    if (!linksWithDedicatedTables.Any())
                     {
-                        var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkSettings);
-                        query += $@"
-DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link.item_id = ?id OR link.destination_item_id = ?id) {wherePart};";
+                        query = $@"DELETE FROM {WiserTableNames.WiserItemLink} AS link WHERE (link.item_id = ?id OR link.destination_item_id = ?id) {wherePart};";
                     }
+                    else
+                    {
+                        foreach (var linkSettings in linksWithDedicatedTables)
+                        {
+                            var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkSettings);
+                            query += $@"
+DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link.item_id = ?id OR link.destination_item_id = ?id) {wherePart};";
+                        }
+                    }
+
                     await clientDatabaseConnection.ExecuteAsync(query);
                 }
 
@@ -559,7 +572,6 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 return new ServiceResult<WiserItemModel>
                 {
                     ErrorMessage = exception.Message,
-                    ReasonPhrase = exception.Message,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -596,7 +608,6 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 return new ServiceResult<CreateItemResultModel>
                 {
                     ErrorMessage = exception.Message,
-                    ReasonPhrase = exception.Message,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -633,8 +644,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 return new ServiceResult<WiserItemModel>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Id must be greater than zero.",
-                    ReasonPhrase = "Id must be greater than zero."
+                    ErrorMessage = "Id must be greater than zero."
                 };
             }
 
@@ -650,7 +660,6 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 return new ServiceResult<WiserItemModel>
                 {
                     ErrorMessage = exception.Message,
-                    ReasonPhrase = exception.Message,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -684,7 +693,6 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 return new ServiceResult<bool>
                 {
                     ErrorMessage = exception.Message,
-                    ReasonPhrase = exception.Message,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -718,7 +726,6 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 return new ServiceResult<bool>
                 {
                     ErrorMessage = errorMessage,
-                    ReasonPhrase = errorMessage,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -781,8 +788,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     return new ServiceResult<string>
                     {
                         StatusCode = HttpStatusCode.NotFound,
-                        ErrorMessage = "Query ID does not exist or query not found.",
-                        ReasonPhrase = "Query ID does not exist or query not found."
+                        ErrorMessage = "Query ID does not exist or query not found."
                     };
                 }
 
@@ -792,8 +798,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     errorResult = new ServiceResult<string>
                     {
                         StatusCode = HttpStatusCode.NotFound,
-                        ErrorMessage = "Data query is empty!",
-                        ReasonPhrase = "Data query is empty!"
+                        ErrorMessage = "Data query is empty!"
                     };
                 }
             }
@@ -818,7 +823,6 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 return new ServiceResult<ActionButtonResultModel>
                 {
                     StatusCode = customQueryResult.StatusCode,
-                    ReasonPhrase = customQueryResult.ReasonPhrase,
                     ErrorMessage = customQueryResult.ErrorMessage
                 };
             }
@@ -832,8 +836,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 return new ServiceResult<ActionButtonResultModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = "Query 'GET_ITEM_DETAILS' not found or empty.",
-                    ReasonPhrase = "Query 'GET_ITEM_DETAILS' not found or empty."
+                    ErrorMessage = "Query 'GET_ITEM_DETAILS' not found or empty."
                 };
             }
 
@@ -917,8 +920,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 return new ServiceResult<ActionButtonResultModel>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Dit item bestaat al en kan niet nogmaals toegevoegd worden.",
-                    ReasonPhrase = "Dit item bestaat al en kan niet nogmaals toegevoegd worden."
+                    ErrorMessage = "Dit item bestaat al en kan niet nogmaals toegevoegd worden."
                 };
             }
 
@@ -980,8 +982,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 return new ServiceResult<ItemHtmlAndScriptModel>(results)
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Invalid item ID.",
-                    ReasonPhrase = "Invalid item ID."
+                    ErrorMessage = "Invalid item ID."
                 };
             }
 
@@ -1718,7 +1719,6 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 errorResult = new ServiceResult<T>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ReasonPhrase = "Property not found.",
                     ErrorMessage = $"Property with id '{propertyId}' not found."
                 };
 
@@ -1740,7 +1740,6 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             errorResult = new ServiceResult<T>
             {
                 StatusCode = HttpStatusCode.NotFound,
-                ReasonPhrase = "Er is geen query ingevuld voor deze actie van dit grid. Neem a.u.b. contact op met ons.",
                 ErrorMessage = $"No query found for the grid with property id '{propertyId}'."
             };
 
@@ -2192,8 +2191,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 return new ServiceResult<bool>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "The parameters encryptedSourceId, encryptedDestinationId, position, encryptedSourceParentId, encryptedDestinationParentId, sourceEntityType and destinationEntityType need to have a value",
-                    ReasonPhrase = "The parameters encryptedSourceId, encryptedDestinationId, position, encryptedSourceParentId, encryptedDestinationParentId, sourceEntityType and destinationEntityType need to have a value"
+                    ErrorMessage = "The parameters encryptedSourceId, encryptedDestinationId, position, encryptedSourceParentId, encryptedDestinationParentId, sourceEntityType and destinationEntityType need to have a value"
                 };
             }
 
@@ -2211,7 +2209,6 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 return new ServiceResult<bool>
                 {
                     ErrorMessage = errorMessage,
-                    ReasonPhrase = errorMessage,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -2250,7 +2247,6 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     return new ServiceResult<bool>
                     {
                         ErrorMessage = $"Items van type '{sourceEntityType}' mogen niet toegevoegd worden onder items van type '{destinationEntityType}'.",
-                        ReasonPhrase = $"Items van type '{sourceEntityType}' mogen niet toegevoegd worden onder items van type '{destinationEntityType}'.",
                         StatusCode = HttpStatusCode.BadRequest
                     };
                 }
@@ -2397,8 +2393,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     return new ServiceResult<bool>
                     {
                         StatusCode = HttpStatusCode.BadRequest,
-                        ErrorMessage = "Received more or less than 1 destination item ID for a link type that is set to use parent_item_id, this is not possible.",
-                        ReasonPhrase = "Received more or less than 1 destination item ID for a link type that is set to use parent_item_id, this is not possible."
+                        ErrorMessage = "Received more or less than 1 destination item ID for a link type that is set to use parent_item_id, this is not possible."
                     };
                 }
 
@@ -2443,8 +2438,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     return new ServiceResult<bool>
                     {
                         StatusCode = HttpStatusCode.BadRequest,
-                        ErrorMessage = "Received more or less than 1 destination item ID for a link type that is set to use parent_item_id, this is not possible.",
-                        ReasonPhrase = "Received more or less than 1 destination item ID for a link type that is set to use parent_item_id, this is not possible."
+                        ErrorMessage = "Received more or less than 1 destination item ID for a link type that is set to use parent_item_id, this is not possible."
                     };
                 }
 

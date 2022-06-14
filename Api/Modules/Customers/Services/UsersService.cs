@@ -468,8 +468,7 @@ namespace Api.Modules.Customers.Services
                 return new ServiceResult<UserModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = "User not found",
-                    ReasonPhrase = "User not found"
+                    ErrorMessage = "User not found"
                 };
             }
 
@@ -479,8 +478,7 @@ namespace Api.Modules.Customers.Services
                 return new ServiceResult<UserModel>
                 {
                     StatusCode = HttpStatusCode.Unauthorized,
-                    ErrorMessage = "Old password is incorrect.",
-                    ReasonPhrase = "Old password is incorrect."
+                    ErrorMessage = "Old password is incorrect."
                 };
             }
 
@@ -528,7 +526,6 @@ namespace Api.Modules.Customers.Services
                 return new ServiceResult<UserModel>
                 {
                     ErrorMessage = customer.ErrorMessage,
-                    ReasonPhrase = customer.ReasonPhrase,
                     StatusCode = customer.StatusCode
                 };
             }
@@ -559,7 +556,6 @@ namespace Api.Modules.Customers.Services
                     return new ServiceResult<UserModel>
                     {
                         ErrorMessage = productionCustomer.ErrorMessage,
-                        ReasonPhrase = productionCustomer.ReasonPhrase,
                         StatusCode = productionCustomer.StatusCode
                     };
                 }
@@ -827,7 +823,6 @@ namespace Api.Modules.Customers.Services
                 return new ServiceResult<bool>
                 {
                     ErrorMessage = "Only administrators are allowed to do this.",
-                    ReasonPhrase = "Only administrators are allowed to do this.",
                     StatusCode = HttpStatusCode.Unauthorized
                 };
             }
