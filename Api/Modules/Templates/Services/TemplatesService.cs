@@ -1448,16 +1448,6 @@ UNION ALL
 SELECT 'Media' AS type_text, 4 AS type_value 
 UNION ALL
 SELECT DISTINCT type AS type_text, type AS type_value FROM `wiser_itemlink` WHERE type > 100");
-                TemplateQueryStrings.Add("REMOVE_LINK", @"SET @sourceId = IF('{source_plain}' LIKE '{%}', '{source:decrypt(true)}', '{source_plain}');
-SET @destinationId = {destination:decrypt(true)};
-SET @_linkTypeNumber = IF('{linkTypeNumber}' LIKE '{%}' OR '{linkTypeNumber}' = '', '2', '{linkTypeNumber}');
-SET @orderNumber = IFNULL((SELECT MIN(ordering) FROM wiser_itemlink WHERE item_id = @sourceId AND destination_item_id = @destinationId AND type = @_linkTypeNumber), -1);
-SET @_username = '{username}';
-SET @_userId = '{encryptedUserId:decrypt(true)}';
-
-DELETE FROM wiser_itemlink WHERE item_id = @sourceId AND destination_item_id = @destinationId AND type = @_linkTypeNumber;
-
-UPDATE wiser_itemlink SET ordering = ordering - 1 WHERE @orderNumber > -1 AND ordering > @orderNumber AND destination_item_id = @destinationId AND type = @_linkTypeNumber;");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_FIELD_TABLE", @"#Verkrijg de kolommen die getoond moeten worden bij een specifiek soort entiteit
 SET @entitytype = '{entity_type}';
 SET @_linkType = '{linkType}';

@@ -1778,17 +1778,6 @@ const moduleSettings = {
         }
 
         /**
-         * Links two items together.
-         * @param {string} sourceId The ID of the item that you want to link.
-         * @param {string} destinationId The ID of the item that you want to link to.
-         * @param {number} linkTypeNumber The link type number.
-         * @returns {any} A promise with the result of the AJAX call.
-         */
-        async addItemLink(sourceId, destinationId, linkTypeNumber) {
-            return Wiser2.api({ url: `${this.settings.serviceRoot}/ADD_LINK?source=${encodeURIComponent(sourceId)}&destination=${encodeURIComponent(destinationId)}&linkTypeNumber=${encodeURIComponent(linkTypeNumber)}` });
-        }
-
-        /**
          * Update the link of an item, to link/move that item to another item.
          * @param {number} linkId The ID of the current link that you want to update.
          * @param {number} newDestinationId The ID of the item where you want to move the item to.
@@ -1806,7 +1795,16 @@ const moduleSettings = {
          * @returns {Promise} A promise with the result of the AJAX call.
          */
         async removeItemLink(sourceId, destinationId, linkTypeNumber) {
-            return Wiser2.api({ url: `${this.settings.serviceRoot}/REMOVE_LINK?source=${encodeURIComponent(sourceId)}&destination=${encodeURIComponent(destinationId)}&linkTypeNumber=${encodeURIComponent(linkTypeNumber)}` });
+            return Wiser2.api({
+                url: `${this.base.settings.wiserApiRoot}items/remove-links?moduleId=${this.base.settings.moduleId}`,
+                method: "DELETE",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    encryptedSourceIds: [sourceId],
+                    encryptedDestinationIds: [destinationId],
+                    linkType: linkTypeNumber
+                })
+            });
         }
 
         /**
@@ -1997,15 +1995,19 @@ const moduleSettings = {
          * @param {string} entityType The entity type of the item to get the HTML for.
          * @param {string} propertyIdSuffix Optional: The suffix for property IDs, this is required when opening items in a popup, so that the fields always have unique ID, even if they already exist in the main tab sheet.
          * @param {number} linkId Optional: The ID of the link between this item and another item. If you're opening this item via a specific link, you should enter the ID of that link, because it's possible to have fields/properties on a link instead of an item.
+         * @param {number} linkType Optional: The type number of the link between this item and another item. If you're opening this item via a specific link, you should enter the ID of that link, because it's possible to have fields/properties on a link instead of an item.
          * @returns {Promise} A promise with the results.
          */
-        async getItemHtml(itemId, entityType, propertyIdSuffix, linkId) {
+        async getItemHtml(itemId, entityType, propertyIdSuffix, linkId, linkType) {
             let url = `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}?entityType=${encodeURIComponent(entityType)}&encryptedModuleId=${encodeURIComponent(this.base.settings.encryptedModuleId)}`;
             if (propertyIdSuffix) {
                 url += `&propertyIdSuffix=${encodeURIComponent(propertyIdSuffix)}`;
             }
             if (linkId) {
                 url += `&itemLinkId=${encodeURIComponent(linkId)}`;
+            }
+            if (linkType) {
+                url += `&linkType=${encodeURIComponent(linkType)}`;
             }
             return Wiser2.api({ url: url });
         }

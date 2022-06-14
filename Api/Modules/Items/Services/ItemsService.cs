@@ -1034,7 +1034,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                                 # TODO: Find a more efficient way to load images and files?
                                 LEFT JOIN (
                                     SELECT item_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'added_on', added_on, 'content_url', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
-                                    FROM {wiserItemFileTable}{WiserTableNames.WiserItemFile}{{0}}
+                                    FROM {wiserItemFileTable}{{0}}
                                     WHERE item_id = ?itemId
                                     GROUP BY property_name
                                 ) files ON files.item_id = i.id AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND files.property_name = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND files.property_name = e.display_name))
@@ -1068,7 +1068,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                                 # TODO: Find a more efficient way to load images and files?
                                 LEFT JOIN (
                                     SELECT itemlink_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'added_on', added_on, 'content_url', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
-                                    FROM {wiserItemFileTableForLink}{WiserTableNames.WiserItemFile}{{0}}
+                                    FROM {wiserItemFileTableForLink}{{0}}
                                     WHERE itemlink_id = ?itemLinkId
                                     GROUP BY property_name
                                 ) files ON files.itemlink_id = il.id AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND files.property_name = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND files.property_name = e.display_name))
@@ -2381,6 +2381,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             var sourceIds = encryptedSourceIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
             var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
             var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType);
+            var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("linkType", linkType);
@@ -2402,7 +2403,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             }
             else
             {
-                query = $@"INSERT IGNORE INTO {WiserTableNames.WiserItemLink} (item_id, destination_item_id, type)
+                query = $@"INSERT IGNORE INTO {linkTablePrefix}{WiserTableNames.WiserItemLink} (item_id, destination_item_id, type)
                         SELECT source.id, destination.id, ?linkType
                         FROM {tablePrefix}{WiserTableNames.WiserItem} AS source
                         JOIN {tablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id IN ({String.Join(",", destinationIds)})
@@ -2426,6 +2427,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             var sourceIds = encryptedSourceIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
             var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
             var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType);
+            var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("linkType", linkType);
@@ -2446,7 +2448,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             }
             else
             {
-                query = $@"DELETE FROM {WiserTableNames.WiserItemLink} WHERE type = ?linkType AND destination_item_id IN ({String.Join(",", destinationIds)}) AND item_id IN ({String.Join(",", sourceIds)})";
+                query = $@"DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} WHERE type = ?linkType AND destination_item_id IN ({String.Join(",", destinationIds)}) AND item_id IN ({String.Join(",", sourceIds)})";
             }
 
             await clientDatabaseConnection.ExecuteAsync(query);

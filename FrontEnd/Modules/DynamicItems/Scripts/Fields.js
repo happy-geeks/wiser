@@ -1886,11 +1886,13 @@ export class Fields {
                         let windowItemId = action.itemId || "{itemId}";
                         let windowLinkId = action.linkId || "{linkId}";
                         let windowEntityType = action.entityType || null;
+                        let windowLinkType = action.linkType || action.linkTypeNumber || "{linkType}";
 
                         // The queryActionResult are from a previously executed query. This way you can combine the actions executeQuery(Once) and openWindow to open a newly created or updated item.
                         if (queryActionResult) {
                             windowItemId = windowItemId.replace(/{itemId}/gi, queryActionResult.itemId || 0);
                             windowLinkId = windowLinkId.replace(/{linkId}/gi, queryActionResult.linkId || 0);
+                            windowLinkId = windowLinkId.replace(/{linkType}/gi, queryActionResult.linkType || queryActionResult.linkTypeNumber || 0);
                         }
                         windowItemId = Wiser2.doWiserItemReplacements(windowItemId, mainItemDetails);
 
@@ -1904,7 +1906,7 @@ export class Fields {
 
                         const itemId = windowItemDetails.id || windowItemDetails.itemId || windowItemDetails.itemid || windowItemDetails.item_id;
                         const encryptedId = windowItemDetails.encryptedId || windowItemDetails.encrypted_id || windowItemDetails.encryptedid;
-                        this.base.windows.loadItemInWindow(false, itemId, encryptedId, windowItemDetails.entityType, windowItemDetails.title, true, null, { hideTitleColumn: false }, windowLinkId);
+                        this.base.windows.loadItemInWindow(false, itemId, encryptedId, windowItemDetails.entityType, windowItemDetails.title, true, null, { hideTitleColumn: false }, windowLinkId, null, null, windowLinkType);
 
                         break;
                     }

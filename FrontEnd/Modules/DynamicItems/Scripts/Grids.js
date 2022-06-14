@@ -1080,6 +1080,7 @@ export class Grids {
         let entityType = dataItem.entityType || dataItem.entity_type;
         let title = dataItem.title;
         const linkId = dataItem.linkId || dataItem.link_id;
+        const linkType = dataItem.linkTypeNumber || dataItem.link_type_number || dataItem.linkType || dataItem.link_type;
 
         if (options.fromMainGrid && this.base.settings.openGridItemsInBlock) {
             this.base.grids.informationBlockIframe.attr("src", `${"/Modules/DynamicItems"}?itemId=${encryptedId}&moduleId=${this.base.settings.moduleId}&iframe=true`);
@@ -1160,7 +1161,7 @@ export class Grids {
             return;
         }
 
-        this.base.windows.loadItemInWindow(false, itemId, encryptedId, entityType, title, !options.hideTitleFieldInWindow, grid, options, linkId);
+        this.base.windows.loadItemInWindow(false, itemId, encryptedId, entityType, title, !options.hideTitleFieldInWindow, grid, options, linkId, null, null, linkType);
     }
 
     /**
@@ -1266,6 +1267,7 @@ export class Grids {
         // get the data bound to the current table row
         const dataItem = senderGrid.dataItem(tr);
         let encryptedId = dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid;
+        let itemId = dataItem.itemId || dataItem.item_id || dataItem.id;
         let selectedItemDetails = {};
 
         if (!encryptedId) {
@@ -1324,8 +1326,9 @@ export class Grids {
                                 text: "Alleen koppeling",
                                 primary: true,
                                 action: (e) => {
+                                    console.log("huh", dataItem, senderGrid.element.closest(".item").data());
                                     const destinationItemId = dataItem.encryptedDestinationItemId || senderGrid.element.closest(".item").data("itemIdEncrypted");
-                                    this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.link_type_number).then(() => {
+                                    this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.linkTypeNumber || dataItem.link_type_number).then(() => {
                                         senderGrid.dataSource.read();
                                     });
                                 }
