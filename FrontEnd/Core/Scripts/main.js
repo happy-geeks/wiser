@@ -168,6 +168,9 @@ import {
                     },
                     changePasswordError() {
                         return this.$store.state.users.changePasswordError;
+                    },
+                    customerManagementIsOpened() {
+                        return this.$store.state.modules.openedModules.filter(m => m.moduleId === "customerManagement").length > 0;
                     }
                 },
                 components: {
@@ -265,6 +268,7 @@ import {
                     },
 
                     async openCustomerManagement() {
+
                         this.openModule({
                             moduleId: "customerManagement",
                             name: "Klant toevoegen",
