@@ -24,15 +24,8 @@ export class Template {
         this.base = base;
     }
 
-    /**
-     * Do all initializations for the Fields class, such as adding bindings.
-     */
     initialize() {
-        /*$("#commitTemplate").kendoButton({
-            click: this.testFunc.bind(),
-
-            icon: "file"
-        });*/
+        
     }
 
     async PublishTemplate(templateId, environment, version) {
@@ -68,38 +61,13 @@ export class Template {
                 data: JSON.stringify(templateCommitData)
             });
 
-
             return templateData;
         } catch (exception) {
             console.error(exception);
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
         }
     }
-    /*
-    async UpdateTemplateEnvironment(templateId, version, environment) {
-        try {
-
-            const templateCommitData = {
-                TemplateId: templateId,
-                Version: version,
-                Enviornment: environment
-
-            }
-
-            const createCommit = await Wiser2.api({
-                url: `${this.base.settings.wiserApiRoot}VersionControl/update-template`,
-                method: "PUT",
-                contentType: "application/json",
-                data: JSON.stringify(templateCommitData)
-            });
-
-            return createCommit;
-
-        } catch (exception) {
-            console.error(exception);
-            kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
-        }
-    }*/
+    
     async GetTemplatesFromCommit(commitId) {
 
         try {
@@ -116,24 +84,4 @@ export class Template {
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
         }
     }
-
-    /*
-    async UpdatePublishEnvironmentTemplate(publishNumber, templateId) {
-        try {
-
-
-            const createCommit = await Wiser2.api({
-                url: `${this.base.settings.wiserApiRoot}VersionControl/${templateId}/${publishNumber}`,
-                method: "PUT",
-                contentType: "application/json"
-            });
-
-        } catch (exception) {
-            console.error(exception);
-            kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
-        }
-    }*/
-
-   
-
 }

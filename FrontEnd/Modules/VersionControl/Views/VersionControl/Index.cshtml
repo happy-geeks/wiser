@@ -15,50 +15,7 @@
     </script>
     
     <script type="text/javascript" src=""></script>
-    <style>
-
-                /* Style the tab */
-        .tab {
-            overflow: hidden;
-            border: 1px solid #ccc;
-            background-color: #f1f1f1;
-        }
-
-        /* Style the buttons that are used to open the tab content */
-        .tab button {
-            background-color: inherit;
-            float: left;
-            border: none;
-            outline: none;
-            cursor: pointer;
-            padding: 14px 16px;
-            transition: 0.3s;
-        }
-
-        /* Change background color of buttons on hover */
-        .tab button:hover {
-            background-color: #ddd;
-        }
-
-        /* Create an active/current tablink class */
-        .tab button.active {
-            background-color: #ccc;
-        }
-
-        /* Style the tab content */
-        .tabcontent {
-            display: none;
-            padding: 6px 12px;
-            border: 1px solid #ccc;
-            border-top: none;
-        }
-
-        #commit-data {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-        }
-
-    </style>
+ 
     
 
 </head>
@@ -90,9 +47,9 @@
 
             <!-- Tab selection -->
             <div class="tab">
-                <button class="tablinks active" onclick="openTabs(event, 'Commit')">Commit change history</button>
-                <button class="tablinks" onclick="openTabs(event, 'Deploy')">Deploy</button>
-                <button class="tablinks" onclick="openTabs(event, 'History')">History</button>
+                <button class="tablinks active" value="Commit">Commit change history</button>
+                <button class="tablinks" value="Deploy">Deploy</button>
+                <button class="tablinks" value="History">History</button>
             </div>
 
             <!-- Tab content -->
@@ -103,9 +60,9 @@
                     </div>
 
                     <div id="checkbox-data">
-                        <input type="checkbox" id="commitTest" value="commitTest" /> Zet commit naar test omgeving<br />
-                        <input type="checkbox" id="commitAcceptatie" value="commitAcceptatie" onclick="onLiveSelect()" /> Zet commit naar acceptatie omgeving<br />
-                        <input type="checkbox" id="commitLive" value="commitLive" onclick="onLiveSelect();" /> Zet commit naar live omgeving
+                        <input type="checkbox" id="commitTest" class="commitCheckbox" value="commitTest" /> Zet commit naar test omgeving<br />
+                        <input type="checkbox" id="commitAcceptatie" class="commitCheckbox" value="commitAcceptatie"/> Zet commit naar acceptatie omgeving<br />
+                        <input type="checkbox" id="commitLive" class="commitCheckbox" value="commitLive"/> Zet commit naar live omgeving
                     </div>
                 </div>
                 
@@ -127,14 +84,7 @@
                 <button class="evironment_deploy" value="live">to live</button>
                 <button class="evironment_deploy" value="accept">to acceptatie</button>
                 <button class="evironment_deploy" value="test">to test</button>
-                
-                <!--
-                <div id="DynamicContentDeployGrid"></div>
 
-                <button class="environment_dynamic_content" value="live">to live</button>
-                <button class="environment_dynamic_content" value="accept">to acceptatie</button>
-                <button class="environment_dynamic_content" value="test">to test</button>
-                -->
 
             </div>
 
@@ -151,46 +101,6 @@
                 <button class="environment_dynamic_content_history" value="test">to test</button>
 
             </div>
-
-            
-            
-
-
-            <script>
-
-
-                function openTabs(evt, tabName) {
-                    var i, tabcontent, tablinks;
-                    tabcontent = document.getElementsByClassName("tabcontent");
-                    for (i = 0; i < tabcontent.length; i++) {
-                        tabcontent[i].style.display = "none";
-                    }
-                    tablinks = document.getElementsByClassName("tablinks");
-                    for (i = 0; i < tablinks.length; i++) {
-
-                        tablinks[i].className = tablinks[i].className.replace(" active", "");
-                    }
-                    document.getElementById(tabName).style.display = "block";
-
-                    evt.currentTarget.className += " active";
-                }
-
-
-
-
-
-                function onLiveSelect() {
-                    if (document.getElementById("commitLive").checked) {
-                        document.getElementById("commitAcceptatie").checked = true;
-                        document.getElementById("commitTest").checked = true;
-                    } else if (document.getElementById("commitAcceptatie").checked) {
-                        document.getElementById("commitTest").checked = true;
-                    }
-                }
-
-
-            </script>
-
 
 
             <div id="informationBlock" class="hidden"></div>
@@ -270,18 +180,6 @@
         </div>
     </div>
 
-    
-
-
-
-   
-    
-
-
-    
-    
-    
-
     <div id="gridDeleteDialog"></div>
 
     <div id="data-builder" class="x-window"></div>
@@ -357,7 +255,7 @@
     </script>
     <script id="userGridParameterTemplate" type="text/x-kendo-template">
         <div class="new-item-dialog-row" id="comboBoxUserParameterContainer">
-            <div class="grid" id="gridUserParameter"></grid>
+            <div class="grid" id="gridUserParameter"></div>
         </div>
     </script>
     <script id="userFileUploadParameterTemplate" type="text/x-kendo-template">

@@ -22,7 +22,6 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             this.clientDatabaseConnection = clientDatabaseConnection;
         }
 
-
         /// <inheritdoc />
         public async Task<DynamicContentModel> GetDynamicContentAsync(int contentId, int version)
         {
@@ -41,7 +40,6 @@ namespace Api.Modules.VersionControl.Service.DataLayer
                 Component = dataTable.Rows[0]["component"].ToString(),
                 LatestVersion = Convert.ToInt32(dataTable.Rows[0]["version"])
             };
-
 
             return dynamicContentModel;
         }

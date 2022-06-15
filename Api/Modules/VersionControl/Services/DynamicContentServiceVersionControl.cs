@@ -51,8 +51,6 @@ namespace Api.Modules.VersionControl.Service
             var versionsAndPublished =
                 await dynamicContentDataService.GetDynamicContentEnvironmentsAsync(dynamicContentId);
 
-
-
             return new ServiceResult<PublishedEnvironmentModel>(
                 PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
         }
@@ -70,8 +68,6 @@ namespace Api.Modules.VersionControl.Service
             {
                 throw new ArgumentException("The version is invalid");
             }
-
-
 
             var newPublished =
                 PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);

@@ -58,8 +58,6 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
             if (dataTable.Rows.Count != 0)
             {
-
-
                 var versionControlModel = new TemplateEnvironments()
                 {
                     TemplateId = Convert.ToInt32(dataTable.Rows[0]["template_id"]),
@@ -67,22 +65,15 @@ namespace Api.Modules.VersionControl.Service.DataLayer
                     {
                         VersionList = new List<int>()
                     }
-                    //Version = Convert.ToInt32(dataTable.Rows[0]["version"]),
                 };
 
 
                 foreach (DataRow template in dataTable.Rows)
                 {
-                    Console.WriteLine(template["published_environment"]);
-
-                    //PublishedEnvironmentModel publishedEnvironment = new PublishedEnvironmentModel();
-
-
                     if (Convert.ToInt32(template["published_environment"]) == 2)
                     {
                         versionControlModel.PublishedEnvironments.TestVersion = 1;
                         versionControlModel.PublishedEnvironments.VersionList.Add(Convert.ToInt32(dataTable.Rows[0]["version"]));
-
                     }
                     else if (Convert.ToInt32(template["published_environment"]) == 4)
                     {
@@ -94,12 +85,8 @@ namespace Api.Modules.VersionControl.Service.DataLayer
                         versionControlModel.PublishedEnvironments.AcceptVersion = 1;
                         versionControlModel.PublishedEnvironments.VersionList.Add(Convert.ToInt32(dataTable.Rows[0]["version"]));
                     }
-
                 }
-
-
                 return versionControlModel;
-
             }
             else
             {
@@ -111,8 +98,6 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         /// <inheritdoc />
         public async Task<bool> CreateNewTemplateCommitAsync(TemplateCommitModel templateCommitModel)
         {
-
-
             var query = $@"INSERT INTO dev_template_live (commitid,itemid,version) VALUES (?commitid,?itemid,?version)";
 
             clientDatabaseConnection.ClearParameters();
@@ -120,17 +105,9 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             clientDatabaseConnection.AddParameter("itemid", templateCommitModel.TemplateId);
             clientDatabaseConnection.AddParameter("version", templateCommitModel.Version);
 
-
-
-
             var dataTable = await clientDatabaseConnection.ExecuteAsync(query);
 
-
-
             return true;
-
-
-
         }
 
         /// <inheritdoc />
@@ -147,10 +124,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             clientDatabaseConnection.AddParameter("itemid", templateCommitModel.TemplateId);
             clientDatabaseConnection.AddParameter("version", templateCommitModel.Version);
 
-
             var dataTable = await clientDatabaseConnection.ExecuteAsync(query);
-
-
 
             return true;
         }

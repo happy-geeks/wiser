@@ -27,38 +27,22 @@ export class Grids {
 
     }
 
-   
-
-    /**
-     * Do all initializations for the Grids class, such as adding bindings.
-     */
+  
     async initialize() {
 
-      
-        console.log(this.base.settings.gridViewOptionParse);
         this.base.settings.gridViewOptionParse = this.base.settings.gridViewOptionParse || {};   
-
-        console.log(this.base.settings.gridViewOptionParse);
-        console.log(this.gridsAreLoaded);
         await this.getModuleGridData(6001);
-        console.log(this.gridsAreLoaded);
-
-        console.log("IDK2");
-       
     }
 
  
 
     async getModuleGridData(moduleId) {
-        
-
         try {
             const moduleGridSettings = await Wiser2.api({
                 url: `${this.base.settings.wiserApiRoot}VersionControl/module-gird-settings/${moduleId}`,
                 method: "GET",
                 contentType: "application/json",
             });
-
 
             for (const [key, value] of Object.entries(moduleGridSettings)) {
 
@@ -67,26 +51,15 @@ export class Grids {
                 var gridOptions = value["gridOptions"];
                 var gridDivId = value["gridDivId"];
 
-
-                console.log(gridDivId);
-
                 await this.setupGridViewMode(customQuery, countQuery, gridOptions, gridDivId);
             } 
-
-
-
         } catch (exception) {
             console.error(exception);
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
         } finally {
-            //this.mainGridFirstLoad = false;
         }
-
-   
-
     }
-   
-    
+
 
     async getData() {
         const getStuff = await Wiser2.api({
@@ -97,18 +70,10 @@ export class Grids {
         return getStuff;
     }
 
-    
-
-    /**
-     * Setup the main grid for when the module has gridViewMode enabled.
-     */
-
 
     async setupGridViewMode(customQuery,countQuery, gridOptions, gridViewId) {
 
         var gridViewOptionParse = JSON.parse(gridOptions);
-
-        console.log(gridViewOptionParse);
 
         const initialProcess = `loadMainGrid_${Date.now()}`;
 
@@ -117,13 +82,10 @@ export class Grids {
            
             const gridViewOptionsSettings = JSON.parse(gridOptions);
 
-
             let gridViewSettings = gridViewOptionsSettings.gridViewSettings;
             let gridViewOptionParse = $.extend({}, this.base.settings.gridViewOptionParse);
             let gridDataResult;
             let previousFilters = null;
-
-            console.log(gridViewSettings);
 
             const usingDataSelector = !!gridViewOptionParse.dataSelectorId;
             
@@ -142,14 +104,11 @@ export class Grids {
                 gridReadOptions: options
             }
 
-
-
             if (gridViewOptionParse.dataSource && gridViewOptionParse.dataSource.filter) {
                 options.filter = gridViewOptionParse.dataSource.filter;
                 previousFilters = JSON.stringify(options.filter);
             }
 
-                //gets grid options and executes sql querry in database
                 gridDataResult = await Wiser2.api({
                     url: `${this.base.settings.wiserApiRoot}VersionControl/${encodeURIComponent(this.base.settings.moduleId)}/overview-grid`,
                     method: "POST",
@@ -157,20 +116,10 @@ export class Grids {
                     data: JSON.stringify(test)
                 });
 
-                
-                console.log(gridDataResult);
-                //foreach row in result get commit_data and set it to html
-           
 
-
-       
-            
                 if (gridDataResult.extraJavascript) {
                     $.globalEval(gridDataResult.extraJavascript);
                 }
-
-            
-            
 
             let disableOpeningOfItems = gridViewSettings.disableOpeningOfItems;
             if (!disableOpeningOfItems) {
@@ -180,11 +129,9 @@ export class Grids {
                 }
             }
             
-
             if (!gridViewSettings.hideCommandColumn) {
                 let commandColumnWidth = 80;
                 const commands = [];
-
 
                 if (!disableOpeningOfItems) {
                     commands.push({
@@ -234,30 +181,16 @@ export class Grids {
                         click: (event) => { this.base.grids.onDeleteItemClick(event, this.mainGrid, "deleteItem", gridViewSettings); }
                     });
                 }
-                /*
-                if (gridDataResult.columns) {
-                    gridDataResult.columns.push({
-                        title: "&nbsp123;",
-                        width: commandColumnWidth,
-                        command: commands
-                    });
-                }*/
+               
             }
 
             const toolbar = [];
-
-         
-
-
-          
 
             if (gridViewSettings.toolbar && gridViewSettings.toolbar.customActions && gridViewSettings.toolbar.customActions.length > 0) {
                 this.addCustomActionsToToolbar("#gridView", 0, 0, toolbar, gridViewSettings.toolbar.customActions);
             }
 
             let totalResults = gridDataResult.totalResults;
-
-
             // Setup filters. They are turned off by default, but can be turned on with default settings.
             let filterable = false;
             const defaultFilters = {
@@ -286,12 +219,8 @@ export class Grids {
                 filterable = $.extend(true, {}, defaultFilters, gridViewSettings.filterable);
             }
 
-            
-
-            // Delete properties that we have already defined, so that they won't be overwritten again by the $.extend below.
             delete gridViewSettings.filterable;
             delete gridViewSettings.toolbar;
-
 
             let columns = gridViewSettings.columns || [];
             if (columns) {
@@ -307,7 +236,7 @@ export class Grids {
                 }
 
                 if (columns.length === 0) {
-                    columns = undefined; // So that Kendo auto generated the columns, it won't do that if we give an empty array.
+                    columns = undefined; 
                 } else {
                     columns = columns.map(e => {
                         const result = e;
@@ -320,7 +249,6 @@ export class Grids {
             }
 
            
-            console.log("test");
             const finalGridViewSettings = $.extend(true, {
                 dataSource: {
                     serverPaging: !usingDataSelector && !gridViewSettings.clientSidePaging,
@@ -333,17 +261,11 @@ export class Grids {
                             const process = `loadMainGrid_${Date.now()}`;
                             
                             try {
-
-                                //list of grids with bools
-                                //if (this.mainGridFirstLoad) {
-                                    console.log("First Load");
-                                    transportOptions.success(gridDataResult);
-                                    this.mainGridFirstLoad = false;
-                                    window.processing.removeProcess(initialProcess);
-                                    return;
-                                //}
-                                console.log("Not First Load");
-
+                                transportOptions.success(gridDataResult);
+                                this.mainGridFirstLoad = false;
+                                window.processing.removeProcess(initialProcess);
+                                return;
+                              
                                 if (!transportOptions.data) {
                                     transportOptions.data = {};
                                 }
@@ -378,7 +300,7 @@ export class Grids {
                                     var uid = finalGridViewSettings.dataSource.fields[0].uid;
                                     var uidElement = document.getElementById(uid);
                                     var table = uidElement.closest("[data-role='grid']");
-                                    console.log(table);
+                                    
 
 
                                     newGridDataResult = await Wiser2.api({
@@ -442,33 +364,20 @@ export class Grids {
             finalGridViewSettings.toolbar = toolbar.length === 0 ? null : toolbar;
             finalGridViewSettings.columns = columns;
 
-
-           
-            console.log(finalGridViewSettings);
-            
-
             this.mainGrid = $(gridViewId).kendoGrid(finalGridViewSettings).data("kendoGrid");
-
-         
            
             await this.loadGridViewState(`main_grid_columns_${this.base.settings.moduleId}`, this.mainGrid);
 
             if (!disableOpeningOfItems) {
                 this.mainGrid.element.on("dblclick", "tbody tr[data-uid] td", (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }); });
             }
-            this.mainGrid.element.find(".k-i-refresh").parent().click(this.base.onMainRefreshButtonClick.bind(this.base));
+            
         } catch (exception) {
             kendo.alert("Er is iets fout gegaan tijdens het laden van de data voor deze module. Sluit a.u.b. de module en probeer het nogmaals, of neem contact op met ons.");
             console.error(exception);
             window.processing.removeProcess(initialProcess);
         }
     }
-
-
-
-
-    
-
 
     async loadGridViewState(key, grid) {
 
@@ -484,7 +393,6 @@ export class Grids {
             });
 
             sessionStorage.setItem(key, value || "[]");
-           
         }
 
         if (!value) {

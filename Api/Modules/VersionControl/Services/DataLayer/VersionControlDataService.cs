@@ -58,10 +58,6 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             return versionList;
         }
 
-
-
-
-
         /// <inheritdoc />
         public Task<bool> CreatePublishLog(int templateId, int version)
         {
@@ -133,7 +129,6 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
             clientDatabaseConnection.AddParameter("templateId", templateId);
         
-
             List<DynamicContentModel> dynamicContentModelList = new List<DynamicContentModel>();
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
@@ -145,10 +140,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
                     {
                         Id = row.Field<int>("id"),
                         Version = row.Field<int>("version"),
-
                     }
-
-
                 );
             }
 
@@ -158,7 +150,11 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         /// <inheritdoc />
         public async Task<List<DynamicContentCommitModel>> GetDynamicContentfromCommitAsync(int commitId)
         {
-            var query = "SELECT wcdc.*\nFROM wiser_commit_dynamic_content wcdc\nLEFT JOIN wiser_commit_dynamic_content x ON x.dynamic_content_id = wcdc.dynamic_content_id AND x.version = wcdc.version       \nWHERE wcdc.version = (SELECT MAX(version) FROM wiser_commit_dynamic_content x2 WHERE x2.dynamic_content_id = wcdc.dynamic_content_id) \nAND wcdc.commit_id = ?commitId";
+            var query = @"SELECT wcdc.* 
+                        FROM wiser_commit_dynamic_content wcdc 
+                        LEFT JOIN wiser_commit_dynamic_content x ON x.dynamic_content_id = wcdc.dynamic_content_id AND x.version = wcdc.version 
+                        WHERE wcdc.version = (SELECT MAX(version) FROM wiser_commit_dynamic_content x2 WHERE x2.dynamic_content_id = wcdc.dynamic_content_id) 
+                        AND wcdc.commit_id = ?commitId";
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("commitId", commitId);

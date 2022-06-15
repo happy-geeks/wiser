@@ -38,7 +38,6 @@ export class Commit {
                 ChangedBy: changedBy
             };
 
-
             const createCommit = await Wiser2.api({
                 url: `${this.base.settings.wiserApiRoot}VersionControl`,
                 method: "PUT",
@@ -51,21 +50,17 @@ export class Commit {
         } catch (exception) {
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
         }
-
-
     }
 
 
     async GetCommitWithId() {
         try {
 
-
             const templateData = await Wiser2.api({
                 url: `${this.base.settings.wiserApiRoot}VersionControl/Commit`,
                 method: "GET",
                 contentType: "application/json",
             });
-
 
             return templateData
         } catch (exception) {

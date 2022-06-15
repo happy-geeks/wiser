@@ -56,8 +56,6 @@ namespace Api.Modules.VersionControl.Service
             templateCommitModel.IsAcceptance = isAcceptatie;
             templateCommitModel.IsLive = isLive;
 
-
-
             var result = await templateDataService.CreateNewTemplateCommitAsync(templateCommitModel);
 
             return new ServiceResult<bool>(result);

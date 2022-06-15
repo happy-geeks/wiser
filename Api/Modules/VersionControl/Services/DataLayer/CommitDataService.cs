@@ -23,7 +23,6 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         /// <inheritdoc />
         public async Task<CreateCommitModel> CreateCommitAsync(CreateCommitModel commitModel)
         {
-            //INSERT QUERRY FOR dev_commit
             var query = $@"INSERT INTO dev_commit (description,changedby) VALUES (?description,?changedby)";
 
             clientDatabaseConnection.ClearParameters();
@@ -53,10 +52,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             clientDatabaseConnection.AddParameter("version", commitItemModel.Version);
             var dataTable = await clientDatabaseConnection.ExecuteAsync(query);
 
-
-
             return true;
-
         }
 
         /// <inheritdoc />
@@ -73,24 +69,15 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             string description = dataTable.Rows[0]["description"].ToString();
             int asanaId = 0;
             string date = dataTable.Rows[0]["addedon"].ToString();
-            //DateTime addedOn = DateTime.ParseExact(date, "HH:mm:ss dd.M.yyyy", System.Globalization.CultureInfo.InvariantCulture);
             string changedBy = dataTable.Rows[0]["changedby"].ToString();
-
 
             return new CreateCommitModel()
             {
                 id = id,
                 Description = description,
                 AsanaId = asanaId,
-                //AddedOn = addedOn,
                 ChangedBy = changedBy
             };
-
-
-
-
-
         }
-
     }
 }

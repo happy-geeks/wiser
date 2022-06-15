@@ -24,7 +24,6 @@ namespace Api.Modules.VersionControl.Service
                 throw new ArgumentException("No commit message!");
             }
 
-
             var result = await commitDataService.CreateCommitAsync(commitModel);
 
             return new ServiceResult<CreateCommitModel>(result);
