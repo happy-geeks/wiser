@@ -667,7 +667,8 @@ WHERE tab_name = '{tabName}' AND entity_name = '{entityName}'
 ORDER BY ordering ASC");
                 TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
 	entity.id,
-	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(entity.friendly_name, IF(entity.name = '', 'ROOT', entity.name))) AS name 
+    entity.name,
+	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(entity.friendly_name, IF(entity.name = '', 'ROOT', entity.name))) AS formattedName 
 FROM wiser_entity AS entity
 LEFT JOIN wiser_module AS module ON module.id = entity.module_id
 ORDER BY module.name ASC, entity.module_id ASC, entity.name ASC");
@@ -1035,7 +1036,7 @@ SET @_save_title_as_seo = '{saveTitleAsSeo}';
 #SET @_api_before_update = {apiBeforeUpdate};
 #SET @_api_before_delete = {apiBeforeDelete};
 SET @_show_title_field = '{showTitleField}';
-SET @_friendly_name = '{friendlyName}';
+SET @_friendly_name = IF('{friendlyName}' = '' OR '{friendlyName}' LIKE '{%}', NULL, '{friendlyName}');
 SET @_save_history = '{saveHistory}';
 SET @_default_ordering = '{defaultOrdering}';
 SET @_dedicated_table_prefix = '{dedicatedTablePrefix}';
@@ -2290,6 +2291,10 @@ SET @querytext = (SELECT REPLACE(REPLACE(IFNULL(data_query, 'SELECT 0 AS id, "" 
 
 PREPARE stmt1 FROM @querytext;
 EXECUTE stmt1;");
+                TemplateQueryStrings.Add("GET_WISER_LINK_LIST", @"SELECT *,
+CONCAT(`name`, ' --> #', type, ' connected entity: ""', connected_entity_type ,'"" destination entity: ""', destination_entity_type, '""')AS formattedName
+FROM `wiser_link`
+ORDER BY type");
             }
         }
 

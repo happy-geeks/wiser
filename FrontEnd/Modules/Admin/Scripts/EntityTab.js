@@ -666,12 +666,12 @@ export class EntityTab {
             placeholder: "Select gewenste entiteit...",
             clearButton: false,
             height: 400,
-            dataTextField: "name",
+            dataTextField: "formattedName",
             dataValueField: "id",
             filter: "contains",
             optionLabel: {
                 id: "",
-                name: "Maak uw keuze..."
+                formattedName: "Maak uw keuze..."
             },
             minLength: 1,
             dataSource: {},
@@ -742,7 +742,7 @@ export class EntityTab {
 
         this.dataSourceEntities = $("#dataSourceEntities").kendoDropDownList({
             clearButton: false,
-            dataTextField: "name",
+            dataTextField: "formattedName",
             dataValueField: "id",
             filter: "contains",
             minLength: 1,
@@ -751,7 +751,7 @@ export class EntityTab {
 
         this.linkedItemEntity = $("#linkedItemEntity").kendoDropDownList({
             clearButton: false,
-            dataTextField: "name",
+            dataTextField: "formattedName",
             dataValueField: "id",
             filter: "contains",
             minLength: 1,
@@ -948,7 +948,7 @@ export class EntityTab {
         this.itemLinkerEntity = $("#itemLinkerEntity").kendoMultiSelect({
             autoClose: false,
             clearButton: false,
-            dataTextField: "name",
+            dataTextField: "formattedName",
             dataValueField: "id",
             filter: "contains",
             minLength: 1,
@@ -1099,7 +1099,7 @@ export class EntityTab {
         this.subEntityGridEntity = $("#subEntityGridEntity").kendoDropDownList({
             autoClose: false,
             clearButton: false,
-            dataTextField: "name",
+            dataTextField: "formattedName",
             dataValueField: "id",
             filter: "contains",
             minLength: 1,
@@ -1130,7 +1130,7 @@ export class EntityTab {
         //timeline
         this.timelineEntity = $("#timelineEntity").kendoDropDownList({
             autoClose: false,
-            dataTextField: "name",
+            dataTextField: "formattedName",
             dataValueField: "id",
             filter: "contains",
             minLength: 1,
@@ -1854,7 +1854,7 @@ export class EntityTab {
         }
         console.log("Type to save:", typeToSave);
         if (typeToSave === "entity") {
-            this.saveEntityProperties();
+            this.saveEntityProperties().catch((e)=> {console.log(e)});
         } else {
             // check if tab is selected
             if (!this.tabNameDropDownList.dataItem()) {
@@ -2065,9 +2065,13 @@ export class EntityTab {
                     }
                     resolve();
                 })
-                .fail(() => {
-                    this.base.showNotification("notification", `Entiteit is niet succesvol aangepast, probeer het opnieuw`, "error");
-
+                .fail((e) => {
+                    if (e.responseText.indexOf("Duplicate entry")) {
+                        this.base.showNotification("notification", `Er bestaat al een entiteit met naam '${entity.name}' gekoppeld aan de module ${this.entityModule.dataItem().moduleName}`, "error");
+                    } else {
+                        this.base.showNotification("notification", `Entiteit is niet succesvol aangepast, probeer het opnieuw`, "error");
+                    }
+                    document.querySelector(".loaderWrap").classList.remove("active");
                     reject();
                 });
         });
