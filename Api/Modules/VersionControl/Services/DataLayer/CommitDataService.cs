@@ -6,9 +6,11 @@ using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
 namespace Api.Modules.VersionControl.Service.DataLayer
 {
+
     public class CommitDataService : ICommitDataService
     {
         private readonly IDatabaseConnection clientDatabaseConnection;
+        
         /// <summary>
         /// 
         /// </summary>
@@ -18,11 +20,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             this.clientDatabaseConnection = clientDatabaseConnection;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="commitModel"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public async Task<CreateCommitModel> CreateCommit(CreateCommitModel commitModel)
         {
             //INSERT QUERRY FOR dev_commit
@@ -44,6 +42,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
         }
 
+        /// <inheritdoc />
         public async Task<bool> CreateCommitItem(int templateId, CommitItemModel commitItemModel)
         {
             var query = $@"INSERT INTO dev_commit_item (commitid,itemid,version) VALUES (?commitid,?itemid,?version)";
@@ -60,6 +59,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
         }
 
+        /// <inheritdoc />
         public async Task<CreateCommitModel> GetCommit()
         {
             var query =

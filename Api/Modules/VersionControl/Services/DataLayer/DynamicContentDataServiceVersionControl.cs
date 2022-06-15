@@ -22,6 +22,8 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             this.clientDatabaseConnection = clientDatabaseConnection;
         }
 
+
+        /// <inheritdoc />
         public async Task<DynamicContentModel> GetDynamicContent(int contentId, int version)
         {
             var query = $@"SELECT * FROM wiser_dynamic_content WHERE content_id = ?content_id AND version = ?version";
@@ -44,6 +46,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             return dynamicContentModel;
         }
 
+        /// <inheritdoc />
         public async Task<bool> CreateNewDynamicContentCommit(DynamicContentCommitModel dynamicContentCommitModel)
         {
             var query = $@"INSERT INTO wiser_commit_dynamic_content (dynamic_content_id,version,commit_id) values (?dynamicContentId, ?version, ?commitId)";
@@ -58,6 +61,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             return true;
         }
 
+        /// <inheritdoc />
         public async Task<Dictionary<int, int>> GetDynamicContentEnvironmentsAsync(int dynamicContentId)
         {
             clientDatabaseConnection.ClearParameters();
@@ -74,6 +78,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             return versionList;
         }
 
+        /// <inheritdoc />
         public async Task<int> UpdateDynamicContentPublishedEnvironmentAsync(int dynamicContentId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username)
         {
             clientDatabaseConnection.ClearParameters();
@@ -120,6 +125,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             return await clientDatabaseConnection.ExecuteAsync(query + ";" + logQuery);
         }
 
+        /// <inheritdoc />
         public async Task<Dictionary<int, int>> GetDynamicContentWithLowerVersion(int contentId, int version)
         {
             var query = $@"SELECT content_id, version FROM wiser_dynamic_content d where d.content_id = ?contentId AND d.version < ?version AND NOT EXISTS(SELECT * FROM wiser_commit_dynamic_content dt WHERE dt.dynamic_content_id = d.content_id and dt.version = d.version)";

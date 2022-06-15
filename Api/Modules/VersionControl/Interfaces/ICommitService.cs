@@ -4,23 +4,31 @@ using Api.Modules.VersionControl.Models;
 
 namespace Api.Modules.VersionControl.Interfaces
 {
+    /// <summary>
+    /// A service for handeling data related to the commit items in the version control model.
+    /// </summary>
     public interface ICommitService
     {
         /// <summary>
-        /// Creates new Commit in the database
+        /// Creates new commit item in the database.
         /// </summary>
-        /// <param name="commitModel">The data of the commit</param>
-        /// <returns></returns>
+        /// <param name="commitModel"></param>
+        /// <returns>Returns a model of the commit.</returns>
         Task<ServiceResult<CreateCommitModel>> CreateCommit(CreateCommitModel commitModel);
 
+
         /// <summary>
-        /// 
+        /// Creates new commit item in the database.
         /// </summary>
-        /// <param name="templateId"></param>
-        /// <param name="commitItemModel"></param>
+        /// <param name="templateId">The ID of the template.</param>
+        /// <param name="commitItemModel">The data from the commit.</param>
         /// <returns></returns>
         Task<ServiceResult<bool>> CreateCommitItem(int templateId, CommitItemModel commitItemModel);
 
+        /// <summary>
+        /// Gets the most recently added commit.
+        /// </summary>
+        /// <returns>Returns a model of the commit.</returns>
         Task<ServiceResult<CreateCommitModel>> GetCommit();
     }
 }

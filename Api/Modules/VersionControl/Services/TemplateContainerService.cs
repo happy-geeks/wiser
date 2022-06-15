@@ -19,24 +19,17 @@ namespace Api.Modules.VersionControl.Service
             this.templateDataService = templateDataService;
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<Dictionary<int, int>>> GetTemplatesWithLowerVersion(int templateId, int version)
         {
             var result = await templateDataService.GetTemplatesWithLowerVersion(templateId, version);
 
             return new ServiceResult<Dictionary<int, int>>(result);
         }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<bool>> CreateNewTemplateCommit(TemplateCommitModel templateCommitModel)
         {
-
-            /*
-            if (!templateCommitModel.IsTest && !templateCommitModel.IsLive && !templateCommitModel.IsAcceptance)
-            {
-                throw new ArgumentException("Need environment");
-            }
-
-            */
-
-
 
             bool isTest = false;
             bool isAcceptatie = false;
@@ -69,6 +62,7 @@ namespace Api.Modules.VersionControl.Service
             return new ServiceResult<bool>(result);
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<bool>> UpdatePublishEnvironmentTemplate(int templateId, int publishNumber)
         {
             var result = await templateDataService.UpdatePublishEnvironmentTemplate(templateId, publishNumber);
@@ -76,14 +70,16 @@ namespace Api.Modules.VersionControl.Service
             return new ServiceResult<bool>(result);
         }
 
-        public async Task<ServiceResult<VersionControlModel>> GetCurrentPublishedEnvironment(int templateId,
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateEnvironments>> GetCurrentPublishedEnvironment(int templateId,
             int version)
         {
             var result = await templateDataService.GetCurrentPublishedEnvironment(templateId, version);
 
-            return new ServiceResult<VersionControlModel>(result);
+            return new ServiceResult<TemplateEnvironments>(result);
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<bool>> UpdateTemplateCommit(TemplateCommitModel templateCommitModel)
         {
             bool isTest = false;

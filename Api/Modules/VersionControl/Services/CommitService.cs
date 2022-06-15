@@ -16,6 +16,7 @@ namespace Api.Modules.VersionControl.Service
             this.commitDataService = commitDataService;
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<CreateCommitModel>> CreateCommit(CreateCommitModel commitModel)
         {
             if (String.IsNullOrWhiteSpace(commitModel.Description))
@@ -29,6 +30,7 @@ namespace Api.Modules.VersionControl.Service
             return new ServiceResult<CreateCommitModel>(result);
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<bool>> CreateCommitItem(int templateId, CommitItemModel commitItemModel)
         {
 
@@ -37,6 +39,7 @@ namespace Api.Modules.VersionControl.Service
             return new ServiceResult<bool>(result);
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<CreateCommitModel>> GetCommit()
         {
             var result = await commitDataService.GetCommit();

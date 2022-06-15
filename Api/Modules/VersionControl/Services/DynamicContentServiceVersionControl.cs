@@ -21,6 +21,7 @@ namespace Api.Modules.VersionControl.Service
             this.dynamicContentDataService = dynamicContentDataService;
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<DynamicContentModel>> GetDynamicContent(int contentId, int version)
         {
             var result = await dynamicContentDataService.GetDynamicContent(contentId, version);
@@ -28,6 +29,7 @@ namespace Api.Modules.VersionControl.Service
             return new ServiceResult<DynamicContentModel>(result);
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<bool>> CreateNewDynamicContentCommit(
             DynamicContentCommitModel dynamicContentCommitModel)
         {
@@ -36,6 +38,7 @@ namespace Api.Modules.VersionControl.Service
             return new ServiceResult<bool>(result);
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<PublishedEnvironmentModel>> GetDynamicContentEnvironmentsAsync(
             int dynamicContentId)
         {
@@ -54,6 +57,7 @@ namespace Api.Modules.VersionControl.Service
                 PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<int>> PublishDynamicContentToEnvironmentAsync(ClaimsIdentity identity,
             int dynamicContentId, int version, string environment, PublishedEnvironmentModel currentPublished)
         {
@@ -80,6 +84,7 @@ namespace Api.Modules.VersionControl.Service
                     newPublished, publishLog, IdentityHelpers.GetUserName(identity)));
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<Dictionary<int, int>>> GetDynamicContentWithLowerVersion(int contentId,
             int version)
         {

@@ -176,7 +176,7 @@ namespace Api.Modules.VersionControl.Controllers
         /// <param name="version"></param>
         /// <returns></returns>
         [HttpGet, Route("current-published-enviornments/{templateId:int}/{version:int}")]
-        [ProducesResponseType(typeof(VersionControlModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(TemplateEnvironments), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetCurrentPublishedEnvironments(int templateId,int version)
         {
@@ -190,7 +190,7 @@ namespace Api.Modules.VersionControl.Controllers
         /// <param name="commitId">The ID of the Commit</param>
         /// <returns>Returns all the templates of the commit in a list</returns>
         [HttpGet, Route("templates-of-commit/{commitId:int}")]
-        [ProducesResponseType(typeof(List<VersionControlModel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<TemplateEnvironments>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetTemplatesfromCommit(int commitId)
         {
@@ -203,7 +203,7 @@ namespace Api.Modules.VersionControl.Controllers
         /// <param name="commitId"></param>
         /// <returns>Returns all the dynamic content of the commit in a list</returns>
         [HttpGet, Route("dynamic_content-of-commit/{commitId:int}")]
-        [ProducesResponseType(typeof(List<VersionControlModel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<TemplateEnvironments>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetDynamicContentfromCommit(int commitId)
         {

@@ -25,7 +25,7 @@ namespace Api.Modules.VersionControl.Service
         }
 
 
-
+        /// <inheritdoc />
         public async Task<ServiceResult<Dictionary<int, int>>> GetPublishedTemplateIdAndVersion()
         {
             var result = await versionControlDataService.GetPublishedTemplateIdAndVersion();
@@ -33,20 +33,8 @@ namespace Api.Modules.VersionControl.Service
             return new ServiceResult<Dictionary<int,int>>(result);
         }
 
-        
 
-        /*public async Task<ServiceResult<Dictionary<int, int>>> GetTemplatesWithLowerVersion(int templateId, int version)
-        {
-            var result = await versionControlDataService.GetTemplatesWithLowerVersion(templateId,version);
-
-            return new ServiceResult<Dictionary<int, int>>(result);
-        }*/
-
-        
-
-        
-      
-
+        /// <inheritdoc />
         public async Task<ServiceResult<bool>> CreatePublishLog(int templateId, int version)
         {
             var result = await versionControlDataService.CreatePublishLog(templateId, version);
@@ -54,26 +42,28 @@ namespace Api.Modules.VersionControl.Service
             return new ServiceResult<bool>(result);
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<List<TemplateCommitModel>>> GetTemplatesFromCommit(int commitId)
         {
             var result = await versionControlDataService.GetTemplatesFromCommit(commitId);
             return new ServiceResult<List<TemplateCommitModel>>(result);
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<List<DynamicContentCommitModel>>> GetDynamicContentfromCommit(int commitId)
         {
             var result = await versionControlDataService.GetDynamicContentfromCommit(commitId);
             return new ServiceResult<List<DynamicContentCommitModel>>(result);
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<List<ModuleGridSettings>>> GetModuleGridSettings(int moduleId)
         {
             var result = await versionControlDataService.GetModuleGridSettings(moduleId);
             return new ServiceResult<List<ModuleGridSettings>>(result);
         }
 
-
-
+        /// <inheritdoc />
         public async Task<ServiceResult<List<DynamicContentModel>>> GetDynamicContentInTemplate(int templateId)
         {
             var result = await versionControlDataService.GetDynamicContentInTemplate(templateId);

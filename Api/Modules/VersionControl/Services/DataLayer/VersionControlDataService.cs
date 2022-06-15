@@ -38,7 +38,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
 
-        
+        /// <inheritdoc />
         public async Task<Dictionary<int, int>> GetPublishedTemplateIdAndVersion()
         {
 
@@ -58,7 +58,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             return versionList;
         }
 
-        
+
 
         /*
         public async Task<Dictionary<int, int>> GetTemplatesWithLowerVersion(int templateId, int version)
@@ -83,15 +83,15 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }*/
 
 
-       
 
+        /// <inheritdoc />
         public Task<bool> CreatePublishLog(int templateId, int version)
         {
             throw new NotImplementedException();
         }
 
-        
 
+        /// <inheritdoc />
         public async Task<List<TemplateCommitModel>> GetTemplatesFromCommit(int commitId)
         {
 
@@ -118,6 +118,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
         }
 
+        /// <inheritdoc />
         public async Task<List<ModuleGridSettings>> GetModuleGridSettings(int moduleId)
         {
             var query = "SELECT * FROM wiser_module_grids WHERE module_id = ?moduleId";
@@ -145,11 +146,8 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             return moduleGridDataList;
         }
 
-        //DYNAMIC CONTENT
 
-
-
-
+        /// <inheritdoc />
         public async Task<List<DynamicContentModel>> GetDynamicContentInTemplate(int templateId)
         {
             var query = $@"SELECT * FROM wiser_template_dynamic_content wtdc LEFT JOIN wiser_dynamic_content dc ON  dc.content_id = wtdc.content_id WHERE dc.version = (SELECT MAX(version) FROM wiser_dynamic_content dc2 WHERE dc2.content_id = dc.content_id) AND destination_template_id = ?templateId AND NOT EXISTS(SELECT * FROM wiser_commit_dynamic_content wcdc WHERE wcdc.dynamic_content_id = dc.content_id and wcdc.version = dc.version)      ";
@@ -179,6 +177,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             return dynamicContentModelList;
         }
 
+        /// <inheritdoc />
         public async Task<List<DynamicContentCommitModel>> GetDynamicContentfromCommit(int commitId)
         {
             var query = "SELECT wcdc.*\nFROM wiser_commit_dynamic_content wcdc\nLEFT JOIN wiser_commit_dynamic_content x ON x.dynamic_content_id = wcdc.dynamic_content_id AND x.version = wcdc.version       \nWHERE wcdc.version = (SELECT MAX(version) FROM wiser_commit_dynamic_content x2 WHERE x2.dynamic_content_id = wcdc.dynamic_content_id) \nAND wcdc.commit_id = ?commitId";
