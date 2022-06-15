@@ -39,7 +39,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
 
         /// <inheritdoc />
-        public async Task<Dictionary<int, int>> GetPublishedTemplateIdAndVersion()
+        public async Task<Dictionary<int, int>> GetPublishedTemplateIdAndVersionAsync()
         {
 
             var query = $@"SELECT template_id, version FROM test.wiser_template where published_environment != 0 group by template_id;";
@@ -60,28 +60,6 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
 
 
-        /*
-        public async Task<Dictionary<int, int>> GetTemplatesWithLowerVersion(int templateId, int version)
-        {
-            var query = $@"SELECT template_id, version FROM wiser_template t where t.template_id = ?templateId AND t.version < ?version AND NOT EXISTS(SELECT * FROM dev_template_live dt WHERE dt.itemid = t.template_id and dt.version = t.version)  ";
-
-            clientDatabaseConnection.ClearParameters();
-
-            clientDatabaseConnection.AddParameter("templateId", templateId);
-            clientDatabaseConnection.AddParameter("version", version);
-
-            Dictionary<int, int> versionList = new Dictionary<int, int>();
-
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
-
-            foreach (DataRow row in dataTable.Rows)
-            {
-                versionList.Add(row.Field<int>("version"), row.Field<int>("template_id") );
-            }
-
-            return versionList;
-        }*/
-
 
 
         /// <inheritdoc />
@@ -92,7 +70,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
 
         /// <inheritdoc />
-        public async Task<List<TemplateCommitModel>> GetTemplatesFromCommit(int commitId)
+        public async Task<List<TemplateCommitModel>> GetTemplatesFromCommitAsync(int commitId)
         {
 
             var query = "SELECT dtl.* FROM dev_template_live dtl LEFT JOIN dev_template_live x ON x.itemid = dtl.itemid AND x.version = dtl.version WHERE dtl.version = (SELECT MAX(version) FROM dev_template_live x2 WHERE x2.itemid = dtl.itemid) AND dtl.commitid = ?commitId";
@@ -119,7 +97,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<List<ModuleGridSettings>> GetModuleGridSettings(int moduleId)
+        public async Task<List<ModuleGridSettings>> GetModuleGridSettingsAsync(int moduleId)
         {
             var query = "SELECT * FROM wiser_module_grids WHERE module_id = ?moduleId";
             clientDatabaseConnection.ClearParameters();
@@ -148,7 +126,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
 
         /// <inheritdoc />
-        public async Task<List<DynamicContentModel>> GetDynamicContentInTemplate(int templateId)
+        public async Task<List<DynamicContentModel>> GetDynamicContentInTemplateAsync(int templateId)
         {
             var query = $@"SELECT * FROM wiser_template_dynamic_content wtdc LEFT JOIN wiser_dynamic_content dc ON  dc.content_id = wtdc.content_id WHERE dc.version = (SELECT MAX(version) FROM wiser_dynamic_content dc2 WHERE dc2.content_id = dc.content_id) AND destination_template_id = ?templateId AND NOT EXISTS(SELECT * FROM wiser_commit_dynamic_content wcdc WHERE wcdc.dynamic_content_id = dc.content_id and wcdc.version = dc.version)      ";
             clientDatabaseConnection.ClearParameters();
@@ -178,7 +156,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<List<DynamicContentCommitModel>> GetDynamicContentfromCommit(int commitId)
+        public async Task<List<DynamicContentCommitModel>> GetDynamicContentfromCommitAsync(int commitId)
         {
             var query = "SELECT wcdc.*\nFROM wiser_commit_dynamic_content wcdc\nLEFT JOIN wiser_commit_dynamic_content x ON x.dynamic_content_id = wcdc.dynamic_content_id AND x.version = wcdc.version       \nWHERE wcdc.version = (SELECT MAX(version) FROM wiser_commit_dynamic_content x2 WHERE x2.dynamic_content_id = wcdc.dynamic_content_id) \nAND wcdc.commit_id = ?commitId";
 

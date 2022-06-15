@@ -24,7 +24,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
 
         /// <inheritdoc />
-        public async Task<DynamicContentModel> GetDynamicContent(int contentId, int version)
+        public async Task<DynamicContentModel> GetDynamicContentAsync(int contentId, int version)
         {
             var query = $@"SELECT * FROM wiser_dynamic_content WHERE content_id = ?content_id AND version = ?version";
 
@@ -47,7 +47,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<bool> CreateNewDynamicContentCommit(DynamicContentCommitModel dynamicContentCommitModel)
+        public async Task<bool> CreateNewDynamicContentCommitAsync(DynamicContentCommitModel dynamicContentCommitModel)
         {
             var query = $@"INSERT INTO wiser_commit_dynamic_content (dynamic_content_id,version,commit_id) values (?dynamicContentId, ?version, ?commitId)";
 
@@ -56,7 +56,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             clientDatabaseConnection.AddParameter("version", dynamicContentCommitModel.Version);
             clientDatabaseConnection.AddParameter("commitId", dynamicContentCommitModel.CommitId);
 
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            var dataTable = await clientDatabaseConnection.ExecuteAsync(query);
 
             return true;
         }
@@ -126,7 +126,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<Dictionary<int, int>> GetDynamicContentWithLowerVersion(int contentId, int version)
+        public async Task<Dictionary<int, int>> GetDynamicContentWithLowerVersionAsync(int contentId, int version)
         {
             var query = $@"SELECT content_id, version FROM wiser_dynamic_content d where d.content_id = ?contentId AND d.version < ?version AND NOT EXISTS(SELECT * FROM wiser_commit_dynamic_content dt WHERE dt.dynamic_content_id = d.content_id and dt.version = d.version)";
 

@@ -21,7 +21,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<CreateCommitModel> CreateCommit(CreateCommitModel commitModel)
+        public async Task<CreateCommitModel> CreateCommitAsync(CreateCommitModel commitModel)
         {
             //INSERT QUERRY FOR dev_commit
             var query = $@"INSERT INTO dev_commit (description,changedby) VALUES (?description,?changedby)";
@@ -29,7 +29,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("description", commitModel.Description);
             clientDatabaseConnection.AddParameter("changedby", commitModel.ChangedBy);
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            var dataTable = await clientDatabaseConnection.ExecuteAsync(query);
 
             return new CreateCommitModel()
             {
@@ -43,7 +43,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<bool> CreateCommitItem(int templateId, CommitItemModel commitItemModel)
+        public async Task<bool> CreateCommitItemAsync(int templateId, CommitItemModel commitItemModel)
         {
             var query = $@"INSERT INTO dev_commit_item (commitid,itemid,version) VALUES (?commitid,?itemid,?version)";
 
@@ -51,7 +51,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             clientDatabaseConnection.AddParameter("commitid", commitItemModel.CommitId);
             clientDatabaseConnection.AddParameter("itemid", commitItemModel.TemplateId);
             clientDatabaseConnection.AddParameter("version", commitItemModel.Version);
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            var dataTable = await clientDatabaseConnection.ExecuteAsync(query);
 
 
 
@@ -60,7 +60,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<CreateCommitModel> GetCommit()
+        public async Task<CreateCommitModel> GetCommitAsync()
         {
             var query =
                 $@"SELECT * FROM test.dev_commit ORDER BY addedon desc LIMIT 1;";

@@ -6,6 +6,7 @@ using Api.Core.Services;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Models;
+using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.VersionControl.Service
 {
@@ -20,33 +21,33 @@ namespace Api.Modules.VersionControl.Service
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<Dictionary<int, int>>> GetTemplatesWithLowerVersion(int templateId, int version)
+        public async Task<ServiceResult<Dictionary<int, int>>> GetTemplatesWithLowerVersionAsync(int templateId, int version)
         {
-            var result = await templateDataService.GetTemplatesWithLowerVersion(templateId, version);
+            var result = await templateDataService.GetTemplatesWithLowerVersionAsync(templateId, version);
 
             return new ServiceResult<Dictionary<int, int>>(result);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> CreateNewTemplateCommit(TemplateCommitModel templateCommitModel)
+        public async Task<ServiceResult<bool>> CreateNewTemplateCommitAsync(TemplateCommitModel templateCommitModel)
         {
 
             bool isTest = false;
             bool isAcceptatie = false;
             bool isLive = false;
 
-            if (templateCommitModel.Enviornment == "live")
+            if (templateCommitModel.Enviornment == Environments.Live)
             {
                 isTest = true;
                 isAcceptatie = true;
                 isLive = true;
             }
-            else if (templateCommitModel.Enviornment == "accept")
+            else if (templateCommitModel.Enviornment == Environments.Acceptance)
             {
                 isAcceptatie = true;
                 isTest = true;
             }
-            else if (templateCommitModel.Enviornment == "test")
+            else if (templateCommitModel.Enviornment == Environments.Test)
             {
                 isTest = true;
             }
@@ -57,47 +58,47 @@ namespace Api.Modules.VersionControl.Service
 
 
 
-            var result = await templateDataService.CreateNewTemplateCommit(templateCommitModel);
+            var result = await templateDataService.CreateNewTemplateCommitAsync(templateCommitModel);
 
             return new ServiceResult<bool>(result);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> UpdatePublishEnvironmentTemplate(int templateId, int publishNumber)
+        public async Task<ServiceResult<bool>> UpdatePublishEnvironmentTemplateAsync(int templateId, int publishNumber)
         {
-            var result = await templateDataService.UpdatePublishEnvironmentTemplate(templateId, publishNumber);
+            var result = await templateDataService.UpdatePublishEnvironmentTemplateAsync(templateId, publishNumber);
 
             return new ServiceResult<bool>(result);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateEnvironments>> GetCurrentPublishedEnvironment(int templateId,
+        public async Task<ServiceResult<TemplateEnvironments>> GetCurrentPublishedEnvironmentAsync(int templateId,
             int version)
         {
-            var result = await templateDataService.GetCurrentPublishedEnvironment(templateId, version);
+            var result = await templateDataService.GetCurrentPublishedEnvironmentAsync(templateId, version);
 
             return new ServiceResult<TemplateEnvironments>(result);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> UpdateTemplateCommit(TemplateCommitModel templateCommitModel)
+        public async Task<ServiceResult<bool>> UpdateTemplateCommitAsync(TemplateCommitModel templateCommitModel)
         {
             bool isTest = false;
             bool isAcceptatie = false;
             bool isLive = false;
 
-            if (templateCommitModel.Enviornment == "live")
+            if (templateCommitModel.Enviornment == Environments.Live)
             {
                 isTest = true;
                 isAcceptatie = true;
                 isLive = true;
             }
-            else if (templateCommitModel.Enviornment == "accept")
+            else if (templateCommitModel.Enviornment == Environments.Acceptance)
             {
                 isAcceptatie = true;
                 isTest = true;
             }
-            else if (templateCommitModel.Enviornment == "test")
+            else if (templateCommitModel.Enviornment == Environments.Test)
             {
                 isTest = true;
             }
@@ -106,7 +107,7 @@ namespace Api.Modules.VersionControl.Service
             templateCommitModel.IsAcceptance = isAcceptatie;
             templateCommitModel.IsLive = isLive;
 
-            var result = await templateDataService.UpdateTemplateCommit(templateCommitModel);
+            var result = await templateDataService.UpdateTemplateCommitAsync(templateCommitModel);
 
             return new ServiceResult<bool>(result);
         }

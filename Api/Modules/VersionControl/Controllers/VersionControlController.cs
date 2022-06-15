@@ -59,7 +59,7 @@ namespace Api.Modules.VersionControl.Controllers
         [HttpPut, ProducesResponseType(typeof(CreateCommitModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateNewCommit(CreateCommitModel commitModel)
         {
-            return (await commitService.CreateCommit(commitModel)).GetHttpResponseMessage();
+            return (await commitService.CreateCommitAsync(commitModel)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Api.Modules.VersionControl.Controllers
         [HttpPut, Route("{templateId:int}"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateNewCommitItem(int templateId, CommitItemModel commitItemModel)
         {
-            return (await commitService.CreateCommitItem(templateId, commitItemModel))
+            return (await commitService.CreateCommitItemAsync(templateId, commitItemModel))
                 .GetHttpResponseMessage();
         }
 
@@ -84,7 +84,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetCommit()
         {
-            return (await commitService.GetCommit()).GetHttpResponseMessage();
+            return (await commitService.GetCommitAsync()).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -96,7 +96,7 @@ namespace Api.Modules.VersionControl.Controllers
         public async Task<IActionResult> CreateNewTemplateCommit(TemplateCommitModel templateCommitModel)
         {
 
-            return (await versionControlTemplateService.CreateNewTemplateCommit(templateCommitModel)).GetHttpResponseMessage();
+            return (await versionControlTemplateService.CreateNewTemplateCommitAsync(templateCommitModel)).GetHttpResponseMessage();
         }
 
        
@@ -109,7 +109,7 @@ namespace Api.Modules.VersionControl.Controllers
         [HttpPut, Route("{templateId:int}/{publishNumber:int}"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdatePublishEnvironmentTemplate(int templateId, int publishNumber)
         {
-            return (await versionControlTemplateService.UpdatePublishEnvironmentTemplate(templateId,publishNumber)).GetHttpResponseMessage();
+            return (await versionControlTemplateService.UpdatePublishEnvironmentTemplateAsync(templateId,publishNumber)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetTemplatesWithLowerVersion(int templateId, int version)
         {
-            return (await versionControlTemplateService.GetTemplatesWithLowerVersion(templateId, version)).GetHttpResponseMessage();
+            return (await versionControlTemplateService.GetTemplatesWithLowerVersionAsync(templateId, version)).GetHttpResponseMessage();
         }
 
 
@@ -180,7 +180,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetCurrentPublishedEnvironments(int templateId,int version)
         {
-            return (await versionControlTemplateService.GetCurrentPublishedEnvironment(templateId, version)).GetHttpResponseMessage();
+            return (await versionControlTemplateService.GetCurrentPublishedEnvironmentAsync(templateId, version)).GetHttpResponseMessage();
         }
 
 
@@ -194,7 +194,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetTemplatesfromCommit(int commitId)
         {
-            return (await _versionControlService.GetTemplatesFromCommit(commitId)).GetHttpResponseMessage();
+            return (await _versionControlService.GetTemplatesFromCommitAsync(commitId)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -207,7 +207,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetDynamicContentfromCommit(int commitId)
         {
-            return (await _versionControlService.GetDynamicContentfromCommit(commitId)).GetHttpResponseMessage();
+            return (await _versionControlService.GetDynamicContentfromCommitAsync(commitId)).GetHttpResponseMessage();
         }
 
 
@@ -225,7 +225,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetDynamicContent(int contentId, int version)
         {
-            return (await dynamicContentService.GetDynamicContent(contentId, version)).GetHttpResponseMessage();
+            return (await dynamicContentService.GetDynamicContentAsync(contentId, version)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -237,7 +237,7 @@ namespace Api.Modules.VersionControl.Controllers
         public async Task<IActionResult> CreateDynamicContentCommit(DynamicContentCommitModel dynamicContentCommitModel)
         {
 
-            return (await dynamicContentService.CreateNewDynamicContentCommit(dynamicContentCommitModel)).GetHttpResponseMessage();
+            return (await dynamicContentService.CreateNewDynamicContentCommitAsync(dynamicContentCommitModel)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -269,7 +269,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetDynamicContentWithLowerVersion(int contentId, int version)
         {
-            return (await dynamicContentService.GetDynamicContentWithLowerVersion(contentId, version)).GetHttpResponseMessage();
+            return (await dynamicContentService.GetDynamicContentWithLowerVersionAsync(contentId, version)).GetHttpResponseMessage();
         }
 
 
@@ -283,7 +283,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetDynamicContentInTemplate(int templateId)
         {
-            return (await _versionControlService.GetDynamicContentInTemplate(templateId)).GetHttpResponseMessage();
+            return (await _versionControlService.GetDynamicContentInTemplateAsync(templateId)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -296,7 +296,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetModuleGridSettings(int moduleId)
         {
-            return (await _versionControlService.GetModuleGridSettings(moduleId)).GetHttpResponseMessage();
+            return (await _versionControlService.GetModuleGridSettingsAsync(moduleId)).GetHttpResponseMessage();
         }
 
 

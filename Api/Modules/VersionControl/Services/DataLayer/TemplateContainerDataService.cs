@@ -23,7 +23,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<Dictionary<int, int>> GetTemplatesWithLowerVersion(int templateId, int version)
+        public async Task<Dictionary<int, int>> GetTemplatesWithLowerVersionAsync(int templateId, int version)
         {
             var query = $@"SELECT template_id, version FROM wiser_template t where t.template_id = ?templateId AND t.version < ?version AND NOT EXISTS(SELECT * FROM dev_template_live dt WHERE dt.itemid = t.template_id and dt.version = t.version)  ";
 
@@ -45,7 +45,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<TemplateEnvironments> GetCurrentPublishedEnvironment(int templateId, int version)
+        public async Task<TemplateEnvironments> GetCurrentPublishedEnvironmentAsync(int templateId, int version)
         {
             var query = "SELECT t.template_id, t.version, t.published_environment FROM wiser_template t WHERE t.template_id = ?templateId AND t.published_environment != 0";
 
@@ -109,7 +109,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<bool> CreateNewTemplateCommit(TemplateCommitModel templateCommitModel)
+        public async Task<bool> CreateNewTemplateCommitAsync(TemplateCommitModel templateCommitModel)
         {
 
 
@@ -123,7 +123,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
 
 
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            var dataTable = await clientDatabaseConnection.ExecuteAsync(query);
 
 
 
@@ -134,7 +134,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<bool> UpdateTemplateCommit(TemplateCommitModel templateCommitModel)
+        public async Task<bool> UpdateTemplateCommitAsync(TemplateCommitModel templateCommitModel)
         {
             var query = $@"UPDATE dev_template_live SET islive = ?islive, isacceptance = ?isacceptance, istest = ?istest WHERE itemid = ?itemid AND version = ?version";
 
@@ -148,7 +148,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             clientDatabaseConnection.AddParameter("version", templateCommitModel.Version);
 
 
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            var dataTable = await clientDatabaseConnection.ExecuteAsync(query);
 
 
 
@@ -156,7 +156,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<bool> UpdatePublishEnvironmentTemplate(int templateId, int publishNumber)
+        public async Task<bool> UpdatePublishEnvironmentTemplateAsync(int templateId, int publishNumber)
         {
             var query = $@"UPDATE wiser_template SET published_environment = ?publishNumber WHERE id = ?templateId";
 
@@ -164,7 +164,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             clientDatabaseConnection.AddParameter("publishNumber", publishNumber);
             clientDatabaseConnection.AddParameter("templateId", templateId);
 
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            var dataTable = await clientDatabaseConnection.ExecuteAsync(query);
 
             return true;
         }

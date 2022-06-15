@@ -16,14 +16,14 @@ namespace Api.Modules.VersionControl.Interfaces.DataLayer
         /// <param name="contentId">The ID of the dynamic content item.</param>
         /// <param name="version">The version of the dynamic content item.</param>
         /// <returns>A model with te data of the dynamic content item.</returns>
-        Task<DynamicContentModel> GetDynamicContent(int contentId, int version);
+        Task<DynamicContentModel> GetDynamicContentAsync(int contentId, int version);
 
         /// <summary>
         /// Creates new dynamic content item that is linked to the commit.
         /// </summary>
         /// <param name="dynamicContentCommitModel">Contains the data of the dynamic content and commit that will be used to add it to the database.</param>
         /// <returns></returns>
-        Task<bool> CreateNewDynamicContentCommit(DynamicContentCommitModel dynamicContentCommitModel);
+        Task<bool> CreateNewDynamicContentCommitAsync(DynamicContentCommitModel dynamicContentCommitModel);
 
         /// <summary>
         /// Gets all the versions of a specific dynamic content item with the published environments.
@@ -48,6 +48,6 @@ namespace Api.Modules.VersionControl.Interfaces.DataLayer
         /// <param name="dynamicContent">The id of the dynamic conent id.</param>
         /// <param name="version">The version of the dynamic content.</param>
         /// <returns>Returns a dictonary with the dynamic content items that have a lower version.</returns>
-        Task<Dictionary<int, int>> GetDynamicContentWithLowerVersion(int dynamicContent, int version);
+        Task<Dictionary<int, int>> GetDynamicContentWithLowerVersionAsync(int dynamicContent, int version);
     }
 }

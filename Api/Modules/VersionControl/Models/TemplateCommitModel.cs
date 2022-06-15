@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Api.Modules.VersionControl.Enums;
+using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.VersionControl.Models
 {
@@ -29,7 +29,7 @@ namespace Api.Modules.VersionControl.Models
         /// <summary>
         /// The environment of the template.
         /// </summary>
-        public string Enviornment { get; set; }
+        public Environments Enviornment { get; set; }
 
         /// <summary>
         /// Bool if the template is on the live environemnt.

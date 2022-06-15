@@ -615,19 +615,19 @@ const moduleSettings = {
             if (selectedChoices[0] != null) {
                 isTest = true;
                 publishNumber = 2;
-                publishEnviornment = "test";
+                publishEnviornment = "Test";
             }
 
             if (selectedChoices[1] != null) {
                 isAcceptance = true;
                 publishNumber = 4;
-                publishEnviornment = "accept";
+                publishEnviornment = "Acceptance";
             }
 
             if (selectedChoices[2] != null) {
                 isLive = true;
                 publishNumber = 8;
-                publishEnviornment = "live";
+                publishEnviornment = "Live";
             }
 
 

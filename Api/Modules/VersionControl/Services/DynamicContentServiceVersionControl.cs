@@ -22,18 +22,18 @@ namespace Api.Modules.VersionControl.Service
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<DynamicContentModel>> GetDynamicContent(int contentId, int version)
+        public async Task<ServiceResult<DynamicContentModel>> GetDynamicContentAsync(int contentId, int version)
         {
-            var result = await dynamicContentDataService.GetDynamicContent(contentId, version);
+            var result = await dynamicContentDataService.GetDynamicContentAsync(contentId, version);
 
             return new ServiceResult<DynamicContentModel>(result);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> CreateNewDynamicContentCommit(
+        public async Task<ServiceResult<bool>> CreateNewDynamicContentCommitAsync(
             DynamicContentCommitModel dynamicContentCommitModel)
         {
-            var result = await dynamicContentDataService.CreateNewDynamicContentCommit(dynamicContentCommitModel);
+            var result = await dynamicContentDataService.CreateNewDynamicContentCommitAsync(dynamicContentCommitModel);
 
             return new ServiceResult<bool>(result);
         }
@@ -85,10 +85,10 @@ namespace Api.Modules.VersionControl.Service
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<Dictionary<int, int>>> GetDynamicContentWithLowerVersion(int contentId,
+        public async Task<ServiceResult<Dictionary<int, int>>> GetDynamicContentWithLowerVersionAsync(int contentId,
             int version)
         {
-            var result = await dynamicContentDataService.GetDynamicContentWithLowerVersion(contentId, version);
+            var result = await dynamicContentDataService.GetDynamicContentWithLowerVersionAsync(contentId, version);
 
             return new ServiceResult<Dictionary<int, int>>(result);
         }

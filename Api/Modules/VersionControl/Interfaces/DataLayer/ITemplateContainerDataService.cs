@@ -18,21 +18,21 @@ namespace Api.Modules.VersionControl.Interfaces.DataLayer
         /// <param name="templateId">The id of the template.</param>
         /// <param name="version">The version of the template.</param>
         /// <returns>Returns a dictionary with the templates that are a lower version than the given one.</returns>
-        Task<Dictionary<int, int>> GetTemplatesWithLowerVersion(int templateId, int version);
+        Task<Dictionary<int, int>> GetTemplatesWithLowerVersionAsync(int templateId, int version);
 
         /// <summary>
         /// Creates a new commit of the template.
         /// </summary>
         /// <param name="templateCommitModel">The data of the template and the commit.</param>
         /// <returns>Returns a bool.</returns>
-        Task<bool> CreateNewTemplateCommit(TemplateCommitModel templateCommitModel);
+        Task<bool> CreateNewTemplateCommitAsync(TemplateCommitModel templateCommitModel);
 
         /// <summary>
         /// Updates a commited template.
         /// </summary>
         /// <param name="templateCommitModel">The data of the template with the data that needs to be changed.</param>
         /// <returns>Returns a bool.</returns>
-        Task<bool> UpdateTemplateCommit(TemplateCommitModel templateCommitModel);
+        Task<bool> UpdateTemplateCommitAsync(TemplateCommitModel templateCommitModel);
 
         /// <summary>
         /// Updates the published environment of the given template.
@@ -40,7 +40,7 @@ namespace Api.Modules.VersionControl.Interfaces.DataLayer
         /// <param name="templateId">The id of the template.</param>
         /// <param name="publishNumber">The environment to publish to.</param>
         /// <returns>Returns a bool.</returns>
-        Task<bool> UpdatePublishEnvironmentTemplate(int templateId, int publishNumber);
+        Task<bool> UpdatePublishEnvironmentTemplateAsync(int templateId, int publishNumber);
 
         /// <summary>
         /// Gets the current published environments of the given template.
@@ -48,6 +48,6 @@ namespace Api.Modules.VersionControl.Interfaces.DataLayer
         /// <param name="templateId">The id of the template.</param>
         /// <param name="version">The version of the template.</param>
         /// <returns>Returns a model with all the templates that are currently published.</returns>
-        Task<TemplateEnvironments> GetCurrentPublishedEnvironment(int templateId, int version);
+        Task<TemplateEnvironments> GetCurrentPublishedEnvironmentAsync(int templateId, int version);
     }
 }

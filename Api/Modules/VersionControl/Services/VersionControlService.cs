@@ -26,16 +26,16 @@ namespace Api.Modules.VersionControl.Service
 
 
         /// <inheritdoc />
-        public async Task<ServiceResult<Dictionary<int, int>>> GetPublishedTemplateIdAndVersion()
+        public async Task<ServiceResult<Dictionary<int, int>>> GetPublishedTemplateIdAndVersionAsync()
         {
-            var result = await versionControlDataService.GetPublishedTemplateIdAndVersion();
+            var result = await versionControlDataService.GetPublishedTemplateIdAndVersionAsync();
 
             return new ServiceResult<Dictionary<int,int>>(result);
         }
 
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> CreatePublishLog(int templateId, int version)
+        public async Task<ServiceResult<bool>> CreatePublishLogAsync(int templateId, int version)
         {
             var result = await versionControlDataService.CreatePublishLog(templateId, version);
 
@@ -43,30 +43,30 @@ namespace Api.Modules.VersionControl.Service
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateCommitModel>>> GetTemplatesFromCommit(int commitId)
+        public async Task<ServiceResult<List<TemplateCommitModel>>> GetTemplatesFromCommitAsync(int commitId)
         {
-            var result = await versionControlDataService.GetTemplatesFromCommit(commitId);
+            var result = await versionControlDataService.GetTemplatesFromCommitAsync(commitId);
             return new ServiceResult<List<TemplateCommitModel>>(result);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<DynamicContentCommitModel>>> GetDynamicContentfromCommit(int commitId)
+        public async Task<ServiceResult<List<DynamicContentCommitModel>>> GetDynamicContentfromCommitAsync(int commitId)
         {
-            var result = await versionControlDataService.GetDynamicContentfromCommit(commitId);
+            var result = await versionControlDataService.GetDynamicContentfromCommitAsync(commitId);
             return new ServiceResult<List<DynamicContentCommitModel>>(result);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<ModuleGridSettings>>> GetModuleGridSettings(int moduleId)
+        public async Task<ServiceResult<List<ModuleGridSettings>>> GetModuleGridSettingsAsync(int moduleId)
         {
-            var result = await versionControlDataService.GetModuleGridSettings(moduleId);
+            var result = await versionControlDataService.GetModuleGridSettingsAsync(moduleId);
             return new ServiceResult<List<ModuleGridSettings>>(result);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<DynamicContentModel>>> GetDynamicContentInTemplate(int templateId)
+        public async Task<ServiceResult<List<DynamicContentModel>>> GetDynamicContentInTemplateAsync(int templateId)
         {
-            var result = await versionControlDataService.GetDynamicContentInTemplate(templateId);
+            var result = await versionControlDataService.GetDynamicContentInTemplateAsync(templateId);
 
             return new ServiceResult<List<DynamicContentModel>>(result);
         }

@@ -14,7 +14,7 @@ namespace Api.Modules.VersionControl.Interfaces
         /// </summary>
         /// <param name="commitModel"></param>
         /// <returns>Returns a model of the commit.</returns>
-        Task<ServiceResult<CreateCommitModel>> CreateCommit(CreateCommitModel commitModel);
+        Task<ServiceResult<CreateCommitModel>> CreateCommitAsync(CreateCommitModel commitModel);
 
 
         /// <summary>
@@ -23,12 +23,12 @@ namespace Api.Modules.VersionControl.Interfaces
         /// <param name="templateId">The ID of the template.</param>
         /// <param name="commitItemModel">The data from the commit.</param>
         /// <returns></returns>
-        Task<ServiceResult<bool>> CreateCommitItem(int templateId, CommitItemModel commitItemModel);
+        Task<ServiceResult<bool>> CreateCommitItemAsync(int templateId, CommitItemModel commitItemModel);
 
         /// <summary>
         /// Gets the most recently added commit.
         /// </summary>
         /// <returns>Returns a model of the commit.</returns>
-        Task<ServiceResult<CreateCommitModel>> GetCommit();
+        Task<ServiceResult<CreateCommitModel>> GetCommitAsync();
     }
 }
