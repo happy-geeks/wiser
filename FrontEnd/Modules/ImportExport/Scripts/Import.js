@@ -668,7 +668,7 @@ const importModuleSettings = {
 
                                     //Get properties of selected entity.
                                     const promiseResults = await Promise.all([
-                                        Wiser2.api({ url: `${this.settings.serviceRoot}/IMPORTEXPORT_GET_ENTITY_PROPERTIES?entityName=${encodeURIComponent(options.model.importTo)}` })
+                                        Wiser2.api({ url: `${this.settings.wiserApiRoot}imports/entity-properties?entityName=${encodeURIComponent(options.model.importTo)}` })
                                     ]);
                                     const propertiesOfEntity = promiseResults[0];
 
@@ -681,16 +681,21 @@ const importModuleSettings = {
                                         let columnName = dataItem.column.toLowerCase();
                                         let propertyMatchMade = false;
 
-                                        //Find a match for the column name on a property.
-                                        for (let i = 0; i < propertiesOfEntity.length; i++) {
-                                            //Set the values if a match with a property has been made.
-                                            if (columnName === propertiesOfEntity[i].name.toLowerCase() || columnName === propertiesOfEntity[i].value.toLowerCase()) {
-                                                dataItem.set("specName", propertiesOfEntity[i].name);
-                                                this.selectProperty(dataItem, propertiesOfEntity[i]);
-                                                propertyMatchMade = true;
-                                                break;
-                                            }
-                                        };
+                                        // Find matches for the column name on a property.
+                                        const matchingProperties = propertiesOfEntity.filter(prop => {
+                                            return prop.name.toLowerCase() === columnName || prop.value.toLowerCase() === columnName;
+                                        });
+                                        if (matchingProperties.length > 0) {
+                                            const sorted = matchingProperties.sort((a, b) => {
+                                                if (a.propertyOrder < b.propertyOrder) return -1;
+                                                if (a.propertyOrder > b.propertyOrder) return 1;
+                                                return 0;
+                                            });
+
+                                            dataItem.set("specName", sorted[0].name);
+                                            this.selectProperty(dataItem, sorted[0]);
+                                            propertyMatchMade = true;
+                                        }
 
                                         //If no match has been made reset all values (in case entity changed).
                                         if (!propertyMatchMade) {
@@ -722,7 +727,7 @@ const importModuleSettings = {
                                 optionLabel: "Kies een eigenschap",
                                 dataSource: {
                                     transport: {
-                                        read: `${this.settings.serviceRoot}/IMPORTEXPORT_GET_ENTITY_PROPERTIES?entityName=${encodeURIComponent(options.model.importTo)}`
+                                        read: `${this.settings.wiserApiRoot}imports/entity-properties?entityName=${encodeURIComponent(options.model.importTo)}`
                                     }
                                 },
                                 change: (e) => {
@@ -848,7 +853,7 @@ const importModuleSettings = {
                                 optionLabel: "Kies een eigenschap",
                                 dataSource: {
                                     transport: {
-                                        read: `${this.settings.serviceRoot}/IMPORTEXPORT_GET_ENTITY_PROPERTIES?linkType=${options.model.linkType}`
+                                        read: `${this.settings.wiserApiRoot}imports/entity-properties?linkType=${options.model.linkType}`
                                     }
                                 },
                                 change: (e) => {

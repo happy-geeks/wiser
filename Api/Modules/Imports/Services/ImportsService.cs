@@ -1258,5 +1258,64 @@ AND destinationDetail.`value` IN({String.Join(",", destinationValues.Select(line
                 throw;
             }
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<IEnumerable<EntityPropertyModel>>> GetEntityProperties(ClaimsIdentity identity, string entityName = null, int linkType = 0)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("entityName", entityName ?? String.Empty);
+            clientDatabaseConnection.AddParameter("linkType", linkType);
+
+            var getPropertiesResult = await clientDatabaseConnection.GetAsync($@"
+                SELECT property.`name`, property.`value`, property.languageCode, property.isImageField, property.allowMultipleImages, CONCAT_WS('_', LPAD(property.propertyOrder, 6, '0'), LPAD(property.id, 6, '0')) AS propertyOrder
+                FROM (
+                    SELECT 0 AS id, 'Item naam' AS `name`, 'itemTitle' AS `value`, '' AS languageCode, 0 AS isImageField, 0 AS allowMultipleImages, 0 AS baseOrder, 1 AS propertyOrder
+                    FROM DUAL
+                    WHERE ?entityName <> ''
+                    UNION
+                    SELECT
+                        id,
+                        CONCAT(
+                            IF(display_name = '', property_name, display_name),
+                            IF(
+                                language_code <> '',
+                                CONCAT(' (', language_code, ')'),
+                                ''
+                            )
+                        ) AS `name`,
+                        IF(property_name = '', display_name, property_name) AS `value`,
+                        language_code AS languageCode,
+                        inputtype = 'image-upload' AS isImageField,
+                        IFNULL(JSON_UNQUOTE(JSON_EXTRACT(NULLIF(`options`, ''), '$.multiple')), 'true') = 'true' AS allowMultipleImages,
+                        1 AS baseOrder,
+                        ordering AS propertyOrder
+                    FROM `{WiserTableNames.WiserEntityProperty}`
+                    WHERE entity_name = ?entityName OR (?linkType > 0 AND link_type = ?linkType)
+                    ORDER BY baseOrder, `name`
+                ) AS property");
+
+            if (getPropertiesResult.Rows.Count == 0)
+            {
+                return new ServiceResult<IEnumerable<EntityPropertyModel>>(null);
+            }
+
+            var entityProperties = new List<EntityPropertyModel>(getPropertiesResult.Rows.Count);
+            foreach (var entityPropertyDataRow in getPropertiesResult.Rows.Cast<DataRow>())
+            {
+                entityProperties.Add(new EntityPropertyModel
+                {
+                    Name = entityPropertyDataRow.Field<string>("name"),
+                    Value = entityPropertyDataRow.Field<string>("value"),
+                    LanguageCode = entityPropertyDataRow.Field<string>("languageCode"),
+                    IsImageField = Convert.ToBoolean(entityPropertyDataRow["isImageField"]),
+                    AllowMultipleImages = Convert.ToBoolean(entityPropertyDataRow["allowMultipleImages"]),
+                    PropertyOrder = entityPropertyDataRow.Field<string>("propertyOrder")
+                });
+            }
+
+            return new ServiceResult<IEnumerable<EntityPropertyModel>>(entityProperties);
+        }
     }
 }

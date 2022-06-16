@@ -1617,31 +1617,6 @@ WHERE role.id = {role_id}");
                 TemplateQueryStrings.Add("DELETE_MODULE_RIGHT_ASSIGNMENT", @"DELETE FROM `wiser_system`.`wiser_permission`
 WHERE role_id = {role_id} AND module_id={module_id}");
 
-                TemplateQueryStrings.Add("IMPORTEXPORT_GET_ENTITY_PROPERTIES", @"SELECT property.`name`, property.`value`, property.languageCode, property.isImageField, property.allowMultipleImages
-FROM (
-    SELECT 'Item naam' AS `name`, 'itemTitle' AS `value`, '' AS languageCode, 0 AS isImageField, 0 AS allowMultipleImages, 0 AS baseOrder
-    FROM DUAL
-    WHERE '{entityName}' NOT LIKE '{%}' AND '{entityName}' <> ''
-    UNION
-    SELECT
-        CONCAT(
-            IF(display_name = '', property_name, display_name),
-            IF(
-                language_code <> '',
-                CONCAT(' (', language_code, ')'),
-                ''
-            )
-        ) AS `name`,
-        IF(property_name = '', display_name, property_name) AS `value`,
-        language_code AS languageCode,
-        inputtype = 'image-upload' AS isImageField,
-        IFNULL(JSON_UNQUOTE(JSON_EXTRACT(NULLIF(`options`, ''), '$.multiple')), 'true') = 'true' AS allowMultipleImages,
-        1 AS baseOrder
-    FROM wiser_entityproperty
-    WHERE entity_name = '{entityName}'
-    OR ('{linkType}' > 0 AND link_type = '{linkType}')
-    ORDER BY baseOrder, `name`
-) AS property");
                 TemplateQueryStrings.Add("GET_ROLE_RIGHTS", @"SELECT
 	properties.id AS `propertyId`,
 	properties.entity_name AS `entityName`,
