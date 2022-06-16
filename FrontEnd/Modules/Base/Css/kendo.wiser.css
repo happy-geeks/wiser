@@ -623,15 +623,6 @@
 	top: 62px;
 	z-index: 100;
 }
-.k-tabstrip .k-tabstrip-items:before {
-    background: var(--white-color);
-    content: "";
-    height: 5px;
-    position: absolute;
-    left: 0;
-    top: -5px;
-    width: 100%;
-}
 .tabStripPopup.k-tabstrip .k-tabstrip-items {
 	top: 0;
 }

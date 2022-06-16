@@ -140,6 +140,15 @@ header {
 }
 
 /**
+ * Main
+ **/
+main {
+    &.scrollable {
+        overflow: auto;
+    }
+}
+
+/**
  * Error alerts
  **/
 .full-error {
