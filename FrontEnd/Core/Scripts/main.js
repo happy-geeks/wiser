@@ -384,6 +384,14 @@ import {
                             });
                         
                         return !this.$store.state.users.changePasswordError;
+                    },
+
+                    switchLanguage(currentCulture) {
+                        if(currentCulture == "nl")
+                            document.cookie = `.AspNetCore.Culture=c=en|uic=en; expires=${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toUTCString}; path=/`;
+                        else
+                            document.cookie = `.AspNetCore.Culture=c=nl|uic=nl; expires=${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toUTCString}; path=/`;
+                        location.reload();
                     }
                 }
             });

@@ -1,17 +1,21 @@
 ﻿@using FrontEnd.Core.Models
+@using Microsoft.AspNetCore.Mvc.Localization
 
 @model BaseViewModel
+@inject IViewLocalizer Localizer
+
 <style>
     [v-cloak] {
         display: none;
     }
 </style>
+
 <!-- Current Wiser version: @Model.WiserVersion?.ToString() -->
 <div id="app" v-cloak :class="{ loading: mainLoader }">
     <header v-if="user.loggedIn && !requirePasswordChange">
         <ul class="main-menu">
             <li id="side-menu">
-                <div id="menu-btn" @@click="toggleMenuState()"><ins class="icon-menu"></ins><span>Menu</span></div>
+                <div id="menu-btn" @@click="toggleMenuState()"><ins class="icon-menu"></ins><span>@Localizer["Menu"]</span></div>
                 <div id="side-btn" @@click="toggleMenuActive()"><ins class="icon-chevron-right"></ins></div>
 
                 <nav id="side-nav">
@@ -37,7 +41,7 @@
                 <div v-for="module in openedModules" :key="module.id" :class="{ 'tab-item': true, active: module.id === activeModule }" @@click="setActiveModule($event, module.id)" :title="module.name">
                     <ins :class="module.icon"></ins>
                     <strong>{{ module.name }}</strong>
-                    <span class="close-module" title="module sluiten" @@click="closeModule(module)"></span>
+                    <span class="close-module" title="@Localizer["module sluiten"]" @@click="closeModule(module)"></span>
                 </div>
             </li>
 
@@ -50,17 +54,18 @@
 
             <li class="login">
                 <span>
-                    <strong class="title">Welkom</strong>
+                    <strong class="title">@Localizer["Welkom"]</strong>
                     <span class="sub-title">{{ user.name }}</span>
                     <ins class="icon-chevron-down"></ins>
                 </span>
 
                 <ul class="sub-menu">
-                    <li><a href="#" v-if="user.adminAccountId" @@click="openCustomerManagement()"><ins class="icon-line-user-plus"></ins><span>Klant toevoegen</span></a></li>
-                    <li><a href="#" @@click="openMarkerIoScreen()"><ins class="icon-line-bug"></ins><span>Bug melden! (CTRL+B)</span></a></li>
-                    <li><a href="#" @@click="openWiserIdPrompt"><ins class="icon-line-database-search"></ins><span>Wiser item openen (CTRL+O)</span></a></li>
-                    <li><a href="#" @@click="openChangePasswordPrompt"><ins class="icon-line-lock"></ins><span>Wachtwoord wijzigen</span></a></li>
-                    <li><a href="#" @@click="logout()"><ins class="icon-line-log-out"></ins><span>Uitloggen</span></a></li>
+                    <li><a href="#" v-if="user.adminAccountId" @@click="openCustomerManagement()"><ins class="icon-line-user-plus"></ins><span>@Localizer["Klant toevoegen"]</span></a></li>
+                    <li><a href="#" @@click="openMarkerIoScreen()"><ins class="icon-line-bug"></ins><span>@Localizer["Bug melden! (CTRL+B)"]</span></a></li>
+                    <li><a href="#" @@click="openWiserIdPrompt"><ins class="icon-line-database-search"></ins><span>@Localizer["Wiser item openen (CTRL+O)"]</span></a></li>
+                    <li><a href="#" @@click="openChangePasswordPrompt"><ins class="icon-line-lock"></ins><span>@Localizer["Wachtwoord wijzigen"]</span></a></li>
+                    <li><a href="#" @@click="logout()"><ins class="icon-line-log-out"></ins><span>@Localizer["Uitloggen"]</span></a></li>
+                    <li><a href="#" @@click="switchLanguage('@System.Globalization.CultureInfo.CurrentCulture')"><ins class="icon-line-log-out"></ins><span>@Localizer["Taal wijzigen"]</span></a></li>
                 </ul>
             </li>
             <li class="logo">
@@ -75,7 +80,7 @@
     </header>
 
     <main :class="{ login: !user.loggedIn || requirePasswordChange }">
-        <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
+        <p v-if="user.loggedIn && !mainLoader && !hasModules">@Localizer["Voor deze gebruiker zijn geen modules beschikbaar."]</p>
         <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
         <section class="iframe-container">
             <iframe v-for="module in openedModulesWithBackend" :key="module.id" :src="module.iframeUrl || `/Modules/${module.type}${module.fileName}${module.queryString}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
@@ -87,26 +92,26 @@
         </keep-alive>
     </main>
 
-    <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een ID in'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]" @@open="onWiserIdPromptOpen">
+    <wiser-dialog :modal="true" :width="'400px'" :title="'@Localizer["Vul een ID in"]'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: '@Localizer["Annuleren"]' }, { text: '@Localizer["Openen"]', primary: true, action: openWiserItem }]" @@open="onWiserIdPromptOpen">
         <div class="form-row">
             <input type="number" id="wiserId" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" @@keypress="onWiserIdFieldKeyPress" required>
         </div>
     </wiser-dialog>
-    <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
-        <p>Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:</p>
+    <wiser-dialog :modal="true" :width="'400px'" :title="'@Localizer["Entiteit"]'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: '@Localizer["Annuleren"]' }, { text: '@Localizer["Openen"]', primary: true, action: openWiserItem }]">
+        <p>@Localizer["Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:"]</p>
         <div class="form-row">
             <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
         </div>
     </wiser-dialog>
-    <wiser-dialog :modal="true" :width="'400px'" :title="'Wachtwoord wijzigen'" ref="changePasswordPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Opslaan', primary: true, action: changePassword }]">
+    <wiser-dialog :modal="true" :width="'400px'" :title="'@Localizer["Wachtwoord wijzigen"]'" ref="changePasswordPrompt" :visible="false" :actions="[{ text: '@Localizer["Annuleren"]' }, { text: '@Localizer["Opslaan"]', primary: true, action: changePassword }]">
         <div class="form-row">
-            <input type="password" id="oldPassword" name="oldPassword" class="loginField passwordField" placeholder="Uw huidig wachtwoord" v-model="changePasswordPromptOldPasswordValue" />
+            <input type="password" id="oldPassword" name="oldPassword" class="loginField passwordField" placeholder="@Localizer["Uw huidig wachtwoord"]" v-model="changePasswordPromptOldPasswordValue" />
         </div>
         <div class="form-row">
-            <input type="password" id="newPassword" name="newPassword" class="loginField passwordField" placeholder="Uw nieuwe wachtwoord" v-model="changePasswordPromptNewPasswordValue" />
+            <input type="password" id="newPassword" name="newPassword" class="loginField passwordField" placeholder="@Localizer["Uw nieuwe wachtwoord"]" v-model="changePasswordPromptNewPasswordValue" />
         </div>
         <div class="form-row">
-            <input type="password" id="newPasswordRepeat" name="newPasswordRepeat" class="loginField passwordField" placeholder="Nogmaals uw nieuwe wachtwoord" v-model="changePasswordPromptNewPasswordRepeatValue" />
+            <input type="password" id="newPasswordRepeat" name="newPasswordRepeat" class="loginField passwordField" placeholder="@Localizer["Nogmaals uw nieuwe wachtwoord"]" v-model="changePasswordPromptNewPasswordRepeatValue" />
         </div>
 
         <div class="error" v-if="changePasswordError">{{ changePasswordError }}</div>
@@ -123,75 +128,75 @@
             </section>
             <section class="full-error" v-if="!validSubDomain">
                 <ins class="icon-line-alert"></ins>
-                <span>U heeft een ongeldig subdomein gebruikt. Controleer a.u.b. het subdomein of neem contact op met ons.</span>
+                <span>@Localizer["U heeft een ongeldig subdomein gebruikt. Controleer a.u.b. het subdomein of neem contact op met ons."]</span>
             </section>
 
             <div v-if="validSubDomain && loginStatus !== 'list' && loginStatus !== 'list_loading' && !showForgotPasswordScreen && !requirePasswordChange">
                 <div class="form-row">
-                    <input type="text" id="username" placeholder="Gebruikersnaam" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="loginForm.username" required>
+                    <input type="text" id="username" placeholder="@Localizer["Gebruikersnaam"]" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="loginForm.username" required>
                 </div>
 
                 <div class="form-row">
-                    <input type="password" id="password" placeholder="Wachtwoord" autocomplete="off" v-model="loginForm.password" @@keydown="checkCapslock($event)" required>
+                    <input type="password" id="password" placeholder="@Localizer["Wachtwoord"]" autocomplete="off" v-model="loginForm.password" @@keydown="checkCapslock($event)" required>
                     <ins id="password-toggle" class="icon-eye-visible" v-on:click="togglePassword()"></ins>
 
-                    <div class="pwd-message" v-if="loginForm.capslock">Caps lock staat aan</div>
+                    <div class="pwd-message" v-if="loginForm.capslock">@Localizer["Caps lock staat aan"]</div>
                 </div>
 
                 <div class="form-row">
                     <label id="remember" class="check-box">
-                        <input type="checkbox" name="remember" class="no-form" v-model="loginForm.rememberMe"><span>Ingelogd blijven</span>
+                        <input type="checkbox" name="remember" class="no-form" v-model="loginForm.rememberMe"><span>@Localizer["Ingelogd blijven"]</span>
                     </label>
                 </div>
 
                 <div class="btn-row">
-                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'loading' }">Inloggen</button>
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'loading' }">@Localizer["Inloggen"]</button>
 
-                    <a href="#" v-on:click="togglePasswordForgottenScreen(true)" id="forgotten-password">Wachtwoord vergeten?</a>
+                    <a href="#" v-on:click="togglePasswordForgottenScreen(true)" id="forgotten-password">@Localizer["Wachtwoord vergeten?"]</a>
                 </div>
             </div>
             <div v-if="loginStatus === 'list' || loginStatus === 'list_loading' && !showForgotPasswordScreen">
-                <p>Kies de gebruiker waarmee u wilt inloggen</p>
+                <p>@Localizer["Kies de gebruiker waarmee u wilt inloggen"]</p>
 
                 <div class="form-row"> 
                     <combobox :data-items="listOfUsers" :text-field="'Title'" :data-item-key="'username'" v-model="loginForm.selectedUser" :filterable="true" @@filterchange="userFilterChange"></combobox>
                 </div>
 
                 <div class="btn-row">
-                    <a href="#" class="btn btn-secundary" @@click="logout()">Annuleren</a>
-                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'list_loading' }">Verder</button>
+                    <a href="#" class="btn btn-secundary" @@click="logout()">@Localizer["Annuleren"]</a>
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'list_loading' }">@Localizer["Verder"]</button>
                 </div>
             </div>
             <div v-if="showForgotPasswordScreen" class="forgotPasswordScreen">
                 <section class="success" v-if="resetPassword">
-                    <span>Een email is verstuurd met uw nieuwe wachtwoord.</span>
+                    <span>@Localizer["Een email is verstuurd met uw nieuwe wachtwoord."]</span>
                 </section>
                 <div class="form-row">
-                    <input type="text" class="loginField usernameField" placeholder="Gebruikersnaam" v-model="forgotPasswordForm.username" />
+                    <input type="text" class="loginField usernameField" placeholder="@Localizer["Gebruikersnaam"]" v-model="forgotPasswordForm.username" />
                 </div>
                 <div class="form-row">
-                    <input type="text" class="loginField passwordField" placeholder="E-mailadres" v-model="forgotPasswordForm.email" />
+                    <input type="text" class="loginField passwordField" placeholder="@Localizer["E-mailadres"]" v-model="forgotPasswordForm.email" />
                 </div>
 
                 <div class="btn-row">
-                    <button type="submit" :class="{ btn: true, 'btn-primary': true }">Verzenden</button>
-                    <div :class="{ btn: true }" v-on:click="togglePasswordForgottenScreen(false)">Annuleren</div>
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true }">@Localizer["Verzenden"]</button>
+                    <div :class="{ btn: true }" v-on:click="togglePasswordForgottenScreen(false)">@Localizer["Annuleren"]</div>
                 </div>
             </div>
             <div class="changePasswordAfterLogin" v-if="requirePasswordChange">
-                <h3>U moet een nieuw wachtwoord kiezen, vul dit a.u.b. hier in</h3>
+                <h3>@Localizer["U moet een nieuw wachtwoord kiezen, vul dit a.u.b. hier in"]</h3>
                 <div class="form-row">
-                    <input type="password" id="newPassword" name="newPassword" class="loginField passwordField" placeholder="Uw nieuwe wachtwoord" v-model="changePasswordForm.newPassword" />
+                    <input type="password" id="newPassword" name="newPassword" class="loginField passwordField" placeholder="@Localizer["Uw nieuwe wachtwoord"]" v-model="changePasswordForm.newPassword" />
                 </div>
                 <div class="form-row">
-                    <input type="password" id="newPasswordRepeat" name="newPasswordRepeat" class="loginField passwordField" placeholder="Nogmaals uw nieuwe wachtwoord" v-model="changePasswordForm.newPasswordRepeat" />
+                    <input type="password" id="newPasswordRepeat" name="newPasswordRepeat" class="loginField passwordField" placeholder="@Localizer["Nogmaals uw nieuwe wachtwoord"]" v-model="changePasswordForm.newPasswordRepeat" />
                 </div>
 
                 <div class="error"></div>
 
                 <div class="btn-row">
-                    <button id="submitPasswordChange" type="submit" :class="{ btn: true, 'btn-primary': true }">Wijzigen</button>
-                    <button id="cancelPasswordChange" :class="{ btn: true }">Annuleren</button>
+                    <button id="submitPasswordChange" type="submit" :class="{ btn: true, 'btn-primary': true }">@Localizer["Wijzigen"]</button>
+                    <button id="cancelPasswordChange" :class="{ btn: true }">@Localizer["Annuleren"]</button>
                 </div>
             </div>
         </form>
@@ -200,73 +205,73 @@
 
 <script type="text/html" id="customer-management-template">
     <div :class="{ loading: loading, 'form-inline': true, 'new-customer-form': true }">
-        <h1>Nieuwe Wiser account toevoegen...</h1>
+        <h1>@Localizer["Nieuwe Wiser account toevoegen..."]</h1>
         <p class="success" v-if="currentStep === 'end'">
-            De klant is successvol aangemaakt en heeft als ID '<em>{{ createCustomerResult.data.id }}</em>' gekregen.<br />
-            De URL voor Wiser Live is geworden: <a :href="'https://' + newCustomerData.subDomain + '.wiser3.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.nl</a>. (Deze werkt pas nadat er een DNS-record is toegevoegd voor dit subdomein.)<br />
-            De URL voor Wiser dev is geworden: <a :href="'http://' + newCustomerData.subDomain + '.wiser3.juicedev.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.juicedev.nl</a>. (Deze kan al direct gebruikt worden.)
+            @Localizer["De klant is successvol aangemaakt en heeft als ID '<em>{0}</em>' gekregen.", "{{ createCustomerResult.data.id }}"]<br />
+            @Localizer["De URL voor Wiser Live is geworden:"] <a :href="'https://' + newCustomerData.subDomain + '.wiser3.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.nl</a>. (@Localizer["Deze werkt pas nadat er een DNS-record is toegevoegd voor dit subdomein."])<br />
+            @Localizer["De URL voor Wiser dev is geworden:"] <a :href="'http://' + newCustomerData.subDomain + '.wiser3.juicedev.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.juicedev.nl</a>. (@Localizer["Deze kan al direct gebruikt worden."])
         </p>
-        <p v-if="newCustomerData.createNewDatabase">Verder zijn nog de volgende databasegebruikers aangemaakt:</p>
-        <p v-else>Je hebt de volgende databasegebruiker ingevuld:</p>
+        <p v-if="newCustomerData.createNewDatabase">@Localizer["Verder zijn nog de volgende databasegebruikers aangemaakt:"]</p>
+        <p v-else>@Localizer["Je hebt de volgende databasegebruiker ingevuld:"]</p>
         <ul class="success" v-if="currentStep === 'end'">
             <li v-for="user in createCustomerResult.databaseUsers" :key="user.name">
                 <strong>{{ user.name }}:</strong> {{ user.password }}
             </li>
         </ul>
-        <p class="success" v-if="currentStep === 'end'"><a href="#" class="btn btn-secundary" @@click="reset">Nog een klant aanmaken</a></p>
+        <p class="success" v-if="currentStep === 'end'"><a href="#" class="btn btn-secundary" @@click="reset">@Localizer["Nog een klant aanmaken"]</a></p>
         <form method="post" v-if="currentStep !== 'end'">
             <section class="step" v-if="currentStep === 1">
                 <div class="form-row">
-                    <label for="newCustomerName">Wat is de gewenste bedrijfsnaam en/of accountnaam?</label>
+                    <label for="newCustomerName">@Localizer["Wat is de gewenste bedrijfsnaam en/of accountnaam?"]</label>
                     <input type="text" id="newCustomerName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.name" required :class="{ error: errors.indexOf('NameNotAvailable') > -1, small: true }" placeholder="Happy Geeks B.V.">
-                    <p class="hint">De volledige bedrijfsnaam van de klant. Bijvoorbeeld 'Happy Geeks B.V.'. Alleen wij zien deze naam terug, de klant ziet deze naam nergens.</p>
+                    <p class="hint">@Localizer["De volledige bedrijfsnaam van de klant. Bijvoorbeeld 'Happy Geeks B.V.'. Alleen wij zien deze naam terug, de klant ziet deze naam nergens."]</p>
                 </div>
                 <div class="form-row error-row" v-if="errors.indexOf('NameNotAvailable') > -1">
                     <ins class="icon-line-alert"></ins>
-                    <span>Er bestaat al een klant met deze naam. Kies a.u.b. een andere naam.</span>
+                    <span>@Localizer["Er bestaat al een klant met deze naam. Kies a.u.b. een andere naam."]</span>
                 </div>
 
                 <div class="form-row">
-                    <label for="subDomain">Wat is het subdomein dat gebruikt moet worden voor Wiser 2?</label>
+                    <label for="subDomain">@Localizer["Wat is het subdomein dat gebruikt moet worden voor Wiser 2?"]</label>
                     <input type="text" id="subDomain" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.subDomain" required :class="{ error: errors.indexOf('SubDomainNotAvailable') > -1, small: true }" placeholder="happygeeks"><span class="hint">.wiser.nl</span>
-                    <p class="hint">Alleen het subdomein, met kleine letters, bijvoorbeeld 'happygeeks'. Dit is verplicht voor Wiser 2 klanten, die moeten kunnen inloggen via een subdomein, zoals 'happygeeks.wiser.nl'.</p>
+                    <p class="hint">@Localizer["Alleen het subdomein, met kleine letters, bijvoorbeeld 'happygeeks'. Dit is verplicht voor Wiser 2 klanten, die moeten kunnen inloggen via een subdomein, zoals 'happygeeks.wiser.nl'."]</p>
                 </div>
                 <div class="form-row error-row" v-if="errors.indexOf('SubDomainNotAvailable') > -1">
                     <ins class="icon-line-alert"></ins>
-                    <span>Er bestaat al een klant met dit subdomein. Kies a.u.b. een ander subdomein.</span>
+                    <span>@Localizer["Er bestaat al een klant met dit subdomein. Kies a.u.b. een ander subdomein."]</span>
                 </div>
                 <div class="form-row">
                     <label>
                         <input type="checkbox" name="isWebShop" v-model="newCustomerData.isWebShop" />
-                        Is webshop
+                        @Localizer["Is webshop"]
                     </label>
-                    <p class="hint">Zet dit vinkje aan indien de klant ook een webshop krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld verzendmethodes, btw-regels etc.</p>
+                    <p class="hint">@Localizer["Zet dit vinkje aan indien de klant ook een webshop krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld verzendmethodes, btw-regels etc."]</p>
                 </div>
                 <div class="form-row">
                     <label>
                         <input type="checkbox" name="isConfigurator" v-model="newCustomerData.isConfigurator" />
-                        Is configurator
+                        @Localizer["Is configurator"]
                     </label>
-                    <p class="hint">Zet dit vinkje aan indien de klant ook een configurator krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld configuration en configurationlines.</p>
+                    <p class="hint">@Localizer["Zet dit vinkje aan indien de klant ook een configurator krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld configuration en configurationlines."]</p>
                 </div>
             </section>
 
             <section class="step" v-if="currentStep === 2">
                 <fieldset>
-                    <legend>Domein</legend>
+                    <legend>@Localizer["Domein"]</legend>
 
                     <div class="form-row">
-                        <label for="siteName">Naam van website</label>
+                        <label for="siteName">@Localizer["Naam van website"]</label>
                         <input type="text" id="siteName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.siteName" placeholder="Happy Geeks">
-                        <p class="hint">De naam van de website, deze wordt op elke pagina achteraan de titel toegevoegd. Voorbeeld: Contact - Happy Geeks</p>
+                        <p class="hint">@Localizer["De naam van de website, deze wordt op elke pagina achteraan de titel toegevoegd. Voorbeeld: Contact - Happy Geeks"]</p>
                     </div>
 
                     <div class="form-row">
-                        <label for="hostDev">Domein dev</label>
+                        <label for="hostDev">@Localizer["Domein dev"]</label>
                         <input type="text" id="hostDev" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostDev" placeholder="happygeeks.nl.juicedev.nl">
                         <p class="hint">
-                            Het domein wat straks voor de test gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
-                            <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
+                            @Localizer["Het domein wat straks voor de test gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen."]<br />
+                            <strong>@Localizer["In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant."]</strong>
                         </p>
                     </div>
 
@@ -274,8 +279,8 @@
                         <label for="hostTest">Domein test</label>
                         <input type="text" id="hostTest" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostTest" placeholder="klant.happygeeks.dev">
                         <p class="hint">
-                            Het domein wat straks voor de test gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
-                            <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
+                            @Localizer["Het domein wat straks voor de test gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen."]<br />
+                            <strong>@Localizer["In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant."]</strong>
                         </p>
                     </div>
 
@@ -283,29 +288,29 @@
                         <label for="hostLive">Domein live</label>
                         <input type="text" id="hostLive" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostLive" placeholder="happygeeks.nl">
                         <p class="hint">
-                            Het domein wat straks voor de live gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
-                            <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
+                           @Localizer["Het domein wat straks voor de test gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen."]<br />
+                            <strong>@Localizer["In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant."]</strong>
                         </p>
                     </div>
                 </fieldset>
 
                 <fieldset>
-                    <legend>Database</legend>
+                    <legend>@Localizer["Database"]</legend>
 
                     <div class="form-row">
                         <label>
                             <input type="checkbox" name="newDatabase" v-model="newCustomerData.createNewDatabase" />
-                            Nieuw databaseschema maken
+                            @Localizer["Nieuw databaseschema maken"]
                         </label>
                     </div>
 
                     <div class="form-row" v-if="newCustomerData.createNewDatabase">
-                        <label for="digitalOceanApiAccessToken">Digital Ocean access token</label>
+                        <label for="digitalOceanApiAccessToken">@Localizer["Digital Ocean access token"]</label>
                         <input type="text" id="digitalOceanApiAccessToken" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.digitalOceanApiAccessToken" required>
                         <p class="hint">
-                            <a href="@(Model.Settings.ApiBaseUrl)api/v3/digital-ocean/authorize" target="_blank">Open eerst deze pagina</a> en geef toestemming op die pagina.
-                            Vervolgens krijg je wat JSON te zien. Kopieer hieruit de waarde van "access_token" en plak die in dit veld.<br />
-                            Klik daarna op de knop "Haal clusters op" hieronder en selecteer daarna het cluster waar de klant aan toegevoegd moet worden.
+                            <a href="@(Model.Settings.ApiBaseUrl)api/v3/digital-ocean/authorize" target="_blank">@Localizer["Open eerst deze pagina"]</a> @Localizer["en geef toestemming op die pagina."]
+                            @Localizer["Vervolgens krijg je wat JSON te zien. Kopieer hieruit de waarde van \"access_token\" en plak die in dit veld."]<br />
+                            @Localizer["Klik daarna op de knop \"Haal clusters op\" hieronder en selecteer daarna het cluster waar de klant aan toegevoegd moet worden."]
                         </p>
                     </div>
 
@@ -318,34 +323,34 @@
                         </li>
                     </ul>
                     <div class="btn-row" v-else-if="newCustomerData.createNewDatabase">
-                        <button type="button" class="btn btn-primary" @@click="getDbClusters">Haal clusters op</button>
+                        <button type="button" class="btn btn-primary" @@click="getDbClusters">@Localizer["Haal clusters op"]</button>
                     </div>
 
                     <div class="form-row" v-if="!newCustomerData.createNewDatabase">
-                        <label for="databaseHost">Host <strong>*</strong></label>
+                        <label for="databaseHost">@Localizer["Host"] <strong>*</strong></label>
                         <input type="text" id="databaseHost" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseHost" required>
                     </div>
 
                     <div class="form-row">
-                        <label for="databaseUsername">Loginnaam <strong>*</strong></label>
+                        <label for="databaseUsername">@Localizer["Loginnaam"] <strong>*</strong></label>
                         <input type="text" id="databaseUsername" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseUsername" required>
-                        <p class="hint" v-if="newCustomerData.createNewDatabase">Vul een naam in voor een databagebruiker die nog niet bestaat.</p>
-                        <p class="hint" v-else>Vul een naam in van een bestaande databasegebruiker.</p>
+                        <p class="hint" v-if="newCustomerData.createNewDatabase">@Localizer["Vul een naam in voor een databagebruiker die nog niet bestaat."]</p>
+                        <p class="hint" v-else>@Localizer["Vul een naam in van een bestaande databasegebruiker."]</p>
                     </div>
 
                     <div class="form-row" v-if="!newCustomerData.createNewDatabase">
-                        <label for="databasePassword">Wachtwoord <strong>*</strong></label>
+                        <label for="databasePassword">@Localizer["Wachtwoord"] <strong>*</strong></label>
                         <input type="text" id="databasePassword" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databasePassword" required>
                     </div>
 
                     <div class="form-row">
-                        <label for="databaseSchema">Schemanaam <strong>*</strong></label>
+                        <label for="databaseSchema">@Localizer["Schemanaam"] <strong>*</strong></label>
                         <input type="text" id="databaseSchema" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseSchema" required>
-                        <p class="hint" v-if="newCustomerData.createNewDatabase">Vul een naam in voor een databaseschema die nog niet bestaat.</p>
-                        <p class="hint" v-else>Vul een naam in van een bestaand databaseschema.</p>
+                        <p class="hint" v-if="newCustomerData.createNewDatabase">@Localizer["Vul een naam in voor een databaseschema die nog niet bestaat."]</p>
+                        <p class="hint" v-else>@Localizer["Vul een naam in van een bestaand databaseschema."]</p>
                     </div>
                     <div class="form-row" v-if="!newCustomerData.createNewDatabase">
-                        <label for="databasePort">Poortnummer <strong>*</strong></label>
+                        <label for="databasePort">@Localizer["Poortnummer"] <strong>*</strong></label>
                         <input type="number" id="databasePort" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databasePort" required min="1" step="1">
                     </div>
                 </fieldset>
@@ -357,7 +362,7 @@
             </div>
 
             <div class="btn-row">
-                <a href="#" class="btn btn-secundary" v-if="currentStep > 1" @@click="previousStep">Terug</a>
+                <a href="#" class="btn btn-secundary" v-if="currentStep > 1" @@click="previousStep">@Localizer["Terug"]</a>
                 <button type="submit" class="btn btn-primary" @@click="nextStep">{{ nextButtonText }}</button>
             </div>
         </form>

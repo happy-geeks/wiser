@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -92,7 +93,18 @@ namespace FrontEnd
                 options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
                 options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Local;
                 options.SerializerSettings.Converters.Add(new StringEnumConverter());
+            })
+            .AddViewLocalization();
+
+            //Configure localization
+            services.Configure<RequestLocalizationOptions>(localizationOptions =>
+            {
+                var supportedCultures = new[] { "nl", "en" };
+                localizationOptions.SetDefaultCulture(supportedCultures[0])
+                    .AddSupportedCultures(supportedCultures)
+                    .AddSupportedUICultures(supportedCultures);
             });
+            services.AddLocalization(options => options.ResourcesPath = "Modules/Translations/Resources");
 
             // Setup dependency injection.
             services.AddHttpContextAccessor();
@@ -116,6 +128,7 @@ namespace FrontEnd
 
             app.UseStaticFiles();
             app.UseRouting();
+            app.UseRequestLocalization(app.ApplicationServices.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
 
             app.UseEndpoints(endpoints =>
             {
