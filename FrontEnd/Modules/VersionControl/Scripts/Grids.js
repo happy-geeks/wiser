@@ -50,9 +50,13 @@ export class Grids {
                 var countQuery = value["countQuery"];
                 var gridOptions = value["gridOptions"];
                 var gridDivId = value["gridDivId"];
-
-                await this.setupGridViewMode(customQuery, countQuery, gridOptions, gridDivId);
+                var gridReadOptions = value["gridReadOptions"];
+        
+                await this.setupGridViewMode(customQuery, countQuery, gridOptions, gridDivId, gridReadOptions);
             } 
+
+            this.gridsAreLoaded = true;
+
         } catch (exception) {
             console.error(exception);
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
@@ -71,7 +75,7 @@ export class Grids {
     }
 
 
-    async setupGridViewMode(customQuery,countQuery, gridOptions, gridViewId) {
+    async setupGridViewMode(customQuery,countQuery, gridOptions, gridViewId, gridReadOptions) {
 
         var gridViewOptionParse = JSON.parse(gridOptions);
 
@@ -88,21 +92,34 @@ export class Grids {
             let previousFilters = null;
 
             const usingDataSelector = !!gridViewOptionParse.dataSelectorId;
-            
-            const options = {
-                page: 1,
-                pageSize: gridViewOptionParse.pageSize || 100,
-                skip: 0,
-                take: gridViewOptionParse.clientSidePaging ? 0 : (gridViewOptionParse.pageSize || 100),
-                firstLoad: true
-            }
 
-            const test = {
+            var options;
+            console.log(gridReadOptions);
+            if (gridReadOptions == "") {
+                options = {
+                    page: 1,
+                    pageSize: gridViewOptionParse.pageSize || 100,
+                    skip: 0,
+                    take: gridViewOptionParse.clientSidePaging ? 0 : (gridViewOptionParse.pageSize || 100),
+                    firstLoad: true
+                }
+            } else {
+                options = JSON.parse(gridReadOptions);
+            }
+           
+          
+            console.log(options);
+           
+
+           
+
+            const gridOptionsData = {
                 customQuery: customQuery,
                 countQuery: countQuery,
                 gridOptions: gridOptions,
                 gridReadOptions: options
             }
+  
 
             if (gridViewOptionParse.dataSource && gridViewOptionParse.dataSource.filter) {
                 options.filter = gridViewOptionParse.dataSource.filter;
@@ -113,7 +130,7 @@ export class Grids {
                     url: `${this.base.settings.wiserApiRoot}VersionControl/${encodeURIComponent(this.base.settings.moduleId)}/overview-grid`,
                     method: "POST",
                     contentType: "application/json",
-                    data: JSON.stringify(test)
+                    data: JSON.stringify(gridOptionsData)
                 });
 
 
@@ -261,11 +278,14 @@ export class Grids {
                             const process = `loadMainGrid_${Date.now()}`;
                             
                             try {
-                                transportOptions.success(gridDataResult);
-                                this.mainGridFirstLoad = false;
-                                window.processing.removeProcess(initialProcess);
-                                return;
-                              
+                                if (this.mainGridFirstLoad && this.gridsAreLoaded == false) {
+                                    transportOptions.success(gridDataResult);
+                                    //this.mainGridFirstLoad = false;
+                                    window.processing.removeProcess(initialProcess);
+                                    return;
+                                }
+                                //get wich grid you are sorting
+                                console.log("Not first");
                                 if (!transportOptions.data) {
                                     transportOptions.data = {};
                                 }
@@ -283,8 +303,9 @@ export class Grids {
                                 transportOptions.data.pageSize = transportOptions.data.pageSize;
                                 previousFilters = currentFilters;
                                 this.mainGridForceRecount = false;
-
+                                
                                 let newGridDataResult;
+                                let newGridDataResult1;
                                 if (usingDataSelector) {
                                    
                                     newGridDataResult = {
@@ -300,25 +321,25 @@ export class Grids {
                                     var uid = finalGridViewSettings.dataSource.fields[0].uid;
                                     var uidElement = document.getElementById(uid);
                                     var table = uidElement.closest("[data-role='grid']");
-                                    
-
-
-                                    newGridDataResult = await Wiser2.api({
+                                    var id = table.id;
+                               
+                                    newGridDataResult1 = await Wiser2.api({
                                        
-                                        url: `${this.base.settings.wiserApiRoot}modules/${encodeURIComponent(this.base.settings.moduleId)}/overview-grid`,
+                                        url: `${this.base.settings.wiserApiRoot}VersionControl/${id}/overview-grid`,
                                         method: "POST",
                                         contentType: "application/json",
                                         data: JSON.stringify(transportOptions.data)
                                     });
+                                    
                                 }
 
-                                if (typeof newGridDataResult.totalResults !== "number" || !transportOptions.data.firstLoad) {
-                                    newGridDataResult.totalResults = totalResults;
+                                if (typeof newGridDataResult1.totalResults !== "number" || !transportOptions.data.firstLoad) {
+                                    newGridDataResult1.totalResults = totalResults;
                                 } else if (transportOptions.data.firstLoad) {
-                                    totalResults = newGridDataResult.totalResults;
+                                    totalResults = newGridDataResult1.totalResults;
                                 }
 
-                                transportOptions.success(newGridDataResult);
+                                transportOptions.success(newGridDataResult1);
                             } catch (exception) {
                                 console.error(exception);
                                 transportOptions.error(exception);

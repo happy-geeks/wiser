@@ -13,7 +13,7 @@ namespace Api.Modules.VersionControl.Interfaces.DataLayer
         /// </summary>
         /// <param name="commitModel"></param>
         /// <returns>Returns a model of the commit.</returns>
-        Task<CreateCommitModel> CreateCommitAsync(CreateCommitModel commitModel);
+        Task<CreateCommitModel> CreateCommitAsync(string commitMessage, string username);
 
         /// <summary>
         /// Creates new commit item in the database.

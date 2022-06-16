@@ -4,6 +4,8 @@ using Api.Core.Services;
 using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
+using System.Security.Claims;
+using Api.Core.Helpers;
 
 namespace Api.Modules.VersionControl.Service
 {
@@ -17,14 +19,14 @@ namespace Api.Modules.VersionControl.Service
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CreateCommitModel>> CreateCommitAsync(CreateCommitModel commitModel)
+        public async Task<ServiceResult<CreateCommitModel>> CreateCommitAsync(string commitMessage, ClaimsIdentity identity)
         {
-            if (String.IsNullOrWhiteSpace(commitModel.Description))
+            if (String.IsNullOrWhiteSpace(commitMessage))
             {
                 throw new ArgumentException("No commit message!");
             }
 
-            var result = await commitDataService.CreateCommitAsync(commitModel);
+            var result = await commitDataService.CreateCommitAsync(commitMessage, IdentityHelpers.GetUserName(identity));
 
             return new ServiceResult<CreateCommitModel>(result);
         }

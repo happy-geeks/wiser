@@ -39,5 +39,9 @@ namespace Api.Modules.VersionControl.Models
         /// The name of the grid.
         /// </summary>
         public string Name { get; set; }
+        /// <summary>
+        /// The read options of the grid
+        /// </summary>
+        public string GridReadOptions { get; set; }
     }
 }

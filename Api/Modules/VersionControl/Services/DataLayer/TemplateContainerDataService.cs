@@ -25,7 +25,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         /// <inheritdoc />
         public async Task<Dictionary<int, int>> GetTemplatesWithLowerVersionAsync(int templateId, int version)
         {
-            var query = $@"SELECT template_id, version FROM wiser_template t where t.template_id = ?templateId AND t.version < ?version AND NOT EXISTS(SELECT * FROM dev_template_live dt WHERE dt.itemid = t.template_id and dt.version = t.version)  ";
+            var query = $@"SELECT template_id, version FROM wiser_template t where t.template_id = ?templateId AND t.version < ?version AND NOT EXISTS(SELECT * FROM wiser_commit_template dt WHERE dt.template_id = t.template_id and dt.version = t.version)  ";
 
             clientDatabaseConnection.ClearParameters();
 
@@ -98,7 +98,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         /// <inheritdoc />
         public async Task<bool> CreateNewTemplateCommitAsync(TemplateCommitModel templateCommitModel)
         {
-            var query = $@"INSERT INTO dev_template_live (commitid,itemid,version) VALUES (?commitid,?itemid,?version)";
+            var query = $@"INSERT INTO wiser_commit_template (commit_id,template_id,version) VALUES (?commitid,?itemid,?version)";
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("commitid", templateCommitModel.CommitId);
@@ -113,7 +113,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         /// <inheritdoc />
         public async Task<bool> UpdateTemplateCommitAsync(TemplateCommitModel templateCommitModel)
         {
-            var query = $@"UPDATE dev_template_live SET islive = ?islive, isacceptance = ?isacceptance, istest = ?istest WHERE itemid = ?itemid AND version = ?version";
+            var query = $@"UPDATE wiser_commit_template SET islive = ?islive, isacceptance = ?isacceptance, istest = ?istest WHERE template_id = ?itemid AND version = ?version";
 
             clientDatabaseConnection.ClearParameters();
 

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Grids.Models;
+using Api.Modules.Kendo.Models;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.VersionControl.Interfaces;
@@ -70,5 +71,6 @@ namespace Api.Modules.VersionControl.Service
 
             return new ServiceResult<List<DynamicContentModel>>(result);
         }
+
     }
 }

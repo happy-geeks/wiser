@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.VersionControl.Models;
+using System.Security.Claims;
 
 namespace Api.Modules.VersionControl.Interfaces
 {
@@ -14,7 +15,7 @@ namespace Api.Modules.VersionControl.Interfaces
         /// </summary>
         /// <param name="commitModel"></param>
         /// <returns>Returns a model of the commit.</returns>
-        Task<ServiceResult<CreateCommitModel>> CreateCommitAsync(CreateCommitModel commitModel);
+        Task<ServiceResult<CreateCommitModel>> CreateCommitAsync(string commitMessage, ClaimsIdentity identity);
 
 
         /// <summary>

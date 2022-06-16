@@ -431,7 +431,7 @@ const moduleSettings = {
 
            
 
-            await this.commit.CreateNewCommit(contentId, commitMessage, "Admin");
+            await this.commit.CreateNewCommit(commitMessage);
 
            
 
@@ -462,17 +462,18 @@ const moduleSettings = {
            
             
             var commitMessage = this.getCommitMessage();
-            await this.commit.CreateNewCommit(commitMessage, "Admin");
+            await this.commit.CreateNewCommit(commitMessage);
             var createdCommit = await this.commit.GetCommitWithId()
             var commitId = createdCommit['id'];
-       
+        
 
             for (const [key, value] of Object.entries(templateSelected)) {
 
                 var templateVersionId = value.querySelector('[data-field="template_id"]').innerHTML;
                 var version = value.querySelector('[data-field="version"]').innerHTML;
- 
+                
                 var lowerVersionTemplates = await this.template.GetTemplatesWithLowerVersion(templateVersionId, version);
+              
 
                 for (const [key, value] of Object.entries(lowerVersionTemplates)) {
                     await this.commit.PutTemplateCommit(commitId, value, key, publishEnviornment);
@@ -482,7 +483,7 @@ const moduleSettings = {
                 await this.template.PublishTemplate(templateVersionId, publishEnviornment, version);
 
             }
-
+          
             for (const [key, value] of Object.entries(dynamicContentSelected)) {
 
                 var dynamicContentId = value.querySelector('[data-field="content_id"]').innerHTML;
@@ -531,7 +532,7 @@ const moduleSettings = {
                 return;
             }
 
-            await this.commit.CreateNewCommit(commitMessage, "Admin");
+            await this.commit.CreateNewCommit(commitMessage);
             var createdCommit = await this.commit.GetCommitWithId()
             var commitId = createdCommit['id'];
 
@@ -963,7 +964,7 @@ const moduleSettings = {
 
             if (commitToAcceptanceCheckbox.checked) {
                 deploymentOptions[1] = commitToAcceptanceCheckbox.value;
-                environment = "accept";
+                environment = "acceptance";
             }
 
             if (commitToLiveCheckbox.checked) {
@@ -974,7 +975,6 @@ const moduleSettings = {
             if (!(commitToLiveCheckbox.checked) && (!commitToAcceptanceCheckbox.checked) && !(commitToTestCheckbox.checked)) {
                 environment = "";
             }
-
             return environment;
         }
 

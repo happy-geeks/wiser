@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Grids.Models;
+using Api.Modules.Kendo.Models;
 using Api.Modules.Modules.Models;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
@@ -19,6 +20,7 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Models;
 using Newtonsoft.Json;
+using Api.Modules.Customers.Interfaces;
 
 namespace Api.Modules.VersionControl.Service.DataLayer
 {
@@ -28,13 +30,15 @@ namespace Api.Modules.VersionControl.Service.DataLayer
     public class VersionControlDataService : IVersionControlDataService
     {
         private readonly IDatabaseConnection clientDatabaseConnection;
+        private readonly IWiserCustomersService wiserCustomersService;
         /// <summary>
         /// 
         /// </summary>
         /// <param name="clientDatabaseConnection"></param>
-        public VersionControlDataService(IDatabaseConnection clientDatabaseConnection)
+        public VersionControlDataService(IDatabaseConnection clientDatabaseConnection, IWiserCustomersService wiserCustomersService)
         {
             this.clientDatabaseConnection = clientDatabaseConnection;
+            this.wiserCustomersService = wiserCustomersService; 
         }
 
 
@@ -42,7 +46,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         public async Task<Dictionary<int, int>> GetPublishedTemplateIdAndVersionAsync()
         {
 
-            var query = $@"SELECT template_id, version FROM test.wiser_template where published_environment != 0 group by template_id;";
+            var query = $@"SELECT template_id, version FROM wiser_template where published_environment != 0 group by template_id;";
 
             clientDatabaseConnection.ClearParameters();
 
@@ -69,7 +73,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         public async Task<List<TemplateCommitModel>> GetTemplatesFromCommitAsync(int commitId)
         {
 
-            var query = "SELECT dtl.* FROM dev_template_live dtl LEFT JOIN dev_template_live x ON x.itemid = dtl.itemid AND x.version = dtl.version WHERE dtl.version = (SELECT MAX(version) FROM dev_template_live x2 WHERE x2.itemid = dtl.itemid) AND dtl.commitid = ?commitId";
+            var query = "SELECT wct.* FROM wiser_commit_template wct LEFT JOIN wiser_commit_template wct2 ON wct2.template_id = wct.template_id AND wct2.version = wct.version WHERE wct.version = (SELECT MAX(version) FROM wiser_commit_template wct3 WHERE wct3.template_id = wct.template_id) AND wct.commit_id = ?commitId";
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("commitId", commitId);
@@ -81,8 +85,8 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             foreach (DataRow row in dataTable.Rows)
             {
                 TemplateCommitModel template = new TemplateCommitModel();
-                template.CommitId = row.Field<int>("commitid");
-                template.TemplateId = row.Field<int>("itemid");
+                template.CommitId = row.Field<int>("commit_id");
+                template.TemplateId = row.Field<int>("template_id");
                 template.Version = row.Field<int>("version");
 
                 templateList.Add(template);
@@ -112,7 +116,8 @@ namespace Api.Modules.VersionControl.Service.DataLayer
                 moduleGridSettings.GridOptions = row.Field<string>("grid_options");
                 moduleGridSettings.GridDivId = row.Field<string>("grid_div_id");
                 moduleGridSettings.Name = row.Field<string>("name");
-        
+                moduleGridSettings.GridReadOptions = row.Field<string>("grid_read_options");
+
 
                 moduleGridDataList.Add(moduleGridSettings);
             }
@@ -153,7 +158,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             var query = @"SELECT wcdc.* 
                         FROM wiser_commit_dynamic_content wcdc 
                         LEFT JOIN wiser_commit_dynamic_content x ON x.dynamic_content_id = wcdc.dynamic_content_id AND x.version = wcdc.version 
-                        WHERE wcdc.version = (SELECT MAX(version) FROM wiser_commit_dynamic_content x2 WHERE x2.dynamic_content_id = wcdc.dynamic_content_id) 
+                        WHERE wcdc.version = (SELECT MAX(version) FROM wiser_commit_dynamic_content wcdc2 WHERE wcdc2.dynamic_content_id = wcdc.dynamic_content_id) 
                         AND wcdc.commit_id = ?commitId";
 
             clientDatabaseConnection.ClearParameters();
@@ -175,5 +180,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
             return dynamicContentList;
         }
+
+       
     }
 }

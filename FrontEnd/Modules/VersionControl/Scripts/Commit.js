@@ -31,11 +31,10 @@ export class Commit {
       
     }
 
-    async CreateNewCommit(commitMessage, changedBy) {
+    async CreateNewCommit(commitMessage) {
         try {
             const commitData = {
                 Description: commitMessage,
-                ChangedBy: changedBy
             };
 
             const createCommit = await Wiser2.api({
@@ -73,6 +72,14 @@ export class Commit {
     async PutTemplateCommit(commitId, templateVersionId, version, enviornment) {
         try {
 
+            console.log(commitId);
+
+            console.log(templateVersionId);
+
+            console.log(version);
+
+            console.log(enviornment);
+
             const TemplateCommitData = {
                 CommitId: commitId,
                 TemplateId: templateVersionId,
@@ -80,7 +87,7 @@ export class Commit {
                 Enviornment: enviornment
 
             }
-
+            
             const createCommit = await Wiser2.api({
                 url: `${this.base.settings.wiserApiRoot}VersionControl/template-commit`,
                 method: "PUT",

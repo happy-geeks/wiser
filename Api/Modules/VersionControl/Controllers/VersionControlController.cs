@@ -44,13 +44,6 @@ namespace Api.Modules.VersionControl.Controllers
             this.commitService = commitService;
         }
 
-        /*[HttpPost, Route("{templateId:int}"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        public async Task<IActionResult> SaveAsync(int templateId, VersionControlModel templateData)
-        {
-            templateData.TemplateId = templateId;
-            return (await versionControlService.SaveTemplateVersionAsync((ClaimsIdentity)User.Identity, templateData)).GetHttpResponseMessage();
-        }*/
-
         /// <summary>
         /// Creates new commit and adds it to the database
         /// </summary>
@@ -59,7 +52,7 @@ namespace Api.Modules.VersionControl.Controllers
         [HttpPut, ProducesResponseType(typeof(CreateCommitModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateNewCommit(CreateCommitModel commitModel)
         {
-            return (await commitService.CreateCommitAsync(commitModel)).GetHttpResponseMessage();
+            return (await commitService.CreateCommitAsync(commitModel.Description, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -135,9 +128,8 @@ namespace Api.Modules.VersionControl.Controllers
         /// </summary>
         /// <param name="id">The ID of the module.</param>
         /// <param name="gridData">The data for the Kendo UI grid.</param>
-        /// <param name="gridDivId">The ID of the div you want this grid to be shown.</param>
         [HttpPost, Route("{id:int}/overview-grid"), ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> OverviewGridAsync(int id, ModuleGridDataSettings gridData, string gridDivId)
+        public async Task<IActionResult> OverviewGridAsync(int id, ModuleGridDataSettings gridData)
         {
             var result = (await gridsService.GetGridDataAsync(id,gridData,(ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
             return result;
@@ -299,14 +291,19 @@ namespace Api.Modules.VersionControl.Controllers
             return (await _versionControlService.GetModuleGridSettingsAsync(moduleId)).GetHttpResponseMessage();
         }
 
-
-        /*[HttpPost, Route("{id:int}/overview-grid"), ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> OverviewGridAsync(int id, GridReadOptionsModel options)
+        
+        [HttpPost]
+        [Route("{gridDivId}/overview-grid")]
+        [ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> OverviewGridVersionControlAsync(string gridDivId, GridReadOptionsModel options)
         {
+            return (await gridsService.GetOverviewGridVersionControlDataAsync(gridDivId, options, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+        //The constraint reference 'string' could not be resolved
+        //SQL QUERRYS NALOPEN
+        //dus ook van dev_commit en dev_template veranderen
 
-            var result = (await gridsService.GetOverviewGridDataAsync(id, options, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
-            return result;
-        }*/
 
     }
 }

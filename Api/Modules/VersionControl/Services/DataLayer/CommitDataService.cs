@@ -21,21 +21,19 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<CreateCommitModel> CreateCommitAsync(CreateCommitModel commitModel)
+        public async Task<CreateCommitModel> CreateCommitAsync(string commitMessage, string username)
         {
-            var query = $@"INSERT INTO dev_commit (description,changedby) VALUES (?description,?changedby)";
+            var query = $@"INSERT INTO wiser_commit (description,changed_by) VALUES (?description,?changedby)";
 
             clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("description", commitModel.Description);
-            clientDatabaseConnection.AddParameter("changedby", commitModel.ChangedBy);
+            clientDatabaseConnection.AddParameter("description", commitMessage);
+            clientDatabaseConnection.AddParameter("changedby", username);
             var dataTable = await clientDatabaseConnection.ExecuteAsync(query);
 
             return new CreateCommitModel()
             {
-                Description = commitModel.Description,
-                AsanaId = commitModel.AsanaId,
-                AddedOn = commitModel.AddedOn,
-                ChangedBy = commitModel.ChangedBy
+                Description = commitMessage,
+                ChangedBy = username
 
             };
 
@@ -59,7 +57,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         public async Task<CreateCommitModel> GetCommitAsync()
         {
             var query =
-                $@"SELECT * FROM test.dev_commit ORDER BY addedon desc LIMIT 1;";
+                $@"SELECT * FROM wiser_commit ORDER BY added_on desc LIMIT 1;";
 
             clientDatabaseConnection.ClearParameters();
 
@@ -68,8 +66,8 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             int id = Convert.ToInt32(dataTable.Rows[0]["id"]);
             string description = dataTable.Rows[0]["description"].ToString();
             int asanaId = 0;
-            string date = dataTable.Rows[0]["addedon"].ToString();
-            string changedBy = dataTable.Rows[0]["changedby"].ToString();
+            string date = dataTable.Rows[0]["added_on"].ToString();
+            string changedBy = dataTable.Rows[0]["changed_by"].ToString();
 
             return new CreateCommitModel()
             {

@@ -7,6 +7,7 @@ using Api.Core.Services;
 using Api.Modules.Grids.Models;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.VersionControl.Models;
+using Api.Modules.Kendo.Models;
 
 namespace Api.Modules.VersionControl.Interfaces
 {
@@ -56,6 +57,7 @@ namespace Api.Modules.VersionControl.Interfaces
         /// <param name="templateId">The id of the template.</param>
         /// <returns>Returns a list of dynamic content items</returns>
         Task<ServiceResult<List<DynamicContentModel>>> GetDynamicContentInTemplateAsync(int templateId);
+
 
     }
 }

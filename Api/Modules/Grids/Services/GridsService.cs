@@ -4,6 +4,7 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Text.Json;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -1590,6 +1591,125 @@ namespace Api.Modules.Grids.Services
             return new ServiceResult<GridSettingsAndDataModel>(results);
         }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+        public async Task<ServiceResult<GridSettingsAndDataModel>> GetOverviewGridVersionControlDataAsync(string gridDivId, GridReadOptionsModel options, ClaimsIdentity identity, bool isForExport = false)
+        {
+            if (gridDivId == "")
+            {
+                throw new ArgumentNullException(nameof(gridDivId));
+            }
+
+            if (isForExport)
+            {
+                // Timeout of 4 hours for exports.
+                clientDatabaseConnection.SetCommandTimeout(14400);
+            }
+
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            var customer = await wiserCustomersService.GetSingleAsync(identity);
+            string gridDivIdWithIdentifier = "#" + gridDivId;
+            // Get module settings.
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("gridDivId", gridDivIdWithIdentifier);
+            var query = $"SELECT custom_query, count_query, grid_options FROM wiser_module_grids WHERE grid_div_id = ?gridDivId";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+
+            if (dataTable.Rows.Count == 0)
+            {
+                return new ServiceResult<GridSettingsAndDataModel>
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"No grid data available for module {gridDivId}",
+                    ReasonPhrase = $"No grid data available for module {gridDivId}"
+                };
+            }
+
+            // Build the schema model for the Kendo UI grid.
+            var firstRow = dataTable.Rows[0];
+            var moduleSettings = firstRow.Field<string>("grid_options");
+            var moduleSettingsModel = new GridViewSettingsModel();
+            var results = new GridSettingsAndDataModel();
+            if (!String.IsNullOrWhiteSpace(moduleSettings))
+            {
+                moduleSettingsModel = JsonConvert.DeserializeObject<GridViewSettingsModel>(moduleSettings);
+                results = moduleSettingsModel.GridViewSettings;
+            }
+
+            if (results.PageSize <= 0)
+            {
+                results.PageSize = 100;
+            }
+
+            // Build the queries.
+            var selectQuery = firstRow.Field<string>("custom_query");
+            if (String.IsNullOrWhiteSpace(selectQuery))
+            {
+                return new ServiceResult<GridSettingsAndDataModel>(results);
+            }
+
+            var countQuery = firstRow.Field<string>("count_query");
+
+            // If the count query is empty and the select query contains a limit, build a count query based on the select query without the limit and sort.
+            if (String.IsNullOrWhiteSpace(countQuery) && !String.IsNullOrWhiteSpace(selectQuery) && selectQuery.Contains("{limit}", StringComparison.OrdinalIgnoreCase))
+            {
+                countQuery = $@"SELECT COUNT(*) FROM (
+                                    {selectQuery.ReplaceCaseInsensitive("{limit}", "").ReplaceCaseInsensitive("{sort}", "").Trim(';')}
+                                ) AS x";
+            }
+
+
+            //string t = Newtonsoft.Json.JsonConvert.SerializeObject(options);
+
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            clientDatabaseConnection.AddParameter("userId", userId);
+            (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, null, moduleSettingsModel.FieldMappings);
+
+            // Get the count, but only if this is not the first load.
+            if (!results.ClientSidePaging && !String.IsNullOrWhiteSpace(countQuery) && (options?.FirstLoad ?? true))
+            {
+                var countDataTable = await clientDatabaseConnection.GetAsync(countQuery);
+                if (countDataTable.Rows.Count > 0 && !countDataTable.Rows[0].IsNull(0))
+                {
+                    results.TotalResults = Convert.ToInt32(countDataTable.Rows[0][0]);
+                }
+            }
+
+            // Get the actual data for the grid.
+            dataTable = await clientDatabaseConnection.GetAsync(selectQuery);
+
+            BuildGridSchema(dataTable, results, results.Columns != null && results.Columns.Any());
+            FillGridData(dataTable, results, identity, IdentityHelpers.IsTestEnvironment(identity), customer.ModelObject);
+
+            if (results.ClientSidePaging || String.IsNullOrWhiteSpace(countQuery))
+            {
+                results.TotalResults = dataTable.Rows.Count;
+            }
+
+            return new ServiceResult<GridSettingsAndDataModel>(results);
+        }
+
+
+
+
+
+
+
+
+
+
+
         /// <inheritdoc />
         public async Task<ServiceResult<GridSettingsAndDataModel>> GetOverviewGridDataAsync(int moduleId, GridReadOptionsModel options, ClaimsIdentity identity, bool isForExport = false)
         {
@@ -2438,7 +2558,7 @@ namespace Api.Modules.Grids.Services
             // Build the schema model for the Kendo UI grid.
             var firstRow = dataTable.Rows[0];
             var moduleSettings = gridData.GridOptions;
-            Console.WriteLine(moduleSettings);
+           
             var moduleSettingsModel = new GridViewSettingsModel();
             var results = new GridSettingsAndDataModel();
             if (!String.IsNullOrWhiteSpace(moduleSettings))
@@ -2468,6 +2588,9 @@ namespace Api.Modules.Grids.Services
                                     {selectQuery.ReplaceCaseInsensitive("{limit}", "").ReplaceCaseInsensitive("{sort}", "").Trim(';')}
                                 ) AS x";
             }
+
+            
+
 
             var userId = IdentityHelpers.GetWiserUserId(identity);
             clientDatabaseConnection.AddParameter("userId", userId);
