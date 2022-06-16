@@ -514,13 +514,13 @@
     color: var(--white-color);
 }
 .k-button-icon .k-icon.k-i-verwijderen:before, .k-button-icon .k-icon.k-i-delete:before {
-    content: "\e9fa";
+	content: "\e9c7";
 }
 .k-button-icon .k-icon.k-i-verversen:before, .k-button-icon .k-icon.k-i-refresh:before {
-    content: "\e9f0";
+	content: "\e9b9";
 }
 .k-button-icon .k-icon.k-i-close:before {
-    content: "\e9e3";
+	content: "\e98d";
 }
 .k-i-css:before {
     content: "\ea36";
@@ -809,7 +809,7 @@ input[type=search] + button {
 	position: relative;
 }
 .k-input-url:after {
-	content: "\e968";
+	content: "\e972";
 	font-family: 'icomoon' !important;
 	font-style: normal;
 	font-weight: normal;
@@ -1578,29 +1578,29 @@ textarea[readonly],
 	-moz-osx-font-smoothing: grayscale;
 }
 .icon-onzichtbaar:before {
-	content: "\e961";
+	content: "\e95e";
 }
 .icon-dev:before {
-	content: "\e9b1";
+	content: "\ea22";
 }
 .icon-test:before {
-	content: "\e960";
+	content: "\ea1a";
 }
 .icon-acceptatie:before {
-	content: "\e95f";
+	content: "\e967";
 }
 .icon-live:before {
-	content: "\e968";
+	content: "\e972";
 }
 .k-i-sort-asc-sm:before {
-    color: var( --light-txt);
-    content: "\e931";
-    font-size: 14px;
+	color: var( --light-txt);
+	content: "\ea07";
+	font-size: 14px;
 }
 .k-i-sort-desc-sm:before {
-    color: var( --light-txt);
-    content: "\e932";
-    font-size: 14px;
+	color: var( --light-txt);
+	content: "\ea08";
+	font-size: 14px;
 }
 .k-button-icon .k-icon.k-i-plus,
 .k-button-icon .k-icon.k-i-hyperlink-open {

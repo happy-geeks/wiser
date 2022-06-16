@@ -31,7 +31,7 @@ html {
     width: 100%;
 }
 
-body { 
+body {
     background-color: $body-color;
     color: $text-color;
     min-height: 100%;
@@ -39,11 +39,11 @@ body {
     width: 100%;
     display: flex;
     flex-direction: column;
-    
+
     &:after {
         @include icon-font;
         @include text-rgba($black-color, 0.02);
-        content: "\e9dc";
+        content: "\ea32";
         font-size: 1350px;
         position: fixed;
         right: 0;
@@ -185,10 +185,10 @@ main {
 .btn {
     &.loading {
         color: transparent !important;
-        
+
         &:after {
             color: $white-color;
-            content: "\ea28";
+            content: "\ec50";
             font-family: 'icomoon' !important;
             font-size: 30px;
             font-style: normal;
@@ -196,11 +196,9 @@ main {
             font-variant: normal;
             text-transform: none;
             line-height: 1;
-            
             position: absolute;
             left: 50%;
             top: 50%;
-            
             animation: ld-cycle 0.5s infinite linear;
         }
     }
@@ -218,16 +216,15 @@ main, div, section {
             right: 0;
             bottom: 0;
             z-index: 10000;
-            
             display: flex;
             justify-content: center;
             align-items: center;
             padding-top: 100px;
         }
-        
+
         &:after {
             color: $white-color;
-            content: "\ea28";
+            content: "\ec50";
             font-family: 'icomoon' !important;
             font-size: 50px;
             font-style: normal;
@@ -235,12 +232,10 @@ main, div, section {
             font-variant: normal;
             text-transform: none;
             line-height: 1;
-            
             position: absolute;
             left: 50%;
             top: 50%;
             z-index: 10001;
-            
             animation: ld-cycle 0.5s infinite linear;
         }
     }
