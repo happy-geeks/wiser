@@ -159,9 +159,9 @@ INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `link_type`, `vi
 INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `link_type`, `visible_in_overview`, `overview_fieldtype`, `overview_width`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `regex_validation`, `mandatory`, `readonly`, `default_value`, `automation`, `css`, `width`, `height`, `options`, `data_query`, `action_query`, `search_query`, `search_count_query`, `grid_delete_query`, `grid_insert_query`, `grid_update_query`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `extended_explanation`, `label_style`, `label_width`) VALUES (0, 'mailtemplate', 0, 0, '', 100, '', '', 'HTMLeditor', 'Template', 'template', NULL, 3, '', 0, 0, NULL, '', '', 100, 600, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', NULL, 0, NULL, 0, 0, NULL, NULL);
 INSERT IGNORE INTO `wiser_item`(`unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES ('', 'map', 700, 4, 0, 'Templates', NOW(), 'Systeem', NULL, '');
 SET @templatesDirectoryId = LAST_INSERT_ID();
-INSERT IGNORE INTO `wiser_itemlink` (item_id, destination_item_id, ordering, type) VALUES (templatesDirectoryId, 0, 1, 1);
+INSERT IGNORE INTO `wiser_itemlink` (item_id, destination_item_id, ordering, type) VALUES (@templatesDirectoryId, 0, 1, 1);
 INSERT IGNORE INTO `wiser_item`(`unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES ('', 'mailtemplate', 700, 4, 0, 'Bestelmail', NOW(), 'Systeem', NULL, '');
-INSERT IGNORE INTO `wiser_itemlink` (item_id, destination_item_id, ordering, type) VALUES (LAST_INSERT_ID(), templatesDirectoryId, 1, 1);
+INSERT IGNORE INTO `wiser_itemlink` (item_id, destination_item_id, ordering, type) VALUES (LAST_INSERT_ID(), @templatesDirectoryId, 1, 1);
 
 -- ----------------------------
 -- Languages

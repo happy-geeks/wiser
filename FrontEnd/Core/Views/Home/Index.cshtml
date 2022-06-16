@@ -76,7 +76,7 @@
         </ul>
         </header>
 
-        <main :class="{ login: !user.loggedIn || requirePasswordChange }">
+        <main :class="{ login: !user.loggedIn || requirePasswordChange, 'scrollable': customerManagementIsOpened }">
             <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
             <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
             <section class="iframe-container">
