@@ -15,6 +15,177 @@ CREATE TABLE IF NOT EXISTS `wiser_login_attempts`  (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
+-- Table structure for wiser_commit
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_commit` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `description` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `asana_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `added_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `changed_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_commit_dynamic_content
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_commit_dynamic_content` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `dynamic_content_id` int DEFAULT NULL,
+  `version` int DEFAULT NULL,
+  `commit_id` int DEFAULT NULL,
+  `added_on` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_commit_template
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_commit_template` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `template_id` int DEFAULT NULL,
+  `version` int DEFAULT NULL,
+  `commit_id` int DEFAULT NULL,
+  `added_on` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_dynamic_content
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_dynamic_content` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `content_id` int DEFAULT NULL,
+  `settings` mediumtext,
+  `component` varchar(255) NOT NULL,
+  `component_mode` varchar(255) NOT NULL,
+  `version` mediumint NOT NULL DEFAULT '0',
+  `title` varchar(255) NOT NULL,
+  `changed_on` datetime NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `changed_by` varchar(50) NOT NULL DEFAULT '',
+  `published_environment` tinyint NOT NULL DEFAULT '0',
+  `removed` tinyint NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `idx_unique` (`content_id`,`version`),
+  KEY `content_id` (`content_id`),
+  FULLTEXT KEY `idx_fulltext` (`title`,`settings`,`component_mode`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_dynamic_content_publish_log
+-- ----------------------------
+CREATE TABLE `wiser_dynamic_content_publish_log` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `content_id` int NOT NULL,
+  `old_live` int NOT NULL,
+  `old_accept` int NOT NULL,
+  `old_test` int NOT NULL,
+  `new_live` int NOT NULL,
+  `new_accept` int NOT NULL,
+  `new_test` int NOT NULL,
+  `changed_on` datetime NOT NULL,
+  `changed_by` varchar(50) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_content_id` (`content_id`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_template
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_template` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `parent_id` int DEFAULT NULL,
+  `template_name` varchar(50) NOT NULL,
+  `template_data` longtext,
+  `template_data_minified` mediumtext,
+  `template_type` int NOT NULL,
+  `version` mediumint NOT NULL,
+  `template_id` int NOT NULL,
+  `changed_on` datetime DEFAULT NULL,
+  `changed_by` varchar(50) NOT NULL,
+  `published_environment` tinyint NOT NULL DEFAULT '0',
+  `use_cache` int NOT NULL DEFAULT '0',
+  `cache_minutes` int NOT NULL DEFAULT '0',
+  `handle_request` tinyint NOT NULL DEFAULT '1',
+  `handle_session` tinyint NOT NULL DEFAULT '1',
+  `handle_objects` tinyint NOT NULL DEFAULT '1',
+  `handle_standards` tinyint NOT NULL DEFAULT '1',
+  `handle_translations` tinyint NOT NULL DEFAULT '1',
+  `handle_dynamic_content` tinyint NOT NULL DEFAULT '1',
+  `handle_logic_blocks` tinyint NOT NULL DEFAULT '1',
+  `handle_mutators` tinyint NOT NULL DEFAULT '0',
+  `login_required` tinyint NOT NULL DEFAULT '0',
+  `login_user_type` varchar(50) DEFAULT NULL,
+  `login_session_prefix` varchar(255) DEFAULT NULL,
+  `login_role` varchar(50) DEFAULT NULL,
+  `linked_templates` varchar(255) DEFAULT NULL,
+  `ordering` int NOT NULL DEFAULT '0',
+  `insert_mode` int NOT NULL DEFAULT '0',
+  `load_always` tinyint(1) NOT NULL DEFAULT '0',
+  `url_regex` varchar(255) DEFAULT NULL,
+  `external_files` mediumtext,
+  `grouping_create_object_instead_of_array` tinyint(1) NOT NULL DEFAULT '0',
+  `grouping_prefix` varchar(50) DEFAULT NULL,
+  `grouping_key` varchar(50) DEFAULT NULL,
+  `grouping_key_column_name` varchar(50) DEFAULT NULL,
+  `grouping_value_column_name` varchar(50) DEFAULT NULL,
+  `removed` tinyint(1) NOT NULL DEFAULT '0',
+  `is_scss_include_template` tinyint(1) NOT NULL DEFAULT '0',
+  `use_in_wiser_html_editors` tinyint(1) NOT NULL DEFAULT '0',
+  `pre_load_query` mediumtext,
+  `cache_location` int NOT NULL DEFAULT '0',
+  `cache_regex` varchar(255) DEFAULT NULL,
+  `login_redirect_url` varchar(255) DEFAULT NULL,
+  `disable_minifier` tinyint(1) NOT NULL DEFAULT '0',
+  `return_not_found_when_pre_load_query_has_no_data` tinyint(1) NOT NULL DEFAULT '0',
+  `routine_type` int NOT NULL DEFAULT '0' COMMENT 'For routine templates only',
+  `routine_parameters` text COMMENT 'For routine templates only',
+  `routine_return_type` varchar(25) DEFAULT NULL COMMENT 'For routine templates only',
+  `is_default_header` tinyint(1) NOT NULL DEFAULT '0',
+  `is_default_footer` tinyint(1) NOT NULL DEFAULT '0',
+  `default_header_footer_regex` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `idx_unique` (`template_id`,`version`) USING BTREE,
+  KEY `template_id` (`template_id`) USING BTREE,
+  KEY `idx_template_id` (`template_id`,`removed`) USING BTREE,
+  KEY `idx_parent_id` (`parent_id`,`removed`) USING BTREE,
+  KEY `idx_type` (`template_type`,`removed`) USING BTREE,
+  KEY `idx_environment` (`published_environment`,`removed`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_template_dynamic_content
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_template_dynamic_content` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `content_id` int NOT NULL,
+  `destination_template_id` int NOT NULL,
+  `added_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `added_by` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `idx_unique` (`content_id`,`destination_template_id`) USING BTREE,
+  KEY `destination_template_id` (`destination_template_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_template_publish_log
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_template_publish_log` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `template_id` int NOT NULL,
+  `old_live` int NOT NULL,
+  `old_accept` int NOT NULL,
+  `old_test` int NOT NULL,
+  `new_live` int NOT NULL,
+  `new_accept` int NOT NULL,
+  `new_test` int NOT NULL,
+  `changed_on` datetime NOT NULL,
+  `changed_by` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_template_id` (`template_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
 -- Table structure for wiser_entity
 -- ----------------------------
 -- NOTE: When changing columns, make sure to also change the triggers for this table!
