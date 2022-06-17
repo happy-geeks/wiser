@@ -1522,6 +1522,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         .Replace("{fieldMode}", fieldMode)
                         .Replace("{containerCssClass}", String.Join(" ", containerCssClasses))
                         .Replace("{linkType}", linkType.ToString())
+                        .Replace("{entityType}", entityType)
                         .Replace("{default_value}", valueToReplace);
                 }
 
@@ -1552,6 +1553,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         .Replace("{userItemPermissions}", ((int)userItemPermissions).ToString())
                         .Replace("{fieldMode}", fieldMode)
                         .Replace("{linkType}", linkType.ToString())
+                        .Replace("{entityType}", entityType)
                         .Replace("{default_value}", $"'{HttpUtility.JavaScriptStringEncode(defaultValue)}'");
                 }
 

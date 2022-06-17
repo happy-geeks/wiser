@@ -44,5 +44,15 @@
         /// Gets or sets the URL to the file, if this is an external file that is not saved in our database.
         /// </summary>
         public string ContentUrl { get; set; }
+
+        /// <summary>
+        /// Gets or sets the entity type of the corresponding item, if this is a file saved on an item.
+        /// </summary>
+        public string EntityType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the type of the corresponding link, if this is a file saved on a link.
+        /// </summary>
+        public int LinkType { get; set; }
     }
 }

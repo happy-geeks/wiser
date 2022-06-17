@@ -5,6 +5,8 @@ var initialFiles = {initialFiles};
 if (initialFiles && initialFiles.length > 0) {
     for (var i = 0; i < initialFiles.length; i++) {
         initialFiles[i].readonly = readonly;
+        initialFiles[i].entityType = "{entityType}";
+        initialFiles[i].linkType = "{linkType}";
     }
 }
 
@@ -12,7 +14,7 @@ var options = {options};
 
 options = $.extend({
     async: {
-        saveUrl: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/upload?propertyName=" + encodeURIComponent("{propertyName}") + "&itemLinkId={itemLinkId}&useTinyPng=" + (options.useTinyPng === true).toString(),
+        saveUrl: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/upload?propertyName=" + encodeURIComponent("{propertyName}") + "&itemLinkId={itemLinkId}&useTinyPng=" + (options.useTinyPng === true).toString() + "&entityType=" + encodeURIComponent("{entityType}") + "&linkType={linkType}",
         withCredentials: false,
         removeUrl: "remove"
     },
@@ -73,7 +75,7 @@ container.find(".imagesContainer").kendoSortable({
             method: "PUT",
             contentType: "application/json",
             dataType: "json",
-            url: `${dynamicItems.settings.wiserApiRoot}items/{itemId}/files/${fileId}/ordering?previousPosition=${oldIndex}&newPosition=${newIndex}&propertyName=${encodeURIComponent(propertyName)}&itemLinkId={itemLinkId}`
+            url: `${dynamicItems.settings.wiserApiRoot}items/{itemId}/files/${fileId}/ordering?previousPosition=${oldIndex}&newPosition=${newIndex}&propertyName=${encodeURIComponent(propertyName)}&itemLinkId={itemLinkId}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`
         }).then(function (dataResult) {
         }).catch(function (jqXHR, textStatus, errorThrown) {
             console.error("Update file order error - {title}", jqXHR, textStatus, errorThrown);
