@@ -8,9 +8,7 @@ using Api.Core.Models;
 using Api.Modules.Customers.Models;
 using Api.Modules.Files.Interfaces;
 using Api.Modules.Files.Models;
-using Api.Modules.Grids.Interfaces;
 using Api.Modules.Items.Controllers;
-using Api.Modules.Items.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -58,7 +56,7 @@ namespace Api.Modules.Files.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> Upload(string encryptedId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false)
+        public async Task<IActionResult> UploadAsync(string encryptedId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false)
         {
             var form = await Request.ReadFormAsync();
 
@@ -78,7 +76,7 @@ namespace Api.Modules.Files.Controllers
         [Route("~/api/v3/items/{encryptedId}/files/url")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> AddFileUrl(string encryptedId, [FromBody]FileModel file, [FromQuery]string propertyName, [FromQuery]ulong itemLinkId = 0)
+        public async Task<IActionResult> AddFileUrlAsync(string encryptedId, [FromBody]FileModel file, [FromQuery]string propertyName, [FromQuery]ulong itemLinkId = 0)
         {
             var result = await filesService.AddUrlAsync(encryptedId, propertyName, file, (ClaimsIdentity)User.Identity, itemLinkId);
             return result.GetHttpResponseMessage();
