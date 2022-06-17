@@ -187,6 +187,12 @@ namespace Api.Modules.Modules.Services
                 var options = dataRow.Field<string>("options");
 
                 var canRead = (permissionsBitMask & AccessRights.Read) == AccessRights.Read;
+                if (!canRead)
+                {
+                    // Don't add the module if the user has no read permissions for it.
+                    continue;
+                }
+
                 var canCreate = (permissionsBitMask & AccessRights.Create) == AccessRights.Create;
                 var canUpdate = (permissionsBitMask & AccessRights.Update) == AccessRights.Update;
                 var canDelete = (permissionsBitMask & AccessRights.Delete) == AccessRights.Delete;
