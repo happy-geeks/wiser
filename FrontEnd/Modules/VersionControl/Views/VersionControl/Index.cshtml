@@ -1,0 +1,274 @@
+﻿@model FrontEnd.Modules.VersionControl.Models.VersionControlViewModel
+
+<!DOCTYPE html>
+<html>
+
+<head runat="server">
+    <title>Wiser 3 - Dynamic items</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.material.min.css" rel="stylesheet" /> 
+    
+    <script>
+        window.wiserVersion = "@Model.WiserVersion?.ToString()";
+    </script>
+    
+    <script type="text/javascript" src=""></script>
+ 
+    
+
+</head>
+
+<body class="@Model.BodyCssClass"
+      data-module-id="@Model.ModuleId"
+      data-module-name="@Model.ModuleName"
+      data-initial-item-id="@Model.InitialItemId"
+      data-iframe-mode="@Model.IframeMode.ToString().ToLowerInvariant()"
+      data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
+      data-wiser-api-root="@Model.ApiRoot"
+      data-wiser-api-v21-root="@Model.ApiRoot"
+      data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
+      data-read-only="@Model.ReadOnly.ToString().ToLowerInvariant()"
+      data-hide-footer="@Model.HideFooter.ToString().ToLowerInvariant()"
+      data-hide-header="@Model.HideHeader.ToString().ToLowerInvariant()"
+      data-sub-domain="@Model.SubDomain"
+      data-create-new-item="@Model.CreateNewItem.ToString().ToLowerInvariant()"
+      data-parent-id="@Model.ParentItemId"
+      data-new-item-data="@Model.NewItemData"
+      data-entity-type="@Model.EntityType"
+      data-track-js-token="@Model.Settings.TrackJsToken"
+      data-api-client-id="@Model.Settings.ApiClientId"
+      data-api-client-secret="@Model.Settings.ApiClientSecret">
+
+    <form id="mainScreenForm" autocomplete="off" novalidate>
+        <div id="wiser">
+
+
+            <!-- Tab selection -->
+            <div class="tab">
+                <button class="tablinks active" value="Commit">Commit change history</button>
+                <button class="tablinks" value="Deploy">Deploy</button>
+                <button class="tablinks" value="History">History</button>
+            </div>
+
+            <!-- Tab content -->
+            <div id="Commit" class="tabcontent" style="display: block">
+                <div id="commit-data">
+                    <div id="description-data">
+                        Beschrijving commit: <input type="text" id="description-textbox" style="width: 50%; height: 50px" />
+                    </div>
+
+                    <div id="checkbox-data">
+                        <input type="checkbox" id="commitTest" class="commitCheckbox" value="commitTest" /> Zet commit naar test omgeving<br />
+                        <input type="checkbox" id="commitAcceptatie" class="commitCheckbox" value="commitAcceptatie"/> Zet commit naar acceptatie omgeving<br />
+                        <input type="checkbox" id="commitLive" class="commitCheckbox" value="commitLive"/> Zet commit naar live omgeving
+                    </div>
+                </div>
+                
+                Template changes
+                <div id="gridView" style="display: block;"></div>
+
+                Dynamic content changes
+                <div id="dynamicContentGrid"></div>
+                
+                <button id="commitTemplate">Commit</button>
+
+                
+
+            </div>
+            <div id="dialog"></div>
+            <div id="Deploy" class="tabcontent">
+                Deploy Grid
+                <div id="deploygrid"></div>
+                <button class="evironment_deploy" value="live">to live</button>
+                <button class="evironment_deploy" value="accept">to acceptatie</button>
+                <button class="evironment_deploy" value="test">to test</button>
+
+
+            </div>
+
+            <div id="History" class="tabcontent">
+                History Grid Templates
+                <div id="historyGridId"></div>
+                
+                <br/>
+
+                History Grid Dynamische content
+                <div id="historyDynamicContentGridId"></div>
+                <button class="environment_dynamic_content_history" value="live">to live</button>
+                <button class="environment_dynamic_content_history" value="accept">to acceptatie</button>
+                <button class="environment_dynamic_content_history" value="test">to test</button>
+
+            </div>
+
+
+            <div id="informationBlock" class="hidden"></div>
+            <div id="window" style="margin: 0 auto; padding: 0;">
+
+                <!-- START --- EDIT LAYOUT -->
+                <input type="checkbox" id="editToggle" class="noForm edit" />
+                <input type="checkbox" id="widthToggle" class="noForm edit" />
+                <!-- END ----- EDIT LAYOUT -->
+
+
+            </div>
+        </div>
+    </form>
+
+    <!-- Item popup / window -->
+    <div id="itemWindow_template" class="popup-container entity-container">
+        <div class="pane-content">
+            <div class="tabStripPopup">
+                <ul>
+                    <li class="k-state-active">Gegevens</li>
+                </ul>
+                <div>
+                    <div class="formview full static-fields itemNameFieldContainer">
+                        <div class="item _existingItemName" data-item-id="0" data-depends-on-field="" data-depends-on-operator="" data-depends-on-value="" data-property-name="title">
+                            <h4><label>Naam voor item</label></h4>
+                            <span class="k-widget k-input k-state-default">
+                                <input type="text" class="textField k-input _nameForExistingItem itemNameField" name="_nameForExistingItem" autocomplete="off" value="">
+                            </span>
+                            <div class="form-hint"></div>
+                        </div>
+                    </div>
+                    <div class="formview full right-pane-content-popup dynamicTabContent">
+                    </div>
+                </div>
+                <div>
+                    <div class="formview full" class="historyGridContainer">
+                        <div class="historyGrid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FIXED FOOTER -->
+        <footer class="fixed ">
+            <div class="metaData">
+                <input type="checkbox" id="meta-toggle_template" class="hidden">
+                <p class="no-selection">Nog geen item geselecteerd</p>
+                <ul class="meta-data hidden">
+                    <li class="visible">ID: <span class="id"></span></li>
+                    <li>UUID: <span class="uuid"></span></li>
+                    <li>Naam: <span class="title"></span></li>
+                    <li class="visible">Type: <span class="entity-type"></span></li>
+                    <li>Omgeving: <span class="published-environment"></span></li>
+                    <li>Alleen lezen: <span class="read-only"></span></li>
+                    <li>Toegevoegd op: <span class="added-on"></span></li>
+                    <li>Toegevoegd door: <span class="added-by"></span></li>
+                    <li><a class="changedon-footer" href="javascript: void(0)">Gewijzigd op: <span class="changed-on"></span></a></li>
+                    <li>Gewijzigd door: <span class="changed-by"></span></li>
+                    <li class="meta-toggle"><label for="meta-toggle_template"><span>Alles tonen</span><span>Minder tonen</span></label></li>
+                </ul>
+            </div>
+            <div class="actions">
+                <button class="saveAndCloseBottomPopup k-primary saveButton" name="saveAndClose">Opslaan en sluiten</button>
+                <button class="saveBottomPopup k-secondary saveButton" name="save">Opslaan</button>
+                <button class="cancelItemPopup k-secondary" name="cancel">Annuleren</button>
+            </div>
+        </footer>
+
+        <div class="popup-loader fullscreen-loader loading">
+            <div class="loader-icon">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="gridDeleteDialog"></div>
+
+    <div id="data-builder" class="x-window"></div>
+
+    <div id="mainLoader" class="fullscreen-loader loading">
+        <div class="loader-icon">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+
+
+    <!-- Kendo Templates -->
+    <div id="imageDialog"></div>
+    <script id="errorTemplate" type="text/x-kendo-template">
+        <div class="wrong-pass">
+            <img src="../../img/error-icon.png" />
+            <h3>#= message #</h3>
+        </div>
+    </script>
+
+    <script id="successTemplate" type="text/x-kendo-template">
+        <div class="success">
+            <img src="../../img/success-icon.png" />
+            <h3>#= message #</h3>
+        </div>
+    </script>
+    
+    <script id="uploaderTemplate" type="text/x-kendo-template">
+        <div class="product" data-item-id="#= itemId #" data-image-id="#= fileId #" data-item-link-id="#= itemLinkId #">
+            <img src="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(itemId) #/files/#= fileId #/#= encodeURIComponent(name) #?encryptedCustomerId=#= encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#= encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#= window.dynamicItems.settings.isTestEnvironment #&subDomain=#= encodeURIComponent(window.dynamicItems.settings.subDomain) #&itemLinkId=#= encodeURIComponent(itemLinkId) #" alt="#: name # image" />
+            <div class="imgTools">
+                <button type="button" class="imgZoom" title="Preview"></button>
+                # if(!readonly) { #
+                <button type="button" class="imgEdit" title="Edit"></button>
+                <button type="button" class="imgDelete" title="Delete"></button>
+                # } #
+            </div>
+        </div>
+    </script>
+
+    <div id="createNewItemDialog"></div>
+    <script id="createNewItemDialogTemplate" type="text/x-kendo-template">
+        <div class="new-item-dialog-row" id="newItemEntityTypeContainer">
+            <h4><label for="newItemEntityTypeField">Kies een entiteit-type</label></h4>
+            <select id="newItemEntityTypeField" class="select"></select>
+        </div>
+        <div class="new-item-dialog-row">
+            <h4><label for="newItemNameField">Vul een naam in</label></h4>
+            <span class="k-widget k-input k-state-default">
+                <input type="text" id="newItemNameField" class="textField k-input" />
+            </span>
+        </div>
+    </script>
+
+    <script id="userNormalInputParameterTemplate" type="text/x-kendo-template">
+        <div class="new-item-dialog-row" id="normalInputUserParameterContainer">
+            <input type="text" id="normalInputUserParameter" name="normalInputUserParameter" class="k-input" />
+        </div>
+    </script>
+
+    <script id="userMultiLineInputParameterTemplate" type="text/x-kendo-template">
+        <div class="new-item-dialog-row" id="multiLineInputUserParameterContainer">
+            <textarea id="multiLineInputUserParameter" name="multiLineInputUserParameter" class="k-input"></textarea>
+        </div>
+    </script>
+    <script id="userComboBoxParameterTemplate" type="text/x-kendo-template">
+        <div class="new-item-dialog-row" id="comboBoxUserParameterContainer">
+            <select class="select" id="comboBoxUserParameter" name="comboBoxUserParameter" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."></select>
+        </div>
+    </script>
+    <script id="userGridParameterTemplate" type="text/x-kendo-template">
+        <div class="new-item-dialog-row" id="comboBoxUserParameterContainer">
+            <div class="grid" id="gridUserParameter"></div>
+        </div>
+    </script>
+    <script id="userFileUploadParameterTemplate" type="text/x-kendo-template">
+        <div class="new-item-dialog-row" id="fileUploadUserParameterContainer">
+            <input type="file" id="fileUploadUserParameter" name="fileUploadUserParameter" />
+        </div>
+    </script>
+    
+    <script src="/scripts/Utils.min.js"></script>
+    <script src="/scripts/VersionControl.min.js"></script>
+
+    <!-- CONTEXT MENU FOR TREEVIEW -->
+    <ul id="menu"></ul>
+</body>
+
+</html>
