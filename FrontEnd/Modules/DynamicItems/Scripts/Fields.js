@@ -54,7 +54,7 @@ export class Fields {
 
             // If we have no name attribute, then it's not an element that we need to use. 
             // It's probably a sub element of some Kendo component then.
-            if (!field.attr("name")) {
+            if (!field.attr("name") || field.hasClass("skip-when-saving")) {
                 return;
             }
 
@@ -95,7 +95,7 @@ export class Fields {
                 extraData.value = names;
                 results.push(extraData);
                 return;
-            } 
+            }
             
             if (kendoControlName) {
                 let kendoControl = field.data(kendoControlName);
