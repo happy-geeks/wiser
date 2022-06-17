@@ -16,6 +16,10 @@ using Api.Modules.Customers.Services;
 using Api.Modules.DigitalOcean.Models;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Services;
+using Api.Modules.VersionControl.Interfaces;
+using Api.Modules.VersionControl.Interfaces.DataLayer;
+using Api.Modules.VersionControl.Service;
+using Api.Modules.VersionControl.Service.DataLayer;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using IdentityServer4.Services;
@@ -238,6 +242,18 @@ namespace Api
             services.Decorate<IDatabaseConnection, ClientDatabaseConnection>();
             services.Decorate<ITemplatesService, CachedTemplatesService>();
             services.Decorate<IUsersService, CachedUsersService>();
+
+            services.AddTransient<IVersionControlService, VersionControlService>();
+            services.AddTransient<IVersionControlDataService, VersionControlDataService>();
+
+            services.AddTransient<ITemplateContainerService, TemplateContainerService>();
+            services.AddTransient<ITemplateContainerDataService, TemplateContainerDataService>();
+
+            services.AddTransient<IDynamicContentServiceVersionControl, DynamicContentServiceVersionControl>();
+            services.AddTransient<IDynamicContentDataServiceVersionControl, DynamicContentDataServiceVersionControl>();
+
+            services.AddTransient<ICommitService, CommitService>();
+            services.AddTransient<ICommitDataService, CommitDataService>();
 
             // Add JavaScriptEngineSwitcher services to the services container.
             services.AddJsEngineSwitcher(options => options.DefaultEngineName = ChakraCoreJsEngine.EngineName).AddChakraCore();

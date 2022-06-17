@@ -30,7 +30,8 @@ module.exports = {
         Templates: "../../Modules/Templates/Scripts/Templates.js",
         DynamicContent: "../../Modules/Templates/Scripts/DynamicContent.js",
         Admin: "../../Modules/Admin/Scripts/Admin.js",
-        Base: "../../Modules/Base/Scripts/Base.js"
+        Base: "../../Modules/Base/Scripts/Base.js",
+        VersionControl: "../../Modules/VersionControl/Scripts/VersionControl.js"
     },
     output: {
         path: path.join(__dirname, "wwwroot/scripts"),
