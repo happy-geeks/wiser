@@ -94,7 +94,7 @@ export class Grids {
             const usingDataSelector = !!gridViewOptionParse.dataSelectorId;
 
             var options;
-            console.log(gridReadOptions);
+
             if (gridReadOptions == "") {
                 options = {
                     page: 1,
@@ -106,11 +106,6 @@ export class Grids {
             } else {
                 options = JSON.parse(gridReadOptions);
             }
-           
-          
-            console.log(options);
-           
-
            
 
             const gridOptionsData = {
@@ -264,8 +259,10 @@ export class Grids {
                     });
                 }
             }
+            console.log(gridDataResult.data[0])
 
-           
+
+
             const finalGridViewSettings = $.extend(true, {
                 dataSource: {
                     serverPaging: !usingDataSelector && !gridViewSettings.clientSidePaging,
@@ -280,12 +277,11 @@ export class Grids {
                             try {
                                 if (this.mainGridFirstLoad && this.gridsAreLoaded == false) {
                                     transportOptions.success(gridDataResult);
-                                    //this.mainGridFirstLoad = false;
+                                    
                                     window.processing.removeProcess(initialProcess);
                                     return;
                                 }
                                 //get wich grid you are sorting
-                                console.log("Not first");
                                 if (!transportOptions.data) {
                                     transportOptions.data = {};
                                 }
@@ -377,13 +373,14 @@ export class Grids {
                     virtual: true
                 },
                 filterable: filterable
-                //filterMenuInit: this.onFilterMenuInit.bind(this),
-                //filterMenuOpen: this.onFilterMenuOpen.bind(this)
             }, gridViewSettings);
 
             finalGridViewSettings.selectable = gridViewSettings.selectable || false;
             finalGridViewSettings.toolbar = toolbar.length === 0 ? null : toolbar;
             finalGridViewSettings.columns = columns;
+
+            console.log(gridDataResult);
+            console.log(finalGridViewSettings);
 
             this.mainGrid = $(gridViewId).kendoGrid(finalGridViewSettings).data("kendoGrid");
            

@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Modules, Dates, Wiser2 } from "../../Base/Scripts/Utils.js";
+import { Modules, Wiser2 } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import { Grids } from "./Grids.js";
 import { Commit } from "./Commit.js";
@@ -362,7 +362,6 @@ const moduleSettings = {
             var envioronmentbuttonValue = event.event.target.value;
             var commitGrid = document.querySelector("#deploygrid");
             var commits = commitGrid.querySelectorAll(".k-state-selected");
-
 
             for (const [key, value] of Object.entries(commits)) {
 

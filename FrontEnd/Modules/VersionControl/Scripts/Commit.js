@@ -72,14 +72,6 @@ export class Commit {
     async PutTemplateCommit(commitId, templateVersionId, version, enviornment) {
         try {
 
-            console.log(commitId);
-
-            console.log(templateVersionId);
-
-            console.log(version);
-
-            console.log(enviornment);
-
             const TemplateCommitData = {
                 CommitId: commitId,
                 TemplateId: templateVersionId,
