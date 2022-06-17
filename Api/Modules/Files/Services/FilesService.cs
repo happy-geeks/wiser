@@ -47,7 +47,7 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<FileModel>>> UploadAsync(string encryptedId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false)
+        public async Task<ServiceResult<List<FileModel>>> UploadAsync(string encryptedId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false, string entityType = null, int linkType = 0)
         {
             if (String.IsNullOrWhiteSpace(encryptedId))
             {
@@ -151,8 +151,11 @@ namespace Api.Modules.Files.Services
             var fileExtension = Path.GetExtension(fileName);
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
             databaseConnection.ClearParameters();
+
+            var tablePrefix = "";
             if (itemLinkId > 0)
             {
+                //tablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync()
                 databaseConnection.AddParameter("itemlink_id", itemLinkId);
             }
             else if (itemId > 0)
