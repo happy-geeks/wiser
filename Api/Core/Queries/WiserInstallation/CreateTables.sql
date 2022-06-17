@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS `wiser_entity`  (
   `save_history` tinyint(1) NOT NULL DEFAULT 1,
   `enable_multiple_environments` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Whether or not to enable multiple environments for entities of this type. This means that the test can have a different version of an item than the live for example.',
   `dedicated_table_prefix` varchar(25) NOT NULL DEFAULT '',
+  `delete_action` enum('archive','permanent','hide','disallow') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'archive',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `name_module_id`(`name`, `module_id`) USING BTREE,
   INDEX `name`(`name`(100), `show_in_tree_view`) USING BTREE,
