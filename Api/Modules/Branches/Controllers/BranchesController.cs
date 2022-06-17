@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Modules.Branches.Interfaces;
 using Api.Modules.Customers.Models;
+using GeeksCoreLibrary.Modules.Branches.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -30,14 +31,14 @@ namespace Api.Modules.Branches.Controllers
         /// Creates a new branch for the authenticated customer.
         /// This will create a new database schema on the same server/cluster and then fill it with part of the data from the original database.
         /// </summary>
-        /// <param name="name">The name of the environment</param>
+        /// <param name="settings">The settings for the new environment</param>
         [HttpPost]
         [ProducesResponseType(typeof(CustomerModel), StatusCodes.Status200OK)]
         [Authorize]
         [Route("{name}")]
-        public async Task<IActionResult> CreateBranchAsync(string name)
+        public async Task<IActionResult> CreateBranchAsync(CreateBranchSettingsModel settings)
         {
-            return (await branchesService.CreateAsync((ClaimsIdentity)User.Identity, name)).GetHttpResponseMessage();
+            return (await branchesService.CreateAsync((ClaimsIdentity)User.Identity, settings)).GetHttpResponseMessage();
         }
 
         /// <summary>

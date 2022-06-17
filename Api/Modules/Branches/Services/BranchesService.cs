@@ -18,9 +18,12 @@ using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
+using GeeksCoreLibrary.Modules.Branches.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Databases.Services;
 using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 
 namespace Api.Modules.Branches.Services
 {
@@ -64,9 +67,9 @@ namespace Api.Modules.Branches.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> CreateAsync(ClaimsIdentity identity, string name)
+        public async Task<ServiceResult<CustomerModel>> CreateAsync(ClaimsIdentity identity, CreateBranchSettingsModel settings)
         {
-            if (String.IsNullOrWhiteSpace(name))
+            if (String.IsNullOrWhiteSpace(settings?.Name))
             {
                 return new ServiceResult<CustomerModel>
                 {
@@ -75,10 +78,13 @@ namespace Api.Modules.Branches.Services
                 };
             }
 
+            // Make sure the queue table exists and is up-to-date.
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserBranchesQueue});
+            
             var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
             var subDomain = currentCustomer.SubDomain;
-            var newCustomerName = $"{currentCustomer.Name} - {name}";
-            var newCustomerTitle = $"{currentCustomer.WiserTitle} - {name}";
+            var newCustomerName = $"{currentCustomer.Name} - {settings.Name}";
+            var newCustomerTitle = $"{currentCustomer.WiserTitle} - {settings.Name}";
 
             // If the ID is not the same as the customer ID, it means this is not the main/production environment of this customer.
             // Then we want to get the sub domain of the main/production environment of the customer, to use as base for the new sub domain for the new environment.
@@ -93,12 +99,12 @@ namespace Api.Modules.Branches.Services
                 }
 
                 subDomain = dataTable.Rows[0].Field<string>("subdomain");
-                newCustomerName = $"{dataTable.Rows[0].Field<string>("name")} - {name}";
-                newCustomerTitle = $"{dataTable.Rows[0].Field<string>("wiser_title")} - {name}";
+                newCustomerName = $"{dataTable.Rows[0].Field<string>("name")} - {settings.Name}";
+                newCustomerTitle = $"{dataTable.Rows[0].Field<string>("wiser_title")} - {settings.Name}";
             }
 
             // Create a valid database and sub domain name for the new environment.
-            var databaseNameBuilder = new StringBuilder(name.Trim().ToLowerInvariant());
+            var databaseNameBuilder = new StringBuilder(settings.Name.Trim().ToLowerInvariant());
             databaseNameBuilder = Path.GetInvalidFileNameChars().Aggregate(databaseNameBuilder, (current, invalidChar) => current.Replace(invalidChar.ToString(), ""));
             databaseNameBuilder = databaseNameBuilder.Replace(@"\", "_").Replace(@"/", "_").Replace(".", "_").Replace(" ", "_");
 
@@ -126,7 +132,7 @@ namespace Api.Modules.Branches.Services
                 return new ServiceResult<CustomerModel>
                 {
                     StatusCode = HttpStatusCode.Conflict,
-                    ErrorMessage = $"Een omgeving met de naam '{name}' bestaat al."
+                    ErrorMessage = $"Een omgeving met de naam '{settings.Name}' bestaat al."
                 };
             }
 
@@ -140,8 +146,38 @@ namespace Api.Modules.Branches.Services
                 };
             }
 
-            // Add the new customer environment to easy_customers.
+            settings.NewCustomerName = newCustomerName;
+            settings.SubDomain = subDomain;
+            settings.WiserTitle = newCustomerTitle;
+            settings.DatabaseName = databaseName;
+            
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("name", settings.Name);
+            clientDatabaseConnection.AddParameter("action", "create");
+            clientDatabaseConnection.AddParameter("data", JsonConvert.SerializeObject(settings));
+            clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
+            clientDatabaseConnection.AddParameter("start_on", settings.StartOn ?? DateTime.Now);
+            clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true));
+            clientDatabaseConnection.AddParameter("user_id", IdentityHelpers.GetWiserUserId(identity));
+            await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserBranchesQueue, 0);
+
             var newCustomer = new CustomerModel
+            {
+                CustomerId = currentCustomer.CustomerId,
+                Name = newCustomerName,
+                SubDomain = subDomain,
+                WiserTitle = newCustomerTitle,
+                Database = new ConnectionInformationModel
+                {
+                    DatabaseName = databaseName
+                }
+            };
+            
+            return new ServiceResult<CustomerModel>(newCustomer);
+
+            // TODO: Move the code below to AIS and use the settings model for deciding what to copy to the new environment.
+            // Add the new customer environment to easy_customers.
+            newCustomer = new CustomerModel
             {
                 CustomerId = currentCustomer.CustomerId,
                 Name = newCustomerName,
@@ -153,11 +189,10 @@ namespace Api.Modules.Branches.Services
                     Host = currentCustomer.Database.Host,
                     Password = currentCustomer.Database.Password,
                     Username = currentCustomer.Database.Username,
-                    DatabaseName = databaseName,
-                    PortNumber = currentCustomer.Database.PortNumber
+                    DatabaseName = databaseName
                 }
             };
-
+            
             try
             {
                 await wiserDatabaseConnection.BeginTransactionAsync();
