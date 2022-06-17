@@ -1104,11 +1104,6 @@ CREATE TRIGGER `EntityInsert` AFTER INSERT ON `wiser_entity` FOR EACH ROW BEGIN
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'enable_multiple_environments', NULL, NEW.`enable_multiple_environments`);
     END IF;
 
-    IF IFNULL(NEW.`use_dedicated_table`, '') <> '' THEN
-        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'use_dedicated_table', NULL, NEW.`use_dedicated_table`);
-    END IF;
-
     IF IFNULL(NEW.`dedicated_table_prefix`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'dedicated_table_prefix', NULL, NEW.`dedicated_table_prefix`);
@@ -1235,11 +1230,6 @@ CREATE TRIGGER `EntityUpdate` AFTER UPDATE ON `wiser_entity` FOR EACH ROW BEGIN
     IF IFNULL(NEW.`enable_multiple_environments`, '') <> IFNULL(OLD.`enable_multiple_environments`, '') THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'enable_multiple_environments', OLD.`enable_multiple_environments`, NEW.`enable_multiple_environments`);
-    END IF;
-
-    IF IFNULL(NEW.`use_dedicated_table`, '') <> IFNULL(OLD.`use_dedicated_table`, '') THEN
-        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'use_dedicated_table', NULL, NEW.`use_dedicated_table`);
     END IF;
 	
     IF IFNULL(NEW.`dedicated_table_prefix`, '') <> IFNULL(OLD.`dedicated_table_prefix`, '') THEN
