@@ -36,6 +36,7 @@ import {
     TOGGLE_PIN_MODULE,
     CHANGE_PASSWORD,
     CREATE_BRANCH,
+    CREATE_BRANCH_ERROR,
     GET_BRANCHES, 
     MERGE_BRANCH,
     GET_ENTITIES_FOR_BRANCHES,
@@ -115,10 +116,16 @@ import {
                         changePasswordPromptOldPasswordValue: null,
                         changePasswordPromptNewPasswordValue: null,
                         changePasswordPromptNewPasswordRepeatValue: null,
-                        createBranchPromptValue: null,
                         selectedBranchValue: null,
-                        entityCopySettings: {
-                            all: -1
+                        createBranchSettings: {
+                            name: null,
+                            startMode: "direct",
+                            startOn: null,
+                            entities: {
+                                all: {
+                                    mode: -1
+                                }
+                            }
                         }
                     };
                 },
@@ -303,7 +310,6 @@ import {
                     },
 
                     async openCustomerManagement() {
-
                         this.openModule({
                             moduleId: "customerManagement",
                             name: "Klant toevoegen",
@@ -336,15 +342,17 @@ import {
                     openCreateBranchPrompt(event) {
                         event.preventDefault();
                         this.$refs.wiserCreateBranchPrompt.open();
+                        this.$refs.wiserBranchesPrompt.close();
                     },
 
                     openMergeBranchPrompt(event) {
                         event.preventDefault();
                         this.$refs.wiserMergeBranchPrompt.open();
+                        this.$refs.wiserBranchesPrompt.close();
                     },
 
                     openMergeConflictsPrompt(event) {
-                        event.preventDefault();
+                        //event.preventDefault();
                         this.$refs.wiserMergeConflictsPrompt.open();
                     },
 
@@ -418,12 +426,20 @@ import {
                     },
 
                     async createBranch() {
-                        if (!this.createBranchPromptValue) {
+                        if (!this.createBranchSettings.name) {
+                            await this.$store.dispatch(CREATE_BRANCH_ERROR, "Vul a.u.b. een naam in");
                             return false;
                         }
 
-                        await this.$store.dispatch(CREATE_BRANCH, this.createBranchPromptValue);
-                        return !this.createBranchError;
+                        await this.$store.dispatch(CREATE_BRANCH, this.createBranchSettings);
+                        
+                        if (!this.createBranchError) {
+                            this.$refs.wiserCreateBranchPrompt.close();
+                            alert("De branch staat klaar om gemaakt te worden. U krijgt een bericht wanneer dit voltooid is.");
+                            return true;
+                        }
+                        
+                        return false;
                     },
 
                     async mergeBranch() {
@@ -484,7 +500,9 @@ import {
                     async onWiserCreateBranchPromptOpen() {
                         await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
                         for (let entity of this.entitiesForBranches) {
-                            this.entityCopySettings[entity.id] = 0;
+                            this.createBranchSettings.entities[entity.id] = {
+                                mode: 0
+                            };
                         }
                     }
                 }

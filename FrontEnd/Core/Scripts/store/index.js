@@ -642,9 +642,9 @@ const branchesModule = {
     },
 
     actions: {
-        async [CREATE_BRANCH]({ commit }, name) {
+        async [CREATE_BRANCH]({ commit }, data) {
             commit(START_REQUEST);
-            const result = await main.branchesService.create(name);
+            const result = await main.branchesService.create(data);
 
             if (result.success) {
                 if (result.data) {
@@ -656,6 +656,10 @@ const branchesModule = {
                 commit(CREATE_BRANCH_ERROR, result.message);
             }
             commit(END_REQUEST);
+        },
+        
+        [CREATE_BRANCH_ERROR]({ commit }, error) {
+            commit(CREATE_BRANCH_ERROR, error);
         },
 
         async [GET_BRANCHES]({ commit }) {

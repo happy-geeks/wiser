@@ -4,13 +4,32 @@ export default class BranchesService extends BaseService {
     /**
      * Creates a new environment for the customers. This will create a new database (on the same server/cluster as the current) and copied most data to that new database.
      * It will then also create a new tenant in Wiser so the customer can login to the new environment.
-     * @param {any} name The name for the new environment.
-     * @returns {any} The information about the new environment.
+     * @param {any} data The data for the new branch.
      */
-    async create(name) {
+    async create(data) {
         const result = {};
         try {
-            const response = await this.base.api.post(`/api/v3/branches/${encodeURIComponent(name)}`);
+            const postData = {
+                name: data.name,
+                startOn: data.startOn,
+                entities: []
+            };
+            
+            for (let key in data.entities) {
+                if (!data.entities.hasOwnProperty(key)) {
+                    continue;
+                }
+                
+                postData.entities.push({
+                    entityType: key,
+                    mode: parseInt(data.entities[key].mode),
+                    amountOfItems: parseInt(data.entities[key].amountOfItems) || null,
+                    start: data.entities[key].start || null,
+                    end: data.entities[key].end || null
+                });
+            }
+            
+            const response = await this.base.api.post(`/api/v3/branches`, postData);
             result.success = true;
             result.data = response.data;
         } catch (error) {

@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
+using Api.Modules.Branches.Models;
 using Api.Modules.Customers.Models;
 using GeeksCoreLibrary.Modules.Branches.Models;
 
@@ -35,11 +36,19 @@ namespace Api.Modules.Branches.Interfaces
         Task<ServiceResult<bool>> IsMainBranchAsync(ClaimsIdentity identity);
 
         /// <summary>
+        /// Get the changes of a branch.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
+        /// <param name="id">The ID of the branch to get the changes of.</param>
+        /// <returns>A list of changes per entity type / Wiser setting type.</returns>
+        Task<ServiceResult<ChangesAvailableForMergingModel>> GetChangesAsync(ClaimsIdentity identity, int id);
+
+        /// <summary>
         /// Synchronise all changes done to wiser items, from a specific environment, to the production environment.
         /// This will look in wiser_history for what has been changed, copy those changes to production and then clear the history.
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
-        /// <param name="id">The ID of the environment to copy the changes from.</param>
+        /// <param name="id">The ID of the branch to copy the changes from.</param>
         Task<ServiceResult<SynchroniseChangesToProductionResultModel>> MergeAsync(ClaimsIdentity identity, int id);
     }
 }

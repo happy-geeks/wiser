@@ -136,6 +136,11 @@
                             Hiermee kunnen wijzigingen die in een branch gedaan zijn, overgezet worden naar de productie-omgeving. U kunt dan kiezen welke wijzigingen doorgezet moeten worden, dat hoeft niet per se alles te zijn.
                             Het is niet mogelijk om verschillende branches samen te voegen. Het samenvoegen gaat altijd van een branch naar de productie-omgeving.
                         </p>
+                        <p>
+                            <strong>Let op:</strong> Tijdens het terugzetten van een branch wordt de database geblokkeerd zodat er geen andere wijziging tussendoor gedaan kunnen worden. 
+                            Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gekoppeld zijn aan dezelfde database, ook niet bereikbaar zullen zijn. 
+                            Zorg daarom dat u het samenvoegen start op een moment waarbij dit het minste impact heeft (zoals 's nachts).
+                        </p>
 
                         <button class="btn btn-primary" @@click="openMergeBranchPrompt">Bestaande branch terugzetten naar productie</button>
                     </div>
@@ -151,7 +156,7 @@
                             <ins class="icon-line-alert"></ins>
                             <span v-html="createBranchError"></span>
                         </section>
-                        <input type="text" id="newBranchName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="createBranchPromptValue" required>
+                        <input type="text" id="newBranchName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="createBranchSettings.name" required>
                     </div>
                     <div class="col col-12 form-row no-bottom-margin">
                         <label for="branche-data">Welke data wil je naar de branche overzetten?
@@ -179,7 +184,7 @@
                                         <td>Alle onderstaande</td>
                                         <td>{{ totalAmountOfItemsForCreatingBranch }}</td>
                                         <td>
-                                            <select v-model="entityCopySettings.all">
+                                            <select v-model="createBranchSettings.entities.all.mode">
                                                 <option value="-1"></option>
                                                 <option value="0">Alles</option>
                                                 <option value="2">Random X items</option>
@@ -190,17 +195,17 @@
                                             </select>
                                         </td>
                                         <td class="extra">
-                                            <label class="number-of-items" v-if="entityCopySettings.all == 2 || entityCopySettings.all == 3">
+                                            <label class="number-of-items" v-if="createBranchSettings.entities.all.mode == 2 || createBranchSettings.entities.all.mode == 3">
                                                 <span>Aantal items:</span>
-                                                <input type="number" value="" class="error" />
+                                                <input type="number" v-model="createBranchSettings.entities.all.amountOfItems" />
                                             </label>
-                                            <label class="single-date" v-if="entityCopySettings.all == 4 || entityCopySettings.all == 5">
+                                            <label class="single-date" v-if="createBranchSettings.entities.all.mode == 4 || createBranchSettings.entities.all.mode == 5">
                                                 <span>Datum:</span>
-                                                <input type="date" value="" class="" />
+                                                <input type="date" v-model="createBranchSettings.entities.all.start" />
                                             </label>
-                                            <div class="date-range" v-if="entityCopySettings.all == 6">
-                                                <input type="date" value="" class="" />
-                                                <input type="date" value="" class="" />
+                                            <div class="date-range" v-if="createBranchSettings.entities.all.mode == 6">
+                                                <input type="date" v-model="createBranchSettings.entities.all.start" />
+                                                <input type="date" v-model="createBranchSettings.entities.all.end" />
                                             </div>
                                         </td>
                                     </tr>
@@ -208,7 +213,7 @@
                                         <td>{{ entity.displayName }}</td>
                                         <td>{{ entity.totalItems }}</td>
                                         <td>
-                                            <select v-model="entityCopySettings[entity.id]" v-if="entityCopySettings.all == -1">
+                                            <select v-model="createBranchSettings.entities[entity.id].mode" v-if="createBranchSettings.entities.all.mode == -1 && createBranchSettings.entities[entity.id]">
                                                 <option value="0">Alles</option>
                                                 <option value="1">Niets</option>
                                                 <option value="2">Random X items</option>
@@ -219,17 +224,17 @@
                                             </select>
                                         </td>
                                         <td class="extra">
-                                            <label class="number-of-items" v-if="entityCopySettings.all == -1 && (entityCopySettings[entity.id] == 2 || entityCopySettings[entity.id] == 3)">
+                                            <label class="number-of-items" v-if="createBranchSettings.entities.all.mode == -1 && createBranchSettings.entities[entity.id] && (createBranchSettings.entities[entity.id].mode == 2 || createBranchSettings.entities[entity.id].mode == 3)">
                                                 <span>Aantal items:</span>
-                                                <input type="number" value="" class="error" />
+                                                <input type="number" v-model="createBranchSettings.entities[entity.id].amountOfItems"/>
                                             </label>
-                                            <label class="single-date" v-if="entityCopySettings.all == -1 && (entityCopySettings[entity.id] == 4 || entityCopySettings[entity.id] == 5)">
+                                            <label class="single-date" v-if="createBranchSettings.entities.all.mode == -1 && createBranchSettings.entities[entity.id] && (createBranchSettings.entities[entity.id].mode == 4 || createBranchSettings.entities[entity.id].mode == 5)">
                                                 <span>Datum:</span>
-                                                <input type="date" value="" class="" />
+                                                <input type="date" v-model="createBranchSettings.entities[entity.id].start"/>
                                             </label>
-                                            <div class="date-range" v-if="entityCopySettings.all == -1 && entityCopySettings[entity.id] == 6">
-                                                <input type="date" value="" class="" />
-                                                <input type="date" value="" class="" />
+                                            <div class="date-range" v-if="createBranchSettings.entities.all.mode == -1 && createBranchSettings.entities[entity.id] && createBranchSettings.entities[entity.id].mode == 6">
+                                                <input type="date" v-model="createBranchSettings.entities[entity.id].start"/>
+                                                <input type="date" v-model="createBranchSettings.entities[entity.id].end"/>
                                             </div>
                                         </td>
                                     </tr>
@@ -241,19 +246,19 @@
                 <footer class="row fixed no-bottom-padding">
                     <div class="col col-8 inline">
                         <label class="radio">
-                            <input type="radio" name="start-time" value="direct" checked />
+                            <input type="radio" name="start-time" value="direct" v-model="createBranchSettings.startMode" />
                             <span>Direct starten</span>
                         </label>
                         <label class="radio">
-                            <input type="radio" name="start-time" value="delayed" />
+                            <input type="radio" name="start-time" value="delayed" v-model="createBranchSettings.startMode" />
                             <span>Starten op:</span>
                         </label>
                         <label>
-                            <input type="datetime-local" name="start-time-picker" value="" />
+                            <input type="datetime-local" name="start-time-picker"  v-model="createBranchSettings.startOn" />
                         </label>
                     </div>
                     <div class="col col-4 align-right">
-                        <button class="btn btn-primary" @@click="createBranch">Start aanmaken nieuwe branche</button>
+                        <button class="btn btn-primary" @@click="createBranch">Start aanmaken nieuwe branch</button>
                     </div>
                 </footer>
             </div>
@@ -263,7 +268,7 @@
                 <div class="row" v-if="!branches || !branches.length">
                     <section class="full-error">
                         <ins class="icon-line-alert"></ins>
-                        <span>U heeft nog geen andere omgevingen. Maak a.u.b. eerst een nieuwe omgeving aan via de optie "Nieuwe omgeving aanmaken".</span>
+                        <span>U heeft nog geen andere branches. Maak a.u.b. eerst een nieuwe branch aan via de optie "Nieuwe branch aanmaken".</span>
                     </section>
                 </div>
                 <div class="row scroll" v-else>
