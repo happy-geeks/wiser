@@ -259,9 +259,6 @@ export class Grids {
                     });
                 }
             }
-            console.log(gridDataResult.data[0])
-
-
 
             const finalGridViewSettings = $.extend(true, {
                 dataSource: {

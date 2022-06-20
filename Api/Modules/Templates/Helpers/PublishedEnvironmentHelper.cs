@@ -67,6 +67,8 @@ namespace Api.Modules.Templates.Helpers
                     return Environments.Test;
                 case "accept":
                     return Environments.Acceptance;
+                case "acceptance":
+                    return Environments.Acceptance;
                 case "live":
                     return Environments.Live;
                 default:

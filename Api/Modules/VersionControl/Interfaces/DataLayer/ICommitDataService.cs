@@ -28,5 +28,13 @@ namespace Api.Modules.VersionControl.Interfaces.DataLayer
         /// </summary>
         /// <returns>Returns a model of the commit.</returns>
         Task<CreateCommitModel> GetCommitAsync();
+
+        /// <summary>
+        /// Completes the commmit
+        /// </summary>
+        /// <param name="commitId">The id of the commit</param>
+        /// <param name="commitCompleted">Bool that sets the commit to completed</param>
+        /// <returns></returns>
+        Task<bool> CompleteCommit(int commitId, bool commitCompleted);
     }
 }

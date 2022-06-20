@@ -304,6 +304,22 @@ namespace Api.Modules.VersionControl.Controllers
         //SQL QUERRYS NALOPEN
         //dus ook van dev_commit en dev_template veranderen
 
+        /// <summary>
+        /// Completes the commit
+        /// </summary>
+        /// <param name="commitId">The id of the commit</param>
+        /// <param name="commitCompleted">The bool to swap the commit to complete</param>
+        /// <returns></returns>
+        [HttpPut]
+        [Route("{commitId:int}/complete-commit/{commitCompleted:bool}")]
+        [ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> CompleteCommit(int commitId, bool commitCompleted)
+        {
+            return (await commitService.CompleteCommit(commitId, commitCompleted)).GetHttpResponseMessage();
+        }
 
+
+        
     }
 }

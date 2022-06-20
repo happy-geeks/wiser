@@ -95,5 +95,20 @@ export class Commit {
         }
     }
 
+    async CompleteCommit(commitId, commitCompleted) {
+        try {
+            const createCommit = await Wiser2.api({
+                url: `${this.base.settings.wiserApiRoot}VersionControl/${commitId}/complete-commit/${commitCompleted}`,
+                method: "PUT",
+                contentType: "application/json",
+            });
+
+            return createCommit;
+
+        } catch (exception) {
+            kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+        }
+    }
+
 
 }

@@ -31,5 +31,14 @@ namespace Api.Modules.VersionControl.Interfaces
         /// </summary>
         /// <returns>Returns a model of the commit.</returns>
         Task<ServiceResult<CreateCommitModel>> GetCommitAsync();
+
+        /// <summary>
+        /// Completes the commit
+        /// </summary>
+        /// <param name="commitId">The id of the commit</param>
+        /// <param name="commitCompleted">The bool that will set the commit to completed</param>
+        /// <returns></returns>
+        Task<ServiceResult<bool>> CompleteCommit(int commitId, bool commitCompleted);
+
     }
 }

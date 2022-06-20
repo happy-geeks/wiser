@@ -18,6 +18,7 @@ namespace Api.Modules.VersionControl.Service
             this.commitDataService = commitDataService;
         }
 
+
         /// <inheritdoc />
         public async Task<ServiceResult<CreateCommitModel>> CreateCommitAsync(string commitMessage, ClaimsIdentity identity)
         {
@@ -47,5 +48,14 @@ namespace Api.Modules.VersionControl.Service
 
             return new ServiceResult<CreateCommitModel>(result);
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> CompleteCommit(int commitId, bool commitCompleted)
+        {
+            var result = await commitDataService.CompleteCommit(commitId, commitCompleted);
+
+            return new ServiceResult<bool>(result);
+        }
+
     }
 }

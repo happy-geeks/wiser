@@ -77,5 +77,18 @@ namespace Api.Modules.VersionControl.Service.DataLayer
                 ChangedBy = changedBy
             };
         }
+        /// <inheritdoc/>
+        public async Task<bool> CompleteCommit(int commitId, bool commitCompleted)
+        {
+            var query = $@"UPDATE wiser_commit SET completed = ?commitCompleted WHERE id = ?commitId";
+
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("commitId", commitId);
+            clientDatabaseConnection.AddParameter("commitCompleted", commitCompleted);
+
+            var dataTable = await clientDatabaseConnection.ExecuteAsync(query);
+
+            return true;
+        }
     }
 }

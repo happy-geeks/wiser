@@ -358,17 +358,20 @@ const moduleSettings = {
 
 
         async Deploy(event) {
-
             var envioronmentbuttonValue = event.event.target.value;
             var commitGrid = document.querySelector("#deploygrid");
-            var commits = commitGrid.querySelectorAll(".k-state-selected");
+            var commits = commitGrid.querySelectorAll(".k-state-selected");       
 
             for (const [key, value] of Object.entries(commits)) {
 
                 var commitId = value.querySelector('[data-field="id"]').innerHTML;
                 var templates = await this.template.GetTemplatesFromCommit(commitId);
                 var dynamicContent = await this.GetDynamicContentFromCommit(commitId);
-                       
+
+                if (envioronmentbuttonValue == "live") {
+                    await this.commit.CompleteCommit(commitId, true);
+                }
+
                 for (const [key, value] of Object.entries(templates)) {
 
                     await this.template.PublishTemplate(value["templateId"], envioronmentbuttonValue, value["version"]);
@@ -456,14 +459,16 @@ const moduleSettings = {
             const dynamicContentTable = document.querySelector("#dynamicContentGrid");
             const dynamicContentSelected = dynamicContentTable.querySelectorAll(".k-state-selected");
 
-            const publishEnviornment = this.getSlectedDeployment();
+            const publishEnviornment = this.getSlectedDeployment();         
 
-           
-            
             var commitMessage = this.getCommitMessage();
             await this.commit.CreateNewCommit(commitMessage);
             var createdCommit = await this.commit.GetCommitWithId()
             var commitId = createdCommit['id'];
+
+            if (publishEnviornment == "live") {
+                await this.commit.CompleteCommit(commitId, true);
+            }
         
 
             for (const [key, value] of Object.entries(templateSelected)) {
@@ -534,6 +539,10 @@ const moduleSettings = {
             await this.commit.CreateNewCommit(commitMessage);
             var createdCommit = await this.commit.GetCommitWithId()
             var commitId = createdCommit['id'];
+
+            if (publishEnviornment == "live") {
+                await this.commit.CompleteCommit(commitId, true);
+            }
 
             for (const [key, value] of Object.entries(templateSelected)) {
                 var templateVersionId = value.querySelector('[data-field="template_id"]').innerHTML;
@@ -964,6 +973,7 @@ const moduleSettings = {
             if (commitToAcceptanceCheckbox.checked) {
                 deploymentOptions[1] = commitToAcceptanceCheckbox.value;
                 environment = "acceptance";
+
             }
 
             if (commitToLiveCheckbox.checked) {

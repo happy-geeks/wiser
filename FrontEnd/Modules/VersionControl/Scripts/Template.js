@@ -31,7 +31,7 @@ export class Template {
     async PublishTemplate(templateId, environment, version) {
         try {
 
-
+            console.log(environment);
             const createCommit = await Wiser2.api({
                 url: `${this.base.settings.wiserApiRoot}/Templates/${templateId}/publish/${environment}/${version}`,
                 method: "POST",
