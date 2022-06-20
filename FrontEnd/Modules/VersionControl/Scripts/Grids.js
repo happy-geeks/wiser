@@ -334,6 +334,22 @@ export class Grids {
                                 }
 
                                 transportOptions.success(newGridDataResult1);
+
+                                if (gridViewId == "#deploygrid") {
+
+                                    var grid = document.getElementById("deploygrid").getElementsByTagName("tbody").item(0);
+
+                                    for (var i = 0; i < grid.childElementCount; i++) {
+                                        var gridRow = grid.childNodes.item(i);
+                                        var contentDataRow = gridRow.querySelector('[data-field="content_data"]');
+                                        var data = contentDataRow.innerHTML
+
+                                        var editedString = data.replaceAll(";", "<p></p>");
+                                        grid.childNodes.item(i).querySelector('[data-field="content_data"]').innerHTML = editedString;
+                                    }
+
+                                }
+
                             } catch (exception) {
                                 console.error(exception);
                                 transportOptions.error(exception);
