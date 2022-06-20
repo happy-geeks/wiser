@@ -797,12 +797,13 @@ CREATE TABLE IF NOT EXISTS `wiser_template_publish_log`  (
 -- ----------------------------
 -- Table structure for wiser_commit
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS `wiser_commit` (
+CREATE TABLE IF NOT EXISTS`wiser_commit` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `description` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `description` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `asana_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `added_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `changed_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `changed_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `completed` tinyint NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
@@ -811,10 +812,10 @@ CREATE TABLE IF NOT EXISTS `wiser_commit` (
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_commit_dynamic_content` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `dynamic_content_id` int DEFAULT NULL,
-  `version` int DEFAULT NULL,
-  `commit_id` int DEFAULT NULL,
-  `added_on` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `dynamic_content_id` int NOT NULL,
+  `version` int NOT NULL,
+  `commit_id` int NOT NULL,
+  `added_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
@@ -823,12 +824,27 @@ CREATE TABLE IF NOT EXISTS `wiser_commit_dynamic_content` (
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_commit_template` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `template_id` int DEFAULT NULL,
-  `version` int DEFAULT NULL,
-  `commit_id` int DEFAULT NULL,
-  `added_on` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `template_id` int NOT NULL,
+  `version` int NOT NULL,
+  `commit_id` int NOT NULL,
+  `added_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_module_grids
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS`wiser_module_grids` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `module_id` int NOT NULL,
+  `custom_query` longtext,
+  `count_query` longtext,
+  `grid_options` longtext,
+  `grid_div_id` varchar(45) NOT NULL,
+  `name` varchar(45) NOT NULL,
+  `grid_read_options` longtext,
+  PRIMARY KEY (`id`)
+) ENGINE = InnoDB AUTO_INCREMENT=6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for wiser_table_changes
