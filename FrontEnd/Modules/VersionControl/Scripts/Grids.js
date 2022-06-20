@@ -1,5 +1,6 @@
 ﻿import { Wiser2 } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
+import { forEach } from "jszip";
 
 require("@progress/kendo-ui/js/kendo.tooltip.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -376,17 +377,32 @@ export class Grids {
             finalGridViewSettings.toolbar = toolbar.length === 0 ? null : toolbar;
             finalGridViewSettings.columns = columns;
 
-            console.log(gridDataResult);
-            console.log(finalGridViewSettings);
-
             this.mainGrid = $(gridViewId).kendoGrid(finalGridViewSettings).data("kendoGrid");
-           
+  
             await this.loadGridViewState(`main_grid_columns_${this.base.settings.moduleId}`, this.mainGrid);
 
             if (!disableOpeningOfItems) {
                 this.mainGrid.element.on("dblclick", "tbody tr[data-uid] td", (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }); });
             }
-            
+
+            if (gridViewId == "#deploygrid") {
+
+                var grid = document.getElementById("deploygrid").getElementsByTagName("tbody").item(0);
+
+                for (var i = 0; i < grid.childElementCount; i++) {
+                    var gridRow = grid.childNodes.item(i);
+                    var contentDataRow = gridRow.querySelector('[data-field="content_data"]');
+                    var data = contentDataRow.innerHTML
+
+                    var editedString = data.replaceAll(";", "<p></p>");
+                    grid.childNodes.item(i).querySelector('[data-field="content_data"]').innerHTML = editedString;
+                }
+
+            }
+
+
+
+
         } catch (exception) {
             kendo.alert("Er is iets fout gegaan tijdens het laden van de data voor deze module. Sluit a.u.b. de module en probeer het nogmaals, of neem contact op met ons.");
             console.error(exception);
@@ -417,6 +433,8 @@ export class Grids {
         const columns = JSON.parse(value);
         const gridOptions = grid.getOptions();
 
+        
+
         if (!gridOptions || !gridOptions.columns || !gridOptions.columns.length) {
             return;
         }
@@ -429,7 +447,6 @@ export class Grids {
 
             column.hidden = savedColumn[0].hidden;
         }
-
         grid.setOptions(gridOptions);
     }
 
