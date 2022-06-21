@@ -139,8 +139,8 @@ INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2CHECKOU
 -- ----------------------------
 -- Baskets
 -- ----------------------------
-INSERT IGNORE INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `dedicated_table_prefix`) VALUES ('basket', 5000, '', '', '','basket');
-INSERT IGNORE INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `dedicated_table_prefix`) VALUES ('basketline', 5000, '', '', '','basket');
+INSERT IGNORE INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `dedicated_table_prefix`,`save_history`) VALUES ('basket', 5000, '', '', '','basket', 0);
+INSERT IGNORE INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `dedicated_table_prefix`,`save_history`) VALUES ('basketline', 5000, '', '', '','basket', 0);
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (5002, 'basket', 'basketline', 'Shopping cart line', 0, 0, 'one-to-one', 'none', 1);
 
 -- ----------------------------
