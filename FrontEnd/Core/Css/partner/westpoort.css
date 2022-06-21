@@ -1,0 +1,72 @@
+:root {
+    --custom-color: #000000;
+    --body-bg-color: #FFFFFF;
+    --menu-width: 300px;
+    --logo-url: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyNS4zLjEsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4NCjxzdmcgdmVyc2lvbj0iMS4xIiBpZD0iTGFhZ18xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCINCgkgdmlld0JveD0iMCAwIDU3OCA3MCIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgNTc4IDcwOyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+DQo8Zz4NCgk8cGF0aCBkPSJNNjAsNjcuM0g0MGwwLjUtNDAuMWgtMC4yTDI1LjYsNjcuM0g1LjRMMCwxLjZoMjAuMmwwLjMsNDAuNmgwLjJMMzYuNiwxLjZoMTguMmwtMC4xLDQxLjJoMC4yTDcxLjIsMS42aDIwLjNMNjAsNjcuM3oiLz4NCgk8cGF0aCBkPSJNOTIuNCwxLjZoNTUuM2wtMy4zLDE2LjloLTM0LjdsLTEuNiw4LjJoMzEuNWwtMywxNS43aC0zMS41bC0xLjYsOC4yaDM1LjhMMTM2LDY3LjVINzkuN0w5Mi40LDEuNnoiLz4NCgk8cGF0aCBkPSJNMTYzLjEsNDUuMmMtMC4zLDEuNy0wLjMsMy4xLTAuMSw0LjNjMC4xLDAuMywwLjEsMC41LDAuMiwwLjhjMS4xLDMuMyw1LjEsNCw4LjcsNGMzLjQsMCw4LjctMS4xLDkuNy02DQoJCWMwLjctMy40LTIuMS00LjMtMTMtNy42Yy0xMC0yLjktMjEuNS01LjgtMTktMTkuMUMxNTIuNiw2LjUsMTY3LjEsMCwxODAuOCwwYzE0LjUsMCwyNi42LDMuNiwyNC4xLDE5LjdoLTE5LjUNCgkJYzAuNy0xLjktMC4zLTIuOS0xLjctMy43Yy0xLjctMC45LTMuNy0xLjQtNS44LTEuNGMtMi44LDAtNy41LDAuNy04LjMsNC40Yy0wLjUsNC43LDguOCw1LjcsMTcuOCw4LjNzMTcuNSw2LjksMTUuMSwxOQ0KCQlDMTk5LjIsNjMuNCwxODIuMSw2OSwxNjcuMiw2OWMtNi45LDAtMjUuMi0yLjItMjUuMy0xOC43YzAtMS41LDAuMS0zLjIsMC41LTVMMTYzLjEsNDUuMkwxNjMuMSw0NS4yeiIvPg0KCTxwYXRoIGQ9Ik0yMjcuMiwxOS43aC0xOC43TDIxMiwxLjZoNTUuNHYxOC4xaC0xOS42bC05LjIsNDcuN0gyMThMMjI3LjIsMTkuN3oiLz4NCgk8cGF0aCBkPSJNMjcwLjQsMS42aDMyLjdjMTcuMywwLDIzLjMsMTMuMSwyMy4zLDIyLjVjMCwxNS45LTEwLjMsMjMuNC0yNC45LDIzLjRoLTExLjZ2MTkuOWgtMTkuNVYxLjZ6IE0yOTAsMzEuOGg3LjYNCgkJYzUuMSwwLDEwLjQtMC40LDEwLjQtN2MwLTYtNC41LTYuNC05LjMtNi40SDI5MFYzMS44eiIvPg0KCTxwYXRoIGQ9Ik0zNTkuOCwwQzM3OS4xLDAsMzkyLDE0LjQsMzkyLDM0LjRjMCwyMC4xLTEyLjksMzQuNC0zMi4yLDM0LjRjLTE5LjMsMC0zMi4yLTE0LjQtMzIuMi0zNC40QzMyNy42LDE0LjQsMzQwLjUsMCwzNTkuOCwweg0KCQkgTTM1OS44LDUyLjVjNSwwLDEyLjYtMy40LDEyLjYtMThzLTcuNy0xOC4xLTEyLjYtMTguMWMtNSwwLTEyLjYsMy40LTEyLjYsMTguMUMzNDcuMiw0OS4xLDM1NC44LDUyLjUsMzU5LjgsNTIuNXoiLz4NCgk8cGF0aCBkPSJNNDI3LjEsMGMxOS4zLDAsMzIuMiwxNC40LDMyLjIsMzQuNGMwLDIwLjEtMTIuOSwzNC40LTMyLjIsMzQuNGMtMTkuMywwLTMyLjItMTQuNC0zMi4yLTM0LjRTNDA3LjgsMCw0MjcuMSwweg0KCQkgTTQyNy4xLDUyLjVjNSwwLDEyLjYtMy40LDEyLjYtMThzLTcuNy0xOC4xLTEyLjYtMTguMWMtNSwwLTEyLjYsMy40LTEyLjYsMTguMUM0MTQuNSw0OS4xLDQyMi4xLDUyLjUsNDI3LjEsNTIuNXoiLz4NCgk8cGF0aCBkPSJNNDYyLjIsMS42aDM3LjNjMTEuMSwwLDIwLjcsNi40LDIwLjcsMTguOGMwLDYuOC0zLDE0LTkuNSwxNi41YzUuMywyLjEsOC42LDguMiw5LjMsMTYuNGMwLjMsMy4yLDAuNCwxMSwyLjEsMTQuMWgtMTkuNg0KCQljLTEtMy4zLTEuMy02LjctMS42LTEwLjFjLTAuNS02LjMtMS4xLTEyLjgtOC44LTEyLjhoLTEwLjR2MjIuOWgtMTkuNlYxLjZINDYyLjJ6IE00ODEuOCwzMC4zSDQ5MmMzLjYsMCw4LjYtMC42LDguNi02LjUNCgkJYzAtNC4xLTIuMi02LjUtOS43LTYuNWgtOS4ydjEzSDQ4MS44eiIvPg0KCTxwYXRoIGQ9Ik01MzkuNiwxOS43aC0xNy44VjEuNkg1Nzd2MTguMWgtMTcuOHY0Ny43aC0xOS42TDUzOS42LDE5LjdMNTM5LjYsMTkuN3oiLz4NCjwvZz4NCjwvc3ZnPg0K");
+    --logo-pos: 75px;
+    --logo-login-size: 40px;
+    --logo-size: 25px;
+}
+
+/* Common */
+body {
+    background-color: var(--body-bg-color);
+}
+
+main {
+    background-color: rgba(var(--custom-color), 0.05);
+}
+/*
+a:not(.btn):hover {
+    color: var(--custom-color);
+}
+*/
+
+/* Side menu */
+.main-menu > li#side-menu {
+    width: var(--menu-width);
+}
+
+.main-menu > li.login .title {
+    color: var(--custom-color);
+}
+
+.main-menu > li.logo .logo1 {
+    fill: var(--custom-color);
+}
+
+.main-menu > li.logo .logo2 {
+    fill: rgba(var(--custom-color), 0.5);
+}
+
+.main-menu > li.tabs .tab-item:hover {
+    color: var(--custom-color);
+}
+
+.main-menu > li.tabs .tab-item:hover > span:before,
+.main-menu > li.tabs .tab-item:hover > span:after {
+    background: var(--custom-color);
+}
+
+.main-menu nav strong {
+    color: var(--custom-color);
+}
+
+#menu-btn {
+    background-image: var(--logo-url);
+    background-repeat: no-repeat;
+    background-position: var(--logo-pos) center;
+    background-size: auto var(--logo-size);
+}
+
+.login-screen .logo {
+    background-image: var(--logo-url);
+    background-repeat: no-repeat;
+    background-position: center center;
+    height: var(--logo-login-size);
+}
+
+#menu-btn img,
+.login-screen .logo img {
+    display: none;
+}

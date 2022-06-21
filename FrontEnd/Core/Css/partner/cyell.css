@@ -1,0 +1,72 @@
+:root {
+    --custom-color: #000000;
+    --body-bg-color: #FFFFFF;
+    --menu-width: 300px;
+    --logo-url: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJpY29uIHNpdGUtbG9nbyIgd2lkdGg9IjIwMCIgaGVpZ2h0PSI0Ni40MjgiPjxwYXRoIGQ9Ik0zMC4xOTkgMjkuMTcxbDguNzU1IDIuNzkzYy0xLjM0IDQuODk0LTMuNTcyIDguNTM1LTYuNjk1IDEwLjkyMS0zLjEyNCAyLjM4Ni03LjA4NSAzLjU2Ny0xMS44ODMgMy41NDMtNS45MzEgMC0xMC44MTEtMi4wMzktMTQuNjQtNi4xMTZDMS45MDcgMzYuMjM0LS4wMDUgMzAuNjc0IDAgMjMuNjNjMC03LjQ3OSAxLjkyMS0xMy4yODYgNS43NjQtMTcuNDJDOS42MDcgMi4wNzQgMTQuNjYxLjAwNSAyMC45MjcgMGM1LjQ2NiAwIDkuOTEgMS42MjMgMTMuMzM2IDQuODY5IDIuMDMxIDEuOTE4IDMuNTQ2IDQuNjc3IDQuNTQzIDguMjc4bC04Ljk0IDIuMTI2Yy0uODU3LTQuNDk1LTQuODUyLTcuNjg5LTkuNDA1LTcuNTJhMTAuMTQ3IDEwLjE0NyAwIDAwLTguMDU3IDMuNTg2QzEwLjM0IDEzLjczIDkuMzA2IDE3LjYgOS4zMDYgMjIuOTVjMCA1LjY2OSAxLjAxNiA5LjcxNiAzLjA0OCAxMi4xNGE5Ljg2IDkuODYgMCAwMDcuOTMxIDMuNjE0IDkuMDM2IDkuMDM2IDAgMDA2LjE5NS0yLjI5NmMxLjczLTEuNTM2IDIuOTctMy45NDggMy43MTktNy4yMzZ6bTI3LjA2NSAxNi41MlYyNi43ODNMNDAuODguNzY2aDEwLjU4M0w2MS45OTEgMTguNTQgNzIuMzA2Ljc2NmgxMC40TDY2LjI2IDI2Ljg0NnYxOC44NDV6bTMxLjE3OCAwVi43NjZoMzMuMTYydjcuNTk3aC0yNC4xM3Y5Ljk2NGgyMi40NzJ2Ny41N0g5Ny40Njd2MTIuMjI1aDI0Ljk5djcuNTd6bTQxLjkxMiAwVjEuMTM0aDkuMDMxdjM2Ljk4N2gyMi40NTh2Ny41N3ptMzguMTY0IDBWMS4xMzRoOS4wM3YzNi45ODdIMjAwdjcuNTd6IiBmaWxsPSIjMjMxZjIwIi8+PC9zdmc+");
+    --logo-pos: 80px;
+    --logo-login-size: 46px;
+    --logo-size: 40px;
+}
+
+/* Common */
+body {
+    background-color: var(--body-bg-color);
+}
+
+main {
+    background-color: rgba(var(--custom-color), 0.05);
+}
+/*
+a:not(.btn):hover {
+    color: var(--custom-color);
+}
+*/
+
+/* Side menu */
+.main-menu > li#side-menu {
+    width: var(--menu-width);
+}
+
+.main-menu > li.login .title {
+    color: var(--custom-color);
+}
+
+.main-menu > li.logo .logo1 {
+    fill: var(--custom-color);
+}
+
+.main-menu > li.logo .logo2 {
+    fill: rgba(var(--custom-color), 0.5);
+}
+
+.main-menu > li.tabs .tab-item:hover {
+    color: var(--custom-color);
+}
+
+.main-menu > li.tabs .tab-item:hover > span:before,
+.main-menu > li.tabs .tab-item:hover > span:after {
+    background: var(--custom-color);
+}
+
+.main-menu nav strong {
+    color: var(--custom-color);
+}
+
+#menu-btn {
+    background-image: var(--logo-url);
+    background-repeat: no-repeat;
+    background-position: var(--logo-pos) center;
+    background-size: auto var(--logo-size);
+}
+
+.login-screen .logo {
+    background-image: var(--logo-url);
+    background-repeat: no-repeat;
+    background-position: center center;
+    height: var(--logo-login-size);
+}
+
+#menu-btn img,
+.login-screen .logo img {
+    display: none;
+}
