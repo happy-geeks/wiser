@@ -96,6 +96,7 @@ namespace Api.Modules.Modules.Services
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { 
                 WiserTableNames.WiserItem,
                 WiserTableNames.WiserItemDetail,
+                WiserTableNames.WiserEntity,
                 WiserTableNames.WiserEntityProperty,
                 WiserTableNames.WiserModule ,
                 WiserTableNames.WiserItemFile,
