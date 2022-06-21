@@ -344,7 +344,7 @@ export class Grids {
                                         var contentDataRow = gridRow.querySelector('[data-field="content_data"]');
                                         var data = contentDataRow.innerHTML
 
-                                        var editedString = data.replaceAll(";", "<p></p>");
+                                        var editedString = data.replaceAll(";", "<br>");
                                         grid.childNodes.item(i).querySelector('[data-field="content_data"]').innerHTML = editedString;
                                     }
 
@@ -410,7 +410,7 @@ export class Grids {
                     var contentDataRow = gridRow.querySelector('[data-field="content_data"]');
                     var data = contentDataRow.innerHTML
 
-                    var editedString = data.replaceAll(";", "<p></p>");
+                    var editedString = data.replaceAll(";", "<br>");
                     grid.childNodes.item(i).querySelector('[data-field="content_data"]').innerHTML = editedString;
                 }
 
@@ -465,10 +465,4 @@ export class Grids {
         }
         grid.setOptions(gridOptions);
     }
-
-
-
- 
-
-
 }
