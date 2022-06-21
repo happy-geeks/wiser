@@ -68,9 +68,13 @@ import {
             this.appSettings = JSON.parse(configElement.innerHTML);
 
             if (this.appSettings.trackJsToken) {
-                TrackJS.install({
-                    token: this.appSettings.trackJsToken
-                });
+                try {
+                    TrackJS.install({
+                        token: this.appSettings.trackJsToken
+                    });
+                } catch(exception) {
+                    console.error("Error loading TrackJS widget", exception);
+                }
             }
 
             if (this.appSettings.loadPartnerStyle) {
@@ -96,9 +100,13 @@ import {
             });
 
             if (this.appSettings.markerIoToken) {
-                const markerSdk = await import("@marker.io/browser");
-                this.markerWidget = await markerSdk.default.loadWidget({ destination: this.appSettings.markerIoToken });
-                this.markerWidget.hide();
+                try {
+                    const markerSdk = await import("@marker.io/browser");
+                    this.markerWidget = await markerSdk.default.loadWidget({ destination: this.appSettings.markerIoToken });
+                    this.markerWidget.hide();
+                } catch(exception) {
+                    console.error("Error loading marker IO widget", exception);
+                }
             }
 
             this.initVue();
