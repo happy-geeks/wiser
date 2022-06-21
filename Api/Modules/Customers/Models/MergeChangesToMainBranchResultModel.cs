@@ -5,7 +5,7 @@ namespace Api.Modules.Customers.Models
     /// <summary>
     /// A model for the result for synchronising changes from an environment to the production environment of a customer/tenant.
     /// </summary>
-    public class SynchroniseChangesToProductionResultModel
+    public class MergeChangesToMainBranchResultModel
     {
         /// <summary>
         /// Gets or sets the amount of successfully synchronised changes.

@@ -174,7 +174,7 @@
                                     <th></th>
                                 </tr>
                                 </thead>
-                                <tbody  v-if="!entitiesForBranches || !entitiesForBranches.length">
+                                <tbody v-if="!entitiesForBranches || !entitiesForBranches.length">
                                     <tr>
                                         <td colspan="4">Geen entiteiten gevonden. Neem a.u.b. contact op met ons.</td>
                                     </tr>
@@ -273,14 +273,19 @@
                 </div>
                 <div class="row scroll" v-else>
                     <div class="col col-12 form-row">
-                        <label for="available-branches">Selecteer beschikbare branche</label>
-                        <dropdownlist id="available-branches" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="selectedBranchValue"></dropdownlist>
+                        <label for="available-branches">Selecteer eerst de branch die u wilt synchroniseren</label>
+                        <dropdownlist id="available-branches" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="branchMergeSettings.selectedBranch" @@change="onSelectedBranchChange"></dropdownlist>
                     </div>
                     
-                    <div class="col col-12 form-row no-bottom-margin">
-                        <label for="branche-datasync">Selecteer te synchroniseren Wiser data</label>
+                    <section class="full-error" v-if="mergeBranchError">
+                        <ins class="icon-line-alert"></ins>
+                        <span v-html="mergeBranchError"></span>
+                    </section>
+                    
+                    <div class="col col-12 form-row no-bottom-margin" v-if="branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id">
+                        <label>Selecteer te synchroniseren Wiser data</label>
                     </div>
-                    <div class="col col-12 table-row no-top-margin">
+                    <div class="col col-12 table-row no-top-margin" v-if="branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id">
                         <div class="fixed-table">
                             <table>
                                 <thead>
@@ -292,328 +297,63 @@
                                         <th width="150">Gewijzigd</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody v-if="!branchChanges || !branchChanges.entities || !branchChanges.entities.length">
+                                    <tr>
+                                        <td colspan="5">Er zijn wijzigingen aan Wiser data om te synchroniseren</td>
+                                    </tr>
+                                </tbody>
+                                <tbody v-else>
                                     <tr>
                                         <td>Alle onderstaande</td>
                                         <td>
                                             <label class="checkbox">
-                                                <input type="checkbox" value="" checked />
-                                                <span>(100)</span>
+                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.everything" />
+                                                <span>({{ totalAmountOfItemsCreated + totalAmountOfItemsUpdated + totalAmountOfItemsDeleted }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" checked />
-                                                <span>(10)</span>
+                                            <label class="checkbox" v-if="totalAmountOfItemsCreated > 0 && !branchMergeSettings.entities.all.everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.create" />
+                                                <span>({{ totalAmountOfItemsCreated }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" checked />
-                                                <span>(5)</span>
+                                            <label class="checkbox" v-if="totalAmountOfItemsDeleted > 0 && !branchMergeSettings.entities.all.everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.delete" />
+                                                <span>({{ totalAmountOfItemsDeleted }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" checked />
-                                                <span>(85)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Klant</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
+                                            <label class="checkbox" v-if="totalAmountOfItemsUpdated > 0 && !branchMergeSettings.entities.all.everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.update" />
+                                                <span>({{ totalAmountOfItemsUpdated }})</span>
                                             </label>
                                         </td>
                                     </tr>
-                                    <tr>
-                                        <td>Order</td>
+                                    <tr v-for="entity in branchChanges.entities" :key="entity.entityType">
+                                        <td>{{ entity.displayName }}</td>
                                         <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
+                                            <label class="checkbox" v-if="!branchMergeSettings.entities.all.everything && branchMergeSettings.entities[entity.entityType]">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].everything" />
+                                                <span>({{ entity.created + entity.deleted + entity.updated }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
+                                            <label class="checkbox" v-if="entity.created > 0 && !branchMergeSettings.entities.all.everything && !branchMergeSettings.entities.all.create && branchMergeSettings.entities[entity.entityType]">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].create" />
+                                                <span>({{ entity.created }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
+                                            <label class="checkbox" v-if="entity.deleted > 0 && !branchMergeSettings.entities.all.everything && !branchMergeSettings.entities.all.delete && branchMergeSettings.entities[entity.entityType]">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].delete" />
+                                                <span>({{ entity.deleted }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Factuur</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Adres</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Basket</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Basketline</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Orderregel</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Product</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Productfilter</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Q</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>R</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
+                                            <label class="checkbox" v-if="entity.updated > 0 && !branchMergeSettings.entities.all.everything && !branchMergeSettings.entities.all.update && branchMergeSettings.entities[entity.entityType]">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].update" />
+                                                <span>({{ entity.updated }})</span>
                                             </label>
                                         </td>
                                     </tr>
@@ -622,11 +362,10 @@
                         </div>
                     </div>
 
-                    
-                    <div class="col col-12 form-row no-bottom-margin">
-                        <label for="branche-sync">Selecteer te synchroniseren Wiser inrichting</label>
+                    <div class="col col-12 form-row no-bottom-margin" v-if="branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id">
+                        <label>Selecteer te synchroniseren Wiser inrichting</label>
                     </div>
-                    <div class="col col-12 table-row no-top-margin">
+                    <div class="col col-12 table-row no-top-margin" v-if="branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id">
                         <div class="fixed-table">
                             <table>
                                 <thead>
@@ -638,328 +377,63 @@
                                         <th width="150">Gewijzigd</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody v-if="!branchChanges || !branchChanges.settings || !branchChanges.settings.length">
+                                    <tr>
+                                        <td colspan="5">Er zijn wijzigingen aan Wiser inrichting om te synchroniseren</td>
+                                    </tr>
+                                </tbody>
+                                <tbody v-else>
                                     <tr>
                                         <td>Alle onderstaande</td>
                                         <td>
                                             <label class="checkbox">
-                                                <input type="checkbox" value="" checked />
-                                                <span>(100)</span>
+                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.everything" />
+                                                <span>({{ totalAmountOfSettingsCreated + totalAmountOfSettingsUpdated + totalAmountOfSettingsDeleted }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" checked />
-                                                <span>(10)</span>
+                                            <label class="checkbox" v-if="totalAmountOfSettingsCreated > 0 && !branchMergeSettings.settings.all.everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.create" />
+                                                <span>({{ totalAmountOfSettingsCreated }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" checked />
-                                                <span>(5)</span>
+                                            <label class="checkbox" v-if="totalAmountOfSettingsDeleted > 0 && !branchMergeSettings.settings.all.everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.delete" />
+                                                <span>({{ totalAmountOfSettingsDeleted }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" checked />
-                                                <span>(85)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Data selectors</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
+                                            <label class="checkbox" v-if="totalAmountOfSettingsUpdated > 0 && !branchMergeSettings.settings.all.everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.update" />
+                                                <span>({{ totalAmountOfSettingsUpdated }})</span>
                                             </label>
                                         </td>
                                     </tr>
-                                    <tr>
-                                        <td>Modules</td>
+                                    <tr v-for="setting in branchChanges.settings" :key="setting.type">
+                                        <td>{{ setting.displayName }}</td>
                                         <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
+                                            <label class="checkbox" v-if="!branchMergeSettings.settings.all.everything && branchMergeSettings.settings[setting.type]">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].everything" />
+                                                <span>({{ setting.created + setting.deleted + setting.updated }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
+                                            <label class="checkbox" v-if="setting.created > 0 && !branchMergeSettings.settings.all.everything && !branchMergeSettings.settings.all.create && branchMergeSettings.settings[setting.type]">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].create" />
+                                                <span>({{ setting.created }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
+                                            <label class="checkbox" v-if="setting.deleted > 0 && !branchMergeSettings.settings.all.everything && !branchMergeSettings.settings.all.delete && branchMergeSettings.settings[setting.type]">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].delete" />
+                                                <span>({{ setting.deleted }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Entiteiten</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Eigenschappen van entiteiten</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Query's</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Rechten</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Rollen</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Veld templates</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>API connection</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Q</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>R</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" value="" />
-                                                <span>(0)</span>
+                                            <label class="checkbox" v-if="setting.updated > 0 && !branchMergeSettings.settings.all.everything && !branchMergeSettings.settings.all.update && branchMergeSettings.settings[setting.type]">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].update" />
+                                                <span>({{ setting.updated }})</span>
                                             </label>
                                         </td>
                                     </tr>
@@ -968,27 +442,27 @@
                         </div>
                     </div>
                     
-                    <div class="col col-12 form-row">
+                    <div class="col col-12 form-row" v-if="branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id">
                         <label class="checkbox">
-                            <input type="checkbox" />
+                            <input type="checkbox" v-model="branchMergeSettings.deleteAfterSuccessfulMerge" />
                             <span>Verwijder deze branche na succesvol mergen</span>
                         </label>
                     </div>
                 </div>
             </div>
-            <footer class="container fixed no-bottom-padding">
+            <footer class="container fixed no-bottom-padding" v-if="branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id">
                 <div class="row">
                     <div class="col col-8 inline">
                         <label class="radio">
-                            <input type="radio" name="start-time" value="direct" checked />
+                            <input type="radio" name="start-time" value="direct" v-model="branchMergeSettings.startMode" />
                             <span>Direct starten</span>
                         </label>
                         <label class="radio">
-                            <input type="radio" name="start-time" value="delayed" />
+                            <input type="radio" name="start-time" value="delayed" v-model="branchMergeSettings.startMode" />
                             <span>Starten op:</span>
                         </label>
                         <label>
-                            <input type="datetime-local" name="start-time-picker" value="" />
+                            <input type="datetime-local" name="start-time-picker" v-model="branchMergeSettings.startOn" />
                         </label>
                     </div>
                     <div class="col col-4 align-right">

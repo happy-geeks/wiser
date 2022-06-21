@@ -48,7 +48,7 @@ namespace Api.Modules.Branches.Interfaces
         /// This will look in wiser_history for what has been changed, copy those changes to production and then clear the history.
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
-        /// <param name="id">The ID of the branch to copy the changes from.</param>
-        Task<ServiceResult<SynchroniseChangesToProductionResultModel>> MergeAsync(ClaimsIdentity identity, int id);
+        /// <param name="settings">The settings of what exactly to merge.</param>
+        Task<ServiceResult<bool>> MergeAsync(ClaimsIdentity identity, MergeBranchSettingsModel settings);
     }
 }

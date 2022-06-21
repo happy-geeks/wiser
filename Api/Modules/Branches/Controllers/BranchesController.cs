@@ -83,14 +83,14 @@ namespace Api.Modules.Branches.Controllers
         /// <summary>
         /// Merge all changes done to wiser items, from a specific branch, to the main branch.
         /// </summary>
-        /// <param name="id">The ID of the environment to copy the changes from.</param>
+        /// <param name="settings">The settings of what exactly to merge.</param>
         [HttpPatch]
-        [ProducesResponseType(typeof(SynchroniseChangesToProductionResultModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(MergeChangesToMainBranchResultModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [Route("merge/{id:int}")]
-        public async Task<IActionResult> MergeBranchAsync(int id)
+        [Route("merge")]
+        public async Task<IActionResult> MergeBranchAsync(MergeBranchSettingsModel settings)
         {
-            return (await branchesService.MergeAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
+            return (await branchesService.MergeAsync((ClaimsIdentity)User.Identity, settings)).GetHttpResponseMessage();
         }
     }
 }
