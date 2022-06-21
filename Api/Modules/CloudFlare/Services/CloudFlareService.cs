@@ -4,16 +4,16 @@ using System.Threading.Tasks;
 using GeeksCoreLibrary.Modules.Objects.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using System;
-using System.Net.Http;
-using System.Net.Http.Headers;
+using System.Linq;
+using RestSharp;
+using Newtonsoft.Json;
 
 namespace Api.Modules.CloudFlare.Services
 {
     /// <inheritdoc cref="ICloudFlareService" />
     public class CloudFlareService : ICloudFlareService, IScopedService
     {
-        private const string ApiPath = "https://api.cloudflare.com/client/v4/accounts";
-        private static readonly HttpClient client = new HttpClient();
+        private const string ApiPath = "https://api.cloudflare.com/client/v4/accounts/";
         private readonly IObjectsService objectsService;
 
         /// <summary>
@@ -45,18 +45,32 @@ namespace Api.Modules.CloudFlare.Services
         /// <inheritdoc cref="ICloudFlareService" />
         public async Task<string> UploadImage(string fileName)
         {
-            client.BaseAddress = new Uri(ApiPath);
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(
-                new MediaTypeWithQualityHeaderValue("application/json"));
-            //todo: add other headers and make call..
+            var cloudFlareSettings = await GetCloudFlareSettings();
 
-            return string.Empty;
+            var restClient = new RestClient($"{ApiPath}{cloudFlareSettings.AccountId}/image/v1");
+            var restRequest = new RestRequest("", Method.Post);
+            restRequest.AddHeader("X-Auth-Key", cloudFlareSettings.AuthorizationKey);
+            restRequest.AddHeader("X-Auth-Email", cloudFlareSettings.AuthorizationEmail);
 
+            restRequest.AddParameter("file", fileName, ParameterType.RequestBody);
+            var response = await restClient.ExecuteAsync(restRequest);
+            if (response.Content.Contains("ERROR"))
+            {
+                return String.Empty;
+            }
+            var uploadImageResponse = JsonConvert.DeserializeObject<UploadImageReponseModel>(response.Content);
+            if (!uploadImageResponse.Success)
+            {
+                return String.Empty;
+            }
+            var firstResult = uploadImageResponse.Result.First();
+            return $"{firstResult.Variants.Original}/{firstResult.Filename}";
+            //TODO: Ook ID mee teruggeven..
         }
 
         /// <inheritdoc cref="ICloudFlareService" />
         public Task<byte[]> GetImage(string url)
+            //TODO: Baseren op Id, niet op url...
         {
             throw new System.NotImplementedException();
         }
