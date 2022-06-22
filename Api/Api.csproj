@@ -148,10 +148,12 @@
     <EmbeddedResource Include="Modules\Items\FieldTemplates\timeline.js" />
     <None Remove="Core\Queries\WiserInstallation\StoredProcedures.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\StoredProcedures.sql" />
+    <None Remove="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="2.1.0" />
+    <PackageReference Include="GeeksCoreLibrary" Version="2.1.1" />
     <PackageReference Include="IdentityServer4" Version="4.1.2" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.18.2" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.18.2" />

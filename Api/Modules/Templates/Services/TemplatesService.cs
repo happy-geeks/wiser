@@ -325,11 +325,6 @@ ORDER BY template.ordering ASC");
                 //and version = (select MAX(version) from easy_templates M where M.name = easy_templates.name and M.deleted = 0)    //M.itemid = easy_templates.itemid => is itemid important here?
 
                 //load all the template queries into the dictionary
-                TemplateQueryStrings.Add("INSERT_ENTITY", @"
-SET @entityName = '{entityName}';
-INSERT INTO `wiser_entity`(name) VALUES(@entityName);
-");
-
                 TemplateQueryStrings.Add("GET_DATA_FOR_RADIO_BUTTONS", @"SET @_itemId = {itemId};
 SET @entityproperty_id = {propertyid};
 SET @querytext = (SELECT data_query FROM wiser_entityproperty WHERE id=@entityproperty_id);
@@ -667,7 +662,8 @@ WHERE tab_name = '{tabName}' AND entity_name = '{entityName}'
 ORDER BY ordering ASC");
                 TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
 	entity.id,
-	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(entity.friendly_name, IF(entity.name = '', 'ROOT', entity.name))) AS name 
+	IF(entity.name = '', 'ROOT', entity.name) AS name,
+	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(entity.friendly_name, IF(entity.name = '', 'ROOT', entity.name))) AS displayName 
 FROM wiser_entity AS entity
 LEFT JOIN wiser_module AS module ON module.id = entity.module_id
 ORDER BY module.name ASC, entity.module_id ASC, entity.name ASC");
@@ -1013,75 +1009,6 @@ AND (({parentId:decrypt(true)} = 0 AND e.name = '') OR ({parentId:decrypt(true)}
                 TemplateQueryStrings.Add("IMPORTEXPORT_GET_LINK_TYPES", @"SELECT type AS id, `name`
 FROM wiser_link
 ORDER BY `name`");
-                TemplateQueryStrings.Add("SAVE_ENTITY_VALUES", @"
-SET @_id = {id};
-SET @_name = '{name}';
-SET @_module_id = {moduleId};
-SET @_accepted_childtypes = '{acceptedChildtypes}';
-SET @_icon = '{icon}';
-SET @_icon_add = '{iconAdd}';
-SET @_icon_expanded = '{iconExpanded}';
-SET @_show_in_tree_view = '{showInTreeView}';
-SET @_query_after_insert = '{queryAfterInsert}';
-SET @_query_after_update = '{queryAfterUpdate}';
-SET @_query_before_update = '{queryBeforeUpdate}';
-SET @_query_before_delete = '{queryBeforeDelete}';
-SET @_color = '{color}';
-SET @_show_in_search = '{showInSearch}';
-SET @_show_overview_tab = '{showOverviewTab}';
-SET @_save_title_as_seo = '{saveTitleAsSeo}';
-#SET @_api_after_insert = {apiAfterInsert};
-#SET @_api_after_update = {apiAfterUpdate};
-#SET @_api_before_update = {apiBeforeUpdate};
-#SET @_api_before_delete = {apiBeforeDelete};
-SET @_show_title_field = '{showTitleField}';
-SET @_friendly_name = '{friendlyName}';
-SET @_save_history = '{saveHistory}';
-SET @_default_ordering = '{defaultOrdering}';
-SET @_dedicated_table_prefix = '{dedicatedTablePrefix}';
-
-SET @_show_in_tree_view = IF(@_show_in_tree_view = TRUE OR @_show_in_tree_view = 'true', 1, 0);
-SET @_show_in_search = IF(@_show_in_search = TRUE OR @_show_in_search = 'true', 1, 0);
-SET @_show_overview_tab = IF(@_show_overview_tab = TRUE OR @_show_overview_tab = 'true', 1, 0);
-SET @_save_title_as_seo = IF(@_save_title_as_seo = TRUE OR @_save_title_as_seo = 'true', 1, 0);
-SET @_show_title_field = IF(@_show_title_field = TRUE OR @_show_title_field = 'true', 1, 0);
-SET @_save_history = IF(@_save_history = TRUE OR @_save_history = 'true', 1, 0);
-
-SET @_name_changed = (SELECT `name` != @_name FROM wiser_entity WHERE id = @_id);
-SET @_name_old = (SELECT `name`  FROM wiser_entity WHERE id = @_id);
-
-UPDATE wiser_entity e
-LEFT JOIN wiser_entity accepted ON accepted.accepted_childtypes LIKE CONCAT('%',@_name_old,'%') AND @_name_changed
-LEFT JOIN wiser_entityproperty propertyOption ON REPLACE(`options` , ' ', '') LIKE CONCAT('%""entityType"":""',@_name_old,'""%') AND @_name_changed
-SET 
-     accepted.accepted_childtypes = REPLACE(accepted.accepted_childtypes, @_name_old, @_name),
-     propertyOption.`options` = REPLACE(propertyOption.`options`, @_name_old, @_name),
-	 e.module_id = @_module_id,
-	 e.name= @_name,
-	 e.accepted_childtypes = @_accepted_childtypes,
-	 e.icon = @_icon,
-	 e.icon_add = @_icon_add,
-	 e.icon_expanded = @_icon_expanded,
-	 e.show_in_tree_view = @_show_in_tree_view,
-	 e.query_after_insert = @_query_after_insert,
-	 e.query_after_update = @_query_after_update,
-	 e.query_before_update = @_query_before_update,
-	 e.query_before_delete = @_query_before_delete,
-	 e.color = @_color,
-	 e.show_in_search = @_show_in_search,
-	 e.show_overview_tab = @_show_overview_tab,
-	 e.save_title_as_seo = @_save_title_as_seo,
-	 #e.api_after_insert = @_api_after_insert,
-	 #e.api_after_update = @_api_after_update,
-	 #e.api_before_update = @_api_before_update,
-	 #e.api_before_delete = @_api_before_delete,
-	 e.show_title_field = @_show_title_field,
-	 e.friendly_name = @_friendly_name,
-	 e.save_history = @_save_history,
-	 e.default_ordering = @_default_ordering,
-     e.dedicated_table_prefix = @_dedicated_table_prefix
-WHERE e.id = @_id;
-");
                 TemplateQueryStrings.Add("SAVE_INITIAL_VALUES", @"SET @_entity_name = '{entityName}';
 SET @_tab_name = '{tabName}';
 SET @_tab_name = IF( @_tab_name='gegevens', '', @_tab_name);
@@ -1151,37 +1078,6 @@ grid_insert_query= @_grid_insert_query,
 grid_update_query = @_grid_update_query
 WHERE entity_name = @_entity_name AND id = @_id
 LIMIT 1; ");
-
-                TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_FOR_SELECTED", @"SELECT 
-`id`, 
-`name`, 
-`module_id` AS `moduleId`, 
-`accepted_childtypes` AS `acceptedChildtypes`, 
-`icon`, 
-`icon_add` AS `iconAdd`, 
-`show_in_tree_view` AS `showInTreeView`, 
-`query_after_insert` AS `queryAfterInsert`, 
-`query_after_update` AS `queryAfterUpdate`, 
-`query_before_update` AS `queryBeforeUpdate`, 
-`query_before_delete` AS `queryBeforeDelete`, 
-`color`, 
-`show_in_search` AS `showInSearch`, 
-`show_overview_tab` AS `showOverviewTab`, 
-`save_title_as_seo` AS `saveTitle`, 
-`api_after_insert` AS `apiAfterInsert`, 
-`api_after_update` AS `apiAfterUpdate`, 
-`api_before_update` AS `apiBeforeUpdate`, 
-`api_before_delete` AS `apiBeforeDelete`, 
-`show_title_field` AS `showTitleField`, 
-`friendly_name` AS `friendlyName`, 
-`save_history` AS `saveHistory`, 
-`default_ordering` AS `defaultOrdering`,
-`enable_multiple_environments` AS `enableMultipleEnvironments`, 
-`icon_expanded` AS `iconExpanded`, 
-`dedicated_table_prefix` AS `dedicatedTablePrefix`
-FROM wiser_entity 
-WHERE id= {id};
-");
 
                 TemplateQueryStrings.Add("GET_ENTITY_FIELD_PROPERTIES_FOR_SELECTED", @"SELECT
 id,
