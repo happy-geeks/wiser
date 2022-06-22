@@ -91,10 +91,6 @@ body.iframe #alert-pane {
     min-height: 100px;
 }
 
-#gridView {
-   
-}
-
 body.gridViewMode:not(.iframe) #gridView {
     display: block;
 }
@@ -108,6 +104,7 @@ body.gridViewMode {
     body.gridViewMode #wiser,
     body.gridViewMode #fullForm,
     body.gridViewMode #mainScreenForm {
+
         height: 100%;
         margin: 0;
         padding: 0;
@@ -116,6 +113,20 @@ body.gridViewMode {
 
 .forceHidden {
     display: none !important;
+}
+
+.mainForm {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+}
+
+#wiser {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
 }
 
 #right-pane #mainScreenForm {
@@ -398,6 +409,10 @@ body.iframe .editMenu {
         padding-right: 6px;
     }
 
+.k-grid-content{
+
+}
+
 .emptyItem {
     border: 0;
 }
@@ -407,6 +422,22 @@ body.iframe .editMenu {
     float: right;
     top: 0px;
     right: 0px;
+}
+
+.k-grid-content{
+    height: 285px;
+}
+
+.k-virtual-scrollable-wrap {
+    overflow-y: scroll;
+}
+
+.k-scrollbar{
+    display:none;
+}
+
+#deploygrid .k-grid-content{
+    height: 690px;
 }
 
 /** Information block, for gridViewMode **/
@@ -560,12 +591,29 @@ body.iframe .editMenu {
 .tabcontent {
     display: none;
     padding: 6px 12px;
-    border: 1px solid #ccc;
-    border-top: none;
+    height: 94%;
 }
 
 #commit-data {
     display: grid;
     grid-template-columns: 1fr 1fr;
 }
+
+.formButton {
+    bottom: 0%;
+    padding-top:1%;
+}
+
+.formData {
+    height: 93.5%;
+    margin: 0px -12px;
+    display: flex;
+    flex-direction: column;
+    padding: 6px 12px;
+}
+
+.gridData{
+    overflow-y:scroll;
+}
+
 

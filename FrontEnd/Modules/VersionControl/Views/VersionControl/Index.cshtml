@@ -21,19 +21,16 @@
 </head>
 
 <body class="@Model.BodyCssClass"
-
       data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
       data-wiser-api-root="@Model.ApiRoot"
       data-wiser-api-v21-root="@Model.ApiRoot"
       data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
-
       data-sub-domain="@Model.SubDomain"
-
       data-track-js-token="@Model.Settings.TrackJsToken"
       data-api-client-id="@Model.Settings.ApiClientId"
       data-api-client-secret="@Model.Settings.ApiClientSecret">
 
-    <form id="mainScreenForm" autocomplete="off" novalidate>
+    <form id="mainScreenForm" class="mainForm" autocomplete="off" novalidate>
         <div id="wiser">
 
 
@@ -46,65 +43,67 @@
 
             <!-- Tab content -->
             <div id="Commit" class="tabcontent" style="display: block">
-                <div id="commit-data">
-                    <div id="description-data">
-                        Beschrijving commit: <input type="text" id="description-textbox" style="width: 50%; height: 50px" />
-                    </div>
+                <div class="formData">
+                    <div id="commit-data">
+                        <div id="description-data">
+                            Beschrijving commit: <input type="text" id="description-textbox" style="width: 50%; height: 50px" />
+                        </div>
 
-                    <div id="checkbox-data">
-                        <input type="checkbox" id="commitTest" class="commitCheckbox" value="commitTest" /> Zet commit naar test omgeving<br />
-                        <input type="checkbox" id="commitAcceptatie" class="commitCheckbox" value="commitAcceptatie"/> Zet commit naar acceptatie omgeving<br />
-                        <input type="checkbox" id="commitLive" class="commitCheckbox" value="commitLive"/> Zet commit naar live omgeving
+                        <div id="checkbox-data">
+                            <input type="checkbox" id="commitTest" class="commitCheckbox" value="commitTest" /> Zet commit naar test omgeving<br />
+                            <input type="checkbox" id="commitAcceptatie" class="commitCheckbox" value="commitAcceptatie"/> Zet commit naar acceptatie omgeving<br />
+                            <input type="checkbox" id="commitLive" class="commitCheckbox" value="commitLive"/> Zet commit naar live omgeving
+                        </div>
+                    </div>
+                    <div class="gridData">
+                        Template changes
+                        <div id="gridView" style="display: block;"></div>
+
+                        Dynamic content changes
+                        <div id="dynamicContentGrid"></div>
                     </div>
                 </div>
-                
-                Template changes
-                <div id="gridView" style="display: block;"></div>
-
-                Dynamic content changes
-                <div id="dynamicContentGrid"></div>
-                
-                <button id="commitTemplate">Commit</button>
+                <button id="commitTemplate" class="formButton">Commit</button>
 
                 
 
             </div>
             <div id="dialog"></div>
             <div id="Deploy" class="tabcontent">
-                Deploy Grid
-                <div id="deploygrid"></div>
-                <button class="evironment_deploy" value="live">to live</button>
-                <button class="evironment_deploy" value="accept">to acceptatie</button>
-                <button class="evironment_deploy" value="test">to test</button>
+                <div class="formData">
+                    <div class="gridData">
+                        Deploy Grid
+                        <div id="deploygrid"></div>
+                    </div>
+                </div>
+                <button class="evironment_deploy formButton" value="live">to live</button>
+                <button class="evironment_deploy formButton" value="accept">to acceptatie</button>
+                <button class="evironment_deploy formButton" value="test">to test</button>
 
 
             </div>
 
             <div id="History" class="tabcontent">
-                History Grid Templates
-                <div id="historyGridId"></div>
+                <div class="formData">
+                    <div class="gridData">
+                        History Grid Templates
+                        <div id="historyGridId"></div>
                 
-                <br/>
+                        <br/>
 
-                History Grid Dynamische content
-                <div id="historyDynamicContentGridId"></div>
-                <button class="environment_dynamic_content_history" value="live">to live</button>
-                <button class="environment_dynamic_content_history" value="accept">to acceptatie</button>
-                <button class="environment_dynamic_content_history" value="test">to test</button>
+                        History Grid Dynamische content
+                        <div id="historyDynamicContentGridId"></div>
+                    </div>
+                </div>
+                <button class="environment_dynamic_content_history formButton" value="live">to live</button>
+                <button class="environment_dynamic_content_history formButton" value="accept">to acceptatie</button>
+                <button class="environment_dynamic_content_history formButton" value="test">to test</button>
 
             </div>
 
 
             <div id="informationBlock" class="hidden"></div>
-            <div id="window" style="margin: 0 auto; padding: 0;">
-
-                <!-- START --- EDIT LAYOUT -->
-                <input type="checkbox" id="editToggle" class="noForm edit" />
-                <input type="checkbox" id="widthToggle" class="noForm edit" />
-                <!-- END ----- EDIT LAYOUT -->
-
-
-            </div>
+            
         </div>
     </form>
 

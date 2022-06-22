@@ -121,9 +121,6 @@ export class Grids {
                 options.filter = gridViewOptionParse.dataSource.filter;
                 previousFilters = JSON.stringify(options.filter);
             }
-            console.log("test");
-            console.log(encodeURIComponent(this.base.settings.moduleId));
-
                 gridDataResult = await Wiser2.api({
                     url: `${this.base.settings.wiserApiRoot}VersionControl/${encodeURIComponent(this.base.settings.moduleId)}/overview-grid`,
                     method: "POST",
