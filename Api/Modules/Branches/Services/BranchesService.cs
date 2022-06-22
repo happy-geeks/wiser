@@ -20,6 +20,7 @@ using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Branches.Enumerations;
+using GeeksCoreLibrary.Modules.Branches.Helpers;
 using GeeksCoreLibrary.Modules.Branches.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -110,9 +111,9 @@ namespace Api.Modules.Branches.Services
             databaseNameBuilder = databaseNameBuilder.Replace(@"\", "_").Replace(@"/", "_").Replace(".", "_").Replace(" ", "_");
 
             var databaseName = $"{currentCustomer.Database.DatabaseName}_{databaseNameBuilder}".ToMySqlSafeValue(false);
-            if (databaseName.Length > 64)
+            if (databaseName.Length > 54)
             {
-                databaseName = databaseName[..64];
+                databaseName = $"{databaseName[..54]}{DateTime.Now:yyMMddHHmm}";
             }
 
             subDomain += $"_{databaseNameBuilder}";
@@ -151,28 +152,41 @@ namespace Api.Modules.Branches.Services
             settings.SubDomain = subDomain;
             settings.WiserTitle = newCustomerTitle;
             settings.DatabaseName = databaseName;
+
+            // Add the new customer environment to easy_customers.
+            var newCustomer = new CustomerModel
+            {
+                CustomerId = currentCustomer.CustomerId,
+                Name = newCustomerName,
+                EncryptionKey = SecurityHelpers.GenerateRandomPassword(20),
+                SubDomain = subDomain,
+                WiserTitle = newCustomerTitle,
+                Database = new ConnectionInformationModel
+                {
+                    Host = currentCustomer.Database.Host,
+                    Password = currentCustomer.Database.Password,
+                    Username = currentCustomer.Database.Username,
+                    DatabaseName = databaseName
+                }
+            };
+            
+            // Clear some data that we don't want to return to client.
+            newCustomer.Database.Host = null;
+            newCustomer.Database.Password = null;
+            newCustomer.Database.Username = null;
+            
+            await wiserCustomersService.CreateOrUpdateCustomerAsync(newCustomer);
             
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("name", settings.Name);
             clientDatabaseConnection.AddParameter("action", "create");
+            clientDatabaseConnection.AddParameter("branch_id", newCustomer.Id);
             clientDatabaseConnection.AddParameter("data", JsonConvert.SerializeObject(settings));
             clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
             clientDatabaseConnection.AddParameter("start_on", settings.StartOn ?? DateTime.Now);
             clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true));
             clientDatabaseConnection.AddParameter("user_id", IdentityHelpers.GetWiserUserId(identity));
             await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserBranchesQueue, 0);
-
-            var newCustomer = new CustomerModel
-            {
-                CustomerId = currentCustomer.CustomerId,
-                Name = newCustomerName,
-                SubDomain = subDomain,
-                WiserTitle = newCustomerTitle,
-                Database = new ConnectionInformationModel
-                {
-                    DatabaseName = databaseName
-                }
-            };
             
             return new ServiceResult<CustomerModel>(newCustomer);
         }
@@ -546,20 +560,20 @@ LIMIT 1";
                     // Changes to items.
                     case "CREATE_ITEM":
                     {
-                        var tablePrefix = GetTablePrefix(tableName, itemId);
+                        var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemId);
                         AddItemToMutationList(createdItems, tablePrefix.TablePrefix, itemId);
                         break;
                     }
                     case "UPDATE_ITEM":
                     {
-                        var tablePrefix = GetTablePrefix(tableName, itemId);
+                        var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemId);
                         AddItemToMutationList(updatedItems, tablePrefix.TablePrefix, itemId);
                         break;
                     }
                     case "DELETE_ITEM":
                     {
                         // When deleting an item, the entity type will be saved in the column "field" of wiser_history, so we don't have to look it up.
-                        var tablePrefix = GetTablePrefix(tableName, itemId);
+                        var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemId);
                         AddItemToMutationList(deletedItems, tablePrefix.TablePrefix, itemId, field);
                         break;
                     }
@@ -584,7 +598,7 @@ LIMIT 1";
                     case "CHANGE_LINK":
                     {
                         // First get the source item ID and destination item ID of the link.
-                        var linkData = await GetDataFromLinkAsync(itemId, GetTablePrefix(tableName, 0).TablePrefix, branchConnection);
+                        var linkData = await GetDataFromLinkAsync(itemId, BranchesHelpers.GetTablePrefix(tableName, 0).TablePrefix, branchConnection);
                         if (!linkData.HasValue)
                         {
                             break;
@@ -621,7 +635,7 @@ LIMIT 1";
                     case "DELETE_FILE" when oldValue == "item_id":
                     {
                         var itemIdFromFile = UInt64.Parse(newValue!);
-                        var tablePrefix = GetTablePrefix(tableName, itemIdFromFile);
+                        var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemIdFromFile);
                         AddItemToMutationList(updatedItems, tablePrefix.TablePrefix, itemIdFromFile);
 
                         break;
@@ -631,7 +645,7 @@ LIMIT 1";
                     {
                         // First get the source item ID and destination item ID of the link.
                         var linkIdFromFile = UInt64.Parse(newValue!);
-                        var linkData = await GetDataFromLinkAsync(linkIdFromFile, GetTablePrefix(tableName, 0).TablePrefix, branchConnection);
+                        var linkData = await GetDataFromLinkAsync(linkIdFromFile, BranchesHelpers.GetTablePrefix(tableName, 0).TablePrefix, branchConnection);
                         if (!linkData.HasValue)
                         {
                             break;
@@ -670,14 +684,14 @@ LIMIT 1";
                         var itemIdFromFile = fileDataTable.Rows[0].Field<ulong>("item_id");
                         if (itemIdFromFile > 0)
                         {
-                            var tablePrefix = GetTablePrefix(tableName, itemIdFromFile);
+                            var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemIdFromFile);
                             AddItemToMutationList(updatedItems, tablePrefix.TablePrefix, itemIdFromFile);
                             break;
                         }
 
                         // First get the source item ID and destination item ID of the link.
                         var linkIdFromFile = fileDataTable.Rows[0].Field<ulong>("itemlink_id");
-                        var linkData = await GetDataFromLinkAsync(linkIdFromFile, GetTablePrefix(tableName, 0).TablePrefix, branchConnection);
+                        var linkData = await GetDataFromLinkAsync(linkIdFromFile, BranchesHelpers.GetTablePrefix(tableName, 0).TablePrefix, branchConnection);
                         if (!linkData.HasValue)
                         {
                             break;
@@ -776,6 +790,8 @@ LIMIT 1";
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
+
+            settings.DatabaseName = selectedEnvironmentCustomer.Database.DatabaseName;
             
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("branch_id", settings.Id);
@@ -788,301 +804,6 @@ LIMIT 1";
             await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserBranchesQueue, 0);
 
             return new ServiceResult<bool>(true);
-        }
-
-        /// <summary>
-        /// Get the prefix for a wiser item table.
-        /// </summary>
-        /// <param name="tableName">The full name of the table.</param>
-        /// <param name="originalItemId">The original item ID.</param>
-        /// <returns>The table prefix and whether or not this is something connected to an item from [prefix]wiser_item.</returns>
-        private static (string TablePrefix, bool IsWiserItemChange) GetTablePrefix(string tableName, ulong originalItemId)
-        {
-            var isWiserItemChange = true;
-            var tablePrefix = "";
-            if (tableName.EndsWith(WiserTableNames.WiserItem, StringComparison.OrdinalIgnoreCase))
-            {
-                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItem, "");
-            }
-            else if (tableName.EndsWith(WiserTableNames.WiserItemDetail, StringComparison.OrdinalIgnoreCase))
-            {
-                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemDetail, "");
-            }
-            else if (tableName.EndsWith(WiserTableNames.WiserItemFile, StringComparison.OrdinalIgnoreCase))
-            {
-                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemFile, "");
-                if (originalItemId == 0)
-                {
-                    isWiserItemChange = false;
-                }
-            }
-            else if (tableName.EndsWith(WiserTableNames.WiserItemLink, StringComparison.OrdinalIgnoreCase))
-            {
-                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemLink, "");
-            }
-            else if (tableName.EndsWith(WiserTableNames.WiserItemLinkDetail, StringComparison.OrdinalIgnoreCase))
-            {
-                tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemLinkDetail, "");
-            }
-            else
-            {
-                isWiserItemChange = false;
-            }
-
-            return (tablePrefix, isWiserItemChange);
-        }
-
-        /// <summary>
-        /// Add all parameters from a dictionary to a <see cref="MySqlCommand"/>.
-        /// </summary>
-        /// <param name="parameters">The dictionary with the parameters.</param>
-        /// <param name="command">The database command.</param>
-        private static void AddParametersToCommand(Dictionary<string, object> parameters, MySqlCommand command)
-        {
-            command.Parameters.Clear();
-            foreach (var parameter in parameters)
-            {
-                command.Parameters.AddWithValue(parameter.Key, parameter.Value);
-            }
-        }
-
-        /// <summary>
-        /// This will update IDs of items/files/etc in the selected environment so that they all will have the same ID as in the production environment.
-        /// </summary>
-        /// <param name="environmentConnection">The database connection to the selected environment.</param>
-        private async Task EqualizeMappedIds(MySqlConnection environmentConnection)
-        {
-            await using var command = environmentConnection.CreateCommand();
-            command.CommandText = $@"SELECT * FROM `{WiserTableNames.WiserIdMappings}` ORDER BY id DESC";
-            var dataTable = new DataTable();
-            using var adapter = new MySqlDataAdapter(command);
-            await adapter.FillAsync(dataTable);
-            
-            foreach (DataRow dataRow in dataTable.Rows)
-            {
-                var mappingRowId = dataRow.Field<ulong>("id");
-                var tableName = dataRow.Field<string>("table_name") ?? "";
-                var ourId = dataRow.Field<ulong>("our_id");
-                var productionId = dataRow.Field<ulong>("production_id");
-                
-                command.Parameters.AddWithValue("mappingRowId", mappingRowId);
-                command.Parameters.AddWithValue("ourId", ourId);
-                command.Parameters.AddWithValue("productionId", productionId);
-                
-                if (tableName.EndsWith(WiserTableNames.WiserItem, StringComparison.OrdinalIgnoreCase))
-                {
-                    command.CommandText = $@"SELECT entity_type FROM `{tableName}` WHERE id = ?ourId";
-                    var entityTypeDataTable = new DataTable();
-                    await adapter.FillAsync(entityTypeDataTable);
-                    var entityType = entityTypeDataTable.Rows[0].Field<string>("entity_type");
-                    var allLinkTypeSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
-                    var LinkTypesWithSource = allLinkTypeSettings.Where(l => String.Equals(l.SourceEntityType, entityType, StringComparison.OrdinalIgnoreCase)).ToList();
-                    var LinkTypesWithDestination = allLinkTypeSettings.Where(l => String.Equals(l.DestinationEntityType, entityType, StringComparison.OrdinalIgnoreCase)).ToList();
-                    
-                    var tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItem, "");
-                    command.CommandText = $@"SET @saveHistory = FALSE;
-
--- Update the ID of the item itself.
-UPDATE `{tablePrefix}{WiserTableNames.WiserItem}`
-SET id = ?productionId
-WHERE id = ?ourId;
-
--- Update all original IDs of items that are using this ID.
-UPDATE `{tablePrefix}{WiserTableNames.WiserItem}`
-SET original_item_id = ?productionId
-WHERE original_item_id = ?ourId;
-
--- Update all parent IDs of items that are using this ID.
-UPDATE `{tablePrefix}{WiserTableNames.WiserItem}`
-SET parent_item_id = ?productionId
-WHERE parent_item_id = ?ourId;
-
--- Update item details to use the new ID.
-UPDATE `{tablePrefix}{WiserTableNames.WiserItemDetail}`
-SET item_id = ?productionId
-WHERE item_id = ?ourId;
-
--- Update item files to use the new ID.
-UPDATE `{tablePrefix}{WiserTableNames.WiserItemFile}`
-SET item_id = ?productionId
-WHERE item_id = ?ourId;";
-
-                    // We need to check if there are any dedicated wiser_itemlink tables such as 123_wiser_itemlink and update the ID of the item in there.
-                    // If there are no dedicated tables, just update it in the main wiser_itemlink table.
-                    // This first block for links where the source item is the current item.
-                    if (!LinkTypesWithSource.Any())
-                    {
-                        command.CommandText += $@"
--- Update item links to use the new ID.
-UPDATE `{WiserTableNames.WiserItemLink}`
-SET item_id = ?productionId
-WHERE item_id = ?ourId;";
-                    }
-                    else
-                    {
-                        foreach (var linkTypeSetting in LinkTypesWithSource)
-                        {
-                            var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSetting);
-                            command.CommandText += $@"
--- Update item links to use the new ID.
-UPDATE `{linkTablePrefix}{WiserTableNames.WiserItemLink}`
-SET item_id = ?productionId
-WHERE item_id = ?ourId;";
-                        }
-                    }
-
-                    // This second block is for links where the destination is the current item.
-                    if (!LinkTypesWithDestination.Any())
-                    {
-                        command.CommandText += $@"
--- Update item links to use the new ID.
-UPDATE `{WiserTableNames.WiserItemLink}`
-SET destination_item_id = ?productionId
-WHERE destination_item_id = ?ourId;";
-                    }
-                    else
-                    {
-                        foreach (var linkTypeSetting in LinkTypesWithDestination)
-                        {
-                            var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSetting);
-                            command.CommandText += $@"
--- Update item links to use the new ID.
-UPDATE `{linkTablePrefix}{WiserTableNames.WiserItemLink}`
-SET destination_item_id = ?productionId
-WHERE destination_item_id = ?ourId;";
-                        }
-                    }
-
-                    await command.ExecuteNonQueryAsync();
-                }
-                else if (tableName.EndsWith(WiserTableNames.WiserItemFile, StringComparison.OrdinalIgnoreCase) || tableName.EndsWith(WiserTableNames.WiserEntity, StringComparison.OrdinalIgnoreCase))
-                {
-                    command.CommandText = $@"SET @saveHistory = FALSE;
-UPDATE `{tableName.ToMySqlSafeValue(false)}` 
-SET id = ?productionId 
-WHERE id = ?ourId;";
-                    await command.ExecuteNonQueryAsync();
-                }
-                else if (tableName.EndsWith(WiserTableNames.WiserItemLink, StringComparison.OrdinalIgnoreCase))
-                {
-                    var tablePrefix = tableName.ReplaceCaseInsensitive(WiserTableNames.WiserItemLink, "");
-                    command.CommandText = $@"SET @saveHistory = FALSE;
-
-UPDATE `{tablePrefix}{WiserTableNames.WiserItemLink}` 
-SET id = ?productionId 
-WHERE id = ?ourId;
-
-UPDATE `{tablePrefix}{WiserTableNames.WiserItemLinkDetail}` 
-SET link_id = ?productionId 
-WHERE link_id = ?ourId;
-
-UPDATE `{tablePrefix}{WiserTableNames.WiserItemFile}` 
-SET itemlink_id = ?productionId 
-WHERE itemlink_id = ?ourId;";
-                    await command.ExecuteNonQueryAsync();
-                }
-                else
-                {
-                    command.CommandText = $@"SET @saveHistory = FALSE;
-
-UPDATE `{tableName}` 
-SET id = ?productionId 
-WHERE id = ?ourId;";
-                    await command.ExecuteNonQueryAsync();
-                }
-                
-                // Delete the row when we succeeded in updating the ID.
-                command.CommandText = $"DELETE FROM `{WiserTableNames.WiserIdMappings}` WHERE id = ?mappingRowId";
-                await command.ExecuteNonQueryAsync();
-            }
-        }
-
-        /// <summary>
-        /// Generates a new ID for the specified table. This will get the highest number from both databases and add 1 to that number.
-        /// This is to make sure that the new ID will not exist anywhere yet, to prevent later synchronisation problems.
-        /// </summary>
-        /// <param name="tableName">The name of the table.</param>
-        /// <param name="productionConnection">The connection to the production database.</param>
-        /// <param name="environmentConnection">The connection to the environment database.</param>
-        /// <returns>The new ID that should be used for the first new item to be inserted into this table.</returns>
-        private async Task<ulong> GenerateNewId(string tableName, MySqlConnection productionConnection, MySqlConnection environmentConnection)
-        {
-            await using var productionCommand = productionConnection.CreateCommand();
-            await using var environmentCommand = environmentConnection.CreateCommand();
-            
-            productionCommand.CommandText = $"SELECT MAX(id) AS maxId FROM `{tableName}`";
-            environmentCommand.CommandText = $"SELECT MAX(id) AS maxId FROM `{tableName}`";
-
-            var maxProductionId = 0UL;
-            var maxEnvironmentId = 0UL;
-            
-            await using var productionReader = await productionCommand.ExecuteReaderAsync();
-            if (await productionReader.ReadAsync())
-            {
-                maxProductionId = Convert.ToUInt64(productionReader.GetValue(0));
-            }
-            await using var environmentReader = await environmentCommand.ExecuteReaderAsync();
-            if (await environmentReader.ReadAsync())
-            {
-                maxEnvironmentId = Convert.ToUInt64(environmentReader.GetValue(0));
-            }
-
-
-            return Math.Max(maxProductionId, maxEnvironmentId) + 1;
-        }
-
-        /// <summary>
-        /// Add an ID mapping, to map the ID of the environment database to the same item with a different ID in the production database.
-        /// </summary>
-        /// <param name="idMappings">The dictionary that contains the in-memory mappings.</param>
-        /// <param name="tableName">The table that the ID belongs to.</param>
-        /// <param name="originalItemId">The ID of the item in the selected environment.</param>
-        /// <param name="newItemId">The ID of the item in the production environment.</param>
-        /// <param name="environmentConnection">The database connection to the selected environment.</param>
-        private async Task AddIdMapping(IDictionary<string, Dictionary<ulong, ulong>> idMappings, string tableName, ulong originalItemId, ulong newItemId, MySqlConnection environmentConnection)
-        {
-            if (!idMappings.ContainsKey(tableName))
-            {
-                idMappings.Add(tableName, new Dictionary<ulong, ulong>());
-            }
-
-            idMappings[tableName].Add(originalItemId, newItemId);
-            await using var environmentCommand = environmentConnection.CreateCommand();
-            environmentCommand.CommandText = $@"INSERT INTO `{WiserTableNames.WiserIdMappings}` 
-(table_name, our_id, production_id)
-VALUES (?tableName, ?ourId, ?productionId)";
-            
-            environmentCommand.Parameters.AddWithValue("tableName", tableName);
-            environmentCommand.Parameters.AddWithValue("ourId", originalItemId);
-            environmentCommand.Parameters.AddWithValue("productionId", newItemId);
-            await environmentCommand.ExecuteNonQueryAsync();
-        }
-
-        /// <summary>
-        /// Get the ID of an item from the mappings. The returned ID will be the ID of the same item in the production environment.
-        /// If there is no mapping for this ID, it means the ID is the same in both environments and the input will be returned.
-        /// </summary>
-        /// <param name="tableName">The table that the ID belongs to.</param>
-        /// <param name="idMapping">The dictionary that contains all the ID mappings.</param>
-        /// <param name="id">The ID to get the mapped value of.</param>
-        /// <returns>The ID of the same item in the production environment.</returns>
-        private static ulong? GetMappedId(string tableName, IReadOnlyDictionary<string, Dictionary<ulong, ulong>> idMapping, ulong? id)
-        {
-            if (id is null or 0)
-            {
-                return id;
-            }
-
-            if (tableName.EndsWith(WiserTableNames.WiserItem, StringComparison.OrdinalIgnoreCase) && idMapping.ContainsKey(tableName) && idMapping[tableName].ContainsKey(id.Value))
-            {
-                id = idMapping[tableName][id.Value];
-            }
-            else
-            {
-                id = idMapping.FirstOrDefault(x => x.Value.ContainsKey(id.Value)).Value?[id.Value] ?? id;
-            }
-
-            return id;
         }
 
         /// <summary>
