@@ -12,6 +12,7 @@ import UsersService from "./shared/users.service";
 import ModulesService from "./shared/modules.service";
 import CustomersService from "./shared/customers.service";
 import ItemsService from "./shared/items.service";
+import TranslationService from "./shared/translations.service";
 
 import store from "./store/index";
 import login from "./components/login";
@@ -33,7 +34,8 @@ import {
     LOAD_ENTITY_TYPES_OF_ITEM_ID,
     GET_CUSTOMER_TITLE,
     TOGGLE_PIN_MODULE,
-    CHANGE_PASSWORD
+    CHANGE_PASSWORD,
+    LOAD_TRANSLATIONS
 } from "./store/mutation-types";
 
 (() => {
@@ -42,6 +44,7 @@ import {
             this.vueApp = null;
             this.appSettings = null;
 
+            this.translationService = new TranslationService(this);
             this.usersService = new UsersService(this);
             this.modulesService = new ModulesService(this);
             this.customersService = new CustomersService(this);
@@ -110,9 +113,13 @@ import {
                         changePasswordPromptNewPasswordRepeatValue: null
                     };
                 },
-                created() {
+                async created() {
+                    await this.$store.dispatch(LOAD_TRANSLATIONS, { location: "Core/Scripts/main", cultureCode: this.appSettings.language });
                     this.$store.dispatch(GET_CUSTOMER_TITLE, this.appSettings.subDomain);
                     document.addEventListener("keydown", this.onAppKeyDown.bind(this));
+
+                    //Translation Test
+                    console.log(this.$store.getters.localizer('vertaal dit'), this.$store.getters.localizer('vertaal dit niet'));
                 },
                 computed: {
                     loginStatus() {
@@ -386,13 +393,13 @@ import {
                         return !this.$store.state.users.changePasswordError;
                     },
 
-                    switchLanguage(currentCulture) {
+                    async switchLanguage(currentCulture) {
                         if(currentCulture == "nl")
                             document.cookie = `.AspNetCore.Culture=c=en|uic=en; expires=${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toUTCString}; path=/`;
                         else
                             document.cookie = `.AspNetCore.Culture=c=nl|uic=nl; expires=${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toUTCString}; path=/`;
                         location.reload();
-                    }
+                    },
                 }
             });
 

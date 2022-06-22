@@ -1,5 +1,5 @@
 ﻿import { createStore } from "vuex";
-import { START_REQUEST, END_REQUEST, AUTH_REQUEST, AUTH_LIST, AUTH_SUCCESS, AUTH_ERROR, AUTH_LOGOUT, MODULES_LOADED, OPEN_MODULE, ACTIVATE_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, MODULES_REQUEST, LOAD_ENTITY_TYPES_OF_ITEM_ID, FORGOT_PASSWORD, RESET_PASSWORD_SUCCESS, RESET_PASSWORD_ERROR, CHANGE_PASSWORD_LOGIN, CHANGE_PASSWORD_SUCCESS, CHANGE_PASSWORD_ERROR, GET_CUSTOMER_TITLE, VALID_SUB_DOMAIN, TOGGLE_PIN_MODULE, CHANGE_PASSWORD } from "./mutation-types";
+import { START_REQUEST, END_REQUEST, AUTH_REQUEST, AUTH_LIST, AUTH_SUCCESS, AUTH_ERROR, AUTH_LOGOUT, MODULES_LOADED, OPEN_MODULE, ACTIVATE_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, MODULES_REQUEST, LOAD_ENTITY_TYPES_OF_ITEM_ID, FORGOT_PASSWORD, RESET_PASSWORD_SUCCESS, RESET_PASSWORD_ERROR, CHANGE_PASSWORD_LOGIN, CHANGE_PASSWORD_SUCCESS, CHANGE_PASSWORD_ERROR, GET_CUSTOMER_TITLE, VALID_SUB_DOMAIN, TOGGLE_PIN_MODULE, CHANGE_PASSWORD, LOAD_TRANSLATIONS } from "./mutation-types";
 
 const baseModule = {
     state: () => ({
@@ -563,6 +563,41 @@ const itemsModule = {
     getters: {}
 };
 
+
+const translationsModule = {
+    state: () => ({
+        translationsStore: []
+    }),
+
+    mutations: {
+        [LOAD_TRANSLATIONS](state, translation) {
+            state.translationsStore = Object.assign([], state.translationsStore, translation); //Retain custom indexing by using Object.assign
+        }
+    },
+
+    actions: {
+        async [LOAD_TRANSLATIONS]({ commit }, data = {}) {
+            if (data.cultureCode != "nl") {
+                commit(START_REQUEST);
+                const translation = await main.translationService.getTranslation(data.location, data.cultureCode);
+                commit(LOAD_TRANSLATIONS, translation);
+                commit(END_REQUEST);
+            }
+        }
+    },
+
+    getters: {
+        localizer: (state) => (inputString) => {
+            let result = state.translationsStore[inputString];
+
+            if (result !== undefined)
+                return result;
+            else
+                return inputString;
+        }
+    }
+};
+
 export default createStore({
     // Do not enable strict mode when deploying for production! 
     // Strict mode runs a synchronous deep watcher on the state tree for detecting inappropriate mutations, and it can be quite expensive when you make large amount of mutations to the state. 
@@ -575,6 +610,7 @@ export default createStore({
         modules: modulesModule,
         customers: customersModule,
         users: usersModule,
-        items: itemsModule
+        items: itemsModule,
+        translations: translationsModule
     }
 });

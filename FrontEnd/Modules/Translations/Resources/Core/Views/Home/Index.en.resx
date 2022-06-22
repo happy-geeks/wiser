@@ -261,8 +261,8 @@
   <data name="Schemanaam" xml:space="preserve">
     <value />
   </data>
-  <data name="Taal wijzigen" xml:space="preserve">
-    <value>Switch language</value>
+  <data name="Switch to english" xml:space="preserve">
+    <value>Verander naar het Nederlands</value>
   </data>
   <data name="Terug" xml:space="preserve">
     <value>Back</value>

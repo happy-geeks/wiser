@@ -65,7 +65,7 @@
                     <li><a href="#" @@click="openWiserIdPrompt"><ins class="icon-line-database-search"></ins><span>@Localizer["Wiser item openen (CTRL+O)"]</span></a></li>
                     <li><a href="#" @@click="openChangePasswordPrompt"><ins class="icon-line-lock"></ins><span>@Localizer["Wachtwoord wijzigen"]</span></a></li>
                     <li><a href="#" @@click="logout()"><ins class="icon-line-log-out"></ins><span>@Localizer["Uitloggen"]</span></a></li>
-                    <li><a href="#" @@click="switchLanguage('@System.Globalization.CultureInfo.CurrentCulture')"><ins class="icon-line-log-out"></ins><span>@Localizer["Taal wijzigen"]</span></a></li>
+                    <li><a href="#" @@click="switchLanguage('@System.Globalization.CultureInfo.CurrentCulture')"><ins class="icon-line-log-out"></ins><span>@Localizer["Switch to english"]</span></a></li>
                 </ul>
             </li>
             <li class="logo">
@@ -379,7 +379,8 @@
     "apiClientId": "@Model.Settings.ApiClientId",
     "apiClientSecret": "@Model.Settings.ApiClientSecret",
     "trackJsToken": "@Model.Settings.TrackJsToken",
-    "markerIoToken": "@Model.Settings.MarkerIoToken"
+    "markerIoToken": "@Model.Settings.MarkerIoToken",
+    "language": "@System.Globalization.CultureInfo.CurrentCulture"
 }
 </script>
 

@@ -34,3 +34,6 @@ export const VALID_SUB_DOMAIN = "validSubDomain";
 
 // Users module.
 export const CHANGE_PASSWORD = "changePassword";
+
+//Translations module.
+export const LOAD_TRANSLATIONS = "loadTranslations";
