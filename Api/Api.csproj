@@ -148,6 +148,8 @@
     <EmbeddedResource Include="Modules\Items\FieldTemplates\timeline.js" />
     <None Remove="Core\Queries\WiserInstallation\StoredProcedures.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\StoredProcedures.sql" />
+    <None Remove="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
   </ItemGroup>
 
   <ItemGroup>

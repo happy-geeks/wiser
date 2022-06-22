@@ -63,6 +63,21 @@ namespace Api.Modules.EntityTypes.Controllers
         }
         
         /// <summary>
+        /// Gets the settings for an entity type.
+        /// </summary>
+        /// <param name="id">The id the entity type.</param>
+        /// <returns>A <see cref="EntitySettingsModel"/> containing all settings of the entity type.</returns>
+        [HttpGet]
+        [Route("id/{id:int}")]
+        [ProducesResponseType(typeof(EntitySettingsModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GetViaIdAsync(int id)
+        {
+            return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
         /// Gets all available entity types, based on module id and parent id.
         /// </summary>
         /// <param name="moduleId">The ID of the module.</param>
@@ -74,6 +89,32 @@ namespace Api.Modules.EntityTypes.Controllers
         public async Task<IActionResult> GetAvailableEntityTypesAsync(int moduleId, string parentId = null)
         {
             return (await entityTypesService.GetAvailableEntityTypesAsync((ClaimsIdentity)User.Identity, moduleId, parentId)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Creates a new entity type.
+        /// </summary>
+        /// <param name="name">The name of the new entity type.</param>
+        /// <returns>The ID of the new entity type.</returns>
+        [HttpPost]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CreateAsync([FromQuery]string name)
+        {
+            return (await entityTypesService.CreateAsync((ClaimsIdentity)User.Identity, name)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Creates a new entity type.
+        /// </summary>
+        /// <param name="id">The ID of the entity type.</param>
+        /// <param name="settings">The settings to save.</param>
+        [HttpPut]
+        [Route("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdateAsync(int id, EntitySettingsModel settings)
+        {
+            return (await entityTypesService.UpdateAsync((ClaimsIdentity)User.Identity, id, settings)).GetHttpResponseMessage();
         }
     }
 }
