@@ -6,15 +6,14 @@ using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
 namespace Api.Modules.VersionControl.Service.DataLayer
 {
-
+    ///<inheritdoc/>
     public class CommitDataService : ICommitDataService
     {
         private readonly IDatabaseConnection clientDatabaseConnection;
-        
+
         /// <summary>
-        /// 
+        /// Creates a new instance of <see cref="CommitDataService"/>.
         /// </summary>
-        /// <param name="clientDatabaseConnection"></param>
         public CommitDataService(IDatabaseConnection clientDatabaseConnection)
         {
             this.clientDatabaseConnection = clientDatabaseConnection;

@@ -136,15 +136,6 @@ namespace Api.Modules.VersionControl.Controllers
             //(id,gridData, (ClaimsIdentity)User.Identity),gridDivId).
         }
 
-        /*
-        [HttpGet, Route("PublishedTemplateVersion")]
-        [ProducesResponseType(typeof(Dictionary<int,int>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetPublishedTemplateIdAndVersion()
-        {
-            return (await _versionControlService.GetPublishedTemplateIdAndVersion()).GetHttpResponseMessage();
-        }*/
-        
 
         /// <summary>
         /// Gets the templates that have a lower version than the given one
@@ -162,10 +153,10 @@ namespace Api.Modules.VersionControl.Controllers
 
 
         /// <summary>
-        /// 
+        /// Gets the current publisehd environments of the templates
         /// </summary>
-        /// <param name="templateId"></param>
-        /// <param name="version"></param>
+        /// <param name="templateId">The id of the template</param>
+        /// <param name="version">The version of the template</param>
         /// <returns></returns>
         [HttpGet, Route("current-published-enviornments/{templateId:int}/{version:int}")]
         [ProducesResponseType(typeof(TemplateEnvironments), StatusCodes.Status200OK)]
@@ -201,9 +192,6 @@ namespace Api.Modules.VersionControl.Controllers
         {
             return (await _versionControlService.GetDynamicContentfromCommitAsync(commitId)).GetHttpResponseMessage();
         }
-
-
-        //DYNAMIC CONTENT
 
 
         /// <summary>
@@ -291,7 +279,12 @@ namespace Api.Modules.VersionControl.Controllers
             return (await _versionControlService.GetModuleGridSettingsAsync(moduleId)).GetHttpResponseMessage();
         }
 
-        
+        /// <summary>
+        /// Gets the overview and data of the grid diV ID
+        /// </summary>
+        /// <param name="gridDivId">The id of the grid</param>
+        /// <param name="options">The options of the grid</param>
+        /// <returns>Returns the grid settings and grid data</returns>
         [HttpPost]
         [Route("{gridDivId}/overview-grid")]
         [ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
@@ -300,9 +293,6 @@ namespace Api.Modules.VersionControl.Controllers
         {
             return (await gridsService.GetOverviewGridVersionControlDataAsync(gridDivId, options, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
-        //The constraint reference 'string' could not be resolved
-        //SQL QUERRYS NALOPEN
-        //dus ook van dev_commit en dev_template veranderen
 
         /// <summary>
         /// Completes the commit
@@ -318,8 +308,5 @@ namespace Api.Modules.VersionControl.Controllers
         {
             return (await commitService.CompleteCommit(commitId, commitCompleted)).GetHttpResponseMessage();
         }
-
-
-        
     }
 }

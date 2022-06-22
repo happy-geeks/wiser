@@ -10,11 +10,16 @@ using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.VersionControl.Service
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class TemplateContainerService : ITemplateContainerService
     {
 
         private readonly ITemplateContainerDataService templateDataService;
-
+        /// <summary>
+        /// Creates a new instance of <see cref="TemplateContainerService"/>.
+        /// </summary>
         public TemplateContainerService(ITemplateContainerDataService templateDataService)
         {
             this.templateDataService = templateDataService;

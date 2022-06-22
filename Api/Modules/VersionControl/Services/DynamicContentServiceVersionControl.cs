@@ -12,10 +12,13 @@ using Api.Modules.VersionControl.Models;
 
 namespace Api.Modules.VersionControl.Service
 {
+    /// <inheritdoc cref="IDynamicContentServiceVersionControl" />
     public class DynamicContentServiceVersionControl : IDynamicContentServiceVersionControl
     {
         private readonly IDynamicContentDataServiceVersionControl dynamicContentDataService;
-
+        /// <summary>
+        /// Creates a new instance of <see cref="DynamicContentServiceVersionControl"/>.
+        /// </summary>
         public DynamicContentServiceVersionControl(IDynamicContentDataServiceVersionControl dynamicContentDataService)
         {
             this.dynamicContentDataService = dynamicContentDataService;

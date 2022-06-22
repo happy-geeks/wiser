@@ -1,4 +1,4 @@
-﻿@model FrontEnd.Modules.VersionControl.Models.VersionControlViewModel
+﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
 
 <!DOCTYPE html>
 <html>
@@ -21,22 +21,14 @@
 </head>
 
 <body class="@Model.BodyCssClass"
-      data-module-id="@Model.ModuleId"
-      data-module-name="@Model.ModuleName"
-      data-initial-item-id="@Model.InitialItemId"
-      data-iframe-mode="@Model.IframeMode.ToString().ToLowerInvariant()"
+
       data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
       data-wiser-api-root="@Model.ApiRoot"
       data-wiser-api-v21-root="@Model.ApiRoot"
       data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
-      data-read-only="@Model.ReadOnly.ToString().ToLowerInvariant()"
-      data-hide-footer="@Model.HideFooter.ToString().ToLowerInvariant()"
-      data-hide-header="@Model.HideHeader.ToString().ToLowerInvariant()"
+
       data-sub-domain="@Model.SubDomain"
-      data-create-new-item="@Model.CreateNewItem.ToString().ToLowerInvariant()"
-      data-parent-id="@Model.ParentItemId"
-      data-new-item-data="@Model.NewItemData"
-      data-entity-type="@Model.EntityType"
+
       data-track-js-token="@Model.Settings.TrackJsToken"
       data-api-client-id="@Model.Settings.ApiClientId"
       data-api-client-secret="@Model.Settings.ApiClientSecret">

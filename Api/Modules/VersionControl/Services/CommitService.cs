@@ -9,10 +9,13 @@ using Api.Core.Helpers;
 
 namespace Api.Modules.VersionControl.Service
 {
+    /// <inheritdoc cref="ICommitService" />
     public class CommitService : ICommitService
     {
         private readonly ICommitDataService commitDataService;
-
+        /// <summary>
+        /// Creates a new instance of <see cref="CommitService"/>.
+        /// </summary>
         public CommitService(ICommitDataService commitDataService)
         {
             this.commitDataService = commitDataService;

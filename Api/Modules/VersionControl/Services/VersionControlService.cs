@@ -15,11 +15,14 @@ using BuckarooSdk.Services.CreditCards.BanContact.Push;
 
 namespace Api.Modules.VersionControl.Service
 {
+    /// <inheritdoc cref="IVersionControlService" />
     public class VersionControlService : IVersionControlService
     {
 
         private readonly IVersionControlDataService versionControlDataService;
-
+        /// <summary>
+        /// Creates a new instance of <see cref="VersionControlService"/>.
+        /// </summary>
         public VersionControlService(IVersionControlDataService versionControlDataService)
         {
             this.versionControlDataService = versionControlDataService;

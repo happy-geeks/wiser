@@ -10,13 +10,13 @@ using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
 namespace Api.Modules.VersionControl.Service.DataLayer
 {
+    ///<inheritdoc/>
     public class DynamicContentDataServiceVersionControl : IDynamicContentDataServiceVersionControl
     {
         private readonly IDatabaseConnection clientDatabaseConnection;
         /// <summary>
-        /// 
+        /// Creates a new instance of <see cref="DynamicContentDataServiceVersionControl"/>.
         /// </summary>
-        /// <param name="clientDatabaseConnection"></param>
         public DynamicContentDataServiceVersionControl(IDatabaseConnection clientDatabaseConnection)
         {
             this.clientDatabaseConnection = clientDatabaseConnection;

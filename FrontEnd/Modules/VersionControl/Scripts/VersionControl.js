@@ -70,7 +70,7 @@ const moduleSettings = {
 
             // Default settings
             this.settings = {
-                moduleId: 0,
+                moduleId: 6001,
                 encryptedModuleId: "",
                 customerId: 0,
                 initialItemId: null,
@@ -175,6 +175,8 @@ const moduleSettings = {
             this.settings.imagesRootId = userData.imagesRootId;
             this.settings.templatesRootId = userData.templatesRootId;
             this.settings.mainDomain = userData.mainDomain;
+
+            console.log(this.settings.wiserApiRoot);
 
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";

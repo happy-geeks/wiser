@@ -10,13 +10,13 @@ using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
 namespace Api.Modules.VersionControl.Service.DataLayer
 {
+    ///<inheritdoc/>
     public class TemplateContainerDataService : ITemplateContainerDataService
     {
         private readonly IDatabaseConnection clientDatabaseConnection;
         /// <summary>
-        /// 
+        /// Creates a new instance of <see cref="TemplateContainerDataService"/>.
         /// </summary>
-        /// <param name="clientDatabaseConnection"></param>
         public TemplateContainerDataService(IDatabaseConnection clientDatabaseConnection)
         {
             this.clientDatabaseConnection = clientDatabaseConnection;

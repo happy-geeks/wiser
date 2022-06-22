@@ -121,6 +121,8 @@ export class Grids {
                 options.filter = gridViewOptionParse.dataSource.filter;
                 previousFilters = JSON.stringify(options.filter);
             }
+            console.log("test");
+            console.log(encodeURIComponent(this.base.settings.moduleId));
 
                 gridDataResult = await Wiser2.api({
                     url: `${this.base.settings.wiserApiRoot}VersionControl/${encodeURIComponent(this.base.settings.moduleId)}/overview-grid`,
@@ -415,9 +417,6 @@ export class Grids {
                 }
 
             }
-
-
-
 
         } catch (exception) {
             kendo.alert("Er is iets fout gegaan tijdens het laden van de data voor deze module. Sluit a.u.b. de module en probeer het nogmaals, of neem contact op met ons.");

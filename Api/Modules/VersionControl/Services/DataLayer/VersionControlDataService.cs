@@ -24,17 +24,15 @@ using Api.Modules.Customers.Interfaces;
 
 namespace Api.Modules.VersionControl.Service.DataLayer
 {
-    /// <summary>
-    /// 
-    /// </summary>
+   
+    ///<inheritdoc/>
     public class VersionControlDataService : IVersionControlDataService
     {
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserCustomersService wiserCustomersService;
         /// <summary>
-        /// 
+        /// Creates a new instance of <see cref="VersionControlDataService"/>.
         /// </summary>
-        /// <param name="clientDatabaseConnection"></param>
         public VersionControlDataService(IDatabaseConnection clientDatabaseConnection, IWiserCustomersService wiserCustomersService)
         {
             this.clientDatabaseConnection = clientDatabaseConnection;
