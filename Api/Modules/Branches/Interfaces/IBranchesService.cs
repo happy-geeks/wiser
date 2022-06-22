@@ -2,7 +2,9 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
+using Api.Modules.Branches.Models;
 using Api.Modules.Customers.Models;
+using GeeksCoreLibrary.Modules.Branches.Models;
 
 namespace Api.Modules.Branches.Interfaces
 {
@@ -16,8 +18,8 @@ namespace Api.Modules.Branches.Interfaces
         /// This will create a new database schema on the same server/cluster and then fill it with part of the data from the original database.
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
-        /// <param name="name">The name of the environment</param>
-        Task<ServiceResult<CustomerModel>> CreateAsync(ClaimsIdentity identity, string name);
+        /// <param name="settings">The settings for the new environment.</param>
+        Task<ServiceResult<CustomerModel>> CreateAsync(ClaimsIdentity identity, CreateBranchSettingsModel settings);
 
         /// <summary>
         /// Gets the environments for the authenticated user.
@@ -34,11 +36,19 @@ namespace Api.Modules.Branches.Interfaces
         Task<ServiceResult<bool>> IsMainBranchAsync(ClaimsIdentity identity);
 
         /// <summary>
+        /// Get the changes of a branch.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
+        /// <param name="id">The ID of the branch to get the changes of.</param>
+        /// <returns>A list of changes per entity type / Wiser setting type.</returns>
+        Task<ServiceResult<ChangesAvailableForMergingModel>> GetChangesAsync(ClaimsIdentity identity, int id);
+
+        /// <summary>
         /// Synchronise all changes done to wiser items, from a specific environment, to the production environment.
         /// This will look in wiser_history for what has been changed, copy those changes to production and then clear the history.
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
-        /// <param name="id">The ID of the environment to copy the changes from.</param>
-        Task<ServiceResult<SynchroniseChangesToProductionResultModel>> MergeAsync(ClaimsIdentity identity, int id);
+        /// <param name="settings">The settings of what exactly to merge.</param>
+        Task<ServiceResult<bool>> MergeAsync(ClaimsIdentity identity, MergeBranchSettingsModel settings);
     }
 }

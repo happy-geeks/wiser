@@ -32,7 +32,8 @@ import {
     MERGE_BRANCH_ERROR,
     MERGE_BRANCH_SUCCESS,
     GET_ENTITIES_FOR_BRANCHES,
-    IS_MAIN_BRANCH
+    IS_MAIN_BRANCH,
+    GET_BRANCH_CHANGES
 } from "./mutation-types";
 
 const baseModule = {
@@ -604,7 +605,8 @@ const branchesModule = {
         createBranchResult: null,
         branches: [],
         entities: [],
-        isMainBranch: false
+        isMainBranch: false,
+        branchChanges: {}
     }),
 
     mutations: {
@@ -638,13 +640,17 @@ const branchesModule = {
 
         [IS_MAIN_BRANCH](state, isMainBranch) {
             state.isMainBranch = isMainBranch;
+        },
+
+        [GET_BRANCH_CHANGES](state, branchChanges) {
+            state.branchChanges = branchChanges;
         }
     },
 
     actions: {
-        async [CREATE_BRANCH]({ commit }, name) {
+        async [CREATE_BRANCH]({ commit }, data) {
             commit(START_REQUEST);
-            const result = await main.branchesService.create(name);
+            const result = await main.branchesService.create(data);
 
             if (result.success) {
                 if (result.data) {
@@ -656,6 +662,10 @@ const branchesModule = {
                 commit(CREATE_BRANCH_ERROR, result.message);
             }
             commit(END_REQUEST);
+        },
+        
+        [CREATE_BRANCH_ERROR]({ commit }, error) {
+            commit(CREATE_BRANCH_ERROR, error);
         },
 
         async [GET_BRANCHES]({ commit }) {
@@ -691,6 +701,10 @@ const branchesModule = {
             commit(END_REQUEST);
         },
 
+        [MERGE_BRANCH_ERROR]({ commit }, error) {
+            commit(MERGE_BRANCH_ERROR, error);
+        },
+
         async [GET_ENTITIES_FOR_BRANCHES]({ commit }) {
             commit(START_REQUEST);
             const entitiesResponse = await main.branchesService.getEntities();
@@ -702,6 +716,13 @@ const branchesModule = {
             commit(START_REQUEST);
             const entitiesResponse = await main.branchesService.isMainBranch();
             commit(IS_MAIN_BRANCH, entitiesResponse.data);
+            commit(END_REQUEST);
+        },
+
+        async [GET_BRANCH_CHANGES]({ commit }, branchId) {
+            commit(START_REQUEST);
+            const changesResponse = await main.branchesService.getChanges(branchId);
+            commit(GET_BRANCH_CHANGES, changesResponse.data);
             commit(END_REQUEST);
         }
     },

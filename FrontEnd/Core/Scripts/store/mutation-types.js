@@ -45,3 +45,4 @@ export const MERGE_BRANCH_SUCCESS = "mergeBranchSuccess";
 export const MERGE_BRANCH_ERROR = "mergeBranchError";
 export const GET_ENTITIES_FOR_BRANCHES = "getEntitiesForBranches";
 export const IS_MAIN_BRANCH = "isMainBranch";
+export const GET_BRANCH_CHANGES = "getBranchChanges"

@@ -1495,7 +1495,7 @@ END;
 DROP TRIGGER IF EXISTS `PermissionDelete`;
 CREATE TRIGGER `PermissionDelete` AFTER DELETE ON `wiser_permission` FOR EACH ROW BEGIN
     INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-    VALUES ('DELETE_PERMISSION', 'wiser_field_templates', OLD.id, IFNULL(@_username, USER()), 'old_data', JSON_OBJECT('role_id', OLD.role_id, 'entity_name', OLD.entity_name, 'item_id', OLD.item_id, 'entity_property_id', OLD.entity_property_id, 'permissions', OLD.permissions, 'module_id', OLD.module_id), '');
+    VALUES ('DELETE_PERMISSION', 'wiser_permission', OLD.id, IFNULL(@_username, USER()), 'old_data', JSON_OBJECT('role_id', OLD.role_id, 'entity_name', OLD.entity_name, 'item_id', OLD.item_id, 'entity_property_id', OLD.entity_property_id, 'permissions', OLD.permissions, 'module_id', OLD.module_id), '');
 END;
 
 -- ----------------------------

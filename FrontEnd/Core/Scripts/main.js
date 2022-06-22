@@ -36,10 +36,12 @@ import {
     TOGGLE_PIN_MODULE,
     CHANGE_PASSWORD,
     CREATE_BRANCH,
+    CREATE_BRANCH_ERROR,
     GET_BRANCHES, 
     MERGE_BRANCH,
     GET_ENTITIES_FOR_BRANCHES,
-    IS_MAIN_BRANCH
+    IS_MAIN_BRANCH,
+    GET_BRANCH_CHANGES
 } from "./store/mutation-types";
 
 (() => {
@@ -123,10 +125,37 @@ import {
                         changePasswordPromptOldPasswordValue: null,
                         changePasswordPromptNewPasswordValue: null,
                         changePasswordPromptNewPasswordRepeatValue: null,
-                        createBranchPromptValue: null,
-                        selectedBranchValue: null,
-                        entityCopySettings: {
-                            all: -1
+                        createBranchSettings: {
+                            name: null,
+                            startMode: "direct",
+                            startOn: null,
+                            entities: {
+                                all: {
+                                    mode: -1
+                                }
+                            }
+                        },
+                        branchMergeSettings: {
+                            selectedBranch: null,
+                            startMode: "direct",
+                            startOn: null,
+                            deleteAfterSuccessfulMerge: false,
+                            entities: {
+                                all: {
+                                    everything: false,
+                                    create: false,
+                                    update: false,
+                                    delete: false
+                                }
+                            },
+                            settings: {
+                                all: {
+                                    everything: false,
+                                    create: false,
+                                    update: false,
+                                    delete: false
+                                }
+                            }
                         }
                     };
                 },
@@ -214,6 +243,39 @@ import {
                     },
                     isMainBranch() {
                         return this.$store.state.branches.isMainBranch;
+                    },
+                    branchChanges() {
+                        return this.$store.state.branches.branchChanges;
+                    },
+                    totalAmountOfItemsCreated() {
+                        return this.$store.state.branches.branchChanges.entities.reduce((accumulator, entity) => {
+                            return accumulator + entity.created;
+                        }, 0);
+                    },
+                    totalAmountOfItemsUpdated() {
+                        return this.$store.state.branches.branchChanges.entities.reduce((accumulator, entity) => {
+                            return accumulator + entity.updated;
+                        }, 0);
+                    },
+                    totalAmountOfItemsDeleted() {
+                        return this.$store.state.branches.branchChanges.entities.reduce((accumulator, entity) => {
+                            return accumulator + entity.deleted;
+                        }, 0);
+                    },
+                    totalAmountOfSettingsCreated() {
+                        return this.$store.state.branches.branchChanges.settings.reduce((accumulator, entity) => {
+                            return accumulator + entity.created;
+                        }, 0);
+                    },
+                    totalAmountOfSettingsUpdated() {
+                        return this.$store.state.branches.branchChanges.settings.reduce((accumulator, entity) => {
+                            return accumulator + entity.updated;
+                        }, 0);
+                    },
+                    totalAmountOfSettingsDeleted() {
+                        return this.$store.state.branches.branchChanges.settings.reduce((accumulator, entity) => {
+                            return accumulator + entity.deleted;
+                        }, 0);
                     }
                 },
                 components: {
@@ -311,7 +373,6 @@ import {
                     },
 
                     async openCustomerManagement() {
-
                         this.openModule({
                             moduleId: "customerManagement",
                             name: "Klant toevoegen",
@@ -344,15 +405,17 @@ import {
                     openCreateBranchPrompt(event) {
                         event.preventDefault();
                         this.$refs.wiserCreateBranchPrompt.open();
+                        this.$refs.wiserBranchesPrompt.close();
                     },
 
                     openMergeBranchPrompt(event) {
                         event.preventDefault();
                         this.$refs.wiserMergeBranchPrompt.open();
+                        this.$refs.wiserBranchesPrompt.close();
                     },
 
                     openMergeConflictsPrompt(event) {
-                        event.preventDefault();
+                        //event.preventDefault();
                         this.$refs.wiserMergeConflictsPrompt.open();
                     },
 
@@ -426,21 +489,36 @@ import {
                     },
 
                     async createBranch() {
-                        if (!this.createBranchPromptValue) {
+                        if (!this.createBranchSettings.name) {
+                            await this.$store.dispatch(CREATE_BRANCH_ERROR, "Vul a.u.b. een naam in");
                             return false;
                         }
 
-                        await this.$store.dispatch(CREATE_BRANCH, this.createBranchPromptValue);
-                        return !this.createBranchError;
+                        await this.$store.dispatch(CREATE_BRANCH, this.createBranchSettings);
+                        
+                        if (!this.createBranchError) {
+                            this.$refs.wiserCreateBranchPrompt.close();
+                            alert("De branch staat klaar om gemaakt te worden. U krijgt een bericht wanneer dit voltooid is.");
+                            return true;
+                        }
+                        
+                        return false;
                     },
 
                     async mergeBranch() {
-                        if (!this.selectedBranchValue || !this.selectedBranchValue.id) {
+                        if (!this.branchMergeSettings.selectedBranch || !this.branchMergeSettings.selectedBranch.id) {
                             return false;
                         }
 
-                        await this.$store.dispatch(MERGE_BRANCH, this.selectedBranchValue.id);
-                        return !this.mergeBranchError;
+                        await this.$store.dispatch(MERGE_BRANCH, this.branchMergeSettings);
+
+                        if (!this.mergeBranchError) {
+                            this.$refs.wiserMergeBranchPrompt.close();
+                            alert("De branch staat klaar om samengevoegd te worden. U krijgt een bericht wanneer dit voltooid is.");
+                            return true;
+                        }
+
+                        return false;
                     },
 
                     handleMergeConflicts() {
@@ -485,14 +563,36 @@ import {
                     async onWiserMergeBranchPromptOpen(sender) {                        
                         await this.$store.dispatch(GET_BRANCHES);
                         if (this.branches && this.branches.length === 1) {
-                            this.selectedBranchValue = this.branches[0];
+                            this.branchMergeSettings.selectedBranch = this.branches[0];
                         }
                     },
                     
                     async onWiserCreateBranchPromptOpen() {
                         await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
                         for (let entity of this.entitiesForBranches) {
-                            this.entityCopySettings[entity.id] = 0;
+                            this.createBranchSettings.entities[entity.id] = {
+                                mode: 0
+                            };
+                        }
+                    },
+
+                    async onSelectedBranchChange(event) {
+                        await this.$store.dispatch(GET_BRANCH_CHANGES, event.target.value.id);
+                        for (let entity of this.branchChanges.entities) {
+                            this.branchMergeSettings.entities[entity.entityType] = {
+                                everything: false,
+                                create: false,
+                                update: false,
+                                delete: false
+                            };
+                        }
+                        for (let entity of this.branchChanges.settings) {
+                            this.branchMergeSettings.settings[entity.type] = {
+                                everything: false,
+                                create: false,
+                                update: false,
+                                delete: false
+                            };
                         }
                     }
                 }
