@@ -5,6 +5,7 @@ using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Api.Modules.EntityProperties.Models;
 using Api.Modules.Imports.Interfaces;
 using Api.Modules.Imports.Models;
 

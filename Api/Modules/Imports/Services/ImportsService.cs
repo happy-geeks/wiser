@@ -20,6 +20,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Enums;
 using Api.Modules.Customers.Models;
+using Api.Modules.EntityProperties.Helpers;
+using Api.Modules.EntityProperties.Models;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
@@ -1270,9 +1272,17 @@ AND destinationDetail.`value` IN({String.Join(",", destinationValues.Select(line
             clientDatabaseConnection.AddParameter("linkType", linkType);
 
             var getPropertiesResult = await clientDatabaseConnection.GetAsync($@"
-                SELECT property.`name`, property.`value`, property.languageCode, property.isImageField, property.allowMultipleImages, CONCAT_WS('_', LPAD(property.propertyOrder, 6, '0'), LPAD(property.id, 6, '0')) AS propertyOrder
+                SELECT property.id, property.display_name, property.property_name, property.language_code, property.inputtype, property.`options`, property.ordering
                 FROM (
-                    SELECT 0 AS id, 'Item naam' AS `name`, 'itemTitle' AS `value`, '' AS languageCode, 0 AS isImageField, 0 AS allowMultipleImages, 0 AS baseOrder, 1 AS propertyOrder
+                    SELECT
+                        0 AS id,
+                        'Item naam' AS display_name,
+                        'itemTitle' AS property_name,
+                        '' AS language_code,
+                        'input' AS inputtype,
+                        '' AS `options`,
+                        1 AS ordering,
+                        0 AS base_order
                     FROM DUAL
                     WHERE ?entityName <> ''
                     UNION
@@ -1285,16 +1295,16 @@ AND destinationDetail.`value` IN({String.Join(",", destinationValues.Select(line
                                 CONCAT(' (', language_code, ')'),
                                 ''
                             )
-                        ) AS `name`,
-                        IF(property_name = '', display_name, property_name) AS `value`,
-                        language_code AS languageCode,
-                        inputtype = 'image-upload' AS isImageField,
-                        IFNULL(JSON_UNQUOTE(JSON_EXTRACT(NULLIF(`options`, ''), '$.multiple')), 'true') = 'true' AS allowMultipleImages,
-                        1 AS baseOrder,
-                        ordering AS propertyOrder
+                        ) AS display_name,
+                        IF(property_name = '', display_name, property_name) AS property_name,
+                        language_code,
+                        inputtype,
+                        IF(inputtype = 'image-upload', `options`, '') AS `options`,
+                        ordering AS ordering,
+                        1 AS base_order
                     FROM `{WiserTableNames.WiserEntityProperty}`
                     WHERE entity_name = ?entityName OR (?linkType > 0 AND link_type = ?linkType)
-                    ORDER BY baseOrder, `name`
+                    ORDER BY base_order, display_name
                 ) AS property");
 
             if (getPropertiesResult.Rows.Count == 0)
@@ -1307,12 +1317,13 @@ AND destinationDetail.`value` IN({String.Join(",", destinationValues.Select(line
             {
                 entityProperties.Add(new EntityPropertyModel
                 {
-                    Name = entityPropertyDataRow.Field<string>("name"),
-                    Value = entityPropertyDataRow.Field<string>("value"),
-                    LanguageCode = entityPropertyDataRow.Field<string>("languageCode"),
-                    IsImageField = Convert.ToBoolean(entityPropertyDataRow["isImageField"]),
-                    AllowMultipleImages = Convert.ToBoolean(entityPropertyDataRow["allowMultipleImages"]),
-                    PropertyOrder = entityPropertyDataRow.Field<string>("propertyOrder")
+                    Id = Convert.ToInt32(entityPropertyDataRow["id"]),
+                    DisplayName = entityPropertyDataRow.Field<string>("display_name"),
+                    PropertyName = entityPropertyDataRow.Field<string>("property_name"),
+                    LanguageCode = entityPropertyDataRow.Field<string>("language_code"),
+                    InputType = EntityPropertyHelper.ToInputType(entityPropertyDataRow.Field<string>("inputtype")),
+                    Options = entityPropertyDataRow.Field<string>("options") ?? String.Empty,
+                    Ordering = Convert.ToInt32(entityPropertyDataRow["ordering"])
                 });
             }
 

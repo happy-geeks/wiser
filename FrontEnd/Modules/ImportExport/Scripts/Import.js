@@ -670,7 +670,21 @@ const importModuleSettings = {
                                     const promiseResults = await Promise.all([
                                         Wiser2.api({ url: `${this.settings.wiserApiRoot}imports/entity-properties?entityName=${encodeURIComponent(options.model.importTo)}` })
                                     ]);
-                                    const propertiesOfEntity = promiseResults[0];
+
+                                    const propertiesOfEntity = [];
+                                    promiseResults[0].forEach(prop => {
+                                        const options = prop.options !== "" ? JSON.parse(prop.options) : {};
+
+                                        // Convert the properties to objects used to determine which field should be auto-selected.
+                                        propertiesOfEntity.push({
+                                            name: prop.displayName,
+                                            value: prop.propertyName,
+                                            languageCode: prop.languageCode,
+                                            isImageField: prop.inputType === "ImageUpload",
+                                            allowMultipleImages: options.hasOwnProperty("multiple") && options.multiple,
+                                            propertyOrder: `${prop.ordering}_${prop.id}`
+                                        });
+                                    });
 
                                     this.importGrid.dataSource.data().forEach((dataItem) => {
                                         dataItem.set("moduleId", widget.dataItem().moduleId);
@@ -727,7 +741,33 @@ const importModuleSettings = {
                                 optionLabel: "Kies een eigenschap",
                                 dataSource: {
                                     transport: {
-                                        read: `${this.settings.wiserApiRoot}imports/entity-properties?entityName=${encodeURIComponent(options.model.importTo)}`
+                                        read: (kendoReadOptions) => {
+                                            Wiser2.api({
+                                                url: `${this.settings.wiserApiRoot}imports/entity-properties?entityName=${encodeURIComponent(options.model.importTo)}`,
+                                                dataType: "json",
+                                                method: "GET",
+                                                data: kendoReadOptions.data
+                                            }).then((result) => {
+                                                const properties = [];
+                                                result.forEach(prop => {
+                                                    const options = prop.options !== "" ? JSON.parse(prop.options) : {};
+
+                                                    // Create data items out of the retrieved properties.
+                                                    properties.push({
+                                                        name: prop.displayName,
+                                                        value: prop.propertyName,
+                                                        languageCode: prop.languageCode,
+                                                        isImageField: prop.inputType === "ImageUpload",
+                                                        allowMultipleImages: options.hasOwnProperty("multiple") && options.multiple,
+                                                        propertyOrder: `${prop.ordering}_${prop.id}`
+                                                    });
+                                                });
+
+                                                kendoReadOptions.success(properties);
+                                            }).catch((result) => {
+                                                kendoReadOptions.error(result);
+                                            });
+                                        }
                                     }
                                 },
                                 change: (e) => {

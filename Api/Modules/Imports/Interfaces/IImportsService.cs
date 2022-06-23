@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
+using Api.Modules.EntityProperties.Models;
 using Api.Modules.Imports.Models;
 
 namespace Api.Modules.Imports.Interfaces
