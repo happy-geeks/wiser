@@ -170,12 +170,12 @@ namespace Api.Modules.Branches.Services
                 }
             };
             
+            await wiserCustomersService.CreateOrUpdateCustomerAsync(newCustomer);
+            
             // Clear some data that we don't want to return to client.
             newCustomer.Database.Host = null;
             newCustomer.Database.Password = null;
             newCustomer.Database.Username = null;
-            
-            await wiserCustomersService.CreateOrUpdateCustomerAsync(newCustomer);
             
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("name", settings.Name);
