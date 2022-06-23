@@ -56,8 +56,7 @@ namespace Api.Modules.Imports.Services
                 return new ServiceResult<ImportResultModel>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "File path is either empty, or the file does not exist.",
-                    ReasonPhrase = "File path is either empty, or the file does not exist."
+                    ErrorMessage = "File path is either empty, or the file does not exist."
                 };
             }
 
@@ -929,8 +928,8 @@ FROM {tablePrefix}{WiserTableNames.WiserItem} AS item {(deleteItemsRequest.Prope
         /// <inheritdoc />
         public async Task<ServiceResult<List<DeleteLinksConfirmModel>>> PrepareDeleteLinksAsync(ClaimsIdentity identity, DeleteLinksRequestModel deleteLinksRequest)
         {
-            //Get all lines, skip first line containing column names.
-            var fileLines = File.ReadAllLines(deleteLinksRequest.FilePath).Skip(1);
+            // Get all lines, skip first line containing column names.
+            var fileLines = (await File.ReadAllLinesAsync(deleteLinksRequest.FilePath)).Skip(1).ToList();
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
 
@@ -982,21 +981,22 @@ AND item.entity_type = ?entityName";
         /// <param name="fileLines"></param>
         /// <param name="deleteLinksRequest">The criteria for the item links to delete.</param>
         /// <returns>Returns the <see cref="DeleteLinksConfirmModel"/> containing the information to delete the links.</returns>
-        private async Task<DeleteLinksConfirmModel> CreateQueryForSingleColumn(IEnumerable<string> fileLines, DeleteLinksRequestModel deleteLinksRequest)
+        private async Task<DeleteLinksConfirmModel> CreateQueryForSingleColumn(IList<string> fileLines, DeleteLinksRequestModel deleteLinksRequest)
         {
             var linkSettings = await wiserItemsService.GetLinkTypeSettingsByIdAsync(deleteLinksRequest.LinkId);
             var destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkSettings.DestinationEntityType);
             var connectedTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkSettings.SourceEntityType);
+            var linkTablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(0, linkSettings.SourceEntityType, linkSettings.DestinationEntityType);
 
             clientDatabaseConnection.AddParameter("linkId", deleteLinksRequest.LinkId);
 
-            var query = string.Empty;
+            string query;
 
             if (linkSettings.UseItemParentId)
             {
                 query = $@"
 SELECT connected.id AS id, connected.id AS sourceId, destination.id AS destinationId
-FROM {WiserTableNames.WiserLink} AS linkSettings
+FROM {linkTablePrefix}{WiserTableNames.WiserLink} AS linkSettings
 JOIN {connectedTablePrefix}{WiserTableNames.WiserItem} AS connected ON connected.entity_type = linkSettings.connected_entity_type
 JOIN {destinationTablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id = connected.parent_item_id AND destination.entity_type = linkSettings.destination_entity_type
 WHERE linkSettings.id = ?linkId
@@ -1007,7 +1007,7 @@ AND (connected.id IN({String.Join(",", fileLines.Select(line => line.ToMySqlSafe
                 query = $@"
 SELECT itemLink.id AS id, connected.id AS sourceId, destination.id AS destinationId
 FROM {WiserTableNames.WiserLink} AS linkSettings
-JOIN {WiserTableNames.WiserItemLink} AS itemLink ON itemLink.type = linkSettings.type
+JOIN {linkTablePrefix}{WiserTableNames.WiserItemLink} AS itemLink ON itemLink.type = linkSettings.type
 JOIN {destinationTablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id = itemLink.destination_item_id AND destination.entity_type = linkSettings.destination_entity_type
 JOIN {connectedTablePrefix}{WiserTableNames.WiserItem} AS connected ON connected.id = itemLink.item_id AND connected.entity_type = linkSettings.connected_entity_type
 WHERE linkSettings.id = ?linkId
@@ -1023,7 +1023,7 @@ AND (itemLink.destination_item_id IN({String.Join(",", fileLines.Select(line => 
         /// <param name="fileLines"></param>
         /// <param name="deleteLinksRequest">The criteria for the item links to delete.</param>
         /// <returns>Returns the a collection of <see cref="DeleteLinksConfirmModel"/> containing the information to delete the links.</returns>
-        private async Task<List<DeleteLinksConfirmModel>> CreateQueryForMultipleColumns(IEnumerable<string> fileLines, DeleteLinksRequestModel deleteLinksRequest)
+        private async Task<List<DeleteLinksConfirmModel>> CreateQueryForMultipleColumns(IList<string> fileLines, DeleteLinksRequestModel deleteLinksRequest)
         {
             var firstEntity = deleteLinksRequest.DeleteSettings[0]["entity"].ToString();
             var secondEntity = deleteLinksRequest.DeleteSettings[1]["entity"].ToString();
@@ -1077,6 +1077,7 @@ AND (itemLink.destination_item_id IN({String.Join(",", fileLines.Select(line => 
 
                 var sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkSettings.SourceEntityType);
                 var destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkSettings.DestinationEntityType);
+                var linkTablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(0, linkSettings.SourceEntityType, linkSettings.DestinationEntityType);
 
                 clientDatabaseConnection.AddParameter("linkType", linkSettings.Type);
                 clientDatabaseConnection.AddParameter("sourceEntity", linkSettings.SourceEntityType);
@@ -1137,7 +1138,7 @@ AND destinationDetail.`value` IN({String.Join(",", destinationValues.Select(line
                 {
                     query.Append($@"
 SELECT itemLink.id AS id, itemLink.item_id AS sourceId, itemLink.destination_item_id AS destinationId
-FROM {WiserTableNames.WiserItemLink} AS itemLink");
+FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS itemLink");
 
                     //If the source is a property join tables.
                     if (!sourceIsId)

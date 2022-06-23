@@ -468,8 +468,7 @@ namespace Api.Modules.Customers.Services
                 return new ServiceResult<UserModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = "User not found",
-                    ReasonPhrase = "User not found"
+                    ErrorMessage = "User not found"
                 };
             }
 
@@ -479,8 +478,7 @@ namespace Api.Modules.Customers.Services
                 return new ServiceResult<UserModel>
                 {
                     StatusCode = HttpStatusCode.Unauthorized,
-                    ErrorMessage = "Old password is incorrect.",
-                    ReasonPhrase = "Old password is incorrect."
+                    ErrorMessage = "Old password is incorrect."
                 };
             }
 
@@ -516,7 +514,22 @@ namespace Api.Modules.Customers.Services
         /// <inheritdoc />
         public async Task<ServiceResult<UserModel>> GetUserDataAsync(ClaimsIdentity identity)
         {
+            return await GetUserDataAsync(this, identity);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<UserModel>> GetUserDataAsync(IUsersService usersService, ClaimsIdentity identity)
+        {
             var customer = await wiserCustomersService.GetSingleAsync(identity);
+            if (customer.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<UserModel>
+                {
+                    ErrorMessage = customer.ErrorMessage,
+                    StatusCode = customer.StatusCode
+                };
+            }
+
             var encryptionKey = customer.ModelObject.EncryptionKey;
             var userId = IdentityHelpers.GetWiserUserId(identity);
 
@@ -526,10 +539,31 @@ namespace Api.Modules.Customers.Services
                 EncryptedCustomerId = customer.ModelObject.CustomerId.ToString().EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true),
                 ZeroEncrypted = "0".EncryptWithAesWithSalt(encryptionKey, true),
                 Id = userId,
-                EmailAddress = await GetUserEmailAddressAsync(userId)
+                EmailAddress = await usersService.GetUserEmailAddressAsync(userId),
+                CurrentEnvironmentName = customer.ModelObject.Name,
+                CurrentEnvironmentIsProductionEnvironment = customer.ModelObject.Id == customer.ModelObject.CustomerId
             };
-            
-            var wiserSettings = await GetWiserSettingsForUserAsync(encryptionKey);
+
+            if (result.CurrentEnvironmentIsProductionEnvironment)
+            {
+                result.ProductionEnvironmentName = result.CurrentEnvironmentName;
+            }
+            else
+            {
+                var productionCustomer = await wiserCustomersService.GetSingleAsync(customer.ModelObject.CustomerId);
+                if (productionCustomer.StatusCode != HttpStatusCode.OK)
+                {
+                    return new ServiceResult<UserModel>
+                    {
+                        ErrorMessage = productionCustomer.ErrorMessage,
+                        StatusCode = productionCustomer.StatusCode
+                    };
+                }
+
+                result.ProductionEnvironmentName = productionCustomer.ModelObject.Name;
+            }
+
+            var wiserSettings = await usersService.GetWiserSettingsForUserAsync(encryptionKey);
             result.FilesRootId = wiserSettings.FilesRootId;
             result.ImagesRootId = wiserSettings.ImagesRootId;
             result.TemplatesRootId = wiserSettings.TemplatesRootId;
@@ -789,7 +823,6 @@ namespace Api.Modules.Customers.Services
                 return new ServiceResult<bool>
                 {
                     ErrorMessage = "Only administrators are allowed to do this.",
-                    ReasonPhrase = "Only administrators are allowed to do this.",
                     StatusCode = HttpStatusCode.Unauthorized
                 };
             }

@@ -61,8 +61,7 @@ namespace Api.Modules.EntityProperties.Services
                 return new ServiceResult<EntityPropertyModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Entity property with ID '{id}' does not exist.",
-                    ReasonPhrase = $"Entity property with ID '{id}' does not exist."
+                    ErrorMessage = $"Entity property with ID '{id}' does not exist."
                 };
             }
 
@@ -113,8 +112,7 @@ namespace Api.Modules.EntityProperties.Services
                 return new ServiceResult<EntityPropertyModel>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Either 'EntityType' or 'LinkType' must contain a value.",
-                    ReasonPhrase = "Either 'EntityType' or 'LinkType' must contain a value."
+                    ErrorMessage = "Either 'EntityType' or 'LinkType' must contain a value."
                 };
             }
 
@@ -123,8 +121,7 @@ namespace Api.Modules.EntityProperties.Services
                 return new ServiceResult<EntityPropertyModel>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "PropertyName is required.",
-                    ReasonPhrase = "PropertyName is required."
+                    ErrorMessage = "PropertyName is required."
                 };
             }
 
@@ -264,8 +261,7 @@ namespace Api.Modules.EntityProperties.Services
                     return new ServiceResult<EntityPropertyModel>
                     {
                         StatusCode = HttpStatusCode.Conflict,
-                        ErrorMessage = $"An entry already exists with {nameof(entityProperty.EntityType)} = '{entityProperty.EntityType}', {nameof(entityProperty.LinkType)} = '{entityProperty.LinkType}', {nameof(entityProperty.DisplayName)} = '{entityProperty.DisplayName}', {nameof(entityProperty.PropertyName)} = '{entityProperty.PropertyName}' and {nameof(entityProperty.LanguageCode)} = '{entityProperty.LanguageCode}'",
-                        ReasonPhrase = "And entry already exists with this data."
+                        ErrorMessage = $"An entry already exists with {nameof(entityProperty.EntityType)} = '{entityProperty.EntityType}', {nameof(entityProperty.LinkType)} = '{entityProperty.LinkType}', {nameof(entityProperty.DisplayName)} = '{entityProperty.DisplayName}', {nameof(entityProperty.PropertyName)} = '{entityProperty.PropertyName}' and {nameof(entityProperty.LanguageCode)} = '{entityProperty.LanguageCode}'"
                     };
                 }
 
@@ -283,8 +279,7 @@ namespace Api.Modules.EntityProperties.Services
                 return new ServiceResult<bool>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Either 'EntityType' or 'LinkType' must contain a value.",
-                    ReasonPhrase = "Either 'EntityType' or 'LinkType' must contain a value."
+                    ErrorMessage = "Either 'EntityType' or 'LinkType' must contain a value."
                 };
             }
 
@@ -293,8 +288,7 @@ namespace Api.Modules.EntityProperties.Services
                 return new ServiceResult<bool>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "PropertyName is required.",
-                    ReasonPhrase = "PropertyName is required."
+                    ErrorMessage = "PropertyName is required."
                 };
             }
 
@@ -392,8 +386,7 @@ namespace Api.Modules.EntityProperties.Services
                     return new ServiceResult<bool>
                     {
                         StatusCode = HttpStatusCode.Conflict,
-                        ErrorMessage = $"An entry already exists with {nameof(entityProperty.EntityType)} = '{entityProperty.EntityType}', {nameof(entityProperty.LinkType)} = '{entityProperty.LinkType}', {nameof(entityProperty.DisplayName)} = '{entityProperty.DisplayName}', {nameof(entityProperty.PropertyName)} = '{entityProperty.PropertyName}' and {nameof(entityProperty.LanguageCode)} = '{entityProperty.LanguageCode}'",
-                        ReasonPhrase = "And entry already exists with this data."
+                        ErrorMessage = $"An entry already exists with {nameof(entityProperty.EntityType)} = '{entityProperty.EntityType}', {nameof(entityProperty.LinkType)} = '{entityProperty.LinkType}', {nameof(entityProperty.DisplayName)} = '{entityProperty.DisplayName}', {nameof(entityProperty.PropertyName)} = '{entityProperty.PropertyName}' and {nameof(entityProperty.LanguageCode)} = '{entityProperty.LanguageCode}'"
                     };
                 }
 

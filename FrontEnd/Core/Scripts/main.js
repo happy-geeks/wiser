@@ -12,6 +12,7 @@ import UsersService from "./shared/users.service";
 import ModulesService from "./shared/modules.service";
 import CustomersService from "./shared/customers.service";
 import ItemsService from "./shared/items.service";
+import BranchesService from "./shared/branches.service";
 
 import store from "./store/index";
 import login from "./components/login";
@@ -33,7 +34,14 @@ import {
     LOAD_ENTITY_TYPES_OF_ITEM_ID,
     GET_CUSTOMER_TITLE,
     TOGGLE_PIN_MODULE,
-    CHANGE_PASSWORD
+    CHANGE_PASSWORD,
+    CREATE_BRANCH,
+    CREATE_BRANCH_ERROR,
+    GET_BRANCHES, 
+    MERGE_BRANCH,
+    GET_ENTITIES_FOR_BRANCHES,
+    IS_MAIN_BRANCH,
+    GET_BRANCH_CHANGES
 } from "./store/mutation-types";
 
 (() => {
@@ -46,6 +54,7 @@ import {
             this.modulesService = new ModulesService(this);
             this.customersService = new CustomersService(this);
             this.itemsService = new ItemsService(this);
+            this.branchesService = new BranchesService(this);
 
             // Fire event on page ready for direct actions
             document.addEventListener("DOMContentLoaded", () => {
@@ -61,9 +70,13 @@ import {
             this.appSettings = JSON.parse(configElement.innerHTML);
 
             if (this.appSettings.trackJsToken) {
-                TrackJS.install({
-                    token: this.appSettings.trackJsToken
-                });
+                try {
+                    TrackJS.install({
+                        token: this.appSettings.trackJsToken
+                    });
+                } catch(exception) {
+                    console.error("Error loading TrackJS widget", exception);
+                }
             }
 
             if (this.appSettings.loadPartnerStyle) {
@@ -89,9 +102,13 @@ import {
             });
 
             if (this.appSettings.markerIoToken) {
-                const markerSdk = await import("@marker.io/browser");
-                this.markerWidget = await markerSdk.default.loadWidget({ destination: this.appSettings.markerIoToken });
-                this.markerWidget.hide();
+                try {
+                    const markerSdk = await import("@marker.io/browser");
+                    this.markerWidget = await markerSdk.default.loadWidget({ destination: this.appSettings.markerIoToken });
+                    this.markerWidget.hide();
+                } catch(exception) {
+                    console.error("Error loading marker IO widget", exception);
+                }
             }
 
             this.initVue();
@@ -107,7 +124,39 @@ import {
                         markerWidget: this.markerWidget,
                         changePasswordPromptOldPasswordValue: null,
                         changePasswordPromptNewPasswordValue: null,
-                        changePasswordPromptNewPasswordRepeatValue: null
+                        changePasswordPromptNewPasswordRepeatValue: null,
+                        createBranchSettings: {
+                            name: null,
+                            startMode: "direct",
+                            startOn: null,
+                            entities: {
+                                all: {
+                                    mode: -1
+                                }
+                            }
+                        },
+                        branchMergeSettings: {
+                            selectedBranch: null,
+                            startMode: "direct",
+                            startOn: null,
+                            deleteAfterSuccessfulMerge: false,
+                            entities: {
+                                all: {
+                                    everything: false,
+                                    create: false,
+                                    update: false,
+                                    delete: false
+                                }
+                            },
+                            settings: {
+                                all: {
+                                    everything: false,
+                                    create: false,
+                                    update: false,
+                                    delete: false
+                                }
+                            }
+                        }
                     };
                 },
                 created() {
@@ -168,6 +217,65 @@ import {
                     },
                     changePasswordError() {
                         return this.$store.state.users.changePasswordError;
+                    },
+                    customerManagementIsOpened() {
+                        return this.$store.state.modules.openedModules.filter(m => m.moduleId === "customerManagement").length > 0;
+                    },
+                    createBranchError() {
+                        return this.$store.state.branches.createBranchError;
+                    },
+                    createBranchResult() {
+                        return this.$store.state.branches.createBranchResult;
+                    },
+                    branches() {
+                        return this.$store.state.branches.branches;
+                    },
+                    mergeBranchError() {
+                        return this.$store.state.branches.mergeBranchError;
+                    },
+                    entitiesForBranches() {
+                        return this.$store.state.branches.entities;
+                    },
+                    totalAmountOfItemsForCreatingBranch() {
+                        return this.$store.state.branches.entities.reduce((accumulator, entity) => {
+                            return accumulator + entity.totalItems;
+                        }, 0);
+                    },
+                    isMainBranch() {
+                        return this.$store.state.branches.isMainBranch;
+                    },
+                    branchChanges() {
+                        return this.$store.state.branches.branchChanges;
+                    },
+                    totalAmountOfItemsCreated() {
+                        return this.$store.state.branches.branchChanges.entities.reduce((accumulator, entity) => {
+                            return accumulator + entity.created;
+                        }, 0);
+                    },
+                    totalAmountOfItemsUpdated() {
+                        return this.$store.state.branches.branchChanges.entities.reduce((accumulator, entity) => {
+                            return accumulator + entity.updated;
+                        }, 0);
+                    },
+                    totalAmountOfItemsDeleted() {
+                        return this.$store.state.branches.branchChanges.entities.reduce((accumulator, entity) => {
+                            return accumulator + entity.deleted;
+                        }, 0);
+                    },
+                    totalAmountOfSettingsCreated() {
+                        return this.$store.state.branches.branchChanges.settings.reduce((accumulator, entity) => {
+                            return accumulator + entity.created;
+                        }, 0);
+                    },
+                    totalAmountOfSettingsUpdated() {
+                        return this.$store.state.branches.branchChanges.settings.reduce((accumulator, entity) => {
+                            return accumulator + entity.updated;
+                        }, 0);
+                    },
+                    totalAmountOfSettingsDeleted() {
+                        return this.$store.state.branches.branchChanges.settings.reduce((accumulator, entity) => {
+                            return accumulator + entity.deleted;
+                        }, 0);
                     }
                 },
                 components: {
@@ -274,16 +382,41 @@ import {
                         });
                     },
 
-                    openWiserIdPrompt() {
+                    openWiserIdPrompt(event) {
+                        event.preventDefault();
                         this.$refs.wiserIdPrompt.open();
                     },
 
-                    openWiserEntityTypePrompt() {
+                    openWiserEntityTypePrompt(event) {
+                        event.preventDefault();
                         this.$refs.wiserEntityTypePrompt.open();
                     },
 
-                    openChangePasswordPrompt() {
+                    openChangePasswordPrompt(event) {
+                        event.preventDefault();
                         this.$refs.changePasswordPrompt.open();
+                    },
+
+                    openWiserBranchesPrompt(event) {
+                        event.preventDefault();
+                        this.$refs.wiserBranchesPrompt.open();
+                    },
+
+                    openCreateBranchPrompt(event) {
+                        event.preventDefault();
+                        this.$refs.wiserCreateBranchPrompt.open();
+                        this.$refs.wiserBranchesPrompt.close();
+                    },
+
+                    openMergeBranchPrompt(event) {
+                        event.preventDefault();
+                        this.$refs.wiserMergeBranchPrompt.open();
+                        this.$refs.wiserBranchesPrompt.close();
+                    },
+
+                    openMergeConflictsPrompt(event) {
+                        //event.preventDefault();
+                        this.$refs.wiserMergeConflictsPrompt.open();
                     },
 
                     async openWiserItem() {
@@ -344,6 +477,54 @@ import {
                         this.markerWidget.capture("fullscreen");
                     },
 
+                    async changePassword() {
+                        await this.$store.dispatch(CHANGE_PASSWORD,
+                            {
+                                oldPassword: this.changePasswordPromptOldPasswordValue,
+                                newPassword: this.changePasswordPromptNewPasswordValue,
+                                newPasswordRepeat: this.changePasswordPromptNewPasswordRepeatValue
+                            });
+
+                        return !this.$store.state.users.changePasswordError;
+                    },
+
+                    async createBranch() {
+                        if (!this.createBranchSettings.name) {
+                            await this.$store.dispatch(CREATE_BRANCH_ERROR, "Vul a.u.b. een naam in");
+                            return false;
+                        }
+
+                        await this.$store.dispatch(CREATE_BRANCH, this.createBranchSettings);
+                        
+                        if (!this.createBranchError) {
+                            this.$refs.wiserCreateBranchPrompt.close();
+                            alert("De branch staat klaar om gemaakt te worden. U krijgt een bericht wanneer dit voltooid is.");
+                            return true;
+                        }
+                        
+                        return false;
+                    },
+
+                    async mergeBranch() {
+                        if (!this.branchMergeSettings.selectedBranch || !this.branchMergeSettings.selectedBranch.id) {
+                            return false;
+                        }
+
+                        await this.$store.dispatch(MERGE_BRANCH, this.branchMergeSettings);
+
+                        if (!this.mergeBranchError) {
+                            this.$refs.wiserMergeBranchPrompt.close();
+                            alert("De branch staat klaar om samengevoegd te worden. U krijgt een bericht wanneer dit voltooid is.");
+                            return true;
+                        }
+
+                        return false;
+                    },
+
+                    handleMergeConflicts() {
+                        alert("Conflicten verwerken");
+                    },
+
                     onOpenModuleClick(event, module) {
                         event.preventDefault();
                         this.openModule(module);
@@ -375,15 +556,44 @@ import {
                         this.$store.dispatch(TOGGLE_PIN_MODULE, moduleId);
                     },
                     
-                    async changePassword() {
-                        await this.$store.dispatch(CHANGE_PASSWORD,
-                            {
-                                oldPassword: this.changePasswordPromptOldPasswordValue,
-                                newPassword: this.changePasswordPromptNewPasswordValue,
-                                newPasswordRepeat: this.changePasswordPromptNewPasswordRepeatValue
-                            });
-                        
-                        return !this.$store.state.users.changePasswordError;
+                    async onWiserBranchesPromptOpen() {
+                        await this.$store.dispatch(IS_MAIN_BRANCH);
+                    },
+                    
+                    async onWiserMergeBranchPromptOpen(sender) {                        
+                        await this.$store.dispatch(GET_BRANCHES);
+                        if (this.branches && this.branches.length === 1) {
+                            this.branchMergeSettings.selectedBranch = this.branches[0];
+                        }
+                    },
+                    
+                    async onWiserCreateBranchPromptOpen() {
+                        await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
+                        for (let entity of this.entitiesForBranches) {
+                            this.createBranchSettings.entities[entity.id] = {
+                                mode: 0
+                            };
+                        }
+                    },
+
+                    async onSelectedBranchChange(event) {
+                        await this.$store.dispatch(GET_BRANCH_CHANGES, event.target.value.id);
+                        for (let entity of this.branchChanges.entities) {
+                            this.branchMergeSettings.entities[entity.entityType] = {
+                                everything: false,
+                                create: false,
+                                update: false,
+                                delete: false
+                            };
+                        }
+                        for (let entity of this.branchChanges.settings) {
+                            this.branchMergeSettings.settings[entity.type] = {
+                                everything: false,
+                                create: false,
+                                update: false,
+                                delete: false
+                            };
+                        }
                     }
                 }
             });
