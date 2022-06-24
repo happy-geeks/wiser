@@ -264,7 +264,7 @@
                 </footer>
             </div>
         </wiser-dialog>
-        <wiser-dialog class="branches-dialog full-height" :modal="true" :width="'1200px'" :title="'Branch terugzetten'" ref="wiserMergeBranchPrompt" :visible="false" :actions="[{ text: 'Open merge conflict popup', primary: true, action: openMergeConflictsPrompt }]" @@open="onWiserMergeBranchPromptOpen">
+        <wiser-dialog class="branches-dialog full-height" :modal="true" :width="'1200px'" :title="'Branch terugzetten'" ref="wiserMergeBranchPrompt" :visible="false" :actions="[]" @@open="onWiserMergeBranchPromptOpen">
             <div class="container">
                 <div class="row" v-if="!branches || !branches.length">
                     <section class="full-error">
