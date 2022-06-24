@@ -38,18 +38,6 @@ namespace Api.Modules.Branches.Services
         private readonly ILogger<BranchesService> logger;
         private readonly IWiserItemsService wiserItemsService;
         private readonly IDatabaseConnection wiserDatabaseConnection;
-        
-        private readonly List<string> entityTypesToSkipWhenSynchronisingEnvironments = new()
-        {
-            GeeksCoreLibrary.Components.ShoppingBasket.Models.Constants.BasketEntityType,
-            GeeksCoreLibrary.Components.ShoppingBasket.Models.Constants.BasketLineEntityType,
-            GeeksCoreLibrary.Components.Account.Models.Constants.DefaultEntityType,
-            GeeksCoreLibrary.Components.Account.Models.Constants.DefaultSubAccountEntityType,
-            GeeksCoreLibrary.Components.OrderProcess.Models.Constants.OrderEntityType,
-            GeeksCoreLibrary.Components.OrderProcess.Models.Constants.OrderLineEntityType,
-            "relatie",
-            "klant"
-        };
 
         /// <summary>
         /// Creates a new instance of <see cref="BranchesService"/>.
@@ -153,7 +141,7 @@ namespace Api.Modules.Branches.Services
             settings.WiserTitle = newCustomerTitle;
             settings.DatabaseName = databaseName;
 
-            // Add the new customer environment to easy_customers.
+            // Add the new customer environment to easy_customers. We do this here already so that the AIS doesn't need access to the main wiser database.
             var newCustomer = new CustomerModel
             {
                 CustomerId = currentCustomer.CustomerId,
@@ -166,6 +154,7 @@ namespace Api.Modules.Branches.Services
                     Host = currentCustomer.Database.Host,
                     Password = currentCustomer.Database.Password,
                     Username = currentCustomer.Database.Username,
+                    PortNumber = currentCustomer.Database.PortNumber,
                     DatabaseName = databaseName
                 }
             };
@@ -176,7 +165,9 @@ namespace Api.Modules.Branches.Services
             newCustomer.Database.Host = null;
             newCustomer.Database.Password = null;
             newCustomer.Database.Username = null;
+            newCustomer.Database.PortNumber = 0;
             
+            // Add the creation of the branch to the queue, so that the AIS can process it.
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("name", settings.Name);
             clientDatabaseConnection.AddParameter("action", "create");
@@ -197,9 +188,10 @@ namespace Api.Modules.Branches.Services
             var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
 
             var query = $@"SELECT id, name
-                        FROM {ApiTableNames.WiserCustomers}
-                        WHERE customerid = ?id
-                        AND id <> ?id";
+FROM {ApiTableNames.WiserCustomers}
+WHERE customerid = ?id
+AND id <> ?id
+ORDER BY id DESC";
             
             wiserDatabaseConnection.AddParameter("id", currentCustomer.CustomerId);
             var dataTable = await wiserDatabaseConnection.GetAsync(query);
@@ -228,8 +220,23 @@ namespace Api.Modules.Branches.Services
         /// <inheritdoc />
         public async Task<ServiceResult<ChangesAvailableForMergingModel>> GetChangesAsync(ClaimsIdentity identity, int id)
         {
+            var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
+            
             var result = new ChangesAvailableForMergingModel();
-            var selectedEnvironmentCustomer = (await wiserCustomersService.GetSingleAsync(id, true)).ModelObject;
+            // If the id is 0, then get the current branch where the user is authenticated, otherwise get the branch of the given ID.
+            var selectedEnvironmentCustomer = id <= 0
+                ? currentCustomer
+                : (await wiserCustomersService.GetSingleAsync(id, true)).ModelObject;
+
+            // Only allow users to get the changes of their own branches.
+            if (currentCustomer.CustomerId != selectedEnvironmentCustomer.CustomerId)
+            {
+                return new ServiceResult<ChangesAvailableForMergingModel>
+                {
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+
             await using var branchConnection = new MySqlConnection(wiserCustomersService.GenerateConnectionStringFromCustomer(selectedEnvironmentCustomer));
             await branchConnection.OpenAsync();
             
@@ -769,7 +776,15 @@ LIMIT 1";
         public async Task<ServiceResult<bool>> MergeAsync(ClaimsIdentity identity, MergeBranchSettingsModel settings)
         {
             var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
-         
+            var productionCustomer = (await wiserCustomersService.GetSingleAsync(currentCustomer.CustomerId, true)).ModelObject;
+            
+            // If the settings.Id is 0, it means the user wants to merge the current branch.
+            if (settings.Id <= 0)
+            {
+                settings.Id = currentCustomer.Id;
+                settings.DatabaseName = currentCustomer.Database.DatabaseName;
+            }
+
             // Make sure the user is not trying to copy changes from main to main, that would be weird and also cause a lot of problems.
             if (currentCustomer.CustomerId == settings.Id)
             {
@@ -780,7 +795,9 @@ LIMIT 1";
                 };
             }
 
-            var selectedEnvironmentCustomer = (await wiserCustomersService.GetSingleAsync(settings.Id, true)).ModelObject;
+            var selectedEnvironmentCustomer = settings.Id == currentCustomer.Id 
+                ? currentCustomer 
+                : (await wiserCustomersService.GetSingleAsync(settings.Id, true)).ModelObject;
 
             // Check to make sure someone is not trying to copy changes from an environment that does not belong to them.
             if (selectedEnvironmentCustomer == null || currentCustomer.CustomerId != selectedEnvironmentCustomer.CustomerId)
@@ -791,17 +808,24 @@ LIMIT 1";
                 };
             }
 
-            settings.DatabaseName = selectedEnvironmentCustomer.Database.DatabaseName;
-            
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("branch_id", settings.Id);
-            clientDatabaseConnection.AddParameter("action", "merge");
-            clientDatabaseConnection.AddParameter("data", JsonConvert.SerializeObject(settings));
-            clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
-            clientDatabaseConnection.AddParameter("start_on", settings.StartOn ?? DateTime.Now);
-            clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true));
-            clientDatabaseConnection.AddParameter("user_id", IdentityHelpers.GetWiserUserId(identity));
-            await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserBranchesQueue, 0);
+            // Add the merge to the queue so that the AIS will process it.
+            await using var branchConnection = new MySqlConnection(wiserCustomersService.GenerateConnectionStringFromCustomer(productionCustomer));
+            await branchConnection.OpenAsync();
+            await using (var environmentCommand = branchConnection.CreateCommand())
+            {
+                environmentCommand.Parameters.AddWithValue("branch_id", settings.Id);
+                environmentCommand.Parameters.AddWithValue("action", "merge");
+                environmentCommand.Parameters.AddWithValue("data", JsonConvert.SerializeObject(settings));
+                environmentCommand.Parameters.AddWithValue("added_on", DateTime.Now);
+                environmentCommand.Parameters.AddWithValue("start_on", settings.StartOn ?? DateTime.Now);
+                environmentCommand.Parameters.AddWithValue("added_by", IdentityHelpers.GetUserName(identity, true));
+                environmentCommand.Parameters.AddWithValue("user_id", IdentityHelpers.GetWiserUserId(identity));
+                environmentCommand.CommandText = $@"INSERT INTO {WiserTableNames.WiserBranchesQueue} 
+(branch_id, action, data, added_on, start_on, added_by, user_id)
+VALUES (?branch_id, ?action, ?data, ?added_on, ?start_on, ?added_by, ?user_id)";
+
+                await environmentCommand.ExecuteNonQueryAsync();
+            }
 
             return new ServiceResult<bool>(true);
         }

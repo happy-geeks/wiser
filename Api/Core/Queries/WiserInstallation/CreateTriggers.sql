@@ -1499,6 +1499,34 @@ CREATE TRIGGER `PermissionDelete` AFTER DELETE ON `wiser_permission` FOR EACH RO
 END;
 
 -- ----------------------------
+-- Triggers structure for table wiser_roles
+-- ----------------------------
+DROP TRIGGER IF EXISTS `RoleInsert`;
+CREATE TRIGGER `RoleInsert` AFTER INSERT ON `wiser_roles` FOR EACH ROW BEGIN
+    INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+    VALUES ('INSERT_ROLE', 'wiser_roles', NEW.id, IFNULL(@_username, USER()), 'id', NULL, NEW.id);
+
+    IF IFNULL(NEW.`role_name`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ROLE', 'wiser_roles', NEW.id, IFNULL(@_username, USER()), 'role_name', NULL, NEW.`role_name`);
+    END IF;
+END;
+
+DROP TRIGGER IF EXISTS `RoleUpdate`;
+CREATE TRIGGER `RoleUpdate` AFTER UPDATE ON `wiser_roles` FOR EACH ROW BEGIN
+    IF IFNULL(NEW.`role_name`, '') <> IFNULL(OLD.`role_name`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ROLE', 'wiser_roles', NEW.id, IFNULL(@_username, USER()), 'role_name', OLD.`role_name`, NEW.`role_name`);
+    END IF;
+END;
+
+DROP TRIGGER IF EXISTS `RoleDelete`;
+CREATE TRIGGER `RoleDelete` AFTER DELETE ON `wiser_roles` FOR EACH ROW BEGIN
+    INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+    VALUES ('DELETE_ROLE', 'wiser_roles', OLD.id, IFNULL(@_username, USER()), 'role_name', OLD.`role_name`, '');
+END;
+
+-- ----------------------------
 -- Triggers structure for table wiser_user_roles
 -- ----------------------------
 DROP TRIGGER IF EXISTS `UserRoleInsert`;

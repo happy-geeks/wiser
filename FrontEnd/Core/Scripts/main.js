@@ -136,7 +136,9 @@ import {
                             }
                         },
                         branchMergeSettings: {
-                            selectedBranch: null,
+                            selectedBranch: {
+                                id: 0
+                            },
                             startMode: "direct",
                             startOn: null,
                             deleteAfterSuccessfulMerge: false,
@@ -156,7 +158,9 @@ import {
                                     delete: false
                                 }
                             }
-                        }
+                        },
+                        generalMessagePromptTitle: "",
+                        generalMessagePromptText: ""
                     };
                 },
                 created() {
@@ -344,6 +348,12 @@ import {
                             document.body.classList.remove("menu-active");
                         }
                     },
+                    
+                    showGeneralMessagePrompt(text = "", title = "") {
+                        this.generalMessagePromptText = text;
+                        this.generalMessagePromptTitle = title;
+                        this.$refs.generalMessagePrompt.open();
+                    },
 
                     logout() {
                         this.$store.dispatch(CLOSE_ALL_MODULES);
@@ -498,7 +508,8 @@ import {
                         
                         if (!this.createBranchError) {
                             this.$refs.wiserCreateBranchPrompt.close();
-                            alert("De branch staat klaar om gemaakt te worden. U krijgt een bericht wanneer dit voltooid is.");
+                            this.showGeneralMessagePrompt("De branch staat klaar om gemaakt te worden. U krijgt een bericht wanneer dit voltooid is.");
+                            
                             return true;
                         }
                         
@@ -506,7 +517,7 @@ import {
                     },
 
                     async mergeBranch() {
-                        if (!this.branchMergeSettings.selectedBranch || !this.branchMergeSettings.selectedBranch.id) {
+                        if (this.isMainBranch && (!this.branchMergeSettings.selectedBranch || !this.branchMergeSettings.selectedBranch.id)) {
                             return false;
                         }
 
@@ -514,7 +525,7 @@ import {
 
                         if (!this.mergeBranchError) {
                             this.$refs.wiserMergeBranchPrompt.close();
-                            alert("De branch staat klaar om samengevoegd te worden. U krijgt een bericht wanneer dit voltooid is.");
+                            this.showGeneralMessagePrompt("De branch staat klaar om samengevoegd te worden. U krijgt een bericht wanneer dit voltooid is.");
                             return true;
                         }
 
@@ -522,7 +533,7 @@ import {
                     },
 
                     handleMergeConflicts() {
-                        alert("Conflicten verwerken");
+                        this.showGeneralMessagePrompt("Conflicten verwerken");
                     },
 
                     onOpenModuleClick(event, module) {
@@ -562,8 +573,13 @@ import {
                     
                     async onWiserMergeBranchPromptOpen(sender) {                        
                         await this.$store.dispatch(GET_BRANCHES);
-                        if (this.branches && this.branches.length === 1) {
+                        if (this.branches && this.branches.length > 0) {
                             this.branchMergeSettings.selectedBranch = this.branches[0];
+                            this.onSelectedBranchChange(this.branches[0].id);
+                        }
+                        else if (!this.isMainBranch) {
+                            // If this is not the main branch, you can only synchronise the changes of the current branch, so get the changes immediately.
+                            this.onSelectedBranchChange();
                         }
                     },
                     
@@ -577,7 +593,15 @@ import {
                     },
 
                     async onSelectedBranchChange(event) {
-                        await this.$store.dispatch(GET_BRANCH_CHANGES, event.target.value.id);
+                        let selectedBranchId = event;
+                        if (!selectedBranchId) {
+                            selectedBranchId = 0;
+                        } 
+                        else if (selectedBranchId.target) {
+                            selectedBranchId = event.target.value.id;
+                        }
+                        
+                        await this.$store.dispatch(GET_BRANCH_CHANGES, selectedBranchId);
                         for (let entity of this.branchChanges.entities) {
                             this.branchMergeSettings.entities[entity.entityType] = {
                                 everything: false,
