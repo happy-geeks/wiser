@@ -188,7 +188,7 @@
                                             <select v-model="createBranchSettings.entities.all.mode">
                                                 <option value="-1"></option>
                                                 <option value="0">Alles</option>
-                                                <option value="2">Random X items</option>
+                                                <option value="2">Willekeurig X items</option>
                                                 <option value="3">Laatste X items</option>
                                                 <option value="4">Alles wat toegevoegd is voor X</option>
                                                 <option value="5">Alles wat toegevoegd is na X</option>
@@ -217,7 +217,7 @@
                                             <select v-model="createBranchSettings.entities[entity.id].mode" v-if="createBranchSettings.entities.all.mode == -1 && createBranchSettings.entities[entity.id]">
                                                 <option value="0">Alles</option>
                                                 <option value="1">Niets</option>
-                                                <option value="2">Random X items</option>
+                                                <option value="2">Willekeurig X items</option>
                                                 <option value="3">Laatste X items</option>
                                                 <option value="4">Alles wat toegevoegd is voor X</option>
                                                 <option value="5">Alles wat toegevoegd is na X</option>
