@@ -125,10 +125,10 @@ export default class UsersService extends BaseService {
      * @returns {any} The user data as an object.
      */
     async getLoggedInUserData() {
-        const result = {};
+        let result = {};
 
         try {
-            let result = sessionStorage.getItem("userSettings");
+            result = sessionStorage.getItem("userSettings");
             if (result) {
                 const sessionData = JSON.parse(result);
                 if (sessionData.dateTime && new Date() - new Date(sessionData.dateTime) < 3600000) {
