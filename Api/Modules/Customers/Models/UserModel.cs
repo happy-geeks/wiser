@@ -61,6 +61,11 @@ namespace Api.Modules.Customers.Models
         public string LastLoginIpAddress { get; set; }
 
         /// <summary>
+        /// Gets or sets the Google Authenticator settings (2FA)
+        /// </summary>
+        public GoogleAuthenticationModel GoogleAuthentication { get; set; }
+
+        /// <summary>
         /// Gets or sets the 
         /// </summary>
         public CustomerModel Customer { get; set; }

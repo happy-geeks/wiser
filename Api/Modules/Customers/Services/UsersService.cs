@@ -18,6 +18,7 @@ using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Communication.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using Google.Authenticator;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -943,6 +944,18 @@ namespace Api.Modules.Customers.Services
             {
                 logger.LogError($"Error while updating last login information of user: {exception}");
             }
+        }
+
+        /// <summary>
+        /// Authenticates the two factor code with the unique key of an user
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        public bool AuthenticateTwofactor(string key, string code)
+        {
+            var tfa = new TwoFactorAuthenticator();
+            return tfa.ValidateTwoFactorPIN(key, code); 
         }
     }
 }

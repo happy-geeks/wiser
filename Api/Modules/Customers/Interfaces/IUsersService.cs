@@ -156,5 +156,13 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="refreshToken">The refresh token.</param>
         /// <returns>The serialized ticket for OWIN context.</returns>
         Task<string> UseRefreshTokenAsync(string subDomain, string refreshToken);
+
+        /// <summary>
+        /// Authenticates the two factor code with the unique key of an user
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        bool AuthenticateTwoFactor(string key, string code);
     }
 }
