@@ -174,7 +174,7 @@ namespace Api.Modules.Files.Services
             }
             else if (useCloudFlare)
             {
-                databaseConnection.AddParameter("content_url", cloudFlareService.UploadImage(fileName));
+                databaseConnection.AddParameter("content_url", cloudFlareService.UploadImage(fileBytes));
             }
             else
             {

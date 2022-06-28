@@ -43,11 +43,11 @@ namespace Api.Modules.CloudFlare.Services
         }
 
         /// <inheritdoc cref="ICloudFlareService" />
-        public async Task<string> UploadImage(string fileName)
+        public async Task<string> UploadImage(byte[] fileBytes)
         {
             var cloudFlareSettings = await GetCloudFlareSettings();
 
-            var restClient = new RestClient($"{ApiPath}{cloudFlareSettings.AccountId}/image/v1");
+            var restClient = new RestClient($"{ApiPath}{cloudFlareSettings.AccountId}/image/v2/direct_upload");
             var restRequest = new RestRequest("", Method.Post);
             restRequest.AddHeader("X-Auth-Key", cloudFlareSettings.AuthorizationKey);
             restRequest.AddHeader("X-Auth-Email", cloudFlareSettings.AuthorizationEmail);
@@ -69,7 +69,7 @@ namespace Api.Modules.CloudFlare.Services
         }
 
         /// <inheritdoc cref="ICloudFlareService" />
-        public Task<byte[]> GetImage(string url)
+        public Task<byte[]> GetImage(string imageId)
             //TODO: Baseren op Id, niet op url...
         {
             throw new System.NotImplementedException();

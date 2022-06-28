@@ -11,16 +11,16 @@ namespace Api.Modules.CloudFlare.Interfaces
         /// <summary>
         /// Uploads an image to CloudFlare
         /// </summary>
-        /// <param name="fileName">Filename of the original file to upload.</param>
+        /// <param name="fileBytes">Contents of the file to upload.</param>
         /// <returns>string with url from CloudFlare</returns>
-        Task<string> UploadImage(string fileName);
+        Task<string> UploadImage(byte[] fileBytes);
 
         /// <summary>
         /// Gets an image from CloudFlarw
         /// </summary>
-        /// <param name="url">url on CloudFlare to get</param>
+        /// <param name="imageId">Id of the image on CloudFlare to get</param>
         /// <returns></returns>
-        Task<byte[]> GetImage(string url);
+        Task<byte[]> GetImage(string imageId);
 
     }
 }
