@@ -540,13 +540,14 @@ namespace Api.Modules.Customers.Services
                 ZeroEncrypted = "0".EncryptWithAesWithSalt(encryptionKey, true),
                 Id = userId,
                 EmailAddress = await usersService.GetUserEmailAddressAsync(userId),
-                CurrentEnvironmentName = customer.ModelObject.Name,
-                CurrentEnvironmentIsProductionEnvironment = customer.ModelObject.Id == customer.ModelObject.CustomerId
+                CurrentBranchName = customer.ModelObject.Name,
+                CurrentBranchId = customer.ModelObject.Id,
+                CurrentBranchIsMainBranch = customer.ModelObject.Id == customer.ModelObject.CustomerId
             };
 
-            if (result.CurrentEnvironmentIsProductionEnvironment)
+            if (result.CurrentBranchIsMainBranch)
             {
-                result.ProductionEnvironmentName = result.CurrentEnvironmentName;
+                result.MainBranchName = result.CurrentBranchName;
             }
             else
             {
@@ -560,7 +561,7 @@ namespace Api.Modules.Customers.Services
                     };
                 }
 
-                result.ProductionEnvironmentName = productionCustomer.ModelObject.Name;
+                result.MainBranchName = productionCustomer.ModelObject.Name;
             }
 
             var wiserSettings = await usersService.GetWiserSettingsForUserAsync(encryptionKey);

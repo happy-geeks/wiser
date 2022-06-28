@@ -26,6 +26,8 @@
                 padding-right: 0;
     
                 .col {
+                    flex: 0 0 auto;
+                    
                     &.align-right {
                         display: flex;
                         justify-content: end;

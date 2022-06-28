@@ -125,6 +125,8 @@ import {
                         changePasswordPromptOldPasswordValue: null,
                         changePasswordPromptNewPasswordValue: null,
                         changePasswordPromptNewPasswordRepeatValue: null,
+                        generalMessagePromptTitle: "",
+                        generalMessagePromptText: "",
                         createBranchSettings: {
                             name: null,
                             startMode: "direct",
@@ -159,8 +161,19 @@ import {
                                 }
                             }
                         },
-                        generalMessagePromptTitle: "",
-                        generalMessagePromptText: ""
+                        openBranchTypes: [
+                            { id: "wiser", name:  "Wiser" },
+                            { id: "website", name: "Website" }
+                        ],
+                        openBranchSettings: {
+                            selectedBranch: {
+                                id: 0
+                            },
+                            websiteUrl: "",
+                            selectedBranchType: {
+                                id: ""
+                            }
+                        }
                     };
                 },
                 created() {
@@ -536,6 +549,47 @@ import {
                         this.showGeneralMessagePrompt("Conflicten verwerken");
                     },
 
+                    openBranch() {
+                        if (!this.openBranchSettings || !this.openBranchSettings.selectedBranchType || !this.openBranchSettings.selectedBranchType.id) {
+                            this.showGeneralMessagePrompt("Kies a.u.b. of u de branch in Wiser wilt openen of op uw website.");
+                            return false;
+                        }
+                        
+                        if (this.openBranchSettings.selectedBranchType.id === 'website' && !this.openBranchSettings.websiteUrl) {
+                            this.showGeneralMessagePrompt("Vul a.u.b. de URL van uw website in.");
+                            return false;
+                        }
+                        
+                        if (!this.openBranchSettings || !this.openBranchSettings.selectedBranch|| !this.openBranchSettings.selectedBranch.id) {
+                            this.showGeneralMessagePrompt("Kies a.u.b. welke branch u wilt openen.");
+                            return false;
+                        }
+                        
+                        let url;
+                        switch (this.openBranchSettings.selectedBranchType.id) {
+                            case "website":
+                                url = this.openBranchSettings.websiteUrl;
+                                if (!url.startsWith("http")) {
+                                    url = `https://${url}`
+                                }
+                                
+                                url = `${url.substring(0, url.indexOf("/", 8))}/branches/${encodeURIComponent(this.openBranchSettings.selectedBranch.database.databaseName)}`;
+                                
+                                break;
+                            case "wiser":
+                                url = `https://${this.openBranchSettings.selectedBranch.subDomain}.${this.appSettings.currentDomain}`;
+                                
+                                break;
+                            default:
+                                console.error("Invalid branch type selected:", this.openBranchSettings.selectedBranchType);
+                                this.showGeneralMessagePrompt("Kies a.u.b. of u de branch in Wiser wilt openen of op uw website.");
+                                return false;
+                        }
+                        
+                        window.open(url, "_blank");
+                        this.$refs.wiserBranchesPrompt.close();
+                    },
+
                     onOpenModuleClick(event, module) {
                         event.preventDefault();
                         this.openModule(module);
@@ -569,10 +623,22 @@ import {
                     
                     async onWiserBranchesPromptOpen() {
                         await this.$store.dispatch(IS_MAIN_BRANCH);
+                        await this.$store.dispatch(GET_BRANCHES);
+                        if (!this.isMainBranch) {
+                            this.openBranchSettings.selectedBranchType = {
+                                id: "website",
+                                name: "Website"
+                            };
+
+
+                            const extraUserData = await main.usersService.getLoggedInUserData();
+                            console.log("extraUserData", extraUserData);
+                            this.openBranchSettings.selectedBranch = this.branches.find(branch => branch.id === extraUserData.currentBranchId);
+                            console.log("this.openBranchSettings.selectedBranch", this.openBranchSettings.selectedBranch);
+                        }
                     },
                     
-                    async onWiserMergeBranchPromptOpen(sender) {                        
-                        await this.$store.dispatch(GET_BRANCHES);
+                    async onWiserMergeBranchPromptOpen(sender) {
                         if (this.branches && this.branches.length > 0) {
                             this.branchMergeSettings.selectedBranch = this.branches[0];
                             this.onSelectedBranchChange(this.branches[0].id);
