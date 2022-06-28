@@ -41,7 +41,7 @@ namespace Api.Modules.Files.Interfaces
         /// <param name="itemId">Optional: The ID of the item the file should be linked to.</param>
         /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
         /// <returns>A list of <see cref="FileModel"/> with file data.</returns>
-        Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0);
+        Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, bool useCloudFlare = false);
 
         /// <summary>
         /// Gets a file of an item.

@@ -13,6 +13,7 @@ using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Files.Interfaces;
 using Api.Modules.Files.Models;
+using Api.Modules.CloudFlare.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
@@ -34,16 +35,18 @@ namespace Api.Modules.Files.Services
         private readonly ILogger<FilesService> logger;
         private readonly IDatabaseConnection databaseConnection;
         private readonly IWiserItemsService wiserItemsService;
+        private readonly ICloudFlareService cloudFlareService;
 
         /// <summary>
         /// Creates a new instance of <see cref="FilesService"/>.
         /// </summary>
-        public FilesService(IWiserCustomersService wiserCustomersService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService)
+        public FilesService(IWiserCustomersService wiserCustomersService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService, ICloudFlareService cloudFlareService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.logger = logger;
             this.databaseConnection = databaseConnection;
             this.wiserItemsService = wiserItemsService;
+            this.cloudFlareService = cloudFlareService;
         }
 
         /// <inheritdoc />
@@ -117,7 +120,7 @@ namespace Api.Modules.Files.Services
                         throw new NotImplementedException("Tiny PNG not supported yet.");
                     }
 
-                    var fileResult = await SaveAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId);
+                    var fileResult = await SaveAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId, useCloudFlare);
                     if (fileResult.StatusCode != HttpStatusCode.OK)
                     {
                         return new ServiceResult<List<FileModel>>
@@ -150,7 +153,7 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0)
+        public async Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, bool useCloudFlare = false)
         {
             var fileExtension = Path.GetExtension(fileName);
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -165,9 +168,13 @@ namespace Api.Modules.Files.Services
             }
 
             databaseConnection.AddParameter("content_type", contentType);
-            if (ftpSettings == null || !ftpSettings.Any())
+            if ((ftpSettings == null || !ftpSettings.Any()) && !useCloudFlare)
             {
                 databaseConnection.AddParameter("content", fileBytes);
+            }
+            else if (useCloudFlare)
+            {
+                databaseConnection.AddParameter("content_url", cloudFlareService.UploadImage(fileName));
             }
             else
             {
