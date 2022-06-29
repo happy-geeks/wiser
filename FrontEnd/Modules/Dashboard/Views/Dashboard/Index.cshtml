@@ -1,0 +1,189 @@
+﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+
+<!DOCTYPE html>
+<html>
+<head runat="server">
+    <meta charset="utf-8" />
+    <title>Wiser 3 - Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.material.min.css" rel="stylesheet" />
+
+    <script>
+        window.wiserVersion = "@Model.WiserVersion";
+    </script>
+    <style>
+        #fullForm {
+            display:  none;
+        }
+    </style>
+</head>
+<body class="@Model.BodyCssClass"
+      data-module-id="706"
+      data-wiser-api-root="@Model.ApiRoot"
+      data-wiser-api-v21-root="@Model.ApiRoot"
+      data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
+      data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
+      data-api-client-id="@Model.Settings.ApiClientId"
+      data-api-client-secret="@Model.Settings.ApiClientSecret"
+      data-sub-domain="@Model.SubDomain"
+      data-track-js-token="@Model.Settings.TrackJsToken">
+    <form id="fullForm">
+        <div id="wiser">
+            <div id="window" class="dashboard" style="margin: 0 auto; padding: 0;">
+                <header>
+                    <div class="formview full">
+                        <div class="item">
+                            <div class="flex-container">
+                                <label>Filter periode</label>
+                                <select class="combo-select" placeholder="Maak uw keuze..." data-role="dropdownlist">
+                                    <option value="Geen filter" selected="selected">Geen filter</option>
+                                    <option value="Huidige maand">Huidige maand</option>
+                                    <option value="Vorige maand">Vorige maand</option>
+                                    <option value="Dit jaar">Dit jaar</option>
+                                    <option value="Vorig jaar">Vorig jaar</option>
+                                    <option value="Selecteer periode">Selecteer periode</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <div class="flex-container">
+                                <div class="daterangepicker" title="daterangepicker"></div>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <div class="flex-container">
+                                <label>Branche</label>
+                                <select class="combo-select" placeholder="Maak uw keuze..." data-role="dropdownlist">
+                                    <option value="Actieve branche" selected="selected">Actieve branche</option>
+                                    <option value="Alle branches">Alle branches</option>
+                                    <option value="Branche 1">Branche 1</option>
+                                    <option value="Branche 2">Branche 2</option>
+                                    <option value="Branche 3">Branche 3</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="item actions">
+                            <button type="button"><ins class="icon-reset" title="Reset"></ins></button>
+
+                            <ul id="mainEditMenu" class="editMenu">
+                                <li>
+                                    <ins class="icon-quickmenu"></ins>
+                                    <ul id="editSub" class="editSub">
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="" class="hidden" checked />
+                                                <span>Naam</span>
+                                                <ins class="icon-check"></ins>
+                                            </label>
+                                        </li>
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="" class="hidden"  />
+                                                <span>Naam</span>
+                                                <ins class="icon-check"></ins>
+                                            </label>
+                                        </li>
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="" class="hidden"  />
+                                                <span>Naam</span>
+                                                <ins class="icon-check"></ins>
+                                            </label>
+                                        </li>
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="" class="hidden"  />
+                                                <span>Naam</span>
+                                                <ins class="icon-check"></ins>
+                                            </label>
+                                        </li>
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="" class="hidden"  />
+                                                <span>Naam</span>
+                                                <ins class="icon-check"></ins>
+                                            </label>
+                                        </li>
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="" class="hidden"  />
+                                                <span>Naam</span>
+                                                <ins class="icon-check"></ins>
+                                            </label>
+                                        </li>
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="" class="hidden"  />
+                                                <span>Naam</span>
+                                                <ins class="icon-check"></ins>
+                                            </label>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </header>
+                
+                <main>
+                    <div id="tiles"></div>
+
+                    <!-- container text templates -->
+                    <script id="update-log" type="text/x-kendo-template">
+                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
+                        <h3>Update log</h3>
+                        <div>Content</div>
+                    </script>
+                    <script id="numbers" type="text/x-kendo-template">
+                        <h3>Numbers</h3>
+                        <div>Content</div>
+                    </script>
+                    <script id="dataselector-rate" type="text/x-kendo-template">
+                        <h3>Uitkomst dataselector</h3>
+                        <div>Content</div>
+                    </script>
+
+                    <!-- container chart templates -->
+                    <script id="data-chart-template" type="text/x-kendo-template">
+                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
+                        <div id="data-chart" style="height:100%; width:100%"></div>
+                    </script>
+                    <script id="users-chart-template" type="text/x-kendo-template">
+                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
+                        <div id="users-chart" style="height:100%; width:100%"></div>
+                    </script>
+                    <script id="subscriptions-chart-template" type="text/x-kendo-template">
+                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
+                        <div id="subscriptions-chart" style="height:100%; width:100%"></div>
+                    </script>
+                    <script id="status-chart-template" type="text/x-kendo-template">
+                        <div id="status-chart" style="height:100%; width:100%"></div>
+                    </script>
+
+                    <!-- container grid templates -->
+                    <script id="services-grid-template" type="text/x-kendo-template">
+                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
+                        <div id="services-grid" style="height:100%;"></div>
+                    </script>
+                </main>
+            </div>
+        </div>
+    </form>
+
+    <div id="mainLoader" class="fullscreen-loader loading">
+        <div class="loader-icon">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+
+    <script src="/scripts/Utils.min.js"></script>
+    <script src="/scripts/Base.min.js"></script>
+    <script src="/scripts/Dashboard.min.js"></script>
+</body>
+</html>

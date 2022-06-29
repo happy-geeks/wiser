@@ -30,6 +30,7 @@ module.exports = {
         Templates: "../../Modules/Templates/Scripts/Templates.js",
         DynamicContent: "../../Modules/Templates/Scripts/DynamicContent.js",
         Admin: "../../Modules/Admin/Scripts/Admin.js",
+        Dashboard: "../../Modules/Dashboard/Scripts/Dashboard.js",
         Base: "../../Modules/Base/Scripts/Base.js"
     },
     output: {
