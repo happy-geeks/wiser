@@ -4,10 +4,6 @@ import { TrackJS } from "trackjs";
 import { createApp, defineAsyncComponent } from "vue";
 import * as axios from "axios";
 
-/*import SwiperCore, { Virtual } from "swiper";
-import { Swiper, SwiperSlide } from "swiper/vue";
-SwiperCore.use([Virtual]);*/
-
 import UsersService from "./shared/users.service";
 import ModulesService from "./shared/modules.service";
 import CustomersService from "./shared/customers.service";
@@ -80,7 +76,7 @@ import {
             }
 
             if (this.appSettings.loadPartnerStyle) {
-                import(`../scss/partner/${this.appSettings.subDomain}.scss`);
+                import(`../css/partner/${this.appSettings.subDomain}.css`);
             }
 
             this.api = axios.create({
