@@ -94,8 +94,8 @@ namespace FrontEnd.Core.Services
             viewModel.ApiAuthenticationUrl = $"{frontEndSettings.ApiBaseUrl}connect/token";
             viewModel.ApiRoot = $"{frontEndSettings.ApiBaseUrl}api/v3/";
 
-            var partnerStylesDirectory = new DirectoryInfo(Path.Combine(webHostEnvironment.ContentRootPath, @"Core/Scss/partner"));
-            viewModel.LoadPartnerStyle = partnerStylesDirectory.GetFiles("*.scss").Any(f => Path.GetFileNameWithoutExtension(f.Name).Equals(viewModel.SubDomain, StringComparison.OrdinalIgnoreCase));
+            var partnerStylesDirectory = new DirectoryInfo(Path.Combine(webHostEnvironment.ContentRootPath, @"Core/Css/partner"));
+            viewModel.LoadPartnerStyle = partnerStylesDirectory.GetFiles("*.css").Any(f => Path.GetFileNameWithoutExtension(f.Name).Equals(viewModel.SubDomain, StringComparison.OrdinalIgnoreCase));
 
             return viewModel;
         }
