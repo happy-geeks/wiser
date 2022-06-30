@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
+using Api.Modules.EntityProperties.Models;
 using Api.Modules.Imports.Models;
 
 namespace Api.Modules.Imports.Interfaces
@@ -52,5 +53,14 @@ namespace Api.Modules.Imports.Interfaces
         /// <param name="deleteLinksConfirms">A collection of <see cref="DeleteLinksConfirmModel"/>s containing the information about the links to delete.</param>
         /// <returns>Returns true on success.</returns>
         Task<ServiceResult<bool>> DeleteLinksAsync(ClaimsIdentity identity, List<DeleteLinksConfirmModel> deleteLinksConfirms);
+
+        /// <summary>
+        /// Retrieves all properties of an entity that can be used in the import module and returns them as <see cref="EntityPropertyModel"/> objects.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="entityName">The name of the property whose properties will be retrieved.</param>
+        /// <param name="linkType">Optional link type, in case the properties should be retrieved by link type instead of entity name.</param>
+        /// <returns>A collection of <see cref="EntityPropertyModel"/> objects.</returns>
+        Task<ServiceResult<IEnumerable<EntityPropertyModel>>> GetEntityProperties(ClaimsIdentity identity, string entityName = null, int linkType = 0);
     }
 }

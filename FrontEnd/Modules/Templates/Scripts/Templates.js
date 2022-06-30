@@ -189,7 +189,7 @@ const moduleSettings = {
                 height: "650",
                 title: "Templates",
                 visible: true,
-                actions: ["refresh"],
+                actions: [],
                 draggable: false
             }).data("kendoWindow").maximize().open();
 

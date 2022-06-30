@@ -329,8 +329,7 @@ namespace Api.Modules.DataSelectors.Services
                 return new ServiceResult<JArray>
                 {
                     StatusCode = statusCode,
-                    ErrorMessage = error,
-                    ReasonPhrase = error
+                    ErrorMessage = error
                 };
             }
 
@@ -369,8 +368,7 @@ namespace Api.Modules.DataSelectors.Services
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "No data selector, path AND entity type found! Please make sure you supply either a valid JSON object or an ID of a valid selector, or a path + entity type.",
-                    ReasonPhrase = "No data selector, path AND entity type found! Please make sure you supply either a valid JSON object or an ID of a valid selector, or a path + entity type."
+                    ErrorMessage = "No data selector, path AND entity type found! Please make sure you supply either a valid JSON object or an ID of a valid selector, or a path + entity type."
                 };
             }
 
@@ -386,8 +384,7 @@ namespace Api.Modules.DataSelectors.Services
                 return new ServiceResult<string>
                 {
                     StatusCode = statusCode,
-                    ErrorMessage = error,
-                    ReasonPhrase = error
+                    ErrorMessage = error
                 };
             }
 
@@ -415,8 +412,7 @@ namespace Api.Modules.DataSelectors.Services
                 return new ServiceResult<byte[]>
                 {
                     StatusCode = statusCode,
-                    ErrorMessage = error,
-                    ReasonPhrase = error
+                    ErrorMessage = error
                 };
             }
 
@@ -432,8 +428,7 @@ namespace Api.Modules.DataSelectors.Services
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "No data received",
-                    ReasonPhrase = "No data received"
+                    ErrorMessage = "No data received"
                 };
             }
 
@@ -461,8 +456,7 @@ namespace Api.Modules.DataSelectors.Services
                 return new ServiceResult<string>
                 {
                     StatusCode = statusCode,
-                    ErrorMessage = error,
-                    ReasonPhrase = error
+                    ErrorMessage = error
                 };
             }
 
@@ -489,8 +483,7 @@ namespace Api.Modules.DataSelectors.Services
                 return new ServiceResult<FileContentResult>
                 {
                     StatusCode = statusCode,
-                    ErrorMessage = error,
-                    ReasonPhrase = error
+                    ErrorMessage = error
                 };
             }
 

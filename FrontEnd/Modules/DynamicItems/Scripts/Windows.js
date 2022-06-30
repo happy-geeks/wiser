@@ -1177,8 +1177,9 @@ export class Windows {
      * @param {number} linkId Optional: If the item was opened via a specific link, enter the ID of that link here.
      * @param {string} windowTitle Optional: The title of the window. If empty, it will use the item title.
      * @param {any} kendoComponent Optional: If this item is being created via a field with a kendo component (such as a grid or dropdown), add the instance of it here, so we can refresh the data source after.
+     * @param {int} linkType Optional: If the item was opened via a specific link, enter the type number of that link here.
      */
-    async loadItemInWindow(isNewItem, itemId, encryptedItemId, entityType, title, showTitleField, senderGrid, fieldOptions, linkId, windowTitle = null, kendoComponent = null) {
+    async loadItemInWindow(isNewItem, itemId, encryptedItemId, entityType, title, showTitleField, senderGrid, fieldOptions, linkId, windowTitle = null, kendoComponent = null, linkType = 0) {
         let currentItemWindow;
         try {
             // Clone the window template and initialize a new window from that clone, then open it.
@@ -1372,7 +1373,7 @@ export class Windows {
                     // Get the information that we need about the opened item.
                     const promises = [
                         this.base.getEntityType(entityType),
-                        this.base.getItemHtml(encryptedItemId, entityType, windowId, linkId)
+                        this.base.getItemHtml(encryptedItemId, entityType, windowId, linkId, linkType)
                     ];
 
                     if (!isNewItem) {
