@@ -80,7 +80,7 @@ import {
             }
 
             if (this.appSettings.loadPartnerStyle) {
-                import(`../scss/partner/${this.appSettings.subDomain}.scss`);
+                import(`../css/partner/${this.appSettings.subDomain}.css`);
             }
 
             this.api = axios.create({
