@@ -4,10 +4,6 @@ import { TrackJS } from "trackjs";
 import { createApp, defineAsyncComponent } from "vue";
 import * as axios from "axios";
 
-/*import SwiperCore, { Virtual } from "swiper";
-import { Swiper, SwiperSlide } from "swiper/vue";
-SwiperCore.use([Virtual]);*/
-
 import UsersService from "./shared/users.service";
 import ModulesService from "./shared/modules.service";
 import CustomersService from "./shared/customers.service";
