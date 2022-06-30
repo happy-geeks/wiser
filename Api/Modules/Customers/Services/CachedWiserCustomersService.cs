@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Models;
@@ -40,26 +41,37 @@ namespace Api.Modules.Customers.Services
         }
         
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity)
+        public async Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity, bool includeDatabaseInformation = false)
         {
             var subDomain = IdentityHelpers.GetSubDomain(identity);
-            return await cache.GetOrAdd($"customer_{subDomain}",
+            return await cache.GetOrAdd($"customer_{subDomain}_{includeDatabaseInformation}",
                 async cacheEntry =>
                 {
                     cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
-                    return await wiserCustomersService.GetSingleAsync(identity);
+                    return await wiserCustomersService.GetSingleAsync(identity, includeDatabaseInformation);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<string>> GetEncryptionKey(ClaimsIdentity identity)
+        public async Task<ServiceResult<CustomerModel>> GetSingleAsync(int id, bool includeDatabaseInformation = false)
+        {
+            return await cache.GetOrAdd($"customer_{id}_{includeDatabaseInformation}",
+                async cacheEntry =>
+                {
+                    cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
+                    return await wiserCustomersService.GetSingleAsync(id, includeDatabaseInformation);
+                }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> GetEncryptionKey(ClaimsIdentity identity, bool forceLiveKey = false)
         {
             var subDomain = IdentityHelpers.GetSubDomain(identity);
             return await cache.GetOrAdd($"encryption_key_{subDomain}",
                 async cacheEntry =>
                 {
                     cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
-                    return await wiserCustomersService.GetEncryptionKey(identity);
+                    return await wiserCustomersService.GetEncryptionKey(identity, forceLiveKey);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
 
@@ -127,6 +139,18 @@ namespace Api.Modules.Customers.Services
                     cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
                     return wiserCustomersService.IsMainDatabase(subDomain);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
+        }
+
+        /// <inheritdoc />
+        public async Task CreateOrUpdateCustomerAsync(CustomerModel customer)
+        {
+            await wiserCustomersService.CreateOrUpdateCustomerAsync(customer);
+        }
+
+        /// <inheritdoc />
+        public string GenerateConnectionStringFromCustomer(CustomerModel customer, bool passwordIsEncrypted = true)
+        {
+            return wiserCustomersService.GenerateConnectionStringFromCustomer(customer, passwordIsEncrypted);
         }
 
         #endregion

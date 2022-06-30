@@ -49,10 +49,6 @@ const moduleSettings = {
             this.grids = null;
             this.fields = null;
 
-            this.newItemId = null;
-            this.selectedItem = null;
-            this.selectedItemTitle = null;
-
             // Kendo components.
             this.notification = null;
             this.mainSplitter = null;
@@ -64,6 +60,10 @@ const moduleSettings = {
 
             // Other.
             this.mainLoader = null;
+            this.newItemId = null;
+            this.selectedItem = null;
+            this.selectedItemTitle = null;
+            this.allEntityTypes = [];
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -88,6 +88,7 @@ const moduleSettings = {
             };
             Object.assign(this.settings, settings);
 
+            // Enumerations.
             this.permissionsEnum = Object.freeze({
                 read: 1 << 0,
                 create: 1 << 1,
@@ -167,11 +168,17 @@ const moduleSettings = {
                 });
             }
 
+            // Get user data from local storage.
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `Admin (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
+            if (!this.settings.wiserApiRoot.endsWith("/")) {
+                this.settings.wiserApiRoot += "/";
+            }
+
+            // Get user data from API.
             const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
@@ -181,13 +188,18 @@ const moduleSettings = {
             this.settings.templatesRootId = userData.templatesRootId;
             this.settings.mainDomain = userData.mainDomain;
 
-            if (!this.settings.wiserApiRoot.endsWith("/")) {
-                this.settings.wiserApiRoot += "/";
-            }
-
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.htmlEditorCssUrl = `${this.settings.wiserApiRoot}templates/css-for-html-editors?encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&isTest=${this.base.settings.isTestEnvironment}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&username=${encodeURIComponent(this.base.settings.username)}&userType=${encodeURIComponent(this.base.settings.userType)}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`
+            
+            // Get list of all entity types, so we can show friendly names wherever we need to and don't have to get them from database via different places.
+            try {
+                this.allEntityTypes = (await Wiser2.api({ url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false` })) || [];
+            } catch (exception) {
+                console.error("Error occurred while trying to load all entity types", exception);
+                this.allEntityTypes = [];
+            }
 
+            // Get extra module settings.
             const extraModuleSettings = await Modules.getModuleSettings(this.settings.wiserApiRoot, this.settings.moduleId);
             Object.assign(this.settings, extraModuleSettings.options);
             let permissions = Object.assign({}, extraModuleSettings);
@@ -1326,7 +1338,11 @@ const moduleSettings = {
         async onDeleteItemClick(event, encryptedItemId, entityType) {
             event.preventDefault();
 
-            await Wiser2.showConfirmDialog(`Weet u zeker dat u het item '${this.base.selectedItem.title}' wilt verwijderen?`);
+            if (this.base.selectedItem && this.base.selectedItem.title) {
+                await Wiser2.showConfirmDialog(`Weet u zeker dat u het item '${this.base.selectedItem.title}' wilt verwijderen?`);
+            } else {
+                await Wiser2.showConfirmDialog(`Weet u zeker dat u dit item wilt verwijderen?`);
+            }
 
             try {
                 await this.deleteItem(encryptedItemId, entityType);
@@ -1707,11 +1723,16 @@ const moduleSettings = {
                 }
 
                 const environmentLabel = this.base.parseEnvironments(itemMetaData.publishedEnvironment);
+                
+                let friendlyEntityName = this.getEntityTypeFriendlyName(itemMetaData.entityType);
+                if (friendlyEntityName !== itemMetaData.entityType) {
+                    friendlyEntityName += ` (${itemMetaData.entityType})`;
+                }
 
                 const metaDataListElement = metaDataContainer.find(".meta-data").removeClass("hidden");
                 metaDataListElement.find(".id").html(itemMetaData.id);
                 metaDataListElement.find(".title").html(itemMetaData.title || "(leeg)");
-                metaDataListElement.find(".entity-type").html(itemMetaData.entityType);
+                metaDataListElement.find(".entity-type").html(friendlyEntityName);
                 metaDataListElement.find(".published-environment").html(environmentLabel.join(", "));
                 metaDataListElement.find(".read-only").html(itemMetaData.readonly);
                 metaDataListElement.find(".added-by").html(itemMetaData.addedBy);
@@ -1761,17 +1782,6 @@ const moduleSettings = {
         }
 
         /**
-         * Links two items together.
-         * @param {string} sourceId The ID of the item that you want to link.
-         * @param {string} destinationId The ID of the item that you want to link to.
-         * @param {number} linkTypeNumber The link type number.
-         * @returns {any} A promise with the result of the AJAX call.
-         */
-        async addItemLink(sourceId, destinationId, linkTypeNumber) {
-            return Wiser2.api({ url: `${this.settings.serviceRoot}/ADD_LINK?source=${encodeURIComponent(sourceId)}&destination=${encodeURIComponent(destinationId)}&linkTypeNumber=${encodeURIComponent(linkTypeNumber)}` });
-        }
-
-        /**
          * Update the link of an item, to link/move that item to another item.
          * @param {number} linkId The ID of the current link that you want to update.
          * @param {number} newDestinationId The ID of the item where you want to move the item to.
@@ -1789,7 +1799,16 @@ const moduleSettings = {
          * @returns {Promise} A promise with the result of the AJAX call.
          */
         async removeItemLink(sourceId, destinationId, linkTypeNumber) {
-            return Wiser2.api({ url: `${this.settings.serviceRoot}/REMOVE_LINK?source=${encodeURIComponent(sourceId)}&destination=${encodeURIComponent(destinationId)}&linkTypeNumber=${encodeURIComponent(linkTypeNumber)}` });
+            return Wiser2.api({
+                url: `${this.base.settings.wiserApiRoot}items/remove-links?moduleId=${this.base.settings.moduleId}`,
+                method: "DELETE",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    encryptedSourceIds: [sourceId],
+                    encryptedDestinationIds: [destinationId],
+                    linkType: linkTypeNumber
+                })
+            });
         }
 
         /**
@@ -1980,9 +1999,10 @@ const moduleSettings = {
          * @param {string} entityType The entity type of the item to get the HTML for.
          * @param {string} propertyIdSuffix Optional: The suffix for property IDs, this is required when opening items in a popup, so that the fields always have unique ID, even if they already exist in the main tab sheet.
          * @param {number} linkId Optional: The ID of the link between this item and another item. If you're opening this item via a specific link, you should enter the ID of that link, because it's possible to have fields/properties on a link instead of an item.
+         * @param {number} linkType Optional: The type number of the link between this item and another item. If you're opening this item via a specific link, you should enter the ID of that link, because it's possible to have fields/properties on a link instead of an item.
          * @returns {Promise} A promise with the results.
          */
-        async getItemHtml(itemId, entityType, propertyIdSuffix, linkId) {
+        async getItemHtml(itemId, entityType, propertyIdSuffix, linkId, linkType) {
             let url = `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}?entityType=${encodeURIComponent(entityType)}&encryptedModuleId=${encodeURIComponent(this.base.settings.encryptedModuleId)}`;
             if (propertyIdSuffix) {
                 url += `&propertyIdSuffix=${encodeURIComponent(propertyIdSuffix)}`;
@@ -1990,16 +2010,21 @@ const moduleSettings = {
             if (linkId) {
                 url += `&itemLinkId=${encodeURIComponent(linkId)}`;
             }
+            if (linkType) {
+                url += `&linkType=${encodeURIComponent(linkType)}`;
+            }
             return Wiser2.api({ url: url });
         }
 
         /**
          * Get all properties / fields from a single item.
          * @param {any} itemId The ID of the item to get the details of.
+         * @param {string} entityType The entity type of the item.
          * @returns {Promise} A promise, which will return an array with 1 item. That item will contain it's basic properties and a property called "property_" which contains an object with all fields and their values.
          */
-        async getItemDetails(itemId) {
-            return Wiser2.api({ url: `${this.settings.serviceRoot}/GET_ITEM_DETAILS?itemId=${encodeURIComponent(itemId)}` });
+        async getItemDetails(itemId, entityType) {
+            const entityTypeUrlPart = entityType ? `?entityType=${encodeURIComponent(entityType)}` : "";
+            return Wiser2.api({ url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/details/${entityTypeUrlPart}` });
         }
 
         /**
@@ -2047,8 +2072,7 @@ const moduleSettings = {
          * @return {any} An array with all the available entity types.
          */
         async getAvailableEntityTypes(parentId) {
-            const names = await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}entity-types/${encodeURIComponent(this.settings.moduleId)}?parentId=${encodeURIComponent(parentId)}` });
-            return names.map(name => { return { name: name }; });
+            return await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}entity-types/${encodeURIComponent(this.settings.moduleId)}?parentId=${encodeURIComponent(parentId)}` });
         }
 
         /**
@@ -2078,6 +2102,36 @@ const moduleSettings = {
         async getApiAction(actionType, entityType) {
             const result = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_API_ACTION?entityType=${encodeURIComponent(entityType)}&actionType=${encodeURIComponent(actionType)}` });
             return !result || !result.length ? 0 : result[0].apiConnectionId || 0;
+        }
+
+        /**
+         * Gets the friendly name of the specified entity type. If there is no friendly name, the input will be returned.
+         * @param {string} entityType The name of the entity type to get the friendly name of.
+         * @param {number} moduleId Optional: If an entity exists in multiple modules, you can enter the ID of the module here. Default value is the ID of the currently opened module.
+         * @returns {string} The friendly name to show to the user.
+         */
+        getEntityTypeFriendlyName(entityType, moduleId = 0) {
+            if (!entityType) {
+                return entityType;
+            }
+
+            moduleId = moduleId || this.settings.moduleId;
+            
+            let entityTypes = this.allEntityTypes.filter(e => e.id === entityType);
+            if (entityTypes.length === 0) {
+                return entityType;
+            }
+            
+            if (entityTypes.length === 1 || !moduleId) {
+                return entityTypes[0].displayName || entityType;
+            }
+
+            const entityTypeForModule = entityTypes.find(e => e.moduleId === moduleId);
+            if (!entityTypeForModule) {
+                return entityTypes[0].displayName || entityType;
+            }
+            
+            return entityTypeForModule.displayName || entityType;
         }
     }
 

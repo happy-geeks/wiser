@@ -25,17 +25,9 @@ namespace FrontEnd.Core.Controllers
 
         public IActionResult Index()
         {
-            var viewModel = new BaseViewModel
-            {
-                Settings = frontEndSettings,
-                WiserVersion = Assembly.GetEntryAssembly()?.GetName().Version,
-                SubDomain = baseService.GetSubDomain(),
-                IsTestEnvironment = webHostEnvironment.EnvironmentName == "test" || webHostEnvironment.EnvironmentName == "dev",
-                Wiser1BaseUrl = baseService.GetWiser1Url()
-            };
-            
-            var partnerStylesDirectory = new DirectoryInfo(Path.Combine(webHostEnvironment.ContentRootPath, @"Core/Scss/partner"));
-            viewModel.LoadPartnerStyle = partnerStylesDirectory.GetFiles("*.scss").Any(f => Path.GetFileNameWithoutExtension(f.Name).Equals(viewModel.SubDomain, StringComparison.OrdinalIgnoreCase));
+            var viewModel = baseService.CreateBaseViewModel();
+            var partnerStylesDirectory = new DirectoryInfo(Path.Combine(webHostEnvironment.ContentRootPath, @"Core/Css/partner"));
+            viewModel.LoadPartnerStyle = partnerStylesDirectory.GetFiles("*.css").Any(f => Path.GetFileNameWithoutExtension(f.Name).Equals(viewModel.SubDomain, StringComparison.OrdinalIgnoreCase));
 
             return View(viewModel);
         }

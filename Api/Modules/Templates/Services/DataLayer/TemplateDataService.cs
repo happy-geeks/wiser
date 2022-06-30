@@ -12,6 +12,7 @@ using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
+using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Enums;
@@ -122,7 +123,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.return_not_found_when_pre_load_query_has_no_data,
                                                                 template.routine_type,
                                                                 template.routine_parameters,
-                                                                template.routine_return_type
+                                                                template.routine_return_type,
+                                                                template.is_default_header,
+                                                                template.is_default_footer,
+                                                                template.default_header_footer_regex
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
                                                             WHERE template.template_id = ?templateId
                                                             {publishedVersionWhere}
@@ -186,7 +190,10 @@ namespace Api.Modules.Templates.Services.DataLayer
                 ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataTable.Rows[0]["return_not_found_when_pre_load_query_has_no_data"]),
                 RoutineType = (RoutineTypes)dataTable.Rows[0].Field<int>("routine_type"),
                 RoutineParameters = dataTable.Rows[0].Field<string>("routine_parameters"),
-                RoutineReturnType = dataTable.Rows[0].Field<string>("routine_return_type")
+                RoutineReturnType = dataTable.Rows[0].Field<string>("routine_return_type"),
+                IsDefaultHeader = Convert.ToBoolean(dataTable.Rows[0]["is_default_header"]),
+                IsDefaultFooter = Convert.ToBoolean(dataTable.Rows[0]["is_default_footer"]),
+                DefaultHeaderFooterRegex = dataTable.Rows[0].Field<string>("default_header_footer_regex")
             };
 
             return templateData;
@@ -435,6 +442,9 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("routineType", (int)templateSettings.RoutineType);
             clientDatabaseConnection.AddParameter("routineParameters", templateSettings.RoutineParameters);
             clientDatabaseConnection.AddParameter("routineReturnType", templateSettings.RoutineReturnType);
+            clientDatabaseConnection.AddParameter("isDefaultHeader", templateSettings.IsDefaultHeader);
+            clientDatabaseConnection.AddParameter("isDefaultFooter", templateSettings.IsDefaultFooter);
+            clientDatabaseConnection.AddParameter("defaultHeaderFooterRegex", templateSettings.DefaultHeaderFooterRegex);
 
             return await clientDatabaseConnection.ExecuteAsync($@"
                 SET @VersionNumber = (SELECT MAX(version)+1 FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId GROUP BY template_id);
@@ -483,7 +493,9 @@ namespace Api.Modules.Templates.Services.DataLayer
                     return_not_found_when_pre_load_query_has_no_data,
                     routine_type,
                     routine_parameters,
-                    routine_return_type
+                    routine_return_type,
+                    is_default_header,
+                    is_default_footer
                 ) 
                 VALUES (
                     ?name,
@@ -530,7 +542,9 @@ namespace Api.Modules.Templates.Services.DataLayer
                     ?returnNotFoundWhenPreLoadQueryHasNoData,
                     ?routineType,
                     ?routineParameters,
-                    ?routineReturnType
+                    ?routineReturnType,
+                    ?isDefaultHeader,
+                    ?isDefaultFooter
                 )");
         }
 
@@ -570,7 +584,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<List<SearchResultModel>> SearchAsync(string searchValue)
+        public async Task<List<SearchResultModel>> SearchAsync(string searchValue, string encryptionKey)
         {
             var searchForId = false;
             if (searchValue.StartsWith("#"))
@@ -708,9 +722,66 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             var results = allItems.Where(i => i.ParentId == 0).ToList();
             AddChildren(results);
 
+            // If an ID was searched return the results.
+            if (searchForId)
+            {
+                return results;
+            }
+
+            // Load all XML templates to check the search value in encrypted templates.
+            query = $@"SELECT template.template_id, template.template_data
+                        FROM {WiserTableNames.WiserTemplate} AS template
+                        LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+                        WHERE template.template_type = {(int)TemplateTypes.Xml}
+                        AND template.removed = 0
+                        AND otherVersion.id IS NULL";
+
+            dataTable = await clientDatabaseConnection.GetAsync(query);
+            
+            // Local function to add unique results to the all items collection.
+            void AddEncryptedTemplates(List<SearchResultModel> currentLevel)
+            {
+                foreach (var result in currentLevel)
+                {
+                    if (!allItems.Any(i => i.TemplateId == result.TemplateId))
+                    {
+                        allItems.Add(result);
+                    }
+                    
+                    AddEncryptedTemplates(result.ChildNodes.Cast<SearchResultModel>().ToList());
+                }
+            }
+
+            var encryptedTemplatesAdded = false;
+
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                var templateId = dataRow.Field<int>("template_id");
+                var templateData = dataRow.Field<string>("template_data");
+                
+                // Non encrypted templates are already checked by thr query and can be skipped.
+                if (allItems.Any(i => i.TemplateId == templateId) || String.IsNullOrWhiteSpace(templateData) || templateData.StartsWith("<") || templateData.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true).IndexOf(searchValue, StringComparison.OrdinalIgnoreCase) == -1)
+                {
+                    continue;
+                }
+
+                var searchResults = await SearchAsync($"#{templateId}", encryptionKey);
+                AddEncryptedTemplates(searchResults);
+                encryptedTemplatesAdded = true;
+            }
+            
+            
+            if (!encryptedTemplatesAdded)
+            {
+                return results;
+            }
+            
+            // Reset the result with the added values from the encrypted templates.
+            results = allItems.Where(i => i.ParentId == 0).ToList();
+            AddChildren(results);
+
             return results;
         }
-
 
         /// <inheritdoc/>
         public async Task<int> CreateAsync(string name, int parent, TemplateTypes type, string username, string editorValue)
@@ -1043,7 +1114,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                     LoadAlways = Convert.ToBoolean(dataRow["load_always"]),
                     DisableMinifier = Convert.ToBoolean(dataRow["disable_minifier"]),
                     UrlRegex = dataRow.Field<string>("url_regex"),
-                    ExternalFiles = dataRow.Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
+                    ExternalFiles = dataRow.Field<string>("external_files")?.Split(new [] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
                     GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(dataRow["grouping_create_object_instead_of_array"]),
                     GroupingPrefix = dataRow.Field<string>("grouping_prefix"),
                     GroupingKey = dataRow.Field<string>("grouping_key"),
@@ -1125,6 +1196,15 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             await clientDatabaseConnection.ExecuteAsync(query);
 
             return true;
+        }
+        
+        /// <inheritdoc />
+        public void DecryptEditorValueIfEncrypted(string encryptionKey, TemplateSettingsModel rawTemplateModel)
+        {
+            if (rawTemplateModel.Type == TemplateTypes.Xml && !String.IsNullOrWhiteSpace(rawTemplateModel.EditorValue) && !rawTemplateModel.EditorValue.StartsWith("<"))
+            {
+                rawTemplateModel.EditorValue = rawTemplateModel.EditorValue.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
+            }
         }
     }
 }

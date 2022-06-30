@@ -96,8 +96,7 @@ namespace Api.Modules.ContentBuilder.Services
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "No item ID given",
-                    ReasonPhrase = "No item ID given"
+                    ErrorMessage = "No item ID given"
                 };
             }
 

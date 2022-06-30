@@ -1,4 +1,4 @@
-﻿import { AUTH_REQUEST, AUTH_LOGOUT, FORGOT_PASSWORD, CHANGE_PASSWORD } from "../store/mutation-types";
+﻿import { AUTH_REQUEST, AUTH_LOGOUT, FORGOT_PASSWORD, CHANGE_PASSWORD_LOGIN } from "../store/mutation-types";
 import { ComboBox } from "@progress/kendo-vue-dropdowns";
 
 export default {
@@ -82,7 +82,7 @@ export default {
                 return;
             } else if (this.requirePasswordChange) {
                 if (event.submitter.id === "submitPasswordChange") {
-                    await this.$store.dispatch(CHANGE_PASSWORD, { user: Object.assign({},
+                    await this.$store.dispatch(CHANGE_PASSWORD_LOGIN, { user: Object.assign({},
                         {
                             oldPassword: this.loginForm.password,
                             newPassword: this.changePasswordForm.newPassword,
@@ -104,6 +104,9 @@ export default {
             if (this.loginStatus === "error") {
                 this.loginForm.selectedUser = "";
                 this.loginForm.password = "";
+            }
+            else {
+                this.loginForm.selectedUser = this.users[0];
             }
         },
 

@@ -93,6 +93,7 @@ namespace Api.Modules.Grids.Services
             var versionJoinClause = "";
             var versionWhereClause = "";
             var tablePrefix = "";
+            var linkTablePrefix = "";
             if (!String.IsNullOrWhiteSpace(entityType) && !String.Equals(entityType, "all", StringComparison.OrdinalIgnoreCase) && !String.Equals(entityType, "undefined", StringComparison.OrdinalIgnoreCase))
             {
                 var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync(entityType);
@@ -112,6 +113,7 @@ namespace Api.Modules.Grids.Services
             {
                 var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkTypeNumber, currentItemIsSourceId ? null : entityType, currentItemIsSourceId ? entityType : null);
                 useItemParentId = linkTypeSettings.UseItemParentId;
+                linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
             }
             
             // Find out if there are custom queries for the grid.
@@ -275,7 +277,7 @@ namespace Api.Modules.Grids.Services
                 }
                 case EntityGridModes.TaskHistory:
                 {
-                    results.Columns.Add(new GridColumn {Field = "due_date", Title = "Due-date", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
+                    results.Columns.Add(new GridColumn {Field = "due_date", Title = "Due-date", Format = "{0:dd MMMM yyyy}"});
                     results.Columns.Add(new GridColumn {Field = "sender", Title = "Verzonden door"});
                     results.Columns.Add(new GridColumn {Field = "receiver", Title = "Verzonden aan"});
                     results.Columns.Add(new GridColumn {Field = "content", Title = "Tekst", Width = "600px"});
@@ -342,7 +344,6 @@ namespace Api.Modules.Grids.Services
                         return new ServiceResult<GridSettingsAndDataModel>
                         {
                             StatusCode = customQueryResult.StatusCode,
-                            ReasonPhrase = customQueryResult.ReasonPhrase,
                             ErrorMessage = customQueryResult.ErrorMessage
                         };
                     }
@@ -408,7 +409,6 @@ namespace Api.Modules.Grids.Services
                         return new ServiceResult<GridSettingsAndDataModel>
                         {
                             ErrorMessage = "Search grid needs to have at least one value to search for.",
-                            ReasonPhrase = "Search grid needs to have at least one value to search for.",
                             StatusCode = HttpStatusCode.BadRequest
                         };
                     }
@@ -744,8 +744,7 @@ namespace Api.Modules.Grids.Services
                     return new ServiceResult<GridSettingsAndDataModel>
                     {
                         StatusCode = HttpStatusCode.BadRequest,
-                        ErrorMessage = "FieldGroupName is required for mode 6 (ItemDetailsGroup)",
-                        ReasonPhrase = "FieldGroupName is required for mode 6 (ItemDetailsGroup)"
+                        ErrorMessage = "FieldGroupName is required for mode 6 (ItemDetailsGroup)"
                     };
                 case EntityGridModes.ItemDetailsGroup:
                 {
@@ -810,7 +809,7 @@ namespace Api.Modules.Grids.Services
                         results.Columns.Add(new GridColumn {Selectable = true, Width = "55px"});
                         results.Columns.Add(new GridColumn {Field = "id", Title = "ID", Width = "80px", Filterable = filterable});
                         results.Columns.Add(new GridColumn {Field = "link_id", Title = "Koppel-ID", Width = "55px", Filterable = filterable});
-                        results.Columns.Add(new GridColumn {Field = "entity_type", Title = "Type", Width = "100px", Filterable = filterable});
+                        results.Columns.Add(new GridColumn {Field = "entity_type", Title = "Type", Width = "100px", Filterable = filterable, Template = "#: window.dynamicItems.getEntityTypeFriendlyName(entity_type) #"});
                         results.Columns.Add(new GridColumn {Field = "published_environment", Title = "Gepubliceerde omgeving", Width = "50px", Template = "<ins title='#: published_environment #' class='icon-#: published_environment #'></ins>"});
                         results.Columns.Add(new GridColumn {Field = "title", Title = "Naam", Filterable = filterable});
                     }
@@ -1215,7 +1214,7 @@ namespace Api.Modules.Grids.Services
                             else
                             {
                                 countQuery = $@"SELECT COUNT(DISTINCT i.id)
-                                                FROM {WiserTableNames.WiserItemLink} il
+                                                FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} il
                                                 JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = il.{(currentItemIsSourceId ? "destination_item_id" : "item_id")} {(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")} {(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}
                                                 {{filters}}
 
@@ -1252,7 +1251,7 @@ namespace Api.Modules.Grids.Services
                                                     i.changed_on,
                                                     i.changed_by,
                                                     il.ordering AS `{WiserItemsService.LinkOrderingFieldName}`
-                                                FROM {WiserTableNames.WiserItemLink} il
+                                                FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} il
                                                 JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = il.{(currentItemIsSourceId ? "destination_item_id" : "item_id")} {(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")} {(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}
 
                                                 {{filters}}
@@ -1297,7 +1296,7 @@ namespace Api.Modules.Grids.Services
                                                     i.changed_on,
                                                     i.changed_by,
                                                     il.ordering AS `{WiserItemsService.LinkOrderingFieldName}`
-                                                FROM {WiserTableNames.WiserItemLink} il
+                                                FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} il
                                                 JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = il.{(currentItemIsSourceId ? "destination_item_id" : "item_id")} {(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")} {(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}
 
                                                 {{filters}}
@@ -1310,7 +1309,7 @@ namespace Api.Modules.Grids.Services
 	                                            LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
 
                                                 JOIN {WiserTableNames.WiserEntityProperty} p ON p.link_type = il.type AND p.visible_in_overview = 1
-                                                JOIN {WiserTableNames.WiserItemLinkDetail} id ON id.itemlink_id = il.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input'))))
+                                                JOIN {linkTablePrefix}{WiserTableNames.WiserItemLinkDetail} id ON id.itemlink_id = il.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input'))))
 
                                                 WHERE il.{(currentItemIsSourceId ? "item_id" : "destination_item_id")} = ?itemId
                                                 {versionWhereClause}
@@ -1618,8 +1617,7 @@ namespace Api.Modules.Grids.Services
                 return new ServiceResult<GridSettingsAndDataModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"No grid data available for module {moduleId}",
-                    ReasonPhrase = $"No grid data available for module {moduleId}"
+                    ErrorMessage = $"No grid data available for module {moduleId}"
                 };
             }
 
@@ -2058,7 +2056,6 @@ namespace Api.Modules.Grids.Services
                     return new ServiceResult<GridSettingsAndDataModel>
                     {
                         StatusCode = customQueryResult.StatusCode,
-                        ReasonPhrase = customQueryResult.ReasonPhrase,
                         ErrorMessage = customQueryResult.ErrorMessage
                     };
                 }
@@ -2314,8 +2311,7 @@ namespace Api.Modules.Grids.Services
                 return new ServiceResult<Dictionary<string, object>>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Dit item bestaat al en kan niet nogmaals toegevoegd worden.",
-                    ReasonPhrase = "Dit item bestaat al en kan niet nogmaals toegevoegd worden."
+                    ErrorMessage = "Dit item bestaat al en kan niet nogmaals toegevoegd worden."
                 };
             }
         }
@@ -2352,8 +2348,7 @@ namespace Api.Modules.Grids.Services
                 return new ServiceResult<bool>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Dit item bestaat al en kan niet nogmaals toegevoegd worden.",
-                    ReasonPhrase = "Dit item bestaat al en kan niet nogmaals toegevoegd worden."
+                    ErrorMessage = "Dit item bestaat al en kan niet nogmaals toegevoegd worden."
                 };
             }
         }

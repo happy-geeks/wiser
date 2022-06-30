@@ -71,8 +71,7 @@ namespace Api.Modules.Modules.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>> GetAsync(
-            ClaimsIdentity identity)
+        public async Task<ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>> GetAsync(ClaimsIdentity identity)
         {
             var modulesForAdmins = new List<int>
             {
@@ -93,8 +92,40 @@ namespace Api.Modules.Modules.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
             // Make sure that Wiser tables are up-to-date.
-            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-                {WiserTableNames.WiserItem, WiserTableNames.WiserEntityProperty, WiserTableNames.WiserModule});
+            const string TriggersName = "wiser_triggers";
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { 
+                WiserTableNames.WiserItem,
+                WiserTableNames.WiserItemDetail,
+                WiserTableNames.WiserEntity,
+                WiserTableNames.WiserEntityProperty,
+                WiserTableNames.WiserModule ,
+                WiserTableNames.WiserItemFile,
+                WiserTableNames.WiserItemLink,
+                WiserTableNames.WiserItemLinkDetail,
+                WiserTableNames.WiserDataSelector,
+                WiserTableNames.WiserTemplate,
+                WiserTableNames.WiserDynamicContent,
+                WiserTableNames.WiserTemplateDynamicContent,
+                WiserTableNames.WiserTemplatePublishLog,
+                WiserTableNames.WiserPreviewProfiles,
+                WiserTableNames.WiserDynamicContentPublishLog,
+                WiserTableNames.WiserLink
+            });
+            var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
+            
+            // Make sure that all triggers for Wiser tables are up-to-date.
+            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2022, 6, 24))
+            {
+                var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
+                await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
+                
+                // Update wiser_table_changes.
+                clientDatabaseConnection.AddParameter("tableName", TriggersName);
+                clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+                await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
+                                                            VALUES (?tableName, ?lastUpdate) 
+                                                            ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)");
+            }
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
@@ -144,10 +175,8 @@ namespace Api.Modules.Modules.Services
                 return new ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>(results);
             }
 
-            var onlyOneInstanceAllowedGlobal =
-                String.Equals(
-                    await objectsService.FindSystemObjectByDomainNameAsync("wiser_modules_OnlyOneInstanceAllowed",
-                        "false"), "true", StringComparison.OrdinalIgnoreCase);
+            var onlyOneInstanceAllowedGlobal = String.Equals(await objectsService.FindSystemObjectByDomainNameAsync("wiser_modules_OnlyOneInstanceAllowed",                                                                                                                     "false"), "true", StringComparison.OrdinalIgnoreCase);
+            
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var moduleId = dataRow.Field<int>("module_id");
@@ -159,9 +188,17 @@ namespace Api.Modules.Modules.Services
                 var options = dataRow.Field<string>("options");
 
                 var canRead = (permissionsBitMask & AccessRights.Read) == AccessRights.Read;
+                if (!canRead)
+                {
+                    // Don't add the module if the user has no read permissions for it.
+                    continue;
+                }
+
                 var canCreate = (permissionsBitMask & AccessRights.Create) == AccessRights.Create;
                 var canUpdate = (permissionsBitMask & AccessRights.Update) == AccessRights.Update;
                 var canDelete = (permissionsBitMask & AccessRights.Delete) == AccessRights.Delete;
+
+                var hasCustomQuery = !String.IsNullOrWhiteSpace(dataRow.Field<string>("custom_query"));
 
                 if (String.IsNullOrWhiteSpace(groupName))
                 {
@@ -178,8 +215,7 @@ namespace Api.Modules.Modules.Services
                     results.Add(groupName, new List<ModuleAccessRightsModel>());
                 }
 
-                var rightsModel = results[groupName].FirstOrDefault(r => r.ModuleId == moduleId) ??
-                                  new ModuleAccessRightsModel {ModuleId = moduleId};
+                var rightsModel = results[groupName].FirstOrDefault(r => r.ModuleId == moduleId) ?? new ModuleAccessRightsModel {ModuleId = moduleId};
 
                 rightsModel.CanRead = rightsModel.CanRead || canRead;
                 rightsModel.CanCreate = rightsModel.CanCreate || canCreate;
@@ -192,6 +228,7 @@ namespace Api.Modules.Modules.Services
                 rightsModel.Pinned = pinnedModules.Contains(moduleId);
                 rightsModel.AutoLoad = autoLoadModules.Contains(moduleId);
                 rightsModel.PinnedGroup = PinnedModulesGroupName;
+                rightsModel.HasCustomQuery = hasCustomQuery;
 
                 if (String.IsNullOrWhiteSpace(rightsModel.Icon))
                 {
@@ -211,10 +248,7 @@ namespace Api.Modules.Modules.Services
                     }
 
                     var onlyOneInstanceAllowed = optionsObject.Value<bool?>("onlyOneInstanceAllowed");
-                    rightsModel.OnlyOneInstanceAllowed =
-                        (onlyOneInstanceAllowedGlobal &&
-                         (!onlyOneInstanceAllowed.HasValue || onlyOneInstanceAllowed.Value)) ||
-                        (onlyOneInstanceAllowed.HasValue && onlyOneInstanceAllowed.Value);
+                    rightsModel.OnlyOneInstanceAllowed = (onlyOneInstanceAllowedGlobal && (!onlyOneInstanceAllowed.HasValue || onlyOneInstanceAllowed.Value)) || (onlyOneInstanceAllowed.HasValue && onlyOneInstanceAllowed.Value);
 
                     if (rightsModel.Type.Equals("Iframe", StringComparison.OrdinalIgnoreCase))
                     {
@@ -229,14 +263,10 @@ namespace Api.Modules.Modules.Services
                             var moduleQuery = dataRow.Field<string>("custom_query");
                             if (!String.IsNullOrWhiteSpace(moduleQuery))
                             {
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId}",
-                                    IdentityHelpers.GetWiserUserId(identity).ToString());
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{username}",
-                                    IdentityHelpers.GetUserName(identity) ?? "");
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userEmailAddress}",
-                                    IdentityHelpers.GetEmailAddress(identity) ?? "");
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userType}",
-                                    IdentityHelpers.GetRoles(identity) ?? "");
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId}", IdentityHelpers.GetWiserUserId(identity).ToString());
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity) ?? "");
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
 
                                 var moduleDataTable = await clientDatabaseConnection.GetAsync(moduleQuery);
                                 if (moduleDataTable.Rows.Count > 0)
@@ -260,8 +290,7 @@ namespace Api.Modules.Modules.Services
             // Make sure that we add certain modules for admins, even if those modules don't exist in wiser_module for this customer.
             if (isAdminAccount)
             {
-                foreach (var moduleId in modulesForAdmins.Where(moduleId =>
-                             !results.Any(g => g.Value.Any(m => m.ModuleId == moduleId))))
+                foreach (var moduleId in modulesForAdmins.Where(moduleId => !results.Any(g => g.Value.Any(m => m.ModuleId == moduleId))))
                 {
                     string groupName;
                     var isPinned = pinnedModules.Contains(moduleId);
@@ -282,7 +311,7 @@ namespace Api.Modules.Modules.Services
                                 CanDelete = true,
                                 CanRead = true,
                                 CanWrite = true,
-                                Icon = "controls",
+                                Icon = "line-sliders",
                                 ModuleId = moduleId,
                                 Name = "Stamgegevens",
                                 Type = "DynamicItems",
@@ -348,7 +377,7 @@ namespace Api.Modules.Modules.Services
                                 CanDelete = true,
                                 CanRead = true,
                                 CanWrite = true,
-                                Icon = "database",
+                                Icon = "line-settings",
                                 ModuleId = moduleId,
                                 Name = "Wiser beheer",
                                 Type = "Admin",
@@ -370,7 +399,7 @@ namespace Api.Modules.Modules.Services
                                 CanDelete = true,
                                 CanRead = true,
                                 CanWrite = true,
-                                Icon = "database",
+                                Icon = "im-ex",
                                 ModuleId = moduleId,
                                 Name = "Import/export",
                                 Type = "ImportExport",
@@ -435,8 +464,7 @@ namespace Api.Modules.Modules.Services
                 results[key] = results[key].OrderBy(m => m.Name).ToList();
             }
 
-            results = results.OrderBy(g => g.Key == PinnedModulesGroupName ? "-" : g.Key)
-                .ToDictionary(g => g.Key, g => g.Value);
+            results = results.OrderBy(g => g.Key == PinnedModulesGroupName ? "-" : g.Key).ToDictionary(g => g.Key, g => g.Value);
 
             return new ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>(results);
         }
@@ -462,7 +490,6 @@ namespace Api.Modules.Modules.Services
                         JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
                         JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
                         JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
-                        LEFT JOIN {WiserTableNames.WiserOrdering} AS ordering ON ordering.user_id = user_role.user_id AND ordering.module_id = permission.module_id
                         WHERE user_role.user_id = ?userId
                         GROUP BY permission.module_id
                         ORDER BY permission.module_id, permission.permissions;";
@@ -579,7 +606,6 @@ namespace Api.Modules.Modules.Services
                 return new ServiceResult<byte[]>
                 {
                     ErrorMessage = gridResult.ErrorMessage,
-                    ReasonPhrase = gridResult.ReasonPhrase,
                     StatusCode = gridResult.StatusCode
                 };
             }
@@ -592,7 +618,12 @@ namespace Api.Modules.Modules.Services
                 var newObject = new JObject();
                 foreach (var column in columns)
                 {
-                    newObject.Add(new JProperty(column.Title, item[column.Field]));
+                    if (String.IsNullOrWhiteSpace(column.Field))
+                    {
+                        continue;
+                    }
+
+                    newObject.Add(new JProperty(column.Title, item[column.Field.ToLowerInvariant()]));
                 }
 
                 newData.Add(newObject);
@@ -622,7 +653,7 @@ namespace Api.Modules.Modules.Services
                             SET `id` = ?new_id,
                                 `custom_query` = ?custom_query,
                                 `count_query` = ?count_query,
-                                `options` = ?options,
+                                `options` = IF(?options != '' AND ?options IS NOT NULL AND JSON_VALID(?options), ?options, ''),
                                 `name` = ?name,
                                 `icon` = ?icon,
                                 `color` = ?color,

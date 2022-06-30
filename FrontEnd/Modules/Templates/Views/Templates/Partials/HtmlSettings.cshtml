@@ -51,7 +51,27 @@
     </div>
 </div>
 <div class="item item-right" style="width: 40%;">
-    <input id="loginRequired" name="loginRequired" type="checkbox" @(Model.LoginRequired ? "checked": "") class="hidden">
+    <input id="isDefaultHeader" name="isDefaultHeader" type="checkbox" @(Model.IsDefaultHeader ? "checked" : "") class="hidden" />
+    <label class="checkbox" for="isDefaultHeader">
+        <span>Deze template is de default header</span>
+    </label>
+
+    <input id="isDefaultFooter" name="isDefaultFooter" type="checkbox" @(Model.IsDefaultFooter ? "checked" : "") class="hidden" />
+    <label class="checkbox" for="isDefaultFooter">
+        <span>Deze template is de default footer</span>
+    </label>
+    
+    <div class="header-footer-regex-panel">
+        <div class="item" data-label-style="float" data-label-width="0">
+            <h4><label for="defaultHeaderFooterRegex">Header/footer regex</label></h4>
+            <span class="k-widget k-input k-state-default">
+                <input type="text" id="defaultHeaderFooterRegex" class="textField k-input" name="defaultHeaderFooterRegex" value="@Model.DefaultHeaderFooterRegex" autocomplete="off" />
+            </span>
+            <div class="form-hint"><span>Indien hier een geldige regex is ingevuld, wordt deze header of footer alleen gebruikt voor URL's die voldoen aan deze regex.</span></div>
+        </div>
+    </div>
+
+    <input id="loginRequired" name="loginRequired" type="checkbox" @(Model.LoginRequired ? "checked" : "") class="hidden">
     <label class="checkbox" for="loginRequired">
         <span>Gebruiker moet ingelogd zijn om deze template te zien</span>
     </label>

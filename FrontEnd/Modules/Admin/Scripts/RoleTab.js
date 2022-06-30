@@ -438,6 +438,7 @@
         }).data("kendoTabStrip");
 
         this.roleList = $("#roleList").kendoListView({
+            contentElement: "ul",
             template: "<li class='sortable' data-item='${id}' >${roleName}</li>",
             dataSource: {
                 transport: {

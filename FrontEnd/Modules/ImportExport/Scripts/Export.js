@@ -282,7 +282,7 @@ const exportModuleSettings = {
                             });
                         }
 
-                        flatModulesList = flatModulesList.concat(modules[key].filter(m => m.name && m.type === "DynamicItems"));
+                        flatModulesList = flatModulesList.concat(modules[key].filter(m => m.name && m.type === "DynamicItems" && m.hasCustomQuery));
                     }
 
                     $(context).find("#ModuleList").kendoDropDownList({

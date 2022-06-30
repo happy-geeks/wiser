@@ -35,7 +35,7 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="parentEntityType">Optional: The entity type of the parent of the item to duplicate. This is needed when the parent item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
         /// <returns>A WiserItemDuplicationResultModel containing the result of the duplication.</returns>
         Task<ServiceResult<WiserItemDuplicationResultModel>> DuplicateItemAsync(string encryptedId, string encryptedParentId, ClaimsIdentity identity, string entityType = null, string parentEntityType = null);
-        
+
         /// <summary>
         /// Copy an item one or more other environments, so that you can have multiple different versions of an item for different environments.
         /// </summary>
@@ -44,7 +44,7 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns>The copied item.</returns>
         Task<ServiceResult<WiserItemModel>> CopyToEnvironmentAsync(string encryptedId, Environments newEnvironments, ClaimsIdentity identity);
-        
+
         /// <summary>
         /// Create a new item.
         /// </summary>
@@ -54,7 +54,7 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="linkType">Optional: The link type of the link to the parent.</param>
         /// <returns>A CreateItemResultModel with information about the newly created item.</returns>
         Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, string encryptedParentId = null, int linkType = 1);
-        
+
         /// <summary>
         /// Updates an item.
         /// </summary>
@@ -108,16 +108,27 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="itemLinkId">Optional: If the item is linked to something else and you need to know that in the query, enter the ID of that link from wiser_itemlink here.</param>
         /// <returns>The results of the query.</returns>
         Task<ServiceResult<ActionButtonResultModel>> ExecuteCustomQueryAsync(string encryptedId, int propertyId, Dictionary<string, object> extraParameters, string encryptedQueryId, ClaimsIdentity identity, ulong itemLinkId = 0);
-        
+
         /// <summary>
         /// Get the HTML and javascript for single Wiser item, to show the item in Wiser.
         /// </summary>
         /// <param name="encryptedId">The encrypted ID of the item to get.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="propertyIdSuffix">Optional: The suffix of every field on the item. This is used to give each field a unique ID, when multiple items are opened at the same time. Default value is <see langword="null"/>.</param>
         /// <param name="itemLinkId">Optional: The id of the item link from wiser_itemlink. This should be used when opening an item via a sub-entities-grid, to show link fields. Default value is 0.</param>
-        /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        /// <returns>A <see cref="ItemHtmlAndScriptModel"/> with the HTML and javascript needed to load this item in Wiser.</returns>
-        Task<ServiceResult<ItemHtmlAndScriptModel>> GetItemHtmlAsync(string encryptedId, ClaimsIdentity identity, string propertyIdSuffix = null, ulong itemLinkId = 0, string entityType = null);
+        /// <param name="entityType">Optional: The entity type of the item. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <param name="linkType">Optional: The type number of the link, if this item also contains fields on a link.</param>
+        /// <returns>A <see cref="ItemHtmlAndScriptModel"/> with the HTML and javascript needed to load this item in Wiser. This is needed when the link is saved in a different table than wiser_itemlink. We can only look up the name of that table if we know the link type beforehand.</returns>
+        Task<ServiceResult<ItemHtmlAndScriptModel>> GetItemHtmlAsync(string encryptedId, ClaimsIdentity identity, string propertyIdSuffix = null, ulong itemLinkId = 0, string entityType = null, int linkType = 0);
+
+        /// <summary>
+        /// Gets a single item by its encrypted item ID.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item to get.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <returns></returns>
+        Task<ServiceResult<WiserItemModel>> GetItemDetailsAsync(string encryptedId, ClaimsIdentity identity, string entityType = null);
 
         /// <summary>
         /// Get the meta data of an item. This is data such as the title, entity type, last change date etc.
@@ -138,7 +149,7 @@ namespace Api.Modules.Items.Interfaces
         /// <typeparam name="T">The return type of the method you call this from.</typeparam>
         /// <returns>The query, any errors and the options (if <see cref="alsoGetOptions"/> is set to <see langword="true"/>).</returns>
         Task<(string Query, ServiceResult<T> ErrorResult, string RawOptions)> GetPropertyQueryAsync<T>(int propertyId, string queryColumnName, bool alsoGetOptions, ulong? itemId = null);
-        
+
         /// <summary>
         /// Encrypt an ID of an item.
         /// </summary>

@@ -125,10 +125,10 @@ export default class UsersService extends BaseService {
      * @returns {any} The user data as an object.
      */
     async getLoggedInUserData() {
-        const result = {};
+        let result = {};
 
         try {
-            let result = sessionStorage.getItem("userSettings");
+            result = sessionStorage.getItem("userSettings");
             if (result) {
                 const sessionData = JSON.parse(result);
                 if (sessionData.dateTime && new Date() - new Date(sessionData.dateTime) < 3600000) {
@@ -186,9 +186,13 @@ export default class UsersService extends BaseService {
         const result = {};
 
         try {
-            result.response = await this.base.api.put(`/api/v3/users/password`, { oldPassword: changePasswordModel.oldPassword, newPassword: changePasswordModel.newPassword, newPasswordRepeat: changePasswordModel.newPasswordRepeat });
+            result.response = await this.base.api.put(`/api/v3/users/password`, { 
+                oldPassword: changePasswordModel.oldPassword, 
+                newPassword: changePasswordModel.newPassword, 
+                newPasswordRepeat: changePasswordModel.newPasswordRepeat 
+            });
         } catch (error) {
-            if (error.response.status !== 400 || error.response.data.error === "server_error") {
+            if ((error.response.status !== 400 && error.response.status !== 401) || error.response.data.error === "server_error") {
                 result.error = "Er is een onbekende fout opgetreden tijdens het wijzigen van uw wachtwoord. Probeer het a.u.b. nogmaals of neem contact op met ons.";
             } else {
                 result.error = "U heeft ongeldige gegevens ingevuld. Probeer het a.u.b. opnieuw.";

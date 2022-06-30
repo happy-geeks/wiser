@@ -86,9 +86,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId, Environments? environment = null)
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
         {
-            return await templatesService.GetTemplateSettingsAsync(templateId, environment);
+            return await templatesService.GetTemplateSettingsAsync(identity, templateId, environment);
         }
 
         /// <inheritdoc />
@@ -128,15 +128,15 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(string searchValue)
+        public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(ClaimsIdentity identity, string searchValue)
         {
-            return await templatesService.SearchAsync(searchValue);
+            return await templatesService.SearchAsync(identity, searchValue);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(int templateId)
+        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId)
         {
-            return await templatesService.GetTemplateHistoryAsync(templateId);
+            return await templatesService.GetTemplateHistoryAsync(identity, templateId);
         }
 
         /// <inheritdoc />
@@ -158,9 +158,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom, Environments? environment = null)
+        public Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom, Environments? environment = null)
         {
-            return await templatesService.GetEntireTreeViewStructureAsync(parentId, startFrom, environment);
+            return templatesService.GetEntireTreeViewStructureAsync(identity, parentId, startFrom, environment);
         }
 
         /// <inheritdoc />
@@ -179,6 +179,18 @@ namespace Api.Modules.Templates.Services
         public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel)
         {
             return await templatesService.GeneratePreviewAsync(identity, requestModel);
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> CheckDefaultHeaderConflict(int templateId, string regexString)
+        {
+            return await templatesService.CheckDefaultHeaderConflict(templateId, regexString);
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString)
+        {
+            return await templatesService.CheckDefaultFooterConflict(templateId, regexString);
         }
     }
 }

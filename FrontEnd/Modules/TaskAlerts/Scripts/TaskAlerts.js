@@ -183,8 +183,13 @@ const moduleSettings = {
         }
 
         async registerPusherAndEventListeners() {
+            if (!this.settings.pusherAppKey) {
+                console.log("No pusher app key set. Task alerts will not receive new messages automatically.");
+                return;
+            }
+
             // Generate new pusher component
-            const pusher = new Pusher("81c3d15c9d95132050cc", {
+            const pusher = new Pusher(this.settings.pusherAppKey, {
                 cluster: "eu",
                 forceTLS: true
             });

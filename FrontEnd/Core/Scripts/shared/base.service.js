@@ -3,7 +3,7 @@
 export default class BaseService {
     /**
      * Initializes a new instance of the BaseService class.
-     * @param {DynamicItems} base An instance of the base class (Main).
+     * @param {Main} base An instance of the base class (Main).
      */
     constructor(base) {
         this.base = base;

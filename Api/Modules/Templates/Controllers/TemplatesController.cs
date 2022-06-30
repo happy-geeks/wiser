@@ -116,7 +116,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(TemplateHistoryOverviewModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetHistoryAsync(int templateId)
         {
-            return (await templatesService.GetTemplateHistoryAsync(templateId)).GetHttpResponseMessage();
+            return (await templatesService.GetTemplateHistoryAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -155,7 +155,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(TemplateSettingsModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSettingsAsync(int templateId)
         {
-            return (await templatesService.GetTemplateSettingsAsync(templateId)).GetHttpResponseMessage();
+            return (await templatesService.GetTemplateSettingsAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -283,7 +283,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(List<SearchResultModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> SearchAsync(string searchValue)
         {
-            return (await templatesService.SearchAsync(searchValue)).GetHttpResponseMessage();
+            return (await templatesService.SearchAsync((ClaimsIdentity)User.Identity, searchValue)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -367,7 +367,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(List<TemplateTreeViewModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetEntireTreeViewStructureAsync(string startFrom = "", Environments? environment = null)
         {
-            return (await templatesService.GetEntireTreeViewStructureAsync(0, startFrom, environment)).GetHttpResponseMessage();
+            return (await templatesService.GetEntireTreeViewStructureAsync((ClaimsIdentity)User.Identity, 0, startFrom, environment)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -381,6 +381,34 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> GeneratePreviewAsync(GenerateTemplatePreviewRequestModel requestModel)
         {
             return (await templatesService.GeneratePreviewAsync((ClaimsIdentity)User.Identity, requestModel)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Checks if there's already a template marked as a default header with the given regex.
+        /// </summary>
+        /// <param name="templateId">ID of the current template.</param>
+        /// <param name="regexString">The regex string of the template.</param>
+        /// <returns>A string with the name of the template that this template conflicts with, or an empty string if there's no conflict.</returns>
+        [HttpGet]
+        [Route("{templateId:int}/check-default-header-conflict")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CheckDefaultHeaderConflict(int templateId, string regexString)
+        {
+            return (await templatesService.CheckDefaultHeaderConflict(templateId, regexString)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Checks if there's already a template marked as a default footer with the given regex.
+        /// </summary>
+        /// <param name="templateId">ID of the current template.</param>
+        /// <param name="regexString">The regex string of the template.</param>
+        /// <returns>A string with the name of the template that this template conflicts with, or an empty string if there's no conflict.</returns>
+        [HttpGet]
+        [Route("{templateId:int}/check-default-footer-conflict")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CheckDefaultFooterConflict(int templateId, string regexString)
+        {
+            return (await templatesService.CheckDefaultFooterConflict(templateId, regexString)).GetHttpResponseMessage();
         }
     }
 }

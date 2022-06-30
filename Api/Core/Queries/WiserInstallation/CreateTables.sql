@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS `wiser_entity`  (
   `save_history` tinyint(1) NOT NULL DEFAULT 1,
   `enable_multiple_environments` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Whether or not to enable multiple environments for entities of this type. This means that the test can have a different version of an item than the live for example.',
   `dedicated_table_prefix` varchar(25) NOT NULL DEFAULT '',
+  `delete_action` enum('archive','permanent','hide','disallow') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'archive',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `name_module_id`(`name`, `module_id`) USING BTREE,
   INDEX `name`(`name`(100), `show_in_tree_view`) USING BTREE,
@@ -97,6 +98,9 @@ CREATE TABLE IF NOT EXISTS `wiser_entityproperty`  (
   `extended_explanation` tinyint NOT NULL DEFAULT 0,
   `label_style` enum('normal','inline', 'float') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `label_width` enum('0','10','20','30','40','50') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `enable_aggregation` tinyint NOT NULL DEFAULT 0,
+  `aggregate_options` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `access_key` varchar(1) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_unique`(`entity_name`, `property_name`, `language_code`, `link_type`, `display_name`) USING BTREE,
   INDEX `idx_module_entity`(`module_id`, `entity_name`) USING BTREE,
@@ -122,10 +126,10 @@ CREATE TABLE IF NOT EXISTS `wiser_field_templates`  (
 -- Table structure for wiser_history
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_history`  (
-  `id` bigint NOT NULL AUTO_INCREMENT,
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
   `action` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'added or changed',
   `tablename` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `item_id` int NOT NULL DEFAULT 0,
+  `item_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   `changed_on` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
   `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `field` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
@@ -230,10 +234,9 @@ CREATE TABLE IF NOT EXISTS `wiser_itemdetail_archive`  (
 -- ----------------------------
 -- Table structure for wiser_itemfile
 -- ----------------------------
--- NOTE: When changing columns, make sure to also change the triggers for this table!
 CREATE TABLE IF NOT EXISTS `wiser_itemfile`  (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `item_id` bigint NOT NULL DEFAULT 0 COMMENT 'let op: dit is het item_id van de content',
+  `item_id` bigint UNSIGNED NOT NULL DEFAULT 0 COMMENT 'let op: dit is het item_id van de content',
   `content_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `content` longblob NULL,
   `content_url` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
@@ -245,8 +248,9 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile`  (
   `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `property_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'De naam van het veld waar deze afbeelding bijhoort',
-  `itemlink_id` bigint NOT NULL DEFAULT 0,
+  `itemlink_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   `protected` tinyint NOT NULL DEFAULT 0 COMMENT 'Stel in op 1 om alleen toe te staan dat het bestand wordt opgehaald via een versleutelde id',
+  `ordering` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `item_id`(`item_id`, `content_type`) USING BTREE,
   INDEX `idx_itemlinkid`(`itemlink_id`) USING BTREE
@@ -270,9 +274,10 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile_archive`  (
   `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `property_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'De naam van het veld waar deze afbeelding bijhoort',
   `itemlink_id` bigint NOT NULL DEFAULT 0,
+  `ordering` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `item_id`(`item_id`, `content_type`) USING BTREE,
-  INDEX `idx_itemlinkid`(`itemlink_id`) USING BTREE
+  INDEX `idx_item_id`(`item_id`, `property_name`) USING BTREE,
+  INDEX `idx_item_link_id`(`itemlink_id`, `property_name`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -362,6 +367,7 @@ CREATE TABLE IF NOT EXISTS `wiser_link`  (
   `relationship` enum('one-to-one','one-to-many','many-to-many') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'one-to-many',
   `duplication` enum('none','copy-link','copy-item') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'none' COMMENT 'What to do with this link, when an item is being duplicated. None means that links of this type will not be copied/duplicatied to the new item. Copy-link means that the linked item will also be linked to the new item. Copy-item means that the linked item will also be duplicated and then that duplicated item will be linked to the new item.',
   `use_item_parent_id` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Set this to 1 to use the column \"parent_item_id\" from wiser_item for these links. This will then no longer use or need the table wiser_itemlink for these links.',
+  `use_dedicated_table` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Set this to 1 to use a dedicated table for links of this type. The GCL and Wiser expect there to be a table \"[linkType]_wiser_itemlink\" to store the links in. So if your link type is \"1\", we will use the table \"1_wiser_itemlink\" instead of \"wiser_itemlink\". This table will not be created automatically. To create this table, make a copy of wiser_itemlink (including triggers, but the the name of the table in the triggers too).',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_link`(`type`, `destination_entity_type`, `connected_entity_type`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
@@ -381,19 +387,6 @@ CREATE TABLE IF NOT EXISTS `wiser_module`  (
   `type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT 'DynamicItems',
   `group` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for wiser_ordering
--- ----------------------------
-CREATE TABLE IF NOT EXISTS `wiser_ordering`  (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` bigint NOT NULL DEFAULT 0,
-  `module_id` int NOT NULL DEFAULT 0,
-  `entity_property_id` int NOT NULL DEFAULT 0,
-  `order` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `idx_user`(`user_id`, `module_id`, `entity_property_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -437,8 +430,7 @@ CREATE TABLE IF NOT EXISTS `wiser_roles`  (
 -- ----------------------------
 -- Table structure for wiser_user_auth_token
 -- ----------------------------
-DROP TABLE IF EXISTS `wiser_user_auth_token`;
-CREATE TABLE `wiser_user_auth_token`  (
+CREATE TABLE IF NOT EXISTS `wiser_user_auth_token`  (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `selector` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
   `hashed_validator` varchar(150) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
@@ -563,113 +555,10 @@ CREATE TABLE IF NOT EXISTS `wiser_data_selector`  (
   `added_on` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
   `changed_on` datetime(0) NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(0),
   `show_in_export_module` tinyint(1) NOT NULL DEFAULT 1,
+  `available_for_rendering` tinyint(1) NOT NULL DEFAULT 1,
+  `default_template` bigint UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_name`(`name`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for system_tablechanges
--- ----------------------------
-CREATE TABLE IF NOT EXISTS `system_tablechanges`  (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `tablename` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `lastchecked` date NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `tablename`(`tablename`) USING BTREE,
-  UNIQUE INDEX `idx_name`(`tablename`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for dev_commit_item
--- ----------------------------
-CREATE TABLE IF NOT EXISTS `dev_commit_item`  (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `commitid` int NOT NULL,
-  `itemid` int NOT NULL,
-  `version` mediumint NOT NULL DEFAULT 0,
-  `addedon` timestamp(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for dev_history
--- ----------------------------
-CREATE TABLE IF NOT EXISTS `dev_history`  (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `template_itemid` int NULL DEFAULT NULL,
-  `template_version` mediumint NULL DEFAULT NULL,
-  `changelist` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `changedby` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `change_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `addedon` timestamp(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for dev_template_live
--- ----------------------------
-CREATE TABLE IF NOT EXISTS `dev_template_live`  (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `commitid` int NOT NULL,
-  `itemid` int NOT NULL,
-  `version` mediumint NOT NULL DEFAULT 0,
-  `addedon` timestamp(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
-  `removed` tinyint NOT NULL DEFAULT 0,
-  `islive` tinyint NOT NULL DEFAULT 0,
-  `isacceptance` tinyint NOT NULL DEFAULT 0,
-  `istest` tinyint NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for easy_dynamiccontent
--- ----------------------------
-CREATE TABLE IF NOT EXISTS `easy_dynamiccontent`  (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `tablename` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `templateid` int NULL DEFAULT NULL,
-  `templatehtml` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `querybuilder` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `query` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `filledvariables` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `type` int NULL DEFAULT 0,
-  `operator` int NULL DEFAULT NULL,
-  `value` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `freenumber1` int NULL DEFAULT NULL,
-  `freefield1` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `cachemodus` enum('nocache','cache','cacherurldifference','memcache','memcacherurldifference') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT 'nocache',
-  `cacheperiodhours` mediumint NULL DEFAULT NULL,
-  `version` mediumint NOT NULL DEFAULT 0,
-  `itemid` int NOT NULL DEFAULT 0,
-  `moduleid` int NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`, `itemid`, `version`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for easy_items
--- ----------------------------
-CREATE TABLE IF NOT EXISTS `easy_items`  (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `customerid` int NOT NULL DEFAULT 0,
-  `moduleid` int NOT NULL,
-  `name` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `level` int NOT NULL DEFAULT 1,
-  `parent_id` int NOT NULL DEFAULT 0,
-  `volgnr` int NOT NULL DEFAULT 1,
-  `haschilds` tinyint NOT NULL DEFAULT 0,
-  `ismap` tinyint NOT NULL DEFAULT 0,
-  `published` tinyint NOT NULL DEFAULT 1,
-  `seoname` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `lastchangedate` timestamp(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
-  `syncenabled` tinyint NOT NULL DEFAULT 0,
-  `originalitemid` int NULL DEFAULT 0,
-  `syncedchangedate` datetime(0) NULL DEFAULT NULL,
-  `deleted` tinyint NOT NULL DEFAULT 0,
-  `createdon` datetime(0) NULL DEFAULT NULL,
-  `createdby` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `lastchangedby` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `readonly` tinyint NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -695,137 +584,9 @@ CREATE TABLE IF NOT EXISTS `easy_objects`  (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Table structure for easy_templates
--- ----------------------------
-CREATE TABLE IF NOT EXISTS `easy_templates`  (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `itemid` int NULL DEFAULT NULL,
-  `template` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `html` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `templatetype` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `customerid` int NOT NULL DEFAULT 1999,
-  `variables` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `csstemplates` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `lastchanged` timestamp(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
-  `loadalways` mediumint NOT NULL DEFAULT 0,
-  `defaulttemplate` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `development` mediumint NOT NULL DEFAULT 0,
-  `jstemplates` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `groupingkey` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `groupingprefix` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `issecure` mediumint NOT NULL DEFAULT 0,
-  `securedsessionprefix` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `urlregex` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `usecache` int NOT NULL DEFAULT 0,
-  `cacheminutes` int NOT NULL DEFAULT 0,
-  `version` mediumint NOT NULL DEFAULT 0,
-  `islive` tinyint NOT NULL DEFAULT 0,
-  `isacceptance` tinyint NOT NULL DEFAULT 0,
-  `istest` tinyint NOT NULL DEFAULT 0,
-  `useobfuscate` int NOT NULL DEFAULT 0,
-  `html_obfuscated` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `html_minified` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `js_babel` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `pagemode` tinyint NOT NULL DEFAULT 0,
-  `deleted` tinyint NOT NULL DEFAULT 0,
-  `handlerequest` tinyint NOT NULL DEFAULT 1,
-  `handlesession` tinyint NOT NULL DEFAULT 1,
-  `handleobjects` tinyint NOT NULL DEFAULT 1,
-  `handlestandards` tinyint NOT NULL DEFAULT 1,
-  `handletranslations` tinyint NOT NULL DEFAULT 1,
-  `handledynamiccontent` tinyint NOT NULL DEFAULT 1,
-  `handlelogicblocks` tinyint NOT NULL DEFAULT 1,
-  `handlemutators` tinyint NOT NULL DEFAULT 0,
-  `externalfiles` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `babelConversionType` int NOT NULL DEFAULT -1,
-  `disableminifier` tinyint NOT NULL DEFAULT 0,
-  `groupingCreateObjectInsteadOfArray` tinyint NOT NULL DEFAULT 0,
-  `groupingKeyColumnName` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `groupingValueColumnName` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `isscssincludetemplate` mediumint NOT NULL DEFAULT 0,
-  `useinwiserhtmleditors` mediumint NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `itemid`(`itemid`) USING BTREE,
-  INDEX `itemid_version`(`itemid`, `version`) USING BTREE,
-  INDEX `itemid_islive`(`itemid`, `islive`) USING BTREE,
-  INDEX `itemid_isacceptance`(`itemid`, `isacceptance`) USING BTREE,
-  INDEX `itemid_istest`(`itemid`, `istest`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for objecttypes
--- ----------------------------
-CREATE TABLE IF NOT EXISTS `objecttypes`  (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `customerid` int NOT NULL DEFAULT 1999,
-  `level` int NOT NULL DEFAULT 0,
-  `parent_id` int NOT NULL DEFAULT 0,
-  `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `shortcode` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `valuetype` enum('string','integer','double','datetime') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'string',
-  `editable` tinyint NOT NULL DEFAULT 1,
-  `longdescription` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `visibleForCustomer` tinyint NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for dev_commit
--- ----------------------------
-CREATE TABLE IF NOT EXISTS `dev_commit`  (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `description` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `asanaid` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `addedon` timestamp(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
-  `changedby` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for easy_files
--- ----------------------------
-CREATE TABLE IF NOT EXISTS `easy_files`  (
-  `ItemID` int NOT NULL AUTO_INCREMENT,
-  `Name` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `ParentID` int NULL DEFAULT 0,
-  `MimeType` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `IsDirectory` tinyint(1) NULL DEFAULT 0,
-  `Size` int NULL DEFAULT 0,
-  `Content` longblob NULL DEFAULT NULL,
-  `FileChangedTime` datetime NULL DEFAULT NULL,
-  `lastmodified` timestamp(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
-  PRIMARY KEY (`ItemID`) USING BTREE,  
-  INDEX `Name`(`Name`, `ParentID`) USING BTREE,
-  INDEX `ParentID`(`ParentID`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for easy_seo
--- ----------------------------
-CREATE TABLE IF NOT EXISTS `easy_seo` (
-  `itemid` int(11) NOT NULL,
-  `noindex` tinyint(4) NULL DEFAULT NULL,
-  `nofollow` tinyint(4) NULL DEFAULT NULL,
-  `url` varchar(355) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `description` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `metatags` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `seotext` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `canonicalurl` varchar(355) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `isregex` tinyint(4) NULL DEFAULT 0,
-  `h1header` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `h2header` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `h3header` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `metatitle` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  PRIMARY KEY (`itemid`) USING BTREE,
-  INDEX `url`(`url`(190)) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Compact;
-
--- ----------------------------
 -- Table structure for wiser_import
 -- ----------------------------
-CREATE TABLE `wiser_import` (
+CREATE TABLE IF NOT EXISTS `wiser_import` (
   `id` int NOT NULL AUTO_INCREMENT,
   `added_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'The date and time that the import task was created',
   `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'The name of the Wiser user that created this import task',
@@ -852,7 +613,7 @@ CREATE TABLE `wiser_import` (
 -- ----------------------------
 -- Table structure for wiser_import_log
 -- ----------------------------
-CREATE TABLE `wiser_import_log`  (
+CREATE TABLE IF NOT EXISTS `wiser_import_log`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `items_total` int NOT NULL DEFAULT 0,
   `items_created` int NOT NULL DEFAULT 0,
@@ -868,7 +629,7 @@ CREATE TABLE `wiser_import_log`  (
 -- ----------------------------
 -- Table structure for wiser_grant_store
 -- ----------------------------
-CREATE TABLE `wiser_grant_store`  (
+CREATE TABLE IF NOT EXISTS `wiser_grant_store`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `key` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
@@ -882,5 +643,165 @@ CREATE TABLE `wiser_grant_store`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_key`(`key`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+
+-- ----------------------------
+-- Table structure for wiser_template
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_template`  (
+   `id` int NOT NULL AUTO_INCREMENT,
+   `parent_id` int NULL DEFAULT NULL,
+   `template_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+   `template_data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+   `template_data_minified` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+   `template_type` int NOT NULL,
+   `version` mediumint NOT NULL,
+   `template_id` int NOT NULL,
+   `changed_on` datetime NULL DEFAULT NULL,
+   `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+   `published_environment` tinyint NOT NULL DEFAULT 0,
+   `use_cache` int NOT NULL DEFAULT 0,
+   `cache_minutes` int NOT NULL DEFAULT 0,
+   `handle_request` tinyint(1) NOT NULL DEFAULT 1,
+   `handle_session` tinyint(1) NOT NULL DEFAULT 1,
+   `handle_objects` tinyint(1) NOT NULL DEFAULT 1,
+   `handle_standards` tinyint(1) NOT NULL DEFAULT 1,
+   `handle_translations` tinyint(1) NOT NULL DEFAULT 1,
+   `handle_dynamic_content` tinyint(1) NOT NULL DEFAULT 1,
+   `handle_logic_blocks` tinyint(1) NOT NULL DEFAULT 1,
+   `handle_mutators` tinyint(1) NOT NULL DEFAULT 0,
+   `login_required` tinyint(1) NOT NULL DEFAULT 0,
+   `login_user_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+   `login_session_prefix` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+   `login_role` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+   `login_redirect_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+   `linked_templates` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+   `ordering` int NOT NULL DEFAULT 0,
+   `insert_mode` int NOT NULL DEFAULT 0,
+   `load_always` tinyint(1) NOT NULL DEFAULT 0,
+   `disable_minifier` tinyint(1) NOT NULL DEFAULT 0,
+   `url_regex` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+   `external_files` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+   `grouping_create_object_instead_of_array` tinyint(1) NOT NULL DEFAULT 0,
+   `grouping_prefix` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+   `grouping_key` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+   `grouping_key_column_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+   `grouping_value_column_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+   `removed` tinyint(1) NOT NULL DEFAULT 0,
+   `is_scss_include_template` tinyint(1) NOT NULL DEFAULT 0,
+   `use_in_wiser_html_editors` tinyint(1) NOT NULL DEFAULT 0,
+   `pre_load_query` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+   `cache_location` int NOT NULL DEFAULT 0,
+   `return_not_found_when_pre_load_query_has_no_data` tinyint(1) NOT NULL DEFAULT 0,
+   `cache_regex` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+   `routine_type` int NOT NULL DEFAULT 0 COMMENT 'For routine templates only',
+   `routine_parameters` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT 'For routine templates only',
+   `routine_return_type` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'For routine templates only',
+   `is_default_header` tinyint(1) NOT NULL DEFAULT 0,
+   `is_default_footer` tinyint(1) NOT NULL DEFAULT 0,
+   `default_header_footer_regex` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+   PRIMARY KEY (`id`) USING BTREE,
+   UNIQUE INDEX `idx_unique`(`template_id` ASC, `version` ASC) USING BTREE,
+   INDEX `idx_removed`(`removed` ASC) USING BTREE,
+   INDEX `template_id`(`template_id` ASC) USING BTREE,
+   INDEX `idx_template_id`(`template_id` ASC, `removed` ASC) USING BTREE,
+   INDEX `idx_parent_id`(`parent_id` ASC, `removed` ASC) USING BTREE,
+   INDEX `idx_type`(`template_type` ASC, `removed` ASC) USING BTREE,
+   INDEX `idx_environment`(`published_environment` ASC, `removed` ASC) USING BTREE,
+   FULLTEXT INDEX `idx_fulltext`(`template_name`, `template_data`)
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_dynamic_content
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_dynamic_content`  (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `content_id` int NULL DEFAULT NULL,
+    `settings` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+    `component` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    `component_mode` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    `version` mediumint NOT NULL DEFAULT 0,
+    `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    `changed_on` datetime NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+    `published_environment` tinyint NOT NULL DEFAULT 0,
+    `removed` tinyint NOT NULL,
+    PRIMARY KEY (`id`) USING BTREE,
+    UNIQUE INDEX `idx_unique`(`content_id` ASC, `version` ASC) USING BTREE,
+    INDEX `content_id`(`content_id` ASC) USING BTREE,
+    FULLTEXT INDEX `idx_fulltext`(`title`, `settings`, `component_mode`)
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_dynamic_content_publish_log
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_dynamic_content_publish_log`  (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `content_id` int NOT NULL,
+    `old_live` int NOT NULL,
+    `old_accept` int NOT NULL,
+    `old_test` int NOT NULL,
+    `new_live` int NOT NULL,
+    `new_accept` int NOT NULL,
+    `new_test` int NOT NULL,
+    `changed_on` datetime NOT NULL,
+    `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    PRIMARY KEY (`id`) USING BTREE,
+    INDEX `idx_content_id`(`content_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_preview_profiles
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_preview_profiles`  (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    `template_id` int NOT NULL,
+    `url` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    `variables` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    PRIMARY KEY (`id`) USING BTREE,
+    INDEX `idx_template_id`(`template_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_template_dynamic_content
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_template_dynamic_content`  (
+   `id` int NOT NULL AUTO_INCREMENT,
+   `content_id` int NOT NULL,
+   `destination_template_id` int NOT NULL,
+   `added_on` datetime NOT NULL,
+   `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+   PRIMARY KEY (`id`) USING BTREE,
+   UNIQUE INDEX `idx_unique`(`content_id` ASC, `destination_template_id` ASC) USING BTREE,
+   INDEX `idx_destination`(`destination_template_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_template_publish_log
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_template_publish_log`  (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `template_id` int NOT NULL,
+    `old_live` int NOT NULL,
+    `old_accept` int NOT NULL,
+    `old_test` int NOT NULL,
+    `new_live` int NOT NULL,
+    `new_accept` int NOT NULL,
+    `new_test` int NOT NULL,
+    `changed_on` datetime NOT NULL,
+    `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    PRIMARY KEY (`id`) USING BTREE,
+    INDEX `idx_template_id`(`template_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_table_changes
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_table_changes`  (
+    `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    `last_update` datetime NOT NULL,
+    PRIMARY KEY (`name`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 SET FOREIGN_KEY_CHECKS = 1;

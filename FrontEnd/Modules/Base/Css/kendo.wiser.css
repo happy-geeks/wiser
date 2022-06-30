@@ -141,6 +141,7 @@
 	position: relative;
 	margin: 0;
 	padding: 0;
+	cursor: move;
 }
 .product img {
 	width: 110px;
@@ -513,13 +514,13 @@
     color: var(--white-color);
 }
 .k-button-icon .k-icon.k-i-verwijderen:before, .k-button-icon .k-icon.k-i-delete:before {
-    content: "\e9fa";
+	content: "\e9c7";
 }
 .k-button-icon .k-icon.k-i-verversen:before, .k-button-icon .k-icon.k-i-refresh:before {
-    content: "\e9f0";
+	content: "\e9b9";
 }
 .k-button-icon .k-icon.k-i-close:before {
-    content: "\e9e3";
+	content: "\e98d";
 }
 .k-i-css:before {
     content: "\ea36";
@@ -621,15 +622,6 @@
 	position: sticky;
 	top: 62px;
 	z-index: 100;
-}
-.k-tabstrip .k-tabstrip-items:before {
-    background: var(--white-color);
-    content: "";
-    height: 5px;
-    position: absolute;
-    left: 0;
-    top: -5px;
-    width: 100%;
 }
 .tabStripPopup.k-tabstrip .k-tabstrip-items {
 	top: 0;
@@ -817,7 +809,7 @@ input[type=search] + button {
 	position: relative;
 }
 .k-input-url:after {
-	content: "\e968";
+	content: "\e972";
 	font-family: 'icomoon' !important;
 	font-style: normal;
 	font-weight: normal;
@@ -1421,7 +1413,6 @@ k-filter-menu .k-autocomplete,
 }
 .handler ~ .k-grid {
 	margin: 5px 0;
-	max-width: calc(100% - 35px);
 }
 .formview.compact .handler ~ .k-grid {
 	max-width: calc(100% - 255px);
@@ -1537,11 +1528,19 @@ k-filter-menu .k-autocomplete,
 .readOnly > h4 {
 	color: var(--read-only-color);
 }
-.k-input[readonly], textarea[readonly] {
+.k-input[readonly], 
+textarea[readonly],
+.item.readonly .k-dropdown .k-input {
 	border: 1px solid var(--medium-color) !important;
 	background: var(--handle-bg-color) !important;
 	color: var(--lighter-txt);
 	pointer-events: none;
+}
+.item.readonly .k-select {
+	display: none;
+}
+.item.readonly .k-dropdown-wrap {
+	cursor: auto;
 }
 .checkbox input[readonly], .radio input[readonly] {
 	pointer-events: none;
@@ -1579,29 +1578,29 @@ k-filter-menu .k-autocomplete,
 	-moz-osx-font-smoothing: grayscale;
 }
 .icon-onzichtbaar:before {
-	content: "\e961";
+	content: "\e95e";
 }
 .icon-dev:before {
-	content: "\e9b1";
+	content: "\ea22";
 }
 .icon-test:before {
-	content: "\e960";
+	content: "\ea1a";
 }
 .icon-acceptatie:before {
-	content: "\e95f";
+	content: "\e967";
 }
 .icon-live:before {
-	content: "\e968";
+	content: "\e972";
 }
 .k-i-sort-asc-sm:before {
-    color: var( --light-txt);
-    content: "\e931";
-    font-size: 14px;
+	color: var( --light-txt);
+	content: "\ea07";
+	font-size: 14px;
 }
 .k-i-sort-desc-sm:before {
-    color: var( --light-txt);
-    content: "\e932";
-    font-size: 14px;
+	color: var( --light-txt);
+	content: "\ea08";
+	font-size: 14px;
 }
 .k-button-icon .k-icon.k-i-plus,
 .k-button-icon .k-icon.k-i-hyperlink-open {

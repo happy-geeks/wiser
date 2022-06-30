@@ -1,5 +1,9 @@
 ﻿@import "../../Base/scss/base.scss";
 
+#wiser, #tabstrip.k-widget {
+    display: block;
+}
+
 #dataSelectorContainer > iframe {
     width: 100%;
     min-height: 1000px;
@@ -235,43 +239,43 @@ footer {
 }
 
 .rootfolder:before {
-    content: "\e968";
+    content: "\e972";
 }
 
 .folder:before {
-    content: "\e9be";
+    content: "\e968";
 }
 
 .wiserfolderclosed:before {
-    content: "\e9bf";
+    content: "\e96d";
 }
 
 .wiserfolderopened:before {
-    content: "\e951";
+    content: "\e965";
 }
 
 .pdf:before {
-    content: "\e9c0";
+    content: "\e956";
 }
 
 .html:before {
-    content: "\e947";
+    content: "\e957";
 }
 
 .image:before {
-    content: "\e986";
+    content: "\e9eb";
 }
 
 .file:before {
-    content: "\e93c";
+    content: "\e94b";
 }
 
 .edit:before {
-    content: "\e983";
+    content: "\e9e8";
 }
 
 .delete:before {
-    content: "\e92a";
+    content: "\e93f";
 }
 .pane-content .formview footer {
     width: 100%;

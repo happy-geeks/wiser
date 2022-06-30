@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.EntityProperties.Enums;
+using Api.Modules.EntityProperties.Helpers;
 using Api.Modules.EntityProperties.Interfaces;
 using Api.Modules.EntityProperties.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -61,8 +62,7 @@ namespace Api.Modules.EntityProperties.Services
                 return new ServiceResult<EntityPropertyModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Entity property with ID '{id}' does not exist.",
-                    ReasonPhrase = $"Entity property with ID '{id}' does not exist."
+                    ErrorMessage = $"Entity property with ID '{id}' does not exist."
                 };
             }
 
@@ -113,8 +113,7 @@ namespace Api.Modules.EntityProperties.Services
                 return new ServiceResult<EntityPropertyModel>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Either 'EntityType' or 'LinkType' must contain a value.",
-                    ReasonPhrase = "Either 'EntityType' or 'LinkType' must contain a value."
+                    ErrorMessage = "Either 'EntityType' or 'LinkType' must contain a value."
                 };
             }
 
@@ -123,8 +122,7 @@ namespace Api.Modules.EntityProperties.Services
                 return new ServiceResult<EntityPropertyModel>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "PropertyName is required.",
-                    ReasonPhrase = "PropertyName is required."
+                    ErrorMessage = "PropertyName is required."
                 };
             }
 
@@ -264,8 +262,7 @@ namespace Api.Modules.EntityProperties.Services
                     return new ServiceResult<EntityPropertyModel>
                     {
                         StatusCode = HttpStatusCode.Conflict,
-                        ErrorMessage = $"An entry already exists with {nameof(entityProperty.EntityType)} = '{entityProperty.EntityType}', {nameof(entityProperty.LinkType)} = '{entityProperty.LinkType}', {nameof(entityProperty.DisplayName)} = '{entityProperty.DisplayName}', {nameof(entityProperty.PropertyName)} = '{entityProperty.PropertyName}' and {nameof(entityProperty.LanguageCode)} = '{entityProperty.LanguageCode}'",
-                        ReasonPhrase = "And entry already exists with this data."
+                        ErrorMessage = $"An entry already exists with {nameof(entityProperty.EntityType)} = '{entityProperty.EntityType}', {nameof(entityProperty.LinkType)} = '{entityProperty.LinkType}', {nameof(entityProperty.DisplayName)} = '{entityProperty.DisplayName}', {nameof(entityProperty.PropertyName)} = '{entityProperty.PropertyName}' and {nameof(entityProperty.LanguageCode)} = '{entityProperty.LanguageCode}'"
                     };
                 }
 
@@ -283,8 +280,7 @@ namespace Api.Modules.EntityProperties.Services
                 return new ServiceResult<bool>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Either 'EntityType' or 'LinkType' must contain a value.",
-                    ReasonPhrase = "Either 'EntityType' or 'LinkType' must contain a value."
+                    ErrorMessage = "Either 'EntityType' or 'LinkType' must contain a value."
                 };
             }
 
@@ -293,8 +289,7 @@ namespace Api.Modules.EntityProperties.Services
                 return new ServiceResult<bool>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "PropertyName is required.",
-                    ReasonPhrase = "PropertyName is required."
+                    ErrorMessage = "PropertyName is required."
                 };
             }
 
@@ -392,8 +387,7 @@ namespace Api.Modules.EntityProperties.Services
                     return new ServiceResult<bool>
                     {
                         StatusCode = HttpStatusCode.Conflict,
-                        ErrorMessage = $"An entry already exists with {nameof(entityProperty.EntityType)} = '{entityProperty.EntityType}', {nameof(entityProperty.LinkType)} = '{entityProperty.LinkType}', {nameof(entityProperty.DisplayName)} = '{entityProperty.DisplayName}', {nameof(entityProperty.PropertyName)} = '{entityProperty.PropertyName}' and {nameof(entityProperty.LanguageCode)} = '{entityProperty.LanguageCode}'",
-                        ReasonPhrase = "And entry already exists with this data."
+                        ErrorMessage = $"An entry already exists with {nameof(entityProperty.EntityType)} = '{entityProperty.EntityType}', {nameof(entityProperty.LinkType)} = '{entityProperty.LinkType}', {nameof(entityProperty.DisplayName)} = '{entityProperty.DisplayName}', {nameof(entityProperty.PropertyName)} = '{entityProperty.PropertyName}' and {nameof(entityProperty.LanguageCode)} = '{entityProperty.LanguageCode}'"
                     };
                 }
 
@@ -565,73 +559,6 @@ namespace Api.Modules.EntityProperties.Services
             }
         }
 
-        private static EntityPropertyInputTypes ToInputType(string value)
-        {
-            switch (value.ToLowerInvariant())
-            {
-                case "input":
-                    return EntityPropertyInputTypes.Input;
-                case "secure-input":
-                    return EntityPropertyInputTypes.SecureInput;
-                case "textbox":
-                    return EntityPropertyInputTypes.TextBox;
-                case "radiobutton":
-                    return EntityPropertyInputTypes.RadioButton;
-                case "checkbox":
-                    return EntityPropertyInputTypes.CheckBox;
-                case "combobox":
-                    return EntityPropertyInputTypes.ComboBox;
-                case "multiselect":
-                    return EntityPropertyInputTypes.MultiSelect;
-                case "numeric-input":
-                    return EntityPropertyInputTypes.NumericInput;
-                case "file-upload":
-                    return EntityPropertyInputTypes.FileUpload;
-                case "htmleditor":
-                    return EntityPropertyInputTypes.HtmlEditor;
-                case "querybuilder":
-                    return EntityPropertyInputTypes.QueryBuilder;
-                case "date-time picker":
-                    return EntityPropertyInputTypes.DateTimePicker;
-                case "imagecoords":
-                    return EntityPropertyInputTypes.ImageCoordinates;
-                case "image-upload":
-                    return EntityPropertyInputTypes.ImageUpload;
-                case "gpslocation":
-                    return EntityPropertyInputTypes.GpsLocation;
-                case "daterange":
-                    return EntityPropertyInputTypes.DateRange;
-                case "sub-entities-grid":
-                    return EntityPropertyInputTypes.SubEntitiesGrid;
-                case "item-linker":
-                    return EntityPropertyInputTypes.ItemLinker;
-                case "color-picker":
-                    return EntityPropertyInputTypes.ColorPicker;
-                case "auto-increment":
-                    return EntityPropertyInputTypes.AutoIncrement;
-                case "linked-item":
-                    return EntityPropertyInputTypes.LinkedItem;
-                case "action-button":
-                    return EntityPropertyInputTypes.ActionButton;
-                case "data-selector":
-                    return EntityPropertyInputTypes.DataSelector;
-                case "chart":
-                    return EntityPropertyInputTypes.Chart;
-                case "scheduler":
-                    return EntityPropertyInputTypes.Scheduler;
-                case "timeline":
-                    return EntityPropertyInputTypes.TimeLine;
-                case "empty":
-                    return EntityPropertyInputTypes.Empty;
-                case "qr":
-                    return EntityPropertyInputTypes.Qr;
-                case "iframe":
-                    return EntityPropertyInputTypes.Iframe;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(value), value, null);
-            }
-        }
-
         private static string ToDatabaseValue(EntityPropertyInputTypes value)
         {
             switch (value)
@@ -710,7 +637,7 @@ namespace Api.Modules.EntityProperties.Services
             row.LanguageCode = dataRow.Field<string>("language_code");
             row.TabName = dataRow.Field<string>("tab_name");
             row.GroupName = dataRow.Field<string>("group_name");
-            row.InputType = ToInputType(dataRow.Field<string>("inputtype"));
+            row.InputType = EntityPropertyHelper.ToInputType(dataRow.Field<string>("inputtype"));
             row.DisplayName = dataRow.Field<string>("display_name");
             row.Ordering = Convert.ToInt32(dataRow["ordering"]);
             row.Explanation = dataRow.Field<string>("explanation");

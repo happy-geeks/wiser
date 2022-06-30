@@ -4,7 +4,7 @@ Wiser v3. This includes the API and the front-end projects.
 ## Requirements
 ### Software
 1. Install [NodeJs](https://nodejs.org/en/) LTS.
-2. To run Wiser in IIS, you need to download the [Windows Hosting Bundle](https://dotnet.microsoft.com/en-us/download/dotnet/5.0) and install it.
+2. To run Wiser in IIS, you need to download the [Windows Hosting Bundle](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) and install it.
 
 ### Compile front-end
 1. Open PowerShell/CMD Window in the directory that contains the `FrontEnd.csproj` file (__NOT__ the root directory, that contains the `WiserCore.sln` file!).
@@ -31,7 +31,7 @@ Wiser v3. This includes the API and the front-end projects.
     "PusherAppId": "", // Some modules use pusher to send notifications to users. Enter the app ID for pusher here if you want to use that.
     "PusherAppKey": "", // The app key for pusher.
     "PusherAppSecret": "", // The app secret for pusher.
-    "PusherSalt": "" // A salt to use when hashing event IDs for pusher.,
+    "PusherSalt": "", // A salt to use when hashing event IDs for pusher.,
     "SigningCredentialCertificate": "" // The fully qualified name of the certificate in the store of the server, of the certificate to use for IdentityServer4 (OAUTH2) authentication.
   },
   "DigitalOcean": {
@@ -73,6 +73,7 @@ server=;port=;uid=;pwd=;database=;pooling=true;Convert Zero Datetime=true;CharSe
 Note the options that are added at the end of the connection string, Wiser will not work properly without these options.
 
 ## Installation script
+The installation script creates a new database schema and then creates several tables in that database. For it to work, you'll need a database user that has enough permissions to do all this.
 To setup this database, you can open a PowerShell or CMD window in the directory that contains the `Api.csproj` file and run the following command:
 ```
 npm run setup:mysql -- --host=host --database=database --user=user --password=password
@@ -100,6 +101,7 @@ The scripts `InsertInitialDataConfigurator.sql` and `InsertInitialDataEcommerce.
 1. Open PowerShell/CMS Window in the directory that contains the `FrontEnd.csproj` file (__NOT__ the root directory, that contains the `WiserCore.sln` file!).
 1. Run the command `node_modules\.bin\webpack --mode=development -w`. This will make webpack watch your javascript and automatically rebuild them when needed, so you don't have to rebuild it manully every time.
 1. To make debugging a little easier, you can setup Visual Studio to always start both the API and FrontEnd projects at the same time. You can do this by right clicking the solution and then `Properties`. Then go to `Common Properties --> Startup Project` and choose `Multiple startup projects`. Then set both `Api` and `FrontEnd` to `Start` and click `OK`.
+1. If you use Rider, you can also set that up to start both projects when debugging. To do this, click `Edit configuration` in the configurations dropdown (in the toolbar), this will open a new screen. In that screen select the root item `.NET Launch Settings Profile`, then click the plus icon on the top left. Now add a `Compound` and give it any name, such as "Debug both". Lastly, add the configurations `.NET Launch Settings Profile 'Api'` and `.NET Launch Settings Profile 'FrontEnd'` to that compount and click `OK`. 
 
 # Multitenancy
 Wiser works with multitenancy, but only with different (sub) domains. So for example, if Wiser runs on the domain `wiser.nl`, then you can use different sub domains for multi tenancy (eg. `foobar.wiser.nl`). Or you can just use multiple domains, like `example.com` and `foorbar.com`. When someone opens a (sub) domain of Wiser, that (sub) domain will then be looked up in `easy_customers`, via the column `subdomain`. If a row has been found, a connectionstring will be generated with the data from that row and that will be used for all requests on that sub domain.

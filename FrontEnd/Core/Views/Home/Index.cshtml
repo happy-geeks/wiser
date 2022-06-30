@@ -1,63 +1,67 @@
 ﻿@using FrontEnd.Core.Models
 
 @model BaseViewModel
+<style>
+    [v-cloak] {
+        display: none;
+    }
+</style>
 <!-- Current Wiser version: @Model.WiserVersion?.ToString() -->
-<div id="app" v-cloak :class="{ loading: mainLoader }">
-    <header v-if="user.loggedIn && !requirePasswordChange">
-        <ul class="main-menu">
-            <li id="side-menu">
-                <div id="menu-btn" @@click="toggleMenuState()"><ins class="icon-menu"></ins><span>Menu</span></div>
-                <div id="side-btn" @@click="toggleMenuActive()"><ins class="icon-chevron-right"></ins></div>
+<div id="app" v-cloak>
+    <div :class="{ 'loading': mainLoader }">
+        <header v-if="user.loggedIn && !requirePasswordChange">
+            <ul class="main-menu">
+                <li id="side-menu">
+                    <div id="menu-btn" @@click="toggleMenuState()"><ins class="icon-menu"></ins><span>Menu</span></div>
+                    <div id="side-btn" @@click="toggleMenuActive()"><ins class="icon-chevron-right"></ins></div>
 
-                <nav id="side-nav">
-                    <div class="menu-scroller">
-                        <ul>
-                            <li v-for="moduleGroup in moduleGroups" :key="moduleGroup.name">
-                                <strong v-if="moduleGroup.name">{{ moduleGroup.name }}</strong>
-                                <ul>
-                                    <li v-for="module in moduleGroup.modules" :key="module.moduleId">
-                                        <a href="#" :title="module.name" @@click="onOpenModuleClick($event, module)"><ins :class="module.icon"></ins><span>{{ module.name }}</span></a>
-                                        <button @@click="onTogglePin($event, module.moduleId)" :class="{ pinned: module.pinned, 'auto-load': module.autoLoad }">
-                                            <ins :class="{ 'icon-line-pin-empty': !module.autoLoad, 'icon-line-pin-full': module.pinned && module.autoLoad }"></ins>
-                                        </button>
-                                    </li>
-                                </ul>
-                            </li>
-                        </ul>
+                    <nav id="side-nav">
+                        <div class="menu-scroller">
+                            <ul>
+                                <li v-for="moduleGroup in moduleGroups" :key="moduleGroup.name">
+                                    <strong v-if="moduleGroup.name">{{ moduleGroup.name }}</strong>
+                                    <ul>
+                                        <li v-for="module in moduleGroup.modules" :key="module.moduleId">
+                                            <a href="#" :title="module.name" @@click="onOpenModuleClick($event, module)"><ins :class="module.icon"></ins><span>{{ module.name }}</span></a>
+                                            <button @@click="onTogglePin($event, module.moduleId)" :class="{ pinned: module.pinned, 'auto-load': module.autoLoad }">
+                                                <ins :class="{ 'icon-line-pin-empty': !module.autoLoad, 'icon-line-pin-full': module.pinned && module.autoLoad }"></ins>
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+                </li>
+
+                <li class="tabs">
+                    <div v-for="module in openedModules" :key="module.id" :class="{ 'tab-item': true, active: module.id === activeModule }" @@click="setActiveModule($event, module.id)" :title="module.name">
+                        <ins :class="module.icon"></ins>
+                        <strong>{{ module.name }}</strong>
+                        <span class="close-module" title="module sluiten" @@click="closeModule(module)"></span>
                     </div>
-                </nav>
-            </li>
+                </li>
 
-            <li class="tabs">
-                <div v-for="module in openedModules" :key="module.id" :class="{ 'tab-item': true, active: module.id === activeModule }" @@click="setActiveModule($event, module.id)" :title="module.name">
-                    <ins :class="module.icon"></ins>
-                    <strong>{{ module.name }}</strong>
-                    <span class="close-module" title="module sluiten" @@click="closeModule(module)"></span>
-                </div>
-            </li>
+                <li class="icons">
+                    <div class="ico-item" v-if="modules.find(m => m.moduleId === 709)">
+                        <ins class="icon-line-search" @@click="openModule(709)"></ins>
+                    </div>
+                    <task-alerts ref="taskAlerts"></task-alerts>
+                </li>
 
-            <li class="icons">
-                <div class="ico-item" v-if="modules.find(m => m.moduleId === 709)">
-                    <ins class="icon-line-search" @@click="openModule(709)"></ins>
-                </div>
-                <div class="ico-item" title="Bug melden!" v-if="markerIoEnabled" @@click="openMarkerIoScreen()">
-                    <ins class="icon-line-bug"></ins>
-                </div>
-                <div class="ico-item">
-                    <ins class="icon-line-database-search" @@click="openWiserIdPrompt"></ins>
-                </div>
-                <task-alerts ref="taskAlerts"></task-alerts>
-            </li>
-
-            <li class="login">
-                <span>
-                    <strong class="title">Welkom</strong>
-                    <span class="sub-title">{{ user.name }}</span>
-                    <ins class="icon-chevron-down"></ins>
-                </span>
+                <li class="login">
+                    <span>
+                        <strong class="title">Welkom</strong>
+                        <span class="sub-title">{{ user.name }}</span>
+                        <ins class="icon-chevron-down"></ins>
+                    </span>
 
                 <ul class="sub-menu">
                     <li><a href="#" v-if="user.adminAccountId" @@click="openCustomerManagement()"><ins class="icon-line-user-plus"></ins><span>Klant toevoegen</span></a></li>
+                    <li><a href="#" @@click="openMarkerIoScreen()"><ins class="icon-line-bug"></ins><span>Bug melden! (CTRL+B)</span></a></li>
+                    <li><a href="#" @@click="openWiserIdPrompt"><ins class="icon-line-database-search"></ins><span>Wiser item openen (CTRL+O)</span></a></li>
+                    <li><a href="#" @@click="openChangePasswordPrompt"><ins class="icon-line-lock"></ins><span>Wachtwoord wijzigen</span></a></li>
+                    <li><a href="#" @@click="openWiserBranchesPrompt"><ins class="icon-table-backup"></ins><span>Wiser branches</span></a></li>
                     <li><a href="#" @@click="logout()"><ins class="icon-line-log-out"></ins><span>Uitloggen</span></a></li>
                 </ul>
             </li>
@@ -70,32 +74,544 @@
                 </svg>
             </li>
         </ul>
-    </header>
+        </header>
 
-    <main :class="{ login: !user.loggedIn || requirePasswordChange }">
-        <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
-        <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
-        <section class="iframe-container">
-            <iframe v-for="module in openedModulesWithBackend" :key="module.id" :src="module.iframeUrl || `/Modules/${module.type}${module.fileName}${module.queryString}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
-            <iframe v-for="module in openedWiser1Modules" :key="module.id" :src="`${appSettings.wiser1BaseUrl}?singleModuleId=${module.moduleId}&autoLoginCookie=${encodeURIComponent(user.cookieValue)}&autoLoginUserId=${encodeURIComponent(user.encryptedId)}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
-        </section>
+        <main :class="{ login: !user.loggedIn || requirePasswordChange, 'scrollable': customerManagementIsOpened }">
+            <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
+            <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
+            <section class="iframe-container">
+                <iframe v-for="module in openedModulesWithBackend" :key="module.id" :src="module.iframeUrl || `/Modules/${module.type}${module.fileName}${module.queryString}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
+                <iframe v-for="module in openedWiser1Modules" :key="module.id" :src="`${appSettings.wiser1BaseUrl}?singleModuleId=${module.moduleId}&autoLoginCookie=${encodeURIComponent(user.cookieValue)}&autoLoginUserId=${encodeURIComponent(user.encryptedId)}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
+            </section>
 
-        <keep-alive>
-            <customer-management v-if="user.adminAccountId && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
-        </keep-alive>
-    </main>
+            <keep-alive>
+                <customer-management v-if="user.adminAccountId && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
+            </keep-alive>
+        </main>
 
-    <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een ID in'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]" @@open="onWiserIdPromptOpen">
-        <div class="form-row">
-            <input type="number" id="wiserId" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" @@keypress="onWiserIdFieldKeyPress" required>
+        <wiser-dialog :modal="true" :width="'400px'" :title="generalMessagePromptTitle" ref="generalMessagePrompt" :visible="false" :actions="[{ text: 'OK', primary: true }]">
+            <div class="form-row">
+                {{ generalMessagePromptText }}
+            </div>
+        </wiser-dialog>
+        <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een ID in'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]" @@open="onWiserIdPromptOpen">
+            <div class="form-row">
+                <input type="number" id="wiserId" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" @@keypress="onWiserIdFieldKeyPress" required>
+            </div>
+        </wiser-dialog>
+        <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
+            <p>Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:</p>
+            <div class="form-row">
+                <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
+            </div>
+        </wiser-dialog>
+        <wiser-dialog :modal="true" :width="'400px'" :title="'Wachtwoord wijzigen'" ref="changePasswordPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Opslaan', primary: true, action: changePassword }]">
+            <div class="form-row">
+                <input type="password" id="oldPassword" name="oldPassword" class="loginField passwordField" placeholder="Uw huidig wachtwoord" v-model="changePasswordPromptOldPasswordValue" />
+            </div>
+            <div class="form-row">
+                <input type="password" id="newPassword" name="newPassword" class="loginField passwordField" placeholder="Uw nieuwe wachtwoord" v-model="changePasswordPromptNewPasswordValue" />
+            </div>
+            <div class="form-row">
+                <input type="password" id="newPasswordRepeat" name="newPasswordRepeat" class="loginField passwordField" placeholder="Nogmaals uw nieuwe wachtwoord" v-model="changePasswordPromptNewPasswordRepeatValue" />
+            </div>
+
+            <div class="error" v-if="changePasswordError">{{ changePasswordError }}</div>
+        </wiser-dialog>
+        <wiser-dialog class="branches-dialog" :modal="true" :width="'1200px'" ref="wiserBranchesPrompt" :visible="false" :actions="[]" @@open="onWiserBranchesPromptOpen">
+            <div class="container">
+                <div class="row equal">
+                    <div class="col col-3" v-if="isMainBranch">
+                        <h2>Branch maken</h2>
+                        <p>
+                            Hier kan een nieuwe branch gemaakt worden. Een branch is een (deel-)kopie van uw database. 
+                            Dit kan gebruikt worden om wijzigingen in Wiser op een veilige manier door te voeren en te testen in een aparte omgeving.
+                            Nadat u klaar bent met testen, kunt u de wijzigingen in een branch weer terugzetten naar de productie-omgeving. 
+                        </p>
+
+                        <button v-if="isMainBranch" class="btn btn-primary" @@click="openCreateBranchPrompt">Nieuwe branch maken</button>
+                    </div>
+                    <div :class="{ 'col': true, 'col-3': true }">
+                        <h2>Branch openen</h2>
+                        <p>
+                            Hier kan een bestaande branch geopend worden.
+                        </p>
+                        
+                        <div class="row no-scroll" v-if="isMainBranch">
+                            <div class="col col-12 form-row">
+                                <label for="open-branch-type">Waar wilt u de branch openen?</label>
+                                <dropdownlist id="open-branch-type" class="full-width" :data-items="openBranchTypes" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranchType"></dropdownlist>
+                            </div>
+                        </div>
+                        
+                        <div class="row no-scroll" v-if="openBranchSettings.selectedBranchType.id === 'website'">
+                            <div class="col col-12 form-row">
+                                <label for="website-url">Geef de URL op van uw website</label>
+                                <input type="url" id="website-url" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="openBranchSettings.websiteUrl" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row no-scroll" v-if="isMainBranch">
+                            <div class="col col-12 form-row">
+                                <label for="available-branches">Selecteer de branch die u wilt openen</label>
+                                <dropdownlist id="available-branches-to-open" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranch"></dropdownlist>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" @@click="openBranch">Branch openen</button>
+                    </div>
+                    <div :class="{ 'col': true, 'col-6': isMainBranch, 'col-9': !isMainBranch }">
+                        <h2>Branch terugzetten</h2>
+                        <p>
+                            Hiermee kunnen wijzigingen die in een branch gedaan zijn, overgezet worden naar de productie-omgeving. U kunt dan kiezen welke wijzigingen doorgezet moeten worden, dat hoeft niet per se alles te zijn.
+                            Het is niet mogelijk om verschillende branches samen te voegen. Het samenvoegen gaat altijd van een branch naar de productie-omgeving.
+                        </p>
+                        <p>
+                            <strong>Let op:</strong> Tijdens het terugzetten van een branch wordt de database geblokkeerd zodat er geen andere wijziging tussendoor gedaan kunnen worden. 
+                            Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gekoppeld zijn aan dezelfde database, ook niet bereikbaar zullen zijn. 
+                            Zorg daarom dat u het samenvoegen start op een moment waarbij dit het minste impact heeft (zoals 's nachts).
+                        </p>
+
+                        <button class="btn btn-primary" @@click="openMergeBranchPrompt">Bestaande branch terugzetten naar productie</button>
+                    </div>
+                </div>
+            </div>
+        </wiser-dialog>
+        <wiser-dialog class="branches-dialog" :modal="true" :width="'1200px'" :title="'Branch maken'" ref="wiserCreateBranchPrompt" :visible="false" :actions="[]" @@open="onWiserCreateBranchPromptOpen">
+            <div class="container stretch">
+                <div class="row no-scroll">
+                    <div class="col col-12 form-row">
+                        <label for="newBranchName">Geef een naam op voor de nieuwe branche</label>
+                        <section class="full-error" v-if="createBranchError">
+                            <ins class="icon-line-alert"></ins>
+                            <span v-html="createBranchError"></span>
+                        </section>
+                        <input type="text" id="newBranchName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="createBranchSettings.name" required>
+                    </div>
+                    <div class="col col-12 form-row no-bottom-margin">
+                        <label for="branche-data">Welke data wil je naar de branche overzetten?
+                            <span class="label-info">Let op: bij items worden ook altijd <strong>alle</strong> gekoppelde items meegenomen!</span>
+                        </label>
+                    </div>
+                    <div class="col col-12 table-row no-top-margin">
+                        <div class="fixed-table">
+                            <table>
+                                <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Aantal</th>
+                                    <th>Wat</th>
+                                    <th></th>
+                                </tr>
+                                </thead>
+                                <tbody v-if="!entitiesForBranches || !entitiesForBranches.length">
+                                    <tr>
+                                        <td colspan="4">Geen entiteiten gevonden. Neem a.u.b. contact op met ons.</td>
+                                    </tr>
+                                </tbody>
+                                <tbody v-else>
+                                    <tr>
+                                        <td>Alle onderstaande</td>
+                                        <td>{{ totalAmountOfItemsForCreatingBranch }}</td>
+                                        <td>
+                                            <select v-model="createBranchSettings.entities.all.mode">
+                                                <option value="-1"></option>
+                                                <option value="0">Alles</option>
+                                                <option value="2">Willekeurig X items</option>
+                                                <option value="3">Laatste X items</option>
+                                                <option value="4">Alles wat toegevoegd is voor X</option>
+                                                <option value="5">Alles wat toegevoegd is na X</option>
+                                                <option value="6">Alles wat toegevoegd is tussen X en Y</option>
+                                            </select>
+                                        </td>
+                                        <td class="extra">
+                                            <label class="number-of-items" v-if="createBranchSettings.entities.all.mode == 2 || createBranchSettings.entities.all.mode == 3">
+                                                <span>Aantal items:</span>
+                                                <input type="number" v-model="createBranchSettings.entities.all.amountOfItems" />
+                                            </label>
+                                            <label class="single-date" v-if="createBranchSettings.entities.all.mode == 4 || createBranchSettings.entities.all.mode == 5">
+                                                <span>Datum:</span>
+                                                <input type="date" v-model="createBranchSettings.entities.all.start" />
+                                            </label>
+                                            <div class="date-range" v-if="createBranchSettings.entities.all.mode == 6">
+                                                <input type="date" v-model="createBranchSettings.entities.all.start" />
+                                                <input type="date" v-model="createBranchSettings.entities.all.end" />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr v-for="entity in entitiesForBranches" :key="entity.id">
+                                        <td>{{ entity.displayName }}</td>
+                                        <td>{{ entity.totalItems }}</td>
+                                        <td>
+                                            <select v-model="createBranchSettings.entities[entity.id].mode" v-if="createBranchSettings.entities.all.mode == -1 && createBranchSettings.entities[entity.id]">
+                                                <option value="0">Alles</option>
+                                                <option value="1">Niets</option>
+                                                <option value="2">Willekeurig X items</option>
+                                                <option value="3">Laatste X items</option>
+                                                <option value="4">Alles wat toegevoegd is voor X</option>
+                                                <option value="5">Alles wat toegevoegd is na X</option>
+                                                <option value="6">Alles wat toegevoegd is tussen X en Y</option>
+                                            </select>
+                                        </td>
+                                        <td class="extra">
+                                            <label class="number-of-items" v-if="createBranchSettings.entities.all.mode == -1 && createBranchSettings.entities[entity.id] && (createBranchSettings.entities[entity.id].mode == 2 || createBranchSettings.entities[entity.id].mode == 3)">
+                                                <span>Aantal items:</span>
+                                                <input type="number" v-model="createBranchSettings.entities[entity.id].amountOfItems"/>
+                                            </label>
+                                            <label class="single-date" v-if="createBranchSettings.entities.all.mode == -1 && createBranchSettings.entities[entity.id] && (createBranchSettings.entities[entity.id].mode == 4 || createBranchSettings.entities[entity.id].mode == 5)">
+                                                <span>Datum:</span>
+                                                <input type="date" v-model="createBranchSettings.entities[entity.id].start"/>
+                                            </label>
+                                            <div class="date-range" v-if="createBranchSettings.entities.all.mode == -1 && createBranchSettings.entities[entity.id] && createBranchSettings.entities[entity.id].mode == 6">
+                                                <input type="date" v-model="createBranchSettings.entities[entity.id].start"/>
+                                                <input type="date" v-model="createBranchSettings.entities[entity.id].end"/>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <footer class="row fixed no-bottom-padding">
+                    <div class="col col-8 inline">
+                        <label class="radio">
+                            <input type="radio" name="start-time" value="direct" v-model="createBranchSettings.startMode" />
+                            <span>Direct starten</span>
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="start-time" value="delayed" v-model="createBranchSettings.startMode" />
+                            <span>Starten op:</span>
+                        </label>
+                        <label>
+                            <input type="datetime-local" name="start-time-picker"  v-model="createBranchSettings.startOn" />
+                        </label>
+                    </div>
+                    <div class="col col-4 align-right">
+                        <button class="btn btn-primary" @@click="createBranch">Start aanmaken nieuwe branch</button>
+                    </div>
+                </footer>
+            </div>
+        </wiser-dialog>
+        <wiser-dialog class="branches-dialog full-height" :modal="true" :width="'1200px'" :title="'Branch terugzetten'" ref="wiserMergeBranchPrompt" :visible="false" :actions="[]" @@open="onWiserMergeBranchPromptOpen">
+            <div class="container">
+                <div class="row" v-if="!branches || !branches.length">
+                    <section class="full-error">
+                        <ins class="icon-line-alert"></ins>
+                        <span>U heeft nog geen andere branches. Maak a.u.b. eerst een nieuwe branch aan via de optie "Nieuwe branch aanmaken".</span>
+                    </section>
+                </div>
+                <div class="row scroll" v-else>
+                    <div class="col col-12 form-row" v-if="isMainBranch">
+                        <label for="available-branches">Selecteer eerst de branch die u wilt synchroniseren</label>
+                        <dropdownlist id="available-branches" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="branchMergeSettings.selectedBranch" @@change="onSelectedBranchChange"></dropdownlist>
+                    </div>
+                    
+                    <section class="full-error" v-if="mergeBranchError">
+                        <ins class="icon-line-alert"></ins>
+                        <span v-html="mergeBranchError"></span>
+                    </section>
+                    
+                    <div class="col col-12 form-row no-bottom-margin" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
+                        <label>Selecteer te synchroniseren Wiser data</label>
+                    </div>
+                    <div class="col col-12 table-row no-top-margin" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
+                        <div class="fixed-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th width="150">Alles</th>
+                                        <th width="150">Nieuw</th>
+                                        <th width="150">Verwijderd</th>
+                                        <th width="150">Gewijzigd</th>
+                                    </tr>
+                                </thead>
+                                <tbody v-if="!branchChanges || !branchChanges.entities || !branchChanges.entities.length">
+                                    <tr>
+                                        <td colspan="5">Er zijn geen wijzigingen aan Wiser data om te synchroniseren.</td>
+                                    </tr>
+                                </tbody>
+                                <tbody v-else>
+                                    <tr>
+                                        <td>Alle onderstaande</td>
+                                        <td>
+                                            <label class="checkbox">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.everything" />
+                                                <span>({{ totalAmountOfItemsCreated + totalAmountOfItemsUpdated + totalAmountOfItemsDeleted }})</span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="checkbox" v-if="totalAmountOfItemsCreated > 0 && !branchMergeSettings.entities.all.everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.create" />
+                                                <span>({{ totalAmountOfItemsCreated }})</span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="checkbox" v-if="totalAmountOfItemsDeleted > 0 && !branchMergeSettings.entities.all.everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.delete" />
+                                                <span>({{ totalAmountOfItemsDeleted }})</span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="checkbox" v-if="totalAmountOfItemsUpdated > 0 && !branchMergeSettings.entities.all.everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.update" />
+                                                <span>({{ totalAmountOfItemsUpdated }})</span>
+                                            </label>
+                                        </td>
+                                    </tr>
+                                    <tr v-for="entity in branchChanges.entities" :key="entity.entityType">
+                                        <td>{{ entity.displayName }}</td>
+                                        <td>
+                                            <label class="checkbox" v-if="!branchMergeSettings.entities.all.everything && branchMergeSettings.entities[entity.entityType]">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].everything" />
+                                                <span>({{ entity.created + entity.deleted + entity.updated }})</span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="checkbox" v-if="entity.created > 0 && !branchMergeSettings.entities.all.everything && !branchMergeSettings.entities.all.create && branchMergeSettings.entities[entity.entityType] && !branchMergeSettings.entities[entity.entityType].everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].create" />
+                                                <span>({{ entity.created }})</span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="checkbox" v-if="entity.deleted > 0 && !branchMergeSettings.entities.all.everything && !branchMergeSettings.entities.all.delete && branchMergeSettings.entities[entity.entityType] && !branchMergeSettings.entities[entity.entityType].everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].delete" />
+                                                <span>({{ entity.deleted }})</span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="checkbox" v-if="entity.updated > 0 && !branchMergeSettings.entities.all.everything && !branchMergeSettings.entities.all.update && branchMergeSettings.entities[entity.entityType] && !branchMergeSettings.entities[entity.entityType].everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].update" />
+                                                <span>({{ entity.updated }})</span>
+                                            </label>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="col col-12 form-row no-bottom-margin" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
+                        <label>Selecteer te synchroniseren Wiser inrichting</label>
+                    </div>
+                    <div class="col col-12 table-row no-top-margin" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
+                        <div class="fixed-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th width="150">Alles</th>
+                                        <th width="150">Nieuw</th>
+                                        <th width="150">Verwijderd</th>
+                                        <th width="150">Gewijzigd</th>
+                                    </tr>
+                                </thead>
+                                <tbody v-if="!branchChanges || !branchChanges.settings || !branchChanges.settings.length">
+                                    <tr>
+                                        <td colspan="5">Er zijn geen wijzigingen aan Wiser inrichting om te synchroniseren.</td>
+                                    </tr>
+                                </tbody>
+                                <tbody v-else>
+                                    <tr>
+                                        <td>Alle onderstaande</td>
+                                        <td>
+                                            <label class="checkbox">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.everything" />
+                                                <span>({{ totalAmountOfSettingsCreated + totalAmountOfSettingsUpdated + totalAmountOfSettingsDeleted }})</span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="checkbox" v-if="totalAmountOfSettingsCreated > 0 && !branchMergeSettings.settings.all.everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.create" />
+                                                <span>({{ totalAmountOfSettingsCreated }})</span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="checkbox" v-if="totalAmountOfSettingsDeleted > 0 && !branchMergeSettings.settings.all.everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.delete" />
+                                                <span>({{ totalAmountOfSettingsDeleted }})</span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="checkbox" v-if="totalAmountOfSettingsUpdated > 0 && !branchMergeSettings.settings.all.everything">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.update" />
+                                                <span>({{ totalAmountOfSettingsUpdated }})</span>
+                                            </label>
+                                        </td>
+                                    </tr>
+                                    <tr v-for="setting in branchChanges.settings" :key="setting.type">
+                                        <td>{{ setting.displayName }}</td>
+                                        <td>
+                                            <label class="checkbox" v-if="!branchMergeSettings.settings.all.everything && branchMergeSettings.settings[setting.type]">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].everything" />
+                                                <span>({{ setting.created + setting.deleted + setting.updated }})</span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="checkbox" v-if="setting.created > 0 && !branchMergeSettings.settings.all.everything && !branchMergeSettings.settings.all.create && branchMergeSettings.settings[setting.type]">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].create" />
+                                                <span>({{ setting.created }})</span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="checkbox" v-if="setting.deleted > 0 && !branchMergeSettings.settings.all.everything && !branchMergeSettings.settings.all.delete && branchMergeSettings.settings[setting.type]">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].delete" />
+                                                <span>({{ setting.deleted }})</span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="checkbox" v-if="setting.updated > 0 && !branchMergeSettings.settings.all.everything && !branchMergeSettings.settings.all.update && branchMergeSettings.settings[setting.type]">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].update" />
+                                                <span>({{ setting.updated }})</span>
+                                            </label>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="col col-12 form-row" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
+                        <label class="checkbox">
+                            <input type="checkbox" v-model="branchMergeSettings.deleteAfterSuccessfulMerge" />
+                            <span>Verwijder deze branche na succesvol mergen</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <footer class="container fixed no-bottom-padding" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
+                <div class="row">
+                    <div class="col col-8 inline">
+                        <label class="radio">
+                            <input type="radio" name="start-time" value="direct" v-model="branchMergeSettings.startMode" />
+                            <span>Direct starten</span>
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="start-time" value="delayed" v-model="branchMergeSettings.startMode" />
+                            <span>Starten op:</span>
+                        </label>
+                        <label>
+                            <input type="datetime-local" name="start-time-picker" v-model="branchMergeSettings.startOn" />
+                        </label>
+                    </div>
+                    <div class="col col-4 align-right">
+                        <button class="btn btn-primary" @@click="mergeBranch">Start terugzet procedure</button>
+                    </div>
+                </div>
+            </footer>
+        </wiser-dialog>
+        <wiser-dialog class="branches-dialog" :modal="true" :width="'1500px'" :title="'Conflicten'" ref="wiserMergeConflictsPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Verwerken openstaande merges', primary: true, action: handleMergeConflicts }]">
+        <div class="container stretch">
+            <div class="row no-scroll">
+                <div class="col col-12 flex-inline">
+                    <select>
+                        <option>Type</option>
+                        <option>Veldnaam</option>
+                        <option>Wijzigingsdatum</option>
+                        <option>Waarde origineel</option>
+                        <option>Waarde branche</option>
+                    </select>
+
+                    <select>
+                        <option>bevat</option>
+                        <option>is gelijk aan</option>
+                        <option>is groter dan</option>
+                        <option>is kleiner dan</option>
+                        <option>is tussen</option>
+                    </select>
+
+                    <input type="text" name="" value="" />
+                    <span>en</span>
+                    <input type="text" name="" value="" />
+                            
+                    <button class="btn btn-primary">Keur goed</button>
+
+                    <button class="btn btn-alert">Keur af</button>
+                </div>
+                
+                <div class="col col-12 table-row no-top-margin">
+                    <div class="fixed-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Naam</th>
+                                    <th>Veld</th>
+                                    <th>Waarde origineel</th>
+                                    <th>Waarde branche</th>
+                                    <th>Origineel gewijzigd op</th>
+                                    <th>Branche gewijzigd op</th>
+                                    <th>Actie</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Klant</td>
+                                    <td>Happy Geeks BV</td>
+                                    <td>Telefoonnummer</td>
+                                    <td>0412-611234</td>
+                                    <td>+31 (412) 611234</td>
+                                    <td>1 januari 2022 om 09.55<br>
+                                        door Ferry</td>
+                                    <td>1 januari 2022 om 09.55<br>
+                                        door Gilian</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>Klant</td>
+                                    <td>Happy Geeks BV</td>
+                                    <td>Telefoonnummer</td>
+                                    <td>0412-611234</td>
+                                    <td>+31 (412) 611234</td>
+                                    <td>1 januari 2022 om 09.55<br>
+                                        door Ferry</td>
+                                    <td>1 januari 2022 om 09.55<br>
+                                        door Gilian</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>Klant</td>
+                                    <td>Happy Geeks BV</td>
+                                    <td>Telefoonnummer</td>
+                                    <td>0412-611234</td>
+                                    <td>+31 (412) 611234</td>
+                                    <td>1 januari 2022 om 09.55<br>
+                                        door Ferry</td>
+                                    <td>1 januari 2022 om 09.55<br>
+                                        door Gilian</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <footer class="row fixed no-bottom-padding">
+                <div class="col col-6 inline">
+                    <span class="error">
+                        LET OP: nog niet alle conflicten hebben een akkoord of deny toegekend gekregen!
+                    </span>
+                </div>
+                <div class="col col-6 align-right">
+                    <span>10 van 100 conflicten akkoord</span>
+                    <button class="btn btn-primary">Verwerken openstaande merges</button>
+                </div>
+            </footer>
         </div>
     </wiser-dialog>
-    <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
-        <p>Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:</p>
-        <div class="form-row">
-            <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
-        </div>
-    </wiser-dialog>
+        <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een ID in'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]" @@open="onWiserIdPromptOpen">
+            <div class="form-row">
+                <input type="number" id="wiserId" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" @@keypress="onWiserIdFieldKeyPress" required>
+            </div>
+        </wiser-dialog>
+        <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
+            <p>Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:</p>
+            <div class="form-row">
+                <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
+            </div>
+        </wiser-dialog>
+    </div>
 </div>
 
 <script type="text/html" id="login-template">
@@ -352,7 +868,8 @@
 <script id="vue-config" type="application/json">
 {
     "apiBase": "@Model.Settings.ApiBaseUrl",
-    "subDomain": "@Model.SubDomain" ,
+    "subDomain": "@Model.SubDomain",
+    "currentDomain": "@Model.CurrentDomain",
     "isTestEnvironment": @Model.IsTestEnvironment.ToString().ToLowerInvariant(),
     "wiser1BaseUrl": "@Model.Wiser1BaseUrl",
     "loadPartnerStyle": @Model.LoadPartnerStyle.ToString().ToLowerInvariant(),

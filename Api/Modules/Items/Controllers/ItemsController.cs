@@ -72,14 +72,30 @@ namespace Api.Modules.Items.Controllers
         /// <param name="propertyIdSuffix">Optional: The suffix of every field on the item. This is used to give each field a unique ID, when multiple items are opened at the same time. Default value is <see langword="null"/>.</param>
         /// <param name="itemLinkId">Optional: The id of the item link from wiser_itemlink. This should be used when opening an item via a sub-entities-grid, to show link fields. Default value is 0.</param>
         /// <param name="entityType">Optional: The entity type of the item. Default value is <see langword="null"/>.</param>
+        /// <param name="linkType">Optional: The type number of the link, if this item also contains fields on a link.</param>
         /// <returns>A <see cref="ItemHtmlAndScriptModel"/> with the HTML and javascript needed to load this item in Wiser.</returns>
         [HttpGet]
         [Route("{encryptedId}")]
         [ProducesResponseType(typeof(ItemHtmlAndScriptModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> GetItemAsync(string encryptedId, [FromQuery]string propertyIdSuffix = null, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null)
+        public async Task<IActionResult> GetItemAsync(string encryptedId, [FromQuery]string propertyIdSuffix = null, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
         {
-            return (await itemsService.GetItemHtmlAsync(encryptedId, (ClaimsIdentity)User.Identity, propertyIdSuffix, itemLinkId, entityType)).GetHttpResponseMessage();
+            return (await itemsService.GetItemHtmlAsync(encryptedId, (ClaimsIdentity)User.Identity, propertyIdSuffix, itemLinkId, entityType, linkType)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Gets all details of an item.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item.</param>
+        /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("{encryptedId}/details")]
+        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetItemDetailsAsync(string encryptedId, [FromQuery]string entityType = null)
+        {
+            return (await itemsService.GetItemDetailsAsync(encryptedId, (ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -234,138 +250,6 @@ namespace Api.Modules.Items.Controllers
         }
 
         /// <summary>
-        /// Upload one or more files for an item.
-        /// The files should be included in the request as multi part form data.
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the item the file should be linked to.</param>
-        /// <param name="propertyName">The name of the property that contains the file upload.</param>
-        /// <param name="title">The title/description of the file.</param>
-        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
-        /// <param name="useTinyPng">Optional: Whether to use tiny PNG to compress image files, one or more image files are being uploaded.</param>
-        /// <returns>A list of <see cref="FileModel"/> with file data.</returns>
-        [HttpPost]
-        [Route("{encryptedId}/upload")]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> Upload(string encryptedId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false)
-        {
-            var form = await Request.ReadFormAsync();
-
-            var result = await filesService.UploadAsync(encryptedId, propertyName, title, form.Files, (ClaimsIdentity)User.Identity, itemLinkId, useTinyPng);
-            return result.GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Adds an URL to an external file.
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the item the file is linked to.</param>
-        /// <param name="propertyName">The name of the property that contains the file upload.</param>
-        /// <param name="file">The file data.</param>
-        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
-        /// <returns>The <see cref="FileModel">FileModel</see> of the new file.</returns>
-        [HttpPost]
-        [Route("{encryptedId}/files/url")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> AddFileUrl(string encryptedId, [FromBody]FileModel file, [FromQuery]string propertyName, [FromQuery]ulong itemLinkId = 0)
-        {
-            var result = await filesService.AddFileUrl(encryptedId, propertyName, file, (ClaimsIdentity)User.Identity, itemLinkId);
-            return result.GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Gets a file of an item.
-        /// </summary>
-        /// <param name="itemId">The encrypted ID of the item to get the file of.</param>
-        /// <param name="fileId">The ID of the file to get.</param>
-        /// <param name="fileName">The full file name to return (including extension).</param>
-        /// <param name="customerInformation">Information about the authenticated user, such as the encrypted user ID.</param>
-        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
-        /// <returns>The file contents.</returns>
-        [HttpGet]
-        [Route("{itemId}/files/{fileId:int}/{filename}")]
-        [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status302Found)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [Produces(MediaTypeNames.Application.Octet)]
-        public async Task<IActionResult> GetFileAsync(string itemId, int fileId, string fileName, [FromQuery] CustomerInformationModel customerInformation, [FromQuery]ulong itemLinkId = 0)
-        {
-            // Create a ClaimsIdentity based on query parameters instead the Identity from the bearer token due to being called from an image source where no headers can be set.
-            var userId = String.IsNullOrWhiteSpace(customerInformation.encryptedUserId) ? 0 : Int32.Parse(customerInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim(ClaimTypes.GroupSid, customerInformation.subDomain ?? "")
-            };
-            var dummyClaimsIdentity = new ClaimsIdentity(claims);
-            //Set the sub domain for the database connection.
-            HttpContext.Items[HttpContextConstants.SubDomainKey] = customerInformation.subDomain;
-
-            var imageResult = await filesService.GetFileAsync(itemId, fileId, dummyClaimsIdentity, itemLinkId);
-            var result = imageResult.GetHttpResponseMessage();
-            if (imageResult.StatusCode != HttpStatusCode.OK)
-            {
-                return result;
-            }
-            
-            if (!String.IsNullOrWhiteSpace(imageResult.ModelObject.Url))
-            {
-                imageResult.StatusCode = HttpStatusCode.Found;
-                return Redirect(imageResult.ModelObject.Url);
-            }
-
-            return File(imageResult.ModelObject.Data, imageResult.ModelObject.ContentType);
-        }
-
-        /// <summary>
-        /// Deletes a file.
-        /// </summary>
-        /// <param name="encryptedItemId">The encrypted ID of the item the file is linked to.</param>
-        /// <param name="fileId">The ID of the file.</param>
-        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
-        [HttpDelete]
-        [Route("{encryptedItemId}/files/{fileId:int}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> DeleteFileAsync(string encryptedItemId, int fileId, [FromQuery]ulong itemLinkId = 0)
-        {
-            return (await filesService.DeleteFileAsync(encryptedItemId, fileId, (ClaimsIdentity)User.Identity, itemLinkId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Change the name of a file.
-        /// </summary>
-        /// <param name="encryptedItemId">The encrypted ID of the item the file is linked to.</param>
-        /// <param name="fileId">The ID of the file.</param>
-        /// <param name="newName">The new name of the file.</param>
-        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
-        [HttpPut]
-        [Route("{encryptedItemId}/files/{fileId:int}/rename/{newName}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> RenameFileAsync(string encryptedItemId, int fileId, string newName, [FromQuery]ulong itemLinkId = 0)
-        {
-            return (await filesService.RenameFileAsync(encryptedItemId, fileId, newName, (ClaimsIdentity)User.Identity, itemLinkId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Change the title/description of a file.
-        /// </summary>
-        /// <param name="encryptedItemId">The encrypted ID of the item the file is linked to.</param>
-        /// <param name="fileId">The ID of the file.</param>
-        /// <param name="newTitle">The new title/description of the file.</param>
-        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
-        [HttpPut]
-        [Route("{encryptedItemId}/files/{fileId:int}/title/{newTitle}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> UpdateFileTitleAsync(string encryptedItemId, int fileId, string newTitle, [FromQuery]ulong itemLinkId = 0)
-        {
-            return (await filesService.UpdateFileTitleAsync(encryptedItemId, fileId, newTitle, (ClaimsIdentity)User.Identity, itemLinkId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
         /// Get the data for a sub-entities-grid.
         /// </summary>
         /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
@@ -484,6 +368,7 @@ namespace Api.Modules.Items.Controllers
 
         /// <summary>
         /// Get all items for a tree view for a specific parent.
+        /// This method does not work with dedicated tables for entity types or link types, because we can't know beforehand what entity types and link types a tree view will contain, so we have no way to know which dedicated tables to use.
         /// </summary>
         /// <param name="moduleId">The ID of the module.</param>
         /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>

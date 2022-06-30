@@ -54,7 +54,7 @@ export class Fields {
 
             // If we have no name attribute, then it's not an element that we need to use. 
             // It's probably a sub element of some Kendo component then.
-            if (!field.attr("name")) {
+            if (!field.attr("name") || field.hasClass("skip-when-saving")) {
                 return;
             }
 
@@ -95,7 +95,7 @@ export class Fields {
                 extraData.value = names;
                 results.push(extraData);
                 return;
-            } 
+            }
             
             if (kendoControlName) {
                 let kendoControl = field.data(kendoControlName);
@@ -652,7 +652,7 @@ export class Fields {
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileId`).html(event.response[0].fileId);
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .title`).html(kendo.htmlEncode(event.response[0].title || "(leeg)"));
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileContainer`).data("fileId", event.response[0].fileId).data("itemId", event.response[0].itemId);
-        event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .name`).attr("href", `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(event.response[0].itemId)}/files/${encodeURIComponent(event.response[0].fileId)}/${encodeURIComponent(event.response[0].name)}`);
+        event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .name`).attr("href", `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(event.response[0].itemId)}/files/${encodeURIComponent(event.response[0].fileId)}/${encodeURIComponent(event.response[0].name)}?itemLinkId=${event.response[0].itemLinkId || 0}&entityType=${encodeURIComponent(event.response[0].entityType || "")}&linkType=${event.response[0].linkType || 0}`);
         let addedOn = (event.response[0].addedOn ? DateTime.fromISO(event.response[0].addedOn, { locale: "nl-NL" }) : DateTime.now()).toLocaleString(Dates.LongDateTimeFormat);
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileDate`).html(kendo.htmlEncode(addedOn));
     }
@@ -746,7 +746,7 @@ export class Fields {
         const value = await kendo.prompt("", containerData.name);
         
         await Wiser2.api({
-            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/rename/${encodeURIComponent(value)}`,
+            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/rename/${encodeURIComponent(value)}?itemLinkId=${encodeURIComponent(containerData.itemLinkId || 0)}&entityType=${encodeURIComponent(containerData.entityType || "")}&linkType=${containerData.linkType || 0}`,
             method: "PUT",
             contentType: "application/json",
             dataType: "JSON"
@@ -766,7 +766,7 @@ export class Fields {
         const value = await kendo.prompt("", containerData.title);
 
         await Wiser2.api({
-            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/title/${encodeURIComponent(value)}`,
+            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/title/${encodeURIComponent(value)}?itemLinkId=${containerData.itemLinkId || 0}&entityType=${encodeURIComponent(containerData.entityType || "")}&linkType=${containerData.linkType || 0}`,
             method: "PUT",
             contentType: "application/json",
             dataType: "JSON"
@@ -826,7 +826,7 @@ export class Fields {
         }
 
         // Get the item details so that those values can be used as variables in a string.
-        const itemDetails = !itemId ? { encryptedId: this.base.settings.zeroEncrypted } : (await this.base.getItemDetails(itemId))[0];
+        const itemDetails = !itemId ? { encryptedId: this.base.settings.zeroEncrypted } : (await this.base.getItemDetails(itemId));
 
         const userParametersWithValues = {};
         const success = await this.executeActionButtonActions(actionDetails.actions, userParametersWithValues, itemDetails, propertyId, selectedItems, senderGrid.element);
@@ -878,8 +878,19 @@ export class Fields {
 
             event.sender.element.addClass("loading");
 
+            // Try to determine the entity type. If this button is located within a window, that window element
+            // might have the entity type set as one of its data properties.
+            let entityType;
+            const window = event.sender.element.closest("div.k-window-content");
+            if (window) {
+                entityType = window.data("entityType");
+                if (!entityType && window.data("entityTypeDetails")) {
+                    window.data("entityTypeDetails").entityType;
+                }
+            }
+
             // Get the item details so that those values can be used as variables in a string.
-            const itemDetails = (await this.base.getItemDetails(itemId))[0];
+            const itemDetails = (await this.base.getItemDetails(itemId, entityType));
 
             // Execute all actions that are configured for this button.
             const userParametersWithValues = {};
@@ -1009,12 +1020,13 @@ export class Fields {
             for (let fileData of event.files) {
                 const fileElement = event.sender.wrapper.find(`[data-uid='${fileData.uid}']`);
                 const fileContainer = fileElement.find(".fileContainer");
+                const containerData = fileContainer.data();
                 const fileId = fileData.fileId || fileContainer.data("fileId");
                 const itemId = fileData.itemId || fileContainer.data("itemId");
                 const itemLinkId = fileData.itemLinkId || fileContainer.data("itemLinkId") || 0;
 
                 await Wiser2.api({
-                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/files/${encodeURIComponent(fileId)}?itemLinkId=${encodeURIComponent(itemLinkId)}`,
+                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/files/${encodeURIComponent(fileId)}?itemLinkId=${encodeURIComponent(itemLinkId || 0)}&entityType=${encodeURIComponent(containerData.entityType || "")}&linkType=${containerData.linkType || 0}`,
                     method: "DELETE",
                     contentType: "application/json",
                     dataType: "JSON"
@@ -1064,13 +1076,13 @@ export class Fields {
 
                                 const promises = [
                                     Wiser2.api({
-                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/rename/${encodeURIComponent(newFileName)}`,
+                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/rename/${encodeURIComponent(newFileName)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                                         method: "PUT",
                                         contentType: "application/json",
                                         dataType: "JSON"
                                     }),
                                     Wiser2.api({
-                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/title/${encodeURIComponent(newTitle)}`,
+                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/title/${encodeURIComponent(newTitle)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                                         method: "PUT",
                                         contentType: "application/json",
                                         dataType: "JSON"
@@ -1117,7 +1129,7 @@ export class Fields {
 
             try {
                 await Wiser2.api({
-                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.encryptedItemId || data.itemId)}/files/${encodeURIComponent(data.imageId || data.fileId)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}`,
+                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.encryptedItemId || data.itemId)}/files/${encodeURIComponent(data.imageId || data.fileId)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                     method: "DELETE",
                     contentType: "application/json",
                     dataType: "JSON"
@@ -1141,9 +1153,10 @@ export class Fields {
             }
             const itemId = imageContainer.data("itemId");
             const itemLinkId = imageContainer.data("itemLinkId") || 0;
+            const data = imageContainer.data();
 
             await Wiser2.api({
-                url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/files/${encodeURIComponent(fileId)}?itemLinkId=${encodeURIComponent(itemLinkId)}`,
+                url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/files/${encodeURIComponent(fileId)}?itemLinkId=${encodeURIComponent(itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                 method: "DELETE",
                 contentType: "application/json",
                 dataType: "JSON"
@@ -1461,15 +1474,18 @@ export class Fields {
                             switch ((parameter.fieldType || "").toLowerCase()) {
                                 case "datetime":
                                     await require("@progress/kendo-ui/js/kendo.datetimepicker.js");
-                                    dialog.element.find("input").addClass("dateTimeField").kendoDateTimePicker(options);
+                                    const dateTimePicker = dialog.element.find("input").addClass("dateTimeField").kendoDateTimePicker(options).data("kendoDateTimePicker");
+                                    setTimeout(() => { dateTimePicker.open(); }, 100);
                                     break;
                                 case "date":
                                     await require("@progress/kendo-ui/js/kendo.datepicker.js");
-                                    dialog.element.find("input").addClass("dateTimeField").kendoDatePicker(options);
+                                    const datePicker = dialog.element.find("input").addClass("dateTimeField").kendoDatePicker(options).data("kendoDatePicker");
+                                    setTimeout(() => { datePicker.open(); }, 100);
                                     break;
                                 case "time":
                                     await require("@progress/kendo-ui/js/kendo.timepicker.js");
-                                    dialog.element.find("input").addClass("dateTimeField").kendoTimePicker(options);
+                                    const timePicker = dialog.element.find("input").addClass("dateTimeField").kendoTimePicker(options).data("kendoTimePicker");
+                                    setTimeout(() => { timePicker.open(); }, 100);
                                     break;
                                 case "number":
                                     await require("@progress/kendo-ui/js/kendo.numerictextbox.js");
@@ -1871,11 +1887,14 @@ export class Fields {
                     case "openWindow": {
                         let windowItemId = action.itemId || "{itemId}";
                         let windowLinkId = action.linkId || "{linkId}";
+                        let windowEntityType = action.entityType || null;
+                        let windowLinkType = action.linkType || action.linkTypeNumber || "{linkType}";
 
                         // The queryActionResult are from a previously executed query. This way you can combine the actions executeQuery(Once) and openWindow to open a newly created or updated item.
                         if (queryActionResult) {
                             windowItemId = windowItemId.replace(/{itemId}/gi, queryActionResult.itemId || 0);
                             windowLinkId = windowLinkId.replace(/{linkId}/gi, queryActionResult.linkId || 0);
+                            windowLinkId = windowLinkId.replace(/{linkType}/gi, queryActionResult.linkType || queryActionResult.linkTypeNumber || 0);
                         }
                         windowItemId = Wiser2.doWiserItemReplacements(windowItemId, mainItemDetails);
 
@@ -1885,11 +1904,11 @@ export class Fields {
                             break;
                         }
 
-                        const windowItemDetails = (await this.base.getItemDetails(windowItemId))[0];
+                        const windowItemDetails = (await this.base.getItemDetails(windowItemId, windowEntityType));
 
                         const itemId = windowItemDetails.id || windowItemDetails.itemId || windowItemDetails.itemid || windowItemDetails.item_id;
                         const encryptedId = windowItemDetails.encryptedId || windowItemDetails.encrypted_id || windowItemDetails.encryptedid;
-                        this.base.windows.loadItemInWindow(false, itemId, encryptedId, windowItemDetails.entityType, windowItemDetails.title, true, null, { hideTitleColumn: false }, windowLinkId);
+                        this.base.windows.loadItemInWindow(false, itemId, encryptedId, windowItemDetails.entityType, windowItemDetails.title, true, null, { hideTitleColumn: false }, windowLinkId, null, null, windowLinkType);
 
                         break;
                     }
@@ -1934,7 +1953,7 @@ export class Fields {
 
                         const templateDetails = await this.base.getItemDetails(userParametersWithValues.contentItemId || action.contentItemId);
 
-                        if (!templateDetails || !templateDetails.length) {
+                        if (!templateDetails) {
                             kendo.alert(`Er werd geprobeerd om actie type '${action.type}' uit te voeren, echter kon de template voor het bestand niet gevonden worden. Neem a.u.b. contact op met ons.`);
                             break;
                         }
@@ -2033,7 +2052,7 @@ export class Fields {
                             }
                         }
 
-                        await this.initializeGenerateFileWindow(allUrls, templateDetails[0], emailData, action, element, userParametersWithValues, itemId, linkId, propertyId, selectedItems);
+                        await this.initializeGenerateFileWindow(allUrls, templateDetails, emailData, action, element, userParametersWithValues, itemId, linkId, propertyId, selectedItems);
 
                         break;
                     }
@@ -2370,7 +2389,13 @@ export class Fields {
                             ],
                             stylesheets: [
                                 this.base.settings.htmlEditorCssUrl
-                            ]
+                            ],
+                            serialization: {
+                                custom: this.onHtmlEditorSerialization
+                            },
+                            deserialization: {
+                                custom: this.onHtmlEditorDeserialization
+                            }
                         }).data("kendoEditor");
                     }
 
@@ -2672,7 +2697,13 @@ export class Fields {
                                     ],
                                     stylesheets: [
                                         this.base.settings.htmlEditorCssUrl
-                                    ]
+                                    ],
+                                    serialization: {
+                                        custom: this.onHtmlEditorSerialization
+                                    },
+                                    deserialization: {
+                                        custom: this.onHtmlEditorDeserialization
+                                    }
                                 }).data("kendoEditor");
 
                                 emailBodyEditor.value(currentEmailData.body || "");
@@ -2881,12 +2912,6 @@ export class Fields {
                 this.onHtmlEditorTemplateExec(event, null, codeMirrorInstance);
             },
             icon: "template-manager"
-        });
-        htmlWindow.find(".addDynamicContent").kendoButton({
-            click: () => {
-                this.onHtmlEditorDynamicContentExec(event, null, itemId, codeMirrorInstance);
-            },
-            icon: "css"
         });
 
         htmlWindow.find(".k-primary").kendoButton({
@@ -3208,6 +3233,24 @@ export class Fields {
                     break;
                 }
         }
+    }
+
+    /**
+     * Event that gets called when the Kendo editor serializes it's contents. 
+     * @param html The HTML contents of the editor.
+     * @returns {*} The HTML contents of the editor.
+     */
+    onHtmlEditorSerialization(html) {
+        return html.replace(/\[(>|&gt;)\]([\w]+)\[(<|&lt;)\]/g, "{$2}");
+    }
+
+    /**
+     * Event that gets called when the Kendo editor deserializes it's contents.
+     * @param html The HTML contents of the editor.
+     * @returns {*} The HTML contents of the editor.
+     */
+    onHtmlEditorDeserialization(html) {
+        return html.replace(/{([\w]+)}/g, "[>]$1[<]");
     }
 
     /**

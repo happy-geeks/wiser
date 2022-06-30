@@ -1,5 +1,13 @@
 ﻿@import "../../Base/scss/base.scss";
 
+#wiser {
+    display: block;
+}
+
+#MainTabStrip.k-widget {
+    display: block;
+}
+
 .hidden {
     display: none;
 }
@@ -25,10 +33,6 @@
 .tabSplit.k-state-active,
 .tabSplit.staticSplit {
     display: flex !important;
-}
-
-.k-tabstrip .tabSplit {
-    min-height: calc(100% + 6px);
 }
 
 .tabSplit .left-pane {
@@ -385,6 +389,14 @@ li.hint {
 
 #entityView .flex-container {
     min-width: 50%;
+}
+
+/* Tab strips */
+#EntityTabStrip .k-content,
+#EntityTabStrip .k-content .left-pane,
+#EntityTabStrip .k-content .right-pane {
+    height: calc(100vh - 258px);
+    overflow: auto;
 }
 
 @keyframes lds-ellipsis1 {

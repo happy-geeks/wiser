@@ -70,11 +70,12 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Get the latest version for a given template.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="templateId">The id of the template.</param>
         /// <param name="environment">The environment the template needs to be active on.</param>
         /// <returns>A <see cref="TemplateSettingsModel"/> containing the template data of the latest version.</returns>
-        Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(int templateId, Environments? environment = null);
-        
+        Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId, Environments? environment = null);
+
         /// <summary>
         /// Get the template environments. This will retrieve a list of versions and their published environments and convert it to a PublishedEnvironmentModel 
         /// containing the Live, accept and test versions and the list of other versions that are present in the data.
@@ -127,15 +128,17 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Search for a template.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="searchValue">The value to search for.</param>
-        Task<ServiceResult<List<SearchResultModel>>> SearchAsync(string searchValue);
-        
+        Task<ServiceResult<List<SearchResultModel>>> SearchAsync(ClaimsIdentity identity, string searchValue);
+
         /// <summary>
         /// Retrieve the history of the template. This will include changes made to dynamic content between the releases of templates and the publishes to different environments from this template. This data is collected and combined in a TemnplateHistoryOverviewModel
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="templateId">The id of the template to retrieve the history from.</param>
         /// <returns>A TemplateHistoryOverviewModel containing a list of templatehistorymodels and a list of publishlogmodels. The model contains base info and a list of changes made within the version and its sub components (e.g. dynamic content, publishes).</returns>
-        Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(int templateId);
+        Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId);
 
         /// <summary>
         /// Creates an empty template with the given name, type and parent template.
@@ -144,7 +147,7 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="name">The name to give the template that will be created.</param>
         /// <param name="parent">The id of the parent template of the template that will be created.</param>
         /// <param name="type">The type of the new template that will be created.</param>
-        /// <param name="editorValue"> The optional editorValue of the template, this can be used for importing files.
+        /// <param name="editorValue"> The optional editorValue of the template, this can be used for importing files.</param>
         /// <returns>The id of the newly created template. This can be used to update the interface accordingly.</returns>
         Task<ServiceResult<TemplateTreeViewModel>> CreateAsync(ClaimsIdentity identity, string name, int parent, TemplateTypes type, string editorValue = "");
 
@@ -168,11 +171,12 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Gets the tree view including template settings of all templates.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="parentId">The ID of the parent item.</param>
         /// <param name="startFrom">Set the place from which to start the tree view, folders separated by comma.</param>
         /// <param name="environment">The environment the template needs to be active on.</param>
         /// <returns></returns>
-        Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(int parentId, string startFrom, Environments? environment = null);
+        Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom, Environments? environment = null);
 
         /// <summary>
         /// Deletes a template. This will not actually delete it from the database, but add a new version with removed = 1 instead.
@@ -198,5 +202,21 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
         /// <returns>The HTML of the template as it would look on the website.</returns>
         Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel);
+
+        /// <summary>
+        /// Checks if there's a conflict with another template that's also marked as a default header with the given regex.
+        /// </summary>
+        /// <param name="templateId">ID of the current template.</param>
+        /// <param name="regexString">The regular expression that can filter whether the default header should be used.</param>
+        /// <returns>A string with the name of the template that this template conflicts with, or an empty string if there's no conflict.</returns>
+        Task<ServiceResult<string>> CheckDefaultHeaderConflict(int templateId, string regexString);
+
+        /// <summary>
+        /// Checks if there's a conflict with another template that's also marked as a default footer with the given regex.
+        /// </summary>
+        /// <param name="templateId">ID of the current template.</param>
+        /// <param name="regexString">The regular expression that can filter whether the default footer should be used.</param>
+        /// <returns>A string with the name of the template that this template conflicts with, or an empty string if there's no conflict.</returns>
+        Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString);
     }
 }

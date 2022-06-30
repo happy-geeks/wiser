@@ -402,4 +402,8 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-/FrontEnd/wwwroot/ContentBuilder/
+/FrontEnd/wwwroot/ContentBuilder/*
+!/FrontEnd/wwwroot/ContentBuilder/plugins/
+/FrontEnd/wwwroot/ContentBuilder/plugins/*
+!/FrontEnd/wwwroot/ContentBuilder/plugins/WiserDataSelector
+/FrontEnd/Core/Css/partner/*.css

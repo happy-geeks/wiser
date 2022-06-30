@@ -93,26 +93,13 @@ namespace Api.Modules.Customers.Services
         /// <inheritdoc />
         public async Task<ServiceResult<UserModel>> GetUserDataAsync(ClaimsIdentity identity)
         {
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
-            var encryptionKey = customer.ModelObject.EncryptionKey;
-            var userId = IdentityHelpers.GetWiserUserId(identity);
+            return await usersService.GetUserDataAsync(this, identity);
+        }
 
-            var result = new UserModel
-            {
-                EncryptedId = IdentityHelpers.GetWiserUserId(identity).ToString().EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true),
-                EncryptedCustomerId = customer.ModelObject.CustomerId.ToString().EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true),
-                ZeroEncrypted = "0".EncryptWithAesWithSalt(encryptionKey, true),
-                Id = userId,
-                EmailAddress = await GetUserEmailAddressAsync(userId)
-            };
-            
-            var wiserSettings = await GetWiserSettingsForUserAsync(encryptionKey);
-            result.FilesRootId = wiserSettings.FilesRootId;
-            result.ImagesRootId = wiserSettings.ImagesRootId;
-            result.TemplatesRootId = wiserSettings.TemplatesRootId;
-            result.MainDomain = wiserSettings.MainDomain;
-
-            return new ServiceResult<UserModel>(result);
+        /// <inheritdoc />
+        public async Task<ServiceResult<UserModel>> GetUserDataAsync(IUsersService service, ClaimsIdentity identity)
+        {
+            return await usersService.GetUserDataAsync(service, identity);
         }
 
         /// <inheritdoc />

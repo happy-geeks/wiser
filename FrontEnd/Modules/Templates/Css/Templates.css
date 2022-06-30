@@ -1,9 +1,7 @@
 ﻿@import "../../Base/scss/base.scss";
 
-#createNewItemDialog,
-#addDynamicContentToHtmlDialog,
-#htmlSourceWindow {
-    display: none;
+#wiser {
+    display: block;
 }
 
 .k-dialog #createNewItemDialog,
@@ -276,6 +274,7 @@
     width: 100%;
 }
 
+.header-footer-regex-panel,
 .user-check-panel,
 .object-grouping-panel {
     transition: 200ms ease-in-out;
@@ -284,6 +283,8 @@
     overflow: hidden;
 }
 
+#isDefaultHeader:checked ~ .header-footer-regex-panel,
+#isDefaultFooter:checked ~ .header-footer-regex-panel,
 #loginRequired:checked ~ .user-check-panel,
 #groupingCreateObjectInsteadOfArray:checked ~ .object-grouping-panel {
     max-height: 2000px;
@@ -469,43 +470,43 @@
 }
 
 .k-sprite.rootfolder:before {
-    content: "\e968";
+    content: "\e972";
 }
 
 .k-sprite.folder:before {
-    content: "\e9be";
+    content: "\e968";
 }
 
 .k-sprite.wiserfolderclosed:before {
-    content: "\e9bf";
+    content: "\e96d";
 }
 
 .k-sprite.wiserfolderopened:before {
-    content: "\e951";
+    content: "\e965";
 }
 
 .k-sprite.pdf:before {
-    content: "\e9c0";
+    content: "\e956";
 }
 
 .k-sprite.html:before {
-    content: "\e947";
+    content: "\e957";
 }
 
 .k-sprite.image:before {
-    content: "\e986";
+    content: "\e9eb";
 }
 
 .k-sprite.file:before {
-    content: "\e93c";
+    content: "\e94b";
 }
 
 .k-sprite.edit:before {
-    content: "\e983";
+    content: "\e9e8";
 }
 
 .k-sprite.delete:before {
-    content: "\e92a";
+    content: "\e93f";
 }
 
 .k-state-default > .k-clear-value {
