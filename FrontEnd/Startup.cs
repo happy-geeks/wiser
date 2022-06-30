@@ -5,7 +5,6 @@ using FrontEnd.Modules.ImportExport.Interfaces;
 using FrontEnd.Modules.ImportExport.Services;
 using FrontEnd.Modules.Templates.Interfaces;
 using FrontEnd.Modules.Templates.Services;
-using FrontEnd.Modules.Templates.SignalR.Hubs;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -94,9 +93,6 @@ namespace FrontEnd
                 options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Local;
                 options.SerializerSettings.Converters.Add(new StringEnumConverter());
             });
-
-            // Add SignalR for WebSockets.
-            services.AddSignalR();
 
             // Setup dependency injection.
             services.AddHttpContextAccessor();

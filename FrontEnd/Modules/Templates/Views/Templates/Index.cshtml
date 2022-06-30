@@ -31,7 +31,8 @@
       data-sub-domain="@Model.SubDomain"
       data-track-js-token="@Model.Settings.TrackJsToken"
       data-api-client-id="@Model.Settings.ApiClientId"
-      data-api-client-secret="@Model.Settings.ApiClientSecret">
+      data-api-client-secret="@Model.Settings.ApiClientSecret"
+      data-pusher-app-key="@Model.Settings.PusherAppKey">
     <span id="popupNotification"></span>
     <div id="wiser">
         <div id="window" style="margin: 0 auto; padding: 0;">
@@ -145,7 +146,6 @@
         </div>
     </div>
 
-    <script src="/scripts/signalr/dist/browser/signalr.min.js"></script>
     <script src="/scripts/Utils.min.js"></script>
     <script src="/scripts/Base.min.js"></script>
     <script src="/scripts/Templates.min.js"></script>

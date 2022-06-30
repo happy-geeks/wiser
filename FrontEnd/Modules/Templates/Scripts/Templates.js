@@ -154,17 +154,21 @@ const moduleSettings = {
             await this.initializeKendoComponents();
             this.bindEvents();
 
-            // Start the SignalR connection.
-            await this.connectedUsers.init();
-
-            window.processing.removeProcess(process);
-
             window.addEventListener("beforeunload", async (event) => {
                 if (!this.canUnloadTemplate()) {
                     event.preventDefault();
                     event.returnValue = "";
                 }
             });
+            window.addEventListener("unload", async () => {
+                // Remove this user from the list.
+                await this.connectedUsers.removeUser();
+            });
+
+            // Start the Pusher connection.
+            await this.connectedUsers.init();
+
+            window.processing.removeProcess(process);
         }
 
         /**
@@ -638,12 +642,8 @@ const moduleSettings = {
                 await Promise.all(promises);
                 window.processing.removeProcess(process);
 
-                // Add user to the connected users (uses SignalR).
-                if (this.connectedUsers.currentTemplateId > 0) {
-                    this.connectedUsers.remove(this.connectedUsers.currentTemplateId, this.base.settings.username);
-                }
-                this.connectedUsers.currentTemplateId = id;
-                this.connectedUsers.add(id, this.base.settings.username);
+                // Add user to the connected users (uses Pusher).
+                this.connectedUsers.switchTemplate(id);
 
                 // Only load dynamic content and previews for HTML templates.
                 const isHtmlTemplate = this.templateSettings.type.toUpperCase() === "HTML";
