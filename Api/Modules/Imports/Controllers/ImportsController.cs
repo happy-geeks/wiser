@@ -5,6 +5,7 @@ using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Api.Modules.EntityProperties.Models;
 using Api.Modules.Imports.Interfaces;
 using Api.Modules.Imports.Models;
 
@@ -96,5 +97,19 @@ namespace Api.Modules.Imports.Controllers
         {
             return (await importsService.DeleteLinksAsync((ClaimsIdentity)User.Identity, deleteLinksConfirms)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Retrieves all properties of an entity that can be used in the import module and returns them as <see cref="EntityPropertyModel"/> objects.
+        /// </summary>
+        /// <param name="entityName">The name of the property whose properties will be retrieved.</param>
+        /// <param name="linkType">Optional link type, in case the properties should be retrieved by link type instead of entity name.</param>
+        /// <returns>A collection of <see cref="EntityPropertyModel"/> objects.</returns>
+        [HttpGet]
+        [Route("entity-properties")]
+        [ProducesResponseType(typeof(IEnumerable<EntityPropertyModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetEntityProperties(string entityName = null, int linkType = 0)
+        {
+            return (await importsService.GetEntityProperties((ClaimsIdentity)User.Identity, entityName, linkType)).GetHttpResponseMessage();
+        } 
     }
 }

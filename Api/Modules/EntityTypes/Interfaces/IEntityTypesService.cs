@@ -32,6 +32,14 @@ namespace Api.Modules.EntityTypes.Interfaces
         Task<ServiceResult<EntitySettingsModel>> GetAsync(ClaimsIdentity identity, string entityType, int moduleId = 0);
 
         /// <summary>
+        /// Gets the settings for an entity type. These settings will be cached for 1 hour.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="id">The ID of the entity type.</param>
+        /// <returns>A <see cref="EntitySettingsModel"/> containing all settings of the entity type.</returns>
+        Task<ServiceResult<EntitySettingsModel>> GetAsync(ClaimsIdentity identity, int id);
+
+        /// <summary>
         /// Gets all available entity types, based on module id and parent id.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
@@ -39,5 +47,21 @@ namespace Api.Modules.EntityTypes.Interfaces
         /// <param name="parentId">Optional: The ID of the parent. Set to 0 or skip to use the root.</param>
         /// <returns>A list of available entity names.</returns>
         Task<ServiceResult<List<EntityTypeModel>>> GetAvailableEntityTypesAsync(ClaimsIdentity identity, int moduleId, string parentId = null);
+
+        /// <summary>
+        /// Creates a new entity type.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="name">The name of the new entity type.</param>
+        /// <returns>The ID of the new entity type.</returns>
+        Task<ServiceResult<long>> CreateAsync(ClaimsIdentity identity, string name);
+
+        /// <summary>
+        /// Creates a new entity type.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="id">The ID of the entity type.</param>
+        /// <param name="settings">The settings to save.</param>
+        Task<ServiceResult<bool>> UpdateAsync(ClaimsIdentity identity, int id, EntitySettingsModel settings);
     }
 }

@@ -56,19 +56,24 @@ namespace Api.Modules.Customers.Models
         public string LastLoginIpAddress { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the current environment / customer.
+        /// Gets or sets the name of the current branch / customer.
         /// </summary>
-        public string CurrentEnvironmentName { get; set; }
+        public string CurrentBranchName { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the production environment / customer.
+        /// Gets or sets the ID of the current branch / customer.
         /// </summary>
-        public string ProductionEnvironmentName { get; set; }
+        public int CurrentBranchId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the main branch / customer.
+        /// </summary>
+        public string MainBranchName { get; set; }
 
         /// <summary>
         /// Gets or sets whether the current environment is the production environment.
         /// </summary>
-        public bool CurrentEnvironmentIsProductionEnvironment { get; set; }
+        public bool CurrentBranchIsMainBranch { get; set; }
 
         /// <summary>
         /// Gets or sets the value that should be saved in a "Remember me" cookie. This will only contain a value if returned by the login method.
