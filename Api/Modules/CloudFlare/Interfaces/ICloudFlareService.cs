@@ -7,20 +7,21 @@ namespace Api.Modules.CloudFlare.Interfaces
     /// </summary>
     public interface ICloudFlareService
     {
- 
+
         /// <summary>
         /// Uploads an image to CloudFlare
         /// </summary>
+        /// <param name="fileName">Name of the file to upload.</param>
         /// <param name="fileBytes">Contents of the file to upload.</param>
         /// <returns>string with url from CloudFlare</returns>
-        Task<string> UploadImage(byte[] fileBytes);
+        Task<string> UploadImageAsync(string fileName, byte[] fileBytes);
 
         /// <summary>
-        /// Gets an image from CloudFlarw
+        /// Deletes an image based on the image id encapsulated in the url
         /// </summary>
-        /// <param name="imageId">Id of the image on CloudFlare to get</param>
+        /// <param name="url">Url from Cloudflare</param>
         /// <returns></returns>
-        Task<byte[]> GetImage(string imageId);
+        Task DeleteImageAsync(string url);
 
     }
 }
