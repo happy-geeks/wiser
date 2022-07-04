@@ -285,7 +285,7 @@ const moduleSettings = {
             }
 
             //Call save function based on active tab
-            switch (this.activeMainTab) {
+            switch (this.activeMainTab.toLowerCase()) {
                 case "entityProperty":
                     await this.entityTab.beforeSave();
                     break;

@@ -49,4 +49,17 @@
         border-bottom: none;
         padding: 0 0 5px 0;
     }
+    
+    .close-dialog {
+        background: none;
+        width: auto;
+        position: absolute;
+        cursor: pointer;
+        border: 0;
+        right: 20px;
+        top: 20px;
+        margin: 0;
+        padding: 0;
+        z-index: 1103;
+    }
 }

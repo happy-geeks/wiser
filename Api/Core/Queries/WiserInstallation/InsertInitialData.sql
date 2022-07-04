@@ -289,36 +289,3 @@ INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_data`, `te
 INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_data`, `template_data_minified`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`, `use_cache`, `cache_minutes`, `handle_request`, `handle_session`, `handle_objects`, `handle_standards`, `handle_translations`, `handle_dynamic_content`, `handle_logic_blocks`, `handle_mutators`, `login_required`, `login_user_type`, `login_session_prefix`, `login_role`, `linked_templates`, `ordering`, `insert_mode`, `load_always`, `url_regex`, `external_files`, `grouping_create_object_instead_of_array`, `grouping_prefix`, `grouping_key`, `grouping_key_column_name`, `grouping_value_column_name`, `removed`, `is_scss_include_template`, `use_in_wiser_html_editors`, `pre_load_query`, `cache_location`, `return_not_found_when_pre_load_query_has_no_data`, `cache_regex`, `login_redirect_url`, `routine_type`, `routine_parameters`, `routine_return_type`, `disable_minifier`, `is_default_header`, `is_default_footer`, `default_header_footer_regex`) VALUES (NULL, 'QUERY', NULL, NULL, 7, 1, 137, NOW(), '', 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, 4, 0, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, 0, 0, NULL, NULL, 0, NULL, NULL, 0, 0, 0, NULL);
 INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_data`, `template_data_minified`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`, `use_cache`, `cache_minutes`, `handle_request`, `handle_session`, `handle_objects`, `handle_standards`, `handle_translations`, `handle_dynamic_content`, `handle_logic_blocks`, `handle_mutators`, `login_required`, `login_user_type`, `login_session_prefix`, `login_role`, `linked_templates`, `ordering`, `insert_mode`, `load_always`, `url_regex`, `external_files`, `grouping_create_object_instead_of_array`, `grouping_prefix`, `grouping_key`, `grouping_key_column_name`, `grouping_value_column_name`, `removed`, `is_scss_include_template`, `use_in_wiser_html_editors`, `pre_load_query`, `cache_location`, `return_not_found_when_pre_load_query_has_no_data`, `cache_regex`, `login_redirect_url`, `routine_type`, `routine_parameters`, `routine_return_type`, `disable_minifier`, `is_default_header`, `is_default_footer`, `default_header_footer_regex`) VALUES (NULL, 'SCRIPTS', NULL, NULL, 7, 1, 138, NOW(), '', 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, 5, 0, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, 0, 0, NULL, NULL, 0, NULL, NULL, 0, 0, 0, NULL);
 INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_data`, `template_data_minified`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`, `use_cache`, `cache_minutes`, `handle_request`, `handle_session`, `handle_objects`, `handle_standards`, `handle_translations`, `handle_dynamic_content`, `handle_logic_blocks`, `handle_mutators`, `login_required`, `login_user_type`, `login_session_prefix`, `login_role`, `linked_templates`, `ordering`, `insert_mode`, `load_always`, `url_regex`, `external_files`, `grouping_create_object_instead_of_array`, `grouping_prefix`, `grouping_key`, `grouping_key_column_name`, `grouping_value_column_name`, `removed`, `is_scss_include_template`, `use_in_wiser_html_editors`, `pre_load_query`, `cache_location`, `return_not_found_when_pre_load_query_has_no_data`, `cache_regex`, `login_redirect_url`, `routine_type`, `routine_parameters`, `routine_return_type`, `disable_minifier`, `is_default_header`, `is_default_footer`, `default_header_footer_regex`) VALUES (NULL, 'AIS', NULL, NULL, 7, 1, 139, NOW(), '', 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, 6, 0, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, 0, 0, NULL, NULL, 0, NULL, NULL, 0, 0, 0, NULL);
-
--- ----------------------------
--- Stored procedures
--- ----------------------------
-CREATE DEFINER=CURRENT_USER FUNCTION `CreateJsonSafeProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8mb4 DETERMINISTIC
-BEGIN
-	DECLARE output VARCHAR(255);
-	
-	SET output = REPLACE(input, '-', '__h__');
-	SET output = REPLACE(output, ' ', '__s__');
-	SET output = REPLACE(output, ':', '__c__');
-	SET output = REPLACE(output, '(', '__bl__');
-	SET output = REPLACE(output, ')', '__br__');
-	SET output = REPLACE(output, '.', '__d__');
-	SET output = REPLACE(output, ',', '__co__');
-
-	RETURN output;
-END;
-
-CREATE DEFINER=CURRENT_USER FUNCTION `GetNameFromSafeJsonProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8mb4 DETERMINISTIC
-BEGIN
-	DECLARE output VARCHAR(255);
-	
-	SET output = REPLACE(input, '__h__', '-');
-	SET output = REPLACE(output, '__s__', ' ');
-	SET output = REPLACE(output, '__c__', ':');
-	SET output = REPLACE(output, '__bl__', '(');
-	SET output = REPLACE(output, '__br__', ')');
-	SET output = REPLACE(output, '__d__', '.');
-	SET output = REPLACE(output, '__co__', ',');
-
-	RETURN output;
-END;
