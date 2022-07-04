@@ -50,8 +50,7 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<FileModel>>> UploadAsync(string encryptedId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false, string entityType = null, int linkType = 0)
-        public async Task<ServiceResult<List<FileModel>>> UploadAsync(string encryptedId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false, bool useCloudFlare = false)
+        public async Task<ServiceResult<List<FileModel>>> UploadAsync(string encryptedId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false, bool useCloudFlare = false, string entityType = null, int linkType = 0)
         {
             if (String.IsNullOrWhiteSpace(encryptedId))
             {
@@ -119,8 +118,7 @@ namespace Api.Modules.Files.Services
                         throw new NotImplementedException("Tiny PNG not supported yet.");
                     }
 
-                    var fileResult = await SaveAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId, entityType, linkType);
-                    var fileResult = await SaveAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId, useCloudFlare);
+                    var fileResult = await SaveAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId, useCloudFlare, entityType, linkType);
                     if (fileResult.StatusCode != HttpStatusCode.OK)
                     {
                         return new ServiceResult<List<FileModel>>
@@ -151,29 +149,19 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+        public async Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, bool useCloudFlare = false, string entityType = null, int linkType = 0)
         {
-
             var content = Array.Empty<byte>();
             var contentUrl = string.Empty;
             var fileExtension = Path.GetExtension(fileName);
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            databaseConnection.ClearParameters();
 
-            var tablePrefix = "";
-            if (itemLinkId > 0)
             if ((ftpSettings == null || !ftpSettings.Any()) && !useCloudFlare)
             {
-                tablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(linkType, entityType);
-                databaseConnection.ClearParameters();
-                databaseConnection.AddParameter("itemlink_id", itemLinkId);
                 content = fileBytes;
             }
             else if (useCloudFlare)
             {
-                tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-                databaseConnection.ClearParameters();
-                databaseConnection.AddParameter("item_id", itemId);
                 contentUrl = await cloudFlareService.UploadImageAsync(fileName, fileBytes);
             }
             else
@@ -252,12 +240,15 @@ namespace Api.Modules.Files.Services
             }
 
             databaseConnection.ClearParameters();
+            var tablePrefix = "";
             if (itemLinkId > 0)
             {
+                tablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(linkType, entityType);
                 databaseConnection.AddParameter("itemlink_id", itemLinkId);
             }
             else if (itemId > 0)
             {
+                tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
                 databaseConnection.AddParameter("item_id", itemId);
             }
             databaseConnection.AddParameter("content_url", contentUrl);
@@ -320,11 +311,8 @@ namespace Api.Modules.Files.Services
             var tablePrefix = itemLinkId > 0
                 ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
                 : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-            
-            var query = $"SELECT content_type, content, content_url, file_name, property_name FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE id = ?imageId";
-            
 
-            var query = $"SELECT content_type, content, content_url, file_name, property_name FROM {WiserTableNames.WiserItemFile} WHERE id = ?imageId";
+            var query = $"SELECT content_type, content, content_url, file_name, property_name FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE id = ?imageId";
 
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
             databaseConnection.ClearParameters();
@@ -418,7 +406,7 @@ namespace Api.Modules.Files.Services
             var tablePrefix = itemLinkId > 0
                 ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
                 : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-            
+
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
             if (!success)
@@ -455,7 +443,7 @@ namespace Api.Modules.Files.Services
             var (_, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
             if (ftpSettings.Any())
             {
-                 if (!String.IsNullOrWhiteSpace(fileUrl))
+                if (!String.IsNullOrWhiteSpace(fileUrl))
                 {
                     foreach (var ftp in ftpSettings)
                     {
@@ -471,7 +459,7 @@ namespace Api.Modules.Files.Services
                     await cloudFlareService.DeleteImageAsync(fileUrl);
                 }
             }
-            
+
             query = $"DELETE FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
             await databaseConnection.ExecuteAsync(query);
 
@@ -520,9 +508,9 @@ namespace Api.Modules.Files.Services
             var tablePrefix = itemLinkId > 0
                 ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
                 : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-            
+
             var query = $"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} SET file_name = ?newName WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
-            
+
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
 
             var userId = IdentityHelpers.GetWiserUserId(identity);
@@ -567,9 +555,9 @@ namespace Api.Modules.Files.Services
             var tablePrefix = itemLinkId > 0
                 ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
                 : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-            
+
             var query = $"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} SET title = ?newTitle WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
-            
+
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
 
             var userId = IdentityHelpers.GetWiserUserId(identity);
@@ -620,7 +608,7 @@ namespace Api.Modules.Files.Services
             var tablePrefix = itemLinkId > 0
                 ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
                 : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-            
+
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
             if (!success)
@@ -730,7 +718,7 @@ AND ordering <= ?newPosition";
             var tablePrefix = itemLinkId > 0
                 ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
                 : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-            
+
             databaseConnection.AddParameter("itemId", itemId);
             databaseConnection.AddParameter("itemLinkId", itemLinkId);
             databaseConnection.AddParameter("propertyName", propertyName);

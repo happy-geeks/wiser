@@ -59,13 +59,11 @@ namespace Api.Modules.Files.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadAsync(string encryptedId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
-        public async Task<IActionResult> Upload(string encryptedId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false, [FromQuery] bool useCloudFlare = false)
+        public async Task<IActionResult> UploadAsync(string encryptedId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false, [FromQuery] bool useCloudFlare = false, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
         {
             var form = await Request.ReadFormAsync();
 
-            var result = await filesService.UploadAsync(encryptedId, propertyName, title, form.Files, (ClaimsIdentity)User.Identity, itemLinkId, useTinyPng, entityType, linkType);
-            var result = await filesService.UploadAsync(encryptedId, propertyName, title, form.Files, (ClaimsIdentity)User.Identity, itemLinkId, useTinyPng, useCloudFlare);
+            var result = await filesService.UploadAsync(encryptedId, propertyName, title, form.Files, (ClaimsIdentity)User.Identity, itemLinkId, useTinyPng, useCloudFlare, entityType, linkType);
             return result.GetHttpResponseMessage();
         }
 
