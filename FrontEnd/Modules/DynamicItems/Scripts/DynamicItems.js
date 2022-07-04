@@ -1338,7 +1338,11 @@ const moduleSettings = {
         async onDeleteItemClick(event, encryptedItemId, entityType) {
             event.preventDefault();
 
-            await Wiser2.showConfirmDialog(`Weet u zeker dat u het item '${this.base.selectedItem.title}' wilt verwijderen?`);
+            if (this.base.selectedItem && this.base.selectedItem.title) {
+                await Wiser2.showConfirmDialog(`Weet u zeker dat u het item '${this.base.selectedItem.title}' wilt verwijderen?`);
+            } else {
+                await Wiser2.showConfirmDialog(`Weet u zeker dat u dit item wilt verwijderen?`);
+            }
 
             try {
                 await this.deleteItem(encryptedItemId, entityType);

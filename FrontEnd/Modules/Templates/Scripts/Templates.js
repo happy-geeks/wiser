@@ -175,7 +175,7 @@ const moduleSettings = {
                 click: () => this.openCreateNewItemDialog()
             });
 
-            $("#saveButton").kendoButton({
+            $("#saveButton, #saveAndDeployToTestButton").kendoButton({
                 icon: "save"
             });
 
@@ -1374,8 +1374,8 @@ const moduleSettings = {
         }
 
         //Deploy a version to an enviorenment
-        async deployEnvironment(environment, templateId) {
-            const version = document.querySelector(`#published-environments .version-${environment} select.combo-select`).value;
+        async deployEnvironment(environment, templateId, version) {
+            version = version || document.querySelector(`#published-environments .version-${environment} select.combo-select`).value;
             if (!version) {
                 kendo.alert("U heeft geen geldige versie geselecteerd.");
                 return;
@@ -1393,8 +1393,8 @@ const moduleSettings = {
             await this.reloadMetaData(templateId);
         }
 
-        async deployDynamicContentEnvironment(environment, contentId) {
-            const version = document.querySelector(`#published-environments-dynamic-component .version-${environment} select.combo-select`).value;
+        async deployDynamicContentEnvironment(environment, contentId, version) {
+            version = version || document.querySelector(`#published-environments-dynamic-component .version-${environment} select.combo-select`).value;
             if (!version) {
                 kendo.alert("U heeft geen geldige versie geselecteerd.");
                 return;
@@ -1433,6 +1433,7 @@ const moduleSettings = {
             });
 
             document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
+            document.getElementById("saveAndDeployToTestButton").addEventListener("click", this.saveTemplate.bind(this, true));
 
             document.getElementById("searchForm").addEventListener("submit", this.onSearchFormSubmit.bind(this));
           
@@ -1559,7 +1560,7 @@ const moduleSettings = {
         /**
          * Save a new version of the selected template.
          */
-        async saveTemplate() {
+        async saveTemplate(alsoDeployToTest = false) {
             if (!this.selectedId || this.saving) {
                 return false;
             }
@@ -1598,6 +1599,11 @@ const moduleSettings = {
 
                 window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
                 this.historyLoaded = false;
+
+                if (alsoDeployToTest) {
+                    const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
+                    await this.deployEnvironment("test", this.selectedId, version);
+                }
                 await this.reloadMetaData(this.selectedId);
 
                 // Save the current settings so that we can keep track of any changes and warn the user if they're about to leave without saving.

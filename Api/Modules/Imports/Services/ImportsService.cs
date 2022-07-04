@@ -20,6 +20,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Enums;
 using Api.Modules.Customers.Models;
+using Api.Modules.EntityProperties.Helpers;
+using Api.Modules.EntityProperties.Models;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
@@ -132,6 +134,7 @@ namespace Api.Modules.Imports.Services
                     string[] headerFields = null;
                     var firstLine = true;
                     var rowsHandled = 0;
+                    var idIndex = -1;
 
                     while (!reader.EndOfData)
                     {
@@ -139,6 +142,16 @@ namespace Api.Modules.Imports.Services
                         {
                             headerFields = reader.ReadFields();
                             firstLine = false;
+                            idIndex = Array.FindIndex(headerFields, s => s.Equals("id", StringComparison.OrdinalIgnoreCase));
+
+                            if (idIndex < 0)
+                            {
+                                importResult.Failed += 1U;
+                                importResult.Errors.Add("Can't do import because of missing ID column");
+                                importResult.UserFriendlyErrors.Add("De import kan niet gedaan worden omdat er geen kolom genaamd 'id' is gevonden in het importbestand. Er moet altijd een kolom met de naam 'id' zijn. Bij het wijzigen van bestaande items, moet daar het ID van het item im komen te staan. Bij het toevoegen van nieuwe items, kan de kolon leeg blijven, of '0' zijn. Bij het importeren van koppelingen moet daar het ID van een van de items in staan (en het andere ID moet dan in een andere kolom staan).");
+                                return new ServiceResult<ImportResultModel>(importResult);
+                            }
+
                             continue;
                         }
 
@@ -166,7 +179,6 @@ namespace Api.Modules.Imports.Services
                         };
                         importData.Add(importItem);
 
-                        var idIndex = Array.FindIndex(headerFields, s => s.Equals("id", StringComparison.OrdinalIgnoreCase));
 
                         var isNewItem = true;
 
@@ -270,6 +282,18 @@ namespace Api.Modules.Imports.Services
                                     // Link item in settings to newly made item.
                                     itemLink.ItemId = Convert.ToUInt64(value.Trim());
                                     itemLink.DestinationItemId = importItem.Item.Id;
+                                }
+                                
+                                // Make sure an item won't get linked to itself.
+                                if (itemLink.ItemId == itemLink.DestinationItemId)
+                                {
+                                    continue;
+                                }
+
+                                // Make sure that we don't import duplicate links.
+                                if (importItem.Links.Any(x => x.ItemId == itemLink.ItemId && x.DestinationItemId == itemLink.DestinationItemId && x.Type == itemLink.Type))
+                                {
+                                    continue;
                                 }
 
                                 importItem.Links.Add(itemLink);
@@ -1258,6 +1282,74 @@ AND destinationDetail.`value` IN({String.Join(",", destinationValues.Select(line
                 await clientDatabaseConnection.RollbackTransactionAsync(false);
                 throw;
             }
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<IEnumerable<EntityPropertyModel>>> GetEntityProperties(ClaimsIdentity identity, string entityName = null, int linkType = 0)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("entityName", entityName ?? String.Empty);
+            clientDatabaseConnection.AddParameter("linkType", linkType);
+
+            var getPropertiesResult = await clientDatabaseConnection.GetAsync($@"
+                SELECT property.id, property.display_name, property.property_name, property.language_code, property.inputtype, property.`options`, property.ordering
+                FROM (
+                    SELECT
+                        0 AS id,
+                        'Item naam' AS display_name,
+                        'itemTitle' AS property_name,
+                        '' AS language_code,
+                        'input' AS inputtype,
+                        '' AS `options`,
+                        1 AS ordering,
+                        0 AS base_order
+                    FROM DUAL
+                    WHERE ?entityName <> ''
+                    UNION
+                    SELECT
+                        id,
+                        CONCAT(
+                            IF(display_name = '', property_name, display_name),
+                            IF(
+                                language_code <> '',
+                                CONCAT(' (', language_code, ')'),
+                                ''
+                            )
+                        ) AS display_name,
+                        IF(property_name = '', display_name, property_name) AS property_name,
+                        language_code,
+                        inputtype,
+                        IF(inputtype = 'image-upload', `options`, '') AS `options`,
+                        ordering AS ordering,
+                        1 AS base_order
+                    FROM `{WiserTableNames.WiserEntityProperty}`
+                    WHERE entity_name = ?entityName OR (?linkType > 0 AND link_type = ?linkType)
+                    ORDER BY base_order, display_name
+                ) AS property");
+
+            if (getPropertiesResult.Rows.Count == 0)
+            {
+                return new ServiceResult<IEnumerable<EntityPropertyModel>>(null);
+            }
+
+            var entityProperties = new List<EntityPropertyModel>(getPropertiesResult.Rows.Count);
+            foreach (var entityPropertyDataRow in getPropertiesResult.Rows.Cast<DataRow>())
+            {
+                entityProperties.Add(new EntityPropertyModel
+                {
+                    Id = Convert.ToInt32(entityPropertyDataRow["id"]),
+                    DisplayName = entityPropertyDataRow.Field<string>("display_name"),
+                    PropertyName = entityPropertyDataRow.Field<string>("property_name"),
+                    LanguageCode = entityPropertyDataRow.Field<string>("language_code"),
+                    InputType = EntityPropertyHelper.ToInputType(entityPropertyDataRow.Field<string>("inputtype")),
+                    Options = entityPropertyDataRow.Field<string>("options") ?? String.Empty,
+                    Ordering = Convert.ToInt32(entityPropertyDataRow["ordering"])
+                });
+            }
+
+            return new ServiceResult<IEnumerable<EntityPropertyModel>>(entityProperties);
         }
     }
 }

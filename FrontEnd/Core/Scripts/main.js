@@ -4,10 +4,6 @@ import { TrackJS } from "trackjs";
 import { createApp, defineAsyncComponent } from "vue";
 import * as axios from "axios";
 
-/*import SwiperCore, { Virtual } from "swiper";
-import { Swiper, SwiperSlide } from "swiper/vue";
-SwiperCore.use([Virtual]);*/
-
 import UsersService from "./shared/users.service";
 import ModulesService from "./shared/modules.service";
 import CustomersService from "./shared/customers.service";
@@ -36,10 +32,12 @@ import {
     TOGGLE_PIN_MODULE,
     CHANGE_PASSWORD,
     CREATE_BRANCH,
+    CREATE_BRANCH_ERROR,
     GET_BRANCHES, 
     MERGE_BRANCH,
     GET_ENTITIES_FOR_BRANCHES,
-    IS_MAIN_BRANCH
+    IS_MAIN_BRANCH,
+    GET_BRANCH_CHANGES
 } from "./store/mutation-types";
 
 (() => {
@@ -78,7 +76,7 @@ import {
             }
 
             if (this.appSettings.loadPartnerStyle) {
-                import(`../scss/partner/${this.appSettings.subDomain}.scss`);
+                import(`../css/partner/${this.appSettings.subDomain}.css`);
             }
 
             this.api = axios.create({
@@ -123,10 +121,54 @@ import {
                         changePasswordPromptOldPasswordValue: null,
                         changePasswordPromptNewPasswordValue: null,
                         changePasswordPromptNewPasswordRepeatValue: null,
-                        createBranchPromptValue: null,
-                        selectedBranchValue: null,
-                        entityCopySettings: {
-                            all: -1
+                        generalMessagePromptTitle: "",
+                        generalMessagePromptText: "",
+                        createBranchSettings: {
+                            name: null,
+                            startMode: "direct",
+                            startOn: null,
+                            entities: {
+                                all: {
+                                    mode: -1
+                                }
+                            }
+                        },
+                        branchMergeSettings: {
+                            selectedBranch: {
+                                id: 0
+                            },
+                            startMode: "direct",
+                            startOn: null,
+                            deleteAfterSuccessfulMerge: false,
+                            entities: {
+                                all: {
+                                    everything: false,
+                                    create: false,
+                                    update: false,
+                                    delete: false
+                                }
+                            },
+                            settings: {
+                                all: {
+                                    everything: false,
+                                    create: false,
+                                    update: false,
+                                    delete: false
+                                }
+                            }
+                        },
+                        openBranchTypes: [
+                            { id: "wiser", name:  "Wiser" },
+                            { id: "website", name: "Website" }
+                        ],
+                        openBranchSettings: {
+                            selectedBranch: {
+                                id: 0
+                            },
+                            websiteUrl: "",
+                            selectedBranchType: {
+                                id: ""
+                            }
                         }
                     };
                 },
@@ -214,6 +256,39 @@ import {
                     },
                     isMainBranch() {
                         return this.$store.state.branches.isMainBranch;
+                    },
+                    branchChanges() {
+                        return this.$store.state.branches.branchChanges;
+                    },
+                    totalAmountOfItemsCreated() {
+                        return this.$store.state.branches.branchChanges.entities.reduce((accumulator, entity) => {
+                            return accumulator + entity.created;
+                        }, 0);
+                    },
+                    totalAmountOfItemsUpdated() {
+                        return this.$store.state.branches.branchChanges.entities.reduce((accumulator, entity) => {
+                            return accumulator + entity.updated;
+                        }, 0);
+                    },
+                    totalAmountOfItemsDeleted() {
+                        return this.$store.state.branches.branchChanges.entities.reduce((accumulator, entity) => {
+                            return accumulator + entity.deleted;
+                        }, 0);
+                    },
+                    totalAmountOfSettingsCreated() {
+                        return this.$store.state.branches.branchChanges.settings.reduce((accumulator, entity) => {
+                            return accumulator + entity.created;
+                        }, 0);
+                    },
+                    totalAmountOfSettingsUpdated() {
+                        return this.$store.state.branches.branchChanges.settings.reduce((accumulator, entity) => {
+                            return accumulator + entity.updated;
+                        }, 0);
+                    },
+                    totalAmountOfSettingsDeleted() {
+                        return this.$store.state.branches.branchChanges.settings.reduce((accumulator, entity) => {
+                            return accumulator + entity.deleted;
+                        }, 0);
                     }
                 },
                 components: {
@@ -282,6 +357,12 @@ import {
                             document.body.classList.remove("menu-active");
                         }
                     },
+                    
+                    showGeneralMessagePrompt(text = "", title = "") {
+                        this.generalMessagePromptText = text;
+                        this.generalMessagePromptTitle = title;
+                        this.$refs.generalMessagePrompt.open();
+                    },
 
                     logout() {
                         this.$store.dispatch(CLOSE_ALL_MODULES);
@@ -311,7 +392,6 @@ import {
                     },
 
                     async openCustomerManagement() {
-
                         this.openModule({
                             moduleId: "customerManagement",
                             name: "Klant toevoegen",
@@ -344,15 +424,17 @@ import {
                     openCreateBranchPrompt(event) {
                         event.preventDefault();
                         this.$refs.wiserCreateBranchPrompt.open();
+                        this.$refs.wiserBranchesPrompt.close();
                     },
 
                     openMergeBranchPrompt(event) {
                         event.preventDefault();
                         this.$refs.wiserMergeBranchPrompt.open();
+                        this.$refs.wiserBranchesPrompt.close();
                     },
 
                     openMergeConflictsPrompt(event) {
-                        event.preventDefault();
+                        //event.preventDefault();
                         this.$refs.wiserMergeConflictsPrompt.open();
                     },
 
@@ -426,25 +508,82 @@ import {
                     },
 
                     async createBranch() {
-                        if (!this.createBranchPromptValue) {
+                        if (!this.createBranchSettings.name) {
+                            await this.$store.dispatch(CREATE_BRANCH_ERROR, "Vul a.u.b. een naam in");
                             return false;
                         }
 
-                        await this.$store.dispatch(CREATE_BRANCH, this.createBranchPromptValue);
-                        return !this.createBranchError;
+                        await this.$store.dispatch(CREATE_BRANCH, this.createBranchSettings);
+                        
+                        if (!this.createBranchError) {
+                            this.$refs.wiserCreateBranchPrompt.close();
+                            this.showGeneralMessagePrompt("De branch staat klaar om gemaakt te worden. U krijgt een bericht wanneer dit voltooid is.");
+                            
+                            return true;
+                        }
+                        
+                        return false;
                     },
 
                     async mergeBranch() {
-                        if (!this.selectedBranchValue || !this.selectedBranchValue.id) {
+                        if (this.isMainBranch && (!this.branchMergeSettings.selectedBranch || !this.branchMergeSettings.selectedBranch.id)) {
                             return false;
                         }
 
-                        await this.$store.dispatch(MERGE_BRANCH, this.selectedBranchValue.id);
-                        return !this.mergeBranchError;
+                        await this.$store.dispatch(MERGE_BRANCH, this.branchMergeSettings);
+
+                        if (!this.mergeBranchError) {
+                            this.$refs.wiserMergeBranchPrompt.close();
+                            this.showGeneralMessagePrompt("De branch staat klaar om samengevoegd te worden. U krijgt een bericht wanneer dit voltooid is.");
+                            return true;
+                        }
+
+                        return false;
                     },
 
                     handleMergeConflicts() {
-                        alert("Conflicten verwerken");
+                        this.showGeneralMessagePrompt("Conflicten verwerken");
+                    },
+
+                    openBranch() {
+                        if (!this.openBranchSettings || !this.openBranchSettings.selectedBranchType || !this.openBranchSettings.selectedBranchType.id) {
+                            this.showGeneralMessagePrompt("Kies a.u.b. of u de branch in Wiser wilt openen of op uw website.");
+                            return false;
+                        }
+                        
+                        if (this.openBranchSettings.selectedBranchType.id === 'website' && !this.openBranchSettings.websiteUrl) {
+                            this.showGeneralMessagePrompt("Vul a.u.b. de URL van uw website in.");
+                            return false;
+                        }
+                        
+                        if (!this.openBranchSettings || !this.openBranchSettings.selectedBranch|| !this.openBranchSettings.selectedBranch.id) {
+                            this.showGeneralMessagePrompt("Kies a.u.b. welke branch u wilt openen.");
+                            return false;
+                        }
+                        
+                        let url;
+                        switch (this.openBranchSettings.selectedBranchType.id) {
+                            case "website":
+                                url = this.openBranchSettings.websiteUrl;
+                                if (!url.startsWith("http")) {
+                                    url = `https://${url}`
+                                }
+                                
+                                url = `${url.substring(0, url.indexOf("/", 8))}/branches/${encodeURIComponent(this.openBranchSettings.selectedBranch.database.databaseName)}`;
+                                
+                                break;
+                            case "wiser":
+                                url = `https://${this.openBranchSettings.selectedBranch.subDomain}.${this.appSettings.currentDomain}`;
+                                
+                                break;
+                            default:
+                                console.error("Invalid branch type selected:", this.openBranchSettings.selectedBranchType);
+                                this.showGeneralMessagePrompt("Kies a.u.b. of u de branch in Wiser wilt openen of op uw website.");
+                                return false;
+                        }
+                        
+                        window.open(url, "_blank");
+                        this.$refs.wiserBranchesPrompt.close();
                     },
 
                     onOpenModuleClick(event, module) {
@@ -480,19 +619,66 @@ import {
                     
                     async onWiserBranchesPromptOpen() {
                         await this.$store.dispatch(IS_MAIN_BRANCH);
+                        await this.$store.dispatch(GET_BRANCHES);
+                        if (!this.isMainBranch) {
+                            this.openBranchSettings.selectedBranchType = {
+                                id: "website",
+                                name: "Website"
+                            };
+
+
+                            const extraUserData = await main.usersService.getLoggedInUserData();
+                            console.log("extraUserData", extraUserData);
+                            this.openBranchSettings.selectedBranch = this.branches.find(branch => branch.id === extraUserData.currentBranchId);
+                            console.log("this.openBranchSettings.selectedBranch", this.openBranchSettings.selectedBranch);
+                        }
                     },
                     
-                    async onWiserMergeBranchPromptOpen(sender) {                        
-                        await this.$store.dispatch(GET_BRANCHES);
-                        if (this.branches && this.branches.length === 1) {
-                            this.selectedBranchValue = this.branches[0];
+                    async onWiserMergeBranchPromptOpen(sender) {
+                        if (this.branches && this.branches.length > 0) {
+                            this.branchMergeSettings.selectedBranch = this.branches[0];
+                            this.onSelectedBranchChange(this.branches[0].id);
+                        }
+                        else if (!this.isMainBranch) {
+                            // If this is not the main branch, you can only synchronise the changes of the current branch, so get the changes immediately.
+                            this.onSelectedBranchChange();
                         }
                     },
                     
                     async onWiserCreateBranchPromptOpen() {
                         await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
                         for (let entity of this.entitiesForBranches) {
-                            this.entityCopySettings[entity.id] = 0;
+                            this.createBranchSettings.entities[entity.id] = {
+                                mode: 0
+                            };
+                        }
+                    },
+
+                    async onSelectedBranchChange(event) {
+                        let selectedBranchId = event;
+                        if (!selectedBranchId) {
+                            selectedBranchId = 0;
+                        } 
+                        else if (selectedBranchId.target) {
+                            selectedBranchId = event.target.value.id;
+                        }
+                        
+                        await this.$store.dispatch(GET_BRANCH_CHANGES, selectedBranchId);
+                        for (let entity of this.branchChanges.entities) {
+                            this.branchMergeSettings.entities[entity.entityType] = {
+                                everything: false,
+                                create: false,
+                                update: false,
+                                delete: false
+                            };
+                        }
+                        for (let entity of this.branchChanges.settings) {
+                            this.branchMergeSettings.settings[entity.type] = {
+                                everything: false,
+                                create: false,
+                                update: false,
+                                delete: false
+                            };
                         }
                     }
                 }

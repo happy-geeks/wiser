@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿ using System.Collections.Generic;
+using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Modules.Branches.Interfaces;
+using Api.Modules.Branches.Models;
 using Api.Modules.Customers.Models;
+using GeeksCoreLibrary.Modules.Branches.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +17,9 @@ namespace Api.Modules.Branches.Controllers
     /// </summary>
     [Route("api/v3/branches")]
     [ApiController]
+    [Authorize]
+    [Consumes(MediaTypeNames.Application.Json)]
+    [Produces(MediaTypeNames.Application.Json)]
     public class BranchesController : Controller
     {
         private readonly IBranchesService branchesService;
@@ -27,26 +33,11 @@ namespace Api.Modules.Branches.Controllers
         }
 
         /// <summary>
-        /// Creates a new branch for the authenticated customer.
-        /// This will create a new database schema on the same server/cluster and then fill it with part of the data from the original database.
-        /// </summary>
-        /// <param name="name">The name of the environment</param>
-        [HttpPost]
-        [ProducesResponseType(typeof(CustomerModel), StatusCodes.Status200OK)]
-        [Authorize]
-        [Route("{name}")]
-        public async Task<IActionResult> CreateBranchAsync(string name)
-        {
-            return (await branchesService.CreateAsync((ClaimsIdentity)User.Identity, name)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
         /// Gets the environments for the authenticated user.
         /// </summary>
         /// <returns>A list of <see cref="CustomerModel"/>.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(List<CustomerModel>), StatusCodes.Status200OK)]
-        [Authorize]
         public async Task<IActionResult> GetBranchesAsync()
         {
             return (await branchesService.GetAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
@@ -58,25 +49,48 @@ namespace Api.Modules.Branches.Controllers
         /// <returns>A boolean indicating whether the current branch is the main branch.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        [Authorize]
         [Route("is-main")]
         public async Task<IActionResult> IsMainBranchAsync()
         {
             return (await branchesService.IsMainBranchAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Creates a new branch for the authenticated customer.
+        /// This will create a new database schema on the same server/cluster and then fill it with part of the data from the original database.
+        /// </summary>
+        /// <param name="settings">The settings for the new environment</param>
+        [HttpPost]
+        [ProducesResponseType(typeof(CustomerModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CreateBranchAsync(CreateBranchSettingsModel settings)
+        {
+            return (await branchesService.CreateAsync((ClaimsIdentity)User.Identity, settings)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Get the changes of a branch.
+        /// </summary>
+        /// <param name="id">The ID of the branch to get the changes of.</param>
+        /// <returns>A list of changes per entity type / Wiser setting type.</returns>
+        [HttpGet]
+        [ProducesResponseType(typeof(ChangesAvailableForMergingModel), StatusCodes.Status200OK)]
+        [Route("changes/{id:int}")]
+        public async Task<IActionResult> GetChangesAsync(int id)
+        {
+            return (await branchesService.GetChangesAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
+        }
         
         /// <summary>
         /// Merge all changes done to wiser items, from a specific branch, to the main branch.
         /// </summary>
-        /// <param name="id">The ID of the environment to copy the changes from.</param>
+        /// <param name="settings">The settings of what exactly to merge.</param>
         [HttpPatch]
-        [ProducesResponseType(typeof(SynchroniseChangesToProductionResultModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(MergeChangesToMainBranchResultModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [Authorize]
-        [Route("merge/{id:int}")]
-        public async Task<IActionResult> MergeBranchAsync(int id)
+        [Route("merge")]
+        public async Task<IActionResult> MergeBranchAsync(MergeBranchSettingsModel settings)
         {
-            return (await branchesService.MergeAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
+            return (await branchesService.MergeAsync((ClaimsIdentity)User.Identity, settings)).GetHttpResponseMessage();
         }
     }
 }

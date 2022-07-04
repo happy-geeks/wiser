@@ -652,7 +652,7 @@ export class Fields {
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileId`).html(event.response[0].fileId);
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .title`).html(kendo.htmlEncode(event.response[0].title || "(leeg)"));
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileContainer`).data("fileId", event.response[0].fileId).data("itemId", event.response[0].itemId);
-        event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .name`).attr("href", `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(event.response[0].itemId)}/files/${encodeURIComponent(event.response[0].fileId)}/${encodeURIComponent(event.response[0].name)}`);
+        event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .name`).attr("href", `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(event.response[0].itemId)}/files/${encodeURIComponent(event.response[0].fileId)}/${encodeURIComponent(event.response[0].name)}?itemLinkId=${event.response[0].itemLinkId || 0}&entityType=${encodeURIComponent(event.response[0].entityType || "")}&linkType=${event.response[0].linkType || 0}`);
         let addedOn = (event.response[0].addedOn ? DateTime.fromISO(event.response[0].addedOn, { locale: "nl-NL" }) : DateTime.now()).toLocaleString(Dates.LongDateTimeFormat);
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileDate`).html(kendo.htmlEncode(addedOn));
     }
@@ -746,7 +746,7 @@ export class Fields {
         const value = await kendo.prompt("", containerData.name);
         
         await Wiser2.api({
-            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/rename/${encodeURIComponent(value)}`,
+            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/rename/${encodeURIComponent(value)}?itemLinkId=${encodeURIComponent(containerData.itemLinkId || 0)}&entityType=${encodeURIComponent(containerData.entityType || "")}&linkType=${containerData.linkType || 0}`,
             method: "PUT",
             contentType: "application/json",
             dataType: "JSON"
@@ -766,7 +766,7 @@ export class Fields {
         const value = await kendo.prompt("", containerData.title);
 
         await Wiser2.api({
-            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/title/${encodeURIComponent(value)}`,
+            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/title/${encodeURIComponent(value)}?itemLinkId=${containerData.itemLinkId || 0}&entityType=${encodeURIComponent(containerData.entityType || "")}&linkType=${containerData.linkType || 0}`,
             method: "PUT",
             contentType: "application/json",
             dataType: "JSON"
@@ -1020,12 +1020,13 @@ export class Fields {
             for (let fileData of event.files) {
                 const fileElement = event.sender.wrapper.find(`[data-uid='${fileData.uid}']`);
                 const fileContainer = fileElement.find(".fileContainer");
+                const containerData = fileContainer.data();
                 const fileId = fileData.fileId || fileContainer.data("fileId");
                 const itemId = fileData.itemId || fileContainer.data("itemId");
                 const itemLinkId = fileData.itemLinkId || fileContainer.data("itemLinkId") || 0;
 
                 await Wiser2.api({
-                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/files/${encodeURIComponent(fileId)}?itemLinkId=${encodeURIComponent(itemLinkId)}`,
+                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/files/${encodeURIComponent(fileId)}?itemLinkId=${encodeURIComponent(itemLinkId || 0)}&entityType=${encodeURIComponent(containerData.entityType || "")}&linkType=${containerData.linkType || 0}`,
                     method: "DELETE",
                     contentType: "application/json",
                     dataType: "JSON"
@@ -1075,13 +1076,13 @@ export class Fields {
 
                                 const promises = [
                                     Wiser2.api({
-                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/rename/${encodeURIComponent(newFileName)}`,
+                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/rename/${encodeURIComponent(newFileName)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                                         method: "PUT",
                                         contentType: "application/json",
                                         dataType: "JSON"
                                     }),
                                     Wiser2.api({
-                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/title/${encodeURIComponent(newTitle)}`,
+                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/title/${encodeURIComponent(newTitle)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                                         method: "PUT",
                                         contentType: "application/json",
                                         dataType: "JSON"
@@ -1128,7 +1129,7 @@ export class Fields {
 
             try {
                 await Wiser2.api({
-                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.encryptedItemId || data.itemId)}/files/${encodeURIComponent(data.imageId || data.fileId)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}`,
+                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.encryptedItemId || data.itemId)}/files/${encodeURIComponent(data.imageId || data.fileId)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                     method: "DELETE",
                     contentType: "application/json",
                     dataType: "JSON"
@@ -1152,9 +1153,10 @@ export class Fields {
             }
             const itemId = imageContainer.data("itemId");
             const itemLinkId = imageContainer.data("itemLinkId") || 0;
+            const data = imageContainer.data();
 
             await Wiser2.api({
-                url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/files/${encodeURIComponent(fileId)}?itemLinkId=${encodeURIComponent(itemLinkId)}`,
+                url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/files/${encodeURIComponent(fileId)}?itemLinkId=${encodeURIComponent(itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                 method: "DELETE",
                 contentType: "application/json",
                 dataType: "JSON"
