@@ -24,22 +24,22 @@ namespace Api.Modules.VersionControl.Controllers
     [Route("api/v3/[controller]"), ApiController, Authorize]
     public class VersionControlController : Controller
     {
-        private readonly IVersionControlService _versionControlService;
+        private readonly IVersionControlService versionControlService;
         private readonly ITemplatesService templatesService;
         private readonly IGridsService gridsService;
-        private readonly ITemplateContainerService versionControlTemplateService;
+        private readonly ITemplateContainerService templateContainerService;
         private readonly IDynamicContentServiceVersionControl dynamicContentService;
         private readonly ICommitService commitService;
 
         /// <summary>
         /// Creates a new instance of <see cref="VersionControlController"/>.
         /// </summary>
-        public VersionControlController(IVersionControlService versionControlService, ITemplatesService templatesService, IGridsService gridsService, ITemplateContainerService templateService, IDynamicContentServiceVersionControl dynamicContentService, ICommitService commitService)
+        public VersionControlController(IVersionControlService versionControlService, ITemplatesService templatesService, IGridsService gridsService, ITemplateContainerService templateContainerService, IDynamicContentServiceVersionControl dynamicContentService, ICommitService commitService)
         {
-            this._versionControlService = versionControlService;
+            this.versionControlService = versionControlService;
             this.templatesService = templatesService;
             this.gridsService = gridsService;
-            this.versionControlTemplateService = templateService;
+            this.templateContainerService = templateContainerService;
             this.dynamicContentService = dynamicContentService;
             this.commitService = commitService;
         }
@@ -52,7 +52,7 @@ namespace Api.Modules.VersionControl.Controllers
         [HttpPut, ProducesResponseType(typeof(CreateCommitModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateNewCommit(CreateCommitModel commitModel)
         {
-            return (await commitService.CreateCommitAsync(commitModel.Description, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+            return (await commitService.CreateCommitAsync(commitModel.Description, (ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -64,8 +64,7 @@ namespace Api.Modules.VersionControl.Controllers
         [HttpPut, Route("{templateId:int}"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateNewCommitItem(int templateId, CommitItemModel commitItemModel)
         {
-            return (await commitService.CreateCommitItemAsync(templateId, commitItemModel))
-                .GetHttpResponseMessage();
+            return (await commitService.CreateCommitItemAsync(templateId, commitItemModel)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -88,11 +87,10 @@ namespace Api.Modules.VersionControl.Controllers
         [HttpPut, Route("template-commit"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateNewTemplateCommit(TemplateCommitModel templateCommitModel)
         {
-
-            return (await versionControlTemplateService.CreateNewTemplateCommitAsync(templateCommitModel)).GetHttpResponseMessage();
+            return (await templateContainerService.CreateNewTemplateCommitAsync(templateCommitModel)).GetHttpResponseMessage();
         }
 
-       
+
         /// <summary>
         /// Updates the environment of the template
         /// </summary>
@@ -102,7 +100,7 @@ namespace Api.Modules.VersionControl.Controllers
         [HttpPut, Route("{templateId:int}/{publishNumber:int}"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdatePublishEnvironmentTemplate(int templateId, int publishNumber)
         {
-            return (await versionControlTemplateService.UpdatePublishEnvironmentTemplateAsync(templateId,publishNumber)).GetHttpResponseMessage();
+            return (await templateContainerService.UpdatePublishEnvironmentTemplateAsync(templateId, publishNumber)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -114,14 +112,13 @@ namespace Api.Modules.VersionControl.Controllers
         /// <returns></returns>
         [HttpPost, Route("{templateId:int}/publish/{environment}/{version:int}"), ProducesResponseType(typeof(LinkedTemplatesModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> PublishToEnvironmentAsync(int templateId, string environment, int version)
-        {  
+        {
 
             var currentPublished = await templatesService.GetTemplateEnvironmentsAsync(templateId);
             return currentPublished.StatusCode != HttpStatusCode.OK
                 ? currentPublished.GetHttpResponseMessage()
-                : (await templatesService.PublishToEnvironmentAsync((ClaimsIdentity)User.Identity, templateId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
+                : (await templatesService.PublishToEnvironmentAsync((ClaimsIdentity) User.Identity, templateId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
         }
-
 
         /// <summary>
         /// Gets the data and settings for a module with grid view mode enabled.
@@ -131,20 +128,9 @@ namespace Api.Modules.VersionControl.Controllers
         [HttpPost, Route("{id:int}/overview-grid"), ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> OverviewGridAsync(int id, ModuleGridDataSettings gridData)
         {
-            var result = (await gridsService.GetGridDataAsync(id,gridData,(ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+            var result = (await gridsService.GetGridDataAsync(id, gridData, (ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
             return result;
-            //(id,gridData, (ClaimsIdentity)User.Identity),gridDivId).
         }
-
-        /*
-        [HttpGet, Route("PublishedTemplateVersion")]
-        [ProducesResponseType(typeof(Dictionary<int,int>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetPublishedTemplateIdAndVersion()
-        {
-            return (await _versionControlService.GetPublishedTemplateIdAndVersion()).GetHttpResponseMessage();
-        }*/
-        
 
         /// <summary>
         /// Gets the templates that have a lower version than the given one
@@ -157,9 +143,8 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetTemplatesWithLowerVersion(int templateId, int version)
         {
-            return (await versionControlTemplateService.GetTemplatesWithLowerVersionAsync(templateId, version)).GetHttpResponseMessage();
+            return (await templateContainerService.GetTemplatesWithLowerVersionAsync(templateId, version)).GetHttpResponseMessage();
         }
-
 
         /// <summary>
         /// 
@@ -170,11 +155,10 @@ namespace Api.Modules.VersionControl.Controllers
         [HttpGet, Route("current-published-enviornments/{templateId:int}/{version:int}")]
         [ProducesResponseType(typeof(TemplateEnvironments), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetCurrentPublishedEnvironments(int templateId,int version)
+        public async Task<IActionResult> GetCurrentPublishedEnvironments(int templateId, int version)
         {
-            return (await versionControlTemplateService.GetCurrentPublishedEnvironmentAsync(templateId, version)).GetHttpResponseMessage();
+            return (await templateContainerService.GetCurrentPublishedEnvironmentAsync(templateId, version)).GetHttpResponseMessage();
         }
-
 
         /// <summary>
         /// Gets all the templates of the given commit
@@ -186,7 +170,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetTemplatesfromCommit(int commitId)
         {
-            return (await _versionControlService.GetTemplatesFromCommitAsync(commitId)).GetHttpResponseMessage();
+            return (await versionControlService.GetTemplatesFromCommitAsync(commitId)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -199,12 +183,8 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetDynamicContentfromCommit(int commitId)
         {
-            return (await _versionControlService.GetDynamicContentfromCommitAsync(commitId)).GetHttpResponseMessage();
+            return (await versionControlService.GetDynamicContentfromCommitAsync(commitId)).GetHttpResponseMessage();
         }
-
-
-        //DYNAMIC CONTENT
-
 
         /// <summary>
         /// Gets the dynamic content with the given ID and Version.
@@ -245,10 +225,8 @@ namespace Api.Modules.VersionControl.Controllers
             var currentPublished = await dynamicContentService.GetDynamicContentEnvironmentsAsync(dynamicContentId);
             return currentPublished.StatusCode != HttpStatusCode.OK
                 ? currentPublished.GetHttpResponseMessage()
-                : (await dynamicContentService.PublishDynamicContentToEnvironmentAsync((ClaimsIdentity)User.Identity, dynamicContentId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
+                : (await dynamicContentService.PublishDynamicContentToEnvironmentAsync((ClaimsIdentity) User.Identity, dynamicContentId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
         }
-
-        
 
         /// <summary>
         /// Gets all the dynamic content that have a lower version than the given one.
@@ -264,7 +242,6 @@ namespace Api.Modules.VersionControl.Controllers
             return (await dynamicContentService.GetDynamicContentWithLowerVersionAsync(contentId, version)).GetHttpResponseMessage();
         }
 
-
         /// <summary>
         /// Gets the dynamic content that are part of the given template
         /// </summary>
@@ -275,7 +252,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetDynamicContentInTemplate(int templateId)
         {
-            return (await _versionControlService.GetDynamicContentInTemplateAsync(templateId)).GetHttpResponseMessage();
+            return (await versionControlService.GetDynamicContentInTemplateAsync(templateId)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -288,22 +265,16 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetModuleGridSettings(int moduleId)
         {
-            return (await _versionControlService.GetModuleGridSettingsAsync(moduleId)).GetHttpResponseMessage();
+            return (await versionControlService.GetModuleGridSettingsAsync(moduleId)).GetHttpResponseMessage();
         }
 
-        
         [HttpPost]
         [Route("{gridDivId}/overview-grid")]
         [ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> OverviewGridVersionControlAsync(string gridDivId, GridReadOptionsModel options)
         {
-            return (await gridsService.GetOverviewGridVersionControlDataAsync(gridDivId, options, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+            return (await gridsService.GetOverviewGridVersionControlDataAsync(gridDivId, options, (ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
         }
-        //The constraint reference 'string' could not be resolved
-        //SQL QUERRYS NALOPEN
-        //dus ook van dev_commit en dev_template veranderen
-
-
     }
 }

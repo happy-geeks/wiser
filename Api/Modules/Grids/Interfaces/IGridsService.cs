@@ -41,8 +41,7 @@ namespace Api.Modules.Grids.Interfaces
         /// <param name="isForExport">Whether this data is going to be used to export it to Excel.</param>
         Task<ServiceResult<GridSettingsAndDataModel>> GetOverviewGridDataAsync(int moduleId, GridReadOptionsModel options, ClaimsIdentity identity, bool isForExport = false);
 
-
-        Task<ServiceResult<GridSettingsAndDataModel>> GetOverviewGridVersionControlDataAsync(string gridDivId, GridReadOptionsModel options, ClaimsIdentity identity, bool isForExport = false);
+        Task<ServiceResult<GridSettingsAndDataModel>> GetOverviewGridVersionControlDataAsync(string gridDivId, GridReadOptionsModel options, ClaimsIdentity identity);
         
         /// <summary>
         /// Get the data for a grid.

@@ -1590,30 +1590,12 @@ namespace Api.Modules.Grids.Services
             return new ServiceResult<GridSettingsAndDataModel>(results);
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-        public async Task<ServiceResult<GridSettingsAndDataModel>> GetOverviewGridVersionControlDataAsync(string gridDivId, GridReadOptionsModel options, ClaimsIdentity identity, bool isForExport = false)
+        /// <inheritdoc />
+        public async Task<ServiceResult<GridSettingsAndDataModel>> GetOverviewGridVersionControlDataAsync(string gridDivId, GridReadOptionsModel options, ClaimsIdentity identity)
         {
             if (gridDivId == "")
             {
                 throw new ArgumentNullException(nameof(gridDivId));
-            }
-
-            if (isForExport)
-            {
-                // Timeout of 4 hours for exports.
-                clientDatabaseConnection.SetCommandTimeout(14400);
             }
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -1630,8 +1612,7 @@ namespace Api.Modules.Grids.Services
                 return new ServiceResult<GridSettingsAndDataModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"No grid data available for module {gridDivId}",
-                    ReasonPhrase = $"No grid data available for module {gridDivId}"
+                    ErrorMessage = $"No grid data available for module {gridDivId}"
                 };
             }
 
@@ -1698,16 +1679,6 @@ namespace Api.Modules.Grids.Services
 
             return new ServiceResult<GridSettingsAndDataModel>(results);
         }
-
-
-
-
-
-
-
-
-
-
 
         /// <inheritdoc />
         public async Task<ServiceResult<GridSettingsAndDataModel>> GetOverviewGridDataAsync(int moduleId, GridReadOptionsModel options, ClaimsIdentity identity, bool isForExport = false)
@@ -2545,8 +2516,7 @@ namespace Api.Modules.Grids.Services
                 return new ServiceResult<GridSettingsAndDataModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"No grid data available for module {moduleId}",
-                    ReasonPhrase = $"No grid data available for module {moduleId}"
+                    ErrorMessage = $"No grid data available for module {moduleId}"
                 };
             }
 
