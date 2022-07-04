@@ -1,0 +1,7 @@
+﻿<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Debug Both" type="CompoundRunConfigurationType">
+    <toRun name="Api" type="LaunchSettings" />
+    <toRun name="FrontEnd" type="LaunchSettings" />
+    <method v="2" />
+  </configuration>
+</component>

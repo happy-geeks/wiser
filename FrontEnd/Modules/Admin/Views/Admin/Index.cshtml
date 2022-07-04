@@ -12,6 +12,11 @@
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
+    <style>
+        #wiser, #MainTabStrip {
+            display:  none;
+        }
+    </style>
 </head>
 <body data-module-id="706"
       data-wiser-api-root="@Model.ApiRoot"
@@ -93,8 +98,17 @@
                                                         <input id="entityName" type="text" class="textField k-input" autocomplete="off" />
                                                     </span>
                                                 </div>
+												<div class="item" style="width: 25%;">
+                                                    <span class="handler">&nbsp;</span>
+                                                    <h4>
+                                                        <label>Tabelnaam voorvoegsel </label>
+                                                    </h4>
+                                                    <span class="k-widget k-input k-state-default">
+                                                        <input id="entityDedicatedTablePrefix" type="text" class="textField k-input" autocomplete="off" />
+                                                    </span>
+                                                </div>
 
-                                                <div class="item" style="width: 75%;">
+                                                <div class="item" style="width: 50%;">
                                                     <span class="handler">&nbsp;</span>
                                                 </div>
 
@@ -1257,7 +1271,7 @@
                                                                     </span>
                                                                 </div>
                                                             </div>
-                                                            <div class="item" data-visible="file-upload">
+                                                            <div class="item" data-visible="file-upload image-upload">
                                                                 <div class="item" style="width: 25%;">
                                                                     <h4>
                                                                         <label>Toegestane extensies</label>
@@ -1462,9 +1476,9 @@
                                     <h4>
                                         <label>Rollen</label>
                                     </h4>
-                                    <ul id="roleList" class="sortable-container multi-select">
+                                    <div id="roleList" class="sortable-container multi-select">
                                         <!-- Filled by Javascript -->
-                                    </ul>
+                                    </div>
                                     <div class="form-hint"><span></span></div>
                                     <div class="buttons">
                                         <span>
@@ -1592,16 +1606,7 @@
                                         <select id="moduleIcon">
                                         </select>
                                     </div>
-                                    <div class="item" style="width: 25%;">
-                                        <span class="handler">&nbsp;</span>
-                                        <h4>
-                                            <label>Kleur</label>
-                                            <span class="info" data-type="moduleColor"><ins class="icon-info-full"></ins></span>
-                                        </h4>
-                                        <select id="moduleColor" placeholder="Maak uw keuze...">
-                                        </select>
-                                    </div>
-                                    <div class="item" style="width: 25%;">
+                                    <div class="item" style="width: 50%;">
                                         <span class="handler">&nbsp;</span>
                                         <h4>
                                             <label>Type</label>
@@ -1660,8 +1665,7 @@
             </footer>
         </div>
     </div>
-
-    <script src="/scripts/Jjl.min.js"></script>
+    
     <script src="/scripts/Utils.min.js"></script>
     <script src="/scripts/Base.min.js"></script>
     <script src="/scripts/Admin.min.js"></script>

@@ -64,11 +64,12 @@
             margin: calc(#{$gutter-width} / 2);
 
             $margin-width: calc(#{$gutter-width} / 2);
+            $negative-margin-width: calc(-#{$gutter-width} / 2);
 
             .row {
                 /* NESTED */
-                margin-top: -$margin-width;
-                margin-left: -$margin-width;
+                margin-top: $negative-margin-width;
+                margin-left: $negative-margin-width;
                 padding: 0;
                 width: calc(100% + #{$gutter-width});
             }

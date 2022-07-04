@@ -8,7 +8,7 @@ namespace Api.Modules.Templates.Helpers
     public class ReflectionHelper
     {
         /// <summary>
-        /// Retrieve the Type of a given component name using reflection. This method will exclusively look through the GCL for components of the type CmsComponent<CmsSettings, Enum>. 
+        /// Retrieve the Type of a given component name using reflection. This method will exclusively look through the GCL for components of the type CmsComponent&lt;CmsSettings, Enum&gt;. 
         /// When no or multiple components are found an InvalidComponentException will be thrown.
         /// </summary>
         /// <param name="componentName">A string of the component that is to be retrieved using reflection.</param>

@@ -1,5 +1,9 @@
 ﻿@import "../../Base/scss/base.scss";
 
+#fullForm {
+    display: block;
+}
+
 body.embedded {
     overflow: hidden;
 }

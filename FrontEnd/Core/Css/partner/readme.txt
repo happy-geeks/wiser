@@ -1,0 +1,1 @@
+Here you can add theme's for wiser sub domains. Simply add a css file with the same name as the subdomain you want to use it for. You can overwerite any default Wiser CSS in that file.

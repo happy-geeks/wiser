@@ -1133,6 +1133,11 @@ div.k-filebrowser-dropzone em {
 .k-file {
     background-color: var(--white-color);
     border-color: var(--sec-color);
+    cursor: move;
+}
+
+.k-file .fileContainer {
+    width: 100%;
 }
 
 .k-file-progress {

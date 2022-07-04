@@ -99,7 +99,7 @@ if (options.mode === "checkBoxGroup") {
     // Set the main image.
     let mainImageUrl = options.mainImageUrl;
     if (options.mainImageId) {
-        mainImageUrl = `${window.dynamicItems.settings.wiserApiRoot}items/0/files/${options.imageId}/${encodeURIComponent("{propertyName}.png")}?encryptedCustomerId=${encodeURIComponent(window.dynamicItems.settings.customerId)}&encryptedUserId=${encodeURIComponent(window.dynamicItems.settings.userId)}&isTest=${window.dynamicItems.settings.isTestEnvironment}&subDomain=${encodeURIComponent(window.dynamicItems.settings.subDomain)}`;
+        mainImageUrl = `${window.dynamicItems.settings.wiserApiRoot}items/0/files/${options.imageId}/${encodeURIComponent("{propertyName}.png")}?encryptedCustomerId=${encodeURIComponent(window.dynamicItems.settings.customerId)}&encryptedUserId=${encodeURIComponent(window.dynamicItems.settings.userId)}&isTest=${window.dynamicItems.settings.isTestEnvironment}&subDomain=${encodeURIComponent(window.dynamicItems.settings.subDomain)}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`;
     } 
     if (mainImageUrl) {
         container.find("#image_{propertyIdWithSuffix}").attr("src", mainImageUrl);
@@ -120,7 +120,7 @@ if (options.mode === "checkBoxGroup") {
 
             let imageUrl = item.imageUrl;
             if (item.imageId) {
-                imageUrl = `${window.dynamicItems.settings.wiserApiRoot}items/0/files/${item.imageId}/${encodeURIComponent(item.name || item.imageId)}.png?encryptedCustomerId=${encodeURIComponent(window.dynamicItems.settings.customerId)}&encryptedUserId=${encodeURIComponent(window.dynamicItems.settings.userId)}&isTest=${window.dynamicItems.settings.isTestEnvironment}&subDomain=${encodeURIComponent(window.dynamicItems.settings.subDomain)}`;
+                imageUrl = `${window.dynamicItems.settings.wiserApiRoot}items/0/files/${item.imageId}/${encodeURIComponent(item.name || item.imageId)}.png?encryptedCustomerId=${encodeURIComponent(window.dynamicItems.settings.customerId)}&encryptedUserId=${encodeURIComponent(window.dynamicItems.settings.userId)}&isTest=${window.dynamicItems.settings.isTestEnvironment}&subDomain=${encodeURIComponent(window.dynamicItems.settings.subDomain)}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`;
             } else if (item.id && (item.imagePropertyName || options.imagePropertyName)) {
                 imageUrl = `${window.dynamicItems.settings.mainDomain}image/wiser2/${item.id}/${item.imagePropertyName || options.imagePropertyName}/crop/66/66/${encodeURIComponent(item.name || item.imageId)}.png`;
             }

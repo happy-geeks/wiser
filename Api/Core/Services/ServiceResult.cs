@@ -27,11 +27,6 @@ namespace Api.Core.Services
         public string ErrorMessage { get; set; }
 
         /// <summary>
-        /// The summary of the error. Leave empty if there is no error.
-        /// </summary>
-        public string ReasonPhrase { get; set; }
-
-        /// <summary>
         /// Initialize a new instance of the <see cref="ServiceResult{T}">ServiceResult</see>.
         /// </summary>
         public ServiceResult()

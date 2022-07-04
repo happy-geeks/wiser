@@ -25,5 +25,16 @@
         /// Gets or sets the name of the module that this entity type belongs to.
         /// </summary>
         public string ModuleName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the prefix for the table that items of this type are stored in.
+        /// If empty, they will be stored in wiser_item, otherwise in [DedicatedTablePrefix_wiser_item].
+        /// </summary>
+        public string DedicatedTablePrefix { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total amount of items of this entity type.
+        /// </summary>
+        public int? TotalItems { get; set; }
     }
 }

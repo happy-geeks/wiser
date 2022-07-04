@@ -47,7 +47,7 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<FileModel>>> UploadAsync(string encryptedId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false)
+        public async Task<ServiceResult<List<FileModel>>> UploadAsync(string encryptedId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false, string entityType = null, int linkType = 0)
         {
             if (String.IsNullOrWhiteSpace(encryptedId))
             {
@@ -66,7 +66,6 @@ namespace Api.Modules.Files.Services
                 return new ServiceResult<List<FileModel>>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ReasonPhrase = "No files found in the request",
                     ErrorMessage = "No files found in the request"
                 };
             }
@@ -74,13 +73,12 @@ namespace Api.Modules.Files.Services
             try
             {
                 await databaseConnection.EnsureOpenConnectionForReadingAsync();
-                var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId);
+                var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
                 if (!success)
                 {
                     return new ServiceResult<List<FileModel>>
                     {
                         ErrorMessage = errorMessage,
-                        ReasonPhrase = errorMessage,
                         StatusCode = HttpStatusCode.Forbidden
                     };
                 }
@@ -93,6 +91,9 @@ namespace Api.Modules.Files.Services
                 {
                     throw new NotImplementedException("Tiny PNG not supported yet.");
                 }
+                
+                // Fix ordering of files.
+                await FixOrderingAsync(itemId, itemLinkId, propertyName);
 
                 var result = new List<FileModel>();
 
@@ -114,14 +115,13 @@ namespace Api.Modules.Files.Services
                         throw new NotImplementedException("Tiny PNG not supported yet.");
                     }
 
-                    var fileResult = await SaveFileAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId);
+                    var fileResult = await SaveAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId, entityType, linkType);
                     if (fileResult.StatusCode != HttpStatusCode.OK)
                     {
                         return new ServiceResult<List<FileModel>>
                         {
                             StatusCode = fileResult.StatusCode,
-                            ErrorMessage = fileResult.ErrorMessage,
-                            ReasonPhrase = fileResult.ReasonPhrase
+                            ErrorMessage = fileResult.ErrorMessage
                         };
                     }
 
@@ -137,27 +137,32 @@ namespace Api.Modules.Files.Services
                     return new ServiceResult<List<FileModel>>
                     {
                         StatusCode = HttpStatusCode.BadRequest,
-                        ErrorMessage = "File is to large for database.",
-                        ReasonPhrase = "File is to large for database."
+                        ErrorMessage = "File is to large for database."
                     };
                 }
 
                 throw;
             }
         }
-        
+
         /// <inheritdoc />
-        public async Task<ServiceResult<FileModel>> SaveFileAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0)
+        public async Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
         {
             var fileExtension = Path.GetExtension(fileName);
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
             databaseConnection.ClearParameters();
+
+            var tablePrefix = "";
             if (itemLinkId > 0)
             {
+                tablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(linkType, entityType);
+                databaseConnection.ClearParameters();
                 databaseConnection.AddParameter("itemlink_id", itemLinkId);
             }
             else if (itemId > 0)
             {
+                tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+                databaseConnection.ClearParameters();
                 databaseConnection.AddParameter("item_id", itemId);
             }
 
@@ -216,8 +221,7 @@ namespace Api.Modules.Files.Services
                         return new ServiceResult<FileModel>
                         {
                             StatusCode = HttpStatusCode.InternalServerError,
-                            ErrorMessage = errorMessage,
-                            ReasonPhrase = errorMessage
+                            ErrorMessage = errorMessage
                         };
                     }
 
@@ -237,13 +241,11 @@ namespace Api.Modules.Files.Services
                     return new ServiceResult<FileModel>
                     {
                         StatusCode = HttpStatusCode.InternalServerError,
-                        ErrorMessage = errorMessage,
-                        ReasonPhrase = errorMessage
+                        ErrorMessage = errorMessage
                     };
                 }
             }
             
-            var isTest = IdentityHelpers.IsTestEnvironment(identity);
             var username = IdentityHelpers.GetUserName(identity);
             databaseConnection.AddParameter("file_name", fileName);
             databaseConnection.AddParameter("extension", Path.GetExtension(fileName));
@@ -251,22 +253,34 @@ namespace Api.Modules.Files.Services
             databaseConnection.AddParameter("title", title ?? "");
             databaseConnection.AddParameter("property_name", propertyName);
 
+            var ordering = 1;
+            var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemlink_id" : "item_id = ?item_id";
+            var query = $@"SELECT IFNULL(MAX(ordering), 0) AS maxOrdering FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE {whereClause} AND property_name = ?property_name";
+            var dataTable = await databaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count > 0)
+            {
+                ordering = Convert.ToInt32(dataTable.Rows[0]["maxOrdering"]) + 1;
+            }
+            databaseConnection.AddParameter("ordering", ordering);
+
             var result = new FileModel
             {
-                FileId = await databaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserItemFile, 0),
+                FileId = await databaseConnection.InsertOrUpdateRecordBasedOnParametersAsync($"{tablePrefix}{WiserTableNames.WiserItemFile}", 0),
                 Name = fileName,
                 Extension = fileExtension,
                 ItemId = await wiserCustomersService.EncryptValue(itemId, identity),
                 Size = fileBytes.Length,
                 Title = title,
-                ContentType = contentType
+                ContentType = contentType,
+                EntityType = entityType,
+                LinkType = linkType
             };
 
             return new ServiceResult<FileModel>(result);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetFileAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId)
+        public async Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0)
         {
             if (String.IsNullOrWhiteSpace(encryptedItemId))
             {
@@ -282,8 +296,12 @@ namespace Api.Modules.Files.Services
             {
                 throw new ArgumentException("Image ID must be greater than zero.");
             }
+
+            var tablePrefix = itemLinkId > 0
+                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
             
-            var query = $"SELECT content_type, content, content_url, file_name, property_name FROM {WiserTableNames.WiserItemFile} WHERE id = ?imageId";
+            var query = $"SELECT content_type, content, content_url, file_name, property_name FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE id = ?imageId";
             
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
             databaseConnection.ClearParameters();
@@ -295,8 +313,7 @@ namespace Api.Modules.Files.Services
                 return new ServiceResult<(string ContentType, byte[] Data, string Url)>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = "File not found",
-                    ReasonPhrase = "File not found"
+                    ErrorMessage = "File not found"
                 };
             }
 
@@ -315,8 +332,7 @@ namespace Api.Modules.Files.Services
                 return new ServiceResult<(string ContentType, byte[] Data, string Url)>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = "File not found",
-                    ReasonPhrase = "File not found"
+                    ErrorMessage = "File not found"
                 };
             }
             
@@ -356,7 +372,7 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> DeleteFileAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId = 0)
+        public async Task<ServiceResult<bool>> DeleteAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
         {
             if (String.IsNullOrWhiteSpace(encryptedItemId))
             {
@@ -375,15 +391,18 @@ namespace Api.Modules.Files.Services
             }
             
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
+
+            var tablePrefix = itemLinkId > 0
+                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
             
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId);
+            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
             if (!success)
             {
                 return new ServiceResult<bool>
                 {
                     ErrorMessage = errorMessage,
-                    ReasonPhrase = errorMessage,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -391,7 +410,7 @@ namespace Api.Modules.Files.Services
             databaseConnection.ClearParameters();
             databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
             databaseConnection.AddParameter("fileId", fileId);
-            var query = $"SELECT property_name FROM {WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
+            var query = $"SELECT property_name FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
             var dataTable = await databaseConnection.GetAsync(query);
             if (dataTable.Rows.Count == 0)
             {
@@ -404,7 +423,7 @@ namespace Api.Modules.Files.Services
             var (_, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
             if (ftpSettings.Any())
             {
-                query = $"SELECT content_url FROM {WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
+                query = $"SELECT content_url FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
                 dataTable = await databaseConnection.GetAsync(query);
                 if (dataTable.Rows.Count == 0)
                 {
@@ -421,7 +440,7 @@ namespace Api.Modules.Files.Services
                 }
             }
             
-            query = $"DELETE FROM {WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
+            query = $"DELETE FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
             await databaseConnection.ExecuteAsync(query);
 
             return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
@@ -448,7 +467,7 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> RenameFileAsync(string encryptedItemId, int fileId, string newName, ClaimsIdentity identity, ulong itemLinkId = 0)
+        public async Task<ServiceResult<bool>> RenameAsync(string encryptedItemId, int fileId, string newName, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
         {
             if (String.IsNullOrWhiteSpace(encryptedItemId))
             {
@@ -465,19 +484,22 @@ namespace Api.Modules.Files.Services
             {
                 throw new ArgumentException("File ID must be greater than zero.");
             }
+
+            var tablePrefix = itemLinkId > 0
+                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
             
-            var query = $"UPDATE {WiserTableNames.WiserItemFile} SET file_name = ?newName WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
+            var query = $"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} SET file_name = ?newName WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
             
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
             
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId);
+            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
             if (!success)
             {
                 return new ServiceResult<bool>
                 {
                     ErrorMessage = errorMessage,
-                    ReasonPhrase = errorMessage,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -492,7 +514,7 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> UpdateFileTitleAsync(string encryptedItemId, int fileId, string newTitle, ClaimsIdentity identity, ulong itemLinkId = 0)
+        public async Task<ServiceResult<bool>> UpdateTitleAsync(string encryptedItemId, int fileId, string newTitle, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
         {
             if (String.IsNullOrWhiteSpace(encryptedItemId))
             {
@@ -509,19 +531,22 @@ namespace Api.Modules.Files.Services
             {
                 throw new ArgumentException("File ID must be greater than zero.");
             }
+
+            var tablePrefix = itemLinkId > 0
+                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
             
-            var query = $"UPDATE {WiserTableNames.WiserItemFile} SET title = ?newTitle WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
+            var query = $"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} SET title = ?newTitle WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
             
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
             
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId);
+            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
             if (!success)
             {
                 return new ServiceResult<bool>
                 {
                     ErrorMessage = errorMessage,
-                    ReasonPhrase = errorMessage,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -536,7 +561,7 @@ namespace Api.Modules.Files.Services
         }
         
         /// <inheritdoc />
-        public async Task<ServiceResult<FileModel>> AddFileUrl(string encryptedItemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId)
+        public async Task<ServiceResult<FileModel>> AddUrlAsync(string encryptedItemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0)
         {
             if (String.IsNullOrWhiteSpace(encryptedItemId))
             {
@@ -554,21 +579,23 @@ namespace Api.Modules.Files.Services
                 return new ServiceResult<FileModel>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ReasonPhrase = "No files found in the request",
                     ErrorMessage = "No files found in the request"
                 };
             }
         
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
+
+            var tablePrefix = itemLinkId > 0
+                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
             
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId);
+            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
             if (!success)
             {
                 return new ServiceResult<FileModel>
                 {
                     ErrorMessage = errorMessage,
-                    ReasonPhrase = errorMessage,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
@@ -594,9 +621,108 @@ namespace Api.Modules.Files.Services
             databaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity) ?? "");
             databaseConnection.AddParameter("title", file.Title ?? "");
             databaseConnection.AddParameter("property_name", propertyName);
-            file.FileId = await databaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserItemFile, 0);
+            file.FileId = await databaseConnection.InsertOrUpdateRecordBasedOnParametersAsync($"{tablePrefix}{WiserTableNames.WiserItemFile}", 0);
 
             return new ServiceResult<FileModel>(file);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> UpdateOrderingAsync(ClaimsIdentity identity, int fileId, int previousPosition, int newPosition, ulong itemId, string propertyName, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+        {
+            await databaseConnection.EnsureOpenConnectionForReadingAsync();
+            
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId);
+            if (!success)
+            {
+                return new ServiceResult<bool>
+                {
+                    ErrorMessage = errorMessage,
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+            
+            if (newPosition == previousPosition)
+            {
+                // Don't need to do anything if the position isn't changed.
+                return new ServiceResult<bool>(true);
+            }
+
+            databaseConnection.AddParameter("fileId", fileId);
+            databaseConnection.AddParameter("previousPosition", previousPosition);
+            databaseConnection.AddParameter("newPosition", newPosition);
+            databaseConnection.AddParameter("itemId", itemId);
+            databaseConnection.AddParameter("propertyName", propertyName);
+            databaseConnection.AddParameter("itemLinkId", itemLinkId);
+            
+            var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemLinkId" : "item_id = ?itemId";
+
+            var tablePrefix = itemLinkId > 0
+                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+
+            string query;
+            if (newPosition < previousPosition)
+            {
+                // Increase the ordering of all files that come later than the new position and earlier than the previous position.
+                query = $@"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} 
+SET ordering = ordering + 1
+WHERE {whereClause}
+AND property_name = ?propertyName
+AND ordering >= ?newPosition
+AND ordering < ?previousPosition";
+                await databaseConnection.ExecuteAsync(query);
+            }
+            else
+            {
+                // Lower the ordering of all files that come later than the previous position and earlier than the new position.
+                query = $@"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} 
+SET ordering = ordering - 1
+WHERE {whereClause}
+AND property_name = ?propertyName
+AND ordering > ?previousPosition
+AND ordering <= ?newPosition";
+                await databaseConnection.ExecuteAsync(query);
+            }
+
+            // Move the file to the new position.
+            query = $@"UPDATE {WiserTableNames.WiserItemFile} SET ordering = ?newPosition WHERE id = ?fileId";
+            await databaseConnection.ExecuteAsync(query);
+
+            return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task FixOrderingAsync(ulong itemId, ulong itemLinkId, string propertyName, string entityType = null, int linkType = 0)
+        {
+            var tablePrefix = itemLinkId > 0
+                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+            
+            databaseConnection.AddParameter("itemId", itemId);
+            databaseConnection.AddParameter("itemLinkId", itemLinkId);
+            databaseConnection.AddParameter("propertyName", propertyName);
+            var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemLinkId" : "item_id = ?itemId";
+            var query = $@"SET @orderingNumber = 0;
+
+UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} AS file
+JOIN (
+	SELECT 
+		x.id,
+		(@orderingNumber := @orderingNumber + 1) AS ordering
+	FROM (
+		SELECT
+			id
+		FROM {tablePrefix}{WiserTableNames.WiserItemFile}
+		WHERE {whereClause}
+		AND property_name = ?propertyName
+		ORDER BY ordering ASC
+	) AS x
+) AS ordering ON ordering.id = file.id
+SET file.ordering = ordering.ordering
+WHERE {whereClause}
+AND property_name = ?propertyName";
+            await databaseConnection.ExecuteAsync(query);
         }
 
         private async Task<(string UploadDirectory, List<FtpSettingsModel> FtpSettings)> GetFtpSettingsAsync(ClaimsIdentity identity, ulong itemLinkId, string propertyName, ulong itemId)

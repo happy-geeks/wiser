@@ -668,9 +668,23 @@ const importModuleSettings = {
 
                                     //Get properties of selected entity.
                                     const promiseResults = await Promise.all([
-                                        Wiser2.api({ url: `${this.settings.serviceRoot}/IMPORTEXPORT_GET_ENTITY_PROPERTIES?entityName=${encodeURIComponent(options.model.importTo)}` })
+                                        Wiser2.api({ url: `${this.settings.wiserApiRoot}imports/entity-properties?entityName=${encodeURIComponent(options.model.importTo)}` })
                                     ]);
-                                    const propertiesOfEntity = promiseResults[0];
+
+                                    const propertiesOfEntity = [];
+                                    promiseResults[0].forEach(prop => {
+                                        const options = prop.options !== "" ? JSON.parse(prop.options) : {};
+
+                                        // Convert the properties to objects used to determine which field should be auto-selected.
+                                        propertiesOfEntity.push({
+                                            name: prop.displayName,
+                                            value: prop.propertyName,
+                                            languageCode: prop.languageCode,
+                                            isImageField: prop.inputType === "ImageUpload",
+                                            allowMultipleImages: options.hasOwnProperty("multiple") && options.multiple,
+                                            propertyOrder: `${prop.ordering}_${prop.id}`
+                                        });
+                                    });
 
                                     this.importGrid.dataSource.data().forEach((dataItem) => {
                                         dataItem.set("moduleId", widget.dataItem().moduleId);
@@ -681,16 +695,21 @@ const importModuleSettings = {
                                         let columnName = dataItem.column.toLowerCase();
                                         let propertyMatchMade = false;
 
-                                        //Find a match for the column name on a property.
-                                        for (let i = 0; i < propertiesOfEntity.length; i++) {
-                                            //Set the values if a match with a property has been made.
-                                            if (columnName === propertiesOfEntity[i].name.toLowerCase() || columnName === propertiesOfEntity[i].value.toLowerCase()) {
-                                                dataItem.set("specName", propertiesOfEntity[i].name);
-                                                this.selectProperty(dataItem, propertiesOfEntity[i]);
-                                                propertyMatchMade = true;
-                                                break;
-                                            }
-                                        };
+                                        // Find matches for the column name on a property.
+                                        const matchingProperties = propertiesOfEntity.filter(prop => {
+                                            return prop.name.toLowerCase() === columnName || prop.value.toLowerCase() === columnName;
+                                        });
+                                        if (matchingProperties.length > 0) {
+                                            const sorted = matchingProperties.sort((a, b) => {
+                                                if (a.propertyOrder < b.propertyOrder) return -1;
+                                                if (a.propertyOrder > b.propertyOrder) return 1;
+                                                return 0;
+                                            });
+
+                                            dataItem.set("specName", sorted[0].name);
+                                            this.selectProperty(dataItem, sorted[0]);
+                                            propertyMatchMade = true;
+                                        }
 
                                         //If no match has been made reset all values (in case entity changed).
                                         if (!propertyMatchMade) {
@@ -722,7 +741,33 @@ const importModuleSettings = {
                                 optionLabel: "Kies een eigenschap",
                                 dataSource: {
                                     transport: {
-                                        read: `${this.settings.serviceRoot}/IMPORTEXPORT_GET_ENTITY_PROPERTIES?entityName=${encodeURIComponent(options.model.importTo)}`
+                                        read: (kendoReadOptions) => {
+                                            Wiser2.api({
+                                                url: `${this.settings.wiserApiRoot}imports/entity-properties?entityName=${encodeURIComponent(options.model.importTo)}`,
+                                                dataType: "json",
+                                                method: "GET",
+                                                data: kendoReadOptions.data
+                                            }).then((result) => {
+                                                const properties = [];
+                                                result.forEach(prop => {
+                                                    const options = prop.options !== "" ? JSON.parse(prop.options) : {};
+
+                                                    // Create data items out of the retrieved properties.
+                                                    properties.push({
+                                                        name: prop.displayName,
+                                                        value: prop.propertyName,
+                                                        languageCode: prop.languageCode,
+                                                        isImageField: prop.inputType === "ImageUpload",
+                                                        allowMultipleImages: options.hasOwnProperty("multiple") && options.multiple,
+                                                        propertyOrder: `${prop.ordering}_${prop.id}`
+                                                    });
+                                                });
+
+                                                kendoReadOptions.success(properties);
+                                            }).catch((result) => {
+                                                kendoReadOptions.error(result);
+                                            });
+                                        }
                                     }
                                 },
                                 change: (e) => {
@@ -848,7 +893,7 @@ const importModuleSettings = {
                                 optionLabel: "Kies een eigenschap",
                                 dataSource: {
                                     transport: {
-                                        read: `${this.settings.serviceRoot}/IMPORTEXPORT_GET_ENTITY_PROPERTIES?linkType=${options.model.linkType}`
+                                        read: `${this.settings.wiserApiRoot}imports/entity-properties?linkType=${options.model.linkType}`
                                     }
                                 },
                                 change: (e) => {

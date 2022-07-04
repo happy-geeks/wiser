@@ -86,7 +86,7 @@ namespace FrontEnd.Core.Services
         public T CreateBaseViewModel<T>() where T : BaseViewModel
         {
             var viewModel = (T)Activator.CreateInstance(typeof(T));
-            viewModel.Settings = frontEndSettings;
+            viewModel!.Settings = frontEndSettings;
             viewModel.WiserVersion = Assembly.GetEntryAssembly()?.GetName().Version;
             viewModel.SubDomain = GetSubDomain();
             viewModel.IsTestEnvironment = webHostEnvironment.EnvironmentName is "test" or "development";
@@ -94,8 +94,14 @@ namespace FrontEnd.Core.Services
             viewModel.ApiAuthenticationUrl = $"{frontEndSettings.ApiBaseUrl}connect/token";
             viewModel.ApiRoot = $"{frontEndSettings.ApiBaseUrl}api/v3/";
 
-            var partnerStylesDirectory = new DirectoryInfo(Path.Combine(webHostEnvironment.ContentRootPath, @"Core/Scss/partner"));
-            viewModel.LoadPartnerStyle = partnerStylesDirectory.GetFiles("*.scss").Any(f => Path.GetFileNameWithoutExtension(f.Name).Equals(viewModel.SubDomain, StringComparison.OrdinalIgnoreCase));
+            if (httpContextAccessor.HttpContext != null)
+            {
+                viewModel.CurrentDomain = httpContextAccessor.HttpContext.Request.Host.Value;
+                viewModel.CurrentDomain = viewModel.CurrentDomain.Replace($"{viewModel.SubDomain}.", "");
+            }
+
+            var partnerStylesDirectory = new DirectoryInfo(Path.Combine(webHostEnvironment.ContentRootPath, @"Core/Css/partner"));
+            viewModel.LoadPartnerStyle = partnerStylesDirectory.GetFiles("*.css").Any(f => Path.GetFileNameWithoutExtension(f.Name).Equals(viewModel.SubDomain, StringComparison.OrdinalIgnoreCase));
 
             return viewModel;
         }

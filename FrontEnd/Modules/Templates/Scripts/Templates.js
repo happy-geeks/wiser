@@ -173,7 +173,7 @@ const moduleSettings = {
                 click: () => this.openCreateNewItemDialog()
             });
 
-            $("#saveButton").kendoButton({
+            $("#saveButton, #saveAndDeployToTestButton").kendoButton({
                 icon: "save"
             });
 
@@ -183,7 +183,7 @@ const moduleSettings = {
                 height: "650",
                 title: "Templates",
                 visible: true,
-                actions: ["refresh"],
+                actions: [],
                 draggable: false
             }).data("kendoWindow").maximize().open();
 
@@ -797,6 +797,73 @@ const moduleSettings = {
             }
         }
 
+        /**
+         * Checks if the current template will conflict with another template based on the default header/footer settings.
+         * @param {number} templateId The current template's ID.
+         * @param {boolean} isDefaultHeader Whether this template should act as a default header.
+         * @param {boolean} isDefaultFooter Whether this template should act as a default footer.
+         * @param {string} defaultHeaderFooterRegex The regular expression that will be used to check the URL to limit which pages can use this default header and/or footer.
+         * @returns {Object} An object with keys "hasConflict" (boolean) and "conflictedWith" (a string array).
+         */
+        async checkDefaultHeaderOrFooterConflict(templateId, isDefaultHeader, isDefaultFooter, defaultHeaderFooterRegex) {
+            if (!isDefaultHeader && !isDefaultFooter) {
+                return false;
+            }
+
+            const process = `checkDefaultHeaderOrFooterConflict_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                const promises = [];
+
+                // Add promises based on parameters.
+                if (isDefaultHeader) {
+                    promises.push(Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}templates/${templateId}/check-default-header-conflict`,
+                        data: {
+                            regexString: defaultHeaderFooterRegex
+                        },
+                        dataType: "json",
+                        method: "GET"
+                    }));
+                }
+                if (isDefaultFooter) {
+                    promises.push(Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}templates/${templateId}/check-default-footer-conflict`,
+                        data: {
+                            regexString: defaultHeaderFooterRegex
+                        },
+                        dataType: "json",
+                        method: "GET"
+                    }));
+                }
+
+                // Result will be an array of responses.
+                const result = await Promise.all(promises);
+                let hasConflict = false;
+                const conflictedWith = [];
+
+                // The value of "conflict" will be the name of a template that this template will conflict with.
+                result.forEach((conflict) => {
+                    if (typeof conflict !== "string" || conflict === "") return;
+
+                    hasConflict = true;
+                    conflictedWith.push(conflict);
+                });
+
+                window.processing.removeProcess(process);
+
+                // Return whether there's a conflict and which template(s) this template conflicts with.
+                return {
+                    hasConflict: hasConflict,
+                    conflictedWith: conflictedWith
+                };
+            } catch (exception) {
+                kendo.alert(`Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.<br>${exception.responseText || exception}`);
+                window.processing.removeProcess(process);
+            }
+        }
+
         //Initializes the kendo components on the deployment tab. These are seperated from other components since these can be reloaded by the application.
         async initKendoDeploymentTab() {
             $("#deployLive, #deployAccept, #deployTest").kendoButton();
@@ -1305,8 +1372,8 @@ const moduleSettings = {
         }
 
         //Deploy a version to an enviorenment
-        async deployEnvironment(environment, templateId) {
-            const version = document.querySelector(`#published-environments .version-${environment} select.combo-select`).value;
+        async deployEnvironment(environment, templateId, version) {
+            version = version || document.querySelector(`#published-environments .version-${environment} select.combo-select`).value;
             if (!version) {
                 kendo.alert("U heeft geen geldige versie geselecteerd.");
                 return;
@@ -1324,8 +1391,8 @@ const moduleSettings = {
             await this.reloadMetaData(templateId);
         }
 
-        async deployDynamicContentEnvironment(environment, contentId) {
-            const version = document.querySelector(`#published-environments-dynamic-component .version-${environment} select.combo-select`).value;
+        async deployDynamicContentEnvironment(environment, contentId, version) {
+            version = version || document.querySelector(`#published-environments-dynamic-component .version-${environment} select.combo-select`).value;
             if (!version) {
                 kendo.alert("U heeft geen geldige versie geselecteerd.");
                 return;
@@ -1364,6 +1431,7 @@ const moduleSettings = {
             });
 
             document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
+            document.getElementById("saveAndDeployToTestButton").addEventListener("click", this.saveTemplate.bind(this, true));
 
             document.getElementById("searchForm").addEventListener("submit", this.onSearchFormSubmit.bind(this));
           
@@ -1490,7 +1558,7 @@ const moduleSettings = {
         /**
          * Save a new version of the selected template.
          */
-        async saveTemplate() {
+        async saveTemplate(alsoDeployToTest = false) {
             if (!this.selectedId || this.saving) {
                 return false;
             }
@@ -1500,8 +1568,24 @@ const moduleSettings = {
             let success = true;
 
             try {
-                this.saving = true;
                 const data = this.getCurrentTemplateSettings();
+
+                // Check if there's a conflict if the template is marked as default header and/or footer.
+                const defaultHeaderCheckbox = document.getElementById("isDefaultHeader");
+                const defaultFooterCheckbox = document.getElementById("isDefaultFooter");
+                if (defaultHeaderCheckbox && defaultFooterCheckbox) {
+                    const defaultHeaderFooterRegexInput = document.getElementById("defaultHeaderFooterRegex");
+                    const conflictCheck = await this.checkDefaultHeaderOrFooterConflict(data.templateId, defaultHeaderCheckbox.checked, defaultFooterCheckbox.checked, defaultHeaderFooterRegexInput.value);
+
+                    if (conflictCheck.hasConflict) {
+                        kendo.alert(`Er is al een standaard header en/of footer met dezelfde regex. Conflicterende template(s): ${conflictCheck.conflictedWith.join(", ")}`);
+                        window.processing.removeProcess(process);
+                        return false;
+                    }
+                }
+
+                // No conflicts, continue saving.
+                this.saving = true;
 
                 const response = await Wiser2.api({
                     url: `${this.settings.wiserApiRoot}templates/${data.templateId}`,
@@ -1513,6 +1597,11 @@ const moduleSettings = {
 
                 window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
                 this.historyLoaded = false;
+
+                if (alsoDeployToTest) {
+                    const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
+                    await this.deployEnvironment("test", this.selectedId, version);
+                }
                 await this.reloadMetaData(this.selectedId);
 
                 // Save the current settings so that we can keep track of any changes and warn the user if they're about to leave without saving.

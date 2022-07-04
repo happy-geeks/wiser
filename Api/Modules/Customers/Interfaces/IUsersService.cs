@@ -85,6 +85,14 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         /// <returns></returns>
         Task<ServiceResult<UserModel>> GetUserDataAsync(ClaimsIdentity identity);
+
+        /// <summary>
+        /// Gets data for the logged in user, such as the encrypted ID (which is only valid for 1 hour), for use with json.jcl.
+        /// </summary>
+        /// <param name="usersService">The <see cref="IUsersService"/> to use, to prevent duplicate code while using caching with the decorator pattern, while still being able to use caching in calls to other methods in this method.</param>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <returns></returns>
+        Task<ServiceResult<UserModel>> GetUserDataAsync(IUsersService usersService, ClaimsIdentity identity);
         
         /// <summary>
         /// Gets settings for a grid for the authenticated user, so that users can keep their state of all grids in Wiser.

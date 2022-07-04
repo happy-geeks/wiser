@@ -74,8 +74,8 @@
             { name: "queryBeforeDelete", text: "Hier kun je een query invullen om te controleren of een item verwijderd mag worden. Deze query moeten minimaal 1 kolom teruggeven met waarde 1 indien de verwijdering/update door mag gaan en waarde 0 als dit niet mag. Optioneel kun je nog een 2e kolom toevoegen aan je query met daarin de tekst die als foutmelding aan de gebruiker getoond wordt wanneer de waarde van de eerste kolom 0 is. Indien je hier geen tekst invult, wordt de standaardtekst Het is niet meer mogelijk om dit item te verwijderen. getoond.Indien er geen query is ingevuld, of de ingevulde query geeft geen resultaten terug, dan mag het verwijderen/ opslaan gewoon doorgaan.Je kunt hier { itemId } gebruiken, dat is het ID van het item dat men probeert te updaten." },
             { name: "entityModule", text: "De module instellen waar deze entiteit voor bedoeld is. Waarschijnlijk gaat deze kolom nog weg, omdat entiteiten uniek moeten zijn over alle modules." },
             { name: "entityIcon", text: "Het icoon dat getoond moet worden voor items van dit type in de boom, wanneer die nog niet uitgeklapt is." },
-            { name: "entityIconAdd", text: "Het icoon dat getoond moet worden voor items van dit type in de boom, wanneer die uitgeklapt is." },
-            { name: "entityIconExpanded", text: "Het icoon dat getoond moet worden voor items van dit type in de boom, wanneer die nog wel uitgeklapt is." },
+            { name: "entityIconAdd", text: "Het icoon dat getoond moet worden bij de optie om een nieuw item van dit type toe te voegen aan de boom." },
+            { name: "entityIconExpanded", text: "Het icoon dat getoond moet worden voor items van dit type in de boom, wanneer die wel uitgeklapt is." },
             { name: "defaultOrdering", text: "De manier waarop items gesorteerd moeten worden in de boom (treeview), of andere plekken waar de template GET_ITEMS wordt gebruikt." },
             { name: "friendlyName", text: "De naam van dit entiteitstype zoals die aan de gebruiker getoond moet worden." }
         ];

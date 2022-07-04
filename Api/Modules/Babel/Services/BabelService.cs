@@ -110,8 +110,7 @@ namespace Api.Modules.Babel.Services
                 return new ServiceResult<ResponseModel>(response)
                 {
                     StatusCode = HttpStatusCode.InternalServerError,
-                    ErrorMessage = exception.Message,
-                    ReasonPhrase = exception.Message
+                    ErrorMessage = exception.Message
                 };
             }
         }

@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
+using Api.Modules.Customers.Interfaces;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -14,6 +15,8 @@ using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Extensions;
+using GeeksCoreLibrary.Modules.Templates.Enums;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -24,14 +27,18 @@ namespace Api.Modules.Templates.Services
     {
         private readonly IDynamicContentDataService dataService;
         private readonly IHistoryDataService historyDataService;
+        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly ITemplateDataService templateDataService;
 
         /// <summary>
         /// Creates a new instance of <see cref="HistoryService"/>.
         /// </summary>
-        public HistoryService(IDynamicContentDataService dataService, IHistoryDataService historyDataService)
+        public HistoryService(IDynamicContentDataService dataService, IHistoryDataService historyDataService, IWiserCustomersService wiserCustomersService, ITemplateDataService templateDataService)
         {
             this.dataService = dataService;
             this.historyDataService = historyDataService;
+            this.wiserCustomersService = wiserCustomersService;
+            this.templateDataService = templateDataService;
         }
 
         /// <inheritdoc />
@@ -98,14 +105,19 @@ namespace Api.Modules.Templates.Services
         }
         
         /// <inheritdoc />
-        public async Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent)
+        public async Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(ClaimsIdentity identity, int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent)
         {
+            var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
             var rawTemplateModels = await historyDataService.GetTemplateHistoryAsync(templateId);
+
+            templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, rawTemplateModels[0]);
 
             var templateHistory = new List<TemplateHistoryModel>();
 
             for (var i = 0; i + 1 < rawTemplateModels.Count; i++)
             {
+                templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, rawTemplateModels[i + 1]);
+
                 var historyModel = GenerateHistoryModelForTemplates(rawTemplateModels[i], rawTemplateModels[i + 1]);
 
                 foreach (var historyList in dynamicContent.Values)
@@ -178,6 +190,9 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("routineType", newVersion.RoutineType, oldVersion.RoutineType, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("routineParameters", newVersion.RoutineParameters, oldVersion.RoutineParameters, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("routineReturnType", newVersion.RoutineReturnType, oldVersion.RoutineReturnType, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("isDefaultHeader", newVersion.IsDefaultHeader, oldVersion.IsDefaultHeader, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("isDefaultFooter", newVersion.IsDefaultFooter, oldVersion.IsDefaultFooter, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("defaultHeaderFooterRegex", newVersion.DefaultHeaderFooterRegex, oldVersion.DefaultHeaderFooterRegex, historyModel);
 
             var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);

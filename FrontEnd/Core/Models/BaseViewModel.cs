@@ -19,5 +19,7 @@ namespace FrontEnd.Core.Models
         public string ApiAuthenticationUrl { get; set; }
 
         public string ApiRoot { get; set; }
+
+        public string CurrentDomain { get; set; }
     }
 }

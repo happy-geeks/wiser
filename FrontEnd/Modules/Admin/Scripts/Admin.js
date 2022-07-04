@@ -5,7 +5,7 @@ import { EntityTab } from "../Scripts/EntityTab.js";
 import { EntityFieldTab } from "../Scripts/EntityFieldTab.js";
 import { EntityPropertyTab } from "../Scripts/EntityPropertyTab.js";
 import { WiserQueryTab } from "../Scripts/WiserQueryTab.js";
-import { Wiser2 } from "../../Base/Scripts/Utils.js"; 
+import { Wiser2 } from "../../Base/Scripts/Utils.js";
 
 
 require("@progress/kendo-ui/js/kendo.all.js");
@@ -30,7 +30,6 @@ const moduleSettings = {
          */
         constructor(settings) {
             this.base = this;
-
             // Kendo components.
             this.mainWindow = null;
 
@@ -279,16 +278,16 @@ const moduleSettings = {
             });
         }
 
-        saveChanges(e) {
+        async saveChanges(e) {
             if (!this.activeMainTab || this.activeMainTab === null || this.activeMainTab === "undefined") {
                 console.error("activeMainTab property is not set");
                 return;
             }
 
             //Call save function based on active tab
-            switch (this.activeMainTab) {
+            switch (this.activeMainTab.toLowerCase()) {
                 case "entityProperty":
-                    this.entityTab.beforeSave();
+                    await this.entityTab.beforeSave();
                     break;
                 case "query's":
                     this.wiserQueryTab.beforeSave();

@@ -42,15 +42,16 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="templateId">The id of the content.</param>
         /// <returns>A PublishedEnvironmentModel containing the published environments of dynamic content</returns>
         Task<PublishedEnvironmentModel> GetHistoryVersionsOfDynamicContent(int templateId);
-        
+
         /// <summary>
         /// Retrieve the history of a template. This will start by retrieving the history of the template. 
         /// When comparing the settings for changes the linked dynamic content will be checked for changes during this version. Any changes found in the linked dynamic content will be added to the template history.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="templateId">The id of the template.</param>
         /// <param name="dynamicContent">A Dictionary containing the overview of dynamic content and its respective history</param>
         /// <returns>A list of TemplateHistoryModel containing the history of the template and its linked dynamic content for each version</returns>
-        Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent);
+        Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(ClaimsIdentity identity, int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent);
         
         /// <summary>
         /// Retrieves the publish history of a template

@@ -12,6 +12,31 @@
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
+    
+    <style>
+        #mainScreenForm,
+        body.iframe #left-pane,
+        body.iframe .pane-content > header,
+        body.iframe .k-splitbar,
+        body.iframe #alert-first,
+        #itemWindow_template,
+        #previewFrame,
+        #sendMailDialog,
+        #htmlSourceWindow,
+        #maximizeEditorWindow,
+        #contentBuilderWindow,
+        #maximizeEditorWindow,
+        #imagesUploaderWindow,
+        #filesUploaderWindow,
+        #templatesUploaderWindow,
+        #infoPanel_template,
+        #maximizeSubEntitiesGridWindow,
+        #changeImageDataDialog,
+        #dataSelectorTemplateDialog,
+        #searchItemsWindow {
+            display: none;
+        }
+    </style>
 </head>
 
 <body class="@Model.BodyCssClass"
@@ -299,9 +324,8 @@
             <div class="actions">
                 <button class="k-primary" name="save">Update</button>
                 <button class="k-secondary" name="cancel">Annuleren</button>
-                <button class="addDynamicContent"></button>
-                <button class="addTemplate"></button>
-                <button class="addImage"></button>
+                <button class="addTemplate" title="Template toevoegen"></button>
+                <button class="addImage" title="Afbeelding toevoegen"></button>
             </div>
         </footer>
     </div>
@@ -579,7 +603,7 @@
                         <div class="item-group">
                             <h3>Voorbeeld</h3>
                             <div class="item">
-                                <iframe class="template-preview-iframe"></iframe>
+                                <iframe class="template-preview-iframe" src="about:blank"></iframe>
                             </div>
                         </div>
                     </div>
@@ -735,8 +759,8 @@
     </script>
 
     <script id="uploaderTemplate" type="text/x-kendo-template">
-        <div class="product" data-item-id="#= itemId #" data-image-id="#= fileId #" data-item-link-id="#= itemLinkId #" data-file-name="#= name #" data-title="#= title #">
-            <img src="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(itemId) #/files/#= fileId #/#= encodeURIComponent(name) #?encryptedCustomerId=#= encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#= encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#= window.dynamicItems.settings.isTestEnvironment #&subDomain=#= encodeURIComponent(window.dynamicItems.settings.subDomain) #&itemLinkId=#= encodeURIComponent(itemLinkId) #" alt="#: name # image" />
+        <div class="product" data-item-id="#= itemId #" data-image-id="#= fileId #" data-item-link-id="#= itemLinkId #" data-file-name="#= name #" data-title="#= title #" data-entity-type="#= entityType || '' #" data-link-type="#= linkType || 0 #">
+            <img src="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(itemId) #/files/#= fileId #/#= encodeURIComponent(name) #?encryptedCustomerId=#= encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#= encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#= window.dynamicItems.settings.isTestEnvironment #&subDomain=#= encodeURIComponent(window.dynamicItems.settings.subDomain) #&itemLinkId=#= encodeURIComponent(itemLinkId) #&entityType=#= encodeURIComponent(entityType || '') #&linkType=#= linkType || 0 #" alt="#: name # image" />
             <div class="imgTools">
                 <button type="button" class="imgZoom" title="Preview"></button>
                 # if(!readonly) { #
