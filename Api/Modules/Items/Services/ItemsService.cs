@@ -696,6 +696,14 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
+            catch (InvalidOperationException)
+            {
+                return new ServiceResult<bool>
+                {
+                    ErrorMessage = "Het is niet mogelijk om dit item te verwijderen.",
+                    StatusCode = HttpStatusCode.Conflict
+                };
+            }
 
             return new ServiceResult<bool>
             {
@@ -1772,9 +1780,9 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("itemId", itemId);
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT IFNULL(friendly_name, name) AS name, name AS value, dedicated_table_prefix
-                                                                    FROM {WiserTableNames.WiserEntity}
-                                                                    GROUP BY name
-                                                                    ORDER BY IFNULL(friendly_name, name) ASC");
+FROM {WiserTableNames.WiserEntity}
+GROUP BY dedicated_table_prefix
+ORDER BY IFNULL(friendly_name, name) ASC");
 
             var results = new List<EntityTypeModel>();
             if (dataTable.Rows.Count == 0)
@@ -1783,25 +1791,30 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             }
 
             // Look in all wiser_item tables of an item exists with the given ID.
-            var allEntityTypes = dataTable.Rows.Cast<DataRow>().Select(dataRow => new Tuple<string, string, string>(dataRow.Field<string>("value"), dataRow.Field<string>("name"), dataRow.Field<string>("dedicated_table_prefix"))).ToList();
-            foreach (var (entityType, displayName, tablePrefix) in allEntityTypes)
+            var groups = dataTable.Rows.Cast<DataRow>().Select(dataRow => new Tuple<string, string, string>(dataRow.Field<string>("value"), dataRow.Field<string>("name"), dataRow.Field<string>("dedicated_table_prefix"))).ToList().GroupBy(x => x.Item3);
+            foreach (var group in groups)
             {
-                dataTable = await clientDatabaseConnection.GetAsync($@"SELECT entity_type FROM {tablePrefix}{(!String.IsNullOrWhiteSpace(tablePrefix) && !tablePrefix.EndsWith("_") ? "_" : "")}{WiserTableNames.WiserItem} WHERE id = ?itemId");
+                var tablePrefix = group.Key;
+                var query = $@"SELECT entity_type FROM {tablePrefix}{(!String.IsNullOrWhiteSpace(tablePrefix) && !tablePrefix.EndsWith("_") ? "_" : "")}{WiserTableNames.WiserItem} WHERE id = ?itemId";
+                dataTable = await clientDatabaseConnection.GetAsync(query);
                 if (dataTable.Rows.Count == 0)
                 {
                     continue;
                 }
 
                 var itemEntityType = dataTable.Rows[0].Field<string>("entity_type");
-                if (!String.Equals(itemEntityType, entityType, StringComparison.OrdinalIgnoreCase))
+                var entity = group.FirstOrDefault(x => String.Equals(itemEntityType, x.Item1, StringComparison.OrdinalIgnoreCase));
+                
+                if (entity == null)
                 {
                     continue;
                 }
 
                 results.Add(new EntityTypeModel
                 {
-                    Id = entityType,
-                    DisplayName = displayName
+                    Id = entity.Item1,
+                    DisplayName = entity.Item2,
+                    DedicatedTablePrefix = tablePrefix
                 });
             }
 

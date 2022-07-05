@@ -94,10 +94,13 @@ namespace Api.Modules.Modules.Services
             // Make sure that Wiser tables are up-to-date.
             const string TriggersName = "wiser_triggers";
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { 
-                WiserTableNames.WiserItem,
-                WiserTableNames.WiserItemDetail,
                 WiserTableNames.WiserEntity,
                 WiserTableNames.WiserEntityProperty,
+                WiserTableNames.WiserLink
+            });
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { 
+                WiserTableNames.WiserItem,
+                WiserTableNames.WiserItemDetail,
                 WiserTableNames.WiserModule ,
                 WiserTableNames.WiserItemFile,
                 WiserTableNames.WiserItemLink,
@@ -108,8 +111,7 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,
                 WiserTableNames.WiserPreviewProfiles,
-                WiserTableNames.WiserDynamicContentPublishLog,
-                WiserTableNames.WiserLink
+                WiserTableNames.WiserDynamicContentPublishLog
             });
             var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
             

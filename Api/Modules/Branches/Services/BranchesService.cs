@@ -187,7 +187,7 @@ namespace Api.Modules.Branches.Services
         {
             var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
 
-            var query = $@"SELECT id, name
+            var query = $@"SELECT id, name, subdomain, db_dbname
 FROM {ApiTableNames.WiserCustomers}
 WHERE customerid = ?id
 AND id <> ?id
@@ -202,7 +202,12 @@ ORDER BY id DESC";
                 {
                     Id = dataRow.Field<int>("id"),
                     CustomerId = currentCustomer.CustomerId,
-                    Name = dataRow.Field<string>("name")
+                    Name = dataRow.Field<string>("name"),
+                    SubDomain = dataRow.Field<string>("subdomain"),
+                    Database = new ConnectionInformationModel
+                    {
+                        DatabaseName = dataRow.Field<string>("db_dbname")
+                    }
                 });
             }
 
