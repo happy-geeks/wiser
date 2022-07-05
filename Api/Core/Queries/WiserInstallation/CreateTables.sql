@@ -138,7 +138,8 @@ CREATE TABLE IF NOT EXISTS `wiser_history`  (
   `language_code` varchar(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `groupname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `item_id`(`item_id`, `field`) USING BTREE
+  INDEX `idx_item_id`(`item_id`, `field`) USING BTREE,
+  INDEX `idx_changed_on`(`changed_on`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------

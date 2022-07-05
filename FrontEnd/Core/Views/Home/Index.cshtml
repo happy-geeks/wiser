@@ -131,31 +131,25 @@
 
                         <button v-if="isMainBranch" class="btn btn-primary" @@click="openCreateBranchPrompt">Nieuwe branch maken</button>
                     </div>
-                    <div :class="{ 'col': true, 'col-3': true }">
+                    <div class="col col-3 no-scroll">
                         <h2>Branch openen</h2>
                         <p>
                             Hier kan een bestaande branch geopend worden.
                         </p>
                         
-                        <div class="row no-scroll" v-if="isMainBranch">
-                            <div class="col col-12 form-row">
-                                <label for="open-branch-type">Waar wilt u de branch openen?</label>
-                                <dropdownlist id="open-branch-type" class="full-width" :data-items="openBranchTypes" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranchType"></dropdownlist>
-                            </div>
+                        <div class="col col-12 form-row" v-if="isMainBranch">
+                            <label for="open-branch-type">Waar wilt u de branch openen?</label>
+                            <dropdownlist id="open-branch-type" class="full-width" :data-items="openBranchTypes" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranchType"></dropdownlist>
                         </div>
                         
-                        <div class="row no-scroll" v-if="openBranchSettings.selectedBranchType.id === 'website'">
-                            <div class="col col-12 form-row">
-                                <label for="website-url">Geef de URL op van uw website</label>
-                                <input type="url" id="website-url" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="openBranchSettings.websiteUrl" required>
-                            </div>
+                        <div class="col col-12 form-row" v-if="openBranchSettings.selectedBranchType.id === 'website'">
+                            <label for="website-url">Geef de URL op van uw website</label>
+                            <input type="url" id="website-url" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="openBranchSettings.websiteUrl" required>
                         </div>
                         
-                        <div class="row no-scroll" v-if="isMainBranch">
-                            <div class="col col-12 form-row">
-                                <label for="available-branches">Selecteer de branch die u wilt openen</label>
-                                <dropdownlist id="available-branches-to-open" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranch"></dropdownlist>
-                            </div>
+                        <div class="col col-12 form-row" v-if="isMainBranch">
+                            <label for="available-branches">Selecteer de branch die u wilt openen</label>
+                            <dropdownlist id="available-branches-to-open" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranch"></dropdownlist>
                         </div>
 
                         <button class="btn btn-primary" @@click="openBranch">Branch openen</button>
@@ -501,105 +495,106 @@
                 </div>
             </footer>
         </wiser-dialog>
+        
         <wiser-dialog class="branches-dialog" :modal="true" :width="'1500px'" :title="'Conflicten'" ref="wiserMergeConflictsPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Verwerken openstaande merges', primary: true, action: handleMergeConflicts }]">
-        <div class="container stretch">
-            <div class="row no-scroll">
-                <div class="col col-12 flex-inline">
-                    <select>
-                        <option>Type</option>
-                        <option>Veldnaam</option>
-                        <option>Wijzigingsdatum</option>
-                        <option>Waarde origineel</option>
-                        <option>Waarde branche</option>
-                    </select>
+            <div class="container stretch">
+                <div class="row no-scroll">
+                    <div class="col col-12 flex-inline">
+                        <select>
+                            <option>Type</option>
+                            <option>Veldnaam</option>
+                            <option>Wijzigingsdatum</option>
+                            <option>Waarde origineel</option>
+                            <option>Waarde branche</option>
+                        </select>
 
-                    <select>
-                        <option>bevat</option>
-                        <option>is gelijk aan</option>
-                        <option>is groter dan</option>
-                        <option>is kleiner dan</option>
-                        <option>is tussen</option>
-                    </select>
+                        <select>
+                            <option>bevat</option>
+                            <option>is gelijk aan</option>
+                            <option>is groter dan</option>
+                            <option>is kleiner dan</option>
+                            <option>is tussen</option>
+                        </select>
 
-                    <input type="text" name="" value="" />
-                    <span>en</span>
-                    <input type="text" name="" value="" />
-                            
-                    <button class="btn btn-primary">Keur goed</button>
+                        <input type="text" name="" value="" />
+                        <span>en</span>
+                        <input type="text" name="" value="" />
+                                
+                        <button class="btn btn-primary">Keur goed</button>
 
-                    <button class="btn btn-alert">Keur af</button>
-                </div>
-                
-                <div class="col col-12 table-row no-top-margin">
-                    <div class="fixed-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Type</th>
-                                    <th>Naam</th>
-                                    <th>Veld</th>
-                                    <th>Waarde origineel</th>
-                                    <th>Waarde branche</th>
-                                    <th>Origineel gewijzigd op</th>
-                                    <th>Branche gewijzigd op</th>
-                                    <th>Actie</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Klant</td>
-                                    <td>Happy Geeks BV</td>
-                                    <td>Telefoonnummer</td>
-                                    <td>0412-611234</td>
-                                    <td>+31 (412) 611234</td>
-                                    <td>1 januari 2022 om 09.55<br>
-                                        door Ferry</td>
-                                    <td>1 januari 2022 om 09.55<br>
-                                        door Gilian</td>
-                                    <td></td>
-                                </tr>
-                                <tr>
-                                    <td>Klant</td>
-                                    <td>Happy Geeks BV</td>
-                                    <td>Telefoonnummer</td>
-                                    <td>0412-611234</td>
-                                    <td>+31 (412) 611234</td>
-                                    <td>1 januari 2022 om 09.55<br>
-                                        door Ferry</td>
-                                    <td>1 januari 2022 om 09.55<br>
-                                        door Gilian</td>
-                                    <td></td>
-                                </tr>
-                                <tr>
-                                    <td>Klant</td>
-                                    <td>Happy Geeks BV</td>
-                                    <td>Telefoonnummer</td>
-                                    <td>0412-611234</td>
-                                    <td>+31 (412) 611234</td>
-                                    <td>1 januari 2022 om 09.55<br>
-                                        door Ferry</td>
-                                    <td>1 januari 2022 om 09.55<br>
-                                        door Gilian</td>
-                                    <td></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <button class="btn btn-alert">Keur af</button>
+                    </div>
+                    
+                    <div class="col col-12 table-row no-top-margin">
+                        <div class="fixed-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Naam</th>
+                                        <th>Veld</th>
+                                        <th>Waarde origineel</th>
+                                        <th>Waarde branche</th>
+                                        <th>Origineel gewijzigd op</th>
+                                        <th>Branche gewijzigd op</th>
+                                        <th>Actie</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Klant</td>
+                                        <td>Happy Geeks BV</td>
+                                        <td>Telefoonnummer</td>
+                                        <td>0412-611234</td>
+                                        <td>+31 (412) 611234</td>
+                                        <td>1 januari 2022 om 09.55<br>
+                                            door Ferry</td>
+                                        <td>1 januari 2022 om 09.55<br>
+                                            door Gilian</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Klant</td>
+                                        <td>Happy Geeks BV</td>
+                                        <td>Telefoonnummer</td>
+                                        <td>0412-611234</td>
+                                        <td>+31 (412) 611234</td>
+                                        <td>1 januari 2022 om 09.55<br>
+                                            door Ferry</td>
+                                        <td>1 januari 2022 om 09.55<br>
+                                            door Gilian</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Klant</td>
+                                        <td>Happy Geeks BV</td>
+                                        <td>Telefoonnummer</td>
+                                        <td>0412-611234</td>
+                                        <td>+31 (412) 611234</td>
+                                        <td>1 januari 2022 om 09.55<br>
+                                            door Ferry</td>
+                                        <td>1 januari 2022 om 09.55<br>
+                                            door Gilian</td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
+                <footer class="row fixed no-bottom-padding">
+                    <div class="col col-6 inline">
+                        <span class="error">
+                            LET OP: nog niet alle conflicten hebben een akkoord of deny toegekend gekregen!
+                        </span>
+                    </div>
+                    <div class="col col-6 align-right">
+                        <span>10 van 100 conflicten akkoord</span>
+                        <button class="btn btn-primary">Verwerken openstaande merges</button>
+                    </div>
+                </footer>
             </div>
-            <footer class="row fixed no-bottom-padding">
-                <div class="col col-6 inline">
-                    <span class="error">
-                        LET OP: nog niet alle conflicten hebben een akkoord of deny toegekend gekregen!
-                    </span>
-                </div>
-                <div class="col col-6 align-right">
-                    <span>10 van 100 conflicten akkoord</span>
-                    <button class="btn btn-primary">Verwerken openstaande merges</button>
-                </div>
-            </footer>
-        </div>
-    </wiser-dialog>
+        </wiser-dialog>
         <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een ID in'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]" @@open="onWiserIdPromptOpen">
             <div class="form-row">
                 <input type="number" id="wiserId" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" @@keypress="onWiserIdFieldKeyPress" required>

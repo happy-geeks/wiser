@@ -385,10 +385,10 @@ LIMIT 1";
             }
 
             // Local function to get the type number, source item ID and the destination item ID from a link.
-            async Task<(int Type, ulong SourceItemId, ulong DestinationItemId)?> GetDataFromLinkAsync(ulong linkId, string tablePrefix, MySqlConnection branchconnection)
+            async Task<(int Type, ulong SourceItemId, ulong DestinationItemId)?> GetDataFromLinkAsync(ulong linkId, string tablePrefix, MySqlConnection connection)
             {
                 var linkDataTable = new DataTable();
-                await using var linkCommand = branchconnection.CreateCommand();
+                await using var linkCommand = connection.CreateCommand();
                 linkCommand.Parameters.AddWithValue("id", linkId);
                 linkCommand.CommandText = $@"SELECT type, item_id, destination_item_id FROM `{tablePrefix}{WiserTableNames.WiserItemLink}` WHERE id = ?id
 UNION ALL
@@ -778,11 +778,12 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> MergeAsync(ClaimsIdentity identity, MergeBranchSettingsModel settings)
+        public async Task<ServiceResult<MergeBranchResultModel>> MergeAsync(ClaimsIdentity identity, MergeBranchSettingsModel settings)
         {
+            var result = new MergeBranchResultModel();
             var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
             var productionCustomer = (await wiserCustomersService.GetSingleAsync(currentCustomer.CustomerId, true)).ModelObject;
-            
+
             // If the settings.Id is 0, it means the user wants to merge the current branch.
             if (settings.Id <= 0)
             {
@@ -793,46 +794,498 @@ LIMIT 1";
             // Make sure the user is not trying to copy changes from main to main, that would be weird and also cause a lot of problems.
             if (currentCustomer.CustomerId == settings.Id)
             {
-                return new ServiceResult<bool>
+                return new ServiceResult<MergeBranchResultModel>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
                     ErrorMessage = "U probeert wijzigingen van de hoofdbranch te synchroniseren, dat is niet mogelijk."
                 };
             }
 
-            var selectedEnvironmentCustomer = settings.Id == currentCustomer.Id 
-                ? currentCustomer 
+            var selectedBranchCustomer = settings.Id == currentCustomer.Id
+                ? currentCustomer
                 : (await wiserCustomersService.GetSingleAsync(settings.Id, true)).ModelObject;
 
             // Check to make sure someone is not trying to copy changes from an environment that does not belong to them.
-            if (selectedEnvironmentCustomer == null || currentCustomer.CustomerId != selectedEnvironmentCustomer.CustomerId)
+            if (selectedBranchCustomer == null || currentCustomer.CustomerId != selectedBranchCustomer.CustomerId)
             {
-                return new ServiceResult<bool>
+                return new ServiceResult<MergeBranchResultModel>
                 {
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
 
-            // Add the merge to the queue so that the AIS will process it.
-            await using var branchConnection = new MySqlConnection(wiserCustomersService.GenerateConnectionStringFromCustomer(productionCustomer));
-            await branchConnection.OpenAsync();
-            await using (var environmentCommand = branchConnection.CreateCommand())
+            DateTime? lastMergeDate = null;
+
+            // Get the date and time of the last merge of this branch, so we can find all changes made in production after this date, to check for merge conflicts.
+            await using var mainConnection = new MySqlConnection(wiserCustomersService.GenerateConnectionStringFromCustomer(productionCustomer));
+            await mainConnection.OpenAsync();
+            await using (var productionCommand = mainConnection.CreateCommand())
             {
-                environmentCommand.Parameters.AddWithValue("branch_id", settings.Id);
-                environmentCommand.Parameters.AddWithValue("action", "merge");
-                environmentCommand.Parameters.AddWithValue("data", JsonConvert.SerializeObject(settings));
-                environmentCommand.Parameters.AddWithValue("added_on", DateTime.Now);
-                environmentCommand.Parameters.AddWithValue("start_on", settings.StartOn ?? DateTime.Now);
-                environmentCommand.Parameters.AddWithValue("added_by", IdentityHelpers.GetUserName(identity, true));
-                environmentCommand.Parameters.AddWithValue("user_id", IdentityHelpers.GetWiserUserId(identity));
-                environmentCommand.CommandText = $@"INSERT INTO {WiserTableNames.WiserBranchesQueue} 
+                productionCommand.Parameters.AddWithValue("branchId", selectedBranchCustomer.Id);
+                productionCommand.CommandText = $"SELECT MAX(finished_on) AS lastMergeDate FROM {WiserTableNames.WiserBranchesQueue} WHERE branch_id = ?branchId AND success = 1 AND finished_on IS NOT NULL";
+
+                var dataTable = new DataTable();
+                using var sourceAdapter = new MySqlDataAdapter(productionCommand);
+                await sourceAdapter.FillAsync(dataTable);
+                if (dataTable.Rows.Count > 0)
+                {
+                    lastMergeDate = dataTable.Rows[0].Field<DateTime?>("lastMergeDate");
+                }
+            }
+
+            await using var branchConnection = new MySqlConnection(wiserCustomersService.GenerateConnectionStringFromCustomer(selectedBranchCustomer));
+            await branchConnection.OpenAsync();
+
+            // If we have no last merge date, it probably means someone removed a record from wiser_branch_queue, in that case get the date of the first change in wiser_history in the branch. 
+            if (!lastMergeDate.HasValue)
+            {
+                await using var branchCommand = branchConnection.CreateCommand();
+                branchCommand.CommandText = $@"SELECT MIN(changed_on) AS firstChangeDate FROM {WiserTableNames.WiserHistory}";
+                var dataTable = new DataTable();
+                using var branchAdapter = new MySqlDataAdapter(branchCommand);
+                await branchAdapter.FillAsync(dataTable);
+                if (dataTable.Rows.Count > 0)
+                {
+                    lastMergeDate = dataTable.Rows[0].Field<DateTime?>("firstChangeDate");
+                }
+            }
+
+            // If we somehow still don't have a last merge date, then we can't check for merge conflicts. This should never happen under normal circumstances.
+            if (lastMergeDate.HasValue)
+            {
+                var moduleNames = new Dictionary<ulong, string>();
+                var entityTypes = new Dictionary<ulong, string>();
+                var entityTypeSettings = new Dictionary<string, EntitySettingsModel>();
+
+                var conflicts = new List<MergeConflictModel>();
+
+                // Get all changes from branch.
+                var dataTable = new DataTable();
+                await using (var branchCommand = branchConnection.CreateCommand())
+                {
+                    branchCommand.CommandText = $@"SELECT 
+    action,
+    tablename,
+    item_id,
+    changed_on,
+    changed_by,
+    field,
+    newvalue,
+    language_code,
+    groupname
+FROM {WiserTableNames.WiserHistory}";
+                    using var branchAdapter = new MySqlDataAdapter(branchCommand);
+                    await branchAdapter.FillAsync(dataTable);
+                }
+
+                foreach (DataRow dataRow in dataTable.Rows)
+                {
+                    var action = dataRow.Field<string>("action")?.ToUpperInvariant();
+                    var conflict = new MergeConflictModel
+                    {
+                        Id = dataRow.Field<ulong>("item_id"),
+                        TableName = dataRow.Field<string>("table_name"),
+                        FieldName = dataRow.Field<string>("field"),
+                        ValueInBranch = dataRow.Field<string>("newvalue"),
+                        ChangeDateInBranch = dataRow.Field<DateTime>("changed_on"),
+                        ChangedByInBranch = dataRow.Field<string>("changed_by"),
+                        LanguageCode = dataRow.Field<string>("language_code"),
+                        GroupName = dataRow.Field<string>("groupname")
+                    };
+
+                    switch (action)
+                    {
+                        case "UPDATE_ENTITYPROPERTY":
+                        {
+                            conflict.Type = "entityProperty";
+                            conflict.Title = "Veld van entiteit";
+                            conflict.FieldDisplayName = conflict.FieldName;
+                            break;
+                        }
+                        case "UPDATE_MODULE":
+                        {
+                            conflict.Type = "module";
+
+                            if (!moduleNames.ContainsKey(conflict.Id))
+                            {
+                                await using var branchCommand = branchConnection.CreateCommand();
+                                branchCommand.Parameters.AddWithValue("id", conflict.Id);
+                                branchCommand.CommandText = $"SELECT name FROM {WiserTableNames.WiserModule} WHERE id = ?id";
+                                var moduleDataTable = new DataTable();
+                                using var branchAdapter = new MySqlDataAdapter(branchCommand);
+                                await branchAdapter.FillAsync(moduleDataTable);
+                                moduleNames.Add(conflict.Id, moduleDataTable.Rows.Count == 0 ? "Onbekend" : moduleDataTable.Rows[0].Field<string>("name"));
+                            }
+
+                            conflict.Title = $"Module ({moduleNames[conflict.Id]})";
+
+                            conflict.FieldDisplayName = conflict.FieldName;
+                            break;
+                        }
+                        case "UPDATE_QUERY":
+                        {
+                            break;
+                        }
+                        case "INSERT_ENTITY":
+                        {
+                            break;
+                        }
+                        case "UPDATE_ENTITY":
+                        {
+                            break;
+                        }
+                        case "DELETE_ENTITY":
+                        {
+                            break;
+                        }
+                        case "INSERT_FIELD_TEMPLATE":
+                        {
+                            break;
+                        }
+                        case "UPDATE_FIELD_TEMPLATE":
+                        {
+                            break;
+                        }
+                        case "DELETE_FIELD_TEMPLATE":
+                        {
+                            break;
+                        }
+                        case "INSERT_LINK_SETTING":
+                        {
+                            break;
+                        }
+                        case "UPDATE_LINK_SETTING":
+                        {
+                            break;
+                        }
+                        case "DELETE_LINK_SETTING":
+                        {
+                            break;
+                        }
+                        case "INSERT_PERMISSION":
+                        {
+                            break;
+                        }
+                        case "UPDATE_PERMISSION":
+                        {
+                            break;
+                        }
+                        case "DELETE_PERMISSION":
+                        {
+                            break;
+                        }
+                        case "INSERT_USER_ROLE":
+                        {
+                            break;
+                        }
+                        case "UPDATE_USER_ROLE":
+                        {
+                            break;
+                        }
+                        case "DELETE_USER_ROLE":
+                        {
+                            break;
+                        }
+                        case "INSERT_API_CONNECTION":
+                        {
+                            break;
+                        }
+                        case "UPDATE_API_CONNECTION":
+                        {
+                            break;
+                        }
+                        case "DELETE_API_CONNECTION":
+                        {
+                            break;
+                        }
+                        case "INSERT_DATA_SELECTOR":
+                        {
+                            break;
+                        }
+                        case "UPDATE_DATA_SELECTOR":
+                        {
+                            break;
+                        }
+                        case "DELETE_DATA_SELECTOR":
+                        {
+                            break;
+                        }
+
+                        // Changes to items.
+                        case "CREATE_ITEM":
+                        {
+                            break;
+                        }
+                        case "UPDATE_ITEM":
+                        {
+                            break;
+                        }
+                        case "DELETE_ITEM":
+                        {
+                            break;
+                        }
+                        case "ADD_LINK":
+                        {
+
+                            break;
+                        }
+                        case "UPDATE_ITEMLINKDETAIL":
+                        case "CHANGE_LINK":
+                        {
+
+                            break;
+                        }
+                        case "REMOVE_LINK":
+                        {
+
+                            break;
+                        }
+                        case "ADD_FILE" when oldValue == "item_id":
+                        case "DELETE_FILE" when oldValue == "item_id":
+                        {
+
+                            break;
+                        }
+                        case "ADD_FILE" when oldValue == "itemlink_id":
+                        case "DELETE_FILE" when oldValue == "itemlink_id":
+                        {
+
+                            break;
+                        }
+                        case "UPDATE_FILE":
+                        {
+
+                            break;
+                        }
+                        default:
+                            continue;
+                    }
+
+                    conflicts.Add(conflict);
+                }
+
+                await using (var productionCommand = mainConnection.CreateCommand())
+                {
+                    productionCommand.Parameters.AddWithValue("lastChange", lastMergeDate.Value);
+                    productionCommand.CommandText = $@"SELECT 
+    action,
+    tablename,
+    item_id,
+    changed_on,
+    changed_by,
+    field,
+    newvalue,
+    language_code,
+    groupname
+FROM {WiserTableNames.WiserHistory}
+WHERE changed_on >= ?lastChange";
+                    using (var branchAdapter = new MySqlDataAdapter(productionCommand))
+                    {
+                        dataTable.Clear();
+                        await branchAdapter.FillAsync(dataTable);
+                    }
+
+                    foreach (DataRow dataRow in dataTable.Rows)
+                    {
+                        var action = dataRow.Field<string>("action")?.ToUpperInvariant();
+
+                        var conflict = conflicts.SingleOrDefault(conflict => conflict.Id == dataRow.Field<ulong>("item_id")
+                                                                             && conflict.TableName == dataRow.Field<string>("table_name")
+                                                                             && conflict.LanguageCode == dataRow.Field<string>("language_code")
+                                                                             && conflict.GroupName == dataRow.Field<string>("groupname")
+                                                                             && conflict.FieldName == dataRow.Field<string>("field"));
+
+                        if (conflict == null)
+                        {
+                            continue;
+                        }
+
+                        switch (action)
+                        {
+                            case "UPDATE_ENTITYPROPERTY":
+                            {
+                                break;
+                            }
+                            case "UPDATE_MODULE":
+                            {
+                                if (!moduleNames.ContainsKey(conflict.Id))
+                                {
+                                    await using var branchCommand = branchConnection.CreateCommand();
+                                    branchCommand.Parameters.AddWithValue("id", conflict.Id);
+                                    branchCommand.CommandText = $"SELECT name FROM {WiserTableNames.WiserModule} WHERE id = ?id";
+                                    var moduleDataTable = new DataTable();
+                                    using var branchAdapter = new MySqlDataAdapter(branchCommand);
+                                    await branchAdapter.FillAsync(moduleDataTable);
+                                    moduleNames.Add(conflict.Id, moduleDataTable.Rows.Count == 0 ? "Onbekend" : moduleDataTable.Rows[0].Field<string>("name"));
+                                }
+
+                                conflict.Title = $"Module ({moduleNames[conflict.Id]})";
+
+                                conflict.FieldDisplayName = conflict.FieldName;
+                                break;
+                            }
+                            case "UPDATE_QUERY":
+                            {
+                                break;
+                            }
+                            case "INSERT_ENTITY":
+                            {
+                                break;
+                            }
+                            case "UPDATE_ENTITY":
+                            {
+                                break;
+                            }
+                            case "DELETE_ENTITY":
+                            {
+                                break;
+                            }
+                            case "INSERT_FIELD_TEMPLATE":
+                            {
+                                break;
+                            }
+                            case "UPDATE_FIELD_TEMPLATE":
+                            {
+                                break;
+                            }
+                            case "DELETE_FIELD_TEMPLATE":
+                            {
+                                break;
+                            }
+                            case "INSERT_LINK_SETTING":
+                            {
+                                break;
+                            }
+                            case "UPDATE_LINK_SETTING":
+                            {
+                                break;
+                            }
+                            case "DELETE_LINK_SETTING":
+                            {
+                                break;
+                            }
+                            case "INSERT_PERMISSION":
+                            {
+                                break;
+                            }
+                            case "UPDATE_PERMISSION":
+                            {
+                                break;
+                            }
+                            case "DELETE_PERMISSION":
+                            {
+                                break;
+                            }
+                            case "INSERT_USER_ROLE":
+                            {
+                                break;
+                            }
+                            case "UPDATE_USER_ROLE":
+                            {
+                                break;
+                            }
+                            case "DELETE_USER_ROLE":
+                            {
+                                break;
+                            }
+                            case "INSERT_API_CONNECTION":
+                            {
+                                break;
+                            }
+                            case "UPDATE_API_CONNECTION":
+                            {
+                                break;
+                            }
+                            case "DELETE_API_CONNECTION":
+                            {
+                                break;
+                            }
+                            case "INSERT_DATA_SELECTOR":
+                            {
+                                break;
+                            }
+                            case "UPDATE_DATA_SELECTOR":
+                            {
+                                break;
+                            }
+                            case "DELETE_DATA_SELECTOR":
+                            {
+                                break;
+                            }
+
+                            // Changes to items.
+                            case "CREATE_ITEM":
+                            {
+                                break;
+                            }
+                            case "UPDATE_ITEM":
+                            {
+                                break;
+                            }
+                            case "DELETE_ITEM":
+                            {
+                                break;
+                            }
+                            case "ADD_LINK":
+                            {
+
+                                break;
+                            }
+                            case "UPDATE_ITEMLINKDETAIL":
+                            case "CHANGE_LINK":
+                            {
+
+                                break;
+                            }
+                            case "REMOVE_LINK":
+                            {
+
+                                break;
+                            }
+                            case "ADD_FILE" when oldValue == "item_id":
+                            case "DELETE_FILE" when oldValue == "item_id":
+                            {
+
+                                break;
+                            }
+                            case "ADD_FILE" when oldValue == "itemlink_id":
+                            case "DELETE_FILE" when oldValue == "itemlink_id":
+                            {
+
+                                break;
+                            }
+                            case "UPDATE_FILE":
+                            {
+
+                                break;
+                            }
+                            default:
+                                continue;
+                        }
+                    }
+                }
+            }
+
+            // Add the merge to the queue so that the AIS will process it.
+            await using (var productionCommand = mainConnection.CreateCommand())
+            {
+                productionCommand.Parameters.AddWithValue("branch_id", settings.Id);
+                productionCommand.Parameters.AddWithValue("action", "merge");
+                productionCommand.Parameters.AddWithValue("data", JsonConvert.SerializeObject(settings));
+                productionCommand.Parameters.AddWithValue("added_on", DateTime.Now);
+                productionCommand.Parameters.AddWithValue("start_on", settings.StartOn ?? DateTime.Now);
+                productionCommand.Parameters.AddWithValue("added_by", IdentityHelpers.GetUserName(identity, true));
+                productionCommand.Parameters.AddWithValue("user_id", IdentityHelpers.GetWiserUserId(identity));
+                productionCommand.CommandText = $@"INSERT INTO {WiserTableNames.WiserBranchesQueue} 
 (branch_id, action, data, added_on, start_on, added_by, user_id)
 VALUES (?branch_id, ?action, ?data, ?added_on, ?start_on, ?added_by, ?user_id)";
 
-                await environmentCommand.ExecuteNonQueryAsync();
+                await productionCommand.ExecuteNonQueryAsync();
             }
 
-            return new ServiceResult<bool>(true);
+            result.Success = true;
+
+            return new ServiceResult<MergeBranchResultModel>(result);
         }
 
         /// <summary>

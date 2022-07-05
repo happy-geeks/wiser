@@ -85,7 +85,7 @@ namespace Api.Modules.Branches.Controllers
         /// </summary>
         /// <param name="settings">The settings of what exactly to merge.</param>
         [HttpPatch]
-        [ProducesResponseType(typeof(MergeChangesToMainBranchResultModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(MergeBranchResultModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [Route("merge")]
         public async Task<IActionResult> MergeBranchAsync(MergeBranchSettingsModel settings)

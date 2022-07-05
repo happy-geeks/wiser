@@ -530,13 +530,15 @@ import {
                             return false;
                         }
 
+                        this.openMergeConflictsPrompt();
+                        /*
                         await this.$store.dispatch(MERGE_BRANCH, this.branchMergeSettings);
 
                         if (!this.mergeBranchError) {
                             this.$refs.wiserMergeBranchPrompt.close();
                             this.showGeneralMessagePrompt("De branch staat klaar om samengevoegd te worden. U krijgt een bericht wanneer dit voltooid is.");
                             return true;
-                        }
+                        }*/
 
                         return false;
                     },
