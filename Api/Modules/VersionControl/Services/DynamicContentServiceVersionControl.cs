@@ -10,7 +10,7 @@ using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
 
-namespace Api.Modules.VersionControl.Service
+namespace Api.Modules.VersionControl.Services
 {
     /// <inheritdoc cref="IDynamicContentServiceVersionControl" />
     public class DynamicContentServiceVersionControl : IDynamicContentServiceVersionControl

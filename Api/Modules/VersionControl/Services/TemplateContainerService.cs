@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Api.Core.Services;
-using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Interfaces;
+using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
 using GeeksCoreLibrary.Core.Enums;
 
-namespace Api.Modules.VersionControl.Service
+namespace Api.Modules.VersionControl.Services
 {
     /// <summary>
     /// 

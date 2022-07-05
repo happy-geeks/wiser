@@ -8,7 +8,7 @@ using Api.Modules.VersionControl.Models;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
-namespace Api.Modules.VersionControl.Service.DataLayer
+namespace Api.Modules.VersionControl.Services.DataLayer
 {
     ///<inheritdoc/>
     public class DynamicContentDataServiceVersionControl : IDynamicContentDataServiceVersionControl
@@ -133,7 +133,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             clientDatabaseConnection.AddParameter("contentId", contentId);
             clientDatabaseConnection.AddParameter("version", version);
 
-            Dictionary<int, int> versionList = new Dictionary<int, int>();
+            var versionList = new Dictionary<int, int>();
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 

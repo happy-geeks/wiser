@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Api.Modules.Templates.Models.Other;
-using Api.Modules.Templates.Models.Template;
-using GeeksCoreLibrary.Modules.Templates.Enums;
+﻿using Api.Modules.Templates.Models.Other;
 
 namespace Api.Modules.VersionControl.Models
 {
-
     /// <summary>
     /// A model that represents a template with all the version that are published.
     /// </summary>

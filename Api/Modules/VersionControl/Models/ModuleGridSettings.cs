@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Api.Modules.VersionControl.Models
+﻿namespace Api.Modules.VersionControl.Models
 {
     /// <summary>
     /// A model of the grid setting of a module.

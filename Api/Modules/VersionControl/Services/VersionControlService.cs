@@ -1,19 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Api.Core.Helpers;
 using Api.Core.Services;
-using Api.Modules.Grids.Models;
-using Api.Modules.Kendo.Models;
-using Api.Modules.Templates.Helpers;
-using Api.Modules.Templates.Models.Other;
 using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Models;
-using BuckarooSdk.Services.CreditCards.BanContact.Push;
 
-namespace Api.Modules.VersionControl.Service
+namespace Api.Modules.VersionControl.Services
 {
     /// <inheritdoc cref="IVersionControlService" />
     public class VersionControlService : IVersionControlService
@@ -54,9 +45,9 @@ namespace Api.Modules.VersionControl.Service
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<DynamicContentCommitModel>>> GetDynamicContentfromCommitAsync(int commitId)
+        public async Task<ServiceResult<List<DynamicContentCommitModel>>> GetDynamicContentFromCommitAsync(int commitId)
         {
-            var result = await versionControlDataService.GetDynamicContentfromCommitAsync(commitId);
+            var result = await versionControlDataService.GetDynamicContentFromCommitAsync(commitId);
             return new ServiceResult<List<DynamicContentCommitModel>>(result);
         }
 

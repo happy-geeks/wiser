@@ -190,7 +190,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetDynamicContentfromCommit(int commitId)
         {
-            return (await _versionControlService.GetDynamicContentfromCommitAsync(commitId)).GetHttpResponseMessage();
+            return (await _versionControlService.GetDynamicContentFromCommitAsync(commitId)).GetHttpResponseMessage();
         }
 
 

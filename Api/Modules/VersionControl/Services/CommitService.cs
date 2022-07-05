@@ -1,13 +1,13 @@
 ﻿using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
-using System.Security.Claims;
-using Api.Core.Helpers;
 
-namespace Api.Modules.VersionControl.Service
+namespace Api.Modules.VersionControl.Services
 {
     /// <inheritdoc cref="ICommitService" />
     public class CommitService : ICommitService

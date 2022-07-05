@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Threading.Tasks;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
-namespace Api.Modules.VersionControl.Service.DataLayer
+namespace Api.Modules.VersionControl.Services.DataLayer
 {
     ///<inheritdoc/>
     public class TemplateContainerDataService : ITemplateContainerDataService
@@ -32,7 +31,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
             clientDatabaseConnection.AddParameter("templateId", templateId);
             clientDatabaseConnection.AddParameter("version", version);
 
-            Dictionary<int, int> versionList = new Dictionary<int, int>();
+            var versionList = new Dictionary<int, int>();
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 

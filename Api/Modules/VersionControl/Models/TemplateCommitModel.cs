@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using GeeksCoreLibrary.Core.Enums;
+﻿using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.VersionControl.Models
 {

@@ -1,30 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Net;
-using System.Security.Claims;
 using System.Threading.Tasks;
-using Api.Core.Helpers;
-using Api.Core.Services;
-using Api.Modules.Grids.Models;
-using Api.Modules.Kendo.Models;
-using Api.Modules.Modules.Models;
-using Api.Modules.Templates.Models.Other;
-using Api.Modules.Templates.Models.Template;
+using Api.Modules.Customers.Interfaces;
 using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Models;
-using DocumentFormat.OpenXml.ExtendedProperties;
-using GeeksCoreLibrary.Core.Extensions;
-using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.Templates.Models;
-using Newtonsoft.Json;
-using Api.Modules.Customers.Interfaces;
 
-namespace Api.Modules.VersionControl.Service.DataLayer
+namespace Api.Modules.VersionControl.Services.DataLayer
 {
-   
     ///<inheritdoc/>
     public class VersionControlDataService : IVersionControlDataService
     {
@@ -48,7 +32,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
             clientDatabaseConnection.ClearParameters();
 
-            Dictionary<int, int> versionList = new Dictionary<int, int>();
+            var versionList = new Dictionary<int, int>();
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
@@ -70,7 +54,6 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         /// <inheritdoc />
         public async Task<List<TemplateCommitModel>> GetTemplatesFromCommitAsync(int commitId)
         {
-
             var query = "SELECT wct.* FROM wiser_commit_template wct LEFT JOIN wiser_commit_template wct2 ON wct2.template_id = wct.template_id AND wct2.version = wct.version WHERE wct.version = (SELECT MAX(version) FROM wiser_commit_template wct3 WHERE wct3.template_id = wct.template_id) AND wct.commit_id = ?commitId";
 
             clientDatabaseConnection.ClearParameters();
@@ -78,14 +61,16 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
-            List<TemplateCommitModel> templateList = new List<TemplateCommitModel>();
+            var templateList = new List<TemplateCommitModel>();
 
             foreach (DataRow row in dataTable.Rows)
             {
-                TemplateCommitModel template = new TemplateCommitModel();
-                template.CommitId = row.Field<int>("commit_id");
-                template.TemplateId = row.Field<int>("template_id");
-                template.Version = row.Field<int>("version");
+                var template = new TemplateCommitModel
+                {
+                    CommitId = row.Field<int>("commit_id"),
+                    TemplateId = row.Field<int>("template_id"),
+                    Version = row.Field<int>("version")
+                };
 
                 templateList.Add(template);
             }
@@ -103,19 +88,20 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
-            List<ModuleGridSettings> moduleGridDataList = new List<ModuleGridSettings>();
+            var moduleGridDataList = new List<ModuleGridSettings>();
 
             foreach (DataRow row in dataTable.Rows)
             {
-                ModuleGridSettings moduleGridSettings = new ModuleGridSettings();
-                moduleGridSettings.ModuleId = row.Field<int>("module_id");
-                moduleGridSettings.CustomQuery = row.Field<string>("custom_query");
-                moduleGridSettings.CountQuery = row.Field<string>("count_query");
-                moduleGridSettings.GridOptions = row.Field<string>("grid_options");
-                moduleGridSettings.GridDivId = row.Field<string>("grid_div_id");
-                moduleGridSettings.Name = row.Field<string>("name");
-                moduleGridSettings.GridReadOptions = row.Field<string>("grid_read_options");
-
+                var moduleGridSettings = new ModuleGridSettings
+                {
+                    ModuleId = row.Field<int>("module_id"),
+                    CustomQuery = row.Field<string>("custom_query"),
+                    CountQuery = row.Field<string>("count_query"),
+                    GridOptions = row.Field<string>("grid_options"),
+                    GridDivId = row.Field<string>("grid_div_id"),
+                    Name = row.Field<string>("name"),
+                    GridReadOptions = row.Field<string>("grid_read_options")
+                };
 
                 moduleGridDataList.Add(moduleGridSettings);
             }
@@ -132,7 +118,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
             clientDatabaseConnection.AddParameter("templateId", templateId);
         
-            List<DynamicContentModel> dynamicContentModelList = new List<DynamicContentModel>();
+            var dynamicContentModelList = new List<DynamicContentModel>();
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
@@ -151,7 +137,7 @@ namespace Api.Modules.VersionControl.Service.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<List<DynamicContentCommitModel>> GetDynamicContentfromCommitAsync(int commitId)
+        public async Task<List<DynamicContentCommitModel>> GetDynamicContentFromCommitAsync(int commitId)
         {
             var query = @"SELECT wcdc.* 
                         FROM wiser_commit_dynamic_content wcdc 
@@ -164,16 +150,18 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
-            List<DynamicContentCommitModel> dynamicContentList = new List<DynamicContentCommitModel>();
+            var dynamicContentList = new List<DynamicContentCommitModel>();
 
             foreach (DataRow row in dataTable.Rows)
             {
-                DynamicContentCommitModel DynamicContent = new DynamicContentCommitModel();
-                DynamicContent.CommitId = row.Field<int>("commit_id");
-                DynamicContent.DynamicContentId = row.Field<int>("dynamic_content_id");
-                DynamicContent.Version = row.Field<int>("version");
+                var dynamicContent = new DynamicContentCommitModel
+                {
+                    CommitId = row.Field<int>("commit_id"),
+                    DynamicContentId = row.Field<int>("dynamic_content_id"),
+                    Version = row.Field<int>("version")
+                };
 
-                dynamicContentList.Add(DynamicContent);
+                dynamicContentList.Add(dynamicContent);
             }
 
             return dynamicContentList;

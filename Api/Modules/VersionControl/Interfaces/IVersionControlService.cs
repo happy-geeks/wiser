@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Api.Core.Services;
-using Api.Modules.Grids.Models;
-using Api.Modules.Templates.Models.Other;
 using Api.Modules.VersionControl.Models;
-using Api.Modules.Kendo.Models;
 
 namespace Api.Modules.VersionControl.Interfaces
 {
@@ -42,7 +36,7 @@ namespace Api.Modules.VersionControl.Interfaces
         /// </summary>
         /// <param name="commitId">The id of the commit.</param>
         /// <returns>Returns a list of dynamic contnet items.</returns>
-        Task<ServiceResult<List<DynamicContentCommitModel>>> GetDynamicContentfromCommitAsync(int commitId);
+        Task<ServiceResult<List<DynamicContentCommitModel>>> GetDynamicContentFromCommitAsync(int commitId);
 
         /// <summary>
         /// Gets the settings of the grids from the given module.

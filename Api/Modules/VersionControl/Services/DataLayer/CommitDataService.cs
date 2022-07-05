@@ -4,7 +4,7 @@ using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
-namespace Api.Modules.VersionControl.Service.DataLayer
+namespace Api.Modules.VersionControl.Services.DataLayer
 {
     ///<inheritdoc/>
     public class CommitDataService : ICommitDataService
@@ -62,11 +62,11 @@ namespace Api.Modules.VersionControl.Service.DataLayer
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
-            int id = Convert.ToInt32(dataTable.Rows[0]["id"]);
-            string description = dataTable.Rows[0]["description"].ToString();
-            int asanaId = 0;
-            string date = dataTable.Rows[0]["added_on"].ToString();
-            string changedBy = dataTable.Rows[0]["changed_by"].ToString();
+            var id = Convert.ToInt32(dataTable.Rows[0]["id"]);
+            var description = dataTable.Rows[0]["description"].ToString();
+            var asanaId = 0;
+            var date = dataTable.Rows[0]["added_on"].ToString();
+            var changedBy = dataTable.Rows[0]["changed_by"].ToString();
 
             return new CreateCommitModel()
             {
