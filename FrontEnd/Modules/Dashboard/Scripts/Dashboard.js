@@ -129,56 +129,56 @@ const moduleSettings = {
             var tileLayout = $("#tiles").kendoTileLayout({
                 containers: [{
                     colSpan: 7,
-                    rowSpan: 2,
+                    rowSpan: 4,
                     header: {
                         text: "Data"
                     },
                     bodyTemplate: kendo.template($("#data-chart-template").html())
                 }, {
                     colSpan: 5,
-                    rowSpan: 2,
+                    rowSpan: 4,
                     header: {
                         text: "Gebruikers"
                     },
                     bodyTemplate: kendo.template($("#users-chart-template").html())
                 }, {
                     colSpan: 7,
-                    rowSpan: 1,
+                    rowSpan: 2,
                     header: {
                         text: "Abonnement"
                     },
                     bodyTemplate: kendo.template($("#subscriptions-chart-template").html())
                 }, {
                     colSpan: 5,
-                    rowSpan: 1,
+                    rowSpan: 2,
                     header: {
                         text: "Update log"
                     },
                     bodyTemplate: kendo.template($("#update-log").html())
                 }, {
                     colSpan: 12,
-                    rowSpan: 1,
+                    rowSpan: 2,
                     header: {
                         text: "Services"
                     },
                     bodyTemplate: kendo.template($("#services-grid-template").html())
                 }, {
                     colSpan: 4,
-                    rowSpan: 1,
+                    rowSpan: 2,
                     header: {
                         text: ""
                     },
                     bodyTemplate: kendo.template($("#numbers").html())
                 }, {
                     colSpan: 4,
-                    rowSpan: 1,
+                    rowSpan: 2,
                     header: {
                         text: ""
                     },
                     bodyTemplate: kendo.template($("#status-chart-template").html())
                 }, {
                     colSpan: 4,
-                    rowSpan: 1,
+                    rowSpan: 2,
                     header: {
                         text: ""
                     },
@@ -190,7 +190,7 @@ const moduleSettings = {
                     columns: 30,
                     rows: 30
                 },
-                rowsHeight: 250,
+                rowsHeight: 125,
                 reorderable: true,
                 resizable: true,
                 resize: function (e) {
@@ -212,6 +212,95 @@ const moduleSettings = {
                     kendo.resize(e.container, true);
                 }
             }).data("kendoTileLayout");
+
+            // create Charts
+            function createChart() {
+                // create Column Chart
+                $("#data-chart").kendoChart({
+                    title: {
+                        text: "Aantal items in Wiser"
+                    },
+                    legend: {
+                        position: "top"
+                    },
+                    seriesDefaults: {
+                        type: "column"
+                    },
+                    series: [{
+                        name: "Actief",
+                        data: [100000, 80000, 12000, 9000, 8500, 5000, 2700],
+                        color: "#FF6800"
+                    }, {
+                        name: "Archief",
+                        data: [205000, 80000, 12000, 9000, 8500, 5000, 2700],
+                        color: "#2ECC71"
+                    }],
+                    valueAxis: {
+                        labels: {
+                            format: "{0}"
+                        },
+                        line: {
+                            visible: false
+                        },
+                        axisCrossingValue: 0
+                    },
+                    categoryAxis: {
+                        categories: ["order", "basket", "ordeline", "basketline", "product", "customer", "factuur"],
+                        line: {
+                            visible: false
+                        },
+                        labels: {
+                            padding: { top: 10 }
+                        }
+                    },
+                    tooltip: {
+                        visible: true,
+                        format: "{0}",
+                        template: "#= series.name #: #= value #"
+                    }
+                });
+
+                // create Pie Chart
+                $("#users-chart").kendoChart({
+                    title: {
+                        position: "top",
+                        text: "Top 10 gebruikers met meeste tijd / aantal x ingelogd"
+                    },
+                    legend: {
+                        visible: false
+                    },
+                    chartArea: {
+                        background: ""
+                    },
+                    seriesDefaults: {
+                        labels: {
+                            visible: true,
+                            background: "transparent",
+                            template: "#= category #: \n #= value#%"
+                        }
+                    },
+                    series: [{
+                        type: "pie",
+                        startAngle: 90,
+                        data: [{
+                            category: "Rest",
+                            value: 56,
+                            color: "#2ECC71"
+                        }, {
+                            category: "Top 10 gebruikers",
+                            value: 44,
+                            color: "#FF6800"
+                        }]
+                    }],
+                    tooltip: {
+                        visible: true,
+                        format: "{0}%"
+                    }
+                });
+            }
+
+            $(document).ready(createChart);
+            $(document).bind("kendo:skinChange", createChart);
         }
 
         initializeCodeMirrorElements() {

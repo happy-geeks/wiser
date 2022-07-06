@@ -252,12 +252,23 @@ editMenu, .editMenu * {
     .k-card-header {
         background-color: $white-color;
         border-color: $white-color;
+        min-height: 55px;
+        box-sizing: border-box;
+
+        + .k-card-body {
+            max-height: calc(100% - 55px);
+        }
     }
 
     .k-card-title {
         color: $black-color;
         font-size: 18px;
         font-weight: 500;
+    }
+
+    .k-card-body {
+        max-height: 100%;
+        box-sizing: border-box;
     }
 
     .k-close-button {
@@ -277,4 +288,199 @@ editMenu, .editMenu * {
     .k-button-icon {
         padding: 0;
     }
+
+    .tile-content {
+        height: 100%;
+        max-height: 100%;
+        overflow: auto;
+        display: flex;
+        flex-wrap: wrap;
+    }
+}
+
+/**
+ * Log
+ **/
+.log-item {
+    padding-bottom: 10px;
+    width: 100%;
+
+    h4 {
+        font-size: 12px;
+        opacity: 0.5;
+        text-transform: uppercase;
+    }
+    ul {
+        li {
+            display: flex;
+            align-items: start;
+            justify-content: start;
+            gap: 10px;
+            padding: 3px;
+        }
+    }
+}
+
+/**
+ *  Services
+ **/
+.table-row {
+    overflow: hidden;
+    display: contents;
+}
+
+.fixed-table {
+    overflow: auto;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+
+    table {
+        border-collapse: collapse;
+        line-height: 30px;
+        width: 100%;
+
+        thead {
+            th {
+                background-color: $line-md-color;
+                border-bottom: 1px solid $line-color;
+                color: $thead-color;
+                position: sticky;
+                top: 0;
+                z-index: 1;
+                text-align: left;
+            }
+        }
+
+        tbody {
+            tr {
+                &:nth-child(even) {
+                    td {
+                        background-color: $lt-color;
+                    }
+                }
+            }
+        }
+
+        th {
+            padding: 1px 5px;
+        }
+
+        td {
+            padding: 5px;
+
+            &.status {
+                &.success {
+                    background-color: $color-success;
+                }
+
+                &.failed {
+                    background-color: $color-failed;
+                }
+
+                &.paused {
+                    background-color: $color-paused;
+                }
+
+                &.warning {
+                    background-color: $color-warning;
+                }
+            }
+
+            &.admin {
+                button {
+                    background-color: transparent;
+                    border: none;
+                    padding: 5px;
+                    cursor: pointer;
+                }
+            }
+        }
+    }
+}
+
+/**
+ * NUMBERS
+ **/
+.number-item {
+    color: $black-color;
+    display: flex;
+    flex-direction: column;
+    padding-top: 30px;
+    width: calc(100% / 3);
+
+    ins {
+        font-size: 50px;
+        margin-bottom: 20px;
+    }
+
+    h3 {
+        font-size: 24px;
+        font-weight: 700;
+    }
+
+    > span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        opacity: 0.5;
+
+        .k-icon {
+            font-size: 20px;
+        }
+    }
+}
+
+/**
+ * BUTTONS
+ **/
+.btn-row {
+    display: flex;
+    gap: 2px;
+    margin-top: auto;
+    width: 100%;
+
+    button {
+        @include transition(150ms);
+        border: none;
+        cursor: pointer;
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 18px;
+        padding: 12px 8px;
+        text-transform: none;
+        width: 100%;
+
+        &.selected {
+            background-color: $primary-color;
+            color: $white-color;
+        }
+
+        &:hover {
+            background-color: darken($line-color, 3%);
+
+            &.selected {
+                background-color: darken($primary-color, 5%);
+            }
+        }
+    }
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar-track {
+    border-radius: $scroll-bar-radius;
+    background-color: $scroll-track-color;
+}
+
+::-webkit-scrollbar {
+    border-radius: $scroll-bar-radius;
+    height: calc(#{$scroll-bar-radius} * 2);
+    width: calc(#{$scroll-bar-radius} * 2);
+    background-color: $scroll-track-color;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: $scroll-bar-radius;
+    background-color: $scroll-thumb-color;
 }
