@@ -144,7 +144,7 @@
                         
                         <div class="col col-12 form-row" v-if="openBranchSettings.selectedBranchType.id === 'website'">
                             <label for="website-url">Geef de URL op van uw website</label>
-                            <input type="url" id="website-url" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="openBranchSettings.websiteUrl" required>
+                            <input type="url" id="website-url" placeholder="https://happyhorizon.com/" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="openBranchSettings.websiteUrl" required>
                         </div>
                         
                         <div class="col col-12 form-row" v-if="isMainBranch">
@@ -152,7 +152,7 @@
                             <dropdownlist id="available-branches-to-open" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranch"></dropdownlist>
                         </div>
 
-                        <button class="btn btn-primary" @@click="openBranch">Branch openen</button>
+                        <a href="#" class="btn btn-primary" @@click="openBranch">Branch openen</a>
                     </div>
                     <div :class="{ 'col': true, 'col-6': isMainBranch || branches.length > 0, 'col-9': !isMainBranch || !branches.length }">
                         <h2>Branch terugzetten</h2>
@@ -541,40 +541,16 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>Klant</td>
-                                        <td>Happy Geeks BV</td>
-                                        <td>Telefoonnummer</td>
-                                        <td>0412-611234</td>
-                                        <td>+31 (412) 611234</td>
-                                        <td>1 januari 2022 om 09.55<br>
-                                            door Ferry</td>
-                                        <td>1 januari 2022 om 09.55<br>
-                                            door Gilian</td>
-                                        <td></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Klant</td>
-                                        <td>Happy Geeks BV</td>
-                                        <td>Telefoonnummer</td>
-                                        <td>0412-611234</td>
-                                        <td>+31 (412) 611234</td>
-                                        <td>1 januari 2022 om 09.55<br>
-                                            door Ferry</td>
-                                        <td>1 januari 2022 om 09.55<br>
-                                            door Gilian</td>
-                                        <td></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Klant</td>
-                                        <td>Happy Geeks BV</td>
-                                        <td>Telefoonnummer</td>
-                                        <td>0412-611234</td>
-                                        <td>+31 (412) 611234</td>
-                                        <td>1 januari 2022 om 09.55<br>
-                                            door Ferry</td>
-                                        <td>1 januari 2022 om 09.55<br>
-                                            door Gilian</td>
+                                    <tr v-for="conflict in mergeBranchResult.conflicts">
+                                        <td>{{ conflict.typeDisplayName }}</td>
+                                        <td>{{ conflict.title }}</td>
+                                        <td>{{ conflict.fieldDisplayName }}</td>
+                                        <td>{{ conflict.valueInMain }}</td>
+                                        <td>{{ conflict.valueInBranch }}</td>
+                                        <td>{{ conflict.changeDateInMain }} (TODO: FOrmat)<br>
+                                            door {{ conflict.changedByInMain }}</td>
+                                        <td>{{ conflict.changeDateInBranch }} (TODO: FOrmat)<br>
+                                            door {{ conflict.changedByInBranch }}</td>
                                         <td></td>
                                     </tr>
                                 </tbody>

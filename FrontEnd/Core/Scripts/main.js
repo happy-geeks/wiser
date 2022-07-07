@@ -3,6 +3,7 @@
 import { TrackJS } from "trackjs";
 import { createApp, defineAsyncComponent } from "vue";
 import * as axios from "axios";
+import { DateTime } from "luxon";
 
 import UsersService from "./shared/users.service";
 import ModulesService from "./shared/modules.service";
@@ -155,7 +156,8 @@ import {
                                     update: false,
                                     delete: false
                                 }
-                            }
+                            },
+                            conflicts: {}
                         },
                         openBranchTypes: [
                             { id: "wiser", name:  "Wiser" },
@@ -242,6 +244,9 @@ import {
                     },
                     branches() {
                         return this.$store.state.branches.branches;
+                    },
+                    mergeBranchResult() {
+                        return this.$store.state.branches.mergeBranchResult;
                     },
                     mergeBranchError() {
                         return this.$store.state.branches.mergeBranchError;
@@ -530,15 +535,24 @@ import {
                             return false;
                         }
 
-                        this.openMergeConflictsPrompt();
-                        /*
+                        
                         await this.$store.dispatch(MERGE_BRANCH, this.branchMergeSettings);
+                        debugger;
+
+                        if (this.mergeBranchError) {
+                            return false;
+                        }
+                        
+                        if (this.mergeBranchResult.conflicts && this.mergeBranchResult.conflicts.length > 0) {
+                            this.openMergeConflictsPrompt();
+                            return true;
+                        }
 
                         if (!this.mergeBranchError) {
                             this.$refs.wiserMergeBranchPrompt.close();
                             this.showGeneralMessagePrompt("De branch staat klaar om samengevoegd te worden. U krijgt een bericht wanneer dit voltooid is.");
                             return true;
-                        }*/
+                        }
 
                         return false;
                     },
@@ -547,7 +561,9 @@ import {
                         this.showGeneralMessagePrompt("Conflicten verwerken");
                     },
 
-                    openBranch() {
+                    openBranch(event) {
+                        event.preventDefault();
+
                         if (!this.openBranchSettings || !this.openBranchSettings.selectedBranchType || !this.openBranchSettings.selectedBranchType.id) {
                             this.showGeneralMessagePrompt("Kies a.u.b. of u de branch in Wiser wilt openen of op uw website.");
                             return false;
@@ -569,6 +585,10 @@ import {
                                 url = this.openBranchSettings.websiteUrl;
                                 if (!url.startsWith("http")) {
                                     url = `https://${url}`
+                                }
+                                
+                                if (!url.endsWith("/")) {
+                                    url += "/";
                                 }
                                 
                                 url = `${url.substring(0, url.indexOf("/", 8))}/branches/${encodeURIComponent(this.openBranchSettings.selectedBranch.database.databaseName)}`;
