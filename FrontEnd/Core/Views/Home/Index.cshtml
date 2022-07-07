@@ -131,7 +131,7 @@
 
                         <button v-if="isMainBranch" class="btn btn-primary" @@click="openCreateBranchPrompt">Nieuwe branch maken</button>
                     </div>
-                    <div class="col col-3 no-scroll">
+                    <div class="col col-3" v-if="branches.length > 0">
                         <h2>Branch openen</h2>
                         <p>
                             Hier kan een bestaande branch geopend worden.
@@ -154,7 +154,7 @@
 
                         <button class="btn btn-primary" @@click="openBranch">Branch openen</button>
                     </div>
-                    <div :class="{ 'col': true, 'col-6': isMainBranch, 'col-9': !isMainBranch }">
+                    <div :class="{ 'col': true, 'col-6': isMainBranch || branches.length > 0, 'col-9': !isMainBranch || !branches.length }">
                         <h2>Branch terugzetten</h2>
                         <p>
                             Hiermee kunnen wijzigingen die in een branch gedaan zijn, overgezet worden naar de productie-omgeving. U kunt dan kiezen welke wijzigingen doorgezet moeten worden, dat hoeft niet per se alles te zijn.
@@ -208,7 +208,7 @@
                                         <td>Alle onderstaande</td>
                                         <td>{{ totalAmountOfItemsForCreatingBranch }}</td>
                                         <td>
-                                            <select v-model="createBranchSettings.entities.all.mode">
+                                            <select v-model="createBranchSettings.entities.all.mode" @@change="onCreateBranchAllSettingsChange">
                                                 <option value="-1"></option>
                                                 <option value="0">Alles</option>
                                                 <option value="2">Willekeurig X items</option>
@@ -221,15 +221,15 @@
                                         <td class="extra">
                                             <label class="number-of-items" v-if="createBranchSettings.entities.all.mode == 2 || createBranchSettings.entities.all.mode == 3">
                                                 <span>Aantal items:</span>
-                                                <input type="number" v-model="createBranchSettings.entities.all.amountOfItems" />
+                                                <input type="number" v-model="createBranchSettings.entities.all.amountOfItems" @@change="onCreateBranchAllSettingsChange" />
                                             </label>
                                             <label class="single-date" v-if="createBranchSettings.entities.all.mode == 4 || createBranchSettings.entities.all.mode == 5">
                                                 <span>Datum:</span>
-                                                <input type="date" v-model="createBranchSettings.entities.all.start" />
+                                                <input type="date" v-model="createBranchSettings.entities.all.start" @@change="onCreateBranchAllSettingsChange" />
                                             </label>
                                             <div class="date-range" v-if="createBranchSettings.entities.all.mode == 6">
-                                                <input type="date" v-model="createBranchSettings.entities.all.start" />
-                                                <input type="date" v-model="createBranchSettings.entities.all.end" />
+                                                <input type="date" v-model="createBranchSettings.entities.all.start" @@change="onCreateBranchAllSettingsChange" />
+                                                <input type="date" v-model="createBranchSettings.entities.all.end" @@change="onCreateBranchAllSettingsChange" />
                                             </div>
                                         </td>
                                     </tr>
@@ -237,7 +237,7 @@
                                         <td>{{ entity.displayName }}</td>
                                         <td>{{ entity.totalItems }}</td>
                                         <td>
-                                            <select v-model="createBranchSettings.entities[entity.id].mode" v-if="createBranchSettings.entities.all.mode == -1 && createBranchSettings.entities[entity.id]">
+                                            <select v-model="createBranchSettings.entities[entity.id].mode" v-if="createBranchSettings.entities[entity.id]">
                                                 <option value="0">Alles</option>
                                                 <option value="1">Niets</option>
                                                 <option value="2">Willekeurig X items</option>
@@ -248,15 +248,15 @@
                                             </select>
                                         </td>
                                         <td class="extra">
-                                            <label class="number-of-items" v-if="createBranchSettings.entities.all.mode == -1 && createBranchSettings.entities[entity.id] && (createBranchSettings.entities[entity.id].mode == 2 || createBranchSettings.entities[entity.id].mode == 3)">
+                                            <label class="number-of-items" v-if="createBranchSettings.entities[entity.id] && (createBranchSettings.entities[entity.id].mode == 2 || createBranchSettings.entities[entity.id].mode == 3)">
                                                 <span>Aantal items:</span>
                                                 <input type="number" v-model="createBranchSettings.entities[entity.id].amountOfItems"/>
                                             </label>
-                                            <label class="single-date" v-if="createBranchSettings.entities.all.mode == -1 && createBranchSettings.entities[entity.id] && (createBranchSettings.entities[entity.id].mode == 4 || createBranchSettings.entities[entity.id].mode == 5)">
+                                            <label class="single-date" v-if="createBranchSettings.entities[entity.id] && (createBranchSettings.entities[entity.id].mode == 4 || createBranchSettings.entities[entity.id].mode == 5)">
                                                 <span>Datum:</span>
                                                 <input type="date" v-model="createBranchSettings.entities[entity.id].start"/>
                                             </label>
-                                            <div class="date-range" v-if="createBranchSettings.entities.all.mode == -1 && createBranchSettings.entities[entity.id] && createBranchSettings.entities[entity.id].mode == 6">
+                                            <div class="date-range" v-if="createBranchSettings.entities[entity.id] && createBranchSettings.entities[entity.id].mode == 6">
                                                 <input type="date" v-model="createBranchSettings.entities[entity.id].start"/>
                                                 <input type="date" v-model="createBranchSettings.entities[entity.id].end"/>
                                             </div>
@@ -315,10 +315,10 @@
                                 <thead>
                                     <tr>
                                         <th>Item</th>
-                                        <th width="150">Alles</th>
-                                        <th width="150">Nieuw</th>
-                                        <th width="150">Verwijderd</th>
-                                        <th width="150">Gewijzigd</th>
+                                        <th>Alles</th>
+                                        <th>Nieuw</th>
+                                        <th>Verwijderd</th>
+                                        <th>Gewijzigd</th>
                                     </tr>
                                 </thead>
                                 <tbody v-if="!branchChanges || !branchChanges.entities || !branchChanges.entities.length">
@@ -331,25 +331,25 @@
                                         <td>Alle onderstaande</td>
                                         <td>
                                             <label class="checkbox">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.everything" />
+                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.everything" @@change="onBranchMergeSettingChange($event, 'entities', 'all', 'everything')" />
                                                 <span>({{ totalAmountOfItemsCreated + totalAmountOfItemsUpdated + totalAmountOfItemsDeleted }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox" v-if="totalAmountOfItemsCreated > 0 && !branchMergeSettings.entities.all.everything">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.create" />
+                                            <label class="checkbox" v-if="totalAmountOfItemsCreated > 0">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.create" @@change="onBranchMergeSettingChange($event, 'entities', 'all', 'create')" />
                                                 <span>({{ totalAmountOfItemsCreated }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox" v-if="totalAmountOfItemsDeleted > 0 && !branchMergeSettings.entities.all.everything">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.delete" />
+                                            <label class="checkbox" v-if="totalAmountOfItemsDeleted > 0">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.delete" @@change="onBranchMergeSettingChange($event, 'entities', 'all', 'delete')" />
                                                 <span>({{ totalAmountOfItemsDeleted }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox" v-if="totalAmountOfItemsUpdated > 0 && !branchMergeSettings.entities.all.everything">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.update" />
+                                            <label class="checkbox" v-if="totalAmountOfItemsUpdated > 0">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.update" @@change="onBranchMergeSettingChange($event, 'entities', 'all', 'update')" />
                                                 <span>({{ totalAmountOfItemsUpdated }})</span>
                                             </label>
                                         </td>
@@ -357,26 +357,26 @@
                                     <tr v-for="entity in branchChanges.entities" :key="entity.entityType">
                                         <td>{{ entity.displayName }}</td>
                                         <td>
-                                            <label class="checkbox" v-if="!branchMergeSettings.entities.all.everything && branchMergeSettings.entities[entity.entityType]">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].everything" />
+                                            <label class="checkbox" v-if="branchMergeSettings.entities[entity.entityType]">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].everything" @@change="onBranchMergeSettingChange($event, 'entities', entity.entityType, 'everything')" />
                                                 <span>({{ entity.created + entity.deleted + entity.updated }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox" v-if="entity.created > 0 && !branchMergeSettings.entities.all.everything && !branchMergeSettings.entities.all.create && branchMergeSettings.entities[entity.entityType] && !branchMergeSettings.entities[entity.entityType].everything">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].create" />
+                                            <label class="checkbox" v-if="entity.created > 0 && branchMergeSettings.entities[entity.entityType]">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].create" @@change="onBranchMergeSettingChange($event, 'entities', entity.entityType, 'create')" />
                                                 <span>({{ entity.created }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox" v-if="entity.deleted > 0 && !branchMergeSettings.entities.all.everything && !branchMergeSettings.entities.all.delete && branchMergeSettings.entities[entity.entityType] && !branchMergeSettings.entities[entity.entityType].everything">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].delete" />
+                                            <label class="checkbox" v-if="entity.deleted > 0 && branchMergeSettings.entities[entity.entityType]">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].delete" @@change="onBranchMergeSettingChange($event, 'entities', entity.entityType, 'delete')" />
                                                 <span>({{ entity.deleted }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox" v-if="entity.updated > 0 && !branchMergeSettings.entities.all.everything && !branchMergeSettings.entities.all.update && branchMergeSettings.entities[entity.entityType] && !branchMergeSettings.entities[entity.entityType].everything">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].update" />
+                                            <label class="checkbox" v-if="entity.updated > 0 && branchMergeSettings.entities[entity.entityType]">
+                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].update" @@change="onBranchMergeSettingChange($event, 'entities', entity.entityType, 'update')" />
                                                 <span>({{ entity.updated }})</span>
                                             </label>
                                         </td>
@@ -395,10 +395,10 @@
                                 <thead>
                                     <tr>
                                         <th>Item</th>
-                                        <th width="150">Alles</th>
-                                        <th width="150">Nieuw</th>
-                                        <th width="150">Verwijderd</th>
-                                        <th width="150">Gewijzigd</th>
+                                        <th>Alles</th>
+                                        <th>Nieuw</th>
+                                        <th>Verwijderd</th>
+                                        <th>Gewijzigd</th>
                                     </tr>
                                 </thead>
                                 <tbody v-if="!branchChanges || !branchChanges.settings || !branchChanges.settings.length">
@@ -411,25 +411,25 @@
                                         <td>Alle onderstaande</td>
                                         <td>
                                             <label class="checkbox">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.everything" />
+                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.everything" @@change="onBranchMergeSettingChange($event, 'settings', 'all', 'everything')" />
                                                 <span>({{ totalAmountOfSettingsCreated + totalAmountOfSettingsUpdated + totalAmountOfSettingsDeleted }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox" v-if="totalAmountOfSettingsCreated > 0 && !branchMergeSettings.settings.all.everything">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.create" />
+                                            <label class="checkbox" v-if="totalAmountOfSettingsCreated > 0">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.create" @@change="onBranchMergeSettingChange($event, 'settings', 'all', 'create')" />
                                                 <span>({{ totalAmountOfSettingsCreated }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox" v-if="totalAmountOfSettingsDeleted > 0 && !branchMergeSettings.settings.all.everything">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.delete" />
+                                            <label class="checkbox" v-if="totalAmountOfSettingsDeleted > 0">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.delete" @@change="onBranchMergeSettingChange($event, 'settings', 'all', 'delete')" />
                                                 <span>({{ totalAmountOfSettingsDeleted }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox" v-if="totalAmountOfSettingsUpdated > 0 && !branchMergeSettings.settings.all.everything">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.update" />
+                                            <label class="checkbox" v-if="totalAmountOfSettingsUpdated > 0">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.update" @@change="onBranchMergeSettingChange($event, 'settings', 'all', 'update')" />
                                                 <span>({{ totalAmountOfSettingsUpdated }})</span>
                                             </label>
                                         </td>
@@ -437,26 +437,26 @@
                                     <tr v-for="setting in branchChanges.settings" :key="setting.type">
                                         <td>{{ setting.displayName }}</td>
                                         <td>
-                                            <label class="checkbox" v-if="!branchMergeSettings.settings.all.everything && branchMergeSettings.settings[setting.type]">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].everything" />
+                                            <label class="checkbox" v-if="branchMergeSettings.settings[setting.type]">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].everything" @@change="onBranchMergeSettingChange($event, 'settings', setting.type, 'everything')" />
                                                 <span>({{ setting.created + setting.deleted + setting.updated }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox" v-if="setting.created > 0 && !branchMergeSettings.settings.all.everything && !branchMergeSettings.settings.all.create && branchMergeSettings.settings[setting.type]">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].create" />
+                                            <label class="checkbox" v-if="setting.created > 0 && branchMergeSettings.settings[setting.type]">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].create" @@change="onBranchMergeSettingChange($event, 'settings', setting.type, 'create')" />
                                                 <span>({{ setting.created }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox" v-if="setting.deleted > 0 && !branchMergeSettings.settings.all.everything && !branchMergeSettings.settings.all.delete && branchMergeSettings.settings[setting.type]">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].delete" />
+                                            <label class="checkbox" v-if="setting.deleted > 0 && branchMergeSettings.settings[setting.type]">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].delete" @@change="onBranchMergeSettingChange($event, 'settings', setting.type, 'delete')" />
                                                 <span>({{ setting.deleted }})</span>
                                             </label>
                                         </td>
                                         <td>
-                                            <label class="checkbox" v-if="setting.updated > 0 && !branchMergeSettings.settings.all.everything && !branchMergeSettings.settings.all.update && branchMergeSettings.settings[setting.type]">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].update" />
+                                            <label class="checkbox" v-if="setting.updated > 0 && branchMergeSettings.settings[setting.type]">
+                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].update" @@change="onBranchMergeSettingChange($event, 'settings', setting.type, 'update')" />
                                                 <span>({{ setting.updated }})</span>
                                             </label>
                                         </td>

@@ -682,6 +682,43 @@ import {
                                 delete: false
                             };
                         }
+                    },
+
+                    onCreateBranchAllSettingsChange(event) {
+                        for (let entity of this.entitiesForBranches) {
+                            this.createBranchSettings.entities[entity.id] = Object.assign({}, this.createBranchSettings.entities.all);
+                        }
+                    },
+
+                    onBranchMergeSettingChange(event, setting, type, operation) {
+                        const isChecked = event.currentTarget.checked;
+                        if (type === "all") {
+                            for (let entityOrSettingType of this.branchChanges[setting]) {
+                                const key = entityOrSettingType.entityType || entityOrSettingType.type;
+                                this.branchMergeSettings[setting][key] = this.branchMergeSettings[setting][key] || {};
+                                switch (operation) {
+                                    case "everything":
+                                        this.branchMergeSettings[setting][key].everything = isChecked;
+                                        this.branchMergeSettings[setting][key].create = isChecked;
+                                        this.branchMergeSettings[setting][key].update = isChecked;
+                                        this.branchMergeSettings[setting][key].delete = isChecked;
+                                        break;
+                                    default:
+                                        this.branchMergeSettings[setting][key][operation] = isChecked;
+                                        break;
+                                }
+                            }
+
+                            if (operation === "everything") {
+                                this.branchMergeSettings[setting].all.create = isChecked;
+                                this.branchMergeSettings[setting].all.update = isChecked;
+                                this.branchMergeSettings[setting].all.delete = isChecked;
+                            }
+                        } else if (operation === "everything") {
+                            this.branchMergeSettings[setting][type].create = isChecked;
+                            this.branchMergeSettings[setting][type].update = isChecked;
+                            this.branchMergeSettings[setting][type].delete = isChecked;
+                        }
                     }
                 }
             });

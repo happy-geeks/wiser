@@ -211,6 +211,50 @@ ORDER BY id DESC";
                 });
             }
 
+            // Get the status of create branches.
+            query = $@"SELECT
+    branch_id,
+    started_on,
+    finished_on,
+    success
+FROM {WiserTableNames.WiserBranchesQueue}
+WHERE action = 'create'";
+            dataTable = await clientDatabaseConnection.GetAsync(query);
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                var id = dataRow.Field<int>("branch_id");
+                var customerModel = results.FirstOrDefault(customer => customer.Id == id);
+                if (customerModel == null)
+                {
+                    continue;
+                }
+
+                var startedOn = dataRow.Field<DateTime?>("started_on");
+                var finishedOn = dataRow.Field<DateTime?>("finished_on");
+                var success = !dataRow.IsNull("success") && Convert.ToBoolean(dataRow["success"]);
+                var statusMessage = "";
+
+                if (startedOn.HasValue && finishedOn.HasValue && !success)
+                {
+                    statusMessage = "Branch aanmaken mislukt";
+                }
+                else if (startedOn.HasValue && !finishedOn.HasValue)
+                {
+                    statusMessage = $"Nog bezig met aanmaken, begonnen om {startedOn.Value:dd-MM-yyyy HH:mm:ss}";
+                }
+                else if (!startedOn.HasValue)
+                {
+                    statusMessage = "Staat nog in wachtrij";
+                }
+
+                if (String.IsNullOrEmpty(statusMessage))
+                {
+                    continue;
+                }
+
+                customerModel.Name += $" (Status: {statusMessage})";
+            }
+
             return new ServiceResult<List<CustomerModel>>(results);
         }
 
