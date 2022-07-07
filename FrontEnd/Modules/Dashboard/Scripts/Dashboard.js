@@ -77,22 +77,19 @@ const moduleSettings = {
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.wiser2UserId = userData.id;
 
-            this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
-            this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
-
-            this.container = document.getElementById("dataBuilder");
-            this.connectionBlocksContainer = document.getElementById("connectionBlocks");
-            this.havingContainer = $(document.getElementById("havingContainer"));
-
             // Initialize the rest.
-            this.initializeWindow();
             this.initializeKendoElements();
-            this.initializeCodeMirrorElements();
 
-            this.dataLoad.initialize();
+            // Start the period picker as read-only.
+            $("#periodPicker").getKendoDateRangePicker().readonly(true);
 
-            // Create a single connection to start with.
-            this.mainConnection = this.addConnection(this.connectionBlocksContainer, true);
+            // Update data.
+            window.processing.addProcess("dataUpdate");
+            await Promise.all([
+                this.updateBranches(),
+                this.updateData()
+            ]);
+            window.processing.removeProcess("dataUpdate");
 
             this.setBindings();
         }
@@ -106,14 +103,85 @@ const moduleSettings = {
         }
 
         setBindings() {
-        }
+            const buttons = Array.from(document.getElementById("typeFilterButtons").querySelectorAll("button"));
+            buttons.forEach((button) => {
+                button.addEventListener("click", async (event) => {
+                    buttons.filter((btn) => btn !== event.currentTarget).forEach((btn) => btn.classList.remove("selected"));
+                    event.currentTarget.classList.add("selected");
 
-        initializeWindow() {
+                    window.processing.addProcess("dataUpdate");
+                    await this.updateData();
+                    window.processing.removeProcess("dataUpdate");
+                });
+            });
+
+            $("#periodFilter").getKendoDropDownList().bind("change", async (event) => {
+                const currentDate = new Date();
+                const value = event.sender.value();
+                let range = null;
+                let readonly = true;
+                let updateData = true;
+                switch (value) {
+                    case "currentMonth":
+                        range = {
+                            start: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1),
+                            end: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+                        };
+                        range.end.setDate(range.end.getDate() - 1);
+                        break;
+                    case "lastMonth":
+                        range = {
+                            start: new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1),
+                            end: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+                        };
+                        range.end.setDate(range.end.getDate() - 1);
+                        break;
+                    case "currentYear":
+                        range = {
+                            start: new Date(currentDate.getFullYear(), 0, 1),
+                            end: new Date(currentDate.getFullYear() + 1, 0, 1)
+                        };
+                        range.end.setDate(range.end.getDate() - 1);
+                        break;
+                    case "lastYear":
+                        range = {
+                            start: new Date(currentDate.getFullYear() - 1, 0, 1),
+                            end: new Date(currentDate.getFullYear(), 0, 1)
+                        };
+                        range.end.setDate(range.end.getDate() - 1);
+                        break;
+                    case "custom":
+                        readonly = false;
+                        updateData = false;
+                        break;
+                }
+
+                const periodPicker = $("#periodPicker").getKendoDateRangePicker();
+                if (range !== null) {
+                    periodPicker.range(range);
+                }
+                periodPicker.readonly(readonly);
+
+                if (updateData) {
+                    window.processing.addProcess("dataUpdate");
+                    await this.updateData();
+                    window.processing.removeProcess("dataUpdate");
+                }
+            });
+
+            $("#periodPicker").getKendoDateRangePicker().bind("change", async () => {
+                window.processing.addProcess("dataUpdate");
+                await this.updateData();
+                window.processing.removeProcess("dataUpdate");
+            });
         }
 
         initializeKendoElements() {
             // create ComboBox from select HTML element
             $(".combo-select").kendoComboBox();
+
+            // create DropDownList from select HTML element
+            $(".drop-down-list").kendoDropDownList();
 
             // create DateRangePicker
             $(".daterangepicker").kendoDateRangePicker({
@@ -228,11 +296,11 @@ const moduleSettings = {
                     },
                     series: [{
                         name: "Actief",
-                        data: [100000, 80000, 12000, 9000, 8500, 5000, 2700],
+                        field: "amountOfItems",
                         color: "#FF6800"
                     }, {
                         name: "Archief",
-                        data: [205000, 80000, 12000, 9000, 8500, 5000, 2700],
+                        field: "amountOfArchivedItems",
                         color: "#2ECC71"
                     }],
                     valueAxis: {
@@ -245,7 +313,7 @@ const moduleSettings = {
                         axisCrossingValue: 0
                     },
                     categoryAxis: {
-                        categories: ["order", "basket", "ordeline", "basketline", "product", "customer", "factuur"],
+                        categories: [],
                         line: {
                             visible: false
                         },
@@ -303,7 +371,65 @@ const moduleSettings = {
             $(document).bind("kendo:skinChange", createChart);
         }
 
-        initializeCodeMirrorElements() {
+        async updateBranches() {
+            const branches = await Wiser2.api({
+                url: `${this.settings.wiserApiRoot}branches`
+            });
+
+            let dataSource = [
+                { text: "Actieve branch", value: 0 },
+                { text: "Alle branches", value: -1 }
+            ];
+            dataSource = dataSource.concat(branches.map(ds => {
+                return {
+                    text: ds.name,
+                    value: ds.id
+                };
+            }));
+
+            const branchesSelect = $("#branchesSelect").getKendoDropDownList();
+            branchesSelect.setDataSource(dataSource);
+
+            // Select first item, which is always the current branch.
+            branchesSelect.select(0);
+        }
+
+        /**
+         * Retrieves data from the server.
+         */
+        async updateData() {
+            const dateRange = $("#periodPicker").getKendoDateRangePicker().range();
+
+            let periodFrom = null;
+            let periodTo = null;
+            if (dateRange !== null) {
+                periodFrom = kendo.toString(dateRange.start, "yyyy-MM-dd");
+                periodTo = kendo.toString(dateRange.end, "yyyy-MM-dd");
+            }
+
+            const data = await Wiser2.api({
+                url: `${this.settings.wiserApiRoot}dashboard`,
+                data: {
+                    periodFrom: periodFrom,
+                    periodTo: periodTo,
+                    itemsDataPeriodFilterType: document.getElementById("typeFilterButtons").querySelector("button.selected").dataset.filter
+                }
+            });
+            if (!data) {
+                return;
+            }
+
+            // Update entity usage.
+            const entityUsage = data.entityUsage;
+            const categories = entityUsage.map(e => e.name);
+
+            const dataChart = $("#data-chart").getKendoChart();
+            dataChart.setOptions({
+                categoryAxis: {
+                    categories: categories
+                }
+            });
+            dataChart.setDataSource(entityUsage);
         }
     }
 

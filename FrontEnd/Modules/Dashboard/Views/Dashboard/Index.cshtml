@@ -22,7 +22,6 @@
 <body class="@Model.BodyCssClass"
       data-module-id="706"
       data-wiser-api-root="@Model.ApiRoot"
-      data-wiser-api-v21-root="@Model.ApiRoot"
       data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
       data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
       data-api-client-id="@Model.Settings.ApiClientId"
@@ -37,30 +36,25 @@
                         <div class="item">
                             <div class="flex-container">
                                 <label>Filter periode</label>
-                                <select class="combo-select" placeholder="Maak uw keuze..." data-role="dropdownlist">
-                                    <option value="Geen filter" selected="selected">Geen filter</option>
-                                    <option value="Huidige maand">Huidige maand</option>
-                                    <option value="Vorige maand">Vorige maand</option>
-                                    <option value="Dit jaar">Dit jaar</option>
-                                    <option value="Vorig jaar">Vorig jaar</option>
-                                    <option value="Selecteer periode">Selecteer periode</option>
+                                <select id="periodFilter" class="drop-down-list" placeholder="Maak uw keuze..." data-role="dropdownlist">
+                                    <option value="all" selected="selected">Geen filter</option>
+                                    <option value="currentMonth">Huidige maand</option>
+                                    <option value="lastMonth">Vorige maand</option>
+                                    <option value="currentYear">Dit jaar</option>
+                                    <option value="lastYear">Vorig jaar</option>
+                                    <option value="custom">Selecteer periode</option>
                                 </select>
                             </div>
                         </div>
                         <div class="item">
                             <div class="flex-container">
-                                <div class="daterangepicker" title="daterangepicker"></div>
+                                <div id="periodPicker" class="daterangepicker" title="daterangepicker"></div>
                             </div>
                         </div>
                         <div class="item">
                             <div class="flex-container">
                                 <label>Branche</label>
-                                <select class="combo-select" placeholder="Maak uw keuze..." data-role="dropdownlist">
-                                    <option value="Actieve branche" selected="selected">Actieve branche</option>
-                                    <option value="Alle branches">Alle branches</option>
-                                    <option value="Branche 1">Branche 1</option>
-                                    <option value="Branche 2">Branche 2</option>
-                                    <option value="Branche 3">Branche 3</option>
+                                <select id="branchesSelect" class="drop-down-list" placeholder="Maak uw keuze..." data-role="dropdownlist">
                                 </select>
                             </div>
                         </div>
@@ -206,20 +200,20 @@
                         <div class="tile-content">
                             <div id="data-chart" style="width:100%"></div>
 
-                            <div class="btn-row">
-                                <button type="button" role="button" aria-label="Alles" class="selected">
+                            <div class="btn-row" id="typeFilterButtons">
+                                <button type="button" role="button" aria-label="Alles" class="selected" data-filter="all">
                                     <span>Alles</span>
                                 </button>
-                                <button type="button" role="button" aria-label="Nieuw aangemaakt">
+                                <button type="button" role="button" aria-label="Nieuw aangemaakt" data-filter="newlyCreated">
                                     <span>Nieuw aangemaakt</span>
                                 </button>
-                                <button type="button" role="button" aria-label="Gewijzigd">
+                                <button type="button" role="button" aria-label="Gewijzigd" data-filter="changed">
                                     <span>Gewijzigd</span>
                                 </button>
-                                <button type="button" role="button" aria-label="Actief">
+                                <button type="button" role="button" aria-label="Actief" data-filter="active">
                                     <span>Actief</span>
                                 </button>
-                                <button type="button" role="button" aria-label="Archief">
+                                <button type="button" role="button" aria-label="Archief" data-filter="archive">
                                     <span>Archief</span>
                                 </button>
                             </div>
