@@ -121,7 +121,6 @@ namespace Api.Modules.LinkSettings.Services
                     {
                         StatusCode = HttpStatusCode.Conflict,
                         ErrorMessage = $"An entry already exists with {nameof(linkSettings.Type)} = '{linkSettings.Type}', {nameof(linkSettings.DestinationEntityType)} = '{linkSettings.DestinationEntityType}' and {nameof(linkSettings.SourceEntityType)} = '{linkSettings.SourceEntityType}'"
-                        ReasonPhrase = "An entry already exists with this data."
                     };
                 }
 
@@ -180,8 +179,7 @@ namespace Api.Modules.LinkSettings.Services
                     return new ServiceResult<bool>
                     {
                         StatusCode = HttpStatusCode.Conflict,
-                        ErrorMessage = $"An entry already exists with {nameof(linkSettings.Type)} = '{linkSettings.Type}', {nameof(linkSettings.DestinationEntityType)} = '{linkSettings.DestinationEntityType}' and {nameof(linkSettings.SourceEntityType)} = '{linkSettings.SourceEntityType}'",
-                        ReasonPhrase = "An entry already exists with this data."
+                        ErrorMessage = $"An entry already exists with {nameof(linkSettings.Type)} = '{linkSettings.Type}', {nameof(linkSettings.DestinationEntityType)} = '{linkSettings.DestinationEntityType}' and {nameof(linkSettings.SourceEntityType)} = '{linkSettings.SourceEntityType}'"
                     };
                 }
 

@@ -2066,20 +2066,27 @@ export class EntityTab {
             if (oldName !== entity.entityType) {
                 await this.reloadEntityList(true);
 
-                this.entitiesCombobox.one("dataBound", () => {
-                    this.entitiesCombobox.select((dataItem) => {
-                        return dataItem.name === entity.entityType;
+                this.entitiesCombobox.one("dataBound",
+                    () => {
+                        this.entitiesCombobox.select((dataItem) => {
+                            return dataItem.name === entity.entityType;
+                        });
                     });
-                });
             }
         } catch (exception) {
             console.error(exception);
-                    if (e.responseText.indexOf("Duplicate entry")) {
-                        this.base.showNotification("notification", `Er bestaat al een entiteit met naam '${entity.name}' gekoppeld aan de module ${this.entityModule.dataItem().moduleName}`, "error");
-                    } else {
-            this.base.showNotification("notification", `Entiteit is niet succesvol aangepast, probeer het opnieuw`, "error");
+            if (e.responseText.indexOf("Duplicate entry")) {
+                this.base.showNotification("notification",
+                    `Er bestaat al een entiteit met naam '${entity.name}' gekoppeld aan de module ${this.entityModule
+                    .dataItem().moduleName}`,
+                    "error");
+            } else {
+                this.base.showNotification("notification",
+                    `Entiteit is niet succesvol aangepast, probeer het opnieuw`,
+                    "error");
+            }
+            document.querySelector(".loaderWrap").classList.remove("active");
         }
-                    document.querySelector(".loaderWrap").classList.remove("active");
     }
 
     // save entity properties to database
