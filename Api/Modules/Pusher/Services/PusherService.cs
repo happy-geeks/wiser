@@ -38,8 +38,7 @@ namespace Api.Modules.Pusher.Services
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "UserId must be greater than 0",
-                    ReasonPhrase = "UserId must be greater than 0"
+                    ErrorMessage = "UserId must be greater than 0"
                 };
             }
 
@@ -56,8 +55,7 @@ namespace Api.Modules.Pusher.Services
                 return new ServiceResult<bool>(false)
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "UserId must be greater than 0",
-                    ReasonPhrase = "UserId must be greater than 0"
+                    ErrorMessage = "UserId must be greater than 0"
                 };
             }
 
@@ -89,8 +87,7 @@ namespace Api.Modules.Pusher.Services
             return new ServiceResult<bool>(success)
             {
                 StatusCode = result.StatusCode,
-                ErrorMessage = success ? null : result.Body,
-                ReasonPhrase = success ? null : "Error from pusher API"
+                ErrorMessage = success ? null : result.Body
             };
         }
     }

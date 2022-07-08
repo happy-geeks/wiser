@@ -23,6 +23,7 @@ using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
@@ -325,11 +326,6 @@ ORDER BY template.ordering ASC");
                 //and version = (select MAX(version) from easy_templates M where M.name = easy_templates.name and M.deleted = 0)    //M.itemid = easy_templates.itemid => is itemid important here?
 
                 //load all the template queries into the dictionary
-                TemplateQueryStrings.Add("INSERT_ENTITY", @"
-SET @entityName = '{entityName}';
-INSERT INTO `wiser_entity`(name) VALUES(@entityName);
-");
-
                 TemplateQueryStrings.Add("GET_DATA_FOR_RADIO_BUTTONS", @"SET @_itemId = {itemId};
 SET @entityproperty_id = {propertyid};
 SET @querytext = (SELECT data_query FROM wiser_entityproperty WHERE id=@entityproperty_id);
@@ -667,8 +663,8 @@ WHERE tab_name = '{tabName}' AND entity_name = '{entityName}'
 ORDER BY ordering ASC");
                 TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
 	entity.id,
-    entity.name,
-	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(entity.friendly_name, IF(entity.name = '', 'ROOT', entity.name))) AS formattedName 
+	IF(entity.name = '', 'ROOT', entity.name) AS name,
+	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(NULLIF(entity.friendly_name, ''), IF(entity.name = '', 'ROOT', entity.name))) AS displayName 
 FROM wiser_entity AS entity
 LEFT JOIN wiser_module AS module ON module.id = entity.module_id
 ORDER BY module.name ASC, entity.module_id ASC, entity.name ASC");
@@ -2428,7 +2424,6 @@ LIMIT 1";
             {
                 return new ServiceResult<TemplateSettingsModel>
                 {
-                    ReasonPhrase = templateEnvironmentsResult.ReasonPhrase,
                     ErrorMessage = templateEnvironmentsResult.ErrorMessage,
                     StatusCode = templateEnvironmentsResult.StatusCode
                 };
@@ -2439,20 +2434,19 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId)
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
         {
             if (templateId <= 0)
             {
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var templateData = await templateDataService.GetDataAsync(templateId);
+            var templateData = await templateDataService.GetDataAsync(templateId, environment);
             var templateEnvironmentsResult = await GetTemplateEnvironmentsAsync(templateId);
             if (templateEnvironmentsResult.StatusCode != HttpStatusCode.OK)
             {
                 return new ServiceResult<TemplateSettingsModel>
                 {
-                    ReasonPhrase = templateEnvironmentsResult.ReasonPhrase,
                     ErrorMessage = templateEnvironmentsResult.ErrorMessage,
                     StatusCode = templateEnvironmentsResult.StatusCode
                 };
@@ -2648,8 +2642,7 @@ LIMIT 1";
                 return new ServiceResult<TemplateHistoryOverviewModel>
                 {
                     StatusCode = dynamicContentOverview.StatusCode,
-                    ErrorMessage = dynamicContentOverview.ErrorMessage,
-                    ReasonPhrase = dynamicContentOverview.ReasonPhrase
+                    ErrorMessage = dynamicContentOverview.ErrorMessage
                 };
             }
 
@@ -2701,8 +2694,7 @@ LIMIT 1";
                 return new ServiceResult<bool>
                 {
                     StatusCode = templateDataResponse.StatusCode,
-                    ErrorMessage = templateDataResponse.ErrorMessage,
-                    ReasonPhrase = templateDataResponse.ReasonPhrase
+                    ErrorMessage = templateDataResponse.ErrorMessage
                 };
             }
 
@@ -2712,8 +2704,7 @@ LIMIT 1";
                 return new ServiceResult<bool>
                 {
                     StatusCode = linkedTemplatesResponse.StatusCode,
-                    ErrorMessage = linkedTemplatesResponse.ErrorMessage,
-                    ReasonPhrase = linkedTemplatesResponse.ReasonPhrase
+                    ErrorMessage = linkedTemplatesResponse.ErrorMessage
                 };
             }
 
@@ -2742,7 +2733,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom)
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom, Environments? environment = null)
         {
             var templates = new List<TemplateTreeViewModel>();
             var path = startFrom.Split(',');
@@ -2755,11 +2746,11 @@ LIMIT 1";
 
                 if (templateTree.HasChildren)
                 {
-                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom)).ModelObject;
+                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom, environment)).ModelObject; 
                 }
                 else
                 {
-                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(identity, templateTree.TemplateId)).ModelObject;
+                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(identity, templateTree.TemplateId, environment)).ModelObject;
                 }
 
                 if (String.IsNullOrWhiteSpace(startFrom))

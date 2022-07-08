@@ -86,9 +86,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId)
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
         {
-            return await templatesService.GetTemplateSettingsAsync(identity, templateId);
+            return await templatesService.GetTemplateSettingsAsync(identity, templateId, environment);
         }
 
         /// <inheritdoc />
@@ -158,9 +158,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom)
+        public Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom, Environments? environment = null)
         {
-            return templatesService.GetEntireTreeViewStructureAsync(identity, parentId, startFrom);
+            return templatesService.GetEntireTreeViewStructureAsync(identity, parentId, startFrom, environment);
         }
 
         /// <inheritdoc />

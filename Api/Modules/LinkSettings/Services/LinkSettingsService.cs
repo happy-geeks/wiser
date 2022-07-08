@@ -52,8 +52,7 @@ namespace Api.Modules.LinkSettings.Services
                 return new ServiceResult<LinkSettingsModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Link setting with ID '{id}' does not exist.",
-                    ReasonPhrase = $"Link setting with ID '{id}' does not exist."
+                    ErrorMessage = $"Link setting with ID '{id}' does not exist."
                 };
             }
 
@@ -121,7 +120,7 @@ namespace Api.Modules.LinkSettings.Services
                     return new ServiceResult<LinkSettingsModel>
                     {
                         StatusCode = HttpStatusCode.Conflict,
-                        ErrorMessage = $"An entry already exists with {nameof(linkSettings.Type)} = '{linkSettings.Type}', {nameof(linkSettings.DestinationEntityType)} = '{linkSettings.DestinationEntityType}' and {nameof(linkSettings.SourceEntityType)} = '{linkSettings.SourceEntityType}'",
+                        ErrorMessage = $"An entry already exists with {nameof(linkSettings.Type)} = '{linkSettings.Type}', {nameof(linkSettings.DestinationEntityType)} = '{linkSettings.DestinationEntityType}' and {nameof(linkSettings.SourceEntityType)} = '{linkSettings.SourceEntityType}'"
                         ReasonPhrase = "An entry already exists with this data."
                     };
                 }

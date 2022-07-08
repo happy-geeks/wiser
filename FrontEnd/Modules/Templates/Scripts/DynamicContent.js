@@ -351,6 +351,11 @@ const moduleSettings = {
                 this.save();
             });
 
+            $("#saveAndDeployToTestButton").click((event) => {
+                event.preventDefault();
+                this.save(true);
+            });
+
             $("#saveAndCloseButton").click(async (event) => {
                 event.preventDefault();
                 await this.save();
@@ -369,7 +374,7 @@ const moduleSettings = {
             });
         }
 
-        async save() {
+        async save(alsoDeployToTest = false) {
             if (this.saving) {
                 return;
             }
@@ -399,8 +404,22 @@ const moduleSettings = {
                     await this.addLinkToTemplate(this.settings.templateId);
                 }
 
-                window.popupNotification.show(`Dynamic content '${document.querySelector('input[name="visibleDescription"]').value}' is succesvol opgeslagen.`, "info");
-                this.loadComponentHistory();
+                window.popupNotification.show(`Dynamisch component '${document.querySelector('input[name="visibleDescription"]').value}' is succesvol opgeslagen.`, "info");
+
+                if (alsoDeployToTest) {
+                    const version = (parseInt($(".historyContainer .historyLine:first").data("historyVersion")) || 0) + 1;
+    
+                    await Wiser2.api({
+                        url: `${this.settings.wiserApiRoot}dynamic-content/${contentId}/publish/test/${version}`,
+                        dataType: "json",
+                        type: "POST",
+                        contentType: "application/json"
+                    });
+    
+                    window.popupNotification.show(`Dynamisch component is succesvol naar de test-omgeving gezet`, "info");
+                }
+                
+                await this.loadComponentHistory();
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met opslaan. Probeer het a.u.b. opnieuw");

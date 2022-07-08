@@ -95,9 +95,6 @@ ins {
 .popup-container .editMenu {
     top: 0;
 }
-.editMenu:hover {
-    padding-left: 142px;
-}
 .editMenu > li {
 	height: 42px;
 	width: 42px;
@@ -535,6 +532,7 @@ ins {
 #left-pane,
 #right-pane {
     height: 100%;
+    overflow: auto;
 }
 
 #right-pane.info-active {
@@ -1219,7 +1217,6 @@ footer input ~ .meta-data li.meta-toggle label span:last-child {
 /* Grid styling - full screen */
 .pane-content.entity-container .k-tabstrip-wrapper {
     height: 100%;
-    padding-top: 10px;
 }
 .pane-content.entity-container .k-tabstrip-wrapper,
 .pane-content.entity-container .k-tabstrip-wrapper .k-tabstrip {
@@ -1240,10 +1237,6 @@ footer input ~ .meta-data li.meta-toggle label span:last-child {
 .pane-content.entity-container .k-tabstrip .k-tabstrip-items.hidden + .k-content.k-state-active .formview:last-child:nth-child(2) .gridview .k-grid {
     height: 100%;
     max-height: 100%;
-}
-
-.pane-content.entity-container .editMenu {
-    position: absolute;
 }
 
 body.gridViewMode {
