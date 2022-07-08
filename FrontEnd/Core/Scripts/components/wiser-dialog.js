@@ -33,6 +33,7 @@ export default {
     template: `<div v-if="mutableVisible" class="w-dialog-container">
     <div v-if="modal" class="w-overlay"></div>
     <div class="w-dialog" :style="{ width: width }">
+        <button class="close-dialog" data-toggle="info" @click="close"><ins class="icon-line-close"></ins></button>
         <h1>{{ title }}</h1>
         <slot></slot>
         <wiser-dialog-action v-for="dialogAction in actions" :key="dialogAction.text" v-bind="dialogAction" :closeDialog="close"></wiser-dialog-action>

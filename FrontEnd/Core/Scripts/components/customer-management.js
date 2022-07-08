@@ -188,7 +188,7 @@ export default {
 
             const newCustomer = {
                 name: this.newCustomerData.name,
-                liveDatabase: {
+                database: {
                     host: this.newCustomerData.databaseHost,
                     username: this.newCustomerData.databaseUsername,
                     password: this.newCustomerData.databasePassword,

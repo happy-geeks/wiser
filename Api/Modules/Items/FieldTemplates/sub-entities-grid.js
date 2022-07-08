@@ -415,7 +415,8 @@ async function generateGrid(data, model, columns) {
                                             "key": key,
                                             "value": transportOptions.data[key],
                                             "isLinkProperty": true,
-                                            "itemLinkId": transportOptions.data.link_id
+                                            "itemLinkId": transportOptions.data.link_id,
+                                            "linkType": options.linkTypeNumber || 0
                                         });
                                     }
                                     continue;
@@ -455,7 +456,8 @@ async function generateGrid(data, model, columns) {
                                     "key": key,
                                     "value": transportOptions.data[key],
                                     "isLinkProperty": isLinkProperty,
-                                    "itemLinkId": transportOptions.data.linkId
+                                    "itemLinkId": transportOptions.data.linkId,
+                                    "linkType": options.linkTypeNumber || 0
                                 });
                             }
                         }

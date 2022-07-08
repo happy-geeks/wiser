@@ -38,6 +38,11 @@ namespace FrontEnd.Core.Models
         public string ApiClientSecret { get; set; }
 
         /// <summary>
+        /// Gets or sets the app key for Pusher events.
+        /// </summary>
+        public string PusherAppKey { get; set; }
+
+        /// <summary>
         /// Gets or sets the token for Track JS. If you don't want to use Track JS, you can leave this empty and the script will not be loaded.
         /// </summary>
         public string TrackJsToken { get; set; }

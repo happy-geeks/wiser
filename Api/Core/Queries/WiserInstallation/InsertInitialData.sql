@@ -6,50 +6,6 @@ SET @customerId = ?newCustomerId;
 INSERT INTO `wiser_roles` VALUES (1, 'Admin');
 
 -- ----------------------------
--- Records of system_tablechanges
--- ----------------------------
-INSERT INTO `system_tablechanges` VALUES (1, 'dev_commit', NOW());
-INSERT INTO `system_tablechanges` VALUES (2, 'dev_commit_item', NOW());
-INSERT INTO `system_tablechanges` VALUES (3, 'dev_history', NOW());
-INSERT INTO `system_tablechanges` VALUES (4, 'dev_template_live', NOW());
-INSERT INTO `system_tablechanges` VALUES (5, 'easy_dynamiccontent', NOW());
-INSERT INTO `system_tablechanges` VALUES (6, 'easy_items', NOW());
-INSERT INTO `system_tablechanges` VALUES (7, 'easy_objects', NOW());
-INSERT INTO `system_tablechanges` VALUES (8, 'objecttypes', NOW());
-INSERT INTO `system_tablechanges` VALUES (9, 'wiser_user_roles', NOW());
-INSERT INTO `system_tablechanges` VALUES (10, 'wiser_entityproperty', NOW());
-INSERT INTO `system_tablechanges` VALUES (11, 'wiser_permission', NOW());
-INSERT INTO `system_tablechanges` VALUES (12, 'wiser_link', NOW());
-INSERT INTO `system_tablechanges` VALUES (13, 'wiser_entity', NOW());
-INSERT INTO `system_tablechanges` VALUES (14, 'wiser_query', NOW());
-INSERT INTO `system_tablechanges` VALUES (15, 'wiser_data_selector', NOW());
-INSERT INTO `system_tablechanges` VALUES (16, 'wiser_login_attempts', NOW());
-INSERT INTO `system_tablechanges` VALUES (17, 'wiser_user_auth_token', NOW());
-INSERT INTO `system_tablechanges` VALUES (18, 'wiser_module', NOW());
-INSERT INTO `system_tablechanges` VALUES (19, 'wiser_ordering', NOW());
-INSERT INTO `system_tablechanges` VALUES (20, 'easy_templates', NOW());
-INSERT INTO `system_tablechanges` VALUES (21, 'wiser_itemfile', NOW());
-INSERT INTO `system_tablechanges` VALUES (22, 'easy_seo', NOW());
-INSERT INTO `system_tablechanges` VALUES (23, 'wiser_communication', NOW());
-INSERT INTO `system_tablechanges` VALUES (24, 'wiser_communication_generated', NOW());
-INSERT INTO `system_tablechanges` VALUES (25, 'wiser_import', NOW());
-INSERT INTO `system_tablechanges` VALUES (26, 'wiser_import_log', NOW());
-INSERT INTO `system_tablechanges` VALUES (27, 'wiser_item_archive', NOW());
-INSERT INTO `system_tablechanges` VALUES (28, 'wiser_itemdetail_archive', NOW());
-INSERT INTO `system_tablechanges` VALUES (29, 'wiser_itemfile_archive', NOW());
-INSERT INTO `system_tablechanges` VALUES (30, 'wiser_itemlink_archive', NOW());
-INSERT INTO `system_tablechanges` VALUES (31, 'wiser_itemlinkdetail_archive', NOW());
-
--- ----------------------------
--- Records of easy_items
--- ----------------------------
-INSERT INTO `easy_items` VALUES (1, @customerId, 143, 'CSS', 1, 0, 0, 0, 1, 1, 'css', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-INSERT INTO `easy_items` VALUES (5, @customerId, 143, 'SCSS', 1, 0, 1, 0, 1, 1, 'scss', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-INSERT INTO `easy_items` VALUES (2, @customerId, 143, 'HTML', 1, 0, 2, 0, 1, 1, 'html', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-INSERT INTO `easy_items` VALUES (3, @customerId, 143, 'QUERY', 1, 0, 3, 0, 1, 1, 'query', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-INSERT INTO `easy_items` VALUES (4, @customerId, 143, 'SCRIPTS', 1, 0, 4, 0, 1, 1, 'scripts', NOW(), 0, 0, NULL, 0, NULL, 'Systeem', NULL, 0);
-
--- ----------------------------
 -- Records of easy_objects
 -- ----------------------------
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'autoredirectmaindomain','true');
@@ -57,36 +13,55 @@ INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'requiress
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'seomodule','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'redirectRequiresTrailingSlash','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'redirectRequiresLowerCase','true');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'seo_dont_use_meta_keywords','true');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'searchSystemObjectsFromSpecificToGeneral','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'fixed_url_active','false');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'multilanguage','false');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'global_meta_title_suffix','{siteName}');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'maindomain_wiser','{hostLive}');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'maindomain','{hostLive}');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'IsTestDomain_{hostTest}','true');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'minify_html','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'javascriptmovetobottom','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'wiser_save_images_relative','true');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2CHECKOUT_AddOrderIdsToPspSuccessUrl_nopsp','true');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'TrackJSEnable','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'always_add_canonical_to_self','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'include_parameters_canonical','pagenr');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'canonical_path_end','/filter/');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'robotstxt','User-agent: *\r\nAllow: /\r\nDisallow: /checkout/*\r\nDisallow: /account/\r\nDisallow: /winkelmandje/\r\nSitemap: <sitemap url>');
-INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'IsWiser2CustomerWithoutRemovedColumn','true');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2ImagesRootId','3');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2FilesRootId','4');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2TemplatesRootId','5');
-
+    
 -- ----------------------------
--- Records of easy_files
+-- Records of wiser_table_changes
 -- ----------------------------
-INSERT IGNORE INTO `easy_files` (ItemId, Name, IsDirectory) VALUES (1, 'images', 1);
-INSERT IGNORE INTO `easy_files` (ItemId, Name, IsDirectory) VALUES (2, 'documents', 1);
-INSERT IGNORE INTO `easy_files` (ItemId, Name, IsDirectory) VALUES (3, 'templates', 1);
-INSERT IGNORE INTO `easy_files` (ItemId, Name, IsDirectory) VALUES (4, 'flash', 1);
-INSERT IGNORE INTO `easy_files` (ItemId, Name, IsDirectory) VALUES (5, 'media', 1);
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_data_selector', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_dynamic_content', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_dynamic_content_publish_log', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_entityproperty', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_grant_store', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_item', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_itemfile', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_preview_profiles', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_template', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_template_dynamic_content', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_template_publish_log', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_triggers', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_login_attempts', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_entity', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_field_templates', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_history', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_itemdetail', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_itemlink', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_itemlinkdetail', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_link', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_module', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_permission', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_query', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_roles', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_user_auth_token', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_user_roles', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_api_connection', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_communication', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_communication_generated', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('easy_objects', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_import', NOW());
+INSERT INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_import_log', NOW());
 
 -- ----------------------------
 -- Records of wiser_module
@@ -95,16 +70,20 @@ INSERT IGNORE INTO `easy_files` (ItemId, Name, IsDirectory) VALUES (5, 'media', 
 INSERT INTO `wiser_module`(`id`, `name`, `icon`, `custom_query`, `count_query`, `options`, `group`) VALUES (806, 'Gebruikers - Wiser', 'users', '# Wiser users\r\nSELECT \r\n    ilc1.id AS id,\r\n    ilc1.id AS `encrypted_id_encrypt_withdate`,\r\n    ilc1.title AS title_wiseruser,\r\n    ilc1.entity_type,\r\n    \r\n    idv_email.value AS email_wiseruser,\r\n    idv_username.value AS username_wiseruser\r\nFROM wiser_item ilc1\r\n[if({email_wiseruser}=)]LEFT[endif] JOIN wiser_itemdetail `idv_email` ON `idv_email`.item_id=ilc1.id AND `idv_email`.`key`=\'email_address\' [if({email_wiseruser}!)]AND `idv_email`.`value` LIKE \'{email_wiseruser}%\'[endif]\r\n[if({username_wiseruser}=)]LEFT[endif] JOIN wiser_itemdetail `idv_username` ON `idv_username`.item_id=ilc1.id AND `idv_username`.`key`=\'username\' [if({username_wiseruser}!)]AND `idv_username`.`value` LIKE \'{username_wiseruser}%\'[endif]\r\n\r\nWHERE ilc1.entity_type=\'wiseruser\'\r\n[if({title_wiseruser}!)]AND ilc1.title {title_wiseruser_filter}[endif]\r\n[if({id}!)]AND ilc1.id = {id}[endif]\r\n{sort}\r\n{limit}', '#CRM module\r\nSELECT COUNT(*)\r\nFROM wiser_item ilc1\r\n[if({email_wiseruser}!)] JOIN wiser_itemdetail `idv_email` ON `idv_email`.item_id=ilc1.id AND `idv_email`.`key`=\'email_address\' AND `idv_email`.`value` LIKE \'{email_wiseruser}%\'[endif]\r\n[if({username_wiseruser}!)]JOIN wiser_itemdetail `idv_username` ON `idv_username`.item_id=ilc1.id AND `idv_username`.`key`=\'username\' AND `idv_username`.`value` LIKE \'{username_wiseruser}%\'[endif]\r\n\r\nWHERE ilc1.entity_type=\'wiseruser\'\r\n[if({title_wiseruser}!)]AND ilc1.title {title_wiseruser_filter}[endif]\r\n[if({id}!)]AND ilc1.id = {id}[endif]\r\n{sort}\r\n{limit}', '{\r\n	\"gridViewMode\": true,\r\n	\"gridViewSettings\": {\r\n		\"pageSize\": 100,\r\n		\"columns\": [\r\n			{ \"field\": \"id\", \"title\": \"ID\" },\r\n			{ \"field\": \"title_wiseruser\", \"title\": \"Naam\" },\r\n			{ \"field\": \"username_wiseruser\", \"title\": \"Gebruikersnaam\" },\r\n			{ \"field\": \"email_wiseruser\", \"title\": \"E-mailadres\" }\r\n		]\r\n	}\r\n}', 'Instellingen');
 # Webpages.
 INSERT INTO `wiser_module`(`id`, `name`, `icon`, `custom_query`, `count_query`, `options`, `group`) VALUES (5505, 'Webpagina\'s', 'document-web', NULL, NULL, NULL, 'Contentbeheer');
-# Task alerts.
-INSERT INTO `wiser_module`(`id`, `name`, `icon`, `custom_query`, `count_query`, `options`) VALUES (708, 'Agendering', 'date', NULL, NULL, NULL);
 # Import history.
-INSERT INTO `wiser_module` (`id`, `custom_query`, `count_query`, `options`, `name`, `icon`, `color`, `type`, `group`) VALUES (5524, 'SELECT\r\n	x.*,\r\n	permission.*\r\nFROM (\r\n	SELECT\r\n		`import`.id,\r\n		`import`.`name`,\r\n		`import`.start_on,\r\n		`import`.started_on,\r\n		`import`.finished_on,\r\n		`import`.success,\r\n		JSON_LENGTH(`import`.`data`) AS amount_of_items,\r\n		SUM(JSON_LENGTH(jsonTable.links)) AS amount_of_links,\r\n		SUM(JSON_LENGTH(jsonTable.files)) AS amount_of_files,\r\n		TIMEDIFF(`import`.finished_on, `import`.started_on) AS time_taken,\r\n		`import`.errors,\r\n		`import`.user_id\r\n	FROM wiser_import AS `import`,\r\n	JSON_TABLE(`import`.`data`, \r\n		\"$[*]\"\r\n		COLUMNS(\r\n			rowid FOR ORDINALITY,\r\n			links JSON PATH \"$.Links\" DEFAULT \'[]\' ON EMPTY,\r\n			files JSON PATH \"$.Files\" DEFAULT \'[]\' ON EMPTY\r\n		)\r\n	) AS jsonTable\r\n	GROUP BY `import`.id\r\n	ORDER BY start_on DESC\r\n) AS x\r\nLEFT JOIN wiser_user_roles AS userRole ON userRole.user_id = ?userId\r\nLEFT JOIN wiser_permission AS permission ON permission.role_id = userRole.role_id AND permission.module_id = ?id\r\nWHERE permission.permissions IS NULL OR permission.permissions & 4 = 4 OR x.user_id = ?userId\r\nGROUP BY x.id', 'SELECT COUNT(*) FROM wiser_import', '{\r\n    \"gridViewMode\": true,\r\n    \"gridViewSettings\": {\r\n        \"pageSize\": 100,\r\n        \"hideCommandColumn\": true,\r\n        \"toolbar\": {\r\n            \"hideExportButton\": true,\r\n			\"hideCreateButton\": true\r\n        },\r\n		\"disableOpeningOfItems\": true,\r\n        \"columns\": [{\r\n                \"field\": \"name\",\r\n                \"title\": \"Naam\"\r\n            }, {\r\n                \"field\": \"start_on\",\r\n                \"title\": \"Gekozen startdatumtijd\",\r\n				\"format\": \"{0:dd-MM-yyyy HH:mm:ss}\"\r\n            }, {\r\n                \"field\": \"started_on\",\r\n                \"title\": \"Begonnen om\",\r\n				\"format\": \"{0:dd-MM-yyyy HH:mm:ss}\"\r\n            }, {\r\n                \"field\": \"finished_on\",\r\n                \"title\": \"Afgerond om\",\r\n				\"format\": \"{0:dd-MM-yyyy HH:mm:ss}\"\r\n            }, {\r\n                \"field\": \"success\",\r\n                \"title\": \"gelukt\",\r\n				\"template\": \"<span class=\'k-icon k-i-#:(success ? \\\"check k-syntax-str\\\" : \\\"cancel k-syntax-error\\\")#\'></span>\"\r\n            }, {\r\n                \"field\": \"amount_of_items\",\r\n                \"title\": \"Aantal items\"\r\n            }, {\r\n                \"field\": \"amount_of_links\",\r\n                \"title\": \"Aantal koppelingen\"\r\n            }, {\r\n                \"field\": \"amount_of_files\",\r\n                \"title\": \"Aantal bestanden\"\r\n            }, {\r\n                \"field\": \"time_taken\",\r\n                \"title\": \"Duur\"\r\n            },\r\n			{\r\n                \"title\": \"Fouten\",\r\n                \"encoded\": false,\r\n				\"template\": \"# if(!errors) { # Geen fouten # } else { # <a class=\'k-button k-grid-settings\' onclick=\'var kendoWindow = $(`<div id=\\\"importErrorLogsPopup\\\">`).kendoWindow({ width: \\\"600px\\\", title: \\\"Fouten\\\", content: { template: \\\"<iframe frameborder=0 class=iframe width=100% height=100% />\\\" }}).data(\\\"kendoWindow\\\"); kendoWindow.center().open(); var iframe = kendoWindow.element.find(\\\"iframe\\\")[0]; iframe = iframe.contentWindow || (iframe.contentDocument.document || iframe.contentDocument); iframe.document.open(); iframe.document.write(\\\"<pre>\\\" + dynamicItems.grids.mainGrid.dataItem(this.closest(\\\"tr\\\")).errors + \\\"</pre>\\\"); iframe.document.close();\'>Fouten bekijken <span class=\'k-icon k-i-hyperlink-open\'></span></a> # } #\"\r\n            }\r\n        ]\r\n    }\r\n}\r\n', 'Importhistorie', 'database', NULL, 'DynamicItems', 'Contentbeheer');
+INSERT INTO `wiser_module` (`id`, `custom_query`, `count_query`, `options`, `name`, `icon`, `color`, `type`, `group`) VALUES (5524, 'SELECT\r\n	x.*,\r\n	permission.*\r\nFROM (\r\n	SELECT\r\n		`import`.id,\r\n		`import`.`name`,\r\n		`import`.start_on,\r\n		`import`.started_on,\r\n		`import`.finished_on,\r\n		`import`.success,\r\n		JSON_LENGTH(`import`.`data`) AS amount_of_items,\r\n		SUM(JSON_LENGTH(jsonTable.links)) AS amount_of_links,\r\n		SUM(JSON_LENGTH(jsonTable.files)) AS amount_of_files,\r\n		TIMEDIFF(`import`.finished_on, `import`.started_on) AS time_taken,\r\n		`import`.errors,\r\n		`import`.user_id\r\n	FROM wiser_import AS `import`,\r\n	JSON_TABLE(`import`.`data`, \r\n		\"$[*]\"\r\n		COLUMNS(\r\n			rowid FOR ORDINALITY,\r\n			links JSON PATH \"$.Links\" DEFAULT \'[]\' ON EMPTY,\r\n			files JSON PATH \"$.Files\" DEFAULT \'[]\' ON EMPTY\r\n		)\r\n	) AS jsonTable\r\n	GROUP BY `import`.id\r\n	ORDER BY start_on DESC\r\n) AS x\r\nLEFT JOIN wiser_user_roles AS userRole ON userRole.user_id = ?userId\r\nLEFT JOIN wiser_permission AS permission ON permission.role_id = userRole.role_id AND permission.module_id = ?id\r\nWHERE permission.permissions IS NULL OR permission.permissions & 4 = 4 OR x.user_id = ?userId\r\nGROUP BY x.id', 'SELECT COUNT(*) FROM wiser_import', '{\r\n    \"gridViewMode\": true,\r\n    \"gridViewSettings\": {\r\n        \"pageSize\": 100,\r\n        \"hideCommandColumn\": true,\r\n        \"toolbar\": {\r\n            \"hideExportButton\": true,\r\n			\"hideCreateButton\": true\r\n        },\r\n		\"disableOpeningOfItems\": true,\r\n        \"columns\": [{\r\n                \"field\": \"name\",\r\n                \"title\": \"Naam\"\r\n            }, {\r\n                \"field\": \"start_on\",\r\n                \"title\": \"Gekozen startdatumtijd\",\r\n				\"format\": \"{0:dd-MM-yyyy HH:mm:ss}\"\r\n            }, {\r\n                \"field\": \"started_on\",\r\n                \"title\": \"Begonnen om\",\r\n				\"format\": \"{0:dd-MM-yyyy HH:mm:ss}\"\r\n            }, {\r\n                \"field\": \"finished_on\",\r\n                \"title\": \"Afgerond om\",\r\n				\"format\": \"{0:dd-MM-yyyy HH:mm:ss}\"\r\n            }, {\r\n                \"field\": \"success\",\r\n                \"title\": \"gelukt\",\r\n				\"template\": \"<span class=\'k-icon k-i-#:(success ? \\\"check k-syntax-str\\\" : \\\"cancel k-syntax-error\\\")#\'></span>\"\r\n            }, {\r\n                \"field\": \"amount_of_items\",\r\n                \"title\": \"Aantal items\"\r\n            }, {\r\n                \"field\": \"amount_of_links\",\r\n                \"title\": \"Aantal koppelingen\"\r\n            }, {\r\n                \"field\": \"amount_of_files\",\r\n                \"title\": \"Aantal bestanden\"\r\n            }, {\r\n                \"field\": \"time_taken\",\r\n                \"title\": \"Duur\"\r\n            },\r\n			{\r\n                \"title\": \"Fouten\",\r\n                \"encoded\": false,\r\n				\"template\": \"# if(!errors) { # Geen fouten # } else { # <a class=\'k-button k-grid-settings\' onclick=\'var kendoWindow = $(`<div id=\\\"importErrorLogsPopup\\\">`).kendoWindow({ width: \\\"600px\\\", title: \\\"Fouten\\\", content: { template: \\\"<iframe frameborder=0 class=iframe width=100% height=100% />\\\" }}).data(\\\"kendoWindow\\\"); kendoWindow.center().open(); var iframe = kendoWindow.element.find(\\\"iframe\\\")[0]; iframe = iframe.contentWindow || (iframe.contentDocument.document || iframe.contentDocument); iframe.document.open(); iframe.document.write(\\\"<pre>\\\" + dynamicItems.grids.mainGrid.dataItem(this.closest(\\\"tr\\\")).errors + \\\"</pre>\\\"); iframe.document.close();\'>Fouten bekijken <span class=\'k-icon k-i-hyperlink-open\'></span></a> # } #\"\r\n            }\r\n        ]\r\n    }\r\n}\r\n', 'Importhistorie', 'calendar-tool', NULL, 'DynamicItems', 'Contentbeheer');
 # Redirect
 INSERT INTO `wiser_module` (`id`, `custom_query`, `count_query`, `options`, `name`, `icon`, `color`, `type`) VALUES (5534, 'SELECT\r\n	redirect.id,\r\n	redirect.id AS `encrypted_id_encrypt_withdate`,\r\n	redirect.entity_type,\r\n	oldurl.`value` AS oldurl,\r\n	newurl.`value` AS newurl,\r\n	permanent.`value` AS permanent,\r\n	ordering.`value` AS ordering\r\nFROM wiser_item redirect\r\n[if({oldurl}=)]LEFT[endif] JOIN wiser_itemdetail oldurl ON oldurl.item_id=redirect.id AND oldurl.`key`=\'oldurl\' [if({oldurl}!)]AND oldurl.`value` {oldurl_filter}[endif]\r\n[if({newurl}=)]LEFT[endif] JOIN wiser_itemdetail newurl ON newurl.item_id=redirect.id AND newurl.`key`=\'newurl\' [if({newurl}!)]AND newurl.`value` {newurl_filter}[endif]\r\n[if({permanent}=)]LEFT[endif] JOIN wiser_itemdetail permanent ON permanent.item_id=redirect.id AND permanent.`key`=\'permanent\' [if({permanent}!)]AND permanent.`value` {permanent_filter}[endif]\r\n[if({ordering}=)]LEFT[endif] JOIN wiser_itemdetail ordering ON ordering.item_id=redirect.id AND ordering.`key`=\'ordering\' [if({ordering}!)]AND ordering.`value` {ordering_filter}[endif]\r\nWHERE redirect.entity_type=\'redirect\'', 'SELECT COUNT(*)\r\nFROM wiser_item redirect\r\n[if({oldurl}!)]JOIN wiser_itemdetail oldurl ON oldurl.item_id=redirect.id AND oldurl.`key`=\'oldurl\' AND oldurl.`value` {oldurl_filter}[endif]\r\n[if({newurl}!)]JOIN wiser_itemdetail newurl ON newurl.item_id=redirect.id AND newurl.`key`=\'newurl\' AND newurl.`value` {newurl_filter}[endif]\r\n[if({permanent}!)]JOIN wiser_itemdetail permanent ON permanent.item_id=redirect.id AND permanent.`key`=\'permanent\' AND permanent.`value` {permanent_filter}[endif]\r\n[if({ordering}!)]JOIN wiser_itemdetail ordering ON ordering.item_id=redirect.id AND ordering.`key`=\'ordering\' AND ordering.`value` {ordering_filter}[endif]\r\nWHERE redirect.entity_type=\'redirect\'', '{\r\n    \"gridViewMode\": true,\r\n    \"gridViewSettings\": {\r\n			\"skipNameForNewItems\": true,\r\n			\"showDeleteButton\": true,\r\n			\"pageSize\": 100,\r\n			\"hideCommandColumn\": false,\r\n			\"toolbar\": {\r\n					\"hideExportButton\": false,\r\n					\"hideCreateButton\": false\r\n			},\r\n			\"disableOpeningOfItems\": false,\r\n			\"columns\": [\r\n				{ \"field\": \"oldurl\", \"title\": \"Oude URL\" },\r\n				{ \"field\": \"newurl\", \"title\": \"Nieuwe URL\" },\r\n				{ \"field\": \"permanent\", \"title\": \"Permanent\" },\r\n				{ \"field\": \"ordering\", \"title\": \"Volgnummer\" }\r\n			]\r\n    }\r\n}', 'Redirect', 'reset', NULL, 'DynamicItems');
 # Admin.
 INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (737, 'Wiser beheer', 'line-settings', 'Admin', 'Instellingen');
 # Stamgegevens
 INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (700, 'Stamgegevens', 'line-sliders', 'DynamicItems', 'Instellingen');
+# Import / export
+INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (5536, 'Import/Export', 'im-ex', 'ImportExport', 'Contentbeheer');
+# Data selector
+INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (706, 'Dataselector', 'settings', 'DataSelector', 'Contentbeheer');
+# Templates
+INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (1, 'Templates', 'document-fold', 'Templates', 'Systeem');
 
 
 -- ----------------------------
@@ -260,12 +239,22 @@ INSERT INTO `wiser_permission`(`id`, `role_id`, `entity_name`, `item_id`, `entit
 INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 5505);
 # Task alerts module.
 INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 708);
-# SEO module.
-INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 5533);
 # Redirect module.
 INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 5534);
 # Stamgegevens module.
 INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 700);
+# Import history module.
+INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 5524);
+# Admin module.
+INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 737);
+# Search module.
+INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 709);
+# Import/export module.
+INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 5536);
+# Data selector module.
+INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 706);
+# Templates module.
+INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 1);
 
 -- ----------------------------
 -- Records of wiser_link
@@ -292,34 +281,11 @@ INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_t
 INSERT INTO `wiser_data_selector` (`name`, `removed`, `module_selection`, `request_json`, `saved_json`, `added_on`, `changed_on`, `show_in_export_module`, `available_for_rendering`, `default_template`) VALUES ('Voorbeeld', 0, '', '{\"main\":{\"entityName\":\"map\",\"fields\":[{\"fieldname\":\"id\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"},{\"fieldname\":\"itemtitle\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"}]},\"orderBy\":[{\"fieldname\":\"itemtitle\",\"direction\":\"ASC\"}],\"limit\":\"0\"}', '{\"main\":{\"entityName\":\"map\",\"fields\":[{\"fieldname\":\"id\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"},{\"fieldname\":\"itemtitle\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"}]},\"useExportMode\":false,\"orderBy\":[{\"entityName\":\"map\",\"fieldName\":\"itemtitle\",\"fieldAlias\":\"\",\"direction\":\"ASC\"}],\"limit\":\"0\"}', NOW(), NOW(), 1, 1, 0);
 
 -- ----------------------------
--- Stored procedures
+-- Records of wiser_module
 -- ----------------------------
-CREATE DEFINER=CURRENT_USER FUNCTION `CreateJsonSafeProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8mb4 DETERMINISTIC
-BEGIN
-	DECLARE output VARCHAR(255);
-	
-	SET output = REPLACE(input, '-', '__h__');
-	SET output = REPLACE(output, ' ', '__s__');
-	SET output = REPLACE(output, ':', '__c__');
-	SET output = REPLACE(output, '(', '__bl__');
-	SET output = REPLACE(output, ')', '__br__');
-	SET output = REPLACE(output, '.', '__d__');
-	SET output = REPLACE(output, ',', '__co__');
-
-	RETURN output;
-END;
-
-CREATE DEFINER=CURRENT_USER FUNCTION `GetNameFromSafeJsonProperty`(input VARCHAR(255)) RETURNS text CHARSET utf8mb4 DETERMINISTIC
-BEGIN
-	DECLARE output VARCHAR(255);
-	
-	SET output = REPLACE(input, '__h__', '-');
-	SET output = REPLACE(output, '__s__', ' ');
-	SET output = REPLACE(output, '__c__', ':');
-	SET output = REPLACE(output, '__bl__', '(');
-	SET output = REPLACE(output, '__br__', ')');
-	SET output = REPLACE(output, '__d__', '.');
-	SET output = REPLACE(output, '__co__', ',');
-
-	RETURN output;
-END;
+INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_data`, `template_data_minified`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`, `use_cache`, `cache_minutes`, `handle_request`, `handle_session`, `handle_objects`, `handle_standards`, `handle_translations`, `handle_dynamic_content`, `handle_logic_blocks`, `handle_mutators`, `login_required`, `login_user_type`, `login_session_prefix`, `login_role`, `linked_templates`, `ordering`, `insert_mode`, `load_always`, `url_regex`, `external_files`, `grouping_create_object_instead_of_array`, `grouping_prefix`, `grouping_key`, `grouping_key_column_name`, `grouping_value_column_name`, `removed`, `is_scss_include_template`, `use_in_wiser_html_editors`, `pre_load_query`, `cache_location`, `return_not_found_when_pre_load_query_has_no_data`, `cache_regex`, `login_redirect_url`, `routine_type`, `routine_parameters`, `routine_return_type`, `disable_minifier`, `is_default_header`, `is_default_footer`, `default_header_footer_regex`) VALUES (NULL, 'CSS', NULL, NULL, 7, 1, 134, NOW(), '', 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, 1, 0, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, 0, 0, NULL, NULL, 0, NULL, NULL, 0, 0, 0, NULL);
+INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_data`, `template_data_minified`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`, `use_cache`, `cache_minutes`, `handle_request`, `handle_session`, `handle_objects`, `handle_standards`, `handle_translations`, `handle_dynamic_content`, `handle_logic_blocks`, `handle_mutators`, `login_required`, `login_user_type`, `login_session_prefix`, `login_role`, `linked_templates`, `ordering`, `insert_mode`, `load_always`, `url_regex`, `external_files`, `grouping_create_object_instead_of_array`, `grouping_prefix`, `grouping_key`, `grouping_key_column_name`, `grouping_value_column_name`, `removed`, `is_scss_include_template`, `use_in_wiser_html_editors`, `pre_load_query`, `cache_location`, `return_not_found_when_pre_load_query_has_no_data`, `cache_regex`, `login_redirect_url`, `routine_type`, `routine_parameters`, `routine_return_type`, `disable_minifier`, `is_default_header`, `is_default_footer`, `default_header_footer_regex`) VALUES (NULL, 'SCSS', NULL, NULL, 7, 1, 135, NOW(), '', 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, 2, 0, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, 0, 0, NULL, NULL, 0, NULL, NULL, 0, 0, 0, NULL);
+INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_data`, `template_data_minified`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`, `use_cache`, `cache_minutes`, `handle_request`, `handle_session`, `handle_objects`, `handle_standards`, `handle_translations`, `handle_dynamic_content`, `handle_logic_blocks`, `handle_mutators`, `login_required`, `login_user_type`, `login_session_prefix`, `login_role`, `linked_templates`, `ordering`, `insert_mode`, `load_always`, `url_regex`, `external_files`, `grouping_create_object_instead_of_array`, `grouping_prefix`, `grouping_key`, `grouping_key_column_name`, `grouping_value_column_name`, `removed`, `is_scss_include_template`, `use_in_wiser_html_editors`, `pre_load_query`, `cache_location`, `return_not_found_when_pre_load_query_has_no_data`, `cache_regex`, `login_redirect_url`, `routine_type`, `routine_parameters`, `routine_return_type`, `disable_minifier`, `is_default_header`, `is_default_footer`, `default_header_footer_regex`) VALUES (NULL, 'HTML', NULL, NULL, 7, 1, 136, NOW(), '', 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, 3, 0, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, 0, 0, NULL, NULL, 0, NULL, NULL, 0, 0, 0, NULL);
+INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_data`, `template_data_minified`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`, `use_cache`, `cache_minutes`, `handle_request`, `handle_session`, `handle_objects`, `handle_standards`, `handle_translations`, `handle_dynamic_content`, `handle_logic_blocks`, `handle_mutators`, `login_required`, `login_user_type`, `login_session_prefix`, `login_role`, `linked_templates`, `ordering`, `insert_mode`, `load_always`, `url_regex`, `external_files`, `grouping_create_object_instead_of_array`, `grouping_prefix`, `grouping_key`, `grouping_key_column_name`, `grouping_value_column_name`, `removed`, `is_scss_include_template`, `use_in_wiser_html_editors`, `pre_load_query`, `cache_location`, `return_not_found_when_pre_load_query_has_no_data`, `cache_regex`, `login_redirect_url`, `routine_type`, `routine_parameters`, `routine_return_type`, `disable_minifier`, `is_default_header`, `is_default_footer`, `default_header_footer_regex`) VALUES (NULL, 'QUERY', NULL, NULL, 7, 1, 137, NOW(), '', 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, 4, 0, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, 0, 0, NULL, NULL, 0, NULL, NULL, 0, 0, 0, NULL);
+INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_data`, `template_data_minified`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`, `use_cache`, `cache_minutes`, `handle_request`, `handle_session`, `handle_objects`, `handle_standards`, `handle_translations`, `handle_dynamic_content`, `handle_logic_blocks`, `handle_mutators`, `login_required`, `login_user_type`, `login_session_prefix`, `login_role`, `linked_templates`, `ordering`, `insert_mode`, `load_always`, `url_regex`, `external_files`, `grouping_create_object_instead_of_array`, `grouping_prefix`, `grouping_key`, `grouping_key_column_name`, `grouping_value_column_name`, `removed`, `is_scss_include_template`, `use_in_wiser_html_editors`, `pre_load_query`, `cache_location`, `return_not_found_when_pre_load_query_has_no_data`, `cache_regex`, `login_redirect_url`, `routine_type`, `routine_parameters`, `routine_return_type`, `disable_minifier`, `is_default_header`, `is_default_footer`, `default_header_footer_regex`) VALUES (NULL, 'SCRIPTS', NULL, NULL, 7, 1, 138, NOW(), '', 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, 5, 0, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, 0, 0, NULL, NULL, 0, NULL, NULL, 0, 0, 0, NULL);
+INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_data`, `template_data_minified`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`, `use_cache`, `cache_minutes`, `handle_request`, `handle_session`, `handle_objects`, `handle_standards`, `handle_translations`, `handle_dynamic_content`, `handle_logic_blocks`, `handle_mutators`, `login_required`, `login_user_type`, `login_session_prefix`, `login_role`, `linked_templates`, `ordering`, `insert_mode`, `load_always`, `url_regex`, `external_files`, `grouping_create_object_instead_of_array`, `grouping_prefix`, `grouping_key`, `grouping_key_column_name`, `grouping_value_column_name`, `removed`, `is_scss_include_template`, `use_in_wiser_html_editors`, `pre_load_query`, `cache_location`, `return_not_found_when_pre_load_query_has_no_data`, `cache_regex`, `login_redirect_url`, `routine_type`, `routine_parameters`, `routine_return_type`, `disable_minifier`, `is_default_header`, `is_default_footer`, `default_header_footer_regex`) VALUES (NULL, 'AIS', NULL, NULL, 7, 1, 139, NOW(), '', 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, 6, 0, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, 0, 0, NULL, NULL, 0, NULL, NULL, 0, 0, 0, NULL);

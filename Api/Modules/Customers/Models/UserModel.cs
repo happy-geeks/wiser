@@ -23,11 +23,6 @@ namespace Api.Modules.Customers.Models
         /// Gets or sets the full name.
         /// </summary>
         public string Name { get; set; }
-        
-        /// <summary>
-        /// Gets or sets the ID of the customer where this user belongs to.
-        /// </summary>
-        public int CustomerId { get; set; }
 
         /// <summary>
         ///  Gets or sets the encrypted customer if for Wiser 2.0.
@@ -66,10 +61,25 @@ namespace Api.Modules.Customers.Models
         public GoogleAuthenticationModel GoogleAuthentication { get; set; }
 
         /// <summary>
-        /// Gets or sets the 
+        /// Gets or sets the name of the current branch / customer.
         /// </summary>
-        public CustomerModel Customer { get; set; }
-        
+        public string CurrentBranchName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ID of the current branch / customer.
+        /// </summary>
+        public int CurrentBranchId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the main branch / customer.
+        /// </summary>
+        public string MainBranchName { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the current environment is the production environment.
+        /// </summary>
+        public bool CurrentBranchIsMainBranch { get; set; }
+
         /// <summary>
         /// Gets or sets the value that should be saved in a "Remember me" cookie. This will only contain a value if returned by the login method.
         /// </summary>

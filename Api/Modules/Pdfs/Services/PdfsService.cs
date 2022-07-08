@@ -58,8 +58,7 @@ namespace Api.Modules.Pdfs.Services
                     return new ServiceResult<string>
                     {
                         StatusCode = saveResult.StatusCode,
-                        ErrorMessage = saveResult.ErrorMessage,
-                        ReasonPhrase = saveResult.ReasonPhrase
+                        ErrorMessage = saveResult.ErrorMessage
                     };
                 }
 
