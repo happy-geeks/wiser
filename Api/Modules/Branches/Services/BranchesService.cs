@@ -859,6 +859,8 @@ LIMIT 1";
                 };
             }
 
+            settings.DatabaseName = selectedBranchCustomer.Database.DatabaseName;
+
             DateTime? lastMergeDate = null;
 
             // Get the date and time of the last merge of this branch, so we can find all changes made in production after this date, to check for merge conflicts.
