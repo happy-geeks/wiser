@@ -36,12 +36,12 @@ public class DashboardController : ControllerBase
     /// </summary>
     /// <param name="periodFrom"></param>
     /// <param name="periodTo"></param>
-    /// <param name="itemsDataPeriodFilterType"></param>
+    /// <param name="branchId"></param>
     /// <returns></returns>
     [HttpGet]
     [ProducesResponseType(typeof(DashboardDataModel), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Get([FromQuery]DateTime? periodFrom = null, [FromQuery]DateTime? periodTo = null, [FromQuery]ItemsDataPeriodFilterTypes itemsDataPeriodFilterType = ItemsDataPeriodFilterTypes.All)
+    public async Task<IActionResult> Get([FromQuery]DateTime? periodFrom = null, [FromQuery]DateTime? periodTo = null, [FromQuery]int branchId = 0)
     {
-        return (await dashboardService.GetDataAsync((ClaimsIdentity)User.Identity, periodFrom, periodTo, itemsDataPeriodFilterType)).GetHttpResponseMessage();
+        return (await dashboardService.GetDataAsync((ClaimsIdentity)User.Identity, periodFrom, periodTo, branchId)).GetHttpResponseMessage();
     }
 }

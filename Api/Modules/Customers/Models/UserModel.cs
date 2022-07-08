@@ -115,5 +115,11 @@ namespace Api.Modules.Customers.Models
         /// Gets or sets the main domain. This is used for generating URLs for images, files etc in HTML editors.
         /// </summary>
         public string MainDomain { get; set; }
+
+        /// <summary>
+        /// Gets or sets the encrypted ID of the entry in the login log table.
+        /// This will be used to update the time the user is active.
+        /// </summary>
+        public string EncryptedLoginLogId { get; set; }
     }
 }

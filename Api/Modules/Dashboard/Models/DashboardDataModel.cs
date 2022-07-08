@@ -8,7 +8,7 @@ public class DashboardDataModel
     /// <summary>
     /// Gets or sets a list of entities with their usage. This list will contain the 8 entities with the highest amount of entities.
     /// </summary>
-    public List<EntityUsageModel> EntityUsage { get; set; }
+    public Dictionary<string, List<ItemsCountModel>> Items { get; set; }
 
     /// <summary>
     /// Gets or sets the amount of times the top 10 users have logged in.

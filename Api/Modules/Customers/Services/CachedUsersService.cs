@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
@@ -172,6 +173,12 @@ namespace Api.Modules.Customers.Services
         public Task<string> UseRefreshTokenAsync(string subDomain, string refreshToken)
         {
             return usersService.UseRefreshTokenAsync(subDomain, refreshToken);
+        }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<TimeSpan>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLogId)
+        {
+            return usersService.UpdateUserTimeActiveAsync(identity, encryptedLogId);
         }
     }
 }

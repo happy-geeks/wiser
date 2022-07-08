@@ -367,6 +367,7 @@ import {
                     logout() {
                         this.$store.dispatch(CLOSE_ALL_MODULES);
                         this.$store.dispatch(AUTH_LOGOUT);
+                        main.usersService.stopUpdateTimeActiveTimer();
                     },
 
                     openModule(module) {

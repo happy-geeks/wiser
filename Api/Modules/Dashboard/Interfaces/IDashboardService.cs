@@ -19,9 +19,8 @@ public interface IDashboardService
     /// <param name="identity">The identity of the authenticated user.</param>
     /// <param name="periodFrom"></param>
     /// <param name="periodTo"></param>
-    /// <param name="itemsDataPeriodFilterType"></param>
     /// <param name="branchId"></param>
     /// <param name="forceRefresh">Whether to force a refresh of the data.</param>
     /// <returns>A <see cref="DashboardDataModel"/> object containing various information about the usage of Wiser.</returns>
-    Task<ServiceResult<DashboardDataModel>> GetDataAsync(ClaimsIdentity identity, DateTime? periodFrom = null, DateTime? periodTo = null, ItemsDataPeriodFilterTypes itemsDataPeriodFilterType = ItemsDataPeriodFilterTypes.All, int branchId = 0, bool forceRefresh = false);
+    Task<ServiceResult<DashboardDataModel>> GetDataAsync(ClaimsIdentity identity, DateTime? periodFrom = null, DateTime? periodTo = null, int branchId = 0, bool forceRefresh = false);
 }

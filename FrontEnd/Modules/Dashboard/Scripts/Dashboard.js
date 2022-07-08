@@ -25,6 +25,8 @@ const moduleSettings = {
             // Other.
             this.mainLoader = null;
 
+            this.itemsData = null;
+
             // Fire event on page ready for direct actions
             document.addEventListener("DOMContentLoaded", () => {
                 this.onPageReady();
@@ -105,13 +107,11 @@ const moduleSettings = {
         setBindings() {
             const buttons = Array.from(document.getElementById("typeFilterButtons").querySelectorAll("button"));
             buttons.forEach((button) => {
-                button.addEventListener("click", async (event) => {
+                button.addEventListener("click", (event) => {
                     buttons.filter((btn) => btn !== event.currentTarget).forEach((btn) => btn.classList.remove("selected"));
                     event.currentTarget.classList.add("selected");
 
-                    window.processing.addProcess("dataUpdate");
-                    await this.updateData();
-                    window.processing.removeProcess("dataUpdate");
+                    this.updateItemsDataChart();
                 });
             });
 
@@ -170,6 +170,12 @@ const moduleSettings = {
             });
 
             $("#periodPicker").getKendoDateRangePicker().bind("change", async () => {
+                window.processing.addProcess("dataUpdate");
+                await this.updateData();
+                window.processing.removeProcess("dataUpdate");
+            });
+
+            $("#branchesSelect").getKendoDropDownList().bind("change", async () => {
                 window.processing.addProcess("dataUpdate");
                 await this.updateData();
                 window.processing.removeProcess("dataUpdate");
@@ -387,6 +393,8 @@ const moduleSettings = {
                 };
             }));
 
+            console.log("dataSource", dataSource);
+
             const branchesSelect = $("#branchesSelect").getKendoDropDownList();
             branchesSelect.setDataSource(dataSource);
 
@@ -407,21 +415,32 @@ const moduleSettings = {
                 periodTo = kendo.toString(dateRange.end, "yyyy-MM-dd");
             }
 
+            const getParameters = {
+                branchId: $("#branchesSelect").getKendoDropDownList().value()
+            };
+            if (periodFrom !== null) {
+                getParameters.periodFrom = periodFrom;
+            }
+            if (periodTo !== null) {
+                getParameters.periodTo = periodTo;
+            }
+
             const data = await Wiser2.api({
                 url: `${this.settings.wiserApiRoot}dashboard`,
-                data: {
-                    periodFrom: periodFrom,
-                    periodTo: periodTo,
-                    itemsDataPeriodFilterType: document.getElementById("typeFilterButtons").querySelector("button.selected").dataset.filter
-                }
+                data: getParameters
             });
             if (!data) {
                 return;
             }
 
             // Update entity usage.
-            const entityUsage = data.entityUsage;
-            const categories = entityUsage.map(e => e.name);
+            this.itemsData = data.items;
+            this.updateItemsDataChart();
+        }
+
+        updateItemsDataChart() {
+            const filter = document.getElementById("typeFilterButtons").querySelector("button.selected").dataset.filter;
+            const categories = this.itemsData[filter].map(e => e.name);
 
             const dataChart = $("#data-chart").getKendoChart();
             dataChart.setOptions({
@@ -429,7 +448,7 @@ const moduleSettings = {
                     categories: categories
                 }
             });
-            dataChart.setDataSource(entityUsage);
+            dataChart.setDataSource(this.itemsData[filter]);
         }
     }
 

@@ -287,6 +287,8 @@ namespace Api.Modules.Customers.Services
                 await LogDateAndIpOfLoginAsync(ipAddress, user.Id);
             }
 
+            user.EncryptedLoginLogId = (await LogSuccessfulLoginAttemptAsync(user.Id)).ToString().EncryptWithAes(apiSettings.AdminUsersEncryptionKey, useSlowerButMoreSecureMethod: true);
+
             await ResetFailedLoginAttemptAsync(username);
 
             return new ServiceResult<UserModel>(user);
@@ -790,6 +792,82 @@ namespace Api.Modules.Customers.Services
 
             return result;
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<TimeSpan>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLogId)
+        {
+            var result = new ServiceResult<TimeSpan>();
+
+            // Try to decrypt the encrypted log ID.
+            string decryptedLogIdAsString;
+            try
+            {
+                decryptedLogIdAsString = encryptedLogId.DecryptWithAes(apiSettings.AdminUsersEncryptionKey, useSlowerButMoreSecureMethod: true);
+            }
+            catch (Exception exception)
+            {
+                logger.LogError($"UpdateUserTimeActiveAsync: Error trying to decrypt encrypted log ID '{encryptedLogId}': {exception}");
+                result.StatusCode = HttpStatusCode.BadRequest;
+                result.ErrorMessage = $"Error trying to decrypt encrypted log ID '{encryptedLogId}'";
+                return result;
+            }
+
+            // Now try to parse the decrypted log ID to a UInt64.
+            if (!UInt64.TryParse(decryptedLogIdAsString, out var decryptedLogId))
+            {
+                logger.LogError($"UpdateUserTimeActiveAsync: Could not parse log ID '{decryptedLogId}' to a UInt64.");
+                result.StatusCode = HttpStatusCode.BadRequest;
+                result.ErrorMessage = $"Error trying to decrypt encrypted log ID '{encryptedLogId}'";
+                return result;
+            }
+
+            // If the parsing was successful, but the ID is 0.
+            if (decryptedLogId == 0)
+            {
+                logger.LogError("UpdateUserTimeActiveAsync: Log ID should be higher than 0.");
+                result.StatusCode = HttpStatusCode.BadRequest;
+                result.ErrorMessage = "Log ID should be higher than 0";
+                return result;
+            }
+
+            // Log ID parsed successfully and is higher than 0; proceed with function.
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+
+            try
+            {
+                await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("id", decryptedLogId);
+                clientDatabaseConnection.AddParameter("user_id", userId);
+                var currentTimeActive = await clientDatabaseConnection.GetAsync("SELECT added_on FROM wiser_login_log WHERE id = ?id AND user_id = ?user_id");
+                if (currentTimeActive.Rows.Count == 0)
+                {
+                    logger.LogError($"UpdateUserTimeActiveAsync: Log ID '{decryptedLogId}' does not exist or doesn't belong to the current user.");
+                    result.StatusCode = HttpStatusCode.BadRequest;
+                    result.ErrorMessage = $"Log ID '{decryptedLogId}' does not exist or doesn't belong to the current user";
+                    return result;
+                }
+
+                var addedOn = currentTimeActive.Rows[0].Field<DateTime>("added_on");
+                var timeActive = DateTime.Now.Subtract(addedOn);
+
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("time_active", timeActive);
+                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync("wiser_login_log", decryptedLogId);
+
+                result.ModelObject = timeActive;
+                result.StatusCode = HttpStatusCode.OK;
+                return result;
+            }
+            catch (Exception exception)
+            {
+                logger.LogError($"Error while updating user active time: {exception}");
+                result.StatusCode = HttpStatusCode.BadRequest;
+                result.ErrorMessage = "Error while updating user active time";
+                return result;
+            }
+        }
         
         /// <summary>
         /// Validates an encrypted admin account ID. 
@@ -977,6 +1055,40 @@ namespace Api.Modules.Customers.Services
             {
                 logger.LogError($"Error while updating last login information of user: {exception}");
             }
+        }
+
+        /// <summary>
+        /// Add an entry to the login log table.
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <exception cref="ArgumentException"></exception>
+        private async Task<ulong> LogSuccessfulLoginAttemptAsync(ulong userId)
+        {
+            if (userId == 0)
+            {
+                throw new ArgumentException("User ID must be higher than 0.", nameof(userId));
+            }
+
+            try
+            {
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("user_id", userId);
+                clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
+
+                // TODO: Use WiserTableNames after GCL has been updated.
+                var logId = await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync("wiser_login_log", 0UL);
+                
+                // Remove outdated logs (data is retained for 3 months).
+                await clientDatabaseConnection.ExecuteAsync("DELETE FROM wiser_login_log WHERE added_on < DATE_SUB(NOW(), INTERVAL 3 MONTH)");
+
+                return logId;
+            }
+            catch (Exception exception)
+            {
+                logger.LogError($"Error while logging successful login attempt: {exception}");
+            }
+
+            return 0UL;
         }
     }
 }

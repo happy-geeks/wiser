@@ -2,6 +2,17 @@
 
 export default class UsersService extends BaseService {
     /**
+     * Initializes a new instance of the UsersService class.
+     * @param {Main} base An instance of the base class (Main).
+     */
+    constructor(base) {
+        super(base);
+
+        this.updateTimeActiveTimer = null;
+        this.updateTimeActiveTimerStopped = true;
+    }
+    
+    /**
      * Sends a login request to the API and returns the result.
      * If an error occurred, it will return a friendly user message.
      * @param {string} username The username.
@@ -41,6 +52,10 @@ export default class UsersService extends BaseService {
                 return user;
             });
             result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true;
+
+            if (loginResult.data.hasOwnProperty("cookieValue")) {
+                this.startUpdateTimeActiveTimer(result.data.encryptedLogId);
+            }
         } catch (error) {
             result.success = false;
             console.error("Error during login", error);
@@ -220,5 +235,24 @@ export default class UsersService extends BaseService {
             console.error(error);
             return false;
         }
+    }
+    
+    async startUpdateTimeActiveTimer(encryptedLogId) {
+        // Clear old interval first.
+        this.stopUpdateTimeActiveTimer();
+
+        // 300000 = 5 minutes.
+        this.updateTimeActiveTimerStopped = false;
+        this.updateTimeActiveTimer = setInterval(async () => {
+            if (!this.updateTimeActiveTimerStopped) {
+                await this.base.api.put(`/api/v3/users/update-active-time?encryptedLogId=${encodeURIComponent(encryptedLogId)}`);
+            }
+        }, 300000);
+    }
+
+    stopUpdateTimeActiveTimer() {
+        // Clear old interval first.
+        this.updateTimeActiveTimerStopped = true;
+        clearInterval(this.updateTimeActiveTimer);
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace Api.Modules.Dashboard.Models;
 
-public class EntityUsageModel
+public class ItemsCountModel
 {
     /// <summary>
     /// Gets or sets the name of the entity. This will be the friendly name if the entity has one.

@@ -144,5 +144,17 @@ namespace Api.Modules.Customers.Controllers
         {
             return (await usersService.SaveAutoLoadModulesAsync((ClaimsIdentity)User.Identity, moduleIds)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Updates the time the current user has been active in Wiser.
+        /// </summary>
+        /// <param name="encryptedLogId"></param>
+        [HttpPut]
+        [Route("update-active-time")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateUserActiveTimeAsync([FromQuery]string encryptedLogId)
+        {
+            return (await usersService.UpdateUserTimeActiveAsync((ClaimsIdentity)User.Identity, encryptedLogId)).GetHttpResponseMessage();
+        }
     }
 }

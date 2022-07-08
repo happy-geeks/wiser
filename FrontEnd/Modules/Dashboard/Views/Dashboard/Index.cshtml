@@ -55,6 +55,8 @@
                             <div class="flex-container">
                                 <label>Branche</label>
                                 <select id="branchesSelect" class="drop-down-list" placeholder="Maak uw keuze..." data-role="dropdownlist">
+                                    <option value="0">Actieve branch</option>
+                                    <option value="-1">Alle branches</option>
                                 </select>
                             </div>
                         </div>
@@ -201,19 +203,19 @@
                             <div id="data-chart" style="width:100%"></div>
 
                             <div class="btn-row" id="typeFilterButtons">
-                                <button type="button" role="button" aria-label="Alles" class="selected" data-filter="all">
+                                <button type="button" role="button" aria-label="Alles" class="selected" data-filter="All">
                                     <span>Alles</span>
                                 </button>
-                                <button type="button" role="button" aria-label="Nieuw aangemaakt" data-filter="newlyCreated">
+                                <button type="button" role="button" aria-label="Nieuw aangemaakt" data-filter="NewlyCreated">
                                     <span>Nieuw aangemaakt</span>
                                 </button>
-                                <button type="button" role="button" aria-label="Gewijzigd" data-filter="changed">
+                                <button type="button" role="button" aria-label="Gewijzigd" data-filter="Changed">
                                     <span>Gewijzigd</span>
                                 </button>
-                                <button type="button" role="button" aria-label="Actief" data-filter="active">
+                                <button type="button" role="button" aria-label="Actief" data-filter="Active" disabled>
                                     <span>Actief</span>
                                 </button>
-                                <button type="button" role="button" aria-label="Archief" data-filter="archive">
+                                <button type="button" role="button" aria-label="Archief" data-filter="Archive" disabled>
                                     <span>Archief</span>
                                 </button>
                             </div>
