@@ -11,6 +11,7 @@ using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
@@ -65,8 +66,17 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<TemplateSettingsModel> GetDataAsync(int templateId)
+        public async Task<TemplateSettingsModel> GetDataAsync(int templateId, Environments? environment = null)
         {
+            var publishedVersionWhere = environment switch
+            {
+                null => "",
+                Environments.Hidden => "AND template.published_environment = 0",
+                _ => $"AND (template.published_environment & {(int)environment}) = {(int)environment}"
+            };
+
+
+
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("templateId", templateId);
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
@@ -119,13 +129,17 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.default_header_footer_regex
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
                                                             WHERE template.template_id = ?templateId
+                                                            {publishedVersionWhere}
                                                             AND template.removed = 0
                                                             ORDER BY template.version DESC 
                                                             LIMIT 1");
 
             if (dataTable.Rows.Count == 0)
             {
-                return null;
+                return new TemplateSettingsModel
+                {
+                    TemplateId = templateId
+                };
             }
 
             var templateData = new TemplateSettingsModel
