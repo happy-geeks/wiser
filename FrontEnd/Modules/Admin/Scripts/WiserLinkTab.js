@@ -5,9 +5,9 @@ export class WiserLinkTab {
         this.base = base;
         this.setupBindings();
         this.initializeKendoComponents();
-
     }
 
+    
 
     /**
     * Setup all basis bindings for this module.
@@ -16,19 +16,36 @@ export class WiserLinkTab {
     setupBindings() {
         $(".addLinkBtn").kendoButton({
             click: () => {
-                this.base.openDialog("Link toevoegen", "Voer de naam in van nieuwe link").then((data) => {
-                    this.addLink(data);
-                });
-
+                var dialog = $('.linkPopupContent').kendoWindow({
+                    width: 350,
+                    height: 100,
+                    title: "Choose Address",
+                    modal: true,
+                    resizable: false,
+                    draggable: false
+                }).data("kendoWindow");
+                dialog.center().open();
             },
             icon: "file"
         });
+
+        document.querySelector(".addLinkBtnPopup").addEventListener("click", () => {
+            this.addLink();
+        });
+
     }
 
-    async addLink(name) {
-        if (name === "") return;
+    async addLink() {
         // todo expand popup to set up linksettingsmodel with type / connected entity / destination entity, name
-        var linkSettingsModel = new LinkSettingsModel(-1,0,"a","b",name);
+        var linkSettingsModel = new LinkSettingsModel(
+            -1,
+            this.linkTypePopup.value(),
+            this.destinationEntityPopup.dataItem().name,
+            this.connectedEntityPopup.dataItem().name,
+            document.getElementById("wiserLinkNamePopup").value);
+
+        linkSettingsModel.relationship = this.relationPopup.dataItem().id;
+
         await Wiser2.api({
                 url: `${this.base.settings.wiserApiRoot}link-settings`,
                 contentType: "application/json; charset=utf-8",
@@ -41,7 +58,17 @@ export class WiserLinkTab {
                 this.reloadWiserLinkList(result);
 
             })
-            .catch(() => {
+            .catch((e) => {
+                console.error(e);
+                if (e.responseText.indexOf("Duplicate entry")) {
+                    this.base.showNotification("notification",
+                        `Er bestaat al een link met type '${linkSettingsModel.type}' met entiteit van '${linkSettingsModel.destinationEntityType}' naar '${linkSettingsModel.sourceEntityType}'`,
+                        "error");
+                } else {
+                    this.base.showNotification("notification",
+                        `Wiser link is niet succesvol aangemaakt, probeer het opnieuw`,
+                        "error");
+                }
                 this.base.showNotification("notification", `Link is niet succesvol toegevoegd, probeer het opnieuw`, "error");
             });
     }
@@ -62,7 +89,7 @@ export class WiserLinkTab {
             filter: "contains",
             optionLabel: {
                 id: "",
-                formattedName: "Maak uw keuze..."
+                displayName: "Maak uw keuze..."
             },
             minLength: 1,
             dataSource: {
@@ -77,12 +104,12 @@ export class WiserLinkTab {
         
         this.connectedEntity = $("#connectedEntity").kendoDropDownList({
             clearButton: false,
-            dataTextField: "formattedName",
+            dataTextField: "displayName",
             dataValueField: "id",
             filter: "contains",
             optionLabel: {
                 id: "",
-                formattedName: "Maak uw keuze..."
+                displayName: "Maak uw keuze..."
             },
             minLength: 1,
             dataSource: {}
@@ -90,17 +117,70 @@ export class WiserLinkTab {
 
         this.destinationEntity = $("#destinationEntity").kendoDropDownList({
             clearButton: false,
-            dataTextField: "formattedName",
+            dataTextField: "displayName",
             dataValueField: "id",
             filter: "contains",
             optionLabel: {
                 id: "",
-                formattedName: "Maak uw keuze..."
+                displayName: "Maak uw keuze..."
             },
             minLength: 1,
             dataSource: {}
         }).data("kendoDropDownList");
 
+
+        this.connectedEntityPopup = $("#connectedEntityPopup").kendoDropDownList({
+            clearButton: false,
+            dataTextField: "displayName",
+            dataValueField: "id",
+            filter: "contains",
+            optionLabel: {
+                id: "",
+                displayName: "Maak uw keuze..."
+            },
+            minLength: 1,
+            dataSource: this.base.entityTab.entityList
+        }).data("kendoDropDownList");
+
+        this.destinationEntityPopup = $("#destinationEntityPopup").kendoDropDownList({
+            clearButton: false,
+            dataTextField: "displayName",
+            dataValueField: "id",
+            filter: "contains",
+            optionLabel: {
+                id: "",
+                displayName: "Maak uw keuze..."
+            },
+            minLength: 1,
+            dataSource: this.base.entityTab.entityList
+        }).data("kendoDropDownList");
+
+        this.relationPopup = $("#relationPopup").kendoDropDownList({
+            clearButton: false,
+            dataTextField: "displayName",
+            dataValueField: "id",
+            filter: "contains",
+            optionLabel: {
+                id: "",
+                displayName: "Maak uw keuze..."
+            } ,
+            minLength: 1,
+            dataSource: [{
+                id: 0,
+                displayName: "1 op 1"
+            }, {
+                id: 1,
+                displayName: "1 op veel"
+                } , {
+            id: 2,
+                displayName: "veel op veel"
+        }]
+        }).data("kendoDropDownList");
+
+        this.linkTypePopup = $("#wiserLinkTypePopup").kendoNumericTextBox({
+            decimals: 0,
+            format: "#"
+        }).data("kendoNumericTextBox"); 
     }
     // actions handled before save, such as checks
     beforeSave() {

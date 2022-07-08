@@ -1579,7 +1579,7 @@
                      </div>
                      <div class="item">
                         <div class="pane-content flex-container">
-                           <div class="item" style="width: 25%;">
+                           <div class="item " style="width: 25%;">
                               <span class="handler">&nbsp;</span>
                               <h4>
                                  <label>Link type</label>
@@ -1604,6 +1604,53 @@
                                 </select>
                             </div>
                         </div>
+                         <div class="pane-content flex-container linkPopupContent">
+                             <div class="item " style="width: 25%;">
+                                 <span class="handler">&nbsp;</span>
+                                 <h4>
+                                     <label>Link naam</label>
+                                 </h4>
+                                 <span class="k-widget k-input k-state-default">
+                                     <input id="wiserLinkNamePopup" type="input" autocomplete="off" />
+                                 </span>
+                             </div>
+                             <div class="item " style="width: 25%;">
+                                 <span class="handler">&nbsp;</span>
+                                 <h4>
+                                     <label>Link type</label>
+                                 </h4>
+                                 <span class="k-widget k-input k-state-default">
+                                     <input id="wiserLinkTypePopup" type="number" step="1" min="1" class="numeric" autocomplete="off" />
+                                 </span>
+                             </div>
+                            
+                             <div class="item" style="width: 40%;">
+                                 <h4>
+                                     <label>Entiteit vanaf</label>
+                                 </h4>
+                                 <select id="connectedEntityPopup" placeholder="Maak uw keuze...">
+                                 </select>
+                             </div>
+                             <div class="item" style="width: 40%;">
+                                 <h4>
+                                     <label>Entiteit naar</label>
+                                 </h4>
+                                 <select id="destinationEntityPopup" placeholder="Maak uw keuze...">
+                                 </select>
+                             </div>
+                             <div class="item" style="width: 40%;">
+                                 <h4>
+                                     <label>Entiteiten relatie</label>
+                                 </h4>
+                                 <select id="relationPopup" placeholder="Maak uw keuze...">
+                                 </select>
+                             </div>
+                             <div class="item" style="width: 40%;">
+                                 <div class="flex-container">
+                                     <button class="k-primary addLinkBtnPopup" style="width: 25%; margin: 4px">Toevoegen</button>
+                                 </div>
+                             </div>
+                         </div>
                      </div>
                   </div>
                </div>
