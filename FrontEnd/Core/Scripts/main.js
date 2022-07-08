@@ -535,9 +535,7 @@ import {
                             return false;
                         }
 
-                        
                         await this.$store.dispatch(MERGE_BRANCH, this.branchMergeSettings);
-                        debugger;
 
                         if (this.mergeBranchError) {
                             return false;
