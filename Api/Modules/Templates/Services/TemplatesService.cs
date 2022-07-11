@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
@@ -35,6 +38,7 @@ using GeeksCoreLibrary.Modules.Templates.Enums;
 using GeeksCoreLibrary.Modules.Templates.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Models;
 using LibSassHost;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -75,11 +79,12 @@ namespace Api.Modules.Templates.Services
         private readonly IObjectsService objectsService;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<TemplatesService> logger;
+        private readonly IWebHostEnvironment webHostEnvironment;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IWebHostEnvironment webHostEnvironment)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -96,6 +101,7 @@ namespace Api.Modules.Templates.Services
             this.objectsService = objectsService;
             this.databaseHelpersService = databaseHelpersService;
             this.logger = logger;
+            this.webHostEnvironment = webHostEnvironment;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -2389,15 +2395,23 @@ LIMIT 1";
                     };
 
                     // Try to minify. Uglify is known to have various issues with minifying newer JavaScript features.
-                    try
+                    var minifyResult = await MinifyJavaScriptWithTerser(template.EditorValue);
+                    if (minifyResult.Successful)
                     {
-                        template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
+                        template.MinifiedValue = minifyResult.MinifiedScript;
                     }
-                    catch (Exception exception)
+                    else
                     {
-                        // Use non-minified editor value as the minified value so the changes don't go lost.
-                        template.MinifiedValue = template.EditorValue;
-                        logger.LogWarning(exception, $"An error occurred while trying to minify the JavaScript of template ID {template.TemplateId}");
+                        try
+                        {
+                            template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
+                        }
+                        catch (Exception exception)
+                        {
+                            // Use non-minified editor value as the minified value so the changes don't go lost.
+                            template.MinifiedValue = template.EditorValue;
+                            logger.LogWarning(exception, $"An error occurred while trying to minify the JavaScript of template ID {template.TemplateId}");
+                        }
                     }
 
                     break;
@@ -3378,6 +3392,82 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 // Other exceptions; return entire exception.
                 return (false, exception.ToString());
             }
+        }
+
+        /// <summary>
+        /// Will attempt to minify JavaScript with a NodeJS package called terser. If it fails, the 
+        /// </summary>
+        /// <param name="script">The raw JavaScript that will be minified.</param>
+        /// <returns>A <see cref="ValueTuple"/> with the first value being whether the minification was successful, and the minified script.</returns>
+        private async Task<(bool Successful, string MinifiedScript)> MinifyJavaScriptWithTerser(string script)
+        {
+            if (String.IsNullOrWhiteSpace(script))
+            {
+                return (false, null);
+            }
+
+            // Create a temporary file that will contain the script. This is required because terser can only work with input files.
+            var uploadsDirectory = Path.Combine(webHostEnvironment.ContentRootPath, "temp/minify");
+            if (!Directory.Exists(uploadsDirectory))
+            {
+                Directory.CreateDirectory(uploadsDirectory);
+            }
+
+            var filePath = Path.Combine(uploadsDirectory, $"{Guid.NewGuid().ToString()}.js");
+            await File.WriteAllTextAsync(filePath, script, Encoding.UTF8);
+
+            string output = null;
+            var successful = true;
+
+            // Windows requires the ".cmd" file to run, while UNIX-based systems can just use the "terser" file (without an extension).
+            var terserCommand = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "terser.cmd" : "terser";
+
+            try
+            {
+                using var process = new Process();
+                process.StartInfo.FileName = Path.Combine(webHostEnvironment.ContentRootPath, $"node_modules/.bin/{terserCommand}");
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.StartInfo.Arguments = $"{filePath} --compress --mangle";
+                
+                process.OutputDataReceived += (_, eventArgs) =>
+                {
+                    // eventArgs.Data holds the response from terser.
+                    if (!String.IsNullOrWhiteSpace(eventArgs.Data))
+                    {
+                        output = eventArgs.Data;
+                    }
+                };
+
+                process.ErrorDataReceived += (_, eventArgs) =>
+                {
+                    // eventArgs.Data holds the response from terser.
+                    if (!String.IsNullOrWhiteSpace(eventArgs.Data))
+                    {
+                        output = eventArgs.Data;
+                    }
+                };
+
+                process.Start();
+
+                //process.EnableRaisingEvents = true;
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+
+                using var cancellationTokenSource = new CancellationTokenSource(5000);
+                await process.WaitForExitAsync(cancellationTokenSource.Token);
+            }
+            catch (Exception exception)
+            {
+                successful = false;
+                logger.LogWarning(exception, "Error trying to minify script with terser");
+            }
+
+            // Remove temporary file afterwards, regardless if it succeeded or not.
+            File.Delete(filePath);
+
+            return (successful, output);
         }
     }
 }
