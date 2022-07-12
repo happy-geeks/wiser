@@ -53,8 +53,9 @@ namespace Api.Modules.EntityTypes.Interfaces
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="name">The name of the new entity type.</param>
+        /// <param name="moduleId">The module ID the new entity type is linked to.</param>
         /// <returns>The ID of the new entity type.</returns>
-        Task<ServiceResult<long>> CreateAsync(ClaimsIdentity identity, string name);
+        Task<ServiceResult<long>> CreateAsync(ClaimsIdentity identity, string name, int moduleId = 0);
 
         /// <summary>
         /// Creates a new entity type.

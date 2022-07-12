@@ -245,10 +245,12 @@ GROUP BY entity_type";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<long>> CreateAsync(ClaimsIdentity identity, string name)
+        public async Task<ServiceResult<long>> CreateAsync(ClaimsIdentity identity, string name, int moduleId = 0)
         {
-            clientDatabaseConnection.AddParameter("name", name);
-            var result = await clientDatabaseConnection.InsertRecordAsync($"INSERT INTO {WiserTableNames.WiserEntity} (name) VALUES (?name)");
+            // Empty string is allowed, so a root entity can be created for a module.
+            clientDatabaseConnection.AddParameter("name", name ?? String.Empty);
+            clientDatabaseConnection.AddParameter("moduleId", moduleId);
+            var result = await clientDatabaseConnection.InsertRecordAsync($"INSERT INTO {WiserTableNames.WiserEntity} (name, module_id) VALUES (?name, ?moduleId)");
             return new ServiceResult<long>(result);
         }
 

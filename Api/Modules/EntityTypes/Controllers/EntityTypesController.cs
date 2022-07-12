@@ -90,17 +90,18 @@ namespace Api.Modules.EntityTypes.Controllers
         {
             return (await entityTypesService.GetAvailableEntityTypesAsync((ClaimsIdentity)User.Identity, moduleId, parentId)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Creates a new entity type.
         /// </summary>
         /// <param name="name">The name of the new entity type.</param>
+        /// <param name="moduleId">The module ID the new entity type is connected to.</param>
         /// <returns>The ID of the new entity type.</returns>
         [HttpPost]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
-        public async Task<IActionResult> CreateAsync([FromQuery]string name)
+        public async Task<IActionResult> CreateAsync([FromQuery]string name, [FromQuery]int moduleId = 0)
         {
-            return (await entityTypesService.CreateAsync((ClaimsIdentity)User.Identity, name)).GetHttpResponseMessage();
+            return (await entityTypesService.CreateAsync((ClaimsIdentity)User.Identity, name, moduleId)).GetHttpResponseMessage();
         }
 
         /// <summary>
