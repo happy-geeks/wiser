@@ -726,7 +726,7 @@ CREATE TABLE IF NOT EXISTS `wiser_dynamic_content`  (
     `changed_on` datetime NOT NULL ON UPDATE CURRENT_TIMESTAMP,
     `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
     `published_environment` tinyint NOT NULL DEFAULT 0,
-    `removed` tinyint NOT NULL,
+    `removed` tinyint NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`) USING BTREE,
     UNIQUE INDEX `idx_unique`(`content_id` ASC, `version` ASC) USING BTREE,
     INDEX `content_id`(`content_id` ASC) USING BTREE,
