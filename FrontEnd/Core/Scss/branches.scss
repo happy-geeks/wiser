@@ -46,10 +46,6 @@
                         gap: 20px;
                         padding: 20px 0;
     
-                        * {
-                            max-width: 20%;
-                        }
-    
                         button {
                             margin: 0;
                         }
@@ -144,6 +140,22 @@
                         &:nth-child(even) {
                             td {
                                 background-color: $lt-color;
+                            }
+                        }
+                        
+                        &.accepted {
+                            td {
+                                background-color: $primary-color;
+                                color: $white-color;
+                                border-top: 1px solid $white-color;
+                            }
+                        }
+
+                        &.denied {
+                            td {
+                                background-color: $alert-color;
+                                color: $white-color;
+                                border-top: 1px solid $white-color;
                             }
                         }
                     }

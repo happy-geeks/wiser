@@ -3,7 +3,6 @@
 import { TrackJS } from "trackjs";
 import { createApp, defineAsyncComponent } from "vue";
 import * as axios from "axios";
-import { DateTime } from "luxon";
 
 import UsersService from "./shared/users.service";
 import ModulesService from "./shared/modules.service";
@@ -38,7 +37,9 @@ import {
     MERGE_BRANCH,
     GET_ENTITIES_FOR_BRANCHES,
     IS_MAIN_BRANCH,
-    GET_BRANCH_CHANGES
+    GET_BRANCH_CHANGES,
+    HANDLE_CONFLICT,
+    HANDLE_MULTIPLE_CONFLICTS
 } from "./store/mutation-types";
 
 (() => {
@@ -157,7 +158,7 @@ import {
                                     delete: false
                                 }
                             },
-                            conflicts: {}
+                            conflicts: []
                         },
                         openBranchTypes: [
                             { id: "wiser", name:  "Wiser" },
@@ -171,7 +172,8 @@ import {
                             selectedBranchType: {
                                 id: ""
                             }
-                        }
+                        },
+                        batchHandleConflictSettings: { }
                     };
                 },
                 created() {
@@ -294,6 +296,27 @@ import {
                         return this.$store.state.branches.branchChanges.settings.reduce((accumulator, entity) => {
                             return accumulator + entity.deleted;
                         }, 0);
+                    },
+                    totalAmountOfMergeConflicts() {
+                        if (!this.$store.state.branches.mergeBranchResult || !this.$store.state.branches.mergeBranchResult.conflicts) {
+                            return 0;
+                        }
+                        
+                        return this.$store.state.branches.mergeBranchResult.conflicts.length;
+                    },
+                    totalAmountOfApprovedMergeConflicts() {
+                        if (!this.$store.state.branches.mergeBranchResult || !this.$store.state.branches.mergeBranchResult.conflicts) {
+                            return 0;
+                        }
+
+                        return this.$store.state.branches.mergeBranchResult.conflicts.filter(r => r.acceptChange === true).length;
+                    },
+                    areAllConflictsHandled() {
+                        if (!this.$store.state.branches.mergeBranchResult || !this.$store.state.branches.mergeBranchResult.conflicts) {
+                            return true;
+                        }
+
+                        return this.$store.state.branches.mergeBranchResult.conflicts.filter(r => r.acceptChange !== true && r.acceptChange !== false).length === 0;
                     }
                 },
                 components: {
@@ -502,7 +525,7 @@ import {
                     },
 
                     async changePassword() {
-                        await this.$store.dispatch(CHANGE_PASSWORD,
+                        await this.$store.codispatch(CHANGE_PASSWORD,
                             {
                                 oldPassword: this.changePasswordPromptOldPasswordValue,
                                 newPassword: this.changePasswordPromptNewPasswordValue,
@@ -534,6 +557,15 @@ import {
                         if (this.isMainBranch && (!this.branchMergeSettings.selectedBranch || !this.branchMergeSettings.selectedBranch.id)) {
                             return false;
                         }
+                        
+                        if (this.mergeBranchResult && this.mergeBranchResult.conflicts.length > 0 && !this.areAllConflictsHandled) {
+                            return false;
+                        }
+
+                        // Copy the conflicts to the merge settings, so that the AIS will know what to do with the conflicts.
+                        if (this.mergeBranchResult && this.mergeBranchResult.conflicts) {
+                            this.branchMergeSettings.conflicts = this.mergeBranchResult.conflicts;
+                        }
 
                         await this.$store.dispatch(MERGE_BRANCH, this.branchMergeSettings);
 
@@ -553,10 +585,6 @@ import {
                         }
 
                         return false;
-                    },
-
-                    handleMergeConflicts() {
-                        this.showGeneralMessagePrompt("Conflicten verwerken");
                     },
 
                     openBranch(event) {
@@ -737,6 +765,22 @@ import {
                             this.branchMergeSettings[setting][type].update = isChecked;
                             this.branchMergeSettings[setting][type].delete = isChecked;
                         }
+                    },
+
+                    onApproveConflictClick(conflict) {
+                        this.$store.dispatch(HANDLE_CONFLICT, { acceptChange: true, id: conflict.id });
+                    },
+
+                    onDenyConflictClick(conflict) {
+                        this.$store.dispatch(HANDLE_CONFLICT, { acceptChange: false, id: conflict.id });
+                    },
+
+                    onAcceptMultipleConflictsClick() {
+                        this.$store.dispatch(HANDLE_MULTIPLE_CONFLICTS, { acceptChange: true, settings: this.batchHandleConflictSettings });
+                    },
+
+                    onDenyMultipleConflictsClick() {
+                        this.$store.dispatch(HANDLE_MULTIPLE_CONFLICTS, { acceptChange: false, settings: this.batchHandleConflictSettings });
                     }
                 }
             });

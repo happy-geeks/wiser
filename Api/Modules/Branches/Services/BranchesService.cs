@@ -14,6 +14,7 @@ using Api.Modules.Branches.Models;
 using Api.Modules.Customers.Enums;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Models;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
@@ -946,7 +947,8 @@ VALUES (?branch_id, ?action, ?data, ?added_on, ?start_on, ?added_by, ?user_id)";
             var dataTable = new DataTable();
             await using (var branchCommand = branchConnection.CreateCommand())
             {
-                branchCommand.CommandText = $@"SELECT 
+                branchCommand.CommandText = $@"SELECT
+    id, 
     action,
     tablename,
     item_id,
@@ -966,7 +968,8 @@ FROM {WiserTableNames.WiserHistory}";
                 var action = dataRow.Field<string>("action")?.ToUpperInvariant();
                 var conflict = new MergeConflictModel
                 {
-                    Id = dataRow.Field<ulong>("item_id"),
+                    Id = Convert.ToUInt64(dataRow["id"]),
+                    ObjectId = dataRow.Field<ulong>("item_id"),
                     TableName = dataRow.Field<string>("tablename"),
                     FieldName = dataRow.Field<string>("field"),
                     ValueInBranch = dataRow.Field<string>("newvalue"),
@@ -988,7 +991,7 @@ FROM {WiserTableNames.WiserHistory}";
 
                         conflict.Type = "entityProperty";
                         conflict.TypeDisplayName = "Veld van entiteit";
-                        conflict.Title = $"#{conflict.Id}";
+                        conflict.Title = $"#{conflict.ObjectId}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
@@ -1002,7 +1005,7 @@ FROM {WiserTableNames.WiserHistory}";
 
                         conflict.Type = "module";
                         conflict.TypeDisplayName = "Module";
-                        conflict.Title = $"#{conflict.Id}";
+                        conflict.Title = $"#{conflict.ObjectId}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
@@ -1016,7 +1019,7 @@ FROM {WiserTableNames.WiserHistory}";
 
                         conflict.Type = "query";
                         conflict.TypeDisplayName = "Query";
-                        conflict.Title = $"#{conflict.Id}";
+                        conflict.Title = $"#{conflict.ObjectId}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
@@ -1030,7 +1033,7 @@ FROM {WiserTableNames.WiserHistory}";
 
                         conflict.Type = "entity";
                         conflict.TypeDisplayName = "Entiteit";
-                        conflict.Title = $"#{conflict.Id}";
+                        conflict.Title = $"#{conflict.ObjectId}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
@@ -1044,7 +1047,7 @@ FROM {WiserTableNames.WiserHistory}";
 
                         conflict.Type = "fieldTemplate";
                         conflict.TypeDisplayName = "Veld-template";
-                        conflict.Title = $"#{conflict.Id}";
+                        conflict.Title = $"#{conflict.ObjectId}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
@@ -1058,7 +1061,7 @@ FROM {WiserTableNames.WiserHistory}";
 
                         conflict.Type = "linkType";
                         conflict.TypeDisplayName = "Koppeltype";
-                        conflict.Title = $"#{conflict.Id}";
+                        conflict.Title = $"#{conflict.ObjectId}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
@@ -1072,7 +1075,7 @@ FROM {WiserTableNames.WiserHistory}";
 
                         conflict.Type = "permission";
                         conflict.TypeDisplayName = "Rechten";
-                        conflict.Title = $"#{conflict.Id}";
+                        conflict.Title = $"#{conflict.ObjectId}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
@@ -1086,7 +1089,7 @@ FROM {WiserTableNames.WiserHistory}";
 
                         conflict.Type = "userRole";
                         conflict.TypeDisplayName = "Koppeling van rol aan gebruiker";
-                        conflict.Title = $"#{conflict.Id}";
+                        conflict.Title = $"#{conflict.ObjectId}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
@@ -1100,7 +1103,7 @@ FROM {WiserTableNames.WiserHistory}";
 
                         conflict.Type = "apiConnection";
                         conflict.TypeDisplayName = "Api-instellingen";
-                        conflict.Title = $"#{conflict.Id}";
+                        conflict.Title = $"#{conflict.ObjectId}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
@@ -1114,7 +1117,7 @@ FROM {WiserTableNames.WiserHistory}";
 
                         conflict.Type = "dataSelector";
                         conflict.TypeDisplayName = "Dataselector";
-                        conflict.Title = $"#{conflict.Id}";
+                        conflict.Title = $"#{conflict.ObjectId}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
@@ -1125,7 +1128,7 @@ FROM {WiserTableNames.WiserHistory}";
                     {
                         conflict.Type = "item";
                         conflict.TypeDisplayName = "Item";
-                        conflict.Title = $"#{conflict.Id}";
+                        conflict.Title = $"#{conflict.ObjectId}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
@@ -1134,7 +1137,7 @@ FROM {WiserTableNames.WiserHistory}";
                     {
                         conflict.Type = "link";
                         conflict.TypeDisplayName = "Koppeling";
-                        conflict.Title = $"#{conflict.Id}";
+                        conflict.Title = $"#{conflict.ObjectId}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
@@ -1142,7 +1145,7 @@ FROM {WiserTableNames.WiserHistory}";
                     {
                         conflict.Type = "file";
                         conflict.TypeDisplayName = "Bestand";
-                        conflict.Title = $"#{conflict.Id}";
+                        conflict.Title = $"#{conflict.ObjectId}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
@@ -1206,7 +1209,7 @@ WHERE changed_on >= ?lastChange";
                 var action = dataRow.Field<string>("action")?.ToUpperInvariant();
                 var value = dataRow.Field<string>("newvalue");
 
-                var conflict = conflicts.LastOrDefault(conflict => conflict.Id == dataRow.Field<ulong>("item_id")
+                var conflict = conflicts.LastOrDefault(conflict => conflict.ObjectId == dataRow.Field<ulong>("item_id")
                                                            && conflict.TableName == dataRow.Field<string>("tablename")
                                                            && conflict.LanguageCode == dataRow.Field<string>("language_code")
                                                            && conflict.GroupName == dataRow.Field<string>("groupname")
@@ -1222,19 +1225,19 @@ WHERE changed_on >= ?lastChange";
                 // Local function for getting the display name of an object, this uses a dictionary to cache the names in memory.
                 async Task<string> GetDisplayNameAsync(IDictionary<ulong, string> cache, string nameColumn = "name")
                 {
-                    if (cache.ContainsKey(conflict!.Id))
+                    if (cache.ContainsKey(conflict!.ObjectId))
                     {
-                        return cache[conflict.Id];
+                        return cache[conflict.ObjectId];
                     }
 
                     await using var branchCommand = branchConnection.CreateCommand();
-                    branchCommand.Parameters.AddWithValue("id", conflict.Id);
+                    branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
                     branchCommand.CommandText = $"SELECT {nameColumn} FROM {conflict.TableName} WHERE id = ?id";
                     var moduleDataTable = new DataTable();
                     using var adapter = new MySqlDataAdapter(branchCommand);
                     await adapter.FillAsync(moduleDataTable);
-                    cache.Add(conflict.Id, moduleDataTable.Rows.Count == 0 ? $"Onbekend, #{conflict.Id}" : moduleDataTable.Rows[0].Field<string>(nameColumn));
-                    return cache[conflict.Id];
+                    cache.Add(conflict.ObjectId, moduleDataTable.Rows.Count == 0 ? $"Onbekend, #{conflict.ObjectId}" : moduleDataTable.Rows[0].Field<string>(nameColumn));
+                    return cache[conflict.ObjectId];
                 }
 
                 switch (action)
@@ -1242,16 +1245,16 @@ WHERE changed_on >= ?lastChange";
                     // Changes to Wiser settings.
                     case "UPDATE_ENTITYPROPERTY":
                     {
-                        if (!entityProperties.ContainsKey(conflict.Id))
+                        if (!entityProperties.ContainsKey(conflict.ObjectId))
                         {
                             await using var branchCommand = branchConnection.CreateCommand();
-                            branchCommand.Parameters.AddWithValue("id", conflict.Id);
+                            branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
                             branchCommand.CommandText = $"SELECT entity_name, display_name, language_code FROM {WiserTableNames.WiserEntityProperty} WHERE id = ?id";
                             var entityPropertyDataTable = new DataTable();
                             using var adapter = new MySqlDataAdapter(branchCommand);
                             await adapter.FillAsync(entityPropertyDataTable);
 
-                            var name = new StringBuilder($"Onbekend, #{conflict.Id}");
+                            var name = new StringBuilder($"Onbekend, #{conflict.ObjectId}");
                             if (entityPropertyDataTable.Rows.Count > 0)
                             {
                                 name = new StringBuilder(entityPropertyDataTable.Rows[0].Field<string>("display_name"));
@@ -1264,10 +1267,10 @@ WHERE changed_on >= ?lastChange";
                                 name.Append($" van {entityPropertyDataTable.Rows[0].Field<string>("entity_name")}");
                             }
 
-                            entityProperties.Add(conflict.Id, name.ToString());
+                            entityProperties.Add(conflict.ObjectId, name.ToString());
                         }
 
-                        conflict.Title = entityProperties[conflict.Id];
+                        conflict.Title = entityProperties[conflict.ObjectId];
                         break;
                     }
                     case "UPDATE_MODULE":
@@ -1282,16 +1285,16 @@ WHERE changed_on >= ?lastChange";
                     }
                     case "UPDATE_ENTITY":
                     {
-                        if (!entityTypes.ContainsKey(conflict.Id))
+                        if (!entityTypes.ContainsKey(conflict.ObjectId))
                         {
                             await using var branchCommand = branchConnection.CreateCommand();
-                            branchCommand.Parameters.AddWithValue("id", conflict.Id);
+                            branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
                             branchCommand.CommandText = $"SELECT name, friendly_name FROM {WiserTableNames.WiserEntity} WHERE id = ?id";
                             var entityDataTable = new DataTable();
                             using var adapter = new MySqlDataAdapter(branchCommand);
                             await adapter.FillAsync(entityDataTable);
 
-                            var name = $"Onbekend, #{conflict.Id}";
+                            var name = $"Onbekend, #{conflict.ObjectId}";
                             if (entityDataTable.Rows.Count > 0)
                             {
                                 name = entityDataTable.Rows[0].Field<string>("friendly_name");
@@ -1301,10 +1304,10 @@ WHERE changed_on >= ?lastChange";
                                 }
                             }
 
-                            entityTypes.Add(conflict.Id,  name);
+                            entityTypes.Add(conflict.ObjectId,  name);
                         }
 
-                        conflict.Title = entityTypes[conflict.Id];
+                        conflict.Title = entityTypes[conflict.ObjectId];
                         break;
                     }
                     case "UPDATE_FIELD_TEMPLATE":
@@ -1340,17 +1343,17 @@ WHERE changed_on >= ?lastChange";
                     case "UPDATE_ITEM":
                     {
                         // Get the title and entity type of the item.
-                        if (!items.ContainsKey(conflict.Id))
+                        if (!items.ContainsKey(conflict.ObjectId))
                         {
                             await using var branchCommand = branchConnection.CreateCommand();
-                            branchCommand.Parameters.AddWithValue("id", conflict.Id);
+                            branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
                             branchCommand.CommandText = $"SELECT title, entity_type, moduleid FROM {conflict.TableName.Replace(WiserTableNames.WiserItemDetail, WiserTableNames.WiserItem)} WHERE id = ?id";
                             var entityDataTable = new DataTable();
                             using var adapter = new MySqlDataAdapter(branchCommand);
                             await adapter.FillAsync(entityDataTable);
 
                             var entityType = "unknown";
-                            var title = $"Onbekend, #{conflict.Id}";
+                            var title = $"Onbekend, #{conflict.ObjectId}";
                             var moduleId = 0;
                             if (entityDataTable.Rows.Count > 0)
                             {
@@ -1359,11 +1362,11 @@ WHERE changed_on >= ?lastChange";
                                 moduleId = entityDataTable.Rows[0].Field<int>("moduleid");
                             }
 
-                            items.Add(conflict.Id, (title, entityType, moduleId));
+                            items.Add(conflict.ObjectId, (title, entityType, moduleId));
                         }
 
-                        conflict.Title = items[conflict.Id].Title;
-                        conflict.Type = items[conflict.Id].EntityType;
+                        conflict.Title = items[conflict.ObjectId].Title;
+                        conflict.Type = items[conflict.ObjectId].EntityType;
                         
                         // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
                         if (!mergeBranchSettings.Entities.Any(x => String.Equals(x.Type, conflict.Type, StringComparison.OrdinalIgnoreCase) && x.Update))
@@ -1372,11 +1375,11 @@ WHERE changed_on >= ?lastChange";
                         }
 
                         // Get the display name for the entity type.
-                        if (!entityTypeSettings.ContainsKey(items[conflict.Id].EntityType))
+                        if (!entityTypeSettings.ContainsKey(items[conflict.ObjectId].EntityType))
                         {
-                            entityTypeSettings.Add(items[conflict.Id].EntityType, await wiserItemsService.GetEntityTypeSettingsAsync(items[conflict.Id].EntityType));
+                            entityTypeSettings.Add(items[conflict.ObjectId].EntityType, await wiserItemsService.GetEntityTypeSettingsAsync(items[conflict.ObjectId].EntityType));
                         }
-                        conflict.TypeDisplayName = entityTypeSettings[items[conflict.Id].EntityType].DisplayName;
+                        conflict.TypeDisplayName = entityTypeSettings[items[conflict.ObjectId].EntityType].DisplayName;
 
                         // Get the display name for the field.
                         var languageCode = dataRow.Field<string>("language_code");
@@ -1415,10 +1418,10 @@ WHERE changed_on >= ?lastChange";
                     case "CHANGE_LINK":
                     {
                         // Get the type number and name of the link.
-                        if (!links.ContainsKey(conflict.Id))
+                        if (!links.ContainsKey(conflict.ObjectId))
                         {
                             await using var branchCommand = branchConnection.CreateCommand();
-                            branchCommand.Parameters.AddWithValue("id", conflict.Id);
+                            branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
                             branchCommand.CommandText = $"SELECT type, item_id, destination_item_id FROM {conflict.TableName.Replace(WiserTableNames.WiserItemLinkDetail, WiserTableNames.WiserItemLink)} WHERE id = ?id";
                             var entityDataTable = new DataTable();
                             using var adapter = new MySqlDataAdapter(branchCommand);
@@ -1430,29 +1433,29 @@ WHERE changed_on >= ?lastChange";
                                 type = entityDataTable.Rows[0].Field<int>("type");
                             }
 
-                            links.Add(conflict.Id, type);
+                            links.Add(conflict.ObjectId, type);
                         }
 
                         // Get the display name for the link type.
-                        if (!linkTypeSettings.ContainsKey(links[conflict.Id]))
+                        if (!linkTypeSettings.ContainsKey(links[conflict.ObjectId]))
                         {
-                            var settings = await wiserItemsService.GetLinkTypeSettingsAsync(links[conflict.Id]);
+                            var settings = await wiserItemsService.GetLinkTypeSettingsAsync(links[conflict.ObjectId]);
                             if (String.IsNullOrWhiteSpace(settings.Name))
                             {
-                                settings.Name = links[conflict.Id].ToString();
+                                settings.Name = links[conflict.ObjectId].ToString();
                             }
 
-                            linkTypeSettings.Add(links[conflict.Id], settings);
+                            linkTypeSettings.Add(links[conflict.ObjectId], settings);
                         }
                         
                         // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
-                        if (!mergeBranchSettings.Entities.Any(x => (String.Equals(x.Type, linkTypeSettings[links[conflict.Id]].SourceEntityType, StringComparison.OrdinalIgnoreCase) || String.Equals(x.Type, linkTypeSettings[links[conflict.Id]].DestinationEntityType, StringComparison.OrdinalIgnoreCase)) && x.Update))
+                        if (!mergeBranchSettings.Entities.Any(x => (String.Equals(x.Type, linkTypeSettings[links[conflict.ObjectId]].SourceEntityType, StringComparison.OrdinalIgnoreCase) || String.Equals(x.Type, linkTypeSettings[links[conflict.ObjectId]].DestinationEntityType, StringComparison.OrdinalIgnoreCase)) && x.Update))
                         {
                             continue;
                         }
 
-                        conflict.Type = links[conflict.Id].ToString();
-                        conflict.TypeDisplayName = linkTypeSettings[links[conflict.Id]].Name;
+                        conflict.Type = links[conflict.ObjectId].ToString();
+                        conflict.TypeDisplayName = linkTypeSettings[links[conflict.ObjectId]].Name;
 
                         // Get the display name for the field.
                         var languageCode = dataRow.Field<string>("language_code");
