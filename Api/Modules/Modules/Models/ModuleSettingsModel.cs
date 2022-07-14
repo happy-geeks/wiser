@@ -40,11 +40,6 @@ namespace Api.Modules.Modules.Models
         public string Icon { get; set; }
 
         /// <summary>
-        /// Gets or sets the main color of the module.
-        /// </summary>
-        public string Color { get; set; }
-
-        /// <summary>
         /// Gets or sets the group name of the module.
         /// </summary>
         public string Group { get; set; }
