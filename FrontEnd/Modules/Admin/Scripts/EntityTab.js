@@ -1722,17 +1722,24 @@ export class EntityTab {
 
         this.entityTabStrip.wrapper.show();
         if (this.entitiesCombobox.dataItem().id) {
-            this.getEntityPropertiesOfSelected(this.entitiesCombobox.dataItem().id);
+            await this.getEntityPropertiesOfSelected(this.entitiesCombobox.dataItem().id);
         }
 
         // set tabnames 
-        this.setTabNameDropDown();
+        await this.setTabNameDropDown();
+        
         // set properties of tab
         this.tabNameDropDownList.one("dataBound", () => {
             this.tabNameDropDownList.select((dataItem) => {
                 return dataItem.tabName === "Gegevens";
             });
         });
+
+        // Refresh code mirrors, otherwise they won't work properly because they were invisible when they were initialized.
+        this.queryAfterInsert.refresh();
+        this.queryAfterUpdate.refresh();
+        this.queryBeforeUpdate.refresh();
+        this.queryBeforeDelete.refresh();
     }
 
     async setTabNameDropDown() {
@@ -1793,8 +1800,19 @@ export class EntityTab {
             this.isSaveSelect = false;
             this.lastSelectedProperty = index;
             this.lastSelectedTabname = selectedTabname;
-            this.getEntityFieldPropertiesOfSelected(dataItem.id, selectedEntityName, selectedTabname);
+            await this.getEntityFieldPropertiesOfSelected(dataItem.id, selectedEntityName, selectedTabname);
         }
+
+        // Refresh code mirror isntances, otherwise they won't work properly because they were initialized while they were invisible.
+        this.cssField.refresh();
+        this.scriptField.refresh();
+        this.jsonField.refresh();
+        this.queryField.refresh();
+        this.queryFieldSubEntities.refresh();
+        this.queryDeleteField.refresh();
+        this.queryInsertField.refresh();
+        this.queryUpdateField.refresh();
+        this.queryContentField.refresh();
     }
 
     async getEntityPropertiesOfSelected(id) {
