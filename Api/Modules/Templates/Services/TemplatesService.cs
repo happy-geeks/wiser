@@ -45,6 +45,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
 using NUglify;
@@ -75,11 +76,12 @@ namespace Api.Modules.Templates.Services
         private readonly IObjectsService objectsService;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<TemplatesService> logger;
+        private readonly GclSettings gclSettings;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IOptions<GclSettings> gclSettings)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -96,6 +98,7 @@ namespace Api.Modules.Templates.Services
             this.objectsService = objectsService;
             this.databaseHelpersService = databaseHelpersService;
             this.logger = logger;
+            this.gclSettings = gclSettings.Value;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -3288,6 +3291,9 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             {
                 httpContextAccessor.HttpContext.Items.Add(Constants.WiserUriOverrideForReplacements, requestModel.Url);
             }
+
+            // Force the GCL environment to development, so that it will always use the latest versions of templates and dynamic components.
+            gclSettings.Environment = Environments.Development;
         }
 
         /// <summary>
