@@ -559,7 +559,6 @@ namespace Api.Modules.Modules.Services
             result.CountQuery = dataTable.Rows[0].Field<string>("count_query");
             result.Name = dataTable.Rows[0].Field<string>("name");
             result.Icon = dataTable.Rows[0].Field<string>("icon");
-            result.Color = dataTable.Rows[0].Field<string>("color");
             result.Type = dataTable.Rows[0].Field<string>("type");
             result.Group = dataTable.Rows[0].Field<string>("group");
 
@@ -647,7 +646,6 @@ namespace Api.Modules.Modules.Services
             clientDatabaseConnection.AddParameter("options", moduleSettingsModel.Options.ToString());
             clientDatabaseConnection.AddParameter("name", moduleSettingsModel.Name);
             clientDatabaseConnection.AddParameter("icon", moduleSettingsModel.Icon);
-            clientDatabaseConnection.AddParameter("color", moduleSettingsModel.Color);
             clientDatabaseConnection.AddParameter("type", moduleSettingsModel.Type);
             clientDatabaseConnection.AddParameter("group", moduleSettingsModel.Group);
 
