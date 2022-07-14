@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
@@ -50,7 +51,12 @@ public class DashboardService : IDashboardService, IScopedService
             {
                 // Get data from all branches.
                 var sources = new List<DashboardDataModel>();
-                foreach (var tempBranchId in branchesData.ModelObject.Select(b => b.Id))
+
+                // 0 is main branch. It's not included in the branchesData, so add it manually.
+                var branchIds = new List<int> { 0 };
+                branchIds.AddRange(branchesData.ModelObject.Select(b => b.Id));
+
+                foreach (var tempBranchId in branchIds)
                 {
                     // Recursively call this function with the branch ID.
                     sources.Add((await GetDataAsync(identity, periodFrom, periodTo, tempBranchId, forceRefresh)).ModelObject);
@@ -85,6 +91,18 @@ public class DashboardService : IDashboardService, IScopedService
 
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
+        if (!String.IsNullOrWhiteSpace(databaseName))
+        {
+            if (!await databaseHelpersService.DatabaseExistsAsync(databaseName))
+            {
+                return new ServiceResult<DashboardDataModel>
+                {
+                    ModelObject = null,
+                    StatusCode = HttpStatusCode.NotFound
+                };
+            }
+        }
+
         if (!periodFrom.HasValue && !periodTo.HasValue)
         {
             await EnsureTableAsync(databaseName);
@@ -118,16 +136,25 @@ public class DashboardService : IDashboardService, IScopedService
                 ? Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, List<ItemsCountModel>>>(rawItemsData)
                 : new Dictionary<string, List<ItemsCountModel>>();
 
+            var userLoginTimeTop10 = wiserStatsData.Rows[0].Field<TimeSpan>("user_login_time_top10");
+            var userLoginTimeOther = wiserStatsData.Rows[0].Field<TimeSpan>("user_login_time_other");
+
             result.Items = itemsData ?? new Dictionary<string, List<ItemsCountModel>>();
             result.UserLoginCountTop10 = wiserStatsData.Rows[0].Field<int>("user_login_count_top10");
             result.UserLoginCountOther = wiserStatsData.Rows[0].Field<int>("user_login_count_other");
-            result.UserLoginTimeTop10 = wiserStatsData.Rows[0].Field<TimeSpan>("user_login_time_top10");
-            result.UserLoginTimeOther = wiserStatsData.Rows[0].Field<TimeSpan>("user_login_time_other");
+            result.UserLoginTimeTop10 = (int) Math.Round(userLoginTimeTop10.TotalSeconds);
+            result.UserLoginTimeOther = (int) Math.Round(userLoginTimeOther.TotalSeconds);
         }
         else
         {
             // Use fresh data.
             result.Items = await GetItemsCountAsync(periodFrom, periodTo, databaseName);
+
+            var userData = await GetUserDataAsync(periodFrom, periodTo, databaseName);
+            result.UserLoginCountTop10 = userData.UserLoginCountTop10;
+            result.UserLoginCountOther = userData.UserLoginCountOther;
+            result.UserLoginTimeTop10 = (int) Math.Round(userData.UserLoginTimeTop10.TotalSeconds);
+            result.UserLoginTimeOther = (int) Math.Round(userData.UserLoginTimeOther.TotalSeconds);
         }
 
         // Limit the item counts to the highest 8.
@@ -168,11 +195,16 @@ public class DashboardService : IDashboardService, IScopedService
     /// <param name="result"></param>
     /// <param name="collectionName"></param>
     /// <param name="itemsCountList"></param>
-    private static void AddItemCountsToResult(IReadOnlyDictionary<string, List<ItemsCountModel>> result, string collectionName, List<ItemsCountModel> itemsCountList)
+    private static void AddItemCountsToResult(Dictionary<string, List<ItemsCountModel>> result, string collectionName, List<ItemsCountModel> itemsCountList)
     {
+        if (!result.ContainsKey(collectionName))
+        {
+            result.Add(collectionName, new List<ItemsCountModel>());
+        }
+
         foreach (var itemsCount in itemsCountList)
         {
-            var currentItemsCount = result[collectionName].SingleOrDefault(i => i.Name == itemsCount.Name);
+            var currentItemsCount = result[collectionName].SingleOrDefault(i => i.EntityName == itemsCount.EntityName);
             if (currentItemsCount == null)
             {
                 result[collectionName].Add(itemsCount);
@@ -185,6 +217,14 @@ public class DashboardService : IDashboardService, IScopedService
         }
     }
 
+    /// <summary>
+    /// Retrieves the amount of items, optionally filtered on a period.
+    /// </summary>
+    /// <param name="itemsDataPeriodFilterType">The filter type. Only works if <paramref name="periodFrom"/> and <paramref name="periodTo"/> are set.</param>
+    /// <param name="periodFrom">From which moment the items should be counted.</param>
+    /// <param name="periodTo">To which moment the items should be counted.</param>
+    /// <param name="databaseName">The name of a branch database that should be looked in. Can be empty to use current branch.</param>
+    /// <returns>A list of all items and the amount of those items that exist.</returns>
     private async Task<List<ItemsCountModel>> GetItemsCountWithFilterAsync(ItemsDataPeriodFilterTypes itemsDataPeriodFilterType, DateTime? periodFrom = null, DateTime? periodTo = null, string databaseName = null)
     {
         var databasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
@@ -217,41 +257,128 @@ public class DashboardService : IDashboardService, IScopedService
                 {
                     if (periodFrom.HasValue)
                     {
-                        whereParts.Add($"`{columnName}` >= '{periodFrom.Value:yyyy-MM-dd} 00:00:00'");
+                        clientDatabaseConnection.AddParameter("periodFrom", periodFrom.Value);
+                        whereParts.Add($"`{columnName}` >= ?periodFrom");
                     }
 
                     if (periodTo.HasValue)
                     {
-                        whereParts.Add($"`{columnName}` <= '{periodTo.Value:yyyy-MM-dd} 23:59:59'");
+                        clientDatabaseConnection.AddParameter("periodTo", periodTo.Value.AddDays(1).AddSeconds(-1));
+                        whereParts.Add($"`{columnName}` <= ?periodTo");
                     }
                 }
             }
 
             var wherePart = whereParts.Count > 0 ? $" WHERE {String.Join(" AND ", whereParts)}" : String.Empty;
 
-            var itemsCountData = await clientDatabaseConnection.GetAsync($"SELECT entity_type, COUNT(*) AS cnt FROM {databasePart}`{prefix}{WiserTableNames.WiserItem}`{wherePart} GROUP BY entity_type");
-            entities.AddRange(itemsCountData.Rows.Cast<DataRow>().Select(entityDataRow => new ItemsCountModel
+            var itemsTableName = $"{prefix}{WiserTableNames.WiserItem}";
+            if (await databaseHelpersService.TableExistsAsync(itemsTableName, databaseName))
             {
-                Name = entityDataRow.Field<string>("entity_type"),
-                AmountOfItems = Convert.ToInt32(entityDataRow["cnt"])
-            }));
+                var itemsCountData = await clientDatabaseConnection.GetAsync($"SELECT entity_type, COUNT(*) AS cnt FROM {databasePart}`{itemsTableName}`{wherePart} GROUP BY entity_type");
+                entities.AddRange(itemsCountData.Rows.Cast<DataRow>().Select(entityDataRow => new ItemsCountModel
+                {
+                    EntityName = entityDataRow.Field<string>("entity_type"),
+                    AmountOfItems = Convert.ToInt32(entityDataRow["cnt"])
+                }));
+            }
 
             // Also retrieved archived item count.
-            var archiveUsageData = await clientDatabaseConnection.GetAsync($"SELECT entity_type, COUNT(*) AS cnt FROM {databasePart}`{prefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix}`{wherePart} GROUP BY entity_type");
-            foreach (var entityDataRow in archiveUsageData.Rows.Cast<DataRow>())
+            var itemsArchiveTableName = $"{prefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix}";
+            if (await databaseHelpersService.TableExistsAsync(itemsArchiveTableName, databaseName))
             {
-                var name = entityDataRow.Field<string>("entity_type");
-                var entity = entities.FirstOrDefault(e => e.Name.Equals(name));
-                if (entity == null)
+                // Only the entity types of the regular count need to be counted, so create a filter to be used in the WHERE part.
+                var entityTypesForFilter = entities.Select(e => e.EntityName).ToArray();
+                var entityTypeFilter = new StringBuilder();
+                entityTypeFilter.Append("entity_type IN (");
+                for (var i = 0; i < entityTypesForFilter.Length; i++)
                 {
-                    continue;
+                    clientDatabaseConnection.AddParameter($"entity_type{i}", entityTypesForFilter[i]);
+                    entityTypeFilter.Append($"?entity_type{i}");
+                    if (i < entityTypesForFilter.Length - 1)
+                    {
+                        entityTypeFilter.Append(", ");
+                    }
                 }
+                entityTypeFilter.Append(")");
+                whereParts.Add(entityTypeFilter.ToString());
+                
+                // Update the wherePart string.
+                wherePart = whereParts.Count > 0 ? $" WHERE {String.Join(" AND ", whereParts)}" : String.Empty;
 
-                entity.AmountOfArchivedItems = Convert.ToInt32(entityDataRow["cnt"]);
+                var archiveUsageData = await clientDatabaseConnection.GetAsync($"SELECT entity_type, COUNT(*) AS cnt FROM {databasePart}`{itemsArchiveTableName}`{wherePart} GROUP BY entity_type");
+                foreach (var entityDataRow in archiveUsageData.Rows.Cast<DataRow>())
+                {
+                    var name = entityDataRow.Field<string>("entity_type");
+                    var entity = entities.FirstOrDefault(e => e.EntityName.Equals(name));
+                    if (entity == null)
+                    {
+                        continue;
+                    }
+
+                    entity.AmountOfArchivedItems = Convert.ToInt32(entityDataRow["cnt"]);
+                }
             }
         }
 
         return entities;
+    }
+
+    private async Task<(int UserLoginCountTop10, int UserLoginCountOther, TimeSpan UserLoginTimeTop10, TimeSpan UserLoginTimeOther)> GetUserDataAsync(DateTime? periodFrom = null, DateTime? periodTo = null, string databaseName = null)
+    {
+        var databasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
+
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+        // Create the WHERE part of the query. This is for the period filter.
+        var whereParts = new List<string>();
+        if (periodFrom.HasValue || periodTo.HasValue)
+        {
+            if (periodFrom.HasValue)
+            {
+                clientDatabaseConnection.AddParameter("periodFrom", periodFrom.Value);
+                whereParts.Add($"`added_on` >= ?periodFrom");
+            }
+
+            if (periodTo.HasValue)
+            {
+                clientDatabaseConnection.AddParameter("periodTo", periodTo.Value.AddDays(1).AddSeconds(-1));
+                whereParts.Add($"`added_on` <= ?periodTo");
+            }
+        }
+
+        var wherePart = whereParts.Count > 0 ? $" WHERE {String.Join(" AND ", whereParts)}" : String.Empty;
+
+        // Retrieve user login count data.
+        var userLoginCountData = await clientDatabaseConnection.GetAsync($@"
+            SELECT user_id, COUNT(*) AS login_count
+            FROM {databasePart}wiser_login_log
+            {wherePart}
+            GROUP BY user_id
+            ORDER BY login_count DESC");
+
+        // Turn data rows into a list of counts.
+        var loginCounts = userLoginCountData.Rows.Cast<DataRow>().Select(dr => Convert.ToInt32(dr["login_count"])).ToList();
+        var loginCountTop10 = loginCounts.Take(10).Sum();
+        var loginCountOther = loginCounts.Count > 10 ? loginCounts.Skip(10).Sum() : 0;
+
+        // Retrieve user login time active data.
+        var userLoginTimeData = await clientDatabaseConnection.GetAsync($@"
+            SELECT user_id, SEC_TO_TIME(SUM(TIME_TO_SEC(time_active))) AS time_active
+            FROM {databasePart}wiser_login_log
+            {wherePart}
+            GROUP BY user_id
+            ORDER BY TIME_TO_SEC(time_active) DESC");
+
+        // Initialize two TimeSpans.
+        var timeActiveTop10 = TimeSpan.Zero;
+        var timeActiveOther = TimeSpan.Zero;
+
+        // Turn the data rows into a list of TimeSpans.
+        var timeSpans = userLoginTimeData.Rows.Cast<DataRow>().Select(dr => dr.Field<TimeSpan>("time_active")).ToList();
+        timeActiveTop10 = timeSpans.Take(10).Aggregate(timeActiveTop10, (current, timeSpan) => current.Add(timeSpan));
+        timeActiveOther = timeSpans.Count > 10 ? timeSpans.Skip(10).Aggregate(timeActiveOther, (current, timeSpan) => current.Add(timeSpan)) : TimeSpan.Zero;
+
+        return (loginCountTop10, loginCountOther, timeActiveTop10, timeActiveOther);
     }
 
     /// <summary>
@@ -272,14 +399,31 @@ public class DashboardService : IDashboardService, IScopedService
         var collectionChanged = ItemsDataPeriodFilterTypes.Changed.ToString("G");
         foreach (var source in sources)
         {
-            AddItemCountsToResult(result.Items, collectionAll, source.Items[collectionAll]);
-            AddItemCountsToResult(result.Items, collectionNewlyCreated, source.Items[collectionNewlyCreated]);
-            AddItemCountsToResult(result.Items, collectionChanged, source.Items[collectionChanged]);
+            // A source can be null if a branch database doesn't exist.
+            if (source == null)
+            {
+                continue;
+            }
+
+            if (source.Items.ContainsKey(collectionAll))
+            {
+                AddItemCountsToResult(result.Items, collectionAll, source.Items[collectionAll]);
+            }
+
+            if (source.Items.ContainsKey(collectionNewlyCreated))
+            {
+                AddItemCountsToResult(result.Items, collectionNewlyCreated, source.Items[collectionNewlyCreated]);
+            }
+
+            if (source.Items.ContainsKey(collectionChanged))
+            {
+                AddItemCountsToResult(result.Items, collectionChanged, source.Items[collectionChanged]);
+            }
 
             result.UserLoginCountTop10 += source.UserLoginCountTop10;
             result.UserLoginCountOther += source.UserLoginCountOther;
-            result.UserLoginTimeTop10 = result.UserLoginTimeTop10.Add(source.UserLoginTimeTop10);
-            result.UserLoginTimeOther = result.UserLoginTimeOther.Add(source.UserLoginTimeOther);
+            result.UserLoginTimeTop10 = result.UserLoginTimeTop10 += source.UserLoginTimeTop10;
+            result.UserLoginTimeOther = result.UserLoginTimeOther += source.UserLoginTimeOther;
         }
 
         return result;
@@ -323,7 +467,8 @@ public class DashboardService : IDashboardService, IScopedService
                 new("id", MySqlDbType.UInt64, notNull: true, isPrimaryKey: true, autoIncrement: true),
                 new("user_id", MySqlDbType.UInt64, notNull: true),
                 new("time_active", MySqlDbType.Time, notNull: true, defaultValue: "00:00:00"),
-                new("added_on", MySqlDbType.DateTime, notNull: true)
+                new("added_on", MySqlDbType.DateTime, notNull: true),
+                new("time_active_changed_on", MySqlDbType.DateTime, notNull: true, comment: "The last time the time_active field was updated.")
             },
             Indexes = new List<IndexSettingsModel>
             {   // TODO: Use WiserTableNames
@@ -356,11 +501,19 @@ public class DashboardService : IDashboardService, IScopedService
             itemsData[key] = itemsData[key].OrderByDescending(i => i.AmountOfItems).Take(8).ToList();
         }
 
-        // TODO: add user login count and user login times.
+        // Retrieve user data.
+        var userData = await GetUserDataAsync(databaseName: databaseName);
+
+        // Clear old data first.
+        await clientDatabaseConnection.ExecuteAsync($"TRUNCATE TABLE {databasePart}wiser_dashboard");
 
         clientDatabaseConnection.ClearParameters();
         clientDatabaseConnection.AddParameter("last_update", DateTime.Now);
         clientDatabaseConnection.AddParameter("items_data", Newtonsoft.Json.JsonConvert.SerializeObject(itemsData));
-        await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {databasePart}wiser_dashboard (last_update, items_data) VALUES (?last_update, ?items_data)");
+        clientDatabaseConnection.AddParameter("user_login_count_top10", userData.UserLoginCountTop10);
+        clientDatabaseConnection.AddParameter("user_login_count_other", userData.UserLoginCountOther);
+        clientDatabaseConnection.AddParameter("user_login_time_top10", userData.UserLoginTimeTop10);
+        clientDatabaseConnection.AddParameter("user_login_time_other", userData.UserLoginTimeOther);
+        await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {databasePart}wiser_dashboard (last_update, items_data, user_login_count_top10, user_login_count_other, user_login_time_top10, user_login_time_other) VALUES (?last_update, ?items_data, ?user_login_count_top10, ?user_login_count_other, ?user_login_time_top10, ?user_login_time_other)");
     }
 }

@@ -121,7 +121,8 @@ namespace Api.Core.Services
                 {"lastLoginDate", (loginResult.ModelObject.LastLoginDate ?? DateTime.Now).ToString("dd-MM-yyyy HH:mm:ss")},
                 {"oldStyleUserId", loginResult.ModelObject.Id.ToString().EncryptWithAesWithSalt()},
                 {"cookieValue", loginResult.ModelObject.CookieValue},
-                {"requirePasswordChange", loginResult.ModelObject.RequirePasswordChange }
+                {"requirePasswordChange", loginResult.ModelObject.RequirePasswordChange},
+                {"encryptedLoginLogId", loginResult.ModelObject.EncryptedLoginLogId}
             };
             
             if (adminAccountId > 0)

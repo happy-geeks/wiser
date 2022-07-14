@@ -34,14 +34,15 @@ public class DashboardController : ControllerBase
     /// <summary>
     /// Retrieve dashboard data.
     /// </summary>
-    /// <param name="periodFrom"></param>
-    /// <param name="periodTo"></param>
-    /// <param name="branchId"></param>
-    /// <returns></returns>
+    /// <param name="periodFrom">The minimum <see cref="DateTime"/> of the data.</param>
+    /// <param name="periodTo">The maximum <see cref="DateTime"/> of the data.</param>
+    /// <param name="branchId">Which branch should be used. A value of 0 means current branch, and -1 means all branches.</param>
+    /// <param name="forceRefresh">Whether the data should be refreshed instead of cached data being used.</param>
+    /// <returns>A <see cref="DashboardDataModel"/> object.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(DashboardDataModel), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Get([FromQuery]DateTime? periodFrom = null, [FromQuery]DateTime? periodTo = null, [FromQuery]int branchId = 0)
+    public async Task<IActionResult> Get([FromQuery]DateTime? periodFrom = null, [FromQuery]DateTime? periodTo = null, [FromQuery]int branchId = 0, [FromQuery]bool forceRefresh = false)
     {
-        return (await dashboardService.GetDataAsync((ClaimsIdentity)User.Identity, periodFrom, periodTo, branchId)).GetHttpResponseMessage();
+        return (await dashboardService.GetDataAsync((ClaimsIdentity)User.Identity, periodFrom, periodTo, branchId, forceRefresh)).GetHttpResponseMessage();
     }
 }

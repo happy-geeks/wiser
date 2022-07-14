@@ -21,12 +21,12 @@ public class DashboardDataModel
     public int UserLoginCountOther { get; set; }
 
     /// <summary>
-    /// Gets or sets the amount of time the top 10 users have spent logged in.
+    /// Gets or sets the amount of time in seconds the top 10 users have spent logged in.
     /// </summary>
-    public TimeSpan UserLoginTimeTop10 { get; set; }
+    public int UserLoginTimeTop10 { get; set; }
 
     /// <summary>
-    /// Gets or sets the amount of time all other users have spent logged in (users that aren't in the top 10).
+    /// Gets or sets the amount of time in seconds all other users have spent logged in (users that aren't in the top 10).
     /// </summary>
-    public TimeSpan UserLoginTimeOther { get; set; }
+    public int UserLoginTimeOther { get; set; }
 }

@@ -8,6 +8,7 @@ require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 import "../../../Core/Scss/fonts.scss"; // TEMP
 import "../../../Core/Scss/icons.scss"; // TEMP
 import "../css/Dashboard.scss";
+import login from "../../../Core/Scripts/components/login";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -105,69 +106,27 @@ const moduleSettings = {
         }
 
         setBindings() {
-            const buttons = Array.from(document.getElementById("typeFilterButtons").querySelectorAll("button"));
-            buttons.forEach((button) => {
+            const itemsTypeFilterButtons = Array.from(document.getElementById("itemsTypeFilterButtons").querySelectorAll("button"));
+            itemsTypeFilterButtons.forEach((button) => {
                 button.addEventListener("click", (event) => {
-                    buttons.filter((btn) => btn !== event.currentTarget).forEach((btn) => btn.classList.remove("selected"));
+                    itemsTypeFilterButtons.filter((btn) => btn !== event.currentTarget).forEach((btn) => btn.classList.remove("selected"));
                     event.currentTarget.classList.add("selected");
 
                     this.updateItemsDataChart();
                 });
             });
 
-            $("#periodFilter").getKendoDropDownList().bind("change", async (event) => {
-                const currentDate = new Date();
-                const value = event.sender.value();
-                let range = null;
-                let readonly = true;
-                let updateData = true;
-                switch (value) {
-                    case "currentMonth":
-                        range = {
-                            start: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1),
-                            end: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
-                        };
-                        range.end.setDate(range.end.getDate() - 1);
-                        break;
-                    case "lastMonth":
-                        range = {
-                            start: new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1),
-                            end: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-                        };
-                        range.end.setDate(range.end.getDate() - 1);
-                        break;
-                    case "currentYear":
-                        range = {
-                            start: new Date(currentDate.getFullYear(), 0, 1),
-                            end: new Date(currentDate.getFullYear() + 1, 0, 1)
-                        };
-                        range.end.setDate(range.end.getDate() - 1);
-                        break;
-                    case "lastYear":
-                        range = {
-                            start: new Date(currentDate.getFullYear() - 1, 0, 1),
-                            end: new Date(currentDate.getFullYear(), 0, 1)
-                        };
-                        range.end.setDate(range.end.getDate() - 1);
-                        break;
-                    case "custom":
-                        readonly = false;
-                        updateData = false;
-                        break;
-                }
+            const userDataTypeFilterButtons = Array.from(document.getElementById("userDataTypeFilterButtons").querySelectorAll("button"));
+            userDataTypeFilterButtons.forEach((button) => {
+                button.addEventListener("click", (event) => {
+                    userDataTypeFilterButtons.filter((btn) => btn !== event.currentTarget).forEach((btn) => btn.classList.remove("selected"));
+                    event.currentTarget.classList.add("selected");
 
-                const periodPicker = $("#periodPicker").getKendoDateRangePicker();
-                if (range !== null) {
-                    periodPicker.range(range);
-                }
-                periodPicker.readonly(readonly);
-
-                if (updateData) {
-                    window.processing.addProcess("dataUpdate");
-                    await this.updateData();
-                    window.processing.removeProcess("dataUpdate");
-                }
+                    this.updateUserDataChart();
+                });
             });
+
+            $("#periodFilter").getKendoDropDownList().bind("change", this.onPeriodFilterChange.bind(this));
 
             $("#periodPicker").getKendoDateRangePicker().bind("change", async () => {
                 window.processing.addProcess("dataUpdate");
@@ -179,6 +138,17 @@ const moduleSettings = {
                 window.processing.addProcess("dataUpdate");
                 await this.updateData();
                 window.processing.removeProcess("dataUpdate");
+            });
+
+            document.getElementById("refreshDataButton").addEventListener("click", () => {
+                Wiser2.showConfirmDialog("Weet u zeker dat u de data wilt verversen? Dit is mogelijk een zware belasting op de database.",
+                    "Verversen",
+                    "Annuleren",
+                    "Verversen").then(async () => {
+                    window.processing.addProcess("dataUpdate");
+                    await this.updateData(true);
+                    window.processing.removeProcess("dataUpdate");
+                });
             });
         }
 
@@ -358,11 +328,11 @@ const moduleSettings = {
                         startAngle: 90,
                         data: [{
                             category: "Rest",
-                            value: 56,
+                            value: 0,
                             color: "#2ECC71"
                         }, {
                             category: "Top 10 gebruikers",
-                            value: 44,
+                            value: 0,
                             color: "#FF6800"
                         }]
                     }],
@@ -439,8 +409,6 @@ const moduleSettings = {
                 };
             }));
 
-            console.log("dataSource", dataSource);
-
             const branchesSelect = $("#branchesSelect").getKendoDropDownList();
             branchesSelect.setDataSource(dataSource);
 
@@ -451,7 +419,7 @@ const moduleSettings = {
         /**
          * Retrieves data from the server.
          */
-        async updateData() {
+        async updateData(forceRefresh = false) {
             const dateRange = $("#periodPicker").getKendoDateRangePicker().range();
 
             let periodFrom = null;
@@ -470,6 +438,9 @@ const moduleSettings = {
             if (periodTo !== null) {
                 getParameters.periodTo = periodTo;
             }
+            if (forceRefresh) {
+                getParameters.forceRefresh = forceRefresh;
+            }
 
             const data = await Wiser2.api({
                 url: `${this.settings.wiserApiRoot}dashboard`,
@@ -482,11 +453,59 @@ const moduleSettings = {
             // Update entity usage.
             this.itemsData = data.items;
             this.updateItemsDataChart();
+
+            // Update user data.
+            const loginCountTotal = data.userLoginCountTop10 + data.userLoginCountOther;
+            let loginCountTop10Percentage = 0;
+            let loginCountOtherPercentage = 0;
+
+            if (loginCountTotal > 0) {
+                loginCountTop10Percentage = Math.round(((data.userLoginCountTop10 / loginCountTotal) * 100) * 10) / 10;
+                loginCountOtherPercentage = 100 - loginCountTop10Percentage;
+            }
+
+            const loginTimeTotal = data.userLoginTimeTop10 + data.userLoginTimeOther;
+            let loginTimeTop10Percentage = 0;
+            let loginTimeOtherPercentage = 0;
+
+            if (loginTimeTotal > 0) {
+                loginTimeTop10Percentage = Math.round(((data.userLoginTimeTop10 / loginTimeTotal) * 100) * 10) / 10;
+                loginTimeOtherPercentage = 100 - loginTimeTop10Percentage;
+            }
+
+            this.userData = {
+                loginCount: [
+                    {
+                        category: "Rest",
+                        value: loginCountOtherPercentage,
+                        color: "#2ECC71"
+                    },
+                    {
+                        category: "Top 10 gebruikers",
+                        value: loginCountTop10Percentage,
+                        color: "#FF6800"
+                    }
+                ],
+                loginTime: [
+                    {
+                        category: "Rest",
+                        value: loginTimeOtherPercentage,
+                        color: "#2ECC71"
+                    },
+                    {
+                        category: "Top 10 gebruikers",
+                        value: loginTimeTop10Percentage,
+                        color: "#FF6800"
+                    }
+                ]
+            };
+
+            this.updateUserDataChart();
         }
 
         updateItemsDataChart() {
-            const filter = document.getElementById("typeFilterButtons").querySelector("button.selected").dataset.filter;
-            const categories = this.itemsData[filter].map(e => e.name);
+            const filter = document.getElementById("itemsTypeFilterButtons").querySelector("button.selected").dataset.filter;
+            const categories = this.itemsData[filter].map(e => e.entityName);
 
             const dataChart = $("#data-chart").getKendoChart();
             dataChart.setOptions({
@@ -495,6 +514,66 @@ const moduleSettings = {
                 }
             });
             dataChart.setDataSource(this.itemsData[filter]);
+        }
+
+        updateUserDataChart() {
+            const filter = document.getElementById("userDataTypeFilterButtons").querySelector("button.selected").dataset.filter;
+            const usersChart = $("#users-chart").getKendoChart();
+            usersChart.findSeriesByIndex(0).data(this.userData[filter]);
+        }
+
+        async onPeriodFilterChange(event) {
+            const currentDate = new Date();
+            const value = event.sender.value();
+            let range = null;
+            let readonly = true;
+            let updateData = true;
+            switch (value) {
+                case "currentMonth":
+                    range = {
+                        start: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1),
+                        end: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+                    };
+                    range.end.setDate(range.end.getDate() - 1);
+                    break;
+                case "lastMonth":
+                    range = {
+                        start: new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1),
+                        end: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+                    };
+                    range.end.setDate(range.end.getDate() - 1);
+                    break;
+                case "currentYear":
+                    range = {
+                        start: new Date(currentDate.getFullYear(), 0, 1),
+                        end: new Date(currentDate.getFullYear() + 1, 0, 1)
+                    };
+                    range.end.setDate(range.end.getDate() - 1);
+                    break;
+                case "lastYear":
+                    range = {
+                        start: new Date(currentDate.getFullYear() - 1, 0, 1),
+                        end: new Date(currentDate.getFullYear(), 0, 1)
+                    };
+                    range.end.setDate(range.end.getDate() - 1);
+                    break;
+                case "custom":
+                    readonly = false;
+                    updateData = false;
+                    break;
+            }
+
+            const periodPicker = $("#periodPicker").getKendoDateRangePicker();
+            if (range !== null) {
+                periodPicker.range(range);
+            }
+            periodPicker.readonly(readonly);
+
+            if (updateData) {
+                window.processing.addProcess("dataUpdate");
+                await this.updateData();
+                window.processing.removeProcess("dataUpdate");
+            }
         }
     }
 

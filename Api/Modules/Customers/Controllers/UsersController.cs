@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -148,13 +149,25 @@ namespace Api.Modules.Customers.Controllers
         /// <summary>
         /// Updates the time the current user has been active in Wiser.
         /// </summary>
-        /// <param name="encryptedLogId"></param>
+        /// <param name="encryptedLoginLogId">The encrypted ID of the log table.</param>
         [HttpPut]
         [Route("update-active-time")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> UpdateUserActiveTimeAsync([FromQuery]string encryptedLogId)
+        [ProducesResponseType(typeof(TimeSpan), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateUserActiveTimeAsync([FromQuery]string encryptedLoginLogId)
         {
-            return (await usersService.UpdateUserTimeActiveAsync((ClaimsIdentity)User.Identity, encryptedLogId)).GetHttpResponseMessage();
+            return (await usersService.UpdateUserTimeActiveAsync((ClaimsIdentity)User.Identity, encryptedLoginLogId)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Updates the time the current user has been active in Wiser.
+        /// </summary>
+        /// <param name="encryptedLoginLogId">The encrypted ID of the log table.</param>
+        [HttpPut]
+        [Route("reset-time-active-changed")]
+        [ProducesResponseType(typeof(TimeSpan), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ResetTimeActiveChangedAsync([FromQuery]string encryptedLoginLogId)
+        {
+            return (await usersService.UpdateUserTimeActiveAsync((ClaimsIdentity)User.Identity, encryptedLoginLogId)).GetHttpResponseMessage();
         }
     }
 }

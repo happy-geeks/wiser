@@ -5,7 +5,7 @@ public class ItemsCountModel
     /// <summary>
     /// Gets or sets the name of the entity. This will be the friendly name if the entity has one.
     /// </summary>
-    public string Name { get; set; }
+    public string EntityName { get; set; }
 
     /// <summary>
     /// Gets or sets the amount of items that have this entity type.

@@ -365,9 +365,12 @@ import {
                     },
 
                     logout() {
-                        this.$store.dispatch(CLOSE_ALL_MODULES);
-                        this.$store.dispatch(AUTH_LOGOUT);
                         main.usersService.stopUpdateTimeActiveTimer();
+                        // Update the user's active time one last time.
+                        main.usersService.updateActiveTime().then(() => {
+                            this.$store.dispatch(CLOSE_ALL_MODULES);
+                            this.$store.dispatch(AUTH_LOGOUT);
+                        });
                     },
 
                     openModule(module) {

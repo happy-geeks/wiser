@@ -176,9 +176,15 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public Task<ServiceResult<TimeSpan>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLogId)
+        public Task<ServiceResult<TimeSpan>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId)
         {
-            return usersService.UpdateUserTimeActiveAsync(identity, encryptedLogId);
+            return usersService.UpdateUserTimeActiveAsync(identity, encryptedLoginLogId);
+        }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<bool>> ResetTimeActiveChangedAsync(ClaimsIdentity identity, string encryptedLoginLogId)
+        {
+            return usersService.ResetTimeActiveChangedAsync(identity, encryptedLoginLogId);
         }
     }
 }

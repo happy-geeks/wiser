@@ -62,7 +62,7 @@
                         </div>
 
                         <div class="item actions">
-                            <button type="button"><ins class="icon-reset" title="Reset"></ins></button>
+                            <button type="button"><ins class="icon-reset" title="Reset" id="refreshDataButton"></ins></button>
 
                             <ul id="mainEditMenu" class="editMenu">
                                 <li>
@@ -202,7 +202,7 @@
                         <div class="tile-content">
                             <div id="data-chart" style="width:100%"></div>
 
-                            <div class="btn-row" id="typeFilterButtons">
+                            <div class="btn-row" id="itemsTypeFilterButtons">
                                 <button type="button" role="button" aria-label="Alles" class="selected" data-filter="All">
                                     <span>Alles</span>
                                 </button>
@@ -226,11 +226,11 @@
                         <div class="tile-content">
                             <div id="users-chart" style="width:100%"></div>
 
-                            <div class="btn-row">
-                                <button type="button" role="button" aria-label="Aantal logins" class="selected">
+                            <div class="btn-row" id="userDataTypeFilterButtons">
+                                <button type="button" role="button" aria-label="Aantal logins" class="selected" data-filter="loginCount">
                                     <span>Aantal logins</span>
                                 </button>
-                                <button type="button" role="button" aria-label="Ingelogde tijd">
+                                <button type="button" role="button" aria-label="Ingelogde tijd" data-filter="loginTime">
                                     <span>Ingelogde tijd</span>
                                 </button>
                             </div>
