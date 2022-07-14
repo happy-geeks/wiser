@@ -45,12 +45,16 @@ $color-failed: #E79493;
 $color-paused: #8CB3E9;
 $color-warning: #F2C89B;
 
-//// SITE VARIABLES 
+//// PROGRESS COLORS
+$color-progress-green: #2ECC71;
+$color-progress-yellow: #FFE162;
+$color-progress-orange: #FF6800;
+$color-progress-red: #CC0000;
 
+//// SITE VARIABLES
 // Base width defines the site width
 // gutter-width will be added to the total to provide spacing on the outside.
 // e.g. base-width: 1280px + gutter-width: 20px will result in a container width of 1300px
-
 $base-width: 1280px;
 
 // Gutter width defines the spacing around a colum.

@@ -238,10 +238,42 @@
                     </script>
                     <script id="subscriptions-chart-template" type="text/x-kendo-template">
                         <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
-                        <div id="subscriptions-chart" style="height:100%; width:100%"></div>
+                        <div class="tile-content">
+                            <div class="tile-row">
+                                <label>Huidige abonnement: Wiser Large.</label>
+                                <span>Prijs per maand: &euro; 75,-</span>
+                                <a href="">abonnement stopzetten?</a>
+                            </div>
+                            <div class="tile-row">
+                                <label>Aantal items:</label>
+                                <div class="progress">
+                                    <span style="width: 65%;" data-value="6.500" data-percent="65"></span>
+                                    <progress max="100" value="65" data-value="6.500" data-max="10K"></progress>
+                                </div>
+                            </div>
+                            <div class="tile-row">
+                                <label>Aantal gebruikers:</label>
+                                <button type="button" role="button" aria-label="Naar gebruikers">
+                                    <span class="k-icon k-i-hyperlink-open"></span>
+                                </button>
+                                <div class="progress">
+                                    <span style="width: 40%;" data-value="10" data-percent="40"></span>
+                                    <progress max="100" value="40" data-value="10" data-max="25"></progress>
+                                </div>
+                            </div>
+                        </div>
                     </script>
                     <script id="status-chart-template" type="text/x-kendo-template">
-                        <div id="status-chart" style="height:100%; width:100%"></div>
+                        <div class="tile-content">
+                            <a href="javascript:;" class="number-item">
+                                <ins class="icon-list"></ins>
+                                <h3>237</h3>
+                                <span>Openstaande agenderingen
+                                    <span class="k-icon k-i-hyperlink-open-sm"></span>
+                                </span>
+                            </a>
+                            <div id="status-chart" style="height:98%;width:65%;"></div>
+                        </div>
                     </script>
 
                     <!-- container grid templates -->

@@ -371,6 +371,52 @@ const moduleSettings = {
                         format: "{0}%"
                     }
                 });
+
+                // create Pie Chart
+                $("#status-chart").kendoChart({
+                    title: {
+                        text: "Openstaande agenderingen per gebruiker",
+                        visible: false
+                    },
+                    legend: {
+                        visible: false
+                    },
+                    chartArea: {
+                        background: ""
+                    },
+                    seriesDefaults: {
+                        labels: {
+                            visible: false,
+                            background: "transparent",
+                            template: "#= category #: \n #= value#%"
+                        }
+                    },
+                    series: [{
+                        type: "pie",
+                        startAngle: 90,
+                        data: [{
+                            category: "Bram",
+                            value: 26,
+                            color: "#2ECC71"
+                        }, {
+                            category: "Freek",
+                            value: 34,
+                            color: "#FFE162"
+                        }, {
+                            category: "Mandy",
+                            value: 30,
+                            color: "#FF6800"
+                        }, {
+                            category: "Paulien",
+                            value: 10,
+                            color: "#CC0000"
+                        }]
+                    }],
+                    tooltip: {
+                        visible: true,
+                        template: "#= category #: #= value#%"
+                    }
+                });
             }
 
             $(document).ready(createChart);
