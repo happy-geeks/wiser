@@ -1,4 +1,6 @@
-﻿export class RoleTab {
+﻿import {Utils} from "../../Base/Scripts/Utils";
+
+export class RoleTab {
     constructor(base) {
         this.base = base;
 
@@ -43,13 +45,7 @@
      * @param {any} permissionCode The code of the permission to add or delete
      */
     updateEntityPropertyPermissions(role, entity, permissionCode) {
-        const qs = {
-            entityId: entity,
-            roleId: role,
-            permissionCode: permissionCode
-        };
-
-        return $.get(`${this.base.settings.serviceRoot}/UPDATE_ENTITY_PROPERTY_PERMISSIONS${jjl.convert.toQueryString(qs, true)}`)
+        return $.get(`${this.base.settings.serviceRoot}/UPDATE_ENTITY_PROPERTY_PERMISSIONS?entityId=${encodeURIComponent(entity)}&roleId=${encodeURIComponent(role)}&permissionCode=${encodeURIComponent(permissionCode)}`)
             .done(() => {
                 this.base.showNotification("notification", `De wijzigingen zijn opgeslagen`, "success");
             }).fail(() => {
@@ -64,13 +60,7 @@
      * @param {any} permissionCode The code of the permission to add or delete
      */
     addRemoveModuleRightAssignment(role, module, permissionCode) {
-        const qs = {
-            roleId: role,
-            moduleId: module,
-            permissionCode: permissionCode
-        };
-
-        return $.get(`${this.base.settings.serviceRoot}/UPDATE_MODULE_PERMISSION${jjl.convert.toQueryString(qs, true)}`)
+        return $.get(`${this.base.settings.serviceRoot}/UPDATE_MODULE_PERMISSION?moduleId=${encodeURIComponent(module)}&roleId=${encodeURIComponent(role)}&permissionCode=${encodeURIComponent(permissionCode)}`)
             .done(() => {
                 this.base.showNotification("notification", `De wijzigingen zijn opgeslagen.`, "success");
             }).fail(() => {
@@ -88,26 +78,26 @@
             return;
         }
 
-        const qs = {
+        const data = {
             entityName: this.entitySelected
         };
 
         let template;
         let notification;
         if (id !== 0) {
-            qs.remove = true;
+            data.remove = true;
             template = "DELETE_ROLE";
-            qs.roleId = id;
+            data.roleId = id;
             notification = "verwijderd";
         } else {
-            qs.add = true;
+            data.add = true;
             template = "INSERT_ROLE";
-            qs.displayName = name;
+            data.displayName = name;
             notification = "toegevoegd";
         }
 
         try {
-            await $.get(`${this.base.settings.serviceRoot}/${template}${jjl.convert.toQueryString(qs, true)}`);
+            await $.get(`${this.base.settings.serviceRoot}/${template}${Utils.toQueryString(data, true)}`);
 
             this.base.showNotification("notification", `Item succesvol ${notification}`, "success");
             this.roleList.dataSource.read();
@@ -244,7 +234,7 @@
         this.entityPropertiesGrid.setDataSource({
             transport: {
                 read: {
-                    url: `${this.base.settings.serviceRoot}/GET_ROLE_RIGHTS${jjl.convert.toQueryString(queryStringForEntityPropertiesGrid, true)}`
+                    url: `${this.base.settings.serviceRoot}/GET_ROLE_RIGHTS${Utils.toQueryString(queryStringForEntityPropertiesGrid, true)}`
                 }
             }
         });
@@ -377,7 +367,7 @@
         this.modulesGrid.setDataSource({
             transport: {
                 read: {
-                    url: `${this.base.settings.serviceRoot}/GET_MODULE_PERMISSIONS${jjl.convert.toQueryString(queryStringForModulesGrid, true)}`
+                    url: `${this.base.settings.serviceRoot}/GET_MODULE_PERMISSIONS${Utils.toQueryString(queryStringForModulesGrid, true)}`
                 }
             }
         });
