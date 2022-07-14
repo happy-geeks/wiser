@@ -42,6 +42,8 @@ CREATE TABLE IF NOT EXISTS `wiser_entity`  (
   `show_title_field` tinyint(1) NOT NULL DEFAULT 1,
   `friendly_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `default_ordering` enum('link_ordering','item_title') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'link_ordering',
+  `template_query` mediumtext,
+  `template_html` mediumtext,
   `save_history` tinyint(1) NOT NULL DEFAULT 1,
   `enable_multiple_environments` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Whether or not to enable multiple environments for entities of this type. This means that the test can have a different version of an item than the live for example.',
   `dedicated_table_prefix` varchar(25) NOT NULL DEFAULT '',
