@@ -106,7 +106,8 @@ export class ModuleTab {
             optionLabel: {
                 value: "",
                 text: "Maak uw keuze..."
-            }
+            },
+            template: '<ins class="#: data.value #"></ins><span>#: data.text #</span>'
         }).data("kendoComboBox");
 
         this.moduleType = $("#moduleType").kendoComboBox({
