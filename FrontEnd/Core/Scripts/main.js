@@ -461,8 +461,7 @@ import {
                         this.$refs.wiserBranchesPrompt.close();
                     },
 
-                    openMergeConflictsPrompt(event) {
-                        //event.preventDefault();
+                    openMergeConflictsPrompt() {
                         this.$refs.wiserMergeConflictsPrompt.open();
                     },
 
@@ -580,6 +579,7 @@ import {
 
                         if (!this.mergeBranchError) {
                             this.$refs.wiserMergeBranchPrompt.close();
+                            this.$refs.wiserMergeConflictsPrompt.close();
                             this.showGeneralMessagePrompt("De branch staat klaar om samengevoegd te worden. U krijgt een bericht wanneer dit voltooid is.");
                             return true;
                         }
