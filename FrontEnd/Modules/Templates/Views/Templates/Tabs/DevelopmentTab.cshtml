@@ -1,6 +1,8 @@
 ﻿@using GeeksCoreLibrary.Modules.Templates.Enums
 @model FrontEnd.Modules.Templates.Models.DevelopmentTabViewModel
 <div class="formview full developmentContainer @Model.TemplateSettings.Type.ToString()Tab">
+    <partial name="Partials/ConnectedUsers" />
+
     <partial name="Partials/PublishedEnvironments" model="@Model.TemplateSettings" />
 
     @if (Model.TemplateSettings.Type == TemplateTypes.Routine)

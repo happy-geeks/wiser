@@ -2,6 +2,7 @@
 import { Wiser2 } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import { Preview } from "./Preview.js";
+import { TemplateConnectedUsers } from "./TemplateConnectedUsers.js";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -89,6 +90,7 @@ const moduleSettings = {
             // Other.
             this.mainLoader = null;
             this.preview = new Preview(this);
+            this.connectedUsers = new TemplateConnectedUsers(this);
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -151,7 +153,6 @@ const moduleSettings = {
 
             await this.initializeKendoComponents();
             this.bindEvents();
-            window.processing.removeProcess(process);
 
             window.addEventListener("beforeunload", async (event) => {
                 if (!this.canUnloadTemplate()) {
@@ -159,6 +160,15 @@ const moduleSettings = {
                     event.returnValue = "";
                 }
             });
+            window.addEventListener("unload", async () => {
+                // Remove this user from the list.
+                await this.connectedUsers.removeUser();
+            });
+
+            // Start the Pusher connection.
+            await this.connectedUsers.init();
+
+            window.processing.removeProcess(process);
         }
 
         /**
@@ -631,6 +641,9 @@ const moduleSettings = {
 
                 await Promise.all(promises);
                 window.processing.removeProcess(process);
+
+                // Add user to the connected users (uses Pusher).
+                this.connectedUsers.switchTemplate(id);
 
                 // Only load dynamic content and previews for HTML templates.
                 const isHtmlTemplate = this.templateSettings.type.toUpperCase() === "HTML";
@@ -1434,11 +1447,19 @@ const moduleSettings = {
             document.getElementById("saveAndDeployToTestButton").addEventListener("click", this.saveTemplate.bind(this, true));
 
             document.getElementById("searchForm").addEventListener("submit", this.onSearchFormSubmit.bind(this));
-          
+
             $(".window-content #left-pane div.k-content").on("dragover", (event) => {
                 event.preventDefault();
             });
             $(".window-content #left-pane div.k-content").on("drop", this.onDropFile.bind(this));
+
+            document.addEventListener("TemplateConnectedUsers:UsersUpdate", (event) => {
+                console.log("TemplateConnectedUsers:UsersUpdate", event.detail)
+                document.querySelectorAll("div.connected-users").forEach(div => {
+                    const list = div.querySelector("div.connected-users-list");
+                    list.innerHTML = event.detail.join(", ");
+                });
+            });
         }
 
         /**
