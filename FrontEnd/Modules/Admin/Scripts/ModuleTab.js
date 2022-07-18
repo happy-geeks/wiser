@@ -19,7 +19,6 @@ export class ModuleTab {
                 this.base.openDialog("Module toevoegen", "Voer de naam in van nieuwe module").then((data) => {
                     this.addModule(data);
                 });
-
             },
             icon: "file"
         });
@@ -107,7 +106,8 @@ export class ModuleTab {
             optionLabel: {
                 value: "",
                 text: "Maak uw keuze..."
-            }
+            },
+            template: '<ins class="#: data.value #"></ins><span>#: data.text #</span>'
         }).data("kendoComboBox");
 
         this.moduleType = $("#moduleType").kendoComboBox({
@@ -135,19 +135,37 @@ export class ModuleTab {
         if (name === "") { return; }
         await Wiser2.api({
             url: `${this.base.settings.wiserApiRoot}modules/settings`,
-                contentType: "application/json; charset=utf-8",
-                dataType: "json",
-                data: JSON.stringify(name),
-                method: "POST"
-            })
-            .then((result) => {
-                this.base.showNotification("notification", `Module succesvol toegevoegd`, "success");
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify(name),
+            method: "POST"
+        }).then((result) => {
+            // Also add root entity.
+            this.addRootEntityForNewModule(result).then(() => {
+                this.base.showNotification("notification", "Module succesvol toegevoegd", "success");
                 this.getModules(true, result);
-
-            })
-            .catch(() => {
-                this.base.showNotification("notification", `Module is niet succesvol toegevoegd, probeer het opnieuw`, "error");
+                this.base.entityTab.reloadEntityList(true);
             });
+        }).catch(() => {
+            this.base.showNotification("notification", "Module is niet succesvol toegevoegd, probeer het opnieuw", "error");
+        });
+    }
+
+    /**
+     * Will add an entity type with an empty name for the newly created module, otherwise it can't be managed
+     * in the entities tab.
+     */
+    async addRootEntityForNewModule(moduleId) {
+        if (typeof moduleId !== "number" || moduleId <= 0) {
+            return;
+        }
+
+        await Wiser2.api({
+            url: `${this.base.settings.wiserApiRoot}entity-types?name=&moduleId=${moduleId}`,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            method: "POST"
+        });
     }
 
     async onModuleComboBoxSelect(event) {
@@ -244,8 +262,8 @@ export class ModuleTab {
                         this.moduleCountQuery.getValue(),
                         this.moduleOptions.getValue(),
                         document.getElementById("moduleName").value,
-                        (this.moduleIcon.dataItem()) ? this.moduleIcon.dataItem().value : "",
-                        (this.moduleType.dataItem()) ? this.moduleType.dataItem().value : "",
+                        this.moduleIcon.value(),
+                        this.moduleType.value(),
                         document.getElementById("moduleGroup").value
                     );
                     if (moduleSettingsModel.errors.length > 0) {

@@ -164,15 +164,14 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.happyEmployeeLoggedIn = user.juiceEmployeeName;
 
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiV21Root);
+            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.wiser2UserId = userData.wiser2Id;
 
-            this.settings.serviceRoot = `${this.settings.wiserApiV21Root}templates/get-and-execute-query`;
-            this.settings.getItemsUrl = `${this.settings.wiserApiV21Root}data-selectors`;
-            this.settings.wiserApiRoot = `${this.settings.wiserVersion >= 210 ? this.settings.wiserApiV21Root : this.settings.wiserApiRoot}`;
+            this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
+            this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
 
             this.moduleTab = new ModuleTab(this);
             this.entityTab = new EntityTab(this);
@@ -279,7 +278,7 @@ const moduleSettings = {
         }
 
         async saveChanges(e) {
-            if (!this.activeMainTab || this.activeMainTab === null || this.activeMainTab === "undefined") {
+            if (!this.activeMainTab || this.activeMainTab === "undefined") {
                 console.error("activeMainTab property is not set");
                 return;
             }
@@ -392,7 +391,6 @@ const moduleSettings = {
                 },
                 select: (event) => {
                     const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
-                    console.log("mainTabStrip select", tabName);
 
                     if (tabName === "query's" || tabName === "entiteiten" || tabName === "modules") {
                         $("footer").show();
@@ -403,7 +401,15 @@ const moduleSettings = {
                 activate: (event) => {
                     const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
                     admin.activeMainTab = tabName;
-                    console.log("mainTabStrip activate", tabName);
+
+                    // Refresh code mirrors in the currently activated tab.
+                    if (event.contentElement) {
+                        event.contentElement.querySelectorAll("div.CodeMirror").forEach((div) => {
+                            if (div.CodeMirror) {
+                                div.CodeMirror.refresh();
+                            }
+                        });
+                    }
                 }
             }).data("kendoTabStrip");
         }

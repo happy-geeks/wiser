@@ -23,6 +23,7 @@ using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
@@ -44,6 +45,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
 using NUglify;
@@ -74,11 +76,12 @@ namespace Api.Modules.Templates.Services
         private readonly IObjectsService objectsService;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<TemplatesService> logger;
+        private readonly GclSettings gclSettings;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IOptions<GclSettings> gclSettings)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -95,6 +98,7 @@ namespace Api.Modules.Templates.Services
             this.objectsService = objectsService;
             this.databaseHelpersService = databaseHelpersService;
             this.logger = logger;
+            this.gclSettings = gclSettings.Value;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -663,7 +667,7 @@ ORDER BY ordering ASC");
                 TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
 	entity.id,
 	IF(entity.name = '', 'ROOT', entity.name) AS name,
-	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(entity.friendly_name, IF(entity.name = '', 'ROOT', entity.name))) AS displayName 
+	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(NULLIF(entity.friendly_name, ''), IF(entity.name = '', 'ROOT', entity.name))) AS displayName 
 FROM wiser_entity AS entity
 LEFT JOIN wiser_module AS module ON module.id = entity.module_id
 ORDER BY module.name ASC, entity.module_id ASC, entity.name ASC");
@@ -2294,14 +2298,14 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId)
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
         {
             if (templateId <= 0)
             {
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var templateData = await templateDataService.GetDataAsync(templateId);
+            var templateData = await templateDataService.GetDataAsync(templateId, environment);
             var templateEnvironmentsResult = await GetTemplateEnvironmentsAsync(templateId);
             if (templateEnvironmentsResult.StatusCode != HttpStatusCode.OK)
             {
@@ -2593,7 +2597,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom)
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom, Environments? environment = null)
         {
             var templates = new List<TemplateTreeViewModel>();
             var path = startFrom.Split(',');
@@ -2606,11 +2610,11 @@ LIMIT 1";
 
                 if (templateTree.HasChildren)
                 {
-                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom)).ModelObject;
+                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom, environment)).ModelObject; 
                 }
                 else
                 {
-                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(identity, templateTree.TemplateId)).ModelObject;
+                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(identity, templateTree.TemplateId, environment)).ModelObject;
                 }
 
                 if (String.IsNullOrWhiteSpace(startFrom))
@@ -2699,22 +2703,11 @@ LIMIT 1";
             await SetupGclForPreviewAsync(identity, requestModel);
 
             outputHtml = contentToWrite.ToString();
-            if (requestModel.TemplateSettings.HandleStandards)
-            {
-                outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, requestModel.TemplateSettings.HandleRequests, false, true, false);
-                outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
-                outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
-            }
-
-            if (requestModel.TemplateSettings.HandleDynamicContent)
-            {
-                outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
-            }
-
-            if (requestModel.TemplateSettings.HandleLogicBlocks)
-            {
-                outputHtml = stringReplacementsService.EvaluateTemplate(outputHtml);
-            }
+            outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, requestModel.TemplateSettings.HandleRequests, false, true, false);
+            outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
+            outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
+            outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
+            outputHtml = stringReplacementsService.EvaluateTemplate(outputHtml);
 
             if (!ombouw)
             {
@@ -3298,6 +3291,9 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             {
                 httpContextAccessor.HttpContext.Items.Add(Constants.WiserUriOverrideForReplacements, requestModel.Url);
             }
+
+            // Force the GCL environment to development, so that it will always use the latest versions of templates and dynamic components.
+            gclSettings.Environment = Environments.Development;
         }
 
         /// <summary>
