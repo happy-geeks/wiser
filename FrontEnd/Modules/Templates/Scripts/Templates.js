@@ -1360,15 +1360,15 @@ const moduleSettings = {
 
         //Bind the deploybuttons for the template versions
         bindDeployButtons(templateId) {
-            $("#deployLive").on("click", this.deployEnvironment.bind(this, "live", templateId));
-            $("#deployAccept").on("click", this.deployEnvironment.bind(this, "accept", templateId));
-            $("#deployTest").on("click", this.deployEnvironment.bind(this, "test", templateId));
+            $("#deployLive").on("click", this.deployEnvironment.bind(this, "live", templateId, null));
+            $("#deployAccept").on("click", this.deployEnvironment.bind(this, "accept", templateId, null));
+            $("#deployTest").on("click", this.deployEnvironment.bind(this, "test", templateId, null));
         }
 
         bindDynamicComponentDeployButtons(contentId) {
-            $("#deployLiveComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "live", contentId));
-            $("#deployAcceptComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "accept", contentId));
-            $("#deployTestComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "test", contentId));
+            $("#deployLiveComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "live", contentId, null));
+            $("#deployAcceptComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "accept", contentId, null));
+            $("#deployTestComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "test", contentId, null));
         }
 
         //Deploy a version to an enviorenment
