@@ -391,7 +391,6 @@ const moduleSettings = {
                 },
                 select: (event) => {
                     const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
-                    console.log("mainTabStrip select", tabName);
 
                     if (tabName === "query's" || tabName === "entiteiten" || tabName === "modules") {
                         $("footer").show();
@@ -402,7 +401,6 @@ const moduleSettings = {
                 activate: (event) => {
                     const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
                     admin.activeMainTab = tabName;
-                    console.log("mainTabStrip activate", tabName);
 
                     // Refresh code mirrors in the currently activated tab.
                     if (event.contentElement) {
