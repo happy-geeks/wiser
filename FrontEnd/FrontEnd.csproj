@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <PackageReference Include="GeeksCoreLibrary" Version="2.1.4" />
+    <PackageReference Include="GoogleAuthenticator" Version="3.0.0" />
     <PackageReference Include="JetBrains.Annotations" Version="2022.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>

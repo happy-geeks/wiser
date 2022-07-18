@@ -168,9 +168,17 @@ namespace Api.Modules.Customers.Interfaces
         /// <summary>
         /// Authenticates the two factor code with the unique key of an user
         /// </summary>
-        /// <param name="key"></param>
-        /// <param name="code"></param>
+        /// <param name="key">Secret stored key</param>
+        /// <param name="code">Code from authenticator app</param>
         /// <returns></returns>
         bool AuthenticateTwoFactor(string key, string code);
+
+        /// <summary>
+        /// SetUps TwoFactor Authentication
+        /// </summary>
+        /// <param name="account">Account-name (equal to e-mail address)</param>
+        /// <param name="key">Secret stored key</param>
+        /// <returns>QR Image URL</returns>
+        string SetUpTwoFactor(string account, string key);
     }
 }

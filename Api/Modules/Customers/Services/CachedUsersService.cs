@@ -11,6 +11,7 @@ using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using Google.Authenticator;
 using LazyCache;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
@@ -173,5 +174,18 @@ namespace Api.Modules.Customers.Services
         {
             return usersService.UseRefreshTokenAsync(subDomain, refreshToken);
         }
+        
+        /// <inheritdoc />
+        public bool AuthenticateTwoFactor(string key, string code)
+        {
+            return usersService.AuthenticateTwoFactor(key, code); 
+        }
+        
+        /// <inheritdoc />
+        public string SetUpTwoFactor(string account, string key)
+        {
+            return usersService.SetUpTwoFactor(account, key);
+        }
+
     }
 }

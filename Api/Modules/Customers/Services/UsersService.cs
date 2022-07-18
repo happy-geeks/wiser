@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Core.Services;
+using Api.Modules.CloudFlare.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Models;
 using Api.Modules.Templates.Interfaces;
@@ -51,6 +52,10 @@ namespace Api.Modules.Customers.Services
         private const string UserPinnedModulesKey = "pinnedModules";
         private const string UserAutoLoadModulesKey = "autoLoadModules";
 
+        private const string UserUses2Fa = "use2fa";
+        private const string UserMustSetup2Fa = "setup2fa";
+        private const string UserSecretId = "secretid";
+        
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IDatabaseConnection wiserDatabaseConnection;
         private readonly ITemplatesService templatesService;
@@ -212,7 +217,10 @@ namespace Api.Modules.Customers.Services
                             IF(last_login_date.value IS NULL, ?now, STR_TO_DATE(last_login_date.value, '%Y-%m-%d %H:%i:%s')) AS last_login_date,
                             IFNULL(require_password_change.value, '0') AS require_password_change,
                             IFNULL(role.role_name, '') AS role,
-                            email.value AS emailAddress
+                            email.value AS emailAddress,
+                            use2fa.value AS use2fa,
+                            setup2fa.value AS setup2fa,
+                            secretid.value as secretid
                         FROM {WiserTableNames.WiserItem} user
                         JOIN {WiserTableNames.WiserItemDetail} username ON username.item_id = user.id AND username.`key` = '{UserUsernameKey}' AND username.value = ?username
                         JOIN {WiserTableNames.WiserItemDetail} password ON password.item_id = user.id AND password.`key` = '{UserPasswordKey}'
@@ -222,6 +230,9 @@ namespace Api.Modules.Customers.Services
                         LEFT JOIN {WiserTableNames.WiserUserRoles} userRole ON userRole.user_id = user.id
                         LEFT JOIN {WiserTableNames.WiserRoles} role ON role.id = userRole.role_id
                         LEFT JOIN {WiserTableNames.WiserItemDetail} email ON email.item_id = user.id AND email.`key` = '{EmailAddressKey}'
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} use2fa on use2fa.item_id = user.id and use2fa.`key` = '{UserUses2Fa}'
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} setup2fa on setup2fa.item_id = user.id and setup2fa.`key` = '{UserMustSetup2Fa}'
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} secretid on secretid.item_id = user.id and secretid.`key` = '{UserSecretId}'
                         WHERE user.entity_type = '{WiserUserEntityType}'
                         AND user.published_environment > 0";
 
@@ -254,6 +265,13 @@ namespace Api.Modules.Customers.Services
                     Role = dataRow.Field<string>("role"),
                     EmailAddress = dataRow.Field<string>("emailAddress")
                 };
+                var googleAuthenticationSettings = new GoogleAuthenticationModel
+                {
+                    SetupGoogleAuthentication = dataRow.Field<bool>("setup2fa"),
+                    UseGoogleAuthentication = dataRow.Field<bool>("use2fa"),
+                    SecureId = dataRow.Field<string>("secretid")
+                };
+                user.GoogleAuthentication = googleAuthenticationSettings;
 
                 // If an admin account is logging in, we don't want to check the password, so just return the first user. 
                 // Otherwise find a user with the correct password.
@@ -980,16 +998,20 @@ namespace Api.Modules.Customers.Services
             }
         }
 
-        /// <summary>
-        /// Authenticates the two factor code with the unique key of an user
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="code"></param>
-        /// <returns></returns>
-        public bool AuthenticateTwofactor(string key, string code)
+        /// <inheritdoc />
+        public bool AuthenticateTwoFactor(string key, string code)
         {
             var tfa = new TwoFactorAuthenticator();
             return tfa.ValidateTwoFactorPIN(key, code); 
         }
+        
+        /// <inheritdoc />
+        public string SetUpTwoFactor(string account, string key)
+        {
+            var tfa = new TwoFactorAuthenticator();
+            var setupInfo = tfa.GenerateSetupCode("WISER", account, key, false, 3);
+            return setupInfo.QrCodeSetupImageUrl;
+        }
+
     }
 }
