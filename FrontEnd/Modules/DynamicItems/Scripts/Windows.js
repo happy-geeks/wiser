@@ -1391,7 +1391,7 @@ export class Windows {
                     const nameField = currentItemWindow.element.find(".itemNameField");
                     currentItemWindow.element.find(".itemNameFieldContainer").toggle(lastUsedEntityType.showTitleField && showTitleField);
 
-                    currentItemTabStrip.element.find("> ul > li .addedFromDatabase").each((index, element) => {
+                    currentItemTabStrip.element.find("> .k-tabstrip-items-wrapper > ul > li .addedFromDatabase").each((index, element) => {
                         currentItemTabStrip.remove($(element).closest("li.k-item"));
                     });
 

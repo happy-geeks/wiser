@@ -1451,7 +1451,7 @@ const moduleSettings = {
                 // Set the HTML of the fields tab.
                 const itemHtmlResult = await this.getItemHtml(itemId, itemMetaData.entityType);
 
-                this.mainTabStrip.element.find("> ul > li .addedFromDatabase").each((index, element) => {
+                this.mainTabStrip.element.find("> .k-tabstrip-items-wrapper > ul > li .addedFromDatabase").each((index, element) => {
                     this.mainTabStrip.remove($(element).closest("li.k-item"));
                 });
 
