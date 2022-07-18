@@ -84,7 +84,8 @@ INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (5536, 
 INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (706, 'Dataselector', 'settings', 'DataSelector', 'Contentbeheer');
 # Templates
 INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (1, 'Templates', 'document-fold', 'Templates', 'Systeem');
-
+# Version Control
+INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (6001,'Version control','settings','VersionControl','Contentbeheer');
 
 -- ----------------------------
 -- Records of wiser_entity
@@ -255,6 +256,8 @@ INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_prop
 INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 706);
 # Templates module.
 INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 1);
+# Version control module.
+INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 6001);
 
 -- ----------------------------
 -- Records of wiser_link

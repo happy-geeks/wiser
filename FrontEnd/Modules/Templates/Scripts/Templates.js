@@ -145,6 +145,8 @@ const moduleSettings = {
             this.settings.templatesRootId = userData.templatesRootId;
             this.settings.mainDomain = userData.mainDomain;
 
+            console.log(this.settings.wiserApiRoot);
+
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }

@@ -799,6 +799,43 @@ CREATE TABLE IF NOT EXISTS `wiser_template_publish_log`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
+-- Table structure for wiser_commit
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS`wiser_commit` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `description` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `asana_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `added_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `changed_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `completed` tinyint NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_commit_dynamic_content
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_commit_dynamic_content` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `dynamic_content_id` int NOT NULL,
+  `version` int NOT NULL,
+  `commit_id` int NOT NULL,
+  `added_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_commit_template
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_commit_template` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `template_id` int NOT NULL,
+  `version` int NOT NULL,
+  `commit_id` int NOT NULL,
+  `added_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
 -- Table structure for wiser_table_changes
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_table_changes`  (
