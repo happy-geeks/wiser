@@ -37,15 +37,12 @@ export class Commit {
                 Description: commitMessage,
             };
 
-            const createCommit = await Wiser2.api({
+            return await Wiser2.api({
                 url: `${this.base.settings.wiserApiRoot}VersionControl`,
                 method: "PUT",
                 contentType: "application/json",
                 data: JSON.stringify(commitData)
             });
-
-            return createCommit;
-
         } catch (exception) {
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
         }
@@ -54,41 +51,32 @@ export class Commit {
 
     async GetCommitWithId() {
         try {
-
-            const templateData = await Wiser2.api({
+            return await Wiser2.api({
                 url: `${this.base.settings.wiserApiRoot}VersionControl/Commit`,
                 method: "GET",
                 contentType: "application/json",
             });
-
-            return templateData
         } catch (exception) {
             console.error(exception);
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
-        };
-
+        }
     }
 
-    async PutTemplateCommit(commitId, templateVersionId, version, enviornment) {
+    async PutTemplateCommit(commitId, templateVersionId, version, environment) {
         try {
-
             const TemplateCommitData = {
-                CommitId: commitId,
-                TemplateId: templateVersionId,
-                Version: version,
-                Enviornment: enviornment
-
+                commitId: commitId,
+                templateId: templateVersionId,
+                version: version,
+                environment: environment
             }
             
-            const createCommit = await Wiser2.api({
+            return await Wiser2.api({
                 url: `${this.base.settings.wiserApiRoot}VersionControl/template-commit`,
                 method: "PUT",
                 contentType: "application/json",
                 data: JSON.stringify(TemplateCommitData)
             });
-
-            return createCommit;
-
         } catch (exception) {
             console.error(exception);
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");

@@ -10,7 +10,7 @@ namespace Api.Modules.VersionControl.Models
         /// <summary>
         /// The id of the commit.
         /// </summary>
-        public int id { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
         /// The description of the commit.

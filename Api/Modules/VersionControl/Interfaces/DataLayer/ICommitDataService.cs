@@ -16,25 +16,10 @@ namespace Api.Modules.VersionControl.Interfaces.DataLayer
         Task<CreateCommitModel> CreateCommitAsync(string commitMessage, string username);
 
         /// <summary>
-        /// Creates new commit item in the database.
-        /// </summary>
-        /// <param name="templateId">The ID of the template.</param>
-        /// <param name="commitItemModel">The data from the commit.</param>
-        /// <returns></returns>
-        Task<bool> CreateCommitItemAsync(int templateId, CommitItemModel commitItemModel);
-
-        /// <summary>
-        /// Gets the most recently added commit.
-        /// </summary>
-        /// <returns>Returns a model of the commit.</returns>
-        Task<CreateCommitModel> GetCommitAsync();
-
-        /// <summary>
         /// Completes the commmit
         /// </summary>
         /// <param name="commitId">The id of the commit</param>
         /// <param name="commitCompleted">Bool that sets the commit to completed</param>
-        /// <returns></returns>
-        Task<bool> CompleteCommit(int commitId, bool commitCompleted);
+        Task CompleteCommitAsync(int commitId, bool commitCompleted);
     }
 }

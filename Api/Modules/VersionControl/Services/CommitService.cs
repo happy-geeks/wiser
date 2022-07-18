@@ -13,6 +13,7 @@ namespace Api.Modules.VersionControl.Services
     public class CommitService : ICommitService
     {
         private readonly ICommitDataService commitDataService;
+        
         /// <summary>
         /// Creates a new instance of <see cref="CommitService"/>.
         /// </summary>
@@ -20,7 +21,6 @@ namespace Api.Modules.VersionControl.Services
         {
             this.commitDataService = commitDataService;
         }
-
 
         /// <inheritdoc />
         public async Task<ServiceResult<CreateCommitModel>> CreateCommitAsync(string commitMessage, ClaimsIdentity identity)
@@ -36,28 +36,11 @@ namespace Api.Modules.VersionControl.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> CreateCommitItemAsync(int templateId, CommitItemModel commitItemModel)
-        {
-
-            var result = await commitDataService.CreateCommitItemAsync(templateId, commitItemModel);
-
-            return new ServiceResult<bool>(result);
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<CreateCommitModel>> GetCommitAsync()
-        {
-            var result = await commitDataService.GetCommitAsync();
-
-            return new ServiceResult<CreateCommitModel>(result);
-        }
-
-        /// <inheritdoc />
         public async Task<ServiceResult<bool>> CompleteCommit(int commitId, bool commitCompleted)
         {
-            var result = await commitDataService.CompleteCommit(commitId, commitCompleted);
+            await commitDataService.CompleteCommitAsync(commitId, commitCompleted);
 
-            return new ServiceResult<bool>(result);
+            return new ServiceResult<bool>(true);
         }
 
     }

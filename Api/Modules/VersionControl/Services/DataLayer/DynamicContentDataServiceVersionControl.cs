@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Text;
 using System.Threading.Tasks;
 using Api.Modules.Templates.Models.Template;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
@@ -25,7 +26,14 @@ namespace Api.Modules.VersionControl.Services.DataLayer
         /// <inheritdoc />
         public async Task<DynamicContentModel> GetDynamicContentAsync(int contentId, int version)
         {
-            var query = $@"SELECT * FROM wiser_dynamic_content WHERE content_id = ?content_id AND version = ?version";
+            var query = $@"SELECT
+    id,
+    content_id,
+    component,
+    version
+FROM {WiserTableNames.WiserDynamicContent}
+WHERE content_id = ?content_id
+AND version = ?version";
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("content_id", contentId);
@@ -33,7 +41,7 @@ namespace Api.Modules.VersionControl.Services.DataLayer
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
-            var dynamicContentModel = new DynamicContentModel()
+            var dynamicContentModel = new DynamicContentModel
             {
                 Id = Convert.ToInt32(dataTable.Rows[0]["id"]),
                 ComponentModeId = Convert.ToInt32(dataTable.Rows[0]["content_id"]),
@@ -45,18 +53,16 @@ namespace Api.Modules.VersionControl.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<bool> CreateNewDynamicContentCommitAsync(DynamicContentCommitModel dynamicContentCommitModel)
+        public async Task CreateNewDynamicContentCommitAsync(DynamicContentCommitModel dynamicContentCommitModel)
         {
-            var query = $@"INSERT INTO wiser_commit_dynamic_content (dynamic_content_id,version,commit_id) values (?dynamicContentId, ?version, ?commitId)";
+            var query = $@"INSERT INTO {WiserTableNames.WiserCommitDynamicContent} (dynamic_content_id, version, commit_id) values (?dynamicContentId, ?version, ?commitId)";
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("dynamicContentId", dynamicContentCommitModel.DynamicContentId);
             clientDatabaseConnection.AddParameter("version", dynamicContentCommitModel.Version);
             clientDatabaseConnection.AddParameter("commitId", dynamicContentCommitModel.CommitId);
 
-            var dataTable = await clientDatabaseConnection.ExecuteAsync(query);
-
-            return true;
+            await clientDatabaseConnection.ExecuteAsync(query);
         }
 
         /// <inheritdoc />
@@ -66,11 +72,13 @@ namespace Api.Modules.VersionControl.Services.DataLayer
             clientDatabaseConnection.AddParameter("dynamicContentId", dynamicContentId);
             var versionList = new Dictionary<int, int>();
 
-            var dataTable = await clientDatabaseConnection.GetAsync($"SELECT wtt.version, wtt.published_environment FROM {WiserTableNames.WiserDynamicContent} wtt WHERE wtt.content_id = ?dynamicContentId");
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT version, published_environment
+FROM {WiserTableNames.WiserDynamicContent}
+WHERE content_id = ?dynamicContentId");
 
             foreach (DataRow row in dataTable.Rows)
             {
-                versionList.Add(row.Field<int>("version"), row.Field<SByte>("published_environment"));
+                versionList.Add(row.Field<int>("version"), row.Field<sbyte>("published_environment"));
             }
 
             return versionList;
@@ -82,21 +90,20 @@ namespace Api.Modules.VersionControl.Services.DataLayer
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("dynamicContentId", dynamicContentId);
 
-            var baseQueryPart = $@"UPDATE {WiserTableNames.WiserDynamicContent} wtt 
-                SET wtt.published_environment = case wtt.version";
+            var baseQueryPart = $@"UPDATE {WiserTableNames.WiserDynamicContent}
+SET published_environment = CASE version";
 
-            var dynamicQueryPart = "";
-            var dynamicWherePart = " AND wtt.version IN (";
+            var dynamicQueryPart = new StringBuilder();
+            var dynamicWherePart = new StringBuilder(" AND version IN (");
             foreach (var versionChange in publishModel)
             {
-                dynamicQueryPart += " WHEN " + versionChange.Key + " THEN wtt.published_environment+" + versionChange.Value;
-                dynamicWherePart += versionChange.Key + ",";
+                dynamicQueryPart.Append($" WHEN {versionChange.Key} THEN published_environment + {versionChange.Value}");
+                dynamicWherePart.Append($"{versionChange.Key},");
             }
-            dynamicWherePart = dynamicWherePart.Substring(0, dynamicWherePart.Length - 1) + ")";
-            var endQueryPart = @" end
-                WHERE wtt.content_id = ?dynamicContentId";
+            var endQueryPart = @" END
+WHERE content_id = ?dynamicContentId";
 
-            var query = baseQueryPart + dynamicQueryPart + endQueryPart + dynamicWherePart;
+            var query = $"{baseQueryPart}{dynamicQueryPart}{endQueryPart}{dynamicWherePart.ToString()[..^1]}";
 
             clientDatabaseConnection.AddParameter("oldlive", publishLog.OldLive);
             clientDatabaseConnection.AddParameter("oldaccept", publishLog.OldAccept);
@@ -107,7 +114,7 @@ namespace Api.Modules.VersionControl.Services.DataLayer
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
             clientDatabaseConnection.AddParameter("username", username);
 
-            var logQuery = $@"INSERT INTO wiser_dynamic_content_publish_log (content_id, old_live, old_accept, old_test, new_live, new_accept, new_test, changed_on, changed_by) 
+            var logQuery = $@"INSERT INTO {WiserTableNames.WiserDynamicContentPublishLog} (content_id, old_live, old_accept, old_test, new_live, new_accept, new_test, changed_on, changed_by) 
             VALUES(
                 ?dynamicContentId,
                 ?oldlive,
@@ -120,13 +127,16 @@ namespace Api.Modules.VersionControl.Services.DataLayer
                 ?username
             )";
 
-            return await clientDatabaseConnection.ExecuteAsync(query + ";" + logQuery);
+            return await clientDatabaseConnection.ExecuteAsync($"{query};{logQuery}");
         }
 
         /// <inheritdoc />
         public async Task<Dictionary<int, int>> GetDynamicContentWithLowerVersionAsync(int contentId, int version)
         {
-            var query = $@"SELECT content_id, version FROM wiser_dynamic_content d where d.content_id = ?contentId AND d.version < ?version AND NOT EXISTS(SELECT * FROM wiser_commit_dynamic_content dt WHERE dt.dynamic_content_id = d.content_id and dt.version = d.version)";
+            var query = $@"SELECT content_id, version
+FROM {WiserTableNames.WiserDynamicContent}
+WHERE content_id = ?contentId 
+AND version < ?version";
 
             clientDatabaseConnection.ClearParameters();
 

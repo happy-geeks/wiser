@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
+using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
 namespace Api.Modules.VersionControl.Services.DataLayer
@@ -24,7 +25,10 @@ namespace Api.Modules.VersionControl.Services.DataLayer
         /// <inheritdoc />
         public async Task<Dictionary<int, int>> GetTemplatesWithLowerVersionAsync(int templateId, int version)
         {
-            var query = $@"SELECT template_id, version FROM wiser_template t where t.template_id = ?templateId AND t.version < ?version AND NOT EXISTS(SELECT * FROM wiser_commit_template dt WHERE dt.template_id = t.template_id and dt.version = t.version)  ";
+            var query = $@"SELECT template_id, version
+FROM {WiserTableNames.WiserTemplate}
+WHERE template_id = ?templateId 
+AND t.version < ?version";
 
             clientDatabaseConnection.ClearParameters();
 
@@ -46,7 +50,13 @@ namespace Api.Modules.VersionControl.Services.DataLayer
         /// <inheritdoc />
         public async Task<TemplateEnvironments> GetCurrentPublishedEnvironmentAsync(int templateId, int version)
         {
-            var query = "SELECT t.template_id, t.version, t.published_environment FROM wiser_template t WHERE t.template_id = ?templateId AND t.published_environment != 0";
+            var query = $@"SELECT
+    template_id,
+    version,
+    published_environment
+FROM {WiserTableNames.WiserTemplate}
+WHERE template_id = ?templateId
+AND published_environment > 0";
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("templateId", templateId);
@@ -54,44 +64,40 @@ namespace Api.Modules.VersionControl.Services.DataLayer
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
-
-            if (dataTable.Rows.Count != 0)
-            {
-                var versionControlModel = new TemplateEnvironments()
-                {
-                    TemplateId = Convert.ToInt32(dataTable.Rows[0]["template_id"]),
-                    PublishedEnvironments = new PublishedEnvironmentModel()
-                    {
-                        VersionList = new List<int>()
-                    }
-                };
-
-
-                foreach (DataRow template in dataTable.Rows)
-                {
-                    if (Convert.ToInt32(template["published_environment"]) == 2)
-                    {
-                        versionControlModel.PublishedEnvironments.TestVersion = 1;
-                        versionControlModel.PublishedEnvironments.VersionList.Add(Convert.ToInt32(dataTable.Rows[0]["version"]));
-                    }
-                    else if (Convert.ToInt32(template["published_environment"]) == 4)
-                    {
-                        versionControlModel.PublishedEnvironments.AcceptVersion = 1;
-                        versionControlModel.PublishedEnvironments.VersionList.Add(Convert.ToInt32(dataTable.Rows[0]["version"]));
-                    }
-                    else if (Convert.ToInt32(template["published_environment"]) == 8)
-                    {
-                        versionControlModel.PublishedEnvironments.AcceptVersion = 1;
-                        versionControlModel.PublishedEnvironments.VersionList.Add(Convert.ToInt32(dataTable.Rows[0]["version"]));
-                    }
-                }
-                return versionControlModel;
-            }
-            else
+            if (dataTable.Rows.Count == 0)
             {
                 return null;
             }
 
+            var versionControlModel = new TemplateEnvironments
+            {
+                TemplateId = Convert.ToInt32(dataTable.Rows[0]["template_id"]),
+                PublishedEnvironments = new PublishedEnvironmentModel()
+                {
+                    VersionList = new List<int>()
+                }
+            };
+
+            foreach (DataRow template in dataTable.Rows)
+            {
+                if (Convert.ToInt32(template["published_environment"]) == 2)
+                {
+                    versionControlModel.PublishedEnvironments.TestVersion = 1;
+                    versionControlModel.PublishedEnvironments.VersionList.Add(Convert.ToInt32(dataTable.Rows[0]["version"]));
+                }
+                else if (Convert.ToInt32(template["published_environment"]) == 4)
+                {
+                    versionControlModel.PublishedEnvironments.AcceptVersion = 1;
+                    versionControlModel.PublishedEnvironments.VersionList.Add(Convert.ToInt32(dataTable.Rows[0]["version"]));
+                }
+                else if (Convert.ToInt32(template["published_environment"]) == 8)
+                {
+                    versionControlModel.PublishedEnvironments.AcceptVersion = 1;
+                    versionControlModel.PublishedEnvironments.VersionList.Add(Convert.ToInt32(dataTable.Rows[0]["version"]));
+                }
+            }
+
+            return versionControlModel;
         }
 
         /// <inheritdoc />

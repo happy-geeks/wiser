@@ -39,18 +39,18 @@ namespace Api.Modules.VersionControl.Services
             bool isAcceptatie = false;
             bool isLive = false;
 
-            if (templateCommitModel.Enviornment == Environments.Live)
+            if (templateCommitModel.Environment == Environments.Live)
             {
                 isTest = true;
                 isAcceptatie = true;
                 isLive = true;
             }
-            else if (templateCommitModel.Enviornment == Environments.Acceptance)
+            else if (templateCommitModel.Environment == Environments.Acceptance)
             {
                 isAcceptatie = true;
                 isTest = true;
             }
-            else if (templateCommitModel.Enviornment == Environments.Test)
+            else if (templateCommitModel.Environment == Environments.Test)
             {
                 isTest = true;
             }
@@ -88,18 +88,18 @@ namespace Api.Modules.VersionControl.Services
             bool isAcceptatie = false;
             bool isLive = false;
 
-            if (templateCommitModel.Enviornment == Environments.Live)
+            if (templateCommitModel.Environment == Environments.Live)
             {
                 isTest = true;
                 isAcceptatie = true;
                 isLive = true;
             }
-            else if (templateCommitModel.Enviornment == Environments.Acceptance)
+            else if (templateCommitModel.Environment == Environments.Acceptance)
             {
                 isAcceptatie = true;
                 isTest = true;
             }
-            else if (templateCommitModel.Enviornment == Environments.Test)
+            else if (templateCommitModel.Environment == Environments.Test)
             {
                 isTest = true;
             }

@@ -427,7 +427,7 @@ const moduleSettings = {
 
         async onCommitDynamicContent(event) {
             var dynamicContentId = this.getSelectedDynamicContentId("#dynamicContentGrid");
-            const publishEnviornment = this.getSlectedDeployment();
+            const publishEnvironment = this.getSlectedDeployment();
             var commitMessage = this.getCommitMessage();
             var version = this.getDynamicContentVersion();
             var dynamicContent = await this.getSelectedDynamicContent(dynamicContentId, version);
@@ -444,11 +444,11 @@ const moduleSettings = {
             var lowerVersionTemplates = await this.GetDynamicContentWithLowerVersion(dynamicContentId, version);
 
             for (const [key, value] of Object.entries(lowerVersionTemplates)) {
-                await this.PutDynamicContentCommit(commitId, value, key, publishEnviornment);
+                await this.PutDynamicContentCommit(commitId, value, key, publishEnvironment);
             }
 
-            await this.PutDynamicContentCommit(commitId, dynamicContentId, version, publishEnviornment);
-            await this.PublishDynamicContent(dynamicContentId, publishEnviornment, version);
+            await this.PutDynamicContentCommit(commitId, dynamicContentId, version, publishEnvironment);
+            await this.PublishDynamicContent(dynamicContentId, publishEnvironment, version);
        
             document.location.reload();
         }
@@ -461,14 +461,14 @@ const moduleSettings = {
             const dynamicContentTable = document.querySelector("#dynamicContentGrid");
             const dynamicContentSelected = dynamicContentTable.querySelectorAll(".k-state-selected");
 
-            const publishEnviornment = this.getSlectedDeployment();         
+            const publishEnvironment = this.getSlectedDeployment();         
 
             var commitMessage = this.getCommitMessage();
             await this.commit.CreateNewCommit(commitMessage);
             var createdCommit = await this.commit.GetCommitWithId()
-            var commitId = createdCommit['id'];
+            var commitId = createdCommit.id;
 
-            if (publishEnviornment == "live") {
+            if (publishEnvironment === "live") {
                 await this.commit.CompleteCommit(commitId, true);
             }
         
@@ -482,11 +482,11 @@ const moduleSettings = {
               
 
                 for (const [key, value] of Object.entries(lowerVersionTemplates)) {
-                    await this.commit.PutTemplateCommit(commitId, value, key, publishEnviornment);
+                    await this.commit.PutTemplateCommit(commitId, value, key, publishEnvironment);
                 }
 
-                await this.commit.PutTemplateCommit(commitId, templateVersionId, version, publishEnviornment);
-                await this.template.PublishTemplate(templateVersionId, publishEnviornment, version);
+                await this.commit.PutTemplateCommit(commitId, templateVersionId, version, publishEnvironment);
+                await this.template.PublishTemplate(templateVersionId, publishEnvironment, version);
 
             }
           
@@ -498,11 +498,11 @@ const moduleSettings = {
                 var lowerVersionDynamicContent = await this.GetDynamicContentWithLowerVersion(dynamicContentId, version);
 
                 for (const [key, value] of Object.entries(lowerVersionDynamicContent)) {
-                    await this.PutDynamicContentCommit(commitId, value, key, publishEnviornment);
+                    await this.PutDynamicContentCommit(commitId, value, key, publishEnvironment);
                 }
 
-                await this.PutDynamicContentCommit(commitId, dynamicContentId, version, publishEnviornment);
-                await this.PublishDynamicContent(dynamicContentId, publishEnviornment, version);
+                await this.PutDynamicContentCommit(commitId, dynamicContentId, version, publishEnvironment);
+                await this.PublishDynamicContent(dynamicContentId, publishEnvironment, version);
             }
             document.location.reload();
         }
@@ -528,7 +528,7 @@ const moduleSettings = {
             }
 
             //selected Environment choices
-            const publishEnviornment = this.getSlectedDeployment();
+            const publishEnvironment = this.getSlectedDeployment();
 
             //Commit message
             //return this commit message
@@ -542,7 +542,7 @@ const moduleSettings = {
             var createdCommit = await this.commit.GetCommitWithId()
             var commitId = createdCommit['id'];
 
-            if (publishEnviornment == "live") {
+            if (publishEnvironment == "live") {
                 await this.commit.CompleteCommit(commitId, true);
             }
 
@@ -554,12 +554,12 @@ const moduleSettings = {
                 var lowerVersionTemplates = await this.template.GetTemplatesWithLowerVersion(templateVersionId, version);
 
                 for (const [key, value] of Object.entries(lowerVersionTemplates)) {
-                    await this.commit.PutTemplateCommit(commitId, value, key, publishEnviornment);
+                    await this.commit.PutTemplateCommit(commitId, value, key, publishEnvironment);
                 }
 
 
-                await this.commit.PutTemplateCommit(commitId, templateVersionId, version, publishEnviornment);
-                await this.template.PublishTemplate(templateVersionId, publishEnviornment, version);
+                await this.commit.PutTemplateCommit(commitId, templateVersionId, version, publishEnvironment);
+                await this.template.PublishTemplate(templateVersionId, publishEnvironment, version);
 
             }
             
@@ -572,11 +572,11 @@ const moduleSettings = {
                 var lowerVersionDynamicContent = await this.GetDynamicContentWithLowerVersion(dynamicContentId, version);
 
                 for (const [key, value] of Object.entries(lowerVersionDynamicContent)) {
-                    await this.PutDynamicContentCommit(commitId, value, key, publishEnviornment);
+                    await this.PutDynamicContentCommit(commitId, value, key, publishEnvironment);
                 }
 
-                await this.PutDynamicContentCommit(commitId, dynamicContentId, version, publishEnviornment);
-                await this.PublishDynamicContent(dynamicContentId, publishEnviornment, version);
+                await this.PutDynamicContentCommit(commitId, dynamicContentId, version, publishEnvironment);
+                await this.PublishDynamicContent(dynamicContentId, publishEnvironment, version);
             }
 
             
@@ -620,11 +620,11 @@ const moduleSettings = {
                         var lowerVersionDynamicContent = await this.GetDynamicContentWithLowerVersion(dynamicContentId, version);
     
                         for (const [key, value] of Object.entries(lowerVersionDynamicContent)) {
-                            await this.PutDynamicContentCommit(commitId, value, key, publishEnviornment);
+                            await this.PutDynamicContentCommit(commitId, value, key, publishEnvironment);
                         }
     
-                       await this.PutDynamicContentCommit(commitId, dynamicContentId, version, publishEnviornment);
-                       await this.PublishDynamicContent(dynamicContentId, publishEnviornment, version);
+                       await this.PutDynamicContentCommit(commitId, dynamicContentId, version, publishEnvironment);
+                       await this.PublishDynamicContent(dynamicContentId, publishEnvironment, version);
                     }
                 }
                 

@@ -39,13 +39,6 @@ namespace Api.Modules.VersionControl.Interfaces
         Task<ServiceResult<List<DynamicContentCommitModel>>> GetDynamicContentFromCommitAsync(int commitId);
 
         /// <summary>
-        /// Gets the settings of the grids from the given module.
-        /// </summary>
-        /// <param name="moduleId"></param>
-        /// <returns>Returns a list with all te settings of the grids.</returns>
-        Task<ServiceResult<List<ModuleGridSettings>>> GetModuleGridSettingsAsync(int moduleId);
-
-        /// <summary>
         /// Gets all the dynamic content items that belong to a specific template.
         /// </summary>
         /// <param name="templateId">The id of the template.</param>

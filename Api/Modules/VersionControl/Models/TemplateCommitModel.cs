@@ -1,4 +1,5 @@
 ﻿using GeeksCoreLibrary.Core.Enums;
+using GeeksCoreLibrary.Modules.Templates.Enums;
 
 namespace Api.Modules.VersionControl.Models
 {
@@ -25,20 +26,20 @@ namespace Api.Modules.VersionControl.Models
         /// <summary>
         /// The environment of the template.
         /// </summary>
-        public Environments Enviornment { get; set; }
+        public Environments Environment { get; set; }
 
         /// <summary>
-        /// Bool if the template is on the live environemnt.
+        /// Bool if the template is on the live environment.
         /// </summary>
         public bool IsLive { get; set; }
 
         /// <summary>
-        /// Bool if the template is on the acceptance environemnt.
+        /// Bool if the template is on the acceptance environment.
         /// </summary>
         public bool IsAcceptance { get; set; }
 
         /// <summary>
-        /// Bool if the template is on the test environemnt.
+        /// Bool if the template is on the test environment.
         /// </summary>
         public bool IsTest { get; set; }
     }

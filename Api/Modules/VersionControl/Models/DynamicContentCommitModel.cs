@@ -30,7 +30,7 @@ namespace Api.Modules.VersionControl.Models
         /// <summary>
         /// The data The commit was added on.
         /// </summary>
-        public DateTime addedOn { get; set; }
+        public DateTime AddedOn { get; set; }
 
     }
 }

@@ -23,7 +23,7 @@ namespace Api.Modules.VersionControl.Interfaces.DataLayer
         /// </summary>
         /// <param name="dynamicContentCommitModel">Contains the data of the dynamic content and commit that will be used to add it to the database.</param>
         /// <returns></returns>
-        Task<bool> CreateNewDynamicContentCommitAsync(DynamicContentCommitModel dynamicContentCommitModel);
+        Task CreateNewDynamicContentCommitAsync(DynamicContentCommitModel dynamicContentCommitModel);
 
         /// <summary>
         /// Gets all the versions of a specific dynamic content item with the published environments.

@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Api.Modules.VersionControl.Models;
 
-namespace Api.Modules.VersionControl.Interfaces
+namespace Api.Modules.VersionControl.Interfaces.DataLayer
 {
     /// <summary>
     /// Data service for handeling general data of the version control model.
@@ -36,13 +36,6 @@ namespace Api.Modules.VersionControl.Interfaces
         /// <param name="commitId">The id of the commit.</param>
         /// <returns>Returns a list of dynamic contnet items.</returns>
         Task<List<DynamicContentCommitModel>> GetDynamicContentFromCommitAsync(int commitId);
-
-        /// <summary>
-        /// Gets the settings of the grids from the given module.
-        /// </summary>
-        /// <param name="moduleId"></param>
-        /// <returns>Returns a list with all te settings of the grids.</returns>
-        Task<List<ModuleGridSettings>> GetModuleGridSettingsAsync(int moduleId);
 
         /// <summary>
         /// Gets all the dynamic content items that belong to a specific template.

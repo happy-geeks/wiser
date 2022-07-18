@@ -836,21 +836,6 @@ CREATE TABLE IF NOT EXISTS `wiser_commit_template` (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Table structure for wiser_module_grids
--- ----------------------------
-CREATE TABLE IF NOT EXISTS`wiser_module_grids` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `module_id` int NOT NULL,
-  `custom_query` longtext,
-  `count_query` longtext,
-  `grid_options` longtext,
-  `grid_div_id` varchar(45) NOT NULL,
-  `name` varchar(45) NOT NULL,
-  `grid_read_options` longtext,
-  PRIMARY KEY (`id`)
-) ENGINE = InnoDB AUTO_INCREMENT=6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
 -- Table structure for wiser_table_changes
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_table_changes`  (

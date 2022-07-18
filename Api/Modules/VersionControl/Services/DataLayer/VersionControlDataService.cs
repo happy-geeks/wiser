@@ -4,7 +4,9 @@ using System.Data;
 using System.Threading.Tasks;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.VersionControl.Interfaces;
+using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
+using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
 namespace Api.Modules.VersionControl.Services.DataLayer
@@ -13,22 +15,23 @@ namespace Api.Modules.VersionControl.Services.DataLayer
     public class VersionControlDataService : IVersionControlDataService
     {
         private readonly IDatabaseConnection clientDatabaseConnection;
-        private readonly IWiserCustomersService wiserCustomersService;
+        
         /// <summary>
         /// Creates a new instance of <see cref="VersionControlDataService"/>.
         /// </summary>
-        public VersionControlDataService(IDatabaseConnection clientDatabaseConnection, IWiserCustomersService wiserCustomersService)
+        public VersionControlDataService(IDatabaseConnection clientDatabaseConnection)
         {
             this.clientDatabaseConnection = clientDatabaseConnection;
-            this.wiserCustomersService = wiserCustomersService; 
         }
 
 
         /// <inheritdoc />
         public async Task<Dictionary<int, int>> GetPublishedTemplateIdAndVersionAsync()
         {
-
-            var query = $@"SELECT template_id, version FROM wiser_template where published_environment != 0 group by template_id;";
+            var query = $@"SELECT template_id, version
+FROM {WiserTableNames.WiserTemplate}
+WHERE published_environment != 0
+GROUP BY template_id;";
 
             clientDatabaseConnection.ClearParameters();
 
@@ -50,11 +53,17 @@ namespace Api.Modules.VersionControl.Services.DataLayer
             throw new NotImplementedException();
         }
 
-
         /// <inheritdoc />
         public async Task<List<TemplateCommitModel>> GetTemplatesFromCommitAsync(int commitId)
         {
-            var query = "SELECT wct.* FROM wiser_commit_template wct LEFT JOIN wiser_commit_template wct2 ON wct2.template_id = wct.template_id AND wct2.version = wct.version WHERE wct.version = (SELECT MAX(version) FROM wiser_commit_template wct3 WHERE wct3.template_id = wct.template_id) AND wct.commit_id = ?commitId";
+            var query = $@"SELECT
+    commit.commit_id,
+    commit.template_id,
+    commit.version
+FROM {WiserTableNames.WiserCommitTemplate} AS commit 
+LEFT JOIN {WiserTableNames.WiserCommitTemplate} AS otherVersion ON otherVersion.template_id = commit.template_id AND otherVersion.version > commit.version
+WHERE wct.commit_id = ?commitId
+AND otherVersion.id IS NULL";
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("commitId", commitId);
@@ -76,44 +85,17 @@ namespace Api.Modules.VersionControl.Services.DataLayer
             }
 
             return templateList;
-
         }
-
-        /// <inheritdoc />
-        public async Task<List<ModuleGridSettings>> GetModuleGridSettingsAsync(int moduleId)
-        {
-            var query = "SELECT * FROM wiser_module_grids WHERE module_id = ?moduleId";
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("moduleId", moduleId);
-
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
-
-            var moduleGridDataList = new List<ModuleGridSettings>();
-
-            foreach (DataRow row in dataTable.Rows)
-            {
-                var moduleGridSettings = new ModuleGridSettings
-                {
-                    ModuleId = row.Field<int>("module_id"),
-                    CustomQuery = row.Field<string>("custom_query"),
-                    CountQuery = row.Field<string>("count_query"),
-                    GridOptions = row.Field<string>("grid_options"),
-                    GridDivId = row.Field<string>("grid_div_id"),
-                    Name = row.Field<string>("name"),
-                    GridReadOptions = row.Field<string>("grid_read_options")
-                };
-
-                moduleGridDataList.Add(moduleGridSettings);
-            }
-
-            return moduleGridDataList;
-        }
-
 
         /// <inheritdoc />
         public async Task<List<DynamicContentModel>> GetDynamicContentInTemplateAsync(int templateId)
         {
-            var query = $@"SELECT * FROM wiser_template_dynamic_content wtdc LEFT JOIN wiser_dynamic_content dc ON  dc.content_id = wtdc.content_id WHERE dc.version = (SELECT MAX(version) FROM wiser_dynamic_content dc2 WHERE dc2.content_id = dc.content_id) AND destination_template_id = ?templateId AND NOT EXISTS(SELECT * FROM wiser_commit_dynamic_content wcdc WHERE wcdc.dynamic_content_id = dc.content_id and wcdc.version = dc.version)      ";
+            var query = $@"SELECT * 
+FROM {WiserTableNames.WiserTemplateDynamicContent} AS dynamicContentToTemplateDLink 
+JOIN {WiserTableNames.WiserDynamicContent} AS dynamicContent ON dynamicContent.content_id = dynamicContentToTemplateDLink.content_id
+LEFT JOIN {WiserTableNames.WiserDynamicContent} AS otherVersion ON otherVersion.content_id = dynamicContent.content_id AND otherVersion.version > dynamicContent.version
+WHERE dynamicContentToTemplateDLink.destination_template_id = ?templateId
+AND otherVersion.id IS NULL";
             clientDatabaseConnection.ClearParameters();
 
             clientDatabaseConnection.AddParameter("templateId", templateId);
@@ -125,7 +107,7 @@ namespace Api.Modules.VersionControl.Services.DataLayer
             foreach (DataRow row in dataTable.Rows)
             {
                 dynamicContentModelList.Add(
-                    new DynamicContentModel()
+                    new DynamicContentModel
                     {
                         Id = row.Field<int>("id"),
                         Version = row.Field<int>("version"),
@@ -139,11 +121,14 @@ namespace Api.Modules.VersionControl.Services.DataLayer
         /// <inheritdoc />
         public async Task<List<DynamicContentCommitModel>> GetDynamicContentFromCommitAsync(int commitId)
         {
-            var query = @"SELECT wcdc.* 
-                        FROM wiser_commit_dynamic_content wcdc 
-                        LEFT JOIN wiser_commit_dynamic_content x ON x.dynamic_content_id = wcdc.dynamic_content_id AND x.version = wcdc.version 
-                        WHERE wcdc.version = (SELECT MAX(version) FROM wiser_commit_dynamic_content wcdc2 WHERE wcdc2.dynamic_content_id = wcdc.dynamic_content_id) 
-                        AND wcdc.commit_id = ?commitId";
+            var query = $@"SELECT
+    commit.commit_id,
+    commit.dynamic_content_id,
+    commit.version
+FROM {WiserTableNames.WiserCommitDynamicContent} AS commit
+LEFT JOIN {WiserTableNames.WiserCommitDynamicContent} AS otherVersion ON otherVersion.dynamic_content_id = commit.dynamic_content_id AND otherVersion.version > commit.version 
+WHERE commit.commit_id = ?commitId
+AND otherVersion.id IS NULL";
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("commitId", commitId);

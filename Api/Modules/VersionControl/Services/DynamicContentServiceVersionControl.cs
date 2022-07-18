@@ -33,34 +33,28 @@ namespace Api.Modules.VersionControl.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> CreateNewDynamicContentCommitAsync(
-            DynamicContentCommitModel dynamicContentCommitModel)
+        public async Task<ServiceResult<bool>> CreateNewDynamicContentCommitAsync(DynamicContentCommitModel dynamicContentCommitModel)
         {
-            var result = await dynamicContentDataService.CreateNewDynamicContentCommitAsync(dynamicContentCommitModel);
+            await dynamicContentDataService.CreateNewDynamicContentCommitAsync(dynamicContentCommitModel);
 
-            return new ServiceResult<bool>(result);
+            return new ServiceResult<bool>(true);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<PublishedEnvironmentModel>> GetDynamicContentEnvironmentsAsync(
-            int dynamicContentId)
+        public async Task<ServiceResult<PublishedEnvironmentModel>> GetDynamicContentEnvironmentsAsync(int dynamicContentId)
         {
-
             if (dynamicContentId <= 0)
             {
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var versionsAndPublished =
-                await dynamicContentDataService.GetDynamicContentEnvironmentsAsync(dynamicContentId);
+            var versionsAndPublished = await dynamicContentDataService.GetDynamicContentEnvironmentsAsync(dynamicContentId);
 
-            return new ServiceResult<PublishedEnvironmentModel>(
-                PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
+            return new ServiceResult<PublishedEnvironmentModel>(PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<int>> PublishDynamicContentToEnvironmentAsync(ClaimsIdentity identity,
-            int dynamicContentId, int version, string environment, PublishedEnvironmentModel currentPublished)
+        public async Task<ServiceResult<int>> PublishDynamicContentToEnvironmentAsync(ClaimsIdentity identity, int dynamicContentId, int version, string environment, PublishedEnvironmentModel currentPublished)
         {
             if (dynamicContentId <= 0)
             {
@@ -72,11 +66,8 @@ namespace Api.Modules.VersionControl.Services
                 throw new ArgumentException("The version is invalid");
             }
 
-            var newPublished =
-                PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
-
-            var publishLog =
-                PublishedEnvironmentHelper.GeneratePublishLog(dynamicContentId, currentPublished, newPublished);
+            var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
+            var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(dynamicContentId, currentPublished, newPublished);
 
             return new ServiceResult<int>(
                 await dynamicContentDataService.UpdateDynamicContentPublishedEnvironmentAsync(dynamicContentId,
@@ -84,8 +75,7 @@ namespace Api.Modules.VersionControl.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<Dictionary<int, int>>> GetDynamicContentWithLowerVersionAsync(int contentId,
-            int version)
+        public async Task<ServiceResult<Dictionary<int, int>>> GetDynamicContentWithLowerVersionAsync(int contentId, int version)
         {
             var result = await dynamicContentDataService.GetDynamicContentWithLowerVersionAsync(contentId, version);
 

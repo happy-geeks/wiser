@@ -17,21 +17,6 @@ namespace Api.Modules.VersionControl.Interfaces
         /// <returns>Returns a model of the commit.</returns>
         Task<ServiceResult<CreateCommitModel>> CreateCommitAsync(string commitMessage, ClaimsIdentity identity);
 
-
-        /// <summary>
-        /// Creates new commit item in the database.
-        /// </summary>
-        /// <param name="templateId">The ID of the template.</param>
-        /// <param name="commitItemModel">The data from the commit.</param>
-        /// <returns></returns>
-        Task<ServiceResult<bool>> CreateCommitItemAsync(int templateId, CommitItemModel commitItemModel);
-
-        /// <summary>
-        /// Gets the most recently added commit.
-        /// </summary>
-        /// <returns>Returns a model of the commit.</returns>
-        Task<ServiceResult<CreateCommitModel>> GetCommitAsync();
-
         /// <summary>
         /// Completes the commit
         /// </summary>

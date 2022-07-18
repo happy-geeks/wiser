@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.VersionControl.Interfaces;
+using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
 
 namespace Api.Modules.VersionControl.Services
@@ -18,7 +19,6 @@ namespace Api.Modules.VersionControl.Services
         {
             this.versionControlDataService = versionControlDataService;
         }
-
 
         /// <inheritdoc />
         public async Task<ServiceResult<Dictionary<int, int>>> GetPublishedTemplateIdAndVersionAsync()
@@ -49,13 +49,6 @@ namespace Api.Modules.VersionControl.Services
         {
             var result = await versionControlDataService.GetDynamicContentFromCommitAsync(commitId);
             return new ServiceResult<List<DynamicContentCommitModel>>(result);
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<List<ModuleGridSettings>>> GetModuleGridSettingsAsync(int moduleId)
-        {
-            var result = await versionControlDataService.GetModuleGridSettingsAsync(moduleId);
-            return new ServiceResult<List<ModuleGridSettings>>(result);
         }
 
         /// <inheritdoc />

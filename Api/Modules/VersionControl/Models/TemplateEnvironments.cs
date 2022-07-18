@@ -13,7 +13,7 @@ namespace Api.Modules.VersionControl.Models
         public int TemplateId { get; set; }
 
         /// <summary>
-        /// The published enviornement model
+        /// The published environment model
         /// </summary>
         public PublishedEnvironmentModel PublishedEnvironments { get; set; }
     }

@@ -24,7 +24,7 @@ namespace Api.Modules.VersionControl.Controllers
     [Route("api/v3/[controller]"), ApiController, Authorize]
     public class VersionControlController : Controller
     {
-        private readonly IVersionControlService _versionControlService;
+        private readonly IVersionControlService versionControlService;
         private readonly ITemplatesService templatesService;
         private readonly IGridsService gridsService;
         private readonly ITemplateContainerService versionControlTemplateService;
@@ -36,7 +36,7 @@ namespace Api.Modules.VersionControl.Controllers
         /// </summary>
         public VersionControlController(IVersionControlService versionControlService, ITemplatesService templatesService, IGridsService gridsService, ITemplateContainerService templateService, IDynamicContentServiceVersionControl dynamicContentService, ICommitService commitService)
         {
-            this._versionControlService = versionControlService;
+            this.versionControlService = versionControlService;
             this.templatesService = templatesService;
             this.gridsService = gridsService;
             this.versionControlTemplateService = templateService;
@@ -56,31 +56,6 @@ namespace Api.Modules.VersionControl.Controllers
         }
 
         /// <summary>
-        /// Creates new commit in the database
-        /// </summary>
-        /// <param name="templateId"></param>
-        /// <param name="commitItemModel"></param>
-        /// <returns></returns>
-        [HttpPut, Route("{templateId:int}"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        public async Task<IActionResult> CreateNewCommitItem(int templateId, CommitItemModel commitItemModel)
-        {
-            return (await commitService.CreateCommitItemAsync(templateId, commitItemModel))
-                .GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Gets data from a commit
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet, Route("Commit")]
-        [ProducesResponseType(typeof(CreateCommitModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetCommit()
-        {
-            return (await commitService.GetCommitAsync()).GetHttpResponseMessage();
-        }
-
-        /// <summary>
         /// Adds new row to the database that connects the template to the commit
         /// </summary>
         /// <param name="templateCommitModel"></param>
@@ -88,7 +63,6 @@ namespace Api.Modules.VersionControl.Controllers
         [HttpPut, Route("template-commit"), ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateNewTemplateCommit(TemplateCommitModel templateCommitModel)
         {
-
             return (await versionControlTemplateService.CreateNewTemplateCommitAsync(templateCommitModel)).GetHttpResponseMessage();
         }
 
@@ -109,7 +83,7 @@ namespace Api.Modules.VersionControl.Controllers
         /// Updates the published environment of the Template
         /// </summary>
         /// <param name="templateId">The ID of the template</param>
-        /// <param name="environment">Name of the enviornment to publish to.</param>
+        /// <param name="environment">Name of the environment to publish to.</param>
         /// <param name="version">The version of the template.</param>
         /// <returns></returns>
         [HttpPost, Route("{templateId:int}/publish/{environment}/{version:int}"), ProducesResponseType(typeof(LinkedTemplatesModel), StatusCodes.Status200OK)]
@@ -158,7 +132,7 @@ namespace Api.Modules.VersionControl.Controllers
         /// <param name="templateId">The id of the template</param>
         /// <param name="version">The version of the template</param>
         /// <returns></returns>
-        [HttpGet, Route("current-published-enviornments/{templateId:int}/{version:int}")]
+        [HttpGet, Route("current-published-environments/{templateId:int}/{version:int}")]
         [ProducesResponseType(typeof(TemplateEnvironments), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetCurrentPublishedEnvironments(int templateId,int version)
@@ -177,7 +151,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetTemplatesfromCommit(int commitId)
         {
-            return (await _versionControlService.GetTemplatesFromCommitAsync(commitId)).GetHttpResponseMessage();
+            return (await versionControlService.GetTemplatesFromCommitAsync(commitId)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -190,7 +164,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetDynamicContentfromCommit(int commitId)
         {
-            return (await _versionControlService.GetDynamicContentFromCommitAsync(commitId)).GetHttpResponseMessage();
+            return (await versionControlService.GetDynamicContentFromCommitAsync(commitId)).GetHttpResponseMessage();
         }
 
 
@@ -263,20 +237,7 @@ namespace Api.Modules.VersionControl.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetDynamicContentInTemplate(int templateId)
         {
-            return (await _versionControlService.GetDynamicContentInTemplateAsync(templateId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Gets all the settings of the grids from the given module
-        /// </summary>
-        /// <param name="moduleId">The ID of the module</param>
-        /// <returns>Returns all the settings of the grids in a list.</returns>
-        [HttpGet, Route("module-gird-settings/{moduleId:int}")]
-        [ProducesResponseType(typeof(List<ModuleGridSettings>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetModuleGridSettings(int moduleId)
-        {
-            return (await _versionControlService.GetModuleGridSettingsAsync(moduleId)).GetHttpResponseMessage();
+            return (await versionControlService.GetDynamicContentInTemplateAsync(templateId)).GetHttpResponseMessage();
         }
 
         /// <summary>
