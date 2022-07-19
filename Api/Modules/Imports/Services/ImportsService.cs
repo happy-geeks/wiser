@@ -567,7 +567,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("data", json);
                 clientDatabaseConnection.AddParameter("server_name", Environment.MachineName);
                 clientDatabaseConnection.AddParameter("sub_domain", subDomain);
-                wiserImportId = await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>("wiser_import");
+                wiserImportId = await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>(WiserTableNames.WiserImport);
             }
             catch (Exception ex)
             {
@@ -585,7 +585,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("errors", String.Join(Environment.NewLine, importResult.Errors));
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
                 clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity));
-                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>("wiser_import_log");
+                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>(WiserTableNames.WiserImportLog);
             }
             catch (Exception exception)
             {
