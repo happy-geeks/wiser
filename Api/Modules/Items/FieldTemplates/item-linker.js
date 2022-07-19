@@ -91,7 +91,7 @@ checkTreeElement.kendoTreeView({
             read: (kendoReadOptions) => {
                 Wiser2.api({
                     url: !showStructure 
-                        ? window.dynamicItems.settings.serviceRoot + "GET_ALL_ITEMS_OF_TYPE?moduleid=" + options.moduleId + "&checkId=" + encodeURIComponent(currentItemId) + "&entityType=" + encodeURIComponent((!options.entityTypes ? "" : options.entityTypes.join())) + "&orderBy=" + encodeURIComponent((options.orderBy || ""))
+                        ? window.dynamicItems.settings.serviceRoot + "/GET_ALL_ITEMS_OF_TYPE?moduleid=" + options.moduleId + "&checkId=" + encodeURIComponent(currentItemId) + "&entityType=" + encodeURIComponent((!options.entityTypes ? "" : options.entityTypes.join())) + "&orderBy=" + encodeURIComponent((options.orderBy || ""))
                         : window.dynamicItems.settings.wiserApiRoot + "items/tree-view?moduleId=" + options.moduleId + "&checkId=" + encodeURIComponent(currentItemId) + (!options.entityTypes ? "" : ("&entityType=" + encodeURIComponent(options.entityTypes.join()))) + (options.orderBy ? ("&orderBy=" + encodeURIComponent(options.orderBy)) : ""),
                     dataType: "json",
                     method: "GET",

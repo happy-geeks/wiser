@@ -1599,7 +1599,7 @@ JOIN wiser_entity we ON we.name = i.entity_type AND we.show_in_tree_view = 1
 LEFT JOIN wiser_itemlink ilp ON ilp.item_id = i.id
 LEFT JOIN wiser_itemlink checked ON checked.item_id = i.id AND checked.destination_item_id = @_checkId AND @_checkId <> '0'
 WHERE i.moduleid = @mid
-AND (@_entityType = '' OR i.entity_type = @entityType)
+AND (@_entityType = '' OR i.entity_type = @_entityType)
 GROUP BY i.id
 ORDER BY 
     CASE WHEN @_ordering = 'title' THEN i.title END ASC,
