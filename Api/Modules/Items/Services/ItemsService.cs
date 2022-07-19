@@ -2306,7 +2306,7 @@ ORDER BY IFNULL(friendly_name, name) ASC");
                 clientDatabaseConnection.AddParameter("newOrderNumber", newOrderNumber);
 
                 // Items voor of na de plaatsing (before/after) 1 plek naar achteren schuiven (niet bij plaatsen op een ander item, want dan komt het nieuwe item altijd achteraan)
-                if (!positionIsOver && sourceParentId == destinationParentId)
+                if (!positionIsOver)
                 {
                     query = $@"UPDATE {WiserTableNames.WiserItemLink}
                             SET ordering = ordering + 1
