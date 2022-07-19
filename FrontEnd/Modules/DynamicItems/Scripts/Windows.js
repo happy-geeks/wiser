@@ -1501,11 +1501,7 @@ export class Windows {
             popupWindowContainer.data("saving", true);
 
             const kendoWindow = popupWindowContainer.data("kendoWindow");
-            let entityType = popupWindowContainer.data("entityTypeDetails");
-
-            if (Wiser2.validateArray(entityType)) {
-                entityType = entityType[0];
-            }
+            let entityType = popupWindowContainer.data("entityTypeDetails").entityType;
 
             const data = kendoWindow.element.data();
             const encryptedItemId = data.itemId;
