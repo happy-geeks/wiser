@@ -83,12 +83,15 @@
                 return false;
             }
 
+            //debugger;
             let html = `<div class="dynamic-content" data-selector-id="${selectedDataSelector}" template-id="${selectedTemplate}"><h2>Data selector '${dataSelectorDropDown.selectedOptions[0].text}' met template '${dataSelectorTemplateDropDown.selectedOptions[0].text}'</h2></div>`;
             const previewResult = await main.dataSelectorsService.generatePreview(html);
             if (previewResult.success && previewResult.data) {
                 html = previewResult.data;
             }
-            _cb.pasteHtmlAtCaret(html, false);
+
+            _cb.rowtool.util.addContent(html, "row");
+
             if (previewResult.success) {
                 _cb.hideModal(modal);
             }
