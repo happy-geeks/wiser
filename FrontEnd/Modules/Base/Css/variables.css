@@ -59,4 +59,9 @@
 	--btn-color: 		var(--action-color);
 
 	--drop-shadow:		0 4px 4px 0 var(--shadow-color);
+	
+	--notify-error:		#BA2049;
+	--notify-warning:	#F5A600;
+	--notify-success:	#5FB662;
+	--notify-info:		#333333;
 }

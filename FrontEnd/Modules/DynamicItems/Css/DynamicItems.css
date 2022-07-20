@@ -146,6 +146,8 @@ body.gridViewMode #mainScreenForm {
 
 #right-pane {
     background-color: #EEEEEE;
+    display: flex;
+    flex-direction: column;
 }
 
 #right-pane .pane-content {
@@ -153,6 +155,8 @@ body.gridViewMode #mainScreenForm {
     margin: 0;
     padding: 0;
     height: fit-content;
+    min-height: fit-content;
+    flex: 1 1 auto;
 }
 
 /** ICONS **/
