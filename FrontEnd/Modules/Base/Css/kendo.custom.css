@@ -1959,7 +1959,7 @@ html .km-pane-wrapper .km-widget,
 }
 
 .k-tabstrip .k-content.k-state-active {
-    background-color: var(--white-color);
+    background-color: var(--item-bg-color);
     color: var(--dark-txt);
 }
 

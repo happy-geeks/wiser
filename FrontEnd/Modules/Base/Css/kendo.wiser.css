@@ -611,7 +611,10 @@
 .k-tabstrip:focus {
 	box-shadow: none;
 }
-.k-tabstrip .k-content.k-state-active {
+.k-tabstrip-items-wrapper {
+	background-color: var(--white-color);
+}
+.k-tabstrip-items-wrapper .k-tabstrip-items .k-item.k-state-active {
 	background-color: var(--item-bg-color);
 	color: var(--dark-txt);
 }
