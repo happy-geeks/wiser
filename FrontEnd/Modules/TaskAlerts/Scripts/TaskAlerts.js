@@ -664,8 +664,9 @@ const moduleSettings = {
             //BUTTONS
             document.querySelectorAll(".module-button").forEach((e) => {
                 const element = $(e);
-                const options = element.data();
-                element.kendoButton(options);
+                element.kendoButton({
+                    icon: element.data("icon")
+                });
             });
         }
 

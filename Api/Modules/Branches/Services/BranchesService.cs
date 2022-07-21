@@ -14,6 +14,7 @@ using Api.Modules.Branches.Models;
 using Api.Modules.Customers.Enums;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Models;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
@@ -23,6 +24,7 @@ using GeeksCoreLibrary.Modules.Branches.Enumerations;
 using GeeksCoreLibrary.Modules.Branches.Helpers;
 using GeeksCoreLibrary.Modules.Branches.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.DataSelector.Models;
 using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
@@ -429,10 +431,10 @@ LIMIT 1";
             }
 
             // Local function to get the type number, source item ID and the destination item ID from a link.
-            async Task<(int Type, ulong SourceItemId, ulong DestinationItemId)?> GetDataFromLinkAsync(ulong linkId, string tablePrefix, MySqlConnection branchconnection)
+            async Task<(int Type, ulong SourceItemId, ulong DestinationItemId)?> GetDataFromLinkAsync(ulong linkId, string tablePrefix, MySqlConnection connection)
             {
                 var linkDataTable = new DataTable();
-                await using var linkCommand = branchconnection.CreateCommand();
+                await using var linkCommand = connection.CreateCommand();
                 linkCommand.Parameters.AddWithValue("id", linkId);
                 linkCommand.CommandText = $@"SELECT type, item_id, destination_item_id FROM `{tablePrefix}{WiserTableNames.WiserItemLink}` WHERE id = ?id
 UNION ALL
@@ -446,7 +448,7 @@ LIMIT 1";
                     return null;
                 }
 
-                return (linkDataTable.Rows[0].Field<int>("type"), linkDataTable.Rows[0].Field<ulong>("item_id"), linkDataTable.Rows[0].Field<ulong>("destination_item_id"));
+                return (linkDataTable.Rows[0].Field<int>("type"), Convert.ToUInt64(linkDataTable.Rows[0]["item_id"]), Convert.ToUInt64(linkDataTable.Rows[0]["destination_item_id"]));
             }
 
             // Count all changed items and settings (if a single item has been changed multiple times, we count only one change).
@@ -822,11 +824,12 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> MergeAsync(ClaimsIdentity identity, MergeBranchSettingsModel settings)
+        public async Task<ServiceResult<MergeBranchResultModel>> MergeAsync(ClaimsIdentity identity, MergeBranchSettingsModel settings)
         {
+            var result = new MergeBranchResultModel();
             var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
             var productionCustomer = (await wiserCustomersService.GetSingleAsync(currentCustomer.CustomerId, true)).ModelObject;
-            
+
             // If the settings.Id is 0, it means the user wants to merge the current branch.
             if (settings.Id <= 0)
             {
@@ -837,46 +840,670 @@ LIMIT 1";
             // Make sure the user is not trying to copy changes from main to main, that would be weird and also cause a lot of problems.
             if (currentCustomer.CustomerId == settings.Id)
             {
-                return new ServiceResult<bool>
+                return new ServiceResult<MergeBranchResultModel>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
                     ErrorMessage = "U probeert wijzigingen van de hoofdbranch te synchroniseren, dat is niet mogelijk."
                 };
             }
 
-            var selectedEnvironmentCustomer = settings.Id == currentCustomer.Id 
-                ? currentCustomer 
+            var selectedBranchCustomer = settings.Id == currentCustomer.Id
+                ? currentCustomer
                 : (await wiserCustomersService.GetSingleAsync(settings.Id, true)).ModelObject;
 
             // Check to make sure someone is not trying to copy changes from an environment that does not belong to them.
-            if (selectedEnvironmentCustomer == null || currentCustomer.CustomerId != selectedEnvironmentCustomer.CustomerId)
+            if (selectedBranchCustomer == null || currentCustomer.CustomerId != selectedBranchCustomer.CustomerId)
             {
-                return new ServiceResult<bool>
+                return new ServiceResult<MergeBranchResultModel>
                 {
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
 
-            // Add the merge to the queue so that the AIS will process it.
-            await using var branchConnection = new MySqlConnection(wiserCustomersService.GenerateConnectionStringFromCustomer(productionCustomer));
-            await branchConnection.OpenAsync();
-            await using (var environmentCommand = branchConnection.CreateCommand())
+            settings.DatabaseName = selectedBranchCustomer.Database.DatabaseName;
+
+            DateTime? lastMergeDate = null;
+
+            // Get the date and time of the last merge of this branch, so we can find all changes made in production after this date, to check for merge conflicts.
+            await using var mainConnection = new MySqlConnection(wiserCustomersService.GenerateConnectionStringFromCustomer(productionCustomer));
+            await mainConnection.OpenAsync();
+            await using (var productionCommand = mainConnection.CreateCommand())
             {
-                environmentCommand.Parameters.AddWithValue("branch_id", settings.Id);
-                environmentCommand.Parameters.AddWithValue("action", "merge");
-                environmentCommand.Parameters.AddWithValue("data", JsonConvert.SerializeObject(settings));
-                environmentCommand.Parameters.AddWithValue("added_on", DateTime.Now);
-                environmentCommand.Parameters.AddWithValue("start_on", settings.StartOn ?? DateTime.Now);
-                environmentCommand.Parameters.AddWithValue("added_by", IdentityHelpers.GetUserName(identity, true));
-                environmentCommand.Parameters.AddWithValue("user_id", IdentityHelpers.GetWiserUserId(identity));
-                environmentCommand.CommandText = $@"INSERT INTO {WiserTableNames.WiserBranchesQueue} 
+                productionCommand.Parameters.AddWithValue("branchId", selectedBranchCustomer.Id);
+                productionCommand.CommandText = $"SELECT MAX(finished_on) AS lastMergeDate FROM {WiserTableNames.WiserBranchesQueue} WHERE branch_id = ?branchId AND success = 1 AND finished_on IS NOT NULL";
+
+                var dataTable = new DataTable();
+                using var sourceAdapter = new MySqlDataAdapter(productionCommand);
+                await sourceAdapter.FillAsync(dataTable);
+                if (dataTable.Rows.Count > 0)
+                {
+                    lastMergeDate = dataTable.Rows[0].Field<DateTime?>("lastMergeDate");
+                }
+            }
+
+            await using var branchConnection = new MySqlConnection(wiserCustomersService.GenerateConnectionStringFromCustomer(selectedBranchCustomer));
+            await branchConnection.OpenAsync();
+
+            // If we have no last merge date, it probably means someone removed a record from wiser_branch_queue, in that case get the date of the first change in wiser_history in the branch. 
+            if (!lastMergeDate.HasValue)
+            {
+                await using var branchCommand = branchConnection.CreateCommand();
+                branchCommand.CommandText = $@"SELECT MIN(changed_on) AS firstChangeDate FROM {WiserTableNames.WiserHistory}";
+                var dataTable = new DataTable();
+                using var branchAdapter = new MySqlDataAdapter(branchCommand);
+                await branchAdapter.FillAsync(dataTable);
+                if (dataTable.Rows.Count > 0)
+                {
+                    lastMergeDate = dataTable.Rows[0].Field<DateTime?>("firstChangeDate");
+                }
+            }
+
+            // If we somehow still don't have a last merge date, then we can't check for merge conflicts. This should never happen under normal circumstances.
+            if (lastMergeDate.HasValue && (settings.ConflictSettings == null || !settings.ConflictSettings.Any()))
+            {
+                var conflicts = new List<MergeConflictModel>();
+                await GetAllChangesFromBranchAsync(branchConnection, conflicts, settings);
+                await FindConflictsInMainBranchAsync(mainConnection, branchConnection, conflicts, lastMergeDate.Value, settings);
+                result.Conflicts = conflicts.Where(conflict => conflict.ChangeDateInMain.HasValue).ToList();
+                if (result.Conflicts.Any())
+                {
+                    result.Success = false;
+                    return new ServiceResult<MergeBranchResultModel>(result);
+                }
+            }
+
+            // Add the merge to the queue so that the AIS will process it.
+            await using (var productionCommand = mainConnection.CreateCommand())
+            {
+                productionCommand.Parameters.AddWithValue("branch_id", settings.Id);
+                productionCommand.Parameters.AddWithValue("action", "merge");
+                productionCommand.Parameters.AddWithValue("data", JsonConvert.SerializeObject(settings));
+                productionCommand.Parameters.AddWithValue("added_on", DateTime.Now);
+                productionCommand.Parameters.AddWithValue("start_on", settings.StartOn ?? DateTime.Now);
+                productionCommand.Parameters.AddWithValue("added_by", IdentityHelpers.GetUserName(identity, true));
+                productionCommand.Parameters.AddWithValue("user_id", IdentityHelpers.GetWiserUserId(identity));
+                productionCommand.CommandText = $@"INSERT INTO {WiserTableNames.WiserBranchesQueue} 
 (branch_id, action, data, added_on, start_on, added_by, user_id)
 VALUES (?branch_id, ?action, ?data, ?added_on, ?start_on, ?added_by, ?user_id)";
 
-                await environmentCommand.ExecuteNonQueryAsync();
+                await productionCommand.ExecuteNonQueryAsync();
             }
 
-            return new ServiceResult<bool>(true);
+            result.Success = true;
+
+            return new ServiceResult<MergeBranchResultModel>(result);
+        }
+
+        /// <summary>
+        /// This method is for finding merge conflicts. This will get all changes from the branch database and add them to the conflicts list.
+        /// This is meant to work together with FindConflictsInMainBranchAsync. which should be called right after this method..
+        /// </summary>
+        /// <param name="branchConnection">The connection to the branch database.</param>
+        /// <param name="conflicts">The list of conflicts.</param>
+        /// <param name="mergeBranchSettings">The settings that say what things to merge.</param>
+        private static async Task GetAllChangesFromBranchAsync(MySqlConnection branchConnection, List<MergeConflictModel> conflicts, MergeBranchSettingsModel mergeBranchSettings)
+        {
+            // Get all changes from branch.
+            var dataTable = new DataTable();
+            await using (var branchCommand = branchConnection.CreateCommand())
+            {
+                branchCommand.CommandText = $@"SELECT
+    id, 
+    action,
+    tablename,
+    item_id,
+    changed_on,
+    changed_by,
+    field,
+    newvalue,
+    language_code,
+    groupname
+FROM {WiserTableNames.WiserHistory}";
+                using var branchAdapter = new MySqlDataAdapter(branchCommand);
+                await branchAdapter.FillAsync(dataTable);
+            }
+            
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                var action = dataRow.Field<string>("action")?.ToUpperInvariant();
+                var conflict = new MergeConflictModel
+                {
+                    Id = Convert.ToUInt64(dataRow["id"]),
+                    ObjectId = dataRow.Field<ulong>("item_id"),
+                    TableName = dataRow.Field<string>("tablename"),
+                    FieldName = dataRow.Field<string>("field"),
+                    ValueInBranch = dataRow.Field<string>("newvalue"),
+                    ChangeDateInBranch = dataRow.Field<DateTime>("changed_on"),
+                    ChangedByInBranch = dataRow.Field<string>("changed_by"),
+                    LanguageCode = dataRow.Field<string>("language_code"),
+                    GroupName = dataRow.Field<string>("groupname")
+                };
+
+                switch (action)
+                {
+                    case "UPDATE_ENTITYPROPERTY":
+                    {
+                        // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
+                        if (!mergeBranchSettings.Settings.Any(x => x.Type == WiserSettingTypes.EntityProperty && x.Update))
+                        {
+                            continue;
+                        }
+
+                        conflict.Type = "entityProperty";
+                        conflict.TypeDisplayName = "Veld van entiteit";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
+                    case "UPDATE_MODULE":
+                    {
+                        // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
+                        if (!mergeBranchSettings.Settings.Any(x => x.Type == WiserSettingTypes.Module && x.Update))
+                        {
+                            continue;
+                        }
+
+                        conflict.Type = "module";
+                        conflict.TypeDisplayName = "Module";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
+                    case "UPDATE_QUERY":
+                    {
+                        // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
+                        if (!mergeBranchSettings.Settings.Any(x => x.Type == WiserSettingTypes.Query && x.Update))
+                        {
+                            continue;
+                        }
+
+                        conflict.Type = "query";
+                        conflict.TypeDisplayName = "Query";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
+                    case "UPDATE_ENTITY":
+                    {
+                        // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
+                        if (!mergeBranchSettings.Settings.Any(x => x.Type == WiserSettingTypes.Entity && x.Update))
+                        {
+                            continue;
+                        }
+
+                        conflict.Type = "entity";
+                        conflict.TypeDisplayName = "Entiteit";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
+                    case "UPDATE_FIELD_TEMPLATE":
+                    {
+                        // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
+                        if (!mergeBranchSettings.Settings.Any(x => x.Type == WiserSettingTypes.FieldTemplates && x.Update))
+                        {
+                            continue;
+                        }
+
+                        conflict.Type = "fieldTemplate";
+                        conflict.TypeDisplayName = "Veld-template";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
+                    case "UPDATE_LINK_SETTING":
+                    {
+                        // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
+                        if (!mergeBranchSettings.Settings.Any(x => x.Type == WiserSettingTypes.Link && x.Update))
+                        {
+                            continue;
+                        }
+
+                        conflict.Type = "linkType";
+                        conflict.TypeDisplayName = "Koppeltype";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
+                    case "UPDATE_PERMISSION":
+                    {
+                        // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
+                        if (!mergeBranchSettings.Settings.Any(x => x.Type == WiserSettingTypes.Permission && x.Update))
+                        {
+                            continue;
+                        }
+
+                        conflict.Type = "permission";
+                        conflict.TypeDisplayName = "Rechten";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
+                    case "UPDATE_USER_ROLE":
+                    {
+                        // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
+                        if (!mergeBranchSettings.Settings.Any(x => x.Type == WiserSettingTypes.UserRole && x.Update))
+                        {
+                            continue;
+                        }
+
+                        conflict.Type = "userRole";
+                        conflict.TypeDisplayName = "Koppeling van rol aan gebruiker";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
+                    case "UPDATE_API_CONNECTION":
+                    {
+                        // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
+                        if (!mergeBranchSettings.Settings.Any(x => x.Type == WiserSettingTypes.ApiConnection && x.Update))
+                        {
+                            continue;
+                        }
+
+                        conflict.Type = "apiConnection";
+                        conflict.TypeDisplayName = "Api-instellingen";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
+                    case "UPDATE_DATA_SELECTOR":
+                    {
+                        // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
+                        if (!mergeBranchSettings.Settings.Any(x => x.Type == WiserSettingTypes.DataSelector && x.Update))
+                        {
+                            continue;
+                        }
+
+                        conflict.Type = "dataSelector";
+                        conflict.TypeDisplayName = "Dataselector";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
+
+                    // Changes to items. We don't check the mergeBranchSettings here, because we don't know the entity types of items here yet.
+                    // The mergeBranchSettings for items will be checked in FindConflictsInMainBranchAsync.
+                    case "UPDATE_ITEM":
+                    {
+                        conflict.Type = "item";
+                        conflict.TypeDisplayName = "Item";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
+                    case "UPDATE_ITEMLINKDETAIL":
+                    case "CHANGE_LINK":
+                    {
+                        conflict.Type = "link";
+                        conflict.TypeDisplayName = "Koppeling";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
+                    case "UPDATE_FILE":
+                    {
+                        conflict.Type = "file";
+                        conflict.TypeDisplayName = "Bestand";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
+                    default:
+                    {
+                        continue;
+                    }
+                }
+
+                conflicts.Add(conflict);
+            }
+        }
+
+        /// <summary>
+        /// This method is for finding merge conflicts. This will get all changes from the main database. It will then check if the same items has been changed in the branch database and if so, add that as a conflict.
+        /// This is meant to work together with GetAllChangesFromBranchAsync. which should be called right before this method.
+        /// </summary>
+        /// <param name="mainConnection">The connection to the main database.</param>
+        /// <param name="branchConnection">The connection to the branch database.</param>
+        /// <param name="conflicts">The list of conflicts.</param>
+        /// <param name="lastMergeDate">The date and time of the last merge, so we know from when to start looking.</param>
+        /// <param name="mergeBranchSettings">The settings that say what things to merge.</param>
+        private async Task FindConflictsInMainBranchAsync(MySqlConnection mainConnection, MySqlConnection branchConnection, List<MergeConflictModel> conflicts, DateTime lastMergeDate, MergeBranchSettingsModel mergeBranchSettings)
+        {
+            var moduleNames = new Dictionary<ulong, string>();
+            var entityTypes = new Dictionary<ulong, string>();
+            var items = new Dictionary<ulong, (string Title, string EntityType, int ModuleId)>();
+            var links = new Dictionary<ulong, int>();
+            var entityTypeSettings = new Dictionary<string, EntitySettingsModel>();
+            var linkTypeSettings = new Dictionary<int, LinkSettingsModel>();
+            var entityProperties = new Dictionary<ulong, string>();
+            var queryNames = new Dictionary<ulong, string>();
+            var fieldTypes = new Dictionary<ulong, string>();
+            var linkSettings = new Dictionary<ulong, string>();
+            var apiConnections = new Dictionary<ulong, string>();
+            var dataSelectors = new Dictionary<ulong, string>();
+            var fieldDisplayNames = new Dictionary<string, string>();
+            var dataTable = new DataTable();
+            
+            await using var productionCommand = mainConnection.CreateCommand();
+            productionCommand.Parameters.AddWithValue("lastChange", lastMergeDate);
+            productionCommand.CommandText = $@"SELECT 
+    action,
+    tablename,
+    item_id,
+    changed_on,
+    changed_by,
+    field,
+    newvalue,
+    language_code,
+    groupname
+FROM {WiserTableNames.WiserHistory}
+WHERE changed_on >= ?lastChange";
+            using (var branchAdapter = new MySqlDataAdapter(productionCommand))
+            {
+                await branchAdapter.FillAsync(dataTable);
+            }
+            
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                var action = dataRow.Field<string>("action")?.ToUpperInvariant();
+                var value = dataRow.Field<string>("newvalue");
+
+                var conflict = conflicts.LastOrDefault(conflict => conflict.ObjectId == dataRow.Field<ulong>("item_id")
+                                                           && conflict.TableName == dataRow.Field<string>("tablename")
+                                                           && conflict.LanguageCode == dataRow.Field<string>("language_code")
+                                                           && conflict.GroupName == dataRow.Field<string>("groupname")
+                                                           && conflict.FieldName == dataRow.Field<string>("field")
+                                                           && conflict.ValueInBranch != value);
+                
+                // If we can't find a conflict in the list, it means that the chosen branch has no change for this item/object, so we can skip it. 
+                if (conflict == null)
+                {
+                    continue;
+                }
+
+                // Local function for getting the display name of an object, this uses a dictionary to cache the names in memory.
+                async Task<string> GetDisplayNameAsync(IDictionary<ulong, string> cache, string nameColumn = "name")
+                {
+                    if (cache.ContainsKey(conflict!.ObjectId))
+                    {
+                        return cache[conflict.ObjectId];
+                    }
+
+                    await using var branchCommand = branchConnection.CreateCommand();
+                    branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
+                    branchCommand.CommandText = $"SELECT {nameColumn} FROM {conflict.TableName} WHERE id = ?id";
+                    var moduleDataTable = new DataTable();
+                    using var adapter = new MySqlDataAdapter(branchCommand);
+                    await adapter.FillAsync(moduleDataTable);
+                    cache.Add(conflict.ObjectId, moduleDataTable.Rows.Count == 0 ? $"Onbekend, #{conflict.ObjectId}" : moduleDataTable.Rows[0].Field<string>(nameColumn));
+                    return cache[conflict.ObjectId];
+                }
+
+                switch (action)
+                {
+                    // Changes to Wiser settings.
+                    case "UPDATE_ENTITYPROPERTY":
+                    {
+                        if (!entityProperties.ContainsKey(conflict.ObjectId))
+                        {
+                            await using var branchCommand = branchConnection.CreateCommand();
+                            branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
+                            branchCommand.CommandText = $"SELECT entity_name, display_name, language_code FROM {WiserTableNames.WiserEntityProperty} WHERE id = ?id";
+                            var entityPropertyDataTable = new DataTable();
+                            using var adapter = new MySqlDataAdapter(branchCommand);
+                            await adapter.FillAsync(entityPropertyDataTable);
+
+                            var name = new StringBuilder($"Onbekend, #{conflict.ObjectId}");
+                            if (entityPropertyDataTable.Rows.Count > 0)
+                            {
+                                name = new StringBuilder(entityPropertyDataTable.Rows[0].Field<string>("display_name"));
+                                var languageCode = entityPropertyDataTable.Rows[0].Field<string>("language_code");
+                                if (!String.IsNullOrWhiteSpace(languageCode))
+                                {
+                                    name.Append($" ({languageCode})");
+                                }
+
+                                name.Append($" van {entityPropertyDataTable.Rows[0].Field<string>("entity_name")}");
+                            }
+
+                            entityProperties.Add(conflict.ObjectId, name.ToString());
+                        }
+
+                        conflict.Title = entityProperties[conflict.ObjectId];
+                        break;
+                    }
+                    case "UPDATE_MODULE":
+                    {
+                        conflict.Title = await GetDisplayNameAsync(moduleNames);
+                        break;
+                    }
+                    case "UPDATE_QUERY":
+                    {
+                        conflict.Title = await GetDisplayNameAsync(queryNames);
+                        break;
+                    }
+                    case "UPDATE_ENTITY":
+                    {
+                        if (!entityTypes.ContainsKey(conflict.ObjectId))
+                        {
+                            await using var branchCommand = branchConnection.CreateCommand();
+                            branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
+                            branchCommand.CommandText = $"SELECT name, friendly_name FROM {WiserTableNames.WiserEntity} WHERE id = ?id";
+                            var entityDataTable = new DataTable();
+                            using var adapter = new MySqlDataAdapter(branchCommand);
+                            await adapter.FillAsync(entityDataTable);
+
+                            var name = $"Onbekend, #{conflict.ObjectId}";
+                            if (entityDataTable.Rows.Count > 0)
+                            {
+                                name = entityDataTable.Rows[0].Field<string>("friendly_name");
+                                if (String.IsNullOrWhiteSpace(name))
+                                {
+                                    name = entityDataTable.Rows[0].Field<string>("name");
+                                }
+                            }
+
+                            entityTypes.Add(conflict.ObjectId,  name);
+                        }
+
+                        conflict.Title = entityTypes[conflict.ObjectId];
+                        break;
+                    }
+                    case "UPDATE_FIELD_TEMPLATE":
+                    {
+                        conflict.Title = await GetDisplayNameAsync(fieldTypes);
+                        break;
+                    }
+                    case "UPDATE_LINK_SETTING":
+                    {
+                        conflict.Title = await GetDisplayNameAsync(linkSettings);
+                        break;
+                    }
+                    case "UPDATE_PERMISSION":
+                    {
+                        break;
+                    }
+                    case "UPDATE_USER_ROLE":
+                    {
+                        break;
+                    }
+                    case "UPDATE_API_CONNECTION":
+                    {
+                        conflict.Title = await GetDisplayNameAsync(apiConnections);
+                        break;
+                    }
+                    case "UPDATE_DATA_SELECTOR":
+                    {
+                        conflict.Title = await GetDisplayNameAsync(dataSelectors);
+                        break;
+                    }
+
+                    // Changes to items.
+                    case "UPDATE_ITEM":
+                    {
+                        // Get the title and entity type of the item.
+                        if (!items.ContainsKey(conflict.ObjectId))
+                        {
+                            await using var branchCommand = branchConnection.CreateCommand();
+                            branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
+                            branchCommand.CommandText = $"SELECT title, entity_type, moduleid FROM {conflict.TableName.Replace(WiserTableNames.WiserItemDetail, WiserTableNames.WiserItem)} WHERE id = ?id";
+                            var entityDataTable = new DataTable();
+                            using var adapter = new MySqlDataAdapter(branchCommand);
+                            await adapter.FillAsync(entityDataTable);
+
+                            var entityType = "unknown";
+                            var title = $"Onbekend, #{conflict.ObjectId}";
+                            var moduleId = 0;
+                            if (entityDataTable.Rows.Count > 0)
+                            {
+                                title = entityDataTable.Rows[0].Field<string>("title");
+                                entityType = entityDataTable.Rows[0].Field<string>("entity_type");
+                                moduleId = entityDataTable.Rows[0].Field<int>("moduleid");
+                            }
+
+                            items.Add(conflict.ObjectId, (title, entityType, moduleId));
+                        }
+
+                        conflict.Title = items[conflict.ObjectId].Title;
+                        conflict.Type = items[conflict.ObjectId].EntityType;
+                        
+                        // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
+                        if (!mergeBranchSettings.Entities.Any(x => String.Equals(x.Type, conflict.Type, StringComparison.OrdinalIgnoreCase) && x.Update))
+                        {
+                            continue;
+                        }
+
+                        // Get the display name for the entity type.
+                        if (!entityTypeSettings.ContainsKey(items[conflict.ObjectId].EntityType))
+                        {
+                            entityTypeSettings.Add(items[conflict.ObjectId].EntityType, await wiserItemsService.GetEntityTypeSettingsAsync(items[conflict.ObjectId].EntityType));
+                        }
+                        conflict.TypeDisplayName = entityTypeSettings[items[conflict.ObjectId].EntityType].DisplayName;
+
+                        // Get the display name for the field.
+                        var languageCode = dataRow.Field<string>("language_code");
+                        var fieldName = dataRow.Field<string>("field");
+                        var fieldKey = $"{conflict.Type}_{fieldName}_{languageCode}";
+                        if (!fieldDisplayNames.ContainsKey(fieldKey))
+                        {
+                            await using var branchCommand = branchConnection.CreateCommand();
+                            branchCommand.Parameters.AddWithValue("fieldName", fieldName);
+                            branchCommand.Parameters.AddWithValue("languageCode", languageCode);
+                            branchCommand.Parameters.AddWithValue("entityType", conflict.Type);
+                            branchCommand.CommandText = $"SELECT display_name FROM {WiserTableNames.WiserEntityProperty} WHERE entity_name = ?entityType AND property_name = ?fieldName AND language_code = ?languageCode";
+                            var entityDataTable = new DataTable();
+                            using var adapter = new MySqlDataAdapter(branchCommand);
+                            await adapter.FillAsync(entityDataTable);
+
+                            var displayName = "";
+                            if (entityDataTable.Rows.Count > 0)
+                            {
+                                displayName = entityDataTable.Rows[0].Field<string>("display_name");
+                            }
+
+                            if (String.IsNullOrWhiteSpace(displayName))
+                            {
+                                displayName = conflict.FieldName;
+                            }
+
+                            fieldDisplayNames.Add(fieldKey, displayName);
+                        }
+
+                        conflict.FieldDisplayName = fieldDisplayNames[fieldKey];
+
+                        break;
+                    }
+                    case "UPDATE_ITEMLINKDETAIL":
+                    case "CHANGE_LINK":
+                    {
+                        // Get the type number and name of the link.
+                        if (!links.ContainsKey(conflict.ObjectId))
+                        {
+                            await using var branchCommand = branchConnection.CreateCommand();
+                            branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
+                            branchCommand.CommandText = $"SELECT type, item_id, destination_item_id FROM {conflict.TableName.Replace(WiserTableNames.WiserItemLinkDetail, WiserTableNames.WiserItemLink)} WHERE id = ?id";
+                            var entityDataTable = new DataTable();
+                            using var adapter = new MySqlDataAdapter(branchCommand);
+                            await adapter.FillAsync(entityDataTable);
+
+                            var type = 0;
+                            if (entityDataTable.Rows.Count > 0)
+                            {
+                                type = entityDataTable.Rows[0].Field<int>("type");
+                            }
+
+                            links.Add(conflict.ObjectId, type);
+                        }
+
+                        // Get the display name for the link type.
+                        if (!linkTypeSettings.ContainsKey(links[conflict.ObjectId]))
+                        {
+                            var settings = await wiserItemsService.GetLinkTypeSettingsAsync(links[conflict.ObjectId]);
+                            if (String.IsNullOrWhiteSpace(settings.Name))
+                            {
+                                settings.Name = links[conflict.ObjectId].ToString();
+                            }
+
+                            linkTypeSettings.Add(links[conflict.ObjectId], settings);
+                        }
+                        
+                        // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
+                        if (!mergeBranchSettings.Entities.Any(x => (String.Equals(x.Type, linkTypeSettings[links[conflict.ObjectId]].SourceEntityType, StringComparison.OrdinalIgnoreCase) || String.Equals(x.Type, linkTypeSettings[links[conflict.ObjectId]].DestinationEntityType, StringComparison.OrdinalIgnoreCase)) && x.Update))
+                        {
+                            continue;
+                        }
+
+                        conflict.Type = links[conflict.ObjectId].ToString();
+                        conflict.TypeDisplayName = linkTypeSettings[links[conflict.ObjectId]].Name;
+
+                        // Get the display name for the field.
+                        var languageCode = dataRow.Field<string>("language_code");
+                        var fieldName = dataRow.Field<string>("field");
+                        var fieldKey = $"{conflict.Type}_{fieldName}_{languageCode}";
+                        if (!fieldDisplayNames.ContainsKey(fieldKey))
+                        {
+                            await using var branchCommand = branchConnection.CreateCommand();
+                            branchCommand.Parameters.AddWithValue("fieldName", fieldName);
+                            branchCommand.Parameters.AddWithValue("languageCode", languageCode);
+                            branchCommand.Parameters.AddWithValue("linkType", conflict.Type);
+                            branchCommand.CommandText = $"SELECT display_name FROM {WiserTableNames.WiserEntityProperty} WHERE link_type = ?linkType AND property_name = ?fieldName AND language_code = ?languageCode";
+                            var entityDataTable = new DataTable();
+                            using var adapter = new MySqlDataAdapter(branchCommand);
+                            await adapter.FillAsync(entityDataTable);
+
+                            var displayName = "";
+                            if (entityDataTable.Rows.Count > 0)
+                            {
+                                displayName = entityDataTable.Rows[0].Field<string>("display_name");
+                            }
+
+                            if (String.IsNullOrWhiteSpace(displayName))
+                            {
+                                displayName = conflict.FieldName;
+                            }
+
+                            fieldDisplayNames.Add(fieldKey, displayName);
+                        }
+
+                        conflict.FieldDisplayName = fieldDisplayNames[fieldKey];
+                        break;
+                    }
+                    case "UPDATE_FILE":
+                    {
+                        conflict.Title = await GetDisplayNameAsync(linkSettings, "file_name");
+                        break;
+                    }
+                    default:
+                    {
+                        continue;
+                    }
+                }
+
+                conflict.ValueInMain = value;
+                conflict.ChangeDateInMain = dataRow.Field<DateTime>("changed_on");
+                conflict.ChangedByInMain = dataRow.Field<string>("changed_by");
+            }
         }
 
         /// <summary>

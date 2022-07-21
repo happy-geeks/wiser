@@ -37,7 +37,9 @@ import {
     MERGE_BRANCH,
     GET_ENTITIES_FOR_BRANCHES,
     IS_MAIN_BRANCH,
-    GET_BRANCH_CHANGES
+    GET_BRANCH_CHANGES,
+    HANDLE_CONFLICT,
+    HANDLE_MULTIPLE_CONFLICTS
 } from "./store/mutation-types";
 
 (() => {
@@ -155,7 +157,8 @@ import {
                                     update: false,
                                     delete: false
                                 }
-                            }
+                            },
+                            conflicts: []
                         },
                         openBranchTypes: [
                             { id: "wiser", name:  "Wiser" },
@@ -169,7 +172,8 @@ import {
                             selectedBranchType: {
                                 id: ""
                             }
-                        }
+                        },
+                        batchHandleConflictSettings: { }
                     };
                 },
                 created() {
@@ -243,6 +247,9 @@ import {
                     branches() {
                         return this.$store.state.branches.branches;
                     },
+                    mergeBranchResult() {
+                        return this.$store.state.branches.mergeBranchResult;
+                    },
                     mergeBranchError() {
                         return this.$store.state.branches.mergeBranchError;
                     },
@@ -289,6 +296,27 @@ import {
                         return this.$store.state.branches.branchChanges.settings.reduce((accumulator, entity) => {
                             return accumulator + entity.deleted;
                         }, 0);
+                    },
+                    totalAmountOfMergeConflicts() {
+                        if (!this.$store.state.branches.mergeBranchResult || !this.$store.state.branches.mergeBranchResult.conflicts) {
+                            return 0;
+                        }
+                        
+                        return this.$store.state.branches.mergeBranchResult.conflicts.length;
+                    },
+                    totalAmountOfApprovedMergeConflicts() {
+                        if (!this.$store.state.branches.mergeBranchResult || !this.$store.state.branches.mergeBranchResult.conflicts) {
+                            return 0;
+                        }
+
+                        return this.$store.state.branches.mergeBranchResult.conflicts.filter(r => r.acceptChange === true).length;
+                    },
+                    areAllConflictsHandled() {
+                        if (!this.$store.state.branches.mergeBranchResult || !this.$store.state.branches.mergeBranchResult.conflicts) {
+                            return true;
+                        }
+
+                        return this.$store.state.branches.mergeBranchResult.conflicts.filter(r => r.acceptChange !== true && r.acceptChange !== false).length === 0;
                     }
                 },
                 components: {
@@ -405,8 +433,7 @@ import {
                         });
                     },
 
-                    openWiserIdPrompt(event) {
-                        event.preventDefault();
+                    openWiserIdPrompt() {
                         this.$refs.wiserIdPrompt.open();
                     },
 
@@ -437,8 +464,7 @@ import {
                         this.$refs.wiserBranchesPrompt.close();
                     },
 
-                    openMergeConflictsPrompt(event) {
-                        //event.preventDefault();
+                    openMergeConflictsPrompt() {
                         this.$refs.wiserMergeConflictsPrompt.open();
                     },
 
@@ -501,7 +527,7 @@ import {
                     },
 
                     async changePassword() {
-                        await this.$store.dispatch(CHANGE_PASSWORD,
+                        await this.$store.codispatch(CHANGE_PASSWORD,
                             {
                                 oldPassword: this.changePasswordPromptOldPasswordValue,
                                 newPassword: this.changePasswordPromptNewPasswordValue,
@@ -533,11 +559,30 @@ import {
                         if (this.isMainBranch && (!this.branchMergeSettings.selectedBranch || !this.branchMergeSettings.selectedBranch.id)) {
                             return false;
                         }
+                        
+                        if (this.mergeBranchResult && this.mergeBranchResult.conflicts.length > 0 && !this.areAllConflictsHandled) {
+                            return false;
+                        }
+
+                        // Copy the conflicts to the merge settings, so that the AIS will know what to do with the conflicts.
+                        if (this.mergeBranchResult && this.mergeBranchResult.conflicts) {
+                            this.branchMergeSettings.conflicts = this.mergeBranchResult.conflicts;
+                        }
 
                         await this.$store.dispatch(MERGE_BRANCH, this.branchMergeSettings);
 
+                        if (this.mergeBranchError) {
+                            return false;
+                        }
+                        
+                        if (this.mergeBranchResult.conflicts && this.mergeBranchResult.conflicts.length > 0) {
+                            this.openMergeConflictsPrompt();
+                            return true;
+                        }
+
                         if (!this.mergeBranchError) {
                             this.$refs.wiserMergeBranchPrompt.close();
+                            this.$refs.wiserMergeConflictsPrompt.close();
                             this.showGeneralMessagePrompt("De branch staat klaar om samengevoegd te worden. U krijgt een bericht wanneer dit voltooid is.");
                             return true;
                         }
@@ -545,11 +590,9 @@ import {
                         return false;
                     },
 
-                    handleMergeConflicts() {
-                        this.showGeneralMessagePrompt("Conflicten verwerken");
-                    },
+                    openBranch(event) {
+                        event.preventDefault();
 
-                    openBranch() {
                         if (!this.openBranchSettings || !this.openBranchSettings.selectedBranchType || !this.openBranchSettings.selectedBranchType.id) {
                             this.showGeneralMessagePrompt("Kies a.u.b. of u de branch in Wiser wilt openen of op uw website.");
                             return false;
@@ -571,6 +614,10 @@ import {
                                 url = this.openBranchSettings.websiteUrl;
                                 if (!url.startsWith("http")) {
                                     url = `https://${url}`
+                                }
+                                
+                                if (!url.endsWith("/")) {
+                                    url += "/";
                                 }
                                 
                                 url = `${url.substring(0, url.indexOf("/", 8))}/branches/${encodeURIComponent(this.openBranchSettings.selectedBranch.database.databaseName)}`;
@@ -721,6 +768,22 @@ import {
                             this.branchMergeSettings[setting][type].update = isChecked;
                             this.branchMergeSettings[setting][type].delete = isChecked;
                         }
+                    },
+
+                    onApproveConflictClick(conflict) {
+                        this.$store.dispatch(HANDLE_CONFLICT, { acceptChange: true, id: conflict.id });
+                    },
+
+                    onDenyConflictClick(conflict) {
+                        this.$store.dispatch(HANDLE_CONFLICT, { acceptChange: false, id: conflict.id });
+                    },
+
+                    onAcceptMultipleConflictsClick() {
+                        this.$store.dispatch(HANDLE_MULTIPLE_CONFLICTS, { acceptChange: true, settings: this.batchHandleConflictSettings });
+                    },
+
+                    onDenyMultipleConflictsClick() {
+                        this.$store.dispatch(HANDLE_MULTIPLE_CONFLICTS, { acceptChange: false, settings: this.batchHandleConflictSettings });
                     }
                 }
             });

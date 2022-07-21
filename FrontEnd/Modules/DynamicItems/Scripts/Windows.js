@@ -1391,7 +1391,7 @@ export class Windows {
                     const nameField = currentItemWindow.element.find(".itemNameField");
                     currentItemWindow.element.find(".itemNameFieldContainer").toggle(lastUsedEntityType.showTitleField && showTitleField);
 
-                    currentItemTabStrip.element.find("> ul > li .addedFromDatabase").each((index, element) => {
+                    currentItemTabStrip.element.find("> .k-tabstrip-items-wrapper > ul > li .addedFromDatabase").each((index, element) => {
                         currentItemTabStrip.remove($(element).closest("li.k-item"));
                     });
 
@@ -1501,11 +1501,7 @@ export class Windows {
             popupWindowContainer.data("saving", true);
 
             const kendoWindow = popupWindowContainer.data("kendoWindow");
-            let entityType = popupWindowContainer.data("entityTypeDetails");
-
-            if (Wiser2.validateArray(entityType)) {
-                entityType = entityType[0];
-            }
+            let entityType = popupWindowContainer.data("entityTypeDetails").entityType;
 
             const data = kendoWindow.element.data();
             const encryptedItemId = data.itemId;

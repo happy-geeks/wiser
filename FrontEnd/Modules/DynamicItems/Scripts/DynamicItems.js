@@ -1014,7 +1014,7 @@ const moduleSettings = {
                 const sourceDataItem = event.sender.dataItem(event.sourceNode);
                 const destinationDataItem = event.sender.dataItem(event.destinationNode);
 
-                const moveItemResult = await Wiser2.api({
+                await Wiser2.api({
                     url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(sourceDataItem.id)}/move/${encodeURIComponent(destinationDataItem.id)}`,
                     method: "PUT",
                     contentType: "application/json",
@@ -1027,6 +1027,8 @@ const moduleSettings = {
                         moduleId: this.base.settings.moduleId
                     })
                 });
+
+                sourceDataItem.destinationItemId = destinationDataItem.destinationItemId;
             } catch (exception) {
                 console.error(exception);
                 kendo.alert(`Er is iets fout gegaan met het verplaatsen van dit item. De fout was:<br>${exception.responseText || exception.statusText}`);
@@ -1451,7 +1453,7 @@ const moduleSettings = {
                 // Set the HTML of the fields tab.
                 const itemHtmlResult = await this.getItemHtml(itemId, itemMetaData.entityType);
 
-                this.mainTabStrip.element.find("> ul > li .addedFromDatabase").each((index, element) => {
+                this.mainTabStrip.element.find("> .k-tabstrip-items-wrapper > ul > li .addedFromDatabase").each((index, element) => {
                     this.mainTabStrip.remove($(element).closest("li.k-item"));
                 });
 

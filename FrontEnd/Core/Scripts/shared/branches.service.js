@@ -114,7 +114,8 @@ export default class BranchesService extends BaseService {
                 startOn: data.startOn,
                 deleteAfterSuccessfulMerge: data.deleteAfterSuccessfulMerge,
                 entities: [],
-                settings: []
+                settings: [],
+                conflictSettings: data.conflicts
             };
             
             for (let key in data.entities) {

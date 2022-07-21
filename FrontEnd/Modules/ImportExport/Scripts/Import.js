@@ -635,7 +635,30 @@ const importModuleSettings = {
                 }
             };
 
+            //BUTTONS
+            $(context).find(".saveButton").kendoButton({
+                icon: "save"
+            });
+
+            $(context).find(".button").kendoButton();
+
+            //DATE PICKER
+            $(context).find(".datepicker").kendoDatePicker({
+                format: "dd MMMM yyyy",
+                culture: "nl-NL"
+            }).data("kendoDatePicker");
+
+            //DATE & TIME PICKER
+            $(context).find(".datetimepicker").kendoDateTimePicker({
+                format: "dd MMMM yyyy HH:mm",
+                culture: "nl-NL"
+            }).data("kendoDateTimePicker");
+
             //GRID - IMPORT
+            if (this.importGrid) {
+                return;
+            }
+            
             this.importGrid = $("#importGrid").kendoGrid({
                 height: 350,
                 resizable: true,
@@ -915,25 +938,6 @@ const importModuleSettings = {
                 dataBound: gridDataBound,
                 change: gridChange
             }).data("kendoGrid");
-
-            //BUTTONS
-            $(context).find(".saveButton").kendoButton({
-                icon: "save"
-            });
-
-            $(context).find(".button").kendoButton();
-
-            //DATE PICKER
-            $(context).find(".datepicker").kendoDatePicker({
-                format: "dd MMMM yyyy",
-                culture: "nl-NL"
-            }).data("kendoDatePicker");
-
-            //DATE & TIME PICKER
-            $(context).find(".datetimepicker").kendoDateTimePicker({
-                format: "dd MMMM yyyy HH:mm",
-                culture: "nl-NL"
-            }).data("kendoDateTimePicker");
         }
 
         // Set the information for a data item for the selected property.
