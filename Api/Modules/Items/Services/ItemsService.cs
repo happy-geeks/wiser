@@ -663,6 +663,14 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
+            catch (ArgumentOutOfRangeException exception)
+            {
+                return new ServiceResult<WiserItemModel>
+                {
+                    ErrorMessage = exception.Message,
+                    StatusCode = HttpStatusCode.Conflict
+                };
+            }
 
             return new ServiceResult<WiserItemModel>(item);
         }
