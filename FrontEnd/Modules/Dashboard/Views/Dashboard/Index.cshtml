@@ -1,4 +1,5 @@
-﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+﻿@using System.IO
+@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
 
 <!DOCTYPE html>
 <html>
@@ -131,30 +132,7 @@
                     <script id="update-log" type="text/x-kendo-template">
                         <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
                         <div class="tile-content">
-                            <div class="log-item">
-                                <h4>12 juni 2022</h4>
-                                <ul>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...<br>en nog meer tekst</span></li>
-                                </ul>
-                            </div>
-                            <div class="log-item">
-                                <h4>11 juni 2022</h4>
-                                <ul>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                </ul>
-                            </div>
-                            <div class="log-item">
-                                <h4>10 juni 2022</h4>
-                                <ul>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                </ul>
-                            </div>
+                            @Html.Raw(await File.ReadAllTextAsync("./UpdateLog.html"))
                         </div>
                     </script>
                     <script id="numbers" type="text/x-kendo-template">
@@ -265,13 +243,11 @@
                     </script>
                     <script id="status-chart-template" type="text/x-kendo-template">
                         <div class="tile-content">
-                            <a href="javascript:;" class="number-item">
+                            <span class="number-item">
                                 <ins class="icon-list"></ins>
-                                <h3>237</h3>
-                                <span>Openstaande agenderingen
-                                    <span class="k-icon k-i-hyperlink-open-sm"></span>
-                                </span>
-                            </a>
+                                <h3 id="totalOpenTaskAlerts">0</h3>
+                                <span>Openstaande agenderingen</span>
+                            </span>
                             <div id="status-chart" style="height:98%;width:65%;"></div>
                         </div>
                     </script>

@@ -5,10 +5,9 @@ require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
-import "../../../Core/Scss/fonts.scss"; // TEMP
-import "../../../Core/Scss/icons.scss"; // TEMP
+import "../../../Core/Scss/fonts.scss";
+import "../../../Core/Scss/icons.scss";
 import "../css/Dashboard.scss";
-import login from "../../../Core/Scripts/components/login";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -358,33 +357,17 @@ const moduleSettings = {
                         labels: {
                             visible: false,
                             background: "transparent",
-                            template: "#= category #: \n #= value#%"
+                            template: "#= category #: \n #= value#"
                         }
                     },
                     series: [{
                         type: "pie",
                         startAngle: 90,
-                        data: [{
-                            category: "Bram",
-                            value: 26,
-                            color: "#2ECC71"
-                        }, {
-                            category: "Freek",
-                            value: 34,
-                            color: "#FFE162"
-                        }, {
-                            category: "Mandy",
-                            value: 30,
-                            color: "#FF6800"
-                        }, {
-                            category: "Paulien",
-                            value: 10,
-                            color: "#CC0000"
-                        }]
+                        data: []
                     }],
                     tooltip: {
                         visible: true,
-                        template: "#= category #: #= value#%"
+                        template: "#= category #: #= value#"
                     }
                 });
             }
@@ -501,6 +484,16 @@ const moduleSettings = {
             };
 
             this.updateUserDataChart();
+
+            // Create task alert data.
+            const openTaskAlertsData = [];
+            for (let prop in data.openTaskAlerts) {
+                openTaskAlertsData.push({
+                    category: prop,
+                    value: data.openTaskAlerts[prop]
+                });
+            }
+            this.updateOpenTaskAlertsChart(openTaskAlertsData);
         }
 
         updateItemsDataChart() {
@@ -520,6 +513,19 @@ const moduleSettings = {
             const filter = document.getElementById("userDataTypeFilterButtons").querySelector("button.selected").dataset.filter;
             const usersChart = $("#users-chart").getKendoChart();
             usersChart.findSeriesByIndex(0).data(this.userData[filter]);
+        }
+
+        /**
+         * Updates the open task alerts chart and total.
+         * @param {Array} data Array with the chart data. Will contain objects with a category property and a value property.
+         */
+        updateOpenTaskAlertsChart(data) {
+            const taskAlertsChart = $("#status-chart").getKendoChart();
+            taskAlertsChart.findSeriesByIndex(0).data(data);
+
+            let totalOpenTaskAlerts = 0;
+            data.forEach(i => totalOpenTaskAlerts += i.value);
+            document.getElementById("totalOpenTaskAlerts").innerText = totalOpenTaskAlerts.toString();
         }
 
         async onPeriodFilterChange(event) {

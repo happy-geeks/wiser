@@ -11,6 +11,8 @@ using Api.Modules.Branches.Interfaces;
 using Api.Modules.Dashboard.Enums;
 using Api.Modules.Dashboard.Interfaces;
 using Api.Modules.Dashboard.Models;
+using Api.Modules.EntityTypes.Models;
+using Api.Modules.TaskAlerts.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Enums;
@@ -26,15 +28,17 @@ public class DashboardService : IDashboardService, IScopedService
     private readonly IDatabaseConnection clientDatabaseConnection;
     private readonly IDatabaseHelpersService databaseHelpersService;
     private readonly IBranchesService branchesService;
+    private readonly ITaskAlertsService taskAlertsService;
 
     /// <summary>
     /// Creates a new instance of <see cref="DashboardService"/>.
     /// </summary>
-    public DashboardService(IDatabaseConnection clientDatabaseConnection, IDatabaseHelpersService databaseHelpersService, IBranchesService branchesService)
+    public DashboardService(IDatabaseConnection clientDatabaseConnection, IDatabaseHelpersService databaseHelpersService, IBranchesService branchesService, ITaskAlertsService taskAlertsService)
     {
         this.clientDatabaseConnection = clientDatabaseConnection;
         this.databaseHelpersService = databaseHelpersService;
         this.branchesService = branchesService;
+        this.taskAlertsService = taskAlertsService;
     }
 
     /// <inheritdoc />
@@ -70,6 +74,9 @@ public class DashboardService : IDashboardService, IScopedService
                     result.Items[key] = result.Items[key].OrderByDescending(i => i.AmountOfItems).Take(8).ToList();
                 }
 
+                // Add open task alerts (not branch-specific, always current branch).
+                result.OpenTaskAlerts = await GetOpenTaskAlertsAsync(identity);
+
                 return new ServiceResult<DashboardDataModel>
                 {
                     ModelObject = result,
@@ -103,9 +110,11 @@ public class DashboardService : IDashboardService, IScopedService
             }
         }
 
+        // If both the "periodFrom" parameter and "periodTo" parameter have no value, then the cached data should be used.
         if (!periodFrom.HasValue && !periodTo.HasValue)
         {
-            await EnsureTableAsync(databaseName);
+            // Make sure the tables exist: TODO: Update this to use the GCL to create/update tables.
+            await EnsureTablesAsync(databaseName);
 
             var queryDatabasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
 
@@ -123,7 +132,7 @@ public class DashboardService : IDashboardService, IScopedService
                 await RefreshTableDataAsync(databaseName);
             }
 
-            var wiserStatsData = await clientDatabaseConnection.GetAsync($"SELECT items_data, user_login_count_top10, user_login_count_other, user_login_time_top10, user_login_time_other FROM {queryDatabasePart}wiser_dashboard");
+            var wiserStatsData = await clientDatabaseConnection.GetAsync($"SELECT items_data, entities_data, user_login_count_top10, user_login_count_other, user_login_time_top10, user_login_time_other FROM {queryDatabasePart}wiser_dashboard");
             if (wiserStatsData.Rows.Count == 0)
             {
                 // This should not be possible, so throw an error here if this happens.
@@ -134,12 +143,18 @@ public class DashboardService : IDashboardService, IScopedService
             var rawItemsData = wiserStatsData.Rows[0].Field<string>("items_data");
             var itemsData = !String.IsNullOrWhiteSpace(rawItemsData)
                 ? Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, List<ItemsCountModel>>>(rawItemsData)
-                : new Dictionary<string, List<ItemsCountModel>>();
+                : new Dictionary<string, List<ItemsCountModel>>(0);
+
+            var rawEntitiesData = wiserStatsData.Rows[0].Field<string>("entities_data");
+            var entitiesData = !String.IsNullOrWhiteSpace(rawEntitiesData)
+                ? Newtonsoft.Json.JsonConvert.DeserializeObject<List<EntityTypeModel>>(rawEntitiesData)
+                : new List<EntityTypeModel>(0);
 
             var userLoginTimeTop10 = wiserStatsData.Rows[0].Field<TimeSpan>("user_login_time_top10");
             var userLoginTimeOther = wiserStatsData.Rows[0].Field<TimeSpan>("user_login_time_other");
 
-            result.Items = itemsData ?? new Dictionary<string, List<ItemsCountModel>>();
+            result.Items = itemsData ?? new Dictionary<string, List<ItemsCountModel>>(0);
+            result.Entities = entitiesData ?? new List<EntityTypeModel>(0);
             result.UserLoginCountTop10 = wiserStatsData.Rows[0].Field<int>("user_login_count_top10");
             result.UserLoginCountOther = wiserStatsData.Rows[0].Field<int>("user_login_count_other");
             result.UserLoginTimeTop10 = (int) Math.Round(userLoginTimeTop10.TotalSeconds);
@@ -149,6 +164,7 @@ public class DashboardService : IDashboardService, IScopedService
         {
             // Use fresh data.
             result.Items = await GetItemsCountAsync(periodFrom, periodTo, databaseName);
+            result.Entities = await GetEntitiesDataAsync(databaseName);
 
             var userData = await GetUserDataAsync(periodFrom, periodTo, databaseName);
             result.UserLoginCountTop10 = userData.UserLoginCountTop10;
@@ -162,6 +178,9 @@ public class DashboardService : IDashboardService, IScopedService
         {
             result.Items[key] = result.Items[key].OrderByDescending(i => i.AmountOfItems).Take(8).ToList();
         }
+
+        // Add open task alerts (not branch-specific, always current branch).
+        result.OpenTaskAlerts = await GetOpenTaskAlertsAsync(identity);
 
         return new ServiceResult<DashboardDataModel>
         {
@@ -221,9 +240,9 @@ public class DashboardService : IDashboardService, IScopedService
     /// Retrieves the amount of items, optionally filtered on a period.
     /// </summary>
     /// <param name="itemsDataPeriodFilterType">The filter type. Only works if <paramref name="periodFrom"/> and <paramref name="periodTo"/> are set.</param>
-    /// <param name="periodFrom">From which moment the items should be counted.</param>
-    /// <param name="periodTo">To which moment the items should be counted.</param>
-    /// <param name="databaseName">The name of a branch database that should be looked in. Can be empty to use current branch.</param>
+    /// <param name="periodFrom">The minimum age of the data.</param>
+    /// <param name="periodTo">The maximum age of the data.</param>
+    /// <param name="databaseName">The name of a branch database that should be used. Can be empty to use current branch.</param>
     /// <returns>A list of all items and the amount of those items that exist.</returns>
     private async Task<List<ItemsCountModel>> GetItemsCountWithFilterAsync(ItemsDataPeriodFilterTypes itemsDataPeriodFilterType, DateTime? periodFrom = null, DateTime? periodTo = null, string databaseName = null)
     {
@@ -323,6 +342,14 @@ public class DashboardService : IDashboardService, IScopedService
         return entities;
     }
 
+    /// <summary>
+    /// Retriever user login data. This is how many times users have logged in and how long they have stayed logged in.
+    /// This is not per user, but rather a difference between the top 10 users and the remaining users.
+    /// </summary>
+    /// <param name="periodFrom">The minimum age of the data.</param>
+    /// <param name="periodTo">The maximum age of the data.</param>
+    /// <param name="databaseName">The name of a branch database that should be used. Can be empty to use current branch.</param>
+    /// <returns>A <see cref="ValueTuple"/> containing the top 10 login counts and times, and the remaining login counts and times.</returns>
     private async Task<(int UserLoginCountTop10, int UserLoginCountOther, TimeSpan UserLoginTimeTop10, TimeSpan UserLoginTimeOther)> GetUserDataAsync(DateTime? periodFrom = null, DateTime? periodTo = null, string databaseName = null)
     {
         var databasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
@@ -382,6 +409,71 @@ public class DashboardService : IDashboardService, IScopedService
     }
 
     /// <summary>
+    /// Retrieves the data about the entities that should be shown in the dashboard.
+    /// </summary>
+    /// <param name="databaseName">The name of a branch database that should be used. Can be empty to use current branch.</param>
+    /// <returns>A <see cref="List{T}"/> containing <see cref="EntityTypeModel"/> objects.</returns>
+    private async Task<List<EntityTypeModel>> GetEntitiesDataAsync(string databaseName = null)
+    {
+        // First retrieve the entities that have "show_in_dashboard" set to 1. Limit it to 3.
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+        // The database portion which will be placed in front of the table names of the FROM and JOIN statements.
+        var queryDatabasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
+        var entitiesData = await clientDatabaseConnection.GetAsync($@"
+            SELECT entity.`name`, entity.dedicated_table_prefix, module.id AS module_id, module.icon
+            FROM {queryDatabasePart}{WiserTableNames.WiserEntity} AS entity
+            JOIN {queryDatabasePart}{WiserTableNames.WiserModule} AS module ON module.id = entity.module_id
+            WHERE entity.show_in_dashboard = 1
+            LIMIT 3");
+
+        var entities = new List<EntityTypeModel>(3);
+        foreach (var dataRow in entitiesData.Rows.Cast<DataRow>())
+        {
+            var tablePrefix = dataRow.Field<string>("dedicated_table_prefix") ?? String.Empty;
+            if (!String.IsNullOrWhiteSpace(tablePrefix) && !tablePrefix.EndsWith("_"))
+            {
+                tablePrefix += "_";
+            }
+
+            var entityCountData = await clientDatabaseConnection.GetAsync($"SELECT COUNT(*) FROM {queryDatabasePart}{tablePrefix}{WiserTableNames.WiserItem}");
+            var entityCount = Convert.ToInt32(entityCountData.Rows[0][0]);
+
+            entities.Add(new EntityTypeModel
+            {
+                DisplayName = dataRow.Field<string>("name"),
+                ModuleId = dataRow.Field<int>("module_id"),
+                TotalItems = entityCount
+            });
+        }
+
+        return entities;
+    }
+
+    /// <summary>
+    /// Retrieves all open task alerts for all users and tallies them per user.
+    /// </summary>
+    private async Task<Dictionary<string, int>> GetOpenTaskAlertsAsync(ClaimsIdentity identity, string databaseName = null)
+    {
+        var result = new Dictionary<string, int>();
+        var openTaskAlerts = await taskAlertsService.GetAsync(identity, true, databaseName);
+
+        foreach (var item in openTaskAlerts.ModelObject)
+        {
+            // Initialize result for a user if it's not added yet.
+            if (!result.ContainsKey(item.UserName))
+            {
+                result[item.UserName] = 0;
+            }
+
+            // Simply add one for the current user.
+            result[item.UserName]++;
+        }
+
+        return result;
+    }
+
+    /// <summary>
     /// Takes multiple instances of <see cref="DashboardDataModel"/> objects, and combines the results into one.
     /// </summary>
     /// <param name="sources"></param>
@@ -390,8 +482,9 @@ public class DashboardService : IDashboardService, IScopedService
     {
         var result = new DashboardDataModel
         {
-            // Combine items data first.
-            Items = new Dictionary<string, List<ItemsCountModel>>(3)
+            Items = new Dictionary<string, List<ItemsCountModel>>(3),
+            Entities = new List<EntityTypeModel>(3),
+            OpenTaskAlerts = new Dictionary<string, int>()
         };
 
         var collectionAll = ItemsDataPeriodFilterTypes.All.ToString("G");
@@ -405,6 +498,7 @@ public class DashboardService : IDashboardService, IScopedService
                 continue;
             }
 
+            // Combine items data.
             if (source.Items.ContainsKey(collectionAll))
             {
                 AddItemCountsToResult(result.Items, collectionAll, source.Items[collectionAll]);
@@ -420,10 +514,42 @@ public class DashboardService : IDashboardService, IScopedService
                 AddItemCountsToResult(result.Items, collectionChanged, source.Items[collectionChanged]);
             }
 
+            // Combine entities data.
+            foreach (var sourceEntity in source.Entities)
+            {
+                var entity = result.Entities.FirstOrDefault(e => e.DisplayName == sourceEntity.DisplayName);
+                if (entity == null)
+                {
+                    result.Entities.Add(sourceEntity);
+                }
+                else
+                {
+                    entity.TotalItems += sourceEntity.TotalItems;
+                }
+
+                // No more than 3 entities should be in the list.
+                if (result.Entities.Count == 3)
+                {
+                    break;
+                }
+            }
+
+            // Combine user data.
             result.UserLoginCountTop10 += source.UserLoginCountTop10;
             result.UserLoginCountOther += source.UserLoginCountOther;
             result.UserLoginTimeTop10 = result.UserLoginTimeTop10 += source.UserLoginTimeTop10;
             result.UserLoginTimeOther = result.UserLoginTimeOther += source.UserLoginTimeOther;
+
+            // Combine open task alerts data.
+            foreach (var (key, value) in source.OpenTaskAlerts)
+            {
+                if (!result.OpenTaskAlerts.ContainsKey(key))
+                {
+                    result.OpenTaskAlerts[key] = 0;
+                }
+
+                result.OpenTaskAlerts[key] += value;
+            }
         }
 
         return result;
@@ -433,7 +559,7 @@ public class DashboardService : IDashboardService, IScopedService
     /// Makes sure the wiser_dashboard table exists.
     /// TODO: Creation of the tables should be moved to the GCL. But this should only be done once the table definitions are final.
     /// </summary>
-    private async Task EnsureTableAsync(string databaseName = null)
+    private async Task EnsureTablesAsync(string databaseName = null)
     {
         var tableChanges = await databaseHelpersService.GetLastTableUpdatesAsync(databaseName);
 
@@ -446,6 +572,7 @@ public class DashboardService : IDashboardService, IScopedService
                 new("id", MySqlDbType.Int32, notNull: true, isPrimaryKey: true, autoIncrement: true),
                 new("last_update", MySqlDbType.DateTime, notNull: true),
                 new("items_data", MySqlDbType.MediumText),
+                new("entities_data", MySqlDbType.MediumText),
                 new("user_login_count_top10", MySqlDbType.Int32, notNull: true, defaultValue: "0"),
                 new("user_login_count_other", MySqlDbType.Int32, notNull: true, defaultValue: "0"),
                 new("user_login_time_top10", MySqlDbType.Time, notNull: true, defaultValue: "00:00:00"),
@@ -501,6 +628,9 @@ public class DashboardService : IDashboardService, IScopedService
             itemsData[key] = itemsData[key].OrderByDescending(i => i.AmountOfItems).Take(8).ToList();
         }
 
+        // Retrieve entities data.
+        var entitiesData = await GetEntitiesDataAsync(databaseName: databaseName);
+
         // Retrieve user data.
         var userData = await GetUserDataAsync(databaseName: databaseName);
 
@@ -510,10 +640,11 @@ public class DashboardService : IDashboardService, IScopedService
         clientDatabaseConnection.ClearParameters();
         clientDatabaseConnection.AddParameter("last_update", DateTime.Now);
         clientDatabaseConnection.AddParameter("items_data", Newtonsoft.Json.JsonConvert.SerializeObject(itemsData));
+        clientDatabaseConnection.AddParameter("entities_data", Newtonsoft.Json.JsonConvert.SerializeObject(entitiesData));
         clientDatabaseConnection.AddParameter("user_login_count_top10", userData.UserLoginCountTop10);
         clientDatabaseConnection.AddParameter("user_login_count_other", userData.UserLoginCountOther);
         clientDatabaseConnection.AddParameter("user_login_time_top10", userData.UserLoginTimeTop10);
         clientDatabaseConnection.AddParameter("user_login_time_other", userData.UserLoginTimeOther);
-        await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {databasePart}wiser_dashboard (last_update, items_data, user_login_count_top10, user_login_count_other, user_login_time_top10, user_login_time_other) VALUES (?last_update, ?items_data, ?user_login_count_top10, ?user_login_count_other, ?user_login_time_top10, ?user_login_time_other)");
+        await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {databasePart}wiser_dashboard (last_update, items_data, entities_data, user_login_count_top10, user_login_count_other, user_login_time_top10, user_login_time_other) VALUES (?last_update, ?items_data, ?entities_data, ?user_login_count_top10, ?user_login_count_other, ?user_login_time_top10, ?user_login_time_other)");
     }
 }
