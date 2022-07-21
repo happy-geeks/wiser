@@ -17,6 +17,10 @@
   <ItemGroup>
     <Compile Remove="Modules\Templates\DataLayer\**" />
     <Content Remove="Modules\Templates\DataLayer\**" />
+    <Content Include="UpdateLog.html">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
     <EmbeddedResource Remove="Modules\Templates\DataLayer\**" />
     <None Remove="Modules\Templates\DataLayer\**" />
     <None Include="wwwroot\ContentBuilder\plugins\WiserDataSelector\plugin.js" />
