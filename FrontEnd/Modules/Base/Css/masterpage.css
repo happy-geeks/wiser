@@ -973,12 +973,12 @@ input:checked + .checkbox span:after,
 footer {
     display: flex;
     justify-content: space-between;
+    gap: 25px;
 }
 footer .metaData {
     float: left;
     font-size: 11px;
     line-height: 38px; 
-    max-width: 50%;
     opacity: 0.75;
 }
 footer .meta-data {
