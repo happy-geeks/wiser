@@ -617,6 +617,8 @@
 .k-tabstrip-items-wrapper .k-tabstrip-items .k-item.k-state-active {
 	background-color: var(--item-bg-color);
 	color: var(--dark-txt);
+	border-bottom-color: transparent;
+	border-top-width: 1px;
 }
 .k-tabstrip .k-tabstrip-items {
     background-color: var(--white-color);
@@ -666,9 +668,6 @@
 .k-tabstrip-items .k-item {
     background-color: var(--white-color);
 }
-.k-tabstrip-items .k-item.k-state-active {
-    background-color: var(--item-bg-color);
-}
 .k-tabstrip-items .k-item .k-link {
 	color: var(--light-txt);
 	font-family: var(--regular-txt);
@@ -681,8 +680,9 @@
 	font-weight: 500;
 }
 .k-tabstrip-items .k-item.k-state-hover {
-    background: var(--white-color);
-    border-top-color: var(--light-color);
+	border-top: 1px solid var(--color-2);
+	background-color: var(--medium-color);
+	border-bottom-color: transparent;
 }
 .k-tabstrip-items .k-item.k-state-hover .k-link {
     color: var(--black-color);
