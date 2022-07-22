@@ -14,7 +14,6 @@ using Api.Modules.Branches.Models;
 using Api.Modules.Customers.Enums;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Models;
-using DocumentFormat.OpenXml.Office2010.Excel;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
@@ -24,7 +23,6 @@ using GeeksCoreLibrary.Modules.Branches.Enumerations;
 using GeeksCoreLibrary.Modules.Branches.Helpers;
 using GeeksCoreLibrary.Modules.Branches.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.DataSelector.Models;
 using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
@@ -1516,11 +1514,47 @@ WHERE changed_on >= ?lastChange";
         /// <returns>A named tuple with the entity types and table prefixes for both the source and the destination.</returns>
         private async Task<(string SourceType, string SourceTablePrefix, string DestinationType, string DestinationTablePrefix)?> GetEntityTypesOfLinkAsync(ulong sourceId, ulong destinationId, int linkType, MySqlConnection mySqlConnection)
         {
-            var allLinkTypeSettings = (await wiserItemsService.GetAllLinkTypeSettingsAsync()).Where(l => l.Type == linkType);
+            var allLinkTypeSettings = (await wiserItemsService.GetAllLinkTypeSettingsAsync()).Where(l => l.Type == linkType).ToList();
             await using var command = mySqlConnection.CreateCommand();
             command.Parameters.AddWithValue("sourceId", sourceId);
             command.Parameters.AddWithValue("destinationId", destinationId);
-            
+
+            // If there are no settings for this link, we assume that the links are from items in the normal wiser_item table and not a table with a prefix.
+            if (!allLinkTypeSettings.Any())
+            {
+                // Check if the source item exists in this table.
+                command.CommandText = $@"SELECT entity_type FROM {WiserTableNames.WiserItem} WHERE id = ?sourceId
+UNION ALL
+SELECT entity_type FROM {WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix} WHERE id = ?sourceId
+LIMIT 1";
+                var sourceDataTable = new DataTable();
+                using var sourceAdapter = new MySqlDataAdapter(command);
+                await sourceAdapter.FillAsync(sourceDataTable);
+                if (sourceDataTable.Rows.Count == 0)
+                {
+                    return null;
+                }
+
+                var sourceEntityType = sourceDataTable.Rows[0].Field<string>("entity_type");
+                
+                // Check if the destination item exists in this table.
+                command.CommandText = $@"SELECT entity_type FROM {WiserTableNames.WiserItem} WHERE id = ?destinationId
+UNION ALL
+SELECT entity_type FROM {WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix} WHERE id = ?destinationId
+LIMIT 1";
+                var destinationDataTable = new DataTable();
+                using var destinationAdapter = new MySqlDataAdapter(command);
+                await destinationAdapter.FillAsync(destinationDataTable);
+                if (destinationDataTable.Rows.Count == 0)
+                {
+                    return null;
+                }
+                
+                var destinationEntityType = destinationDataTable.Rows[0].Field<string>("entity_type");
+
+                return (sourceEntityType, "", destinationEntityType, "");
+            }
+
             // It's possible that there are multiple link types that use the same number, so we have to check all of them.
             foreach (var linkTypeSettings in allLinkTypeSettings)
             {
@@ -1541,9 +1575,9 @@ LIMIT 1";
                 }
 
                 // Check if the destination item exists in this table.
-                command.CommandText = $@"SELECT entity_type FROM {destinationTablePrefix}{WiserTableNames.WiserItem} WHERE id = ?sourceId
+                command.CommandText = $@"SELECT entity_type FROM {destinationTablePrefix}{WiserTableNames.WiserItem} WHERE id = ?destinationId
 UNION ALL
-SELECT entity_type FROM {destinationTablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix} WHERE id = ?sourceId
+SELECT entity_type FROM {destinationTablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix} WHERE id = ?destinationId
 LIMIT 1";
                 var destinationDataTable = new DataTable();
                 using var destinationAdapter = new MySqlDataAdapter(command);
