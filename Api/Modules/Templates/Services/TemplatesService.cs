@@ -2730,31 +2730,93 @@ LIMIT 1";
 
             if (viewModel.Css != null)
             {
-                viewModel.Css.GeneralCssFileName = AddMainDomainToUrl(viewModel.Css.GeneralCssFileName, mainDomain);
-                viewModel.Css.PageAsyncFooterCssFileName = AddMainDomainToUrl(viewModel.Css.PageAsyncFooterCssFileName, mainDomain);
-                viewModel.Css.PageInlineHeadCss = AddMainDomainToUrl(viewModel.Css.PageInlineHeadCss, mainDomain);
-                viewModel.Css.PageStandardCssFileName = AddMainDomainToUrl(viewModel.Css.PageStandardCssFileName, mainDomain);
-                viewModel.Css.PageSyncFooterCssFileName = AddMainDomainToUrl(viewModel.Css.PageSyncFooterCssFileName, mainDomain);
+                var cssBuilder = new StringBuilder();
+                cssBuilder.AppendLine((await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Css)).Content);
+                cssBuilder.AppendLine(viewModel.Css.PageInlineHeadCss);
+                
+                var regex = new Regex("/css/gclcss_(.*).css");
+                var match = regex.Match(viewModel.Css.PageStandardCssFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Css.PageStandardCssFileName = null;
+                
+                match = regex.Match(viewModel.Css.PageAsyncFooterCssFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Css.PageAsyncFooterCssFileName = null;
+                
+                match = regex.Match(viewModel.Css.PageSyncFooterCssFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Css.PageSyncFooterCssFileName = null;
+
+                viewModel.Css.PageInlineHeadCss = cssBuilder.ToString();
             }
 
             if (viewModel.Javascript != null)
             {
-                viewModel.Javascript.GeneralJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.GeneralJavascriptFileName, mainDomain);
-                viewModel.Javascript.GeneralFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.GeneralFooterJavascriptFileName, mainDomain);
-                viewModel.Javascript.PageAsyncFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageAsyncFooterJavascriptFileName, mainDomain);
-                viewModel.Javascript.PageStandardJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageStandardJavascriptFileName, mainDomain);
-                viewModel.Javascript.PageSyncFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageSyncFooterJavascriptFileName, mainDomain);
+                viewModel.Javascript.PageInlineHeadJavascript ??= new List<string>();
+                viewModel.Javascript.PageInlineHeadJavascript.Insert(0, (await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Js)).Content);
+
+                var regex = new Regex("/css/gcljs_(.*).css");
+                var match = regex.Match(viewModel.Javascript.PageStandardJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.PageStandardJavascriptFileName = null;
+                
+                match = regex.Match(viewModel.Javascript.GeneralFooterJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.GeneralFooterJavascriptFileName = null;
+                
+                match = regex.Match(viewModel.Javascript.PageAsyncFooterJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.PageAsyncFooterJavascriptFileName = null;
+                
+                match = regex.Match(viewModel.Javascript.PageSyncFooterJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.PageSyncFooterJavascriptFileName = null;
             }
 
             // Generate HTML from view.
             await using var writer = new StringWriter();
             var executingAssemblyDirectoryAbsolutePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
-            var executingFilePath = executingAssemblyDirectoryAbsolutePath.Replace('\\', '/');
+            var executingFilePath = executingAssemblyDirectoryAbsolutePath!.Replace('\\', '/');
             const string viewPath = "~/Modules/Templates/Views/Shared/Template.cshtml";
             var viewResult = razorViewEngine.GetView(executingFilePath, viewPath, true);
 
-            var actionContext = new ActionContext(httpContextAccessor.HttpContext, new RouteData(), new ActionDescriptor());
+            var actionContext = new ActionContext(httpContextAccessor.HttpContext!, new RouteData(), new ActionDescriptor());
 
             if (viewResult.Success == false)
             {
