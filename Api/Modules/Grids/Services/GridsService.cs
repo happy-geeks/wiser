@@ -223,7 +223,7 @@ namespace Api.Modules.Grids.Services
                     results.Columns.Add(new GridColumn {Field = "action", Title = "Actie type"});
                     results.Columns.Add(new GridColumn {Field = "oldvalue", Title = "Oude waarde"});
                     results.Columns.Add(new GridColumn {Field = "newvalue", Title = "Nieuwe waarde"});
-                    results.Columns.Add(new GridColumn {Field = "changed_by", Title = "Nieuwe waarde"});
+                    results.Columns.Add(new GridColumn {Field = "changed_by", Title = "Gewijzigd door"});
 
                     hasPredefinedSchema = true;
                     results.SchemaModel.Fields.Add("id", new FieldModel {Type = "number"});
