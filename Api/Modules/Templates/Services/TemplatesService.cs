@@ -1183,8 +1183,8 @@ SET @itemname = (SELECT title FROM wiser_item WHERE id=@_itemId);
 SET @userId = {encryptedUserId:decrypt(true)};
 
 SELECT 
-	CONCAT('\'', @itemname, '\' hernoemen') AS text, 
-    'icon-album-rename' AS spriteCssClass,
+	CONCAT('\'', @itemname, '\' hernoemen (F2)') AS text, 
+    'icon-rename' AS spriteCssClass,
     'RENAME_ITEM' AS attraction,
     i.entity_type AS attrentity_type
     #the JSON must consist of a subnode with attributes, so attr is the name of the json object containing 'action' as a value, herefore the name here is attr...action
@@ -1206,8 +1206,9 @@ SELECT
 		)
     
 UNION
-    SELECT CONCAT('Nieuw(e) \'', i.name, '\' aanmaken'), 
-	i.icon_add,'CREATE_ITEM', 
+    SELECT CONCAT('Nieuw(e) \'', i.name, '\' aanmaken (SHIFT+N)'), 
+	i.icon_add,
+    'CREATE_ITEM', 
 	i.name
     FROM wiser_entity i
     JOIN wiser_entity we ON we.module_id=@_moduleId AND we.name=@entity_type
@@ -1228,7 +1229,7 @@ UNION
 		)
 
 UNION
-	SELECT CONCAT('\'', @itemname, '\' dupliceren') AS text, 
+	SELECT CONCAT('\'', @itemname, '\' dupliceren (SHIFT+D)') AS text, 
 	'icon-document-duplicate',
 	'DUPLICATE_ITEM',
     i.entity_type AS attrentity_type
@@ -1319,7 +1320,7 @@ UNION
 		)
     
 UNION
-	SELECT CONCAT('\'', @itemname, '\' verwijderen') AS text, 
+	SELECT CONCAT('\'', @itemname, '\' verwijderen (DEL)') AS text, 
 	'icon-delete',
 	'REMOVE_ITEM',
     i.entity_type AS attrentity_type

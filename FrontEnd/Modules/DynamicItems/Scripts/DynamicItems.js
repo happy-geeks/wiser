@@ -285,22 +285,47 @@ const moduleSettings = {
             });
 
             // Keyboard shortcuts
-            $("body").on("keyup", (event) => {
+            $("body").on("keyup", async (event) => {
+                console.log("keyup", event);
                 const target = $(event.target);
 
                 if (target.prop("tagName") === "INPUT" || target.prop("tagName") === "TEXTAREA") {
                     return;
                 }
 
-                switch (event.key) {
-                    case "N":
-                        {
-                            const addButton = $("#addButton");
-                            if (event.shiftKey && addButton.is(":visible")) {
-                                addButton.click();
-                            }
+                const selectedItem = this.mainTreeView.select();
+                switch (event.key.toUpperCase()) {
+                    case "N": {
+                        const addButton = $("#addButton");
+                        if (event.shiftKey && addButton.is(":visible")) {
+                            addButton.click();
+                        }
+                        break;
+                    }
+                    case "F2": {
+                        if (!selectedItem.length) {
                             break;
                         }
+                        
+                        await this.handleContextMenuAction(selectedItem, "RENAME_ITEM");
+                        break;
+                    }
+                    case "D": {
+                        if (!selectedItem.length || !event.shiftKey) {
+                            break;
+                        }
+
+                        await this.handleContextMenuAction(selectedItem, "DUPLICATE_ITEM");
+                        break;
+                    }
+                    case "DELETE": {
+                        if (!selectedItem.length) {
+                            break;
+                        }
+
+                        await this.handleContextMenuAction(selectedItem, "REMOVE_ITEM");
+                        break;
+                    }
                 }
             });
 
@@ -662,92 +687,99 @@ const moduleSettings = {
          * @param {any} event The click event.
          */
         async onContextMenuClick(event) {
+            const button = $(event.item);
+            const action = button.attr("action");
+            await this.handleContextMenuAction($(event.target), action);
+        }
+        
+        async handleContextMenuAction(selectedNode, action) {
+            if (!selectedNode || !action) {
+                return;
+            }
+            
+            const treeView = this.base.mainTreeView;
+            const dataItem = treeView.dataItem(selectedNode);
+            // For some reason the JCL already encodes the values, so decode them here, otherwise they will be encoded twice in some cases, which can cause problems.
+            const itemId = decodeURIComponent(dataItem.id);
+            const entityType = dataItem.entityType;
+            
             try {
-                const button = $(event.item);
-                const node = $(event.target);
-                const treeView = this.base.mainTreeView;
-                const dataItem = treeView.dataItem(event.target);
-                // For some reason the JCL already encodes the values, so decode them here, otherwise they will be encoded twice in some cases, which can cause problems.
-                const itemId = decodeURIComponent(dataItem.id);
-                const action = button.attr("action");
-                const entityType = button.attr("entity_type");
-
                 switch (action) {
                     case "RENAME_ITEM":
-                        {
-                            kendo.prompt("Vul een nieuwe naam in", node.text()).done((newName) => {
-                                this.base.updateItem(itemId, [], null, false, newName, false, true, entityType).then(() => {
-                                    this.base.notification.show({ message: "Succesvol gewijzigd" }, "success");
-                                    treeView.text(node, newName);
-                                    $("#right-pane input[name='_nameForExistingItem']").val(newName);
-                                });
-                            }).fail(() => { });
-                            break;
-                        }
+                    {
+                        kendo.prompt("Vul een nieuwe naam in", selectedNode.text()).done((newName) => {
+                            this.base.updateItem(itemId, [], null, false, newName, false, true, entityType).then(() => {
+                                this.base.notification.show({ message: "Succesvol gewijzigd" }, "success");
+                                treeView.text(selectedNode, newName);
+                                $("#right-pane input[name='_nameForExistingItem']").val(newName);
+                            });
+                        }).fail(() => { });
+                        break;
+                    }
                     case "CREATE_ITEM":
-                        {
-                            this.base.dialogs.openCreateItemDialog(itemId, node, entityType);
-                            break;
-                        }
+                    {
+                        await this.base.dialogs.openCreateItemDialog(itemId, selectedNode, entityType);
+                        break;
+                    }
                     case "DUPLICATE_ITEM":
-                        {
-                            // Duplicate the item.
-                            // For some reason the JCL already encodes the values, so decode them here, otherwise they will be encoded twice in some cases, which can cause problems.
-                            const parentId = decodeURIComponent(dataItem.destinationItemId || this.base.settings.zeroEncrypted);
-                            const parentItem = treeView.dataItem(this.base.mainTreeView.parent(node));
-                            const duplicateItemResults = await this.base.duplicateItem(itemId, parentId, dataItem.entityType, parentItem ? parentItem.entityType : "");
-                            this.base.notification.show({ message: `Het item '${dataItem.name || dataItem.title}' is gedupliceerd.` }, "success");
+                    {
+                        // Duplicate the item.
+                        // For some reason the JCL already encodes the values, so decode them here, otherwise they will be encoded twice in some cases, which can cause problems.
+                        const parentId = decodeURIComponent(dataItem.destinationItemId || this.base.settings.zeroEncrypted);
+                        const parentItem = treeView.dataItem(this.base.mainTreeView.parent(selectedNode));
+                        const duplicateItemResults = await this.base.duplicateItem(itemId, parentId, dataItem.entityType, parentItem ? parentItem.entityType : "");
+                        this.base.notification.show({ message: `Het item '${dataItem.name || dataItem.title}' is gedupliceerd.` }, "success");
 
-                            // Reload the parent item in the tree view, so that the new item becomes visible.
-                            if (parentItem) {
-                                parentItem.loaded(false);
-                                parentItem.load();
-                            } else {
-                                treeView.dataSource.read();
-                            }
-
-                            break;
+                        // Reload the parent item in the tree view, so that the new item becomes visible.
+                        if (parentItem) {
+                            parentItem.loaded(false);
+                            parentItem.load();
+                        } else {
+                            treeView.dataSource.read();
                         }
+
+                        break;
+                    }
                     case "REMOVE_ITEM":
-                        {
-                            Wiser.showConfirmDialog(`Weet u zeker dat u het item '${this.base.mainTreeView.dataItem(node).title}' wilt verwijderen?`).then(async () => {
-                                try {
-                                    await this.base.deleteItem(itemId, entityType);
-                                    this.base.mainTreeView.remove(node);
-                                } catch (exception) {
-                                    console.error(exception);
-                                    if (exception.status === 409) {
-                                        const message = exception.responseText || "Het is niet meer mogelijk om dit item te verwijderen.";
-                                        kendo.alert(message);
-                                    } else {
-                                        kendo.alert("Er is iets fout gegaan tijdens het verwijderen van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
-                                    }
+                    {
+                        Wiser.showConfirmDialog(`Weet u zeker dat u het item '${dataItem.title}' wilt verwijderen?`).then(async () => {
+                            try {
+                                await this.base.deleteItem(itemId, entityType);
+                                this.base.mainTreeView.remove(selectedNode);
+                            } catch (exception) {
+                                console.error(exception);
+                                if (exception.status === 409) {
+                                    const message = exception.responseText || "Het is niet meer mogelijk om dit item te verwijderen.";
+                                    kendo.alert(message);
+                                } else {
+                                    kendo.alert("Er is iets fout gegaan tijdens het verwijderen van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
                                 }
-                            }).catch(() => { });
+                            }
+                        }).catch(() => { });
 
-                            break;
-                        }
+                        break;
+                    }
                     case "HIDE_ITEM":
-                        {
-                            await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
-                            node.closest("li").addClass("hiddenOnWebsite");
-                            window.dynamicItems.notification.show({ message: "Item is verborgen" }, "success");
-                            break;
-                        }
+                    {
+                        await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
+                        selectedNode.closest("li").addClass("hiddenOnWebsite");
+                        window.dynamicItems.notification.show({ message: "Item is verborgen" }, "success");
+                        break;
+                    }
                     case "PUBLISH_LIVE":
                     case "PUBLISH_ITEM":
-                        {
-                            await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
-                            node.closest("li").removeClass("hiddenOnWebsite");
-                            window.dynamicItems.notification.show({ message: "Item is zichtbaar gemaakt" }, "success");
-                            break;
-                        }
+                    {
+                        await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
+                        selectedNode.closest("li").removeClass("hiddenOnWebsite");
+                        window.dynamicItems.notification.show({ message: "Item is zichtbaar gemaakt" }, "success");
+                        break;
+                    }
                     default:
-                        {
-                            await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
-                            window.dynamicItems.notification.show({ message: "Succesvol gewijzigd" }, "success");
-                            break;
-                        }
+                    {
+                        await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
+                        window.dynamicItems.notification.show({ message: "Succesvol gewijzigd" }, "success");
+                        break;
+                    }
                 }
             } catch (onContextMenuClickException) {
                 console.error("Error during onContextMenuClick", onContextMenuClickException);

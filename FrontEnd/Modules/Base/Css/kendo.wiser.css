@@ -416,6 +416,8 @@
     font: 24px/43px var(--title-txt);
 	font-weight: 400;
     padding-right: 16px;
+	white-space: break-spaces;
+	line-height: 1em;
 }
 @media (min-width: 1025px) {
     .k-window-titlebar .k-window-title {
