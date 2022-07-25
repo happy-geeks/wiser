@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import { Wiser } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 
 require("@progress/kendo-ui/js/kendo.all.js");
@@ -80,7 +80,7 @@ const moduleSettings = {
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
-                Wiser2.alert({
+                Wiser.alert({
                     title: "Niet ingelogd",
                     content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
@@ -94,11 +94,11 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = user.adminAccountName;
             
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
-            this.settings.wiser2UserId = userData.id;
+            this.settings.wiserUserId = userData.id;
             
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
@@ -201,7 +201,7 @@ const moduleSettings = {
             });
 
             // Generate pusher event for the current logged-in customer
-            const eventId = await Wiser2.api({ url: `${this.settings.wiserApiRoot}pusher/event-id` });
+            const eventId = await Wiser.api({ url: `${this.settings.wiserApiRoot}pusher/event-id` });
 
             // User update channel for pusher messages
             channel.bind("agendering_" + eventId, (event) => {
@@ -299,7 +299,7 @@ const moduleSettings = {
         }
 
         async loadTasks() {
-            const data = await Wiser2.api({ url: `${this.settings.wiserApiRoot}task-alerts` });
+            const data = await Wiser.api({ url: `${this.settings.wiserApiRoot}task-alerts` });
 
             if (!data) {
                 return;
@@ -404,7 +404,7 @@ const moduleSettings = {
                         },
                         {
                             key: "placed_by_id",
-                            value: this.settings.wiser2UserId
+                            value: this.settings.wiserUserId
                         }
                     ];
 
@@ -412,7 +412,7 @@ const moduleSettings = {
                     const createResult = await this.createItem("agendering", parentId, null, null, inputData);
 
                     // Send a pusher to notify the receiving user.
-                    await Wiser2.api({
+                    await Wiser.api({
                         url: `${this.settings.wiserApiRoot}pusher/message`,
                         method: "POST",
                         contentType: "application/json",
@@ -479,7 +479,7 @@ const moduleSettings = {
                 this.loadTasks();
 
                 // Send a pusher to notify the receiving user
-                await Wiser2.api({
+                await Wiser.api({
                     url: `${this.settings.wiserApiRoot}pusher/message`,
                     method: "POST",
                     contentType: "application/json",
@@ -542,7 +542,7 @@ const moduleSettings = {
                     moduleId: moduleId || this.settings.moduleId
                 };
                 const parentIdUrlPart = parentId ? `&parentId=${encodeURIComponent(parentId)}` : "";
-                const createItemResult = await Wiser2.api({
+                const createItemResult = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}items?linkType=${linkTypeNumber || 0}${parentIdUrlPart}&isNewItem=true`,
                     method: "POST",
                     contentType: "application/json",
@@ -550,7 +550,7 @@ const moduleSettings = {
                 });
                 if (!skipUpdate) await this.updateItem(createItemResult.newItemId, data || [], true, entityType);
 
-                const workflowResult = await Wiser2.api({
+                const workflowResult = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(createItemResult.newItemId)}/workflow?isNewItem=true`,
                     method: "POST",
                     contentType: "application/json",
@@ -592,7 +592,7 @@ const moduleSettings = {
                 publishedEnvironment: "Live"
             };
 
-            return Wiser2.api({
+            return Wiser.api({
                 url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}?isNewItem=${!!isNewItem}`,
                 method: "PUT",
                 contentType: "application/json",
@@ -644,7 +644,7 @@ const moduleSettings = {
                 }, element.data());
 
                 const widget = element.kendoMultiSelect(options).getKendoMultiSelect();
-                Wiser2.fixKendoDropDownScrolling(widget);
+                Wiser.fixKendoDropDownScrolling(widget);
             });
 
             //DROPDOWNLIST
@@ -658,7 +658,7 @@ const moduleSettings = {
                 }, data);
 
                 const widget = element.kendoDropDownList(options).getKendoDropDownList();
-                Wiser2.fixKendoDropDownScrolling(widget);
+                Wiser.fixKendoDropDownScrolling(widget);
             });
 
             //BUTTONS

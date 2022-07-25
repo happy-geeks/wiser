@@ -16,8 +16,8 @@ var options = $.extend({
                 
                 var inputData = window.dynamicItems.fields.getInputData(field.closest(".popup-container, .pane-content")) || [];
                 inputData = inputData.reduce((obj, item) => { obj[item.key] = item.value; return obj; });
-                
-                Wiser2.api({
+
+                Wiser.api({
                     method: "POST",
                     contentType: "application/json",
                     dataType: "json",
@@ -88,7 +88,7 @@ if (typeof options.dataSource === "string") {
             searchAddition = "&search=";
         }
 
-        Wiser2.api({
+        Wiser.api({
             url: window.dynamicItems.settings.serviceRoot + "/SEARCH_ITEMS?id=" + encodeURIComponent("{itemIdEncrypted}") + "&moduleid=" + searchModuleId.toString() +
                 "&entityType=" + encodeURIComponent(options.entityType) + "&searchInTitle=" + encodeURIComponent(searchInTitle.toString()) +
                 "&searchFields=" + encodeURIComponent(searchFields.join()) + "&searchEverywhere=" + searchEverywhere +
@@ -136,7 +136,7 @@ if (typeof options.dataSource === "string") {
 	//options.filtering = function(event) { window.dynamicItems.fields.onComboBoxFiltering(event, '{itemIdEncrypted}', options); };
 } else if (options.dataSelectorId) {
     options.dataSource.transport.read = (kendoReadOptions) => {
-        Wiser2.api({
+        Wiser.api({
             url: window.dynamicItems.settings.getItemsUrl + "?trace=false&encryptedDataSelectorId=" + encodeURIComponent(options.dataSelectorId),
             dataType: "json",
             method: "GET",

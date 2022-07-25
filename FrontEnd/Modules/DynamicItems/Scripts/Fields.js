@@ -1,4 +1,4 @@
-﻿import {Dates, Wiser2, Misc, Utils} from "../../Base/Scripts/Utils.js";
+﻿import {Dates, Wiser, Misc, Utils} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import { DateTime } from "luxon";
 
@@ -724,7 +724,7 @@ export class Fields {
             searchModuleId = moduleId;
         }
 
-        const result = await Wiser2.api({
+        const result = await Wiser.api({
             url: `${this.base.settings.serviceRoot}/SEARCH_ITEMS?id=${encodeURIComponent(itemId)}&moduleid=${encodeURIComponent(searchModuleId)}&entityType=${encodeURIComponent(options.entityType)}&search=${encodeURIComponent(event.filter.value)}&searchInTitle=${encodeURIComponent(searchInTitle)}&searchFields=${encodeURIComponent(searchFields.join())}&searchEverywhere=${encodeURIComponent(searchEverywhere)}`,
             method: "GET",
             contentType: "application/json",
@@ -745,7 +745,7 @@ export class Fields {
         const containerData = container.data();
         const value = await kendo.prompt("", containerData.name);
         
-        await Wiser2.api({
+        await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/rename/${encodeURIComponent(value)}?itemLinkId=${encodeURIComponent(containerData.itemLinkId || 0)}&entityType=${encodeURIComponent(containerData.entityType || "")}&linkType=${containerData.linkType || 0}`,
             method: "PUT",
             contentType: "application/json",
@@ -765,7 +765,7 @@ export class Fields {
         const containerData = container.data();
         const value = await kendo.prompt("", containerData.title);
 
-        await Wiser2.api({
+        await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/title/${encodeURIComponent(value)}?itemLinkId=${containerData.itemLinkId || 0}&entityType=${encodeURIComponent(containerData.entityType || "")}&linkType=${containerData.linkType || 0}`,
             method: "PUT",
             contentType: "application/json",
@@ -1025,7 +1025,7 @@ export class Fields {
                 const itemId = fileData.itemId || fileContainer.data("itemId");
                 const itemLinkId = fileData.itemLinkId || fileContainer.data("itemLinkId") || 0;
 
-                await Wiser2.api({
+                await Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/files/${encodeURIComponent(fileId)}?itemLinkId=${encodeURIComponent(itemLinkId || 0)}&entityType=${encodeURIComponent(containerData.entityType || "")}&linkType=${containerData.linkType || 0}`,
                     method: "DELETE",
                     contentType: "application/json",
@@ -1075,13 +1075,13 @@ export class Fields {
                                 const newTitle = dialogElement.find("input[name=title]").val();
 
                                 const promises = [
-                                    Wiser2.api({
+                                    Wiser.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/rename/${encodeURIComponent(newFileName)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                                         method: "PUT",
                                         contentType: "application/json",
                                         dataType: "JSON"
                                     }),
-                                    Wiser2.api({
+                                    Wiser.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/title/${encodeURIComponent(newTitle)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                                         method: "PUT",
                                         contentType: "application/json",
@@ -1122,13 +1122,13 @@ export class Fields {
         event.preventDefault();
         // If event.currentTarget is not undefined, it means the user clicked the delete button manually.
         if (event.currentTarget) {
-            await Wiser2.showConfirmDialog(`Weet u zeker dat u deze afbeelding wilt verwijderen?`);
+            await Wiser.showConfirmDialog(`Weet u zeker dat u deze afbeelding wilt verwijderen?`);
 
             const imageContainer = $(event.currentTarget).closest(".product");
             const data = imageContainer.data();
 
             try {
-                await Wiser2.api({
+                await Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.encryptedItemId || data.itemId)}/files/${encodeURIComponent(data.imageId || data.fileId)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                     method: "DELETE",
                     contentType: "application/json",
@@ -1155,7 +1155,7 @@ export class Fields {
             const itemLinkId = imageContainer.data("itemLinkId") || 0;
             const data = imageContainer.data();
 
-            await Wiser2.api({
+            await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/files/${encodeURIComponent(fileId)}?itemLinkId=${encodeURIComponent(itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                 method: "DELETE",
                 contentType: "application/json",
@@ -1385,7 +1385,7 @@ export class Fields {
                                             }
                                         }
                                     }
-                                    const queryResult = await Wiser2.api({
+                                    const queryResult = await Wiser.api({
                                         method: "POST",
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(options.defaultValueQueryId)}`,
                                         data: JSON.stringify(extraData),
@@ -1409,7 +1409,7 @@ export class Fields {
                                     transport: {
                                         read: async (kendoOptions) => {
                                             try {
-                                                const queryResult = await Wiser2.api({
+                                                const queryResult = await Wiser.api({
                                                     method: "POST",
                                                     url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(queryId)}`,
                                                     contentType: "application/json"
@@ -1438,7 +1438,7 @@ export class Fields {
                                         options.dataSource = {
                                             transport: {
                                                 read: (options) => {
-                                                    Wiser2.api({
+                                                    Wiser.api({
                                                         url: `${this.base.settings.wiserApiRoot}users`,
                                                         dataType: "json",
                                                         method: "GET",
@@ -1622,7 +1622,7 @@ export class Fields {
             // Then execute the actions, using the entered user parameters if there are any.
             try {
                 const executeQuery = () => {
-                    return Wiser2.api({
+                    return Wiser.api({
                         method: "POST",
                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.queryId || this.base.settings.zeroEncrypted)}&itemLinkId=${encodeURIComponent(mainItemDetails.linkId || mainItemDetails.link_id || 0)}`,
                         data: JSON.stringify(userParametersWithValues),
@@ -1732,7 +1732,7 @@ export class Fields {
                             }
                         }
 
-                        let finalUrl = Wiser2.doWiserItemReplacements(action.url, mainItemDetails, true);
+                        let finalUrl = Wiser.doWiserItemReplacements(action.url, mainItemDetails, true);
                         if (!selectedItems || !selectedItems.length) {
                             await openUrl(finalUrl);
                             break;
@@ -1801,7 +1801,7 @@ export class Fields {
                             }
                         }
 
-                        let finalUrl = Wiser2.doWiserItemReplacements(action.url, mainItemDetails, true);
+                        let finalUrl = Wiser.doWiserItemReplacements(action.url, mainItemDetails, true);
                         await openUrl(finalUrl);
 
                         break;
@@ -1896,7 +1896,7 @@ export class Fields {
                             windowLinkId = windowLinkId.replace(/{linkId}/gi, queryActionResult.linkId || 0);
                             windowLinkId = windowLinkId.replace(/{linkType}/gi, queryActionResult.linkType || queryActionResult.linkTypeNumber || 0);
                         }
-                        windowItemId = Wiser2.doWiserItemReplacements(windowItemId, mainItemDetails);
+                        windowItemId = Wiser.doWiserItemReplacements(windowItemId, mainItemDetails);
 
                         if (!windowItemId) {
                             // We can't open a window with an item if we have no item ID, so show an error.
@@ -1980,7 +1980,7 @@ export class Fields {
                             if (queryActionResult) {
                                 itemIdForUrl = itemIdForUrl.replace(/{itemId}/gi, queryActionResult.itemId || 0);
                             }
-                            itemIdForUrl = Wiser2.doWiserItemReplacements(itemIdForUrl, mainItemDetails);
+                            itemIdForUrl = Wiser.doWiserItemReplacements(itemIdForUrl, mainItemDetails);
                             url += `&itemId=${itemIdForUrl}`;
                         } else {
                             url += `&itemId=${encodeURIComponent(mainItemDetails.encryptedId)}`;
@@ -2040,7 +2040,7 @@ export class Fields {
                             }
                         }
                         if (action.emailDataQueryId) {
-                            emailData = await Wiser2.api({
+                            emailData = await Wiser.api({
                                 method: "POST",
                                 url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.emailDataQueryId)}&itemLinkId=${encodeURIComponent(linkId)}`,
                                 data: JSON.stringify($.extend(extraParameters, userParametersWithValues)),
@@ -2180,7 +2180,7 @@ export class Fields {
                                 await combineValuesFromAllSelectedItemsAndAddToUserParameters();
                             }
 
-                            const apiCallResult = await Wiser2.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, userParametersWithValues);
+                            const apiCallResult = await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, userParametersWithValues);
                         } catch (apiCallException) {
                             if (typeof apiCallException === "string") {
                                 kendo.alert(apiCallException);
@@ -2205,7 +2205,7 @@ export class Fields {
                         }
 
                         // Send a pusher to notify the receiving user.
-                        await Wiser2.api({
+                        await Wiser.api({
                             method: "POST",
                             url: `${this.base.settings.wiserApiRoot}pusher/message`,
                             contentType: "application/json",
@@ -2332,7 +2332,7 @@ export class Fields {
                     const url = urls[i];
 
                     // Execute the data selector and get the HTML result.
-                    const dataSelectorResult = await Wiser2.api({
+                    const dataSelectorResult = await Wiser.api({
                         method: "POST",
                         contentType: "application/json",
                         url: url
@@ -2558,7 +2558,7 @@ export class Fields {
                                                             saveInDatabase: true
                                                         })
                                                     };
-                                                    promises.push(Wiser2.api(ajaxOptions));
+                                                    promises.push(Wiser.api(ajaxOptions));
                                                 }
 
                                                 Promise.all(promises).catch((error) => {
@@ -2567,10 +2567,10 @@ export class Fields {
                                                     kendo.alert("Er is iets fout gegaan met het genereren van de PDF. Probeer het a.u.b. nogmaals of neem contact op met ons");
                                                 }).then((results) => {
                                                     const allFiles = dialogElement.find("input[name=files]").data("kendoUpload").getFiles();
-                                                    const wiser2FileAttachments = allFiles.filter(file => file.fileId > 0).map(file => file.fileId) || [];
+                                                    const wiserFileAttachments = allFiles.filter(file => file.fileId > 0).map(file => file.fileId) || [];
                                                 
                                                     for (let fileId of results) {
-                                                        wiser2FileAttachments.push(parseInt(fileId.replace(/\"/g, "")));
+                                                        wiserFileAttachments.push(parseInt(fileId.replace(/\"/g, "")));
                                                     }
 
                                                     const success = () => {
@@ -2596,7 +2596,7 @@ export class Fields {
 
                                                         const queryPromises = [];
                                                         for (let selectedItem of selectedItems) {
-                                                            queryPromises.push(Wiser2.api({
+                                                            queryPromises.push(Wiser.api({
                                                                 method: "POST",
                                                                 url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.dataItem.encryptedId)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.executeQueryAfterEmail)}&itemLinkId=${encodeURIComponent(selectedItem.dataItem.linkId)}`,
                                                                 data: JSON.stringify(userParametersWithValues),
@@ -2612,8 +2612,8 @@ export class Fields {
                                                             loader.removeClass("loading");
                                                         });
                                                     };
-                                                
-                                                    Wiser2.api({
+
+                                                    Wiser.api({
                                                         url: `${this.base.settings.wiserApiRoot}communications/email`,
                                                         method: "POST",
                                                         contentType: "application/json",
@@ -2627,7 +2627,7 @@ export class Fields {
                                                             cc: [mailDialog.element.find("input[name=cc]").val()],
                                                             bcc: [mailDialog.element.find("input[name=bcc]").val()],
                                                             subject: mailDialog.element.find("input[name=subject]").val(),
-                                                            wiserItemFiles: wiser2FileAttachments,
+                                                            wiserItemFiles: wiserFileAttachments,
                                                             content: emailBodyEditor.value()
                                                         })
                                                     }).catch((jqXHR, textStatus, errorThrown) => {
@@ -2802,7 +2802,7 @@ export class Fields {
 
     /**
      * Event that gets called when the user executes the custom action for adding an image from Wiser to the HTML editor.
-     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser 2.0 is being loaded in an iframe.
+     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
      * @param {any} event The event from the execute action.
      * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
      * @param {any} codeMirror The CodeMirror editor where the action is executed in.
@@ -2819,7 +2819,7 @@ export class Fields {
 
     /**
      * Event that gets called when the user executes the custom action for adding a link to a file from Wiser to the HTML editor.
-     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser 2.0 is being loaded in an iframe.
+     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
      * @param {any} event The event from the execute action.
      * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
      * @param {any} codeMirror The CodeMirror editor where the action is executed in.
@@ -2836,7 +2836,7 @@ export class Fields {
 
     /**
      * Event that gets called when the user executes the custom action for adding a template from Wiser to the HTML editor.
-     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser 2.0 is being loaded in an iframe.
+     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
      * @param {any} event The event from the execute action.
      * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
      * @param {any} codeMirror The CodeMirror editor where the action is executed in.
@@ -3071,7 +3071,7 @@ export class Fields {
                     transport: {
                         read: async (options) => {
                             try {
-                                const results = await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}data-selectors?forRendering=true` });
+                                const results = await Wiser.api({ url: `${this.base.settings.wiserApiRoot}data-selectors?forRendering=true` });
                                 options.success(results);
                             } catch (exception) {
                                 console.error(exception);
@@ -3090,7 +3090,7 @@ export class Fields {
                     transport: {
                         read: async (options) => {
                             try {
-                                const results = await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}data-selectors/templates` });
+                                const results = await Wiser.api({ url: `${this.base.settings.wiserApiRoot}data-selectors/templates` });
                                 options.success(results);
                             } catch (exception) {
                                 console.error(exception);
@@ -3122,7 +3122,7 @@ export class Fields {
                             }
 
                             let html = `<div class="dynamic-content" data-selector-id="${selectedDataSelector}" template-id="${selectedTemplate}"><h2>Data selector '${dataSelectorDropDown.text()}' met template '${dataSelectorTemplateDropDown.text()}'</h2></div>`;
-                            Wiser2.api({
+                            Wiser.api({
                                 url: `${this.base.settings.wiserApiRoot}data-selectors/preview-for-html-editor`,
                                 method: "POST",
                                 contentType: "application/json",
@@ -3218,7 +3218,7 @@ export class Fields {
 
     /**
      * Event that gets called when the user double clicks a dynamic content block in a HTML editor.
-     * This will open the dynamicHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser 2.0 is being loaded in an iframe.
+     * This will open the dynamicHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
      * @param {any} event The event from the execute action.
      * @param {any} editor The HTML editor where the action is executed in.
      * @param {any} itemId The ID of the current item.
@@ -3418,7 +3418,7 @@ export class Fields {
      * @returns {any} A promise.
      */
     updateWidth(propertyId, width) {
-        return Wiser2.api({
+        return Wiser.api({
             url: `${this.base.settings.wiserApiRoot}properties/${encodeURIComponent(propertyId)}/width/${encodeURIComponent(width)}`,
             method: "PUT",
             contentType: "application/json"

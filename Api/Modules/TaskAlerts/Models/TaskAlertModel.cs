@@ -8,8 +8,6 @@ namespace Api.Modules.TaskAlerts.Models
     /// </summary>
     public class TaskAlertModel
     {
-        // Note: All these JsonProperties are for backwards compatibility, to keep the original Wiser 2.0 names in the JSON.
-
         /// <summary>
         /// Gets or sets the ID.
         /// </summary>

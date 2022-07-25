@@ -24,7 +24,7 @@ if (options.fieldGroupName) {
 }
 
 if (customQueryGrid) {
-    Wiser2.api({ url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}" + linkTypeParameter }).then(function(customQueryResults) {
+    Wiser.api({ url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}" + linkTypeParameter }).then(function(customQueryResults) {
         if (customQueryResults.extraJavascript) {
             jQuery.globalEval(customQueryResults.extraJavascript);
         }
@@ -182,12 +182,12 @@ if (customQueryGrid) {
     }
     
     if (usingDataSelector) {
-        Wiser2.api({
+        Wiser.api({
             url: window.dynamicItems.settings.getItemsUrl + "?trace=false&encryptedDataSelectorId=" + encodeURIComponent(options.dataSelectorId) + "&itemId=" + encodeURIComponent("{itemIdEncrypted}"),
             contentType: "application/json"
         }).then(done);
     } else {
-        Wiser2.api({
+        Wiser.api({
             url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/entity-grids/" + encodeURIComponent(options.entityType) + "?propertyId={propertyId}" + linkTypeParameter.replace("?", "&") + "&mode=" + gridMode.toString() + "&fieldGroupName=" + encodeURIComponent(options.fieldGroupName || "") + "&currentItemIsSourceId=" + (options.currentItemIsSourceId || false).toString(),
             method: "POST",
             contentType: "application/json"
@@ -316,7 +316,7 @@ async function generateGrid(data, model, columns) {
                         }
 
                         if (customQueryGrid) {
-                            Wiser2.api({
+                            Wiser.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids-with-filters/{propertyId}" + linkTypeParameter,
                                 method: "POST",
                                 contentType: "application/json",
@@ -338,7 +338,7 @@ async function generateGrid(data, model, columns) {
                                 loader.removeClass("loading");
                             });
                         } else {
-                            Wiser2.api({
+                            Wiser.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/entity-grids/" + encodeURIComponent(options.entityType) + "?propertyId={propertyId}" + linkTypeParameter.replace("?", "&") + "&mode=" + gridMode.toString() + "&fieldGroupName=" + encodeURIComponent(options.fieldGroupName || "") + "&currentItemIsSourceId=" + (options.currentItemIsSourceId || false).toString(),
                                 method: "POST",
                                 contentType: "application/json",
@@ -367,7 +367,7 @@ async function generateGrid(data, model, columns) {
                         loader.addClass("loading");
 
                         if (customQueryGrid) {
-                            Wiser2.api({
+                            Wiser.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
                                 method: "PUT",
                                 contentType: "application/json",
@@ -462,7 +462,7 @@ async function generateGrid(data, model, columns) {
                             }
                         }
 
-                        Wiser2.api({
+                        Wiser.api({
                             url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
                             method: "PUT",
                             contentType: "application/json",
@@ -515,7 +515,7 @@ async function generateGrid(data, model, columns) {
                             transportOptions.data.groupName = options.fieldGroupName;
                             itemModel.details.push(transportOptions.data);
 
-                            Wiser2.api({
+                            Wiser.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
                                 method: "PUT",
                                 contentType: "application/json",
@@ -546,7 +546,7 @@ async function generateGrid(data, model, columns) {
                         } else if (customQueryGrid) {
                             loader.addClass("loading");
 
-                            Wiser2.api({
+                            Wiser.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
                                 method: "POST",
                                 contentType: "application/json",
@@ -585,7 +585,7 @@ async function generateGrid(data, model, columns) {
                             transportOptions.data.value = null;
                             itemModel.details.push(transportOptions.data);
 
-                            Wiser2.api({
+                            Wiser.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
                                 method: "PUT",
                                 contentType: "application/json",
@@ -616,7 +616,7 @@ async function generateGrid(data, model, columns) {
                         } else if (customQueryGrid) {
                             loader.addClass("loading");
 
-                            Wiser2.api({
+                            Wiser.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
                                 method: "DELETE",
                                 contentType: "application/json",

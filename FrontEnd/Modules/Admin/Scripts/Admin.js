@@ -5,7 +5,7 @@ import { EntityTab } from "../Scripts/EntityTab.js";
 import { EntityFieldTab } from "../Scripts/EntityFieldTab.js";
 import { EntityPropertyTab } from "../Scripts/EntityPropertyTab.js";
 import { WiserQueryTab } from "../Scripts/WiserQueryTab.js";
-import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import { Wiser } from "../../Base/Scripts/Utils.js";
 
 
 require("@progress/kendo-ui/js/kendo.all.js");
@@ -150,7 +150,7 @@ const moduleSettings = {
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
-                Wiser2.alert({
+                Wiser.alert({
                     title: "Niet ingelogd",
                     content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
@@ -164,11 +164,11 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.happyEmployeeLoggedIn = user.juiceEmployeeName;
 
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
-            this.settings.wiser2UserId = userData.wiser2Id;
+            this.settings.wiserUserId = userData.id;
 
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;

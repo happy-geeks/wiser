@@ -16,7 +16,7 @@ var options = $.extend(true, {
     dataSource: {
         transport: {
             read: function(transportOptions) {
-                Wiser2.api({
+                Wiser.api({
                     method: "POST",
                     url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.queryId || 0) + "&&itemLinkId={itemLinkId}",
                     contentType: "application/json"
@@ -80,7 +80,7 @@ if (optionsFromProperty.resourcesQueryId) {
                 },
                 transport: {
                     read: (kendoReadOptions) => {
-                        Wiser2.api({
+                        Wiser.api({
                             url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.resourcesQueryId || 0) + "&itemLinkId={itemLinkId}",
                             contentType: "application/json",
                             dataType: "json",

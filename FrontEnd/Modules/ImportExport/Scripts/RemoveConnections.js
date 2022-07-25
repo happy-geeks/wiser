@@ -1,4 +1,4 @@
-﻿import { Wiser2 } from "../../Base/Scripts/Utils.js";
+﻿import { Wiser } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 
 require("@progress/kendo-ui/js/kendo.all.js");
@@ -88,7 +88,7 @@ export class RemoveConnections {
                 this.setupCorrectInputBasedOnUploadedFile(context, e.response.columns);
                 this.importFilename = e.response.filename;
                 if (e.response.rowCount > e.response.importLimit) {
-                    Wiser2.alert({
+                    Wiser.alert({
                         title: "Import limiet overschreden",
                         content: `De import bevat meer dan ${e.response.importLimit} rijen. Alleen de eerste ${e.response.importLimit} van de ${e.response.rowCount} rijen zullen worden geïmporteerd.`
                     });
@@ -102,7 +102,7 @@ export class RemoveConnections {
 
         try {
             const promiseResults = await Promise.all([
-                Wiser2.api({ url: `${this.settings.wiserApiRoot}link-settings` })
+                Wiser.api({ url: `${this.settings.wiserApiRoot}link-settings` })
             ]);
             const linkTypes = promiseResults[0];
 
@@ -124,7 +124,7 @@ export class RemoveConnections {
         window.processing.removeProcess(process);
 
         const promiseResults = await Promise.all([
-            Wiser2.api({ url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false` })
+            Wiser.api({ url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false` })
         ]);
         const entityNames = promiseResults[0];
 
@@ -237,7 +237,7 @@ export class RemoveConnections {
     //Let the API prepare the delete to retrieve all information for delete.
     async prepareDeleteConnections() {
         if (!this.importFilename || this.importFilename === "") {
-            Wiser2.showMessage({
+            Wiser.showMessage({
                 title: "Ongeldig bestand",
                 content: "Er is geen bestand geüpload om te gebruiken voor het verwijderen van koppelingen."
             });
@@ -253,7 +253,7 @@ export class RemoveConnections {
             const linkId = $(context).find("#deleteConnectionsLinkCombobox").data("kendoDropDownList").value();
 
             if (linkId === "") {
-                Wiser2.showMessage({
+                Wiser.showMessage({
                     title: "Link type mist",
                     content: "Er is geen koppeltype gekozen om de koppelingen binnen te verwijderen."
                 });
@@ -269,7 +269,7 @@ export class RemoveConnections {
 
             this.connectionsGrid.dataItems().forEach(item => {
                 if (item.entity === "" || item.matchTo === "") {
-                    Wiser2.showMessage({
+                    Wiser.showMessage({
                         title: "Lege kolommen",
                         content: "Niet alle kolommen zijn ingevuld."
                     });
@@ -284,7 +284,7 @@ export class RemoveConnections {
             });
         }
 
-        const result = await Wiser2.api({
+        const result = await Wiser.api({
             url: `${this.settings.wiserApiRoot}imports/delete-links/prepare`,
             method: "POST",
             contentType: "application/json",
@@ -299,13 +299,13 @@ export class RemoveConnections {
         let totalLinksToDelete = 0;
         results.forEach(result => totalLinksToDelete += result.ids.length);
 
-        Wiser2.confirm({
+        Wiser.confirm({
             title: "Bevestig links verwijderen",
             content: `U staat op het punt om ${totalLinksToDelete} link(s) te verwijderen. Wilt u doorgaan?`,
             actions: [{
                 text: "Ok",
                 action: async function (e) {
-                    const result = await Wiser2.api({
+                    const result = await Wiser.api({
                         url: `${window.removeConnections.settings.wiserApiRoot}imports/delete-links/confirm`,
                         method: "POST",
                         contentType: "application/json",
@@ -313,12 +313,12 @@ export class RemoveConnections {
                     });
                     
                     if (result === true) {
-                        Wiser2.showMessage({
+                        Wiser.showMessage({
                             title: "Koppelingen verwijderd",
                             content: "De koppelingen zijn verwijderd."
                         });
                     } else {
-                        Wiser2.showMessage({
+                        Wiser.showMessage({
                             title: "Koppelingen verwijderen mislukt.",
                             content: "Er is iets mis gegaan tijdens het verwijderen van de koppelingen, de actie is teruggedraaid."
                         });

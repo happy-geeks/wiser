@@ -133,7 +133,7 @@ export class ModuleTab {
 
     async addModule(name) {
         if (name === "") { return; }
-        await Wiser2.api({
+        await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}modules/settings`,
             contentType: "application/json; charset=utf-8",
             dataType: "json",
@@ -160,7 +160,7 @@ export class ModuleTab {
             return;
         }
 
-        await Wiser2.api({
+        await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}entity-types?name=&moduleId=${moduleId}`,
             contentType: "application/json; charset=utf-8",
             dataType: "json",
@@ -176,7 +176,7 @@ export class ModuleTab {
 
     async getModules(reloadDataSource = true, moduleIdToSelect = null) {
         if (reloadDataSource) {
-            this.moduleList = await Wiser2.api({
+            this.moduleList = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}modules/settings`,
                 method: "GET"
             });
@@ -201,7 +201,7 @@ export class ModuleTab {
     }
 
     async getModuleById(id) {
-        const results = await Wiser2.api({
+        const results = await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}modules/${id}/settings`,
             method: "GET"
         });
@@ -280,7 +280,7 @@ export class ModuleTab {
 
     async updateModule(id, moduleSettingsModel) {
         try {
-            await Wiser2.api({
+            await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}modules/${id}/settings`,
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",

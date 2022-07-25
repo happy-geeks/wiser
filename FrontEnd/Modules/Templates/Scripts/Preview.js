@@ -1,4 +1,4 @@
-﻿import { Wiser2 } from "../../Base/Scripts/Utils.js";
+﻿import { Wiser } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
@@ -121,7 +121,7 @@ export class Preview {
     }
 
     async loadProfiles() {
-        this.previewProfiles = await Wiser2.api({
+        this.previewProfiles = await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}templates/${this.base.selectedId}/profiles`,
             dataType: "json",
             method: "GET"
@@ -163,7 +163,7 @@ export class Preview {
                 return;
             }
 
-            const generatedHtml = await Wiser2.api({
+            const generatedHtml = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}templates/preview`,
                 contentType: "application/json",
                 type: "POST",
@@ -208,7 +208,7 @@ export class Preview {
                 return;
             }
 
-            const generatedHtml = await Wiser2.api({
+            const generatedHtml = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}dynamic-content/${componentId}/html-preview`,
                 contentType: "application/json",
                 type: "POST",
@@ -271,13 +271,13 @@ export class Preview {
             return;
         }
 
-        await Wiser2.showConfirmDialog(`Weet u zeker dat u het profiel "${this.previewProfilesDropDown.text()}" wilt verwijderen?`);
+        await Wiser.showConfirmDialog(`Weet u zeker dat u het profiel "${this.previewProfilesDropDown.text()}" wilt verwijderen?`);
 
         const process = `deleteProfile_${Date.now()}`;
         window.processing.addProcess(process);
 
         try {
-            await Wiser2.api({
+            await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}templates/${this.base.selectedId}/profiles/${selectedPreviewProfile}`,
                 dataType: "json",
                 contentType: "application/json",
@@ -306,7 +306,7 @@ export class Preview {
         window.processing.addProcess(process);
 
         try {
-            const newProfile = await Wiser2.api({
+            const newProfile = await Wiser.api({
                 url: saveAsNewProfile ? `${this.base.settings.wiserApiRoot}templates/${this.base.selectedId}/profiles` : `${this.base.settings.wiserApiRoot}templates/${this.base.selectedId}/profiles/${selectedPreviewProfile}`,
                 dataType: "json",
                 contentType: "application/json",

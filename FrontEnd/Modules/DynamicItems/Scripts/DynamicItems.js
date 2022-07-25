@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Modules, Dates, Wiser2 } from "../../Base/Scripts/Utils.js";
+import { Modules, Dates, Wiser } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import { DateTime } from "luxon";
 import { Fields } from "./Fields.js";
@@ -179,7 +179,7 @@ const moduleSettings = {
             }
 
             // Get user data from API.
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
@@ -193,7 +193,7 @@ const moduleSettings = {
             
             // Get list of all entity types, so we can show friendly names wherever we need to and don't have to get them from database via different places.
             try {
-                this.allEntityTypes = (await Wiser2.api({ url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false` })) || [];
+                this.allEntityTypes = (await Wiser.api({ url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false` })) || [];
             } catch (exception) {
                 console.error("Error occurred while trying to load all entity types", exception);
                 this.allEntityTypes = [];
@@ -498,7 +498,7 @@ const moduleSettings = {
                 dataSource: {
                     transport: {
                         read: (options) => {
-                            Wiser2.api({
+                            Wiser.api({
                                 url: `${this.base.settings.wiserApiRoot}items/tree-view?moduleId=${this.base.settings.moduleId}`,
                                 dataType: "json",
                                 method: "GET",
@@ -645,7 +645,7 @@ const moduleSettings = {
         async onContextMenuOpen(event) {
             try {
                 const nodeId = this.mainTreeView.dataItem(event.target).id;
-                let contextMenu = await Wiser2.api({ url: `${this.base.settings.serviceRoot}/GET_CONTEXT_MENU?moduleId=${encodeURIComponent(this.base.settings.moduleId)}&itemId=${encodeURIComponent(nodeId)}` });
+                let contextMenu = await Wiser.api({ url: `${this.base.settings.serviceRoot}/GET_CONTEXT_MENU?moduleId=${encodeURIComponent(this.base.settings.moduleId)}&itemId=${encodeURIComponent(nodeId)}` });
                 //TODO: DIT MOET ANDERS MAAR KOMT ZO VERKEERD UIT WISER
                 contextMenu = JSON.parse(JSON.stringify(contextMenu).replace(/"attr":\[/g, '"attr":').replace(/\}\]\},/g, "}},").replace("}]}]", "}}]"));
                 this.mainTreeViewContextMenu.setOptions({
@@ -710,7 +710,7 @@ const moduleSettings = {
                         }
                     case "REMOVE_ITEM":
                         {
-                            Wiser2.showConfirmDialog(`Weet u zeker dat u het item '${this.base.mainTreeView.dataItem(node).title}' wilt verwijderen?`).then(async () => {
+                            Wiser.showConfirmDialog(`Weet u zeker dat u het item '${this.base.mainTreeView.dataItem(node).title}' wilt verwijderen?`).then(async () => {
                                 try {
                                     await this.base.deleteItem(itemId, entityType);
                                     this.base.mainTreeView.remove(node);
@@ -729,7 +729,7 @@ const moduleSettings = {
                         }
                     case "HIDE_ITEM":
                         {
-                            await Wiser2.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
+                            await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
                             node.closest("li").addClass("hiddenOnWebsite");
                             window.dynamicItems.notification.show({ message: "Item is verborgen" }, "success");
                             break;
@@ -737,14 +737,14 @@ const moduleSettings = {
                     case "PUBLISH_LIVE":
                     case "PUBLISH_ITEM":
                         {
-                            await Wiser2.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
+                            await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
                             node.closest("li").removeClass("hiddenOnWebsite");
                             window.dynamicItems.notification.show({ message: "Item is zichtbaar gemaakt" }, "success");
                             break;
                         }
                     default:
                         {
-                            await Wiser2.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
+                            await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
                             window.dynamicItems.notification.show({ message: "Succesvol gewijzigd" }, "success");
                             break;
                         }
@@ -1014,7 +1014,7 @@ const moduleSettings = {
                 const sourceDataItem = event.sender.dataItem(event.sourceNode);
                 const destinationDataItem = event.sender.dataItem(event.destinationNode);
 
-                await Wiser2.api({
+                await Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(sourceDataItem.id)}/move/${encodeURIComponent(destinationDataItem.id)}`,
                     method: "PUT",
                     contentType: "application/json",
@@ -1083,7 +1083,7 @@ const moduleSettings = {
                     take: 100
                 };
 
-                const gridDataResult = await Wiser2.api({
+                const gridDataResult = await Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/history?mode=3&moduleId=${this.base.settings.moduleId}`,
                     method: "POST",
                     contentType: "application/json",
@@ -1125,7 +1125,7 @@ const moduleSettings = {
                                     transportOptions.data.pageSize = transportOptions.data.pageSize;
                                     previousFilters = currentFilters;
 
-                                    const newGridDataResult = await Wiser2.api({
+                                    const newGridDataResult = await Wiser.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/history?mode=3&moduleId=${this.base.settings.moduleId}`,
                                         method: "POST",
                                         contentType: "application/json",
@@ -1192,7 +1192,7 @@ const moduleSettings = {
                     return;
                 }
 
-                const customColumns = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_COLUMNS_FOR_TABLE?itemId=${encodeURIComponent(itemId)}` });
+                const customColumns = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_COLUMNS_FOR_TABLE?itemId=${encodeURIComponent(itemId)}` });
                 const model = {
                     id: "id",
                     fields: {
@@ -1269,7 +1269,7 @@ const moduleSettings = {
                         transport: {
                             read: async (options) => {
                                 try {
-                                    const results = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_DATA_FOR_TABLE?itemId=${encodeURIComponent(itemId)}` });
+                                    const results = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_DATA_FOR_TABLE?itemId=${encodeURIComponent(itemId)}` });
                                     if (!results) {
                                         options.success(results);
                                         return;
@@ -1341,9 +1341,9 @@ const moduleSettings = {
             event.preventDefault();
 
             if (this.base.selectedItem && this.base.selectedItem.title) {
-                await Wiser2.showConfirmDialog(`Weet u zeker dat u het item '${this.base.selectedItem.title}' wilt verwijderen?`);
+                await Wiser.showConfirmDialog(`Weet u zeker dat u het item '${this.base.selectedItem.title}' wilt verwijderen?`);
             } else {
-                await Wiser2.showConfirmDialog(`Weet u zeker dat u dit item wilt verwijderen?`);
+                await Wiser.showConfirmDialog(`Weet u zeker dat u dit item wilt verwijderen?`);
             }
 
             try {
@@ -1379,7 +1379,7 @@ const moduleSettings = {
             event.preventDefault();
             
             const title = $("#tabstrip .itemNameFieldContainer .itemNameField").val();
-            await Wiser2.showConfirmDialog(`Weet u zeker dat u het verwijderen ongedaan wilt maken voor '${title}'?`);
+            await Wiser.showConfirmDialog(`Weet u zeker dat u het verwijderen ongedaan wilt maken voor '${title}'?`);
 
             const process = `undeleteItem_${Date.now()}`;
             window.processing.addProcess(process);
@@ -1392,7 +1392,7 @@ const moduleSettings = {
 
                 let entityType = popupWindowContainer.data("entityTypeDetails");
 
-                if (Wiser2.validateArray(entityType)) {
+                if (Wiser.validateArray(entityType)) {
                     entityType = entityType[0];
                 }
 
@@ -1576,11 +1576,11 @@ const moduleSettings = {
             if (executeWorkFlow) {
                 const apiActionId = await this.getApiAction("before_update", entityType);
                 if (apiActionId) {
-                    await Wiser2.doApiCall(this.settings, apiActionId, updateItemData);
+                    await Wiser.doApiCall(this.settings, apiActionId, updateItemData);
                 }
             }
 
-            return Wiser2.api({
+            return Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}?isNewItem=${!!isNewItem}`,
                 method: "PUT",
                 contentType: "application/json",
@@ -1615,7 +1615,7 @@ const moduleSettings = {
                     if (executeWorkFlow) {
                         this.getApiAction("after_update", updateResult.entityType).then((apiActionId) => {
                             if (apiActionId) {
-                                Wiser2.doApiCall(this.settings, apiActionId, updateResult).then(() => {
+                                Wiser.doApiCall(this.settings, apiActionId, updateResult).then(() => {
                                     if (showSuccessMessage) {
                                         this.notification.show({ message: "Opslaan is gelukt" }, "success");
                                     }
@@ -1790,7 +1790,7 @@ const moduleSettings = {
          * @returns {any} A promise with the result of the AJAX call.
          */
         async updateItemLink(linkId, newDestinationId) {
-            return Wiser2.api({ url: `${this.settings.serviceRoot}/UPDATE_LINK?linkId=${encodeURIComponent(linkId)}&destinationId=${encodeURIComponent(newDestinationId)}` });
+            return Wiser.api({ url: `${this.settings.serviceRoot}/UPDATE_LINK?linkId=${encodeURIComponent(linkId)}&destinationId=${encodeURIComponent(newDestinationId)}` });
         }
 
         /**
@@ -1801,7 +1801,7 @@ const moduleSettings = {
          * @returns {Promise} A promise with the result of the AJAX call.
          */
         async removeItemLink(sourceId, destinationId, linkTypeNumber) {
-            return Wiser2.api({
+            return Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}items/remove-links?moduleId=${this.base.settings.moduleId}`,
                 method: "DELETE",
                 contentType: "application/json",
@@ -1832,7 +1832,7 @@ const moduleSettings = {
                 };
 
                 const parentIdUrlPart = parentId ? `&parentId=${encodeURIComponent(parentId)}` : "";
-                const createItemResult = await Wiser2.api({
+                const createItemResult = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}items?linkType=${linkTypeNumber || 0}${parentIdUrlPart}&isNewItem=true`,
                     method: "POST",
                     contentType: "application/json",
@@ -1844,7 +1844,7 @@ const moduleSettings = {
                 let newItemDetails = [];
                 if (!skipUpdate) newItemDetails = await this.base.updateItem(createItemResult.newItemId, data || [], null, false, name, false, false, entityType);
 
-                const workflowResult = await Wiser2.api({
+                const workflowResult = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(createItemResult.newItemId)}/workflow?isNewItem=true`,
                     method: "POST",
                     contentType: "application/json",
@@ -1857,7 +1857,7 @@ const moduleSettings = {
                 try {
                     const apiActionId = await this.getApiAction("after_insert", entityType);
                     if (apiActionId) {
-                        apiActionResult = await Wiser2.doApiCall(this.settings, apiActionId, newItemDetails);
+                        apiActionResult = await Wiser.doApiCall(this.settings, apiActionId, newItemDetails);
                     }
                 } catch (exception) {
                     console.error(exception);
@@ -1897,7 +1897,7 @@ const moduleSettings = {
             try {
                 const apiActionId = await this.getApiAction("before_delete", entityType);
                 if (apiActionId) {
-                    await Wiser2.doApiCall(this.settings, apiActionId, { encryptedId: encryptedItemId });
+                    await Wiser.doApiCall(this.settings, apiActionId, { encryptedId: encryptedItemId });
                 }
             } catch (exception) {
                 console.error(exception);
@@ -1907,7 +1907,7 @@ const moduleSettings = {
                 });
             }
 
-            return Wiser2.api({
+            return Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}?entityType=${entityType || ""}`,
                 method: "DELETE",
                 contentType: "application/json",
@@ -1924,7 +1924,7 @@ const moduleSettings = {
         async undeleteItem(encryptedItemId, entityType) {
             console.warn("undeleteItem in dynamicItems.js called");
 
-            return Wiser2.api({
+            return Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}?undelete=true&entityType=${entityType || ""}`,
                 method: "DELETE",
                 contentType: "application/json",
@@ -1944,13 +1944,13 @@ const moduleSettings = {
             try {
                 const entityTypeQueryString = !entityType ? "" : `?entityType=${encodeURIComponent(entityType)}`;
                 const parentEntityTypeQueryString = !parentEntityType ? "" : `${!entityType ? "?" : "&"}parentEntityType=${encodeURIComponent(parentEntityType)}`;
-                const createItemResult = await Wiser2.api({
+                const createItemResult = await Wiser.api({
                     method: "POST",
                     url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/duplicate/${encodeURIComponent(parentId)}${entityTypeQueryString}${parentEntityTypeQueryString}`,
                     contentType: "application/json",
                     dataType: "JSON"
                 });
-                const workflowResult = await Wiser2.api({
+                const workflowResult = await Wiser.api({
                     method: "POST",
                     url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(createItemResult.newItemId)}/workflow?isNewItem=true`,
                     contentType: "application/json",
@@ -1978,7 +1978,7 @@ const moduleSettings = {
          * @returns {Promise} A promise with the result of the AJAX call.
          */
         async copyToEnvironment(encryptedItemId, newEnvironments) {
-            return Wiser2.api({
+            return Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}/copy-to-environment/${newEnvironments}`,
                 method: "POST",
                 contentType: "application/json",
@@ -1992,7 +1992,7 @@ const moduleSettings = {
          * @returns {Promise} A promise with the results.
          */
         async getTitle(itemId) {
-            return Wiser2.api({ url: `${this.settings.serviceRoot}/GET_TITLE?itemId=${encodeURIComponent(itemId)}` });
+            return Wiser.api({ url: `${this.settings.serviceRoot}/GET_TITLE?itemId=${encodeURIComponent(itemId)}` });
         }
 
         /**
@@ -2015,7 +2015,7 @@ const moduleSettings = {
             if (linkType) {
                 url += `&linkType=${encodeURIComponent(linkType)}`;
             }
-            return Wiser2.api({ url: url });
+            return Wiser.api({ url: url });
         }
 
         /**
@@ -2026,7 +2026,7 @@ const moduleSettings = {
          */
         async getItemDetails(itemId, entityType) {
             const entityTypeUrlPart = entityType ? `?entityType=${encodeURIComponent(entityType)}` : "";
-            return Wiser2.api({ url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/details/${entityTypeUrlPart}` });
+            return Wiser.api({ url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/details/${entityTypeUrlPart}` });
         }
 
         /**
@@ -2035,7 +2035,7 @@ const moduleSettings = {
          * @returns {Promise} A promise, which will return an array with 1 item. That item will contain it's basic properties and a property called "property_" which contains an object with all fields and their values.
          */
         async getEntityBlock(itemId) {
-            return Wiser2.api({ url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/block/` });
+            return Wiser.api({ url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/block/` });
         }
 
         /**
@@ -2045,7 +2045,7 @@ const moduleSettings = {
          * @returns {Promise} A promise, which will return an array with 1 item. That item will contain information about the property / field, including it's value.
          */
         async getItemValue(encryptedItemId, propertyName) {
-            return Wiser2.api({ url: `${this.settings.serviceRoot}/GET_ITEM_VALUE?itemId=${encodeURIComponent(encryptedItemId)}&propertyName=${encodeURIComponent(propertyName)}` });
+            return Wiser.api({ url: `${this.settings.serviceRoot}/GET_ITEM_VALUE?itemId=${encodeURIComponent(encryptedItemId)}&propertyName=${encodeURIComponent(propertyName)}` });
         }
 
         /**
@@ -2056,7 +2056,7 @@ const moduleSettings = {
          */
         async getItemMetaData(itemId, entityType) {
             const entityTypeUrlPart = entityType ? `?entityType=${encodeURIComponent(entityType)}` : "";
-            return Wiser2.api({ url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/meta${entityTypeUrlPart}` });
+            return Wiser.api({ url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/meta${entityTypeUrlPart}` });
         }
 
         /**
@@ -2065,7 +2065,7 @@ const moduleSettings = {
          * @returns {Promise} A promise, which will return an array with the results.
          */
         async getItemEnvironments(mainItemId) {
-            return Wiser2.api({ url: `${this.settings.serviceRoot}/GET_ITEM_ENVIRONMENTS?mainItemId=${encodeURIComponent(mainItemId)}` });
+            return Wiser.api({ url: `${this.settings.serviceRoot}/GET_ITEM_ENVIRONMENTS?mainItemId=${encodeURIComponent(mainItemId)}` });
         }
 
         /**
@@ -2074,7 +2074,7 @@ const moduleSettings = {
          * @return {any} An array with all the available entity types.
          */
         async getAvailableEntityTypes(parentId) {
-            return await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}entity-types/${encodeURIComponent(this.settings.moduleId)}?parentId=${encodeURIComponent(parentId)}` });
+            return await Wiser.api({ url: `${this.base.settings.wiserApiRoot}entity-types/${encodeURIComponent(this.settings.moduleId)}?parentId=${encodeURIComponent(parentId)}` });
         }
 
         /**
@@ -2090,7 +2090,7 @@ const moduleSettings = {
                 return JSON.parse(result);
             }
 
-            result = await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}entity-types/${encodeURIComponent(name)}?moduleId=${moduleId}` });
+            result = await Wiser.api({ url: `${this.base.settings.wiserApiRoot}entity-types/${encodeURIComponent(name)}?moduleId=${moduleId}` });
             sessionStorage.setItem(sessionStorageKey, JSON.stringify(result));
             return result;
         }
@@ -2102,7 +2102,7 @@ const moduleSettings = {
          * @returns {number} The ID of the API action, or 0 if there is no action set.
          */
         async getApiAction(actionType, entityType) {
-            const result = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_API_ACTION?entityType=${encodeURIComponent(entityType)}&actionType=${encodeURIComponent(actionType)}` });
+            const result = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_API_ACTION?entityType=${encodeURIComponent(entityType)}&actionType=${encodeURIComponent(actionType)}` });
             return !result || !result.length ? 0 : result[0].apiConnectionId || 0;
         }
 
