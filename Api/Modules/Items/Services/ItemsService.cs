@@ -748,7 +748,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
             if (String.IsNullOrWhiteSpace(item?.EntityType))
             {
-                var newItem = await wiserItemsService.GetItemDetailsAsync(itemId);
+                var newItem = await wiserItemsService.GetItemDetailsAsync(itemId, skipPermissionsCheck: true);
                 if (item == null)
                 {
                     item = newItem;
