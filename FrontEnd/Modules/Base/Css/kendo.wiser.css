@@ -1686,6 +1686,9 @@ textarea[readonly],
 .k-editor .k-i-wiser-paste-without-formatting:before {
     content: "\e665";
 }
+.k-editor .k-i-wiser-you-tube:before {
+	content: "\e82b";
+}
 .maximize-editor-window table.k-editor-widget {
     height: calc(100vh - 10px);
 }

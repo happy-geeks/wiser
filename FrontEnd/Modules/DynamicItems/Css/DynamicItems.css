@@ -24,7 +24,8 @@ dd {
 }
 
 .k-dialog #changeImageDataDialog,
-.k-dialog #dataSelectorTemplateDialog {
+.k-dialog #dataSelectorTemplateDialog,
+.k-dialog #youTubeDialog {
     display: block;
 }
 

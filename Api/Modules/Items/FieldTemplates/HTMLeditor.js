@@ -47,6 +47,11 @@ var dataSelectorTool = {
     tooltip: "Data selector met template",
     exec: function(e) { window.dynamicItems.fields.onHtmlEditorDataSelectorExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor")); }
 };
+var youTubeTool = {
+    name: "wiserYouTube",
+    tooltip: "YouTube video invoegen",
+    exec: function(e) { window.dynamicItems.fields.onHtmlEditorYouTubeExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor")); }
+};
 
 var options = $.extend(true, {
 	resizable: true,
@@ -98,6 +103,7 @@ var allTools = {
     templateTool: [3,99],
     entityBlockTool: [99],
     dataSelectorTool: [99],
+    youTubeTool: [3,99],
     "subscript": [99],
     "superscript": [99],
     "tableWizard": [3,99],
@@ -165,6 +171,9 @@ for (var toolName in allTools) {
             break;
         case "dataSelectorTool":
             tool = dataSelectorTool;
+            break;
+        case "youTubeTool":
+            tool = youTubeTool;
             break;
         default:
             tool = toolName;

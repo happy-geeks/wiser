@@ -1,4 +1,4 @@
-﻿import { Dates, Wiser2, Misc } from "../../Base/Scripts/Utils.js";
+﻿import {Dates, Wiser2, Misc, Utils} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import { DateTime } from "luxon";
 
@@ -3139,6 +3139,71 @@ export class Fields {
                                 editor.options.pasteCleanup.none = originalOptions.none;
                                 editor.options.pasteCleanup.span = originalOptions.span;
                             });
+                        }
+                    }
+                ]
+            }).data("kendoDialog");
+
+            dataSelectorTemplateDialog.open();
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+        }
+    }
+
+    /**
+     * Event that gets called when the user executes the custom action for embedding a youtube video.
+     * @param {any} event The event from the execute action.
+     * @param {any} editor The HTML editor where the action is executed in.
+     */
+    async onHtmlEditorYouTubeExec(event, editor) {
+        try {
+            const dialogElement = $("#youTubeDialog");
+            let dataSelectorTemplateDialog = dialogElement.data("kendoDialog");
+
+            if (dataSelectorTemplateDialog) {
+                dataSelectorTemplateDialog.destroy();
+            }
+
+            dataSelectorTemplateDialog = dialogElement.kendoDialog({
+                width: "900px",
+                title: "YouTube video invoegen",
+                closable: false,
+                modal: true,
+                actions: [
+                    {
+                        text: "Annuleren"
+                    },
+                    {
+                        text: "Invoegen",
+                        primary: true,
+                        action: (event) => {
+                            const videoId = dialogElement.find("#youTubeVideoId").val();
+                            const width = dialogElement.find("#youTubeVideoWidth").val();
+                            const height = dialogElement.find("#youTubeVideoHeight").val();
+                            if (!videoId || !width || !height) {
+                                kendo.alert("Vul a.u.b. een video-ID, hoogte en breedte in.")
+                                return false;
+                            }
+                            
+                            const queryString = {
+                                rel: dialogElement.find("#youTubeShowRelatedVideos").prop("checked"),
+                                autoplay: dialogElement.find("#youTubeAutoPlay").prop("checked")
+                            };
+                            
+                            let fullScreenAttribute = "";
+                            if (dialogElement.find("#youTubeAllowFullScreen").prop("checked")) {
+                                fullScreenAttribute = 'allowfullscreen="allowfullscreen"';
+                            }
+
+                            let html = `<iframe width="${width}" height="${height}" src="//www.youtube.com/embed/${videoId}${Utils.toQueryString(queryString, true)}" frameborder="0" ${fullScreenAttribute}></iframe>`;
+
+                            const originalOptions = editor.options.pasteCleanup;
+                            editor.options.pasteCleanup.none = true;
+                            editor.options.pasteCleanup.span = false;
+                            editor.exec("inserthtml", { value: html });
+                            editor.options.pasteCleanup.none = originalOptions.none;
+                            editor.options.pasteCleanup.span = originalOptions.span;
                         }
                     }
                 ]
