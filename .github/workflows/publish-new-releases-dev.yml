@@ -19,7 +19,7 @@ jobs:
       run: dotnet restore
       
     - name: Copy partner styles
-      run: Copy-Item -Path "${{ secrets.PARTNER_STYLES_LOCATION }}\*" -Destination "${{ secrets.WORKER_LOCATION_TEST }}\wiser\wiser\FrontEnd\Core\Css\partner" -Recurse
+      run: Copy-Item -Path "${{ secrets.PARTNER_STYLES_LOCATION }}\*" -Destination "${{ secrets.WORKER_LOCATION }}\wiser\wiser\FrontEnd\Core\Css\partner" -Recurse
       
     - name: Build
       run: dotnet build --no-restore
