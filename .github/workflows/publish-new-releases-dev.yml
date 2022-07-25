@@ -18,6 +18,9 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
       
+    - name: Copy partner styles
+      run: Xcopy "${{ secrets.PARTNER_STYLES_LOCATION }}" "${{ secrets.WORKER_LOCATION_TEST }}"
+      
     - name: Build
       run: dotnet build --no-restore
       
