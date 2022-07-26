@@ -72,7 +72,8 @@
 	right: auto;
 	top: auto;
 	transform: none;
-	min-height: 36px;
+	margin-top: auto;
+	min-height: fit-content;
 }
 
 /* KENDO - IMAGE UPLOAD */
@@ -749,7 +750,7 @@ div.k-multiselect,
 .item .flex-container {
     display: flex;
 }
-.item .flex-container .k-dropdown {
+.item .flex-container > .k-dropdown {
     flex-grow: 1;
     width: 20%;
 }
