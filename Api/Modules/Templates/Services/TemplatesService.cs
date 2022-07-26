@@ -1708,19 +1708,6 @@ AND il.type = @_linkType
 AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
 GROUP BY il.destination_item_id, id.id
 ORDER BY il.ordering, i.title, i.id");
-                TemplateQueryStrings.Add("ADD_LINK", @"SET @sourceId = {source:decrypt(true)};
-SET @destinationId = {destination:decrypt(true)};
-SET @_linkTypeNumber = IF('{linkTypeNumber}' LIKE '{%}' OR '{linkTypeNumber}' = '', '2', '{linkTypeNumber}');
-SET @newOrderNumber = IFNULL((SELECT MAX(link.ordering) + 1 FROM wiser_itemlink AS link JOIN wiser_item AS item ON item.id = link.item_id WHERE link.destination_item_id = @destinationId AND link.type = @_linkTypeNumber), 1);
-SET @_username = '{username}';
-SET @_userId = '{encryptedUserId:decrypt(true)}';
-
-INSERT IGNORE INTO wiser_itemlink (item_id, destination_item_id, ordering, type)
-SELECT @sourceId, @destinationId, @newOrderNumber, @_linkTypeNumber
-FROM DUAL
-WHERE @sourceId <> @destinationId;
-
-SELECT LAST_INSERT_ID() AS newId;");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_TABLE", @"SET @selected_id = {itemId:decrypt(true)}; # 3077
 
 SELECT 
