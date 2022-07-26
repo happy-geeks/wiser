@@ -179,7 +179,7 @@ export class Preview {
             iframe.document.close();
         } catch (exception) {
             console.error(exception);
-            kendo.alert("Er is iets fout gegaan met het genereren van de preview. Probeer het a.u.b. opnieuw of neem contact op.")
+            window.popupNotification.show(`Er is iets fout gegaan met het genereren van de preview. Probeer het a.u.b. opnieuw of neem contact op.`, "error");
         }
 
         if (showLoader) {
@@ -256,7 +256,7 @@ export class Preview {
             htmlWindow.data("kendoWindow").maximize().open();
         } catch (exception) {
             console.error(exception);
-            kendo.alert("Er is iets fout gegaan met het genereren van de preview. Probeer het a.u.b. opnieuw of neem contact op.")
+            window.popupNotification.show(`Er is iets fout gegaan met het genereren van de preview. Probeer het a.u.b. opnieuw of neem contact op.`, "error");
         }
         
         window.processing.removeProcess(process);

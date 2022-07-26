@@ -2669,6 +2669,8 @@ LIMIT 1";
             var queryString = QueryHelpers.ParseQuery(requestModel.Url.Query);
             var ombouw = (!queryString.ContainsKey("ombouw") || !String.Equals(queryString["ombouw"].ToString(), "false", StringComparison.OrdinalIgnoreCase)) && !String.Equals(requestModel.PreviewVariables.FirstOrDefault(v => String.Equals(v.Key, "ombouw", StringComparison.OrdinalIgnoreCase))?.Value, "false", StringComparison.OrdinalIgnoreCase);
 
+            await SetupGclForPreviewAsync(identity, requestModel);
+            
             var contentToWrite = new StringBuilder();
 
             // Execute the pre load query before any replacements are being done and before any dynamic components are handled.
@@ -2688,8 +2690,6 @@ LIMIT 1";
             {
                 contentToWrite.Append(await pagesService.GetGlobalFooter(requestModel.Url.ToString(), javascriptTemplates, cssTemplates));
             }
-
-            await SetupGclForPreviewAsync(identity, requestModel);
 
             outputHtml = contentToWrite.ToString();
             outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, requestModel.TemplateSettings.HandleRequests, false, true, false);
