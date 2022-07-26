@@ -75,13 +75,20 @@ checkTreeElement.kendoTreeView({
         startLoader();
         
         let sourceItem = event.sender.dataItem(event.node);
-        let templateName = sourceItem.checked ? "ADD_LINK" : "REMOVE_LINK";
+        let methodName = sourceItem.checked ? "add-links" : "remove-links";
 
         Wiser.api({
-            url: window.dynamicItems.settings.serviceRoot + "/" + encodeURIComponent(templateName) + "?source=" + encodeURIComponent(sourceItem.id) + "&destination=" + encodeURIComponent(currentItemId) + "&linkTypeNumber=" + (options.linkTypeNumber || ""),
+            url: `${window.dynamicItems.settings.wiserApiRoot}items/${methodName}`,
+            data: JSON.stringify({
+                encryptedSourceIds: [sourceItem.id],
+                encryptedDestinationIds: [currentItemId],
+                linkType: options.linkTypeNumber || 0,
+                sourceEntityType: sourceItem.entityType
+            }),
+            contentType: "application/json",
             dataType: "json",
-            method: "GET"
-        }).then(() => {
+            method: sourceItem.checked ? "POST" : "DELETE"
+        }).finally(() => {
             stopLoader(true);
         });
     },

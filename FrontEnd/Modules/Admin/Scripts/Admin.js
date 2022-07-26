@@ -261,7 +261,10 @@ const moduleSettings = {
                                 return;
                             }
                             try {
-                                const qResult = await $.get(`${this.settings.serviceRoot}/${templateName}?isTest=${encodeURIComponent(this.settings.isTestEnvironment)}`);
+                                const qResult = await Wiser.api({ 
+                                    url: `${this.settings.serviceRoot}/${templateName}?isTest=${encodeURIComponent(this.settings.isTestEnvironment)}`,
+                                    method: "GET"
+                                });
                                 if (qResult.success) {
                                     this.showNotification(null, "Entiteiten zijn succesvol aangemaakt of bijgewerkt!", "success", 2000);
                                 }
@@ -289,13 +292,13 @@ const moduleSettings = {
                     await this.entityTab.beforeSave();
                     break;
                 case "query's":
-                    this.wiserQueryTab.beforeSave();
+                    await this.wiserQueryTab.beforeSave();
                     break;
                 case "modules":
-                    this.moduleTab.beforeSave();
+                    await this.moduleTab.beforeSave();
                     break;
                 default:
-                    this.entityTab.beforeSave();
+                    await this.entityTab.beforeSave();
                     break;
             }
         }

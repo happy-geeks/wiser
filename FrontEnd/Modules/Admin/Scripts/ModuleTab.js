@@ -249,7 +249,7 @@ export class ModuleTab {
     }
 
     // actions handled before save, such as checks
-    beforeSave() {
+    async beforeSave() {
         if (this.checkIfModuleIsSet(true)) {
             const moduleIdElement = document.getElementById("moduleId");
 
@@ -270,7 +270,7 @@ export class ModuleTab {
                         this.base.showNotification("notification", `Controleer de instellingen van de module, er zijn ${moduleSettingsModel.errors.length} fout(en) gevonden: ${moduleSettingsModel.errors.join(", ")}`, "error");
                         return;
                     }
-                    this.updateModule(this.moduleCombobox.dataItem().id, moduleSettingsModel);
+                    await this.updateModule(this.moduleCombobox.dataItem().id, moduleSettingsModel);
                 } else {
                     this.base.showNotification("notification", `ID van de module moet een nummerieke waarde zijn!`, "error");
                 }
@@ -300,7 +300,7 @@ export class ModuleTab {
         };
     }
 
-    async setCodeMirrorFields(field, value) {
+    setCodeMirrorFields(field, value) {
         if (field != null && field) {
             field.setValue((value != null && value) ? value : "");
             field.refresh();
@@ -313,12 +313,12 @@ export class ModuleTab {
             this.moduleCombobox.dataItem().id !== "" &&
             this.moduleListInitialized === true) {
             return true;
-        } else {
-            if (showNotification)
-                this.base.showNotification("notification", `Selecteer eerst een module!`, "error");
-
-            return false;
+        }
+        
+        if (showNotification) {
+            this.base.showNotification("notification", `Selecteer eerst een module!`, "error");
         }
 
+        return false;
     }
 }
