@@ -2045,7 +2045,7 @@ export class EntityTab {
             entity.entityType = document.getElementById("entityName").value;
 
             entity.moduleId = this.entityModule.value();
-            entity.acceptedChildtypes = this.acceptedChildTypes.value().join();
+            entity.acceptedChildtypes = this.acceptedChildTypes.value();
             entity.icon = this.entityIcon.value();
             entity.iconAdd = this.entityIconAdd.value();
             entity.iconExpanded = this.entityIconExpanded.value();
