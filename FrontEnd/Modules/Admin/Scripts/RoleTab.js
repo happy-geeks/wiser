@@ -44,13 +44,19 @@ export class RoleTab {
      * @param {any} entity The name of the entity property
      * @param {any} permissionCode The code of the permission to add or delete
      */
-    updateEntityPropertyPermissions(role, entity, permissionCode) {
-        return $.get(`${this.base.settings.serviceRoot}/UPDATE_ENTITY_PROPERTY_PERMISSIONS?entityId=${encodeURIComponent(entity)}&roleId=${encodeURIComponent(role)}&permissionCode=${encodeURIComponent(permissionCode)}`)
-            .done(() => {
-                this.base.showNotification("notification", `De wijzigingen zijn opgeslagen`, "success");
-            }).fail(() => {
-                this.base.showNotification("notification", `Er is iets fout gegaan, probeer het opnieuw`, "error");
+    async updateEntityPropertyPermissions(role, entity, permissionCode) {
+        try {
+            await Wiser.api({
+                url: `${this.base.settings.serviceRoot}/UPDATE_ENTITY_PROPERTY_PERMISSIONS?entityId=${encodeURIComponent(entity)}&roleId=${encodeURIComponent(role)}&permissionCode=${encodeURIComponent(permissionCode)}`,
+                method: "GET"
             });
+            
+            this.base.showNotification("notification", `De wijzigingen zijn opgeslagen`, "success");
+        }
+        catch(exception) {
+            console.error("Error while updating entity property permissions", exception);
+            this.base.showNotification("notification", `Er is iets fout gegaan, probeer het opnieuw`, "error");
+        }
     }
 
     /**
@@ -59,13 +65,19 @@ export class RoleTab {
      * @param {any} module The id of the module
      * @param {any} permissionCode The code of the permission to add or delete
      */
-    addRemoveModuleRightAssignment(role, module, permissionCode) {
-        return $.get(`${this.base.settings.serviceRoot}/UPDATE_MODULE_PERMISSION?moduleId=${encodeURIComponent(module)}&roleId=${encodeURIComponent(role)}&permissionCode=${encodeURIComponent(permissionCode)}`)
-            .done(() => {
-                this.base.showNotification("notification", `De wijzigingen zijn opgeslagen.`, "success");
-            }).fail(() => {
-                this.base.showNotification("notification", `Er is iets fout gegaan, probeer het opnieuw`, "error");
+    async addRemoveModuleRightAssignment(role, module, permissionCode) {
+        try {
+            await Wiser.api({
+                url: `${this.base.settings.serviceRoot}/UPDATE_MODULE_PERMISSION?moduleId=${encodeURIComponent(module)}&roleId=${encodeURIComponent(role)}&permissionCode=${encodeURIComponent(permissionCode)}`,
+                method: "GET"
             });
+
+            this.base.showNotification("notification", `De wijzigingen zijn opgeslagen.`, "success");
+        }
+        catch(exception) {
+            console.error("Error while updating entity property permissions", exception);
+            this.base.showNotification("notification", `Er is iets fout gegaan, probeer het opnieuw`, "error");
+        }
     }
 
     /**
@@ -97,7 +109,10 @@ export class RoleTab {
         }
 
         try {
-            await $.get(`${this.base.settings.serviceRoot}/${template}${Utils.toQueryString(data, true)}`);
+            await Wiser.api({ 
+                url: `${this.base.settings.serviceRoot}/${template}${Utils.toQueryString(data, true)}`,
+                method: "GET"
+            });
 
             this.base.showNotification("notification", `Item succesvol ${notification}`, "success");
             this.roleList.dataSource.read();
@@ -353,8 +368,9 @@ export class RoleTab {
 
                         let permissionValue = this.base.setCheckboxForItems(targetElement, tagetType, moduleId, "module");
 
-                        if (permissionValue !== -1)
+                        if (permissionValue !== -1) {
                             this.addRemoveModuleRightAssignment(roleId, moduleId, permissionValue);
+                        }
                     });
                 }
             }).data("kendoGrid");
