@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
+using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Kendo.Enums;
@@ -81,12 +82,13 @@ namespace Api.Modules.Templates.Services
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<TemplatesService> logger;
         private readonly GclSettings gclSettings;
+        private readonly ApiSettings apiSettings;
         private readonly IWebHostEnvironment webHostEnvironment;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IOptions<GclSettings> gclSettings, IWebHostEnvironment webHostEnvironment)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IOptions<GclSettings> gclSettings, IOptions<ApiSettings> apiSettings, IWebHostEnvironment webHostEnvironment)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -104,6 +106,7 @@ namespace Api.Modules.Templates.Services
             this.databaseHelpersService = databaseHelpersService;
             this.logger = logger;
             this.gclSettings = gclSettings.Value;
+            this.apiSettings = apiSettings.Value;
             this.webHostEnvironment = webHostEnvironment;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
@@ -2386,16 +2389,27 @@ LIMIT 1";
                         EvalTreatment = EvalTreatment.Ignore
                     };
 
-                    // Try to minify. Uglify is known to have various issues with minifying newer JavaScript features.
-                    var minifyResult = await MinifyJavaScriptWithTerser(template.EditorValue);
-                    if (minifyResult.Successful)
+                    // Try to the minify the script.
+                    var terserSuccessful = false;
+                    string terserMinifiedScript = null;
+                    if (apiSettings.UseTerserForTemplateScriptMinification)
                     {
-                        template.MinifiedValue = minifyResult.MinifiedScript;
+                        // Minification through terser is enabled, attempt to minify it using that.
+                        (terserSuccessful, terserMinifiedScript) = await MinifyJavaScriptWithTerser(template.EditorValue);
+                    }
+
+                    if (terserSuccessful)
+                    {
+                        template.MinifiedValue = terserMinifiedScript;
                     }
                     else
                     {
+                        // If minification through terser failed somehow (like a missing/outdated/corrupt installation), then
+                        // use NUglify as a fallback.
                         try
                         {
+                            // Wrapped in a try-catch statement, because NUglify is known to have various
+                            // issues with minifying newer JavaScript features.
                             template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
                         }
                         catch (Exception exception)
@@ -3441,7 +3455,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
         }
 
         /// <summary>
-        /// Will attempt to minify JavaScript with a NodeJS package called terser. If it fails, the 
+        /// Will attempt to minify JavaScript with a NodeJS package called terser.
         /// </summary>
         /// <param name="script">The raw JavaScript that will be minified.</param>
         /// <returns>A <see cref="ValueTuple"/> with the first value being whether the minification was successful, and the minified script.</returns>
@@ -3476,7 +3490,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.RedirectStandardError = true;
                 process.StartInfo.Arguments = $"{filePath} --compress --mangle";
-                
+
                 process.OutputDataReceived += (_, eventArgs) =>
                 {
                     // eventArgs.Data holds the response from terser.
