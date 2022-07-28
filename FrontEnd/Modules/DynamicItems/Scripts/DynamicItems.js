@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Modules, Dates, Wiser } from "../../Base/Scripts/Utils.js";
+import {Modules, Dates, Wiser, Utils} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import { DateTime } from "luxon";
 import { Fields } from "./Fields.js";
@@ -64,6 +64,7 @@ const moduleSettings = {
             this.selectedItem = null;
             this.selectedItemTitle = null;
             this.allEntityTypes = [];
+            this.allLanguages = [];
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -197,6 +198,14 @@ const moduleSettings = {
             } catch (exception) {
                 console.error("Error occurred while trying to load all entity types", exception);
                 this.allEntityTypes = [];
+            }
+            
+            // Get list of all languages, we need this later for the option for translating items.
+            try {
+                this.allLanguages = (await Wiser.api({url: `${this.settings.wiserApiRoot}languages`})) || [];
+            } catch (exception) {
+                console.error("Error occurred while trying to load all languages", exception);
+                this.allLanguages = [];
             }
 
             // Get extra module settings.
@@ -415,6 +424,10 @@ const moduleSettings = {
                 this.dialogs.copyItemToEnvironmentDialog.element.find("input[type=checkbox]").prop("checked", false);
                 this.dialogs.copyItemToEnvironmentDialog.element.data("id", this.selectedItemMetaData.plainOriginalItemId);
                 this.dialogs.copyItemToEnvironmentDialog.open();
+            });
+
+            $("#mainEditMenu .translateItem").click(async (event) => {
+                await this.onTranslateItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
             });
         }
 
@@ -1462,6 +1475,101 @@ const moduleSettings = {
         }
 
         /**
+         * The click event for the button to translate all fields on an item.
+         * @param {any} event The click event.
+         * @param {string} encryptedItemId The encrypted ID of the item to undelete.
+         * @param {string} entityType The entity type of the item.
+         */
+        async onTranslateItemClick(event, encryptedItemId, entityType) {
+            event.preventDefault();
+
+            try {
+                const dialogElement = $("#translateItemDialog");
+                let translateItemDialog = dialogElement.data("kendoDialog");
+
+                await require("@progress/kendo-ui/js/kendo.multiselect.js");                
+                
+                const sourceLanguageDropDownElement = dialogElement.find("#sourceLanguageDropDown");
+                const targetLanguagesMultiSelectElement = dialogElement.find("#targetLanguagesMultiSelect");
+                
+                let sourceLanguageDropDown = sourceLanguageDropDownElement.data("kendoDropDownList");
+                let targetLanguagesMultiSelect = targetLanguagesMultiSelectElement.data("kendoMultiSelect");
+                
+                if (!sourceLanguageDropDown) {
+                    sourceLanguageDropDown = sourceLanguageDropDownElement.kendoDropDownList({
+                        dataSource: this.allLanguages,
+                        dataTextField: "name",
+                        dataValueField: "code"
+                    }).data("kendoDropDownList");
+                }
+
+                if (!targetLanguagesMultiSelect) {
+                    targetLanguagesMultiSelect = targetLanguagesMultiSelectElement.kendoMultiSelect({
+                        dataSource: this.allLanguages,
+                        dataTextField: "name",
+                        dataValueField: "code"
+                    }).data("kendoMultiSelect");
+                }
+                
+                let defaultLanguage = this.allLanguages.find(l => l.isDefaultLanguage);
+                if (!defaultLanguage) {
+                    defaultLanguage = this.allLanguages[0];
+                }
+
+                sourceLanguageDropDown.value(defaultLanguage.code);
+                targetLanguagesMultiSelect.value("-1");
+
+                if (!translateItemDialog) {
+                    translateItemDialog = dialogElement.kendoDialog({
+                        width: "900px",
+                        title: "Item vertalen",
+                        closable: false,
+                        modal: true,
+                        actions: [
+                            {
+                                text: "Annuleren"
+                            },
+                            {
+                                text: "Vertalen",
+                                primary: true,
+                                action: async () => {
+                                    const process = `translateItem_${Date.now()}`;
+                                    window.processing.addProcess(process);
+
+                                    Wiser.api({
+                                        url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}/translate`,
+                                        method: "PUT",
+                                        contentType: "application/json",
+                                        data: JSON.stringify({
+                                            entityType: entityType,
+                                            sourceLanguageCode: sourceLanguageDropDown.value(),
+                                            targetLanguageCodes: targetLanguagesMultiSelect.value()
+                                        })
+                                    }).then(() => {
+                                        translateItemDialog.close();
+                                        $(event.currentTarget).closest(".entity-container").find(".reloadItem").click();
+                                        $(event.currentTarget).closest(".k-window").find(".k-i-verversen").parent().click()
+                                        this.notification.show({message: "Vertalen is gelukt"}, "success");
+                                    }).catch((error) => {
+                                        console.error("An error occurred while translating an item", error);
+                                        kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                                    }).finally(() => {
+                                        window.processing.removeProcess(process);
+                                    });
+                                }
+                            }
+                        ]
+                    }).data("kendoDialog");
+                }
+
+                translateItemDialog.open();
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+            }
+        }
+
+        /**
          * Load a specific item in the main container / tab strip.
          * @param {any} itemId The ID of the item to load.
          * @param {number} tabToSelect Optional: The tab index to initially open after the item has been loaded. Default is 0.
@@ -1472,7 +1580,8 @@ const moduleSettings = {
 
             // Set meta data of the selected item in the footer.
             try {
-                const itemMetaData = await this.base.addItemMetaData(itemId, entityType, $("#metaData"), false, $("#right-pane .entity-container"));
+                const entityContainer = $("#right-pane .entity-container");
+                const itemMetaData = await this.base.addItemMetaData(itemId, entityType, $("#metaData"), false, entityContainer);
                 if (!itemMetaData) {
                     console.warn("No meta data found for item, the user probably doesn't have rights for it anymore.");
                     window.processing.removeProcess(process);
@@ -1543,6 +1652,9 @@ const moduleSettings = {
                         };
                     }
                 }
+                
+                const translateButton = entityContainer.find(".editMenu .translateItem").closest("li");
+                translateButton.toggle(this.allLanguages.length > 1 && entityContainer.find(".item[data-language-code]:not([data-language-code=''])").length > 0);
 
                 // Setup dependencies for all tabs.
                 for (let i = itemHtmlResult.tabs.length - 1; i >= 0; i--) {

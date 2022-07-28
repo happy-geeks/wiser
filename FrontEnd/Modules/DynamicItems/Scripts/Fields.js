@@ -3159,13 +3159,13 @@ export class Fields {
     async onHtmlEditorYouTubeExec(event, editor) {
         try {
             const dialogElement = $("#youTubeDialog");
-            let dataSelectorTemplateDialog = dialogElement.data("kendoDialog");
+            let youtubeDialog = dialogElement.data("kendoDialog");
 
-            if (dataSelectorTemplateDialog) {
-                dataSelectorTemplateDialog.destroy();
+            if (youtubeDialog) {
+                youtubeDialog.destroy();
             }
 
-            dataSelectorTemplateDialog = dialogElement.kendoDialog({
+            youtubeDialog = dialogElement.kendoDialog({
                 width: "900px",
                 title: "YouTube video invoegen",
                 closable: false,
@@ -3209,7 +3209,7 @@ export class Fields {
                 ]
             }).data("kendoDialog");
 
-            dataSelectorTemplateDialog.open();
+            youtubeDialog.open();
         } catch (exception) {
             console.error(exception);
             kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
