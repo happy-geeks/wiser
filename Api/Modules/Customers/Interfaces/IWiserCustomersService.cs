@@ -83,7 +83,7 @@ namespace Api.Modules.Customers.Interfaces
         Task<ServiceResult<CustomerExistsResults>> CustomerExistsAsync(string name, string subDomain);
 
         /// <summary>
-        /// Creates a new Wiser 2 customer.
+        /// Creates a new Wiser customer/tenant.
         /// </summary>
         /// <param name="customer">The data for the new customer.</param>
         /// <param name="isWebShop">Optional: Indicate whether or not this customer is getting a webshop. Default is <see langword="false"/>.</param>

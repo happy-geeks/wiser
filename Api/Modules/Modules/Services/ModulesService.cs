@@ -29,7 +29,7 @@ using Newtonsoft.Json.Linq;
 namespace Api.Modules.Modules.Services
 {
     /// <summary>
-    /// Service for getting information / settings for Wiser 2.0+ modules.
+    /// Service for getting information / settings for Wiser modules.
     /// </summary>
     public class ModulesService : IModulesService, IScopedService
     {

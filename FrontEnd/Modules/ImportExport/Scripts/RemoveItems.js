@@ -1,4 +1,4 @@
-﻿import { Wiser2 } from "../../Base/Scripts/Utils.js";
+﻿import { Wiser } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 
 require("@progress/kendo-ui/js/kendo.all.js");
@@ -98,7 +98,7 @@ export class RemoveItems {
 
                 this.importFilename = e.response.filename;
                 if (e.response.rowCount > e.response.importLimit) {
-                    Wiser2.alert({
+                    Wiser.alert({
                         title: "Import limiet overschreden",
                         content: `De import bevat meer dan ${e.response.importLimit} rijen. Alleen de eerste ${e.response.importLimit} van de ${e.response.rowCount} rijen zullen worden geïmporteerd.`
                     });
@@ -112,7 +112,7 @@ export class RemoveItems {
 
         try {
             const promiseResults = await Promise.all([
-                Wiser2.api({ url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false` })
+                Wiser.api({ url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false` })
             ]);
             const entityTypes = promiseResults[0];
 
@@ -161,7 +161,7 @@ export class RemoveItems {
 
         try {
             const promiseResults = await Promise.all([
-                Wiser2.api({ url: `${this.settings.wiserApiRoot}entity-properties/${entityName}?onlyEntityTypesWithDisplayName=false&onlyEntityTypesWithPropertyName=true&addIdProperty=true` })
+                Wiser.api({ url: `${this.settings.wiserApiRoot}entity-properties/${entityName}?onlyEntityTypesWithDisplayName=false&onlyEntityTypesWithPropertyName=true&addIdProperty=true` })
             ]);
             const entityProperties = promiseResults[0];
 
@@ -195,7 +195,7 @@ export class RemoveItems {
 
         if (deleteByFile) {
             if (!this.importFilename || this.importFilename === "") {
-                Wiser2.showMessage({
+                Wiser.showMessage({
                     title: "Ongeldig bestand",
                     content: "Er is geen bestand geüpload om te gebruiken voor het verwijderen van items."
                 });
@@ -206,7 +206,7 @@ export class RemoveItems {
             let propertyName = $(context).find("#EntityPropertiesContainer").data("kendoDropDownList").value();
 
             if (entityName === "") {
-                Wiser2.showMessage({
+                Wiser.showMessage({
                     title: "Entiteit mist",
                     content: "Er is geen entiteit gekozen waarbinnen items verwijdert moeten worden."
                 });
@@ -214,14 +214,14 @@ export class RemoveItems {
             }
 
             if (propertyName === "") {
-                Wiser2.showMessage({
+                Wiser.showMessage({
                     title: "Eigenschap mist",
                     content: "Er is geen eigenschap gekozen om de waardes in het bestand mee te vergelijken."
                 });
                 return;
             }
 
-            const result = await Wiser2.api({
+            const result = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}imports/delete-items/prepare`,
                 method: "POST",
                 contentType: "application/json",
@@ -264,13 +264,13 @@ export class RemoveItems {
 
     //Handle preparation response from the API.
     async prepareDeleteFinished(results) {
-        Wiser2.confirm({
+        Wiser.confirm({
             title: "Bevestig items verwijderen",
             content: `U staat op het punt om ${results.ids.length} item(s) te verwijderen. Wilt u doorgaan?`,
             actions: [{
                 text: "Ok",
                 action: async function (e) {
-                    const result = await Wiser2.api({
+                    const result = await Wiser.api({
                         url: `${window.removeItems.settings.wiserApiRoot}imports/delete-items/confirm`,
                         method: "POST",
                         contentType: "application/json",
@@ -278,12 +278,12 @@ export class RemoveItems {
                     });
                     
                     if (result === true) {
-                        Wiser2.showMessage({
+                        Wiser.showMessage({
                             title: "Items verwijderd",
                             content: "De items zijn verwijderd."
                         });
                     } else {
-                        Wiser2.showMessage({
+                        Wiser.showMessage({
                             title: "Items verwijderen mislukt.",
                             content: "Er is iets mis gegaan tijdens het verwijderen van de items, de actie is teruggedraaid."
                         });

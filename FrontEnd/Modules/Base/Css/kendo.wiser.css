@@ -72,7 +72,8 @@
 	right: auto;
 	top: auto;
 	transform: none;
-	min-height: 36px;
+	margin-top: auto;
+	min-height: fit-content;
 }
 
 /* KENDO - IMAGE UPLOAD */
@@ -416,6 +417,8 @@
     font: 24px/43px var(--title-txt);
 	font-weight: 400;
     padding-right: 16px;
+	white-space: break-spaces;
+	line-height: 1em;
 }
 @media (min-width: 1025px) {
     .k-window-titlebar .k-window-title {
@@ -747,7 +750,7 @@ div.k-multiselect,
 .item .flex-container {
     display: flex;
 }
-.item .flex-container .k-dropdown {
+.item .flex-container > .k-dropdown {
     flex-grow: 1;
     width: 20%;
 }
@@ -1685,6 +1688,9 @@ textarea[readonly],
 }
 .k-editor .k-i-wiser-paste-without-formatting:before {
     content: "\e665";
+}
+.k-editor .k-i-wiser-you-tube:before {
+	content: "\e82b";
 }
 .maximize-editor-window table.k-editor-widget {
     height: calc(100vh - 10px);

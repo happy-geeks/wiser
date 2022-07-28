@@ -52,7 +52,6 @@ namespace Api.Modules.Imports.Services
         /// <inheritdoc />
         public async Task<ServiceResult<ImportResultModel>> PrepareImportAsync(ClaimsIdentity identity, ImportRequestModel importRequest)
         {
-            // !!! NOTE: Any and all changes done here, should also be done in the Wiser 2.0 in Wiser2/Modules/ImportExport/Import.aspx.vb/PerformImport !!!
             if (String.IsNullOrWhiteSpace(importRequest.FilePath) || !File.Exists(importRequest.FilePath))
             {
                 return new ServiceResult<ImportResultModel>

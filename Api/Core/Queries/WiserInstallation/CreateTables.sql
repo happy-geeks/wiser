@@ -279,6 +279,7 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile_archive`  (
   `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `property_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'De naam van het veld waar deze afbeelding bijhoort',
   `itemlink_id` bigint NOT NULL DEFAULT 0,
+  `protected` tinyint NOT NULL DEFAULT 0 COMMENT 'Stel in op 1 om alleen toe te staan dat het bestand wordt opgehaald via een versleutelde id',
   `ordering` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_item_id`(`item_id`, `property_name`) USING BTREE,

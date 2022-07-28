@@ -21,7 +21,11 @@
 <body data-module-id="706"
       data-wiser-api-root="@Model.ApiRoot"
       data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
-      data-sub-domain="@Model.SubDomain">
+      data-sub-domain="@Model.SubDomain"
+      data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
+      data-api-client-id="@Model.Settings.ApiClientId"
+      data-api-client-secret="@Model.Settings.ApiClientSecret"
+      data-track-js-token="@Model.Settings.TrackJsToken">
     <div id="wiser">
         <div class="loaderWrap">
             <div class="lds-ellipsis">

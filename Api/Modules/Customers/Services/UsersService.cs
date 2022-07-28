@@ -27,7 +27,7 @@ using StringHelpers = Api.Core.Helpers.StringHelpers;
 namespace Api.Modules.Customers.Services
 {
     /// <summary>
-    /// Service for operations related to Wiser 2 users (users that can log in to Wiser 2.0).
+    /// Service for operations related to Wiser users (users that can log in to Wiser).
     /// </summary>
     public class UsersService : IUsersService, IScopedService
     {

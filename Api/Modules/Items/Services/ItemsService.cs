@@ -663,6 +663,14 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
+            catch (ArgumentOutOfRangeException exception)
+            {
+                return new ServiceResult<WiserItemModel>
+                {
+                    ErrorMessage = exception.Message,
+                    StatusCode = HttpStatusCode.Conflict
+                };
+            }
 
             return new ServiceResult<WiserItemModel>(item);
         }
@@ -740,7 +748,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
             if (String.IsNullOrWhiteSpace(item?.EntityType))
             {
-                var newItem = await wiserItemsService.GetItemDetailsAsync(itemId);
+                var newItem = await wiserItemsService.GetItemDetailsAsync(itemId, skipPermissionsCheck: true);
                 if (item == null)
                 {
                     item = newItem;

@@ -7,7 +7,7 @@ var options = $.extend({
 	dataSource: {
 		transport: {
             read: (kendoReadOptions) => {
-                Wiser2.api({
+                Wiser.api({
                     url: window.dynamicItems.settings.serviceRoot + "/GET_DATA_FROM_ENTITY_QUERY?propertyid={propertyId}&myItemId={itemId}",
                     dataType: "json",
                     method: "GET",
@@ -33,7 +33,7 @@ if (typeof options.dataSource === "string") {
             options.dataSource = {
                 transport: {
                     read: (kendoReadOptions) => {
-                        Wiser2.api({
+                        Wiser.api({
                             url: window.dynamicItems.settings.wiserApiRoot + "users",
                             dataType: "json",
                             method: "GET",
@@ -60,7 +60,7 @@ if (typeof options.dataSource === "string") {
 		searchModuleId = window.dynamicItems.settings.moduleId;
 	}
     options.dataSource.transport.read = (kendoReadOptions) => {
-        Wiser2.api({
+        Wiser.api({
             url: window.dynamicItems.settings.serviceRoot + "/SEARCH_ITEMS?id=" + encodeURIComponent("{itemIdEncrypted}") + "&moduleid=" + searchModuleId.toString() +
                 "&entityType=" + encodeURIComponent(options.entityType) + "&search=&searchInTitle=" + searchInTitle.toString() +
                 "&searchFields=" + encodeURIComponent(searchFields.join()) + "&searchEverywhere=" + searchEverywhere +
@@ -78,7 +78,7 @@ if (typeof options.dataSource === "string") {
 	options.filtering = function(event) { window.dynamicItems.fields.onComboBoxFiltering(event, '{itemIdEncrypted}', options); };
 } else if (options.dataSelectorId > 0) {
     options.dataSource.transport.read = (kendoReadOptions) => {
-        Wiser2.api({
+        Wiser.api({
             url: window.dynamicItems.settings.getItemsUrl + "?trace=false&encryptedDataSelectorId=" + encodeURIComponent(options.dataSelectorId.toString()),
             dataType: "json",
             method: "GET",

@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import { Wiser } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
@@ -78,7 +78,7 @@ const moduleSettings = {
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
-                Wiser2.alert({
+                Wiser.alert({
                     title: "Niet ingelogd",
                     content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
@@ -92,11 +92,11 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
           
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
-            this.settings.wiser2UserId = userData.id;
+            this.settings.wiserUserId = userData.id;
 
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
@@ -129,7 +129,7 @@ const moduleSettings = {
                     await this.dataLoad.loadById(Number.parseInt(loadId, 10));
                 } catch (e) {
                     window.processing.removeProcess("dataSelectorLoad");
-                    Wiser2.alert({
+                    Wiser.alert({
                         title: "Laden mislukt",
                         content: "Er is een fout opgetreden tijdens het laden van de data selector. Probeer het a.u.b. nogmaals."
                     });
@@ -165,7 +165,7 @@ const moduleSettings = {
 
             if (exportModeCheckbox) {
                 exportModeCheckbox.addEventListener("change", () => {
-                    Wiser2.confirm({
+                    Wiser.confirm({
                         title: "Data Selector",
                         content: "Let op! Dit zorgt ervoor dat een nieuwe data selector geopend wordt. Gegevens die niet zijn opgeslagen zullen verloren gaan. Wilt u doorgaan?",
                         messages: {
@@ -184,7 +184,7 @@ const moduleSettings = {
 
             if (newButton) {
                 $(newButton).getKendoButton().bind("click", () => {
-                    Wiser2.confirm({
+                    Wiser.confirm({
                         title: "Data Selector",
                         content: "Weet u zeker dat u een nieuwe data selector wilt beginnen? Gegevens die niet zijn opgeslagen zullen verloren gaan.",
                         messages: {
@@ -235,7 +235,7 @@ const moduleSettings = {
                             const resultJson = await this.getJsonResult();
                             this.jsonCodeMirrorEditor.getDoc().setValue(JSON.stringify(resultJson, null, 2));
                         } catch (e) {
-                            Wiser2.alert({
+                            Wiser.alert({
                                 title: "Ophalen resultaat mislukt",
                                 content: "Er is iets fout gegaan bij het ophalen van het JSON resultaat. Probeer het a.u.b. nogmaals."
                             });
@@ -264,7 +264,7 @@ const moduleSettings = {
                             const resultQuery = await this.getQuery();
                             this.queryCodeMirrorEditor.getDoc().setValue(resultQuery);
                         } catch (e) {
-                            Wiser2.alert({
+                            Wiser.alert({
                                 title: "Ophalen query mislukt",
                                 content: "Er is iets fout gegaan bij het ophalen van de query. Probeer het a.u.b. nogmaals."
                             });
@@ -381,12 +381,12 @@ const moduleSettings = {
         }
 
         async getAllEntityTypes() {
-            const response = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=` });
+            const response = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=` });
             this.allEntityTypes = response.map(ce => ce.entityType);
         }
 
         async updateAvailableEntityTypes() {
-            const response = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=${this.selectedModules.join(",")}` });
+            const response = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=${this.selectedModules.join(",")}` });
             this.availableEntityTypes = response.map(ce => ce.entityType);
 
             $("#selectEntity").getKendoDropDownList().setDataSource({
@@ -535,7 +535,7 @@ const moduleSettings = {
             scopeRow.find("select.scope-value-select").getKendoMultiSelect().setDataSource({
                 transport: {
                     read: (options) => {
-                        Wiser2.api({
+                        Wiser.api({
                             url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entityName=${dataItem.entityName}&propertyName=${dataItem.propertyName}&languageCode=${dataItem.languageCode}&useExportMode=${this.useExportMode ? "1" : "0"}`,
                             dataType: "json"
                         }).then((result) => {
@@ -780,7 +780,7 @@ const moduleSettings = {
             let exportLimit = exportLimitInput.value.trim();
             if (!/^\d+(?:,\d+)?$/.test(exportLimit)) {
                 if (limit !== "") {
-                    Wiser2.alert({
+                    Wiser.alert({
                         title: "Limiet ongeldig",
                         content: "Waarde bij limiet is ongeldig. Dit moet een getal zijn, of twee getallen gescheiden door een komma."
                     });
@@ -1012,7 +1012,7 @@ const moduleSettings = {
                 parameters = Object.assign({}, requestVariables, parameters);
             }
 
-            return Wiser2.api({
+            return Wiser.api({
                 method: "POST",
                 contentType: "application/json",
                 url: rootUrl,
@@ -1028,7 +1028,7 @@ const moduleSettings = {
             let rootUrl = `${this.settings.getItemsUrl}/query`;
             let parameters = { settings: this.createJsonRequest() };
 
-            return Wiser2.api({
+            return Wiser.api({
                 method: "POST",
                 contentType: "application/json",
                 url: rootUrl,
@@ -1046,7 +1046,7 @@ const moduleSettings = {
                 availableForRendering: document.getElementById("availableForRendering").checked ? 1 : 0
             };
 
-            const saveResult = await Wiser2.api({
+            const saveResult = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}data-selectors/save`,
                 method: "POST",
                 contentType: "application/json",
@@ -1088,17 +1088,17 @@ const moduleSettings = {
 
             kendoPrompt.open().result.done((input) => {
                 window.processing.addProcess("checkSavedNameExists");
-                Wiser2.api({ url: `${this.settings.serviceRoot}/CHECK_DATA_SELECTOR_NAME_EXISTS?name=${encodeURIComponent(input)}` }).then((existsResult) => {
+                Wiser.api({ url: `${this.settings.serviceRoot}/CHECK_DATA_SELECTOR_NAME_EXISTS?name=${encodeURIComponent(input)}` }).then((existsResult) => {
                     window.processing.removeProcess("checkSavedNameExists");
 
-                    if (!Wiser2.validateArray(existsResult) || existsResult[0].nameExists !== 1) {
+                    if (!Wiser.validateArray(existsResult) || existsResult[0].nameExists !== 1) {
                         this.currentName = input;
 
                         window.processing.addProcess("dataSelectorSave");
                         this.save(input).then(
                             () => {
                                 window.processing.removeProcess("dataSelectorSave");
-                                Wiser2.showMessage({
+                                Wiser.showMessage({
                                     title: "Opslaan succesvol",
                                     content: "De data selector is succesvol opgeslagen."
                                 });
@@ -1106,7 +1106,7 @@ const moduleSettings = {
                             (error) => {
                                 console.error(error);
                                 window.processing.removeProcess("dataSelectorSave");
-                                Wiser2.alert({
+                                Wiser.alert({
                                     title: "Opslaan mislukt",
                                     content: "Er is een fout opgetreden tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals."
                                 });
@@ -1116,7 +1116,7 @@ const moduleSettings = {
                     }
 
                     // Data selector with the given name already exists; ask for overwrite confirmation.
-                    Wiser2.confirm({
+                    Wiser.confirm({
                         title: "Data Selector",
                         content: "Een data selector met deze naam bestaat al. Wilt u deze overschrijven?",
                         messages: {
@@ -1130,14 +1130,14 @@ const moduleSettings = {
                         this.save(input).then(
                             () => {
                                 window.processing.removeProcess("dataSelectorSave");
-                                Wiser2.showMessage({
+                                Wiser.showMessage({
                                     title: "Opslaan succesvol",
                                     content: "De data selector is succesvol opgeslagen."
                                 });
                             },
                             () => {
                                 window.processing.removeProcess("dataSelectorSave");
-                                Wiser2.alert({
+                                Wiser.alert({
                                     title: "Opslaan mislukt",
                                     content: "Er is een fout opgetreden tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals."
                                 });
@@ -1219,7 +1219,7 @@ const moduleSettings = {
                     try {
                         actionResult = await this.save(data.name);
                     } catch (e) {
-                        Wiser2.alert({
+                        Wiser.alert({
                             title: "Opslaan mislukt",
                             content: "Er is een fout opgetreden tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals."
                         });
@@ -1231,7 +1231,7 @@ const moduleSettings = {
                     try {
                         actionResult = await this.getJsonResult();
                     } catch (e) {
-                        Wiser2.alert({
+                        Wiser.alert({
                             title: "Ophalen data mislukt",
                             content: "Er is een fout opgetreden tijdens het ophalen van het data selector resultaat. Probeer het a.u.b. nogmaals."
                         });
@@ -1319,7 +1319,7 @@ const moduleSettings = {
                     dbInput.find("select.scope-value-select").data("kendoMultiSelect").setDataSource({
                         transport: {
                             read: (options) => {
-                                Wiser2.api({
+                                Wiser.api({
                                     url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entityName=${dataItem.entityName}&propertyName=${dataItem.propertyName}&languageCode=${dataItem.languageCode}`,
                                     dataType: "json"
                                 }).then((result) => {
@@ -1515,7 +1515,7 @@ const moduleSettings = {
                 const languageCode = languageCodeField.getKendoComboBox();
 
                 // Update language codes.
-                Wiser2.api({ url: `${this.settings.serviceRoot}/GET_LANGUAGE_CODES?entityName=${dataItem.entityName || ""}&linkType=${dataItem.linkType || "0"}&propertyName=${dataItem.propertyName}` }).then((response) => {
+                Wiser.api({ url: `${this.settings.serviceRoot}/GET_LANGUAGE_CODES?entityName=${dataItem.entityName || ""}&linkType=${dataItem.linkType || "0"}&propertyName=${dataItem.propertyName}` }).then((response) => {
                     languageCode.setDataSource({
                         data: [...response]
                     });
@@ -1567,7 +1567,7 @@ const moduleSettings = {
 
                     // Check if alias is already in use. The check only needs to be performed if one has been set, and if it's not the same as the previous value.
                     if (newFieldAlias.length > 0 && dataItem.fieldAlias.toLowerCase() !== newFieldAlias.toLowerCase() && this.checkIfAliasInUse(newFieldAlias)) {
-                        Wiser2.alert({
+                        Wiser.alert({
                             title: "Alias in gebruik",
                             content: "Deze alias is al in gebruik. Kies een andere alias."
                         });
@@ -1660,7 +1660,7 @@ const moduleSettings = {
                 })
             });
             subEntitySelectWidget.bind("cascade", async (e) => {
-                const response = await Wiser2.api({
+                const response = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}data-selectors/entity-properties/${e.sender.value()}/?forExportMode=${this.useExportMode}`
                 });
 
@@ -1799,7 +1799,7 @@ const moduleSettings = {
                 }
 
                 const widget = element.kendoDropDownList(options).getKendoDropDownList();
-                Wiser2.fixKendoDropDownScrolling(widget);
+                Wiser.fixKendoDropDownScrolling(widget);
             });
 
             //COMBOBOX
@@ -1816,7 +1816,7 @@ const moduleSettings = {
                     height: 400
                 }, element.data());
                 const widget = element.kendoComboBox(options).getKendoComboBox();
-                Wiser2.fixKendoDropDownScrolling(widget);
+                Wiser.fixKendoDropDownScrolling(widget);
 
                 if (openOnFocus) {
                     widget.input.on("click", () => {
@@ -1867,7 +1867,7 @@ const moduleSettings = {
                 }
 
                 const widget = element.kendoMultiSelect(options).getKendoMultiSelect();
-                Wiser2.fixKendoDropDownScrolling(widget);
+                Wiser.fixKendoDropDownScrolling(widget);
 
                 if (sortable) {
                     this.extendMultiSelectWithSortable(widget);

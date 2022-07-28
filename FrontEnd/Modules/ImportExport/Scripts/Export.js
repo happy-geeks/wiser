@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Wiser2, Misc } from "../../Base/Scripts/Utils.js";
+import { Wiser, Misc } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
@@ -60,7 +60,7 @@ const exportModuleSettings = {
                 headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
             });
 
-            const html = await Wiser2.api({ url: "/Modules/ImportExport/Export/Html" });
+            const html = await Wiser.api({ url: "/Modules/ImportExport/Export/Html" });
             this.exportHtml.insertAdjacentHTML("beforeend", html);
 
             this.mainLoader = $("#mainLoader");
@@ -72,7 +72,7 @@ const exportModuleSettings = {
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
-                Wiser2.alert({
+                Wiser.alert({
                     title: "Niet ingelogd",
                     content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
@@ -95,7 +95,7 @@ const exportModuleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
             
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
@@ -238,9 +238,9 @@ const exportModuleSettings = {
 
             try {
                 const promiseResults = await Promise.all([
-                    Wiser2.api({ url: `${this.settings.wiserApiRoot}data-selectors?forExportModule=true` }),
-                    Wiser2.api({ url: `${this.settings.wiserApiRoot}queries/export-module` }),
-                    Wiser2.api({ url: `${this.settings.wiserApiRoot}modules` })
+                    Wiser.api({ url: `${this.settings.wiserApiRoot}data-selectors?forExportModule=true` }),
+                    Wiser.api({ url: `${this.settings.wiserApiRoot}queries/export-module` }),
+                    Wiser.api({ url: `${this.settings.wiserApiRoot}modules` })
                 ]);
                 const dataSelectors = promiseResults[0];
                 const queries = promiseResults[1];
