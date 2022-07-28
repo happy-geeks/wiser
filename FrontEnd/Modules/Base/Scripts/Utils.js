@@ -71,7 +71,7 @@ export class Modules {
      */
     static async getModuleSettings(apiRoot, moduleId) {
         try {
-            const result = await Wiser2.api({ url: `${apiRoot}modules/${moduleId}/settings` });
+            const result = await Wiser.api({ url: `${apiRoot}modules/${moduleId}/settings` });
             if (!result) {
                 return {
                     id: moduleId,
@@ -93,14 +93,14 @@ export class Modules {
 
     /**
      * Checks if the response from a request is an array and, optionally, if it contains at least one item. This can be used to validate the response from HTTP requests.
-     * @deprecated This function is deprecated in favor of Wiser2.validateArray.
+     * @deprecated This function is deprecated in favor of Wiser.validateArray.
      * @param {any} response The response from a request.
      * @param {boolean} allowEmptyResponse Whether the response must contain at least one item.
      * @returns {boolean} Whether the result is an array and satisfies the condition of mustHaveItems.
      */
     static validateJsonResponse(response, allowEmptyResponse = false) {
-        console.warn("Modules.validateJsonResponse is deprecated. User Wiser2.validateArray instead.");
-        return Wiser2.validateArray(response, allowEmptyResponse);
+        console.warn("Modules.validateJsonResponse is deprecated. User Wiser.validateArray instead.");
+        return Wiser.validateArray(response, allowEmptyResponse);
     }
 }
 
@@ -245,9 +245,9 @@ export class Strings {
 }
 
 /**
- * Wiser2 utils.
+ * Wiser utils.
  */
-export class Wiser2 {
+export class Wiser {
     static async api(settings) {
         // Find the Window that contains the main vue app of Wiser. We need this for saving the promise of refreshing the auth token.
         // We do this on that window, because some modules have multiple iframes that all do xhr calls, so we need to make sure they all wait for each other
@@ -377,7 +377,7 @@ export class Wiser2 {
             }
 
             if (!result) {
-                result = await Wiser2.api({ url: `${apiRoot}users/self` });
+                result = await Wiser.api({ url: `${apiRoot}users/self` });
                 if (result) {
                     sessionStorage.setItem("userSettings", JSON.stringify({ dateTime: new Date(), data: result }));
                 }
@@ -485,7 +485,7 @@ export class Wiser2 {
      */
     static fixKendoDropDownScrolling(widget) {
         if (!widget || !widget.ul) {
-            console.warn("Wiser2.fixKendoDropDownScrolling called with an undefined widget, or a widget that has no 'ul' property.", widget);
+            console.warn("Wiser.fixKendoDropDownScrolling called with an undefined widget, or a widget that has no 'ul' property.", widget);
             return;
         }
 
@@ -529,7 +529,7 @@ export class Wiser2 {
             }
         }
 
-        return Wiser2.doObjectReplacements(output, itemDetails.property_, uriEncodeValues);
+        return Wiser.doObjectReplacements(output, itemDetails.property_, uriEncodeValues);
     }
 
     /**
@@ -600,7 +600,7 @@ export class Wiser2 {
                 window.processing.addProcess(process);
 
                 // Get the settings.
-                const apiConnectionData = await Wiser2.api({ url: `${settings.wiserApiRoot}api-connections/${encodeURIComponent(apiConnectionId)}` });
+                const apiConnectionData = await Wiser.api({ url: `${settings.wiserApiRoot}api-connections/${encodeURIComponent(apiConnectionId)}` });
                 if (!apiConnectionData || !apiConnectionData.options) {
                     reject("Er werd geprobeerd om een API aan te roepen, echter zijn er niet genoeg gegevens bekend. Neem a.u.b. contact op met ons.");
                     window.processing.removeProcess(process);
@@ -632,7 +632,7 @@ export class Wiser2 {
                 if (apiOptions.authentication) {
                     switch ((apiOptions.authentication.type || "").toUpperCase()) {
                         case "OAUTH2":
-                            await Wiser2.doOauth2Authentication(settings, apiOptions, apiConnectionId, authenticationData, extraHeaders, itemDetails, extraData, success, reject);
+                            await Wiser.doOauth2Authentication(settings, apiOptions, apiConnectionId, authenticationData, extraHeaders, itemDetails, extraData, success, reject);
                             break;
                         default:
                             reject("Geen of onbekend authenticatie-type opgegeven. Neem a.u.b. contact op met ons.");
@@ -651,7 +651,7 @@ export class Wiser2 {
 
                     // If a query ID is set, execute that query first, so that the results can be used in the call to the API.
                     if (action.preRequestQueryId && itemDetails) {
-                        const queryResult = await Wiser2.api({
+                        const queryResult = await Wiser.api({
                             method: "POST",
                             url: `${settings.wiserApiRoot}items/${encodeURIComponent(itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid)}/action-button/0?queryId=${encodeURIComponent(action.preRequestQueryId)}&itemLinkId=${encodeURIComponent(itemDetails.linkId || itemDetails.link_id || 0)}`,
                             data: !extraData ? null : JSON.stringify(extraData),
@@ -665,10 +665,10 @@ export class Wiser2 {
 
                     // Do replacements on action function.
                     if (extraData) {
-                        action.function = Wiser2.doObjectReplacements(action.function, extraData);
+                        action.function = Wiser.doObjectReplacements(action.function, extraData);
                     }
                     if (itemDetails) {
-                        action.function = Wiser2.doWiserItemReplacements(action.function, itemDetails);
+                        action.function = Wiser.doWiserItemReplacements(action.function, itemDetails);
                     }
 
                     // If function does not start with a slash, add it.
@@ -693,10 +693,10 @@ export class Wiser2 {
                                 switch (typeof data[key]) {
                                     case "string":
                                         if (extraData) {
-                                            data[key] = Wiser2.doObjectReplacements(data[key], extraData);
+                                            data[key] = Wiser.doObjectReplacements(data[key], extraData);
                                         }
                                         if (itemDetails) {
-                                            data[key] = Wiser2.doWiserItemReplacements(data[key], itemDetails);
+                                            data[key] = Wiser.doWiserItemReplacements(data[key], itemDetails);
                                         }
                                         break;
                                     case "object":
@@ -711,7 +711,7 @@ export class Wiser2 {
 
                     // Execute the request.
                     let apiResults = await $.ajax({
-                        url: "/Wiser2/ApiProxy.aspx",
+                        url: "/Wiser/ApiProxy.aspx",
                         headers: headers,
                         method: "POST",
                         contentType: action.contentType,
@@ -738,7 +738,7 @@ export class Wiser2 {
 
                     // If a postRequestQueryId is set, execute that query after the API call, so that the results of the API call can be used in the query.
                     if (action.postRequestQueryId && itemDetails) {
-                        const postRequestQueryResult = await Wiser2.api({
+                        const postRequestQueryResult = await Wiser.api({
                             method: "POST",
                             url: `${settings.wiserApiRoot}items/${encodeURIComponent(itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid)}/action-button/0?queryId=${encodeURIComponent(action.postRequestQueryId)}&itemLinkId=${encodeURIComponent(itemDetails.linkId || itemDetails.link_id || 0)}`,
                             data: !apiResults ? null : JSON.stringify(apiResults),
@@ -783,7 +783,7 @@ export class Wiser2 {
             if (authenticationData.refreshToken || authenticationData.authenticationToken) {
                 const authenticationRequest = {
                     method: "POST",
-                    url: "/Wiser2/ApiProxy.aspx",
+                    url: "/Wiser/ApiProxy.aspx",
                     headers: { "X-Api-Url": `${apiOptions.baseUrl}${apiOptions.authentication.accessTokenUrl}` },
                     data: {}
                 };
@@ -808,7 +808,7 @@ export class Wiser2 {
                 authenticationData = $.extend(authenticationData, authenticationResult);
                 authenticationData.accessTokenExpire = moment().add(parseInt(authenticationData.expiresIn), "seconds").toDate();
 
-                await Wiser2.api({
+                await Wiser.api({
                     method: "POST",
                     url: `${settings.serviceRoot}/UPDATE_API_AUTHENTICATION_DATA?id=${encodeURIComponent(apiConnectionId)}`,
                     data: {
@@ -843,7 +843,7 @@ export class Wiser2 {
 
                             clearInterval(interval);
                             loginWindow.close();
-                            Wiser2.doApiCall(settings, apiConnectionId, itemDetails, extraData, { authenticationToken: authenticationToken }).then(success).catch(reject);
+                            Wiser.doApiCall(settings, apiConnectionId, itemDetails, extraData, { authenticationToken: authenticationToken }).then(success).catch(reject);
                         }
                     } catch (intervalException) {
                         // we're here when the child window has been navigated away or closed
@@ -996,7 +996,7 @@ export class Misc {
         // Selecting the Printer to Print on
         let printers = dymo.label.framework.getPrinters();
         if (printers.length === 0) {
-            Wiser2.showMessage({
+            Wiser.showMessage({
                 title: "Geen printer gevonden",
                 content: "No DYMO printers are installed. Install DYMO printers."
             });
@@ -1033,5 +1033,5 @@ export class Misc {
 window.modules = Modules;
 window.Dates = Dates;
 window.Strings = Strings;
-window.Wiser2 = Wiser2;
+window.Wiser = Wiser;
 window.Misc = Misc;

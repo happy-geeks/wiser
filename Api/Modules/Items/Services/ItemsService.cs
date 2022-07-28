@@ -663,6 +663,14 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
+            catch (ArgumentOutOfRangeException exception)
+            {
+                return new ServiceResult<WiserItemModel>
+                {
+                    ErrorMessage = exception.Message,
+                    StatusCode = HttpStatusCode.Conflict
+                };
+            }
 
             return new ServiceResult<WiserItemModel>(item);
         }
@@ -740,7 +748,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
             if (String.IsNullOrWhiteSpace(item?.EntityType))
             {
-                var newItem = await wiserItemsService.GetItemDetailsAsync(itemId);
+                var newItem = await wiserItemsService.GetItemDetailsAsync(itemId, skipPermissionsCheck: true);
                 if (item == null)
                 {
                     item = newItem;
@@ -2306,7 +2314,7 @@ ORDER BY IFNULL(friendly_name, name) ASC");
                 clientDatabaseConnection.AddParameter("newOrderNumber", newOrderNumber);
 
                 // Items voor of na de plaatsing (before/after) 1 plek naar achteren schuiven (niet bij plaatsen op een ander item, want dan komt het nieuwe item altijd achteraan)
-                if (!positionIsOver && sourceParentId == destinationParentId)
+                if (!positionIsOver)
                 {
                     query = $@"UPDATE {WiserTableNames.WiserItemLink}
                             SET ordering = ordering + 1

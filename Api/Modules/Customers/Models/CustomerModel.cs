@@ -34,12 +34,12 @@ namespace Api.Modules.Customers.Models
         public ConnectionInformationModel Database { get; set; }
         
         /// <summary>
-        /// Gets or sets the encryption key for Wiser 2 data.
+        /// Gets or sets the encryption key for Wiser data.
         /// </summary>
         public string EncryptionKey { get; set; }
 
         /// <summary>
-        /// Gets or sets the sub domain for Wiser 2+.
+        /// Gets or sets the sub domain for Wiser.
         /// </summary>
         public string SubDomain { get; set; }
 

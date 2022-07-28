@@ -21,7 +21,7 @@
         public string LanguageCode { get; set; } = "nl";
 
         /// <summary>
-        /// Gets or sets the Wiser 2 sub domain used to access the site.
+        /// Gets or sets the Wiser sub domain used to access the site.
         /// </summary>
         public string SubDomain { get; set; }
     }

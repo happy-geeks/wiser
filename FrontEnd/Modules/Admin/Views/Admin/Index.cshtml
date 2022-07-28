@@ -21,7 +21,11 @@
 <body data-module-id="706"
       data-wiser-api-root="@Model.ApiRoot"
       data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
-      data-sub-domain="@Model.SubDomain">
+      data-sub-domain="@Model.SubDomain"
+      data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
+      data-api-client-id="@Model.Settings.ApiClientId"
+      data-api-client-secret="@Model.Settings.ApiClientSecret"
+      data-track-js-token="@Model.Settings.TrackJsToken">
     <div id="wiser">
         <div class="loaderWrap">
             <div class="lds-ellipsis">
@@ -34,7 +38,7 @@
         <div id="window" class="module-admin" style="margin: 0 auto; padding: 0;">
             <div class="pane-content">
                 <!-- TABS -->
-                <div class="tabstrip" id="MainTabStrip">
+                <div class="tabstrip k-tabstrip-wrapper" id="MainTabStrip">
                     <ul>
                         <li style="display:none">Entiteiten Genereren</li>
                         <li class="k-state-active">Entiteiten</li>
@@ -81,7 +85,7 @@
                                     </div>
                                 </div>
                                 <div class="item">
-                                    <div class="tabstrip" id="EntityTabStrip">
+                                    <div class="tabstrip k-tabstrip-wrapper" id="EntityTabStrip">
                                         <ul>
                                             <li class="k-state-active">Eigenschappen</li>
                                             <li>Velden</li>
@@ -101,6 +105,7 @@
                                                     <span class="handler">&nbsp;</span>
                                                     <h4>
                                                         <label>Tabelnaam voorvoegsel </label>
+                                                        <span class="info" data-type="entityDedicatedTablePrefix"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <span class="k-widget k-input k-state-default">
                                                         <input id="entityDedicatedTablePrefix" type="text" class="textField k-input" autocomplete="off" />
@@ -125,7 +130,7 @@
                                                     <span class="handler">&nbsp;</span>
                                                     <h4>
                                                         <label>Geaccepteerde entiteit(en)</label>
-                                                        <span class="info" data-type="entityAcceptedChildtypes"><ins class="icon-info-full"></ins></span>
+                                                        <span class="info" data-type="entityAcceptedChildTypes"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <select id="acceptedChildTypes">
                                                     </select>
@@ -308,6 +313,7 @@
                                                             </h4>
                                                             <select id="tabnames">
                                                             </select>
+                                                            <div class="form-hint"><span>Om een nieuwe tab te maken; maak een nieuw veld aan, of wijzig een bestaand veld, en vul bij "Tab" de naam voor de nieuwe tab in.</span></div>
                                                             <ul id="tabNameProperties">
                                                             </ul>
                                                             <div class="form-hint"><span>Sleep items om de volgorde te veranderen</span></div>
@@ -1101,7 +1107,7 @@
                                                                 </footer>
                                                             </div>
                                                             <div id="actionButtonPopupHtml" class="item" data-visible="">
-                                                                <div class="tabStrip tabStripActionButton">
+                                                                <div class="tabStrip tabStripActionButton k-tabstrip-wrapper">
                                                                     <ul>
                                                                         <li data-visible="executeQuery executeQueryOnce">
                                                                             Query uitvoeren
@@ -1490,7 +1496,7 @@
                         </div>
                         <div class="right-pane">
                             <div class="pane-content">
-                                <div class="tabstrip" id="RolesTabStrip">
+                                <div class="tabstrip k-tabstrip-wrapper" id="RolesTabStrip">
                                     <ul>
                                         <li class="k-state-active">Velden</li>
                                         <li>Modules</li>
