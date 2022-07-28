@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import { Wiser } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
@@ -26,6 +26,8 @@ const moduleSettings = {
             this.mainLoader = null;
 
             this.itemsData = null;
+            this.userData = null;
+            this.entityData = null;
 
             // Fire event on page ready for direct actions
             document.addEventListener("DOMContentLoaded", () => {
@@ -59,7 +61,7 @@ const moduleSettings = {
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
-                Wiser2.alert({
+                Wiser.alert({
                     title: "Niet ingelogd",
                     content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
@@ -73,11 +75,11 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
-            this.settings.wiser2UserId = userData.id;
+            this.settings.wiserUserId = userData.id;
 
             // Initialize the rest.
             this.initializeKendoElements();
@@ -125,6 +127,16 @@ const moduleSettings = {
                 });
             });
 
+            const entityDataTypeFilterButtons = Array.from(document.getElementById("entityDataTypeFilterButtons").querySelectorAll("button"));
+            entityDataTypeFilterButtons.forEach((button) => {
+                button.addEventListener("click", (event) => {
+                    entityDataTypeFilterButtons.filter((btn) => btn !== event.currentTarget).forEach((btn) => btn.classList.remove("selected"));
+                    event.currentTarget.classList.add("selected");
+
+                    this.updateEntityUsageData();
+                });
+            });
+
             $("#periodFilter").getKendoDropDownList().bind("change", this.onPeriodFilterChange.bind(this));
 
             $("#periodPicker").getKendoDateRangePicker().bind("change", async () => {
@@ -140,7 +152,7 @@ const moduleSettings = {
             });
 
             document.getElementById("refreshDataButton").addEventListener("click", () => {
-                Wiser2.showConfirmDialog("Weet u zeker dat u de data wilt verversen? Dit is mogelijk een zware belasting op de database.",
+                Wiser.showConfirmDialog("Weet u zeker dat u de data wilt verversen? Dit is mogelijk een zware belasting op de database.",
                     "Verversen",
                     "Annuleren",
                     "Verversen").then(async () => {
@@ -377,7 +389,7 @@ const moduleSettings = {
         }
 
         async updateBranches() {
-            const branches = await Wiser2.api({
+            const branches = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}branches`
             });
 
@@ -425,7 +437,7 @@ const moduleSettings = {
                 getParameters.forceRefresh = forceRefresh;
             }
 
-            const data = await Wiser2.api({
+            const data = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dashboard`,
                 data: getParameters
             });
@@ -433,7 +445,7 @@ const moduleSettings = {
                 return;
             }
 
-            // Update entity usage.
+            // Update items usage.
             this.itemsData = data.items;
             this.updateItemsDataChart();
 
@@ -485,6 +497,10 @@ const moduleSettings = {
 
             this.updateUserDataChart();
 
+            // Update entity usage data.
+            this.entityData = data.entities;
+            this.updateEntityUsageData();
+
             // Create task alert data.
             const openTaskAlertsData = [];
             for (let prop in data.openTaskAlerts) {
@@ -498,7 +514,7 @@ const moduleSettings = {
 
         updateItemsDataChart() {
             const filter = document.getElementById("itemsTypeFilterButtons").querySelector("button.selected").dataset.filter;
-            const categories = this.itemsData[filter].map(e => e.entityName);
+            const categories = this.itemsData[filter].map((e) => e.entityName);
 
             const dataChart = $("#data-chart").getKendoChart();
             dataChart.setOptions({
@@ -515,6 +531,29 @@ const moduleSettings = {
             usersChart.findSeriesByIndex(0).data(this.userData[filter]);
         }
 
+        updateEntityUsageData() {
+            const filter = document.getElementById("entityDataTypeFilterButtons").querySelector("button.selected").dataset.filter;
+            $("#entityData .number-item").remove();
+
+            this.entityData[filter].forEach((entity) => {
+                const numberItem = $($("#entity-data").html());
+                numberItem.find("ins").addClass(`icon-${entity.moduleIcon}`);
+                numberItem.find("h3").text(kendo.format("{0:N0}", entity.totalItems));
+                numberItem.find("span.entity-total-text").text(`${entity.displayName} items`);
+                numberItem.on("click", (e) => {
+                    e.preventDefault();
+                    window.parent.postMessage({
+                        action: "OpenModule",
+                        actionData: {
+                            moduleId: entity.moduleId
+                        }
+                    });
+                });
+
+                $("#entityData div.btn-row").before(numberItem);
+            });
+        }
+
         /**
          * Updates the open task alerts chart and total.
          * @param {Array} data Array with the chart data. Will contain objects with a category property and a value property.
@@ -524,7 +563,7 @@ const moduleSettings = {
             taskAlertsChart.findSeriesByIndex(0).data(data);
 
             let totalOpenTaskAlerts = 0;
-            data.forEach(i => totalOpenTaskAlerts += i.value);
+            data.forEach((i) => totalOpenTaskAlerts += i.value);
             document.getElementById("totalOpenTaskAlerts").innerText = totalOpenTaskAlerts.toString();
         }
 

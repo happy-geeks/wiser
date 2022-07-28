@@ -58,6 +58,7 @@ import {
             document.addEventListener("DOMContentLoaded", () => {
                 this.onPageReady();
             });
+            window.addEventListener("message", this.handlePostMessage.bind(this));
         }
 
         /**
@@ -110,6 +111,18 @@ import {
             }
 
             this.initVue();
+        }
+
+        handlePostMessage(event) {
+            if (!event.data || !event.data.action) {
+                return;
+            }
+
+            switch (event.data.action) {
+                case "OpenModule":
+                    this.vueApp.openModule(event.data.actionData.moduleId);
+                    break;
+            }
         }
 
         initVue() {

@@ -563,6 +563,7 @@ CREATE TABLE IF NOT EXISTS `wiser_data_selector`  (
   `show_in_export_module` tinyint(1) NOT NULL DEFAULT 1,
   `available_for_rendering` tinyint(1) NOT NULL DEFAULT 1,
   `default_template` bigint UNSIGNED NOT NULL DEFAULT 0,
+  `show_in_dashboard` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_name`(`name`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;

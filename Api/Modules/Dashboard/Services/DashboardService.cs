@@ -147,14 +147,14 @@ public class DashboardService : IDashboardService, IScopedService
 
             var rawEntitiesData = wiserStatsData.Rows[0].Field<string>("entities_data");
             var entitiesData = !String.IsNullOrWhiteSpace(rawEntitiesData)
-                ? Newtonsoft.Json.JsonConvert.DeserializeObject<List<EntityTypeModel>>(rawEntitiesData)
-                : new List<EntityTypeModel>(0);
+                ? Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, List<EntityTypeModel>>>(rawEntitiesData)
+                : new Dictionary<string, List<EntityTypeModel>>(0);
 
             var userLoginTimeTop10 = wiserStatsData.Rows[0].Field<TimeSpan>("user_login_time_top10");
             var userLoginTimeOther = wiserStatsData.Rows[0].Field<TimeSpan>("user_login_time_other");
 
             result.Items = itemsData ?? new Dictionary<string, List<ItemsCountModel>>(0);
-            result.Entities = entitiesData ?? new List<EntityTypeModel>(0);
+            result.Entities = entitiesData ?? new Dictionary<string, List<EntityTypeModel>>(0);
             result.UserLoginCountTop10 = wiserStatsData.Rows[0].Field<int>("user_login_count_top10");
             result.UserLoginCountOther = wiserStatsData.Rows[0].Field<int>("user_login_count_other");
             result.UserLoginTimeTop10 = (int) Math.Round(userLoginTimeTop10.TotalSeconds);
@@ -200,9 +200,9 @@ public class DashboardService : IDashboardService, IScopedService
     {
         var result = new Dictionary<string, List<ItemsCountModel>>(3)
         {
-            { ItemsDataPeriodFilterTypes.All.ToString("G"), await GetItemsCountWithFilterAsync(ItemsDataPeriodFilterTypes.All, periodFrom, periodTo, databaseName) },
-            { ItemsDataPeriodFilterTypes.NewlyCreated.ToString("G"), await GetItemsCountWithFilterAsync(ItemsDataPeriodFilterTypes.NewlyCreated, periodFrom, periodTo, databaseName) },
-            { ItemsDataPeriodFilterTypes.Changed.ToString("G"), await GetItemsCountWithFilterAsync(ItemsDataPeriodFilterTypes.Changed, periodFrom, periodTo, databaseName) }
+            { PeriodFilterTypes.All.ToString("G"), await GetItemsCountWithFilterAsync(PeriodFilterTypes.All, periodFrom, periodTo, databaseName) },
+            { PeriodFilterTypes.NewlyCreated.ToString("G"), await GetItemsCountWithFilterAsync(PeriodFilterTypes.NewlyCreated, periodFrom, periodTo, databaseName) },
+            { PeriodFilterTypes.Changed.ToString("G"), await GetItemsCountWithFilterAsync(PeriodFilterTypes.Changed, periodFrom, periodTo, databaseName) }
         };
 
         return result;
@@ -239,12 +239,12 @@ public class DashboardService : IDashboardService, IScopedService
     /// <summary>
     /// Retrieves the amount of items, optionally filtered on a period.
     /// </summary>
-    /// <param name="itemsDataPeriodFilterType">The filter type. Only works if <paramref name="periodFrom"/> and <paramref name="periodTo"/> are set.</param>
+    /// <param name="periodFilterType">The filter type. Only works if <paramref name="periodFrom"/> and <paramref name="periodTo"/> are set.</param>
     /// <param name="periodFrom">The minimum age of the data.</param>
     /// <param name="periodTo">The maximum age of the data.</param>
     /// <param name="databaseName">The name of a branch database that should be used. Can be empty to use current branch.</param>
     /// <returns>A list of all items and the amount of those items that exist.</returns>
-    private async Task<List<ItemsCountModel>> GetItemsCountWithFilterAsync(ItemsDataPeriodFilterTypes itemsDataPeriodFilterType, DateTime? periodFrom = null, DateTime? periodTo = null, string databaseName = null)
+    private async Task<List<ItemsCountModel>> GetItemsCountWithFilterAsync(PeriodFilterTypes periodFilterType, DateTime? periodFrom = null, DateTime? periodTo = null, string databaseName = null)
     {
         var databasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
 
@@ -263,12 +263,12 @@ public class DashboardService : IDashboardService, IScopedService
 
             // Create the WHERE part of the query. This is for the period filter.
             var whereParts = new List<string>();
-            if (itemsDataPeriodFilterType != ItemsDataPeriodFilterTypes.All && (periodFrom.HasValue || periodTo.HasValue))
+            if (periodFilterType != PeriodFilterTypes.All && (periodFrom.HasValue || periodTo.HasValue))
             {
-                var columnName = itemsDataPeriodFilterType switch
+                var columnName = periodFilterType switch
                 {
-                    ItemsDataPeriodFilterTypes.NewlyCreated => "added_on",
-                    ItemsDataPeriodFilterTypes.Changed => "changed_on",
+                    PeriodFilterTypes.NewlyCreated => "added_on",
+                    PeriodFilterTypes.Changed => "changed_on",
                     _ => ""
                 };
 
@@ -413,8 +413,16 @@ public class DashboardService : IDashboardService, IScopedService
     /// </summary>
     /// <param name="databaseName">The name of a branch database that should be used. Can be empty to use current branch.</param>
     /// <returns>A <see cref="List{T}"/> containing <see cref="EntityTypeModel"/> objects.</returns>
-    private async Task<List<EntityTypeModel>> GetEntitiesDataAsync(string databaseName = null)
+    private async Task<Dictionary<string, List<EntityTypeModel>>> GetEntitiesDataAsync(string databaseName = null)
     {
+        var collectionAll = PeriodFilterTypes.All.ToString("G");
+        var collectionNewlyCreated = PeriodFilterTypes.NewlyCreated.ToString("G");
+        var result = new Dictionary<string, List<EntityTypeModel>>(2)
+        {
+            { collectionAll, new List<EntityTypeModel>(3) },
+            { collectionNewlyCreated, new List<EntityTypeModel>(3) }
+        };
+
         // First retrieve the entities that have "show_in_dashboard" set to 1. Limit it to 3.
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
@@ -427,7 +435,6 @@ public class DashboardService : IDashboardService, IScopedService
             WHERE entity.show_in_dashboard = 1
             LIMIT 3");
 
-        var entities = new List<EntityTypeModel>(3);
         foreach (var dataRow in entitiesData.Rows.Cast<DataRow>())
         {
             var tablePrefix = dataRow.Field<string>("dedicated_table_prefix") ?? String.Empty;
@@ -436,18 +443,47 @@ public class DashboardService : IDashboardService, IScopedService
                 tablePrefix += "_";
             }
 
-            var entityCountData = await clientDatabaseConnection.GetAsync($"SELECT COUNT(*) FROM {queryDatabasePart}{tablePrefix}{WiserTableNames.WiserItem}");
+            var entityName = dataRow.Field<string>("name");
+
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("entity_type", entityName);
+
+            // Retrieve total count of items with this entity type.
+            var entityCountData = await clientDatabaseConnection.GetAsync($@"
+                SELECT COUNT(*)
+                FROM {queryDatabasePart}{tablePrefix}{WiserTableNames.WiserItem}
+                WHERE entity_type = ?entity_type");
+
             var entityCount = Convert.ToInt32(entityCountData.Rows[0][0]);
 
-            entities.Add(new EntityTypeModel
+            // Now retrieve the count for entities that are new. New is considered to be a month old at most.
+            var newEntityCountData = await clientDatabaseConnection.GetAsync($@"
+                SELECT COUNT(*)
+                FROM {queryDatabasePart}{tablePrefix}{WiserTableNames.WiserItem}
+                WHERE entity_type = ?entity_type AND added_on BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()");
+
+            var newEntityCount = Convert.ToInt32(newEntityCountData.Rows[0][0]);
+
+            result[collectionAll].Add(new EntityTypeModel
             {
-                DisplayName = dataRow.Field<string>("name"),
+                DisplayName = entityName,
                 ModuleId = dataRow.Field<int>("module_id"),
+                ModuleIcon = dataRow.Field<string>("icon"),
                 TotalItems = entityCount
+            });
+            result[collectionNewlyCreated].Add(new EntityTypeModel
+            {
+                DisplayName = entityName,
+                ModuleId = dataRow.Field<int>("module_id"),
+                ModuleIcon = dataRow.Field<string>("icon"),
+                TotalItems = newEntityCount
             });
         }
 
-        return entities;
+        result[collectionAll] = result[collectionAll].OrderByDescending(e => e.TotalItems).ToList();
+        result[collectionNewlyCreated] = result[collectionNewlyCreated].OrderByDescending(e => e.TotalItems).ToList();
+
+        return result;
     }
 
     /// <summary>
@@ -474,22 +510,22 @@ public class DashboardService : IDashboardService, IScopedService
     }
 
     /// <summary>
-    /// Takes multiple instances of <see cref="DashboardDataModel"/> objects, and combines the results into one.
+    /// Takes multiple instances of <see cref="DashboardDataModel"/> objects and combines them into one.
     /// </summary>
-    /// <param name="sources"></param>
-    /// <returns></returns>
+    /// <param name="sources">A list of <see cref="DashboardDataModel"/> objects to combine into one.</param>
+    /// <returns>The combined <see cref="DashboardDataModel"/> object.</returns>
     private static DashboardDataModel CombineResults(IEnumerable<DashboardDataModel> sources)
     {
         var result = new DashboardDataModel
         {
             Items = new Dictionary<string, List<ItemsCountModel>>(3),
-            Entities = new List<EntityTypeModel>(3),
+            Entities = new Dictionary<string, List<EntityTypeModel>>(2),
             OpenTaskAlerts = new Dictionary<string, int>()
         };
 
-        var collectionAll = ItemsDataPeriodFilterTypes.All.ToString("G");
-        var collectionNewlyCreated = ItemsDataPeriodFilterTypes.NewlyCreated.ToString("G");
-        var collectionChanged = ItemsDataPeriodFilterTypes.Changed.ToString("G");
+        var collectionAll = PeriodFilterTypes.All.ToString("G");
+        var collectionNewlyCreated = PeriodFilterTypes.NewlyCreated.ToString("G");
+        var collectionChanged = PeriodFilterTypes.Changed.ToString("G");
         foreach (var source in sources)
         {
             // A source can be null if a branch database doesn't exist.
@@ -515,22 +551,26 @@ public class DashboardService : IDashboardService, IScopedService
             }
 
             // Combine entities data.
-            foreach (var sourceEntity in source.Entities)
+            foreach (var sourceEntityList in source.Entities)
             {
-                var entity = result.Entities.FirstOrDefault(e => e.DisplayName == sourceEntity.DisplayName);
-                if (entity == null)
+                foreach (var sourceEntity in sourceEntityList.Value)
                 {
-                    result.Entities.Add(sourceEntity);
-                }
-                else
-                {
-                    entity.TotalItems += sourceEntity.TotalItems;
-                }
+                    // The sourceEntityList.Key will be either 'All' or 'NewlyCreated'.
+                    var entity = result.Entities[sourceEntityList.Key].FirstOrDefault(e => e.DisplayName == sourceEntity.DisplayName);
+                    if (entity == null)
+                    {
+                        result.Entities[sourceEntityList.Key].Add(sourceEntity);
+                    }
+                    else
+                    {
+                        entity.TotalItems += sourceEntity.TotalItems;
+                    }
 
-                // No more than 3 entities should be in the list.
-                if (result.Entities.Count == 3)
-                {
-                    break;
+                    // No more than 3 entities should be in the list.
+                    if (result.Entities[sourceEntityList.Key].Count == 3)
+                    {
+                        break;
+                    }
                 }
             }
 

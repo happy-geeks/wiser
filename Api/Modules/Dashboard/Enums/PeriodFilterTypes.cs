@@ -3,7 +3,7 @@
 /// <summary>
 /// Determines how the data period filter affects which items are retrieved.
 /// </summary>
-public enum ItemsDataPeriodFilterTypes
+public enum PeriodFilterTypes
 {
     /// <summary>
     /// Retrieve all items (ignores period filter).

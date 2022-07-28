@@ -13,9 +13,9 @@ public class DashboardDataModel
 
     /// <summary>
     /// Gets or sets the entities data. This is a count of the total amount of items for these entities, as well as the
-    /// module ID that is associated with the entities.
+    /// module ID and icon that is associated with the entities.
     /// </summary>
-    public List<EntityTypeModel> Entities { get; set; }
+    public Dictionary<string, List<EntityTypeModel>> Entities { get; set; }
 
     /// <summary>
     /// Gets or sets the amount of times the top 10 users have logged in.

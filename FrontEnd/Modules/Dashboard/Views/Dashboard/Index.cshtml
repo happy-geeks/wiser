@@ -136,38 +136,26 @@
                         </div>
                     </script>
                     <script id="numbers" type="text/x-kendo-template">
-                        <div class="tile-content">
-                            <a href="javascript:;" class="number-item">
-                                <ins class="icon-cart"></ins>
-                                <h3>4.542.420</h3>
-                                <span>Totaal aantal orders
-                                    <span class="k-icon k-i-hyperlink-open-sm"></span>
-                                </span>
-                            </a>
-                            <a href="javascript:;" class="number-item">
-                                <ins class="icon-box"></ins>
-                                <h3>2.500</h3>
-                                <span>Totaal aantal producten
-                                    <span class="k-icon k-i-hyperlink-open-sm"></span>
-                                </span>
-                            </a>
-                            <a href="javascript:;" class="number-item">
-                                <ins class="icon-line-user-check"></ins>
-                                <h3>300</h3>
-                                <span>Totaal aantal klanten
-                                    <span class="k-icon k-i-hyperlink-open-sm"></span>
-                                </span>
-                            </a>
-
-                            <div class="btn-row">
-                                <button type="button" role="button" aria-label="Totaal" class="selected">
+                        <div class="tile-content" id="entityData">
+                            <div class="btn-row" id="entityDataTypeFilterButtons">
+                                <button type="button" role="button" aria-label="Totaal" data-filter="All" class="selected">
                                     <span>Totaal</span>
                                 </button>
-                                <button type="button" role="button" aria-label="Nieuw">
+                                <button type="button" role="button" aria-label="Nieuw" data-filter="NewlyCreated">
                                     <span>Nieuw</span>
                                 </button>
                             </div>
                         </div>
+                    </script>
+                    <script id="entity-data" type="text/x-kendo-template">
+                        <a href="javascript:;" class="number-item">
+                            <ins class=""></ins>
+                            <h3>0</h3>
+                            <span>
+                                <span class="entity-total-text">-</span>
+                                <span class="k-icon k-i-hyperlink-open-sm"></span>
+                            </span>
+                        </a>
                     </script>
                     <script id="dataselector-rate" type="text/x-kendo-template">
                         <h3>Uitkomst dataselector</h3>
@@ -181,7 +169,7 @@
                             <div id="data-chart" style="width:100%"></div>
 
                             <div class="btn-row" id="itemsTypeFilterButtons">
-                                <button type="button" role="button" aria-label="Alles" class="selected" data-filter="All">
+                                <button type="button" role="button" aria-label="Alles" data-filter="All" class="selected">
                                     <span>Alles</span>
                                 </button>
                                 <button type="button" role="button" aria-label="Nieuw aangemaakt" data-filter="NewlyCreated">
