@@ -534,6 +534,9 @@
 .k-i-image-insert:before {
     content: "\ea37";
 }
+.k-i-vertalen:before {
+	content: "\e963";
+}
 
 /* KENDO - NOTIFICATION */
 .k-notification img {
