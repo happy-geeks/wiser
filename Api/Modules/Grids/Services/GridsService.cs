@@ -1629,7 +1629,7 @@ namespace Api.Modules.Grids.Services
             if (!String.IsNullOrWhiteSpace(moduleSettings))
             {
                 moduleSettingsModel = JsonConvert.DeserializeObject<GridViewSettingsModel>(moduleSettings);
-                results = moduleSettingsModel.GridViewSettings;
+                results = moduleSettingsModel!.GridViewSettings;
             }
 
             if (results.PageSize <= 0)
