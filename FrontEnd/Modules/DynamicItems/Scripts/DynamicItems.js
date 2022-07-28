@@ -190,21 +190,23 @@ const moduleSettings = {
 
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.htmlEditorCssUrl = `${this.settings.wiserApiRoot}templates/css-for-html-editors?encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&isTest=${this.base.settings.isTestEnvironment}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&username=${encodeURIComponent(this.base.settings.username)}&userType=${encodeURIComponent(this.base.settings.userType)}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`
-            
+
             // Get list of all entity types, so we can show friendly names wherever we need to and don't have to get them from database via different places.
             try {
-                this.allEntityTypes = (await Wiser.api({ url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false` })) || [];
+                this.allEntityTypes = (await Wiser.api({url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
             } catch (exception) {
                 console.error("Error occurred while trying to load all entity types", exception);
                 this.allEntityTypes = [];
             }
 
             // Get extra module settings.
-            const extraModuleSettings = await Modules.getModuleSettings(this.settings.wiserApiRoot, this.settings.moduleId);
-            Object.assign(this.settings, extraModuleSettings.options);
-            let permissions = Object.assign({}, extraModuleSettings);
-            delete permissions.options;
-            this.settings.permissions = permissions;
+            if (this.settings.moduleId > 0) {
+                const extraModuleSettings = await Modules.getModuleSettings(this.settings.wiserApiRoot, this.settings.moduleId);
+                Object.assign(this.settings, extraModuleSettings.options);
+                let permissions = Object.assign({}, extraModuleSettings);
+                delete permissions.options;
+                this.settings.permissions = permissions;
+            }
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
             $("body").toggleClass("gridViewMode", this.settings.gridViewMode);
 
@@ -226,7 +228,7 @@ const moduleSettings = {
                 await this.loadItem(newItemResult.itemId, 0, newItemResult.entityType);
                 window.processing.removeProcess(process);
             } else if (this.settings.initialItemId) {
-                this.loadItem(this.settings.initialItemId, 0, this.settings.entityType);
+                await this.loadItem(this.settings.initialItemId, 0, this.settings.entityType);
             }
 
             if (this.settings.iframeMode && this.settings.hideHeader) {
@@ -286,10 +288,9 @@ const moduleSettings = {
 
             // Keyboard shortcuts
             $("body").on("keyup", async (event) => {
-                console.log("keyup", event);
                 const target = $(event.target);
 
-                if (target.prop("tagName") === "INPUT" || target.prop("tagName") === "TEXTAREA") {
+                if (target.prop("tagName") === "INPUT" || target.prop("tagName") === "TEXTAREA" || !this.mainTreeView) {
                     return;
                 }
 
@@ -330,10 +331,10 @@ const moduleSettings = {
             });
 
             // Binding to unselect the main tree view.
-            $("#left-pane, .k-window-titlebar").click((event) => {
-                var target = $(event.target);
+            $("body").on("click", "#left-pane, .main-window .k-window-titlebar", async (event) => {
+                const target = $(event.target);
 
-                if (target.hasClass("k-in") || target.hasClass("k-i-expand") || target.prop("tagName") === "BUTTON" || target.prop("tagName") === "INPUT" || (target.closest(".k-window-titlebar").length > 0 && target.siblings("#window").length === 0)) {
+                if (target.closest(".k-window-titlebar").length === 0 && (target.hasClass("k-in") || target.hasClass("k-i-expand") || target.prop("tagName") === "BUTTON" || target.prop("tagName") === "INPUT")) {
                     return;
                 }
 
@@ -350,9 +351,13 @@ const moduleSettings = {
 
                 this.mainTabStrip.select(0);
 
-                this.dialogs.loadAvailableEntityTypesInDropDown(this.settings.zeroEncrypted);
+                await this.dialogs.loadAvailableEntityTypesInDropDown(this.settings.zeroEncrypted);
 
-                $("#alert-first").removeClass("hidden");
+                if (!this.settings.initialItemId) {
+                    $("#alert-first").removeClass("hidden");
+                } else {
+                    await this.loadItem(this.settings.initialItemId, 0, this.settings.entityType);
+                }
             });
 
             // Close first alert.
@@ -370,8 +375,8 @@ const moduleSettings = {
                 target.closest(".k-window").find("#right-pane").removeClass("info-active");
             });
 
-            $("body").on("click", ".imgZoom", function () {
-                const image = $(this).parents(".product").find("img");
+            $("body").on("click", ".imgZoom", (event) => {
+                const image = $(event.currentTarget).parents(".product").find("img");
                 const dialogElement = $("#imageDialog");
                 let dialog = dialogElement.data("kendoDialog");
                 if (!dialog) {
@@ -395,15 +400,15 @@ const moduleSettings = {
 
             $("#mainEditMenu .reloadItem").click(async (event) => {
                 const previouslySelectedTab = this.mainTabStrip.select().index();
-                this.loadItem(this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
+                await this.loadItem(this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
             });
 
             $("#mainEditMenu .deleteItem").click(async (event) => {
-                this.onDeleteItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
+                await this.onDeleteItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
             });
 
             $("#mainEditMenu .undeleteItem").click(async (event) => {
-                this.onUndeleteItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id);
+                await this.onUndeleteItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id);
             });
 
             $("#mainEditMenu .copyToEnvironment").click(async (event) => {
@@ -1563,7 +1568,7 @@ const moduleSettings = {
                 const indexAfter = this.mainTabStrip.select().index();
                 if (indexBefore === indexAfter) {
                     // Kendo does trigger the select event if you select the same tab again, so we have to do it manually to make sure the contents of the newly loaded item will be shown, instead of the contents of the previous item.
-                    this.onTabStripSelect((!this.selectedItem || !this.selectedItem.id ? 0 : this.selectedItem.id), "mainScreen", { item: this.mainTabStrip.select(), contentElement: this.mainTabStrip.contentElement(this.mainTabStrip.select().index()) });
+                    await this.onTabStripSelect((!this.selectedItem || !this.selectedItem.id ? 0 : this.selectedItem.id), "mainScreen", { item: this.mainTabStrip.select(), contentElement: this.mainTabStrip.contentElement(this.mainTabStrip.select().index()) });
                 }
 
                 // If the mode for changing field widths is enabled, call the method that show the current width of each field, 
@@ -1738,8 +1743,8 @@ const moduleSettings = {
                 }
 
                 editMenu.find(".copyToEnvironment").closest("li").toggle(itemMetaData.enableMultipleEnvironments > 0);
-                deleteButtons.toggle(itemMetaData.canDelete && !itemMetaData.removed);
-                undeleteButtons.toggle(itemMetaData.canDelete && !!itemMetaData.removed); // Double exclamation mark, because jQuery expects a true/false, but removed has a 0 or 1 most of the time.
+                deleteButtons.toggle(itemMetaData.canDelete && !itemMetaData.removed && itemId !== this.settings.initialItemId);
+                undeleteButtons.toggle(itemMetaData.canDelete && !!itemMetaData.removed && itemId !== this.settings.initialItemId); // Double exclamation mark, because jQuery expects a true/false, but removed has a 0 or 1 most of the time.
 
                 $("#alert-first").addClass("hidden");
 
@@ -2036,7 +2041,7 @@ const moduleSettings = {
          * @param {number} linkType Optional: The type number of the link between this item and another item. If you're opening this item via a specific link, you should enter the ID of that link, because it's possible to have fields/properties on a link instead of an item.
          * @returns {Promise} A promise with the results.
          */
-        async getItemHtml(itemId, entityType, propertyIdSuffix, linkId, linkType) {
+        async getItemHtml(itemId, entityType, propertyIdSuffix = "", linkId = 0, linkType = 0) {
             let url = `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}?entityType=${encodeURIComponent(entityType)}&encryptedModuleId=${encodeURIComponent(this.base.settings.encryptedModuleId)}`;
             if (propertyIdSuffix) {
                 url += `&propertyIdSuffix=${encodeURIComponent(propertyIdSuffix)}`;
@@ -2047,6 +2052,7 @@ const moduleSettings = {
             if (linkType) {
                 url += `&linkType=${encodeURIComponent(linkType)}`;
             }
+            
             return Wiser.api({ url: url });
         }
 
