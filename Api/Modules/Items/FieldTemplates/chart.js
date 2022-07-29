@@ -16,7 +16,7 @@
         dataSource: {
             transport: {
                 read: (options) => {
-                    Wiser2.api({
+                    Wiser.api({
                         url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.queryId || 0),
                         dataType: "json",
                         method: "POST",

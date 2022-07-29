@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import { Wiser } from "../../Base/Scripts/Utils.js";
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
@@ -51,7 +51,7 @@ const moduleSettings = {
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
-                Wiser2.alert({
+                Wiser.alert({
                     title: "Niet ingelogd",
                     content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
@@ -65,7 +65,7 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = user.adminAccountName;
             
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
@@ -75,7 +75,7 @@ const moduleSettings = {
                 this.settings.wiserApiRoot += "/";
             }
             
-            this.backendUsers = await Wiser2.api({ url: `${this.settings.wiserApiRoot}users` });
+            this.backendUsers = await Wiser.api({ url: `${this.settings.wiserApiRoot}users` });
             console.log(this.backendUsers);
 
             this.initializeMainGrid();
@@ -138,7 +138,7 @@ const moduleSettings = {
                     }
                 };
 
-                const gridDataResult = await Wiser2.api({
+                const gridDataResult = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(this.settings.zeroEncrypted)}/entity-grids/agendering?mode=2&moduleId=${this.settings.moduleId}`,
                     method: "POST",
                     contentType: "application/json",
@@ -193,7 +193,7 @@ const moduleSettings = {
                                         return;
                                     }
 
-                                    const newGridDataResult = await Wiser2.api({
+                                    const newGridDataResult = await Wiser.api({
                                         url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(this.settings.zeroEncrypted)}/entity-grids/agendering?mode=2&moduleId=${this.settings.moduleId}`,
                                         method: "POST",
                                         contentType: "application/json",

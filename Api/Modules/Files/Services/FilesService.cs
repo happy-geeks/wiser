@@ -244,11 +244,13 @@ namespace Api.Modules.Files.Services
             if (itemLinkId > 0)
             {
                 tablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(linkType, entityType);
+                databaseConnection.ClearParameters();
                 databaseConnection.AddParameter("itemlink_id", itemLinkId);
             }
             else if (itemId > 0)
             {
                 tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+                databaseConnection.ClearParameters();
                 databaseConnection.AddParameter("item_id", itemId);
             }
             databaseConnection.AddParameter("content_url", contentUrl);

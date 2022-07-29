@@ -429,8 +429,7 @@ import {
                         });
                     },
 
-                    openWiserIdPrompt(event) {
-                        event.preventDefault();
+                    openWiserIdPrompt() {
                         this.$refs.wiserIdPrompt.open();
                     },
 

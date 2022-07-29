@@ -56,15 +56,7 @@ module.exports = {
             },
             {
                 test: /\.(woff(2)?|ttf|eot|svg|png|jpg)(\?v=\d+\.\d+\.\d+)?$/,
-                use: [
-                    {
-                        loader: "file-loader",
-                        options: {
-                            name: "[name].[ext]",
-                            outputPath: "fonts/"
-                        }
-                    }
-                ]
+                type: "asset/resource"
             }
         ]
     }

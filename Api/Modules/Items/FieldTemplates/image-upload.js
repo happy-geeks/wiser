@@ -71,7 +71,7 @@ container.find(".imagesContainer").kendoSortable({
         const fileId = event.item.data("imageId");
         const propertyName = container.data("propertyName");
 
-        Wiser2.api({
+        Wiser.api({
             method: "PUT",
             contentType: "application/json",
             dataType: "json",

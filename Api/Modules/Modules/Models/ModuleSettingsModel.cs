@@ -4,7 +4,7 @@ using Newtonsoft.Json.Linq;
 namespace Api.Modules.Modules.Models
 {
     /// <summary>
-    /// A model for information about a Wiser 2.0 module.
+    /// A model for information about a Wiser module.
     /// </summary>
     public class ModuleSettingsModel
     {
