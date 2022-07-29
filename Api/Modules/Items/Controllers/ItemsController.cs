@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
+﻿using System.Collections.Generic;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
-using Api.Modules.Customers.Models;
 using Api.Modules.EntityTypes.Models;
 using Api.Modules.Files.Interfaces;
-using Api.Modules.Files.Models;
 using Api.Modules.Grids.Enums;
 using Api.Modules.Grids.Interfaces;
 using Api.Modules.Grids.Models;
@@ -16,7 +12,6 @@ using Api.Modules.Items.Interfaces;
 using Api.Modules.Items.Models;
 using Api.Modules.Kendo.Models;
 using GeeksCoreLibrary.Core.Enums;
-using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -198,7 +193,6 @@ namespace Api.Modules.Items.Controllers
         /// Undeleting an item moves it from the archive table back to the actual table.
         /// </summary>
         /// <param name="encryptedId">The encrypted ID of the item to delete.</param>
-        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="undelete">Optional: Whether to undelete the item instead of deleting it.</param>
         /// <param name="entityType">Optional: The entity type of the item. This is needed if the item is saved in a different table than wiser_item.</param>
         [HttpDelete]
@@ -433,6 +427,22 @@ namespace Api.Modules.Items.Controllers
         public async Task<IActionResult> GetEncryptedIdAsync(ulong id)
         {
             return (await itemsService.GetEncryptedIdAsync(id, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Translate all fields of an item into one or more other languages, using the Google Translation API.
+        /// This will only translate fields that don't have a value yet for the destination language
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item to translate.</param>
+        /// <param name="settings">The settings for translating.</param>
+        [HttpPut]
+        [Route("{encryptedId}/translate")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetEncryptedIdAsync(string encryptedId, TranslateItemRequestModel settings)
+        {
+            return (await itemsService.TranslateAllFieldsAsync((ClaimsIdentity)User.Identity, encryptedId, settings)).GetHttpResponseMessage();
         }
     }
 }

@@ -42,6 +42,8 @@ CREATE TABLE IF NOT EXISTS `wiser_entity`  (
   `show_title_field` tinyint(1) NOT NULL DEFAULT 1,
   `friendly_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `default_ordering` enum('link_ordering','item_title') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'link_ordering',
+  `template_query` mediumtext,
+  `template_html` mediumtext,
   `save_history` tinyint(1) NOT NULL DEFAULT 1,
   `enable_multiple_environments` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Whether or not to enable multiple environments for entities of this type. This means that the test can have a different version of an item than the live for example.',
   `dedicated_table_prefix` varchar(25) NOT NULL DEFAULT '',
@@ -138,7 +140,8 @@ CREATE TABLE IF NOT EXISTS `wiser_history`  (
   `language_code` varchar(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `groupname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `item_id`(`item_id`, `field`) USING BTREE
+  INDEX `idx_item_id`(`item_id`, `field`) USING BTREE,
+  INDEX `idx_changed_on`(`changed_on`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -274,6 +277,7 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile_archive`  (
   `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `property_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'De naam van het veld waar deze afbeelding bijhoort',
   `itemlink_id` bigint NOT NULL DEFAULT 0,
+  `protected` tinyint NOT NULL DEFAULT 0 COMMENT 'Stel in op 1 om alleen toe te staan dat het bestand wordt opgehaald via een versleutelde id',
   `ordering` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_item_id`(`item_id`, `property_name`) USING BTREE,
@@ -725,7 +729,7 @@ CREATE TABLE IF NOT EXISTS `wiser_dynamic_content`  (
     `changed_on` datetime NOT NULL ON UPDATE CURRENT_TIMESTAMP,
     `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
     `published_environment` tinyint NOT NULL DEFAULT 0,
-    `removed` tinyint NOT NULL,
+    `removed` tinyint NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`) USING BTREE,
     UNIQUE INDEX `idx_unique`(`content_id` ASC, `version` ASC) USING BTREE,
     INDEX `content_id`(`content_id` ASC) USING BTREE,

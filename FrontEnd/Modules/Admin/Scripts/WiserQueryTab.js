@@ -70,10 +70,10 @@ export class WiserQueryTab {
     }
 
     // actions handled before save, such as checks
-    beforeSave() {
+    async beforeSave() {
         if (this.checkIfQueryIsSet(true)) {
             const queryModel = new QueryModel(this.queryCombobox.dataItem().id, document.getElementById("queryDescription").value, this.queryFromWiser.getValue(), document.getElementById("showInExportModule").checked);
-            this.updateQuery(queryModel.id, queryModel);
+            await this.updateQuery(queryModel.id, queryModel);
         }
     }
 
@@ -85,15 +85,13 @@ export class WiserQueryTab {
 
     async getQueries(reloadDataSource = true, queryIdToSelect = null) {
         if (reloadDataSource) {
-            this.queryList = await $.ajax({
-                url: `${this.base.settings.wiserApiRoot}queries/`,
+            this.queryList = await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}queries`,
                 method: "GET"
             });
 
             if (!queryList) {
-                this.base.showNotification("notification",
-                    "Het ophalen van de queries is mislukt, probeer het opnieuw",
-                    "error");
+                this.base.showNotification("notification", "Het ophalen van de query's is mislukt, probeer het opnieuw", "error");
             }
         }
 
@@ -111,72 +109,78 @@ export class WiserQueryTab {
     }
 
     async updateQuery(id, queryModel) {
-        await $.ajax({
-            url: `${this.base.settings.wiserApiRoot}queries/${id}`,
-            contentType: "application/json; charset=utf-8",
-            dataType: "json",
-            data: JSON.stringify(queryModel),
-            method: "PUT"
-        })
-            .done(() => {
-                this.base.showNotification("notification", `Query is succesvol bijgewerkt`, "success");
-                this.getQueries();
-            })
-            .fail(() => {
-                this.base.showNotification("notification", `Het bijwerken van de queries is mislukt, probeer het opnieuw`, "error");
+        try {
+            await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}queries/${id}`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(queryModel),
+                method: "PUT"
             });
+            
+            this.base.showNotification("notification", `Query is succesvol bijgewerkt`, "success");
+            await this.getQueries();
+        }
+        catch (exception) {
+            console.error("Error while updating query", exception);
+            this.base.showNotification("notification", `Het bijwerken van de queries is mislukt, probeer het opnieuw`, "error");
+        }
     }
 
     async getQueryById(id) {
-        const results = await $.ajax({
+        const results = await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}queries/${id}`,
             method: "GET"
         });
 
-        this.setQueryPropertiesToDefault();
-        this.setQueryProperties(results);
+        await this.setQueryPropertiesToDefault();
+        await this.setQueryProperties(results);
     }
 
     async addQuery(description) {
-        if (description === "") { return; }
-        await $.ajax({
-            url: `${this.base.settings.wiserApiRoot}queries/`,
-            contentType: "application/json; charset=utf-8",
-            dataType: "json",
-            data: JSON.stringify(description),
-            method: "POST"
-        })
-            .done((result) => {
-                this.base.showNotification("notification", `Query succesvol toegevoegd`, "success");
-                this.getQueries(true, result.id);
-
-            })
-            .fail(() => {
-                this.base.showNotification("notification", `Query is niet succesvol toegevoegd, probeer het opnieuw`, "error");
+        if (!description) { 
+            return;
+        }
+        
+        try {
+            const result = await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}queries/`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(description),
+                method: "POST"
             });
+            
+            this.base.showNotification("notification", `Query succesvol toegevoegd`, "success");
+            await this.getQueries(true, result.id);
+        }
+        catch (exception) {
+            console.error("Error while creating query", exception);
+            this.base.showNotification("notification", `Query is niet succesvol toegevoegd, probeer het opnieuw`, "error");
+        }
     }
 
     async deleteQueryById(id) {
-        await $.ajax({
-            url: `${this.base.settings.wiserApiRoot}queries/${id}`,
-            method: "DELETE"
-        })
-            .done(() => {
-                this.getQueries(true, 0);
-                this.setQueryPropertiesToDefault();
-                this.base.showNotification("notification", `Query succesvol verwijdert`, "success");
-            })
-            .fail(() => {
-                this.base.showNotification("notification",
-                    "Query is niet succesvol verwijderd, probeer het opnieuw",
-                    "error");
+        try {
+            const result = await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}queries/${id}`,
+                method: "DELETE"
             });
+
+            await this.getQueries(true, 0);
+            await this.setQueryPropertiesToDefault();
+            this.base.showNotification("notification", `Query succesvol verwijderd`, "success");
+        }
+        catch (exception) {
+            console.error("Error while deleting query", exception);
+            this.base.showNotification("notification", `Query is niet succesvol verwijderd, probeer het opnieuw`, "error");
+        }
     }
 
     async setQueryProperties(resultSet) {
         document.getElementById("queryDescription").value = resultSet.description;
         document.getElementById("showInExportModule").checked = resultSet.show_in_export_module;
-        this.setCodeMirrorFields(this.queryFromWiser, resultSet.query);
+        await this.setCodeMirrorFields(this.queryFromWiser, resultSet.query);
     }
 
     async setQueryPropertiesToDefault() {

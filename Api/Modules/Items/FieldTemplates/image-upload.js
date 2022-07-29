@@ -14,7 +14,7 @@ var options = {options};
 
 options = $.extend({
     async: {
-        saveUrl: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/upload?propertyName=" + encodeURIComponent("{propertyName}") + "&itemLinkId={itemLinkId}&useTinyPng=" + (options.useTinyPng === true).toString() + "&entityType=" + encodeURIComponent("{entityType}") + "&linkType={linkType}",
+        saveUrl: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/upload?propertyName=" + encodeURIComponent("{propertyName}") + "&itemLinkId={itemLinkId}&useTinyPng=" + (options.useTinyPng === true).toString() + "&useCloudFlare=" + (options.useCloudFlare === true).toString() + "&entityType=" + encodeURIComponent("{entityType}") + "&linkType={linkType}",
         withCredentials: false,
         removeUrl: "remove"
     },
@@ -71,7 +71,7 @@ container.find(".imagesContainer").kendoSortable({
         const fileId = event.item.data("imageId");
         const propertyName = container.data("propertyName");
 
-        Wiser2.api({
+        Wiser.api({
             method: "PUT",
             contentType: "application/json",
             dataType: "json",

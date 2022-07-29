@@ -29,7 +29,7 @@ using Newtonsoft.Json.Linq;
 namespace Api.Modules.Modules.Services
 {
     /// <summary>
-    /// Service for getting information / settings for Wiser 2.0+ modules.
+    /// Service for getting information / settings for Wiser modules.
     /// </summary>
     public class ModulesService : IModulesService, IScopedService
     {
@@ -544,7 +544,7 @@ namespace Api.Modules.Modules.Services
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
 
-            var query = $@"SELECT id, custom_query, count_query, `options`, `name`, icon, color, type, `group` FROM {WiserTableNames.WiserModule} WHERE id = ?id";
+            var query = $@"SELECT id, custom_query, count_query, `options`, `name`, icon, type, `group` FROM {WiserTableNames.WiserModule} WHERE id = ?id";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count == 0)
@@ -559,7 +559,6 @@ namespace Api.Modules.Modules.Services
             result.CountQuery = dataTable.Rows[0].Field<string>("count_query");
             result.Name = dataTable.Rows[0].Field<string>("name");
             result.Icon = dataTable.Rows[0].Field<string>("icon");
-            result.Color = dataTable.Rows[0].Field<string>("color");
             result.Type = dataTable.Rows[0].Field<string>("type");
             result.Group = dataTable.Rows[0].Field<string>("group");
 
@@ -647,7 +646,6 @@ namespace Api.Modules.Modules.Services
             clientDatabaseConnection.AddParameter("options", moduleSettingsModel.Options.ToString());
             clientDatabaseConnection.AddParameter("name", moduleSettingsModel.Name);
             clientDatabaseConnection.AddParameter("icon", moduleSettingsModel.Icon);
-            clientDatabaseConnection.AddParameter("color", moduleSettingsModel.Color);
             clientDatabaseConnection.AddParameter("type", moduleSettingsModel.Type);
             clientDatabaseConnection.AddParameter("group", moduleSettingsModel.Group);
 
@@ -658,7 +656,6 @@ namespace Api.Modules.Modules.Services
                                 `options` = IF(?options != '' AND ?options IS NOT NULL AND JSON_VALID(?options), ?options, ''),
                                 `name` = ?name,
                                 `icon` = ?icon,
-                                `color` = ?color,
                                 `type` = ?type,
                                 `group` = ?group
                         WHERE id = ?id";

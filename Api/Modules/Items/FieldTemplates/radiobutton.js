@@ -1,5 +1,5 @@
 ﻿(function() {
-    Wiser2.api({
+    Wiser.api({
         url: window.dynamicItems.settings.serviceRoot + "/GET_DATA_FOR_RADIO_BUTTONS?propertyid={propertyId}&itemId={itemId}",
         method: "GET"
     }).then(function(results) {

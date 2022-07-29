@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 namespace Api.Modules.Items.Models
 {
     /// <summary>
-    /// A model of a Wiser 2 item that contains all fields/details as direct properties in the JSON, instead of a list of item details that needs to be iterated through.
+    /// A model of a Wiser item that contains all fields/details as direct properties in the JSON, instead of a list of item details that needs to be iterated through.
     /// This is made for Zapier, but can also be used for other things in the future.
     /// </summary>
     public class FlatItemModel

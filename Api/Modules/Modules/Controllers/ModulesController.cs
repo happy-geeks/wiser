@@ -39,7 +39,7 @@ namespace Api.Modules.Modules.Controllers
         }
 
         /// <summary>
-        /// Gets all Wiser 2 module that the user is allowed to use.
+        /// Gets all Wiser module that the user is allowed to use.
         /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(List<ModuleAccessRightsModel>), StatusCodes.Status200OK)]
