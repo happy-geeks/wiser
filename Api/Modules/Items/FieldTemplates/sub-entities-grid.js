@@ -110,27 +110,34 @@ if (customQueryGrid) {
                         column.hidden = options.hideIdColumn || false;
                         break;
                     case "link_id":
+                    case "linkId":
                         column.hidden = options.hideLinkIdColumn || false;
                         break;
                     case "entity_type":
+                    case "entityType":
                         column.hidden = options.hideTypeColumn || false;
                         break;
                     case "published_environment":
+                    case "publishedEnvironment":
                         column.hidden = options.hideEnvironmentColumn || false;
                         break;
                     case "title":
                         column.hidden = options.hideTitleColumn || false;
                         break;
                     case "added_on":
+                    case "addedOn":
                         column.hidden = !options.showAddedOnColumn;
                         break;
                     case "added_by":
+                    case "addedBy":
                         column.hidden = !options.showAddedByColumn;
                         break;
                     case "changed_on":
+                    case "changedOn":
                         column.hidden = !options.showChangedOnColumn;
                         break;
                     case "changed_by":
+                    case "changedBy":
                         column.hidden = !options.showChangedByColumn;
                         break;
                 }
@@ -255,7 +262,7 @@ async function generateGrid(data, model, columns) {
             (function () {
                 var column = columns[i];
                 var editable = column.editable;
-                if (column.field) {
+                if (column.field && customQueryGrid) {
                     column.field = column.field.toLowerCase();
                 }
 
@@ -398,9 +405,34 @@ async function generateGrid(data, model, columns) {
                         if (options.fieldGroupName) {
                             encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
+                            // If we have a predefined language code, then always force that language code, so that the user doesn't have to enter it manually.
+                            if (options.languageCode) {
+                                transportOptions.data.languageCode = options.languageCode;
+                            }
                             itemModel.details.push(transportOptions.data);
                         } else {
-                            var nonFieldProperties = ["id", "published_environment", "encrypted_id", "entity_type", "link_id", "link_type", "link_type_number", "encryptedId", "added_on", "added_by", "changed_on", "changed_by"];
+                            var nonFieldProperties = [
+                                "id",
+                                "published_environment",
+                                "publishedEnvironment",
+                                "encrypted_id",
+                                "encryptedId",
+                                "entity_type",
+                                "entityType",
+                                "link_id",
+                                "linkId",
+                                "link_type",
+                                "linkType",
+                                "linkTypeNumber",
+                                "added_on",
+                                "addedOn",
+                                "added_by",
+                                "addedBy",
+                                "changed_on",
+                                "changedOn",
+                                "changed_by",
+                                "changedBy"
+                            ];
                             for (var key in transportOptions.data) {
                                 if (!transportOptions.data.hasOwnProperty(key) || nonFieldProperties.indexOf(key) > -1) {
                                     continue;
@@ -513,6 +545,10 @@ async function generateGrid(data, model, columns) {
                             };
                             var encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
+                            // If we have a predefined language code, then always force that language code, so that the user doesn't have to enter it manually.
+                            if (options.languageCode) {
+                                transportOptions.data.languageCode = options.languageCode;
+                            }
                             itemModel.details.push(transportOptions.data);
 
                             Wiser.api({
@@ -582,7 +618,12 @@ async function generateGrid(data, model, columns) {
                             };
                             var encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
+                            // If we have a predefined language code, then always force that language code, so that the user doesn't have to enter it manually.
+                            if (options.languageCode) {
+                                transportOptions.data.languageCode = options.languageCode;
+                            }
                             transportOptions.data.value = null;
+                            transportOptions.data.key = "";
                             itemModel.details.push(transportOptions.data);
 
                             Wiser.api({
@@ -824,7 +865,7 @@ async function generateGrid(data, model, columns) {
 
     dynamicItems.grids.attachSelectionCounter(field[0]);
 
-    if (!customQueryGrid && dynamicItems.fieldTemplateFlags.enableSubEntitiesGridsOrdering) {
+    if (!customQueryGrid && dynamicItems.fieldTemplateFlags.enableSubEntitiesGridsOrdering && !options.fieldGroupName) {
         kendoComponent.table.kendoSortable({
             autoScroll: true,
             hint: function (element) {
