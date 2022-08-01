@@ -2176,7 +2176,7 @@ const moduleSettings = {
          */
         async getItemDetails(itemId, entityType) {
             const entityTypeUrlPart = entityType ? `?entityType=${encodeURIComponent(entityType)}` : "";
-            return Wiser.api({ url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/details/${entityTypeUrlPart}` });
+            return Wiser.api({ url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/details${entityTypeUrlPart}` });
         }
 
         /**
