@@ -248,7 +248,7 @@ namespace Api
             services.AddTransient<IVersionControlService, VersionControlService>();
             services.AddTransient<IVersionControlDataService, VersionControlDataService>();
 
-            services.AddTransient<ITemplateContainerService, TemplateContainerService>();
+            services.AddTransient<ITemplateCommitsService, TemplateCommitsService>();
             services.AddTransient<ITemplateContainerDataService, TemplateContainerDataService>();
 
             services.AddTransient<IDynamicContentServiceVersionControl, DynamicContentServiceVersionControl>();

@@ -1,4 +1,4 @@
-﻿import { Dates, Wiser2, Misc } from "../../Base/Scripts/Utils.js";
+﻿import { Dates, Wiser, Misc } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import { DateTime } from "luxon";
 
@@ -37,7 +37,7 @@ export class Commit {
                 Description: commitMessage,
             };
 
-            return await Wiser2.api({
+            return await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}VersionControl`,
                 method: "PUT",
                 contentType: "application/json",
@@ -51,8 +51,8 @@ export class Commit {
 
     async GetCommitWithId() {
         try {
-            return await Wiser2.api({
-                url: `${this.base.settings.wiserApiRoot}VersionControl/Commit`,
+            return await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}version-control/commit`,
                 method: "GET",
                 contentType: "application/json",
             });
@@ -71,8 +71,8 @@ export class Commit {
                 environment: environment
             }
             
-            return await Wiser2.api({
-                url: `${this.base.settings.wiserApiRoot}VersionControl/template-commit`,
+            return await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}version-control/template-commit`,
                 method: "PUT",
                 contentType: "application/json",
                 data: JSON.stringify(TemplateCommitData)
@@ -85,8 +85,8 @@ export class Commit {
 
     async CompleteCommit(commitId, commitCompleted) {
         try {
-            const createCommit = await Wiser2.api({
-                url: `${this.base.settings.wiserApiRoot}VersionControl/${commitId}/complete-commit/${commitCompleted}`,
+            const createCommit = await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}version-control/${commitId}/complete-commit/${commitCompleted}`,
                 method: "PUT",
                 contentType: "application/json",
             });
@@ -97,6 +97,4 @@ export class Commit {
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
         }
     }
-
-
 }

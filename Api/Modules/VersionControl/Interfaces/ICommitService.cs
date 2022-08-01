@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.VersionControl.Models;
 using System.Security.Claims;
@@ -13,7 +14,6 @@ namespace Api.Modules.VersionControl.Interfaces
         /// <summary>
         /// Creates new commit item in the database.
         /// </summary>
-        /// <param name="commitModel"></param>
         /// <returns>Returns a model of the commit.</returns>
         Task<ServiceResult<CreateCommitModel>> CreateCommitAsync(string commitMessage, ClaimsIdentity identity);
 
@@ -25,5 +25,9 @@ namespace Api.Modules.VersionControl.Interfaces
         /// <returns></returns>
         Task<ServiceResult<bool>> CompleteCommit(int commitId, bool commitCompleted);
 
+        /// <summary>
+        /// Get all templates that have uncommitted changes.
+        /// </summary>
+        Task<ServiceResult<List<TemplateCommitModel>>> GetTemplatesToCommitAsync();
     }
 }

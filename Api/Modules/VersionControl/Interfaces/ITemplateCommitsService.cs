@@ -8,7 +8,7 @@ namespace Api.Modules.VersionControl.Interfaces
     /// <summary>
     /// A service for handeling data related to the template items in the version control model.
     /// </summary>
-    public interface ITemplateContainerService
+    public interface ITemplateCommitsService
     {
         /// <summary>
         /// Gets the templates that have a lower version than the given one.

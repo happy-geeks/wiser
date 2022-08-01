@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
@@ -43,5 +44,12 @@ namespace Api.Modules.VersionControl.Services
             return new ServiceResult<bool>(true);
         }
 
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<TemplateCommitModel>>> GetTemplatesToCommitAsync()
+        {
+            var results = await commitDataService.GetTemplatesToCommitAsync();
+
+            return new ServiceResult<List<TemplateCommitModel>>(results);
+        }
     }
 }

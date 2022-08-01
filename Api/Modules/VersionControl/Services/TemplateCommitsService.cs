@@ -8,17 +8,14 @@ using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.VersionControl.Services
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public class TemplateContainerService : ITemplateContainerService
+    public class TemplateCommitsService : ITemplateCommitsService
     {
-
         private readonly ITemplateContainerDataService templateDataService;
+
         /// <summary>
-        /// Creates a new instance of <see cref="TemplateContainerService"/>.
+        /// Creates a new instance of <see cref="TemplateCommitsService"/>.
         /// </summary>
-        public TemplateContainerService(ITemplateContainerDataService templateDataService)
+        public TemplateCommitsService(ITemplateContainerDataService templateDataService)
         {
             this.templateDataService = templateDataService;
         }
@@ -34,10 +31,9 @@ namespace Api.Modules.VersionControl.Services
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> CreateNewTemplateCommitAsync(TemplateCommitModel templateCommitModel)
         {
-
-            bool isTest = false;
-            bool isAcceptatie = false;
-            bool isLive = false;
+            var isTest = false;
+            var isAcceptatie = false;
+            var isLive = false;
 
             if (templateCommitModel.Environment == Environments.Live)
             {
@@ -73,8 +69,7 @@ namespace Api.Modules.VersionControl.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateEnvironments>> GetCurrentPublishedEnvironmentAsync(int templateId,
-            int version)
+        public async Task<ServiceResult<TemplateEnvironments>> GetCurrentPublishedEnvironmentAsync(int templateId, int version)
         {
             var result = await templateDataService.GetCurrentPublishedEnvironmentAsync(templateId, version);
 
@@ -84,9 +79,9 @@ namespace Api.Modules.VersionControl.Services
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> UpdateTemplateCommitAsync(TemplateCommitModel templateCommitModel)
         {
-            bool isTest = false;
-            bool isAcceptatie = false;
-            bool isLive = false;
+            var isTest = false;
+            var isAcceptatie = false;
+            var isLive = false;
 
             if (templateCommitModel.Environment == Environments.Live)
             {
@@ -112,6 +107,5 @@ namespace Api.Modules.VersionControl.Services
 
             return new ServiceResult<bool>(result);
         }
-
     }
 }

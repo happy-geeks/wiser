@@ -9,7 +9,6 @@ html, body {
     body.iframe .pane-content > header,
     body.iframe .k-splitbar,
     body.iframe #alert-first,
-    #itemWindow_template,
     #previewFrame,
     #sendMailDialog,
     #htmlSourceWindow,
@@ -91,25 +90,9 @@ body.iframe #alert-pane {
     min-height: 100px;
 }
 
-body.gridViewMode:not(.iframe) #gridView {
+#templateChangesGrid {
     display: block;
 }
-
-body.gridViewMode {
-    overflow-x: hidden;
-}
-
-    body.gridViewMode,
-    body.gridViewMode #gridView,
-    body.gridViewMode #wiser,
-    body.gridViewMode #fullForm,
-    body.gridViewMode #mainScreenForm {
-
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        border-width: 0;
-    }
 
 .forceHidden {
     display: none !important;
@@ -129,48 +112,12 @@ body.gridViewMode {
     border-width: 0;
 }
 
-#right-pane #mainScreenForm {
-    width: 100%;
-    height: 100%;
-}
-
 #window {
     margin: 0 auto;
     padding: 0;
     width: 100%;
     height: 100%;
 }
-
-#panelwithsplitter {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    border: 0;
-}
-
-#horizontal,
-#imagesUploaderWindow .horizontal,
-#filesUploaderWindow .horizontal,
-#templatesUploaderWindow .horizontal {
-    border: 0;
-    height: 100%;
-    width: 100%;
-}
-
-#left-pane, .left-pane {
-    background-color: #CCCCCC;
-}
-
-#right-pane {
-    background-color: #EEEEEE;
-}
-
-    #right-pane .pane-content {
-        border: 0;
-        margin: 0;
-        padding: 0;
-        height: 100%
-    }
 
 /** ICONS **/
 .k-sprite {
@@ -357,62 +304,6 @@ body.iframe .editMenu {
     top: 0;
 }
 
-#overViewGrid {
-    width: calc(100% - 5px);
-}
-
-#gridView .k-grid-toolbar .full-screen {
-    order: 6;
-}
-
-#gridView .k-grid-toolbar .k-grid-refresh {
-    order: 5;
-}
-
-.k-grid-toolbar .k-grid-excel,
-.k-grid-toolbar .clear-all-filters,
-.k-grid-toolbar .full-screen {
-    order: 4;
-}
-
-.k-grid-toolbar .k-grid-excel {
-    transition: 200ms ease;
-    max-width: 42px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-indent: 42px;
-    justify-content: start;
-}
-
-.k-grid-toolbar .full-screen,
-.k-grid-toolbar .k-grid-refresh,
-.k-grid-toolbar .k-grid-excel,
-.k-grid-toolbar .clear-all-filters {
-    max-height: 40px;
-    max-width: 40px;
-    padding: 12px;
-}
-
-    .k-grid-toolbar .k-grid-excel .k-icon {
-        position: absolute;
-        margin: 0;
-    }
-
-.k-grid-toolbar .counterContainer {
-    line-height: 38px;
-    color: var(--dark-txt);
-    margin-left: auto;
-    order: 2;
-}
-
-    .k-grid-toolbar .counterContainer .counter {
-        padding-right: 6px;
-    }
-
-.k-grid-content{
-
-}
-
 .emptyItem {
     border: 0;
 }
@@ -439,65 +330,6 @@ body.iframe .editMenu {
 #deploygrid .k-grid-content{
     height: 690px;
 }
-
-/** Information block, for gridViewMode **/
-#wiser.with-information-block {
-    display: flex;
-    align-items: stretch;
-}
-
-    #wiser.with-information-block.information-top body.gridViewMode #wiser #gridView,
-    #wiser.with-information-block.information-bottom body.gridViewMode #wiser #gridView {
-        height: auto;
-    }
-
-    #wiser.with-information-block.information-bottom {
-        flex-direction: column;
-    }
-
-    #wiser.with-information-block.information-top {
-        flex-direction: column-reverse;
-    }
-
-    #wiser.with-information-block.information-left {
-        flex-direction: row-reverse;
-    }
-
-    #wiser.with-information-block.information-right {
-        flex-direction: row;
-    }
-
-#informationBlock.top,
-#informationBlock.bottom {
-    width: 100%;
-}
-
-#informationBlock.left,
-#informationBlock.right {
-    height: 100%;
-}
-
-#informationBlock.full {
-    border: none;
-    padding: 0;
-}
-
-#informationBlock iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-}
-
-#wiser.with-information-block.information-bottom div,
-#wiser.with-information-block.information-top div {
-    flex-grow: 1;
-    flex-shrink: 1;
-}
-
-    #wiser.with-information-block.information-bottom div:nth-child(1),
-    #wiser.with-information-block.information-top div:nth-child(2) {
-        flex-basis: auto;
-    }
 
 .new-item-dialog-row textarea {
     width: 400px;

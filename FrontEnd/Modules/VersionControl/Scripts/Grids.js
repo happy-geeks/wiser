@@ -1,6 +1,5 @@
-﻿import { Wiser2 } from "../../Base/Scripts/Utils.js";
+﻿import { Wiser } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
-import { forEach } from "jszip";
 
 require("@progress/kendo-ui/js/kendo.tooltip.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -21,26 +20,124 @@ export class Grids {
     constructor(base) {
         this.base = base;
 
-        this.mainGrid = null;
-        this.mainGridFirstLoad = true;
-        this.mainGridForceRecount = false;
-        this.gridsAreLoaded = false;
-
+        this.templateChangesGrid = null;
     }
-
-  
+    
     async initialize() {
-
-        this.base.settings.gridViewOptionParse = this.base.settings.gridViewOptionParse || {};   
-        await this.getModuleGridData(6001);
+        /*this.base.settings.gridViewOptionParse = this.base.settings.gridViewOptionParse || {};   
+        await this.getModuleGridData(6001);*/
+        
+        // noinspection ES6MissingAwait
+        this.setupTemplateChangesGrid();
     }
+    
+    async setupTemplateChangesGrid() {
+        try {
+            const gridSettings = {
+                dataSource: {
+                    transport: {
+                        read: async (transportOptions) => {
+                            const initialProcess = `GetTemplatesToCommit_${Date.now()}`;
+                            window.processing.addProcess(initialProcess);
+                            
+                            try {
+                                const templatesToCommit = await Wiser.api({
+                                    url: `${this.base.settings.wiserApiRoot}version-control/templates-to-commit`,
+                                    method: "GET",
+                                    contentType: "application/json"
+                                });
+    
+                                console.log("templatesToCommit", templatesToCommit);
+                                transportOptions.success(templatesToCommit);
+                            } catch (exception) {
+                                console.error(exception);
+                                kendo.alert("Er is iets fout gegaan met het laden van de wijzigingen in templates. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+                                transportOptions.error(exception);
+                            }
 
- 
+                            window.processing.removeProcess(initialProcess);
+                        }
+                    },
+                    schema: {
+                        model: {
+                            id: "id",
+                            fields: {
+                                changedOn: {
+                                    type: "date"
+                                }
+                            }
+                        }
+                    }
+                },
+                columns: [
+                    {
+                        "selectable": "true",
+                        "width": "50px"
+                    },
+                    {
+                        "field": "templateId",
+                        "title": "ID",
+                        "width": "100px"
+                    },
+                    {
+                        "field": "templateType",
+                        "title": "Type",
+                        "width": "150px"
+                    },
+                    {
+                        "field": "templateParentName",
+                        "title": "Map",
+                        "width": "150px"
+                    },
+                    {
+                        "field": "templateName",
+                        "title": "Template"
+                    },
+                    {
+                        "field": "version",
+                        "title": "Versie",
+                        "width": "150px"
+                    },
+                    {
+                        "field": "versionTest",
+                        "title": "Versie test",
+                        "width": "150px"
+                    },
+                    {
+                        "field": "versionAcceptance",
+                        "title": "Versie acceptatie",
+                        "width": "150px"
+                    },
+                    {
+                        "field": "versionLive",
+                        "title": "Versie live",
+                        "width": "150px"
+                    },
+                    {
+                        "field": "changedOn",
+                        "format": "{0:F}",
+                        "title": "Datum",
+                        "width": "300px"
+                    },
+                    {
+                        "field": "changedBy",
+                        "title": "Door"
+                    }
+                ]
+            };
+            
+            this.templateChangesGrid = $("#templateChangesGrid").kendoGrid(gridSettings).data("kendoGrid");
+            
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan met het laden van de wijzigingen in templates. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+        }
+    }
 
     async getModuleGridData(moduleId) {
         try {
-            const moduleGridSettings = await Wiser2.api({
-                url: `${this.base.settings.wiserApiRoot}VersionControl/module-gird-settings/${moduleId}`,
+            const moduleGridSettings = await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}version-control/module-gird-settings/${moduleId}`,
                 method: "GET",
                 contentType: "application/json",
             });
@@ -64,17 +161,6 @@ export class Grids {
         } finally {
         }
     }
-
-
-    async getData() {
-        const getStuff = await Wiser2.api({
-            url: `${this.base.settings.wiserApiRoot}/PublishedTemplateVersion`,
-            method: "GET",
-            contentType: "application/json"
-        });
-        return getStuff;
-    }
-
 
     async setupGridViewMode(customQuery,countQuery, gridOptions, gridViewId, gridReadOptions) {
 
@@ -121,8 +207,8 @@ export class Grids {
                 options.filter = gridViewOptionParse.dataSource.filter;
                 previousFilters = JSON.stringify(options.filter);
             }
-                gridDataResult = await Wiser2.api({
-                    url: `${this.base.settings.wiserApiRoot}VersionControl/${encodeURIComponent(this.base.settings.moduleId)}/overview-grid`,
+                gridDataResult = await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control/${encodeURIComponent(this.base.settings.moduleId)}/overview-grid`,
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(gridOptionsData)
@@ -163,10 +249,10 @@ export class Grids {
                         if (!gridViewSettings || gridViewSettings.showDeleteConformations !== false) {
                             const itemName = mainItemDetails.title || mainItemDetails.name;
                             const deleteConfirmationText = itemName ? `het item '${itemName}'` : "het geselecteerde item";
-                            await Wiser2.showConfirmDialog(`Weet u zeker dat u ${deleteConfirmationText} wilt verwijderen?`)
+                            await Wiser.showConfirmDialog(`Weet u zeker dat u ${deleteConfirmationText} wilt verwijderen?`)
                         }
 
-                        await Wiser2.api({
+                        await Wiser.api({
                             method: "POST",
                             url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid || this.base.settings.zeroEncrypted)}/action-button/0?queryId=${encodeURIComponent(gridViewSettings.deleteItemQueryId)}&itemLinkId=${encodeURIComponent(mainItemDetails.linkId || mainItemDetails.linkId || 0)}`,
                             data: JSON.stringify(mainItemDetails),
@@ -304,7 +390,7 @@ export class Grids {
                                     newGridDataResult = {
                                         columns: gridViewSettings.columns,
                                         pageSize: gridViewSettings.pageSize || 100,
-                                        data: await Wiser2.api({
+                                        data: await Wiser.api({
                                             url: `${this.base.settings.getItemsUrl}?encryptedDataSelectorId=${encodeURIComponent(gridViewSettings.dataSelectorId)}`,
                                             contentType: "application/json"
                                         })
@@ -316,9 +402,9 @@ export class Grids {
                                     var table = uidElement.closest("[data-role='grid']");
                                     var id = table.id;
                                
-                                    newGridDataResult1 = await Wiser2.api({
+                                    newGridDataResult1 = await Wiser.api({
                                        
-                                        url: `${this.base.settings.wiserApiRoot}VersionControl/${id}/overview-grid`,
+                                        url: `${this.base.settings.wiserApiRoot}version-control/${id}/overview-grid`,
                                         method: "POST",
                                         contentType: "application/json",
                                         data: JSON.stringify(transportOptions.data)
@@ -429,7 +515,7 @@ export class Grids {
         value = sessionStorage.getItem(key);
         
         if (!value) {
-            value = await Wiser2.api({
+            value = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}users/grid-settings/${encodeURIComponent(key)}`,
                 method: "GET",
                 contentType: "application/json"

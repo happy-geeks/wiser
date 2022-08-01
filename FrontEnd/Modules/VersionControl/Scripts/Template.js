@@ -1,4 +1,4 @@
-﻿import {Wiser2} from "../../Base/Scripts/Utils.js";
+﻿import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 
 
@@ -32,7 +32,7 @@ export class Template {
         try {
 
             console.log(environment);
-            const createCommit = await Wiser2.api({
+            const createCommit = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}/Templates/${templateId}/publish/${environment}/${version}`,
                 method: "POST",
                 contentType: "application/json",
@@ -54,8 +54,8 @@ export class Template {
                 Version: version
             }
 
-            const templateData = await Wiser2.api({
-                url: `${this.base.settings.wiserApiRoot}VersionControl/${templateId}/${version}`,
+            const templateData = await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}version-control/${templateId}/${version}`,
                 method: "GET",
                 contentType: "application/json",
                 data: JSON.stringify(templateCommitData)
@@ -71,8 +71,8 @@ export class Template {
     async GetTemplatesFromCommit(commitId) {
 
         try {
-            const createCommit = await Wiser2.api({
-                url: `${this.base.settings.wiserApiRoot}VersionControl/templates-of-commit/${commitId}`,
+            const createCommit = await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}version-control/templates-of-commit/${commitId}`,
                 method: "GET",
                 contentType: "application/json",
             });

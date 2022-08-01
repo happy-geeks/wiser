@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Modules, Wiser2 } from "../../Base/Scripts/Utils.js";
+import { Modules, Wiser } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import { Grids } from "./Grids.js";
 import { Commit } from "./Commit.js";
@@ -45,17 +45,9 @@ const moduleSettings = {
             this.template = null;
 
             this.newItemId = null;
-            this.selectedItem = null;
-            this.selectedItemTitle = null;
 
             // Kendo components.
             this.notification = null;
-            this.mainSplitter = null;
-            this.mainTreeView = null;
-            this.mainTreeViewContextMenu = null;
-            this.mainTabStrip = null;
-            this.mainTabStripSortable = null;
-            this.mainValidator = null;
 
             // Other.
             this.mainLoader = null;
@@ -131,8 +123,8 @@ const moduleSettings = {
             });
 
             // Fire event on page ready for direct actions
-            $(document).ready(() => {
-                this.onPageReady();
+            $(document).ready(async () => {
+                await this.onPageReady();
             });
         }
 
@@ -146,8 +138,6 @@ const moduleSettings = {
             document.addEventListener("processing.Busy", this.toggleMainLoader.bind(this, true));
             document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
 
-            
-            
             // Fullscreen event for elements that can go fullscreen, such as HTML editors.
             const classHolder = $(document.documentElement);
             const fullscreenChange = "webkitfullscreenchange mozfullscreenchange fullscreenchange MSFullscreenChange";
@@ -167,7 +157,7 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
@@ -183,11 +173,6 @@ const moduleSettings = {
             }
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.htmlEditorCssUrl = `${this.settings.wiserApiRoot}templates/css-for-html-editors?encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&isTest=${this.base.settings.isTestEnvironment}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&username=${encodeURIComponent(this.base.settings.username)}&userType=${encodeURIComponent(this.base.settings.userType)}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`
-            const extraModuleSettings = await Modules.getModuleSettings(this.settings.wiserApiRoot, this.settings.moduleId);
-            Object.assign(this.settings, extraModuleSettings.options);
-            let permissions = Object.assign({}, extraModuleSettings);
-            delete permissions.options;
-            this.settings.permissions = permissions;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
             $("body").toggleClass("gridViewMode", this.settings.gridViewMode);
             
@@ -195,32 +180,28 @@ const moduleSettings = {
             this.initializeKendoComponents();
 
             // Initialize sub classes.
-
-            this.grids.initialize();
+            await this.grids.initialize();
             this.commit.initialize();
             this.template.initialize();
-            
 
             if (this.settings.iframeMode && this.settings.hideHeader) {
                 $("#tabstrip > ul").addClass("hidden");
             }
             if (this.settings.iframeMode && this.settings.hideFooter) {
                 $("#right-pane > footer").addClass("hidden");
-            } 
-
+            }
             
+            this.toggleMainLoader(false);
         }
         
         /**
          * Setup all basis bindings for this module.
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
          */
-        setupBindings() {            
-
+        setupBindings() {
             $("#mainScreenForm").submit(event => { event.preventDefault(); });
 
             $(".commitCheckbox").on("click", function () {
-
                 var liveElement = document.getElementById("commitLive");
                 var acceptanceElement = document.getElementById("commitAcceptatie");
                 var testElement = document.getElementById("commitTest");
@@ -238,7 +219,6 @@ const moduleSettings = {
             });
 
             $(".tablinks").click(async (event) => {
-
                 var target = $(event.target);
                 var tabValue = target[0].value
 
@@ -260,7 +240,6 @@ const moduleSettings = {
                     evt.currentTarget.className += " active";
             });  
         }
-        
 
         /**
          * Initializes all kendo components for the base class.
@@ -275,7 +254,7 @@ const moduleSettings = {
                 actions: [
                     { text: 'Ja', action: this.onCommitSelectedItemsWithDynamicContentItems.bind(this) },
                     { text: 'Nee', action: this.onCommitOnlySelectedItems.bind(this) },
-                    { text: 'Cancel', action: this.onCancel }
+                    { text: 'Annuleren' }
                 ]
             }).data("kendoDialog");
 
@@ -295,12 +274,10 @@ const moduleSettings = {
                 icon: "save"
             });
 
-
             $(".environment_dynamic_content_history").kendoButton({
                 click: this.HistoryDynamicContent.bind(this),
                 icon: "save"
             });
-
 
             // Normal notifications.
             this.notification = $("#alert").kendoNotification({
@@ -323,41 +300,7 @@ const moduleSettings = {
                     template: $("#successTemplate").html()
                 }]
             }).data("kendoNotification");
-
-          
-
-            this.mainTabStripSortable = $("#tabstrip ul.k-tabstrip-items").kendoSortable({
-                filter: "li.k-item",
-                axis: "x",
-                container: "ul.k-tabstrip-items",
-                hint: (element) => {
-                    return $(`<div id='hint' class='k-widget k-header k-tabstrip'><ul class='k-tabstrip-items k-reset'><li class='k-item k-state-active k-tab-on-top'>${element.html()}</li></ul></div>`);
-                    console.log("SORT");
-                },
-                start: (event) => {
-                    this.mainTabStrip.activateTab(event.item);
-                    console.log("SORT");
-                },
-                change: (event) => {
-                    const reference = this.mainTabStrip.tabGroup.children().eq(event.newIndex);
-                    console.log("SORT");
-                    if (event.oldIndex < event.newIndex) {
-                        this.mainTabStrip.insertAfter(event.item, reference);
-                    } else {
-                        this.mainTabStrip.insertBefore(event.item, reference);
-                    }
-                }
-            }).data("kendoSortable");
-
-           
-
-            // Some things should not be done if we're in iframe mode.
-            if (this.settings.iframeMode || this.settings.gridViewMode) {
-                return;
-            }
-
         }
-
 
         async Deploy(event) {
             var envioronmentbuttonValue = event.event.target.value;
@@ -455,7 +398,7 @@ const moduleSettings = {
 
         async onCommitSelectedOnly() {
             
-            const templateTable = document.querySelector("#gridView");
+            const templateTable = document.querySelector("#templateChangesGrid");
             const templateSelected = templateTable.querySelectorAll(".k-state-selected");
 
             const dynamicContentTable = document.querySelector("#dynamicContentGrid");
@@ -509,7 +452,7 @@ const moduleSettings = {
 
         async onCommitSelectedAndRelatedDynamicConent() {
             
-            const templateTable = document.querySelector("#gridView");
+            const templateTable = document.querySelector("#templateChangesGrid");
             const templateSelected = templateTable.querySelectorAll(".k-state-selected");
 
             const dynamicContentTable = document.querySelector("#dynamicContentGrid");
@@ -632,28 +575,16 @@ const moduleSettings = {
             document.location.reload();
         }
 
-
-        
-        //Dyalogue popup choices
-        onCancel() {
-        }
-
         async onCommitSelectedItemsWithDynamicContentItems() {
-            this.onCommitSelectedAndRelatedDynamicConent();
-         
+            await this.onCommitSelectedAndRelatedDynamicConent();
         }
-
-
-        async onCommitOnlySelectedItems() {
-            this.onCommitSelectedOnly();
-        }
-
-
         
+        async onCommitOnlySelectedItems() {
+            await this.onCommitSelectedOnly();
+        }
 
         async onCommit(event) {
-
-            const templateTable1 = document.querySelector("#gridView");
+            const templateTable1 = document.querySelector("#templateChangesGrid");
             const templateSelected1 = templateTable1.querySelectorAll(".k-state-selected");
 
             var DynamicContentList = [];
@@ -752,8 +683,8 @@ const moduleSettings = {
         async DynamicContentInTemplates(templateId) {
             try {
 
-                const createCommit = await Wiser2.api({
-                    url: `${this.base.settings.wiserApiRoot}VersionControl/dynamic-content-in-template/${templateId}`,
+                const createCommit = await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control/dynamic-content-in-template/${templateId}`,
                     method: "GET",
                     contentType: "application/json",
                 });
@@ -770,8 +701,8 @@ const moduleSettings = {
             
 
             try {
-                const createCommit = await Wiser2.api({
-                    url: `${this.base.settings.wiserApiRoot}VersionControl/${dynamicContentId}/publish-dynamic-content/${environment}/${version}`,
+                const createCommit = await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control/${dynamicContentId}/publish-dynamic-content/${environment}/${version}`,
                     method: "POST",
                     contentType: "application/json",
                 });
@@ -787,8 +718,8 @@ const moduleSettings = {
         async GetDynamicContentFromCommit(commitId) {
 
             try {
-                const createCommit = await Wiser2.api({
-                    url: `${this.base.settings.wiserApiRoot}VersionControl/dynamic_content-of-commit/${commitId}`,
+                const createCommit = await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control/dynamic_content-of-commit/${commitId}`,
                     method: "GET",
                     contentType: "application/json",
                 });
@@ -810,8 +741,8 @@ const moduleSettings = {
                     Version: version
                 }
 
-                const createCommit = await Wiser2.api({
-                    url: `${this.base.settings.wiserApiRoot}VersionControl/${templateId}`,
+                const createCommit = await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control/${templateId}`,
                     method: "PUT",
                     contentType: "application/json",
                     data: JSON.stringify(commitItemData)
@@ -834,8 +765,8 @@ const moduleSettings = {
 
                 }
 
-                const createCommit = await Wiser2.api({
-                    url: `${this.base.settings.wiserApiRoot}VersionControl/dynamic-content-commit`,
+                const createCommit = await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control/dynamic-content-commit`,
                     method: "PUT",
                     contentType: "application/json",
                     data: JSON.stringify(dynamicContentCommitData)
@@ -853,8 +784,8 @@ const moduleSettings = {
             try {
                 
                 
-                const createCommit = await Wiser2.api({
-                    url: `${this.base.settings.wiserApiRoot}VersionControl/${templateId}/publish/${environment}/${version}`,
+                const createCommit = await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control/${templateId}/publish/${environment}/${version}`,
                     method: "POST",
                     contentType: "application/json",
                 });
@@ -870,7 +801,7 @@ const moduleSettings = {
 
         async getSelectedTemplateWithIdAndVersion(templateId, version) {
             try {
-                const templateData = await Wiser2.api({
+                const templateData = await Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}templates/${templateId}/${version}`,
                     method: "GET",
                     contentType: "application/json",
@@ -885,8 +816,8 @@ const moduleSettings = {
 
         async getSelectedDynamicContent(dynamicContentId, version) {
             try {
-                const templateData = await Wiser2.api({
-                    url: `${this.base.settings.wiserApiRoot}VersionControl/dynamic-content/${dynamicContentId}/${version}`,
+                const templateData = await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control/dynamic-content/${dynamicContentId}/${version}`,
                     method: "GET",
                     contentType: "application/json",
                 });
@@ -909,8 +840,8 @@ const moduleSettings = {
                     Version: version
                 }
 
-                const templateData = await Wiser2.api({
-                    url: `${this.base.settings.wiserApiRoot}VersionControl/dynamic-content/lower-versions/${templateId}/${version}`,
+                const templateData = await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control/dynamic-content/lower-versions/${templateId}/${version}`,
                     method: "GET",
                     contentType: "application/json",
                     data: JSON.stringify(templateCommitData)
