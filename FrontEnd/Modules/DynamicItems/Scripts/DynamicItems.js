@@ -215,7 +215,10 @@ const moduleSettings = {
                 let permissions = Object.assign({}, extraModuleSettings);
                 delete permissions.options;
                 this.settings.permissions = permissions;
+            } else {
+                this.settings.permissions = {};
             }
+            
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
             $("body").toggleClass("gridViewMode", this.settings.gridViewMode);
 
