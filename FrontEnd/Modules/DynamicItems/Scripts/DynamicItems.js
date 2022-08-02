@@ -215,7 +215,10 @@ const moduleSettings = {
                 let permissions = Object.assign({}, extraModuleSettings);
                 delete permissions.options;
                 this.settings.permissions = permissions;
+            } else {
+                this.settings.permissions = {};
             }
+            
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
             $("body").toggleClass("gridViewMode", this.settings.gridViewMode);
 
@@ -2176,7 +2179,7 @@ const moduleSettings = {
          */
         async getItemDetails(itemId, entityType) {
             const entityTypeUrlPart = entityType ? `?entityType=${encodeURIComponent(entityType)}` : "";
-            return Wiser.api({ url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/details/${entityTypeUrlPart}` });
+            return Wiser.api({ url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/details${entityTypeUrlPart}` });
         }
 
         /**

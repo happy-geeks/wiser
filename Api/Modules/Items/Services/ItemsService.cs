@@ -1648,7 +1648,10 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             }
 
             var result = await wiserItemsService.GetItemDetailsAsync(itemId, entityType: entityType, skipPermissionsCheck: true);
-            result.EncryptedId = await wiserCustomersService.EncryptValue(result.Id, identity);
+            if (result != null)
+            {
+                result.EncryptedId = await wiserCustomersService.EncryptValue(result.Id, identity);
+            }
 
             return new ServiceResult<WiserItemModel>(result);
         }
