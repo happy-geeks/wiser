@@ -190,9 +190,14 @@ const moduleSettings = {
             }
 
             //NUMERIC FIELD
-            container.find(".numeric").kendoNumericTextBox({
-                change: () => this.onInputChange(true),
-                spin: () => this.onInputChange(false)
+            container.find(".numeric").each((index, element) => {
+                const isDecimal = $(element).data("decimal") === true;
+                $(element).kendoNumericTextBox({
+                    decimals: isDecimal ? 2 : 0,
+                    format: isDecimal ? "n2" : "n0",
+                    change: () => this.onInputChange(true),
+                    spin: () => this.onInputChange(false)
+                });
             });
             
             //MULTISELECT
