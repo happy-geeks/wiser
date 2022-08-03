@@ -3,6 +3,7 @@ using Api.Modules.EntityProperties.Models;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Modules.EntityProperties.Enums;
 
 namespace Api.Modules.EntityProperties.Interfaces
 {
@@ -23,7 +24,7 @@ namespace Api.Modules.EntityProperties.Interfaces
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="id">The ID of the settings from wiser_entityproperty.</param>
-        /// <returns>A <see cref="LinkSettingsModel"/> with all settings.</returns>
+        /// <returns>An <see cref="EntityPropertyModel"/> with all settings.</returns>
         Task<ServiceResult<EntityPropertyModel>> GetAsync(ClaimsIdentity identity, int id);
 
         /// <summary>
@@ -54,10 +55,18 @@ namespace Api.Modules.EntityProperties.Interfaces
         Task<ServiceResult<bool>> UpdateAsync(ClaimsIdentity identity, int id, EntityPropertyModel entityProperty);
 
         /// <summary>
-        /// Deletes ab entity property.
+        /// Deletes an entity property.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="id">The ID of the entity property to delete.</param>
         Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id);
+
+        /// <summary>
+        /// Copies an entity property to all other available languages that don't have this property yet.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="id">The ID of the entity property to copy.</param>
+        /// <param name="tabOption">The tab to add the new fields too.</param>
+        Task<ServiceResult<bool>> CopyToAllAvailableLanguagesAsync(ClaimsIdentity identity, int id, CopyToOtherLanguagesTabOptions tabOption);
     }
 }
