@@ -74,7 +74,6 @@ export class EntityTab {
                 const index = tabNameProp.select().index();
                 const dataItem = tabNameProp.dataSource.view()[index];
                 if (!dataItem) {
-                    this.base.showNotification("notification", "Item is niet succesvol verwijderd, probeer het opnieuw", "error");
                     return;
                 }
 
@@ -84,6 +83,30 @@ export class EntityTab {
                 });
             },
             icon: "delete"
+        });
+        
+        $(".copyToOtherLanguagesButton").kendoButton({
+            click: () => {
+                const index = this.listOfTabProperties.select().index();
+                const dataItem = this.listOfTabProperties.dataSource.view()[index];
+                if (!dataItem) {
+                    return;
+                }
+
+                $("<div id='copyEntityPropertyToOtherLanguagesDialog'></div>").kendoDialog({
+                    width: "505px",
+                    title: "Kopieren naar andere talen",
+                    closable: false,
+                    modal: false,
+                    content: "<p>Wilt u de nieuwe velden toevoegen aan de 'Gegevens' tab, of een tab per taal maken?<p>",
+                    actions: [
+                        { text: "Gegevens tab", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 0) } },
+                        { text: "Tab per taal (taalcode)", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 1) } },
+                        { text: "Tab per taal (taalnaam)", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 2) } }
+                    ],
+                }).data("kendoDialog").open();
+            },
+            icon: "globe"
         });
 
         await Misc.ensureCodeMirror();
@@ -284,7 +307,7 @@ export class EntityTab {
                     });
                 }
                 
-                // if we have no items yet, and no data item of the tabname combobox. refresh entities combobox so the first tab will automatically gets selected
+                // if we have no items yet, and no data item of the tabname combobox. refresh entities combobox so the first tab will automatically be selected
                 if (!this.tabNameDropDownList.dataItem()) {
                     // reset tab names if we didnt have any before
                     await this.onEntitiesComboBoxSelect(this);
@@ -297,6 +320,32 @@ export class EntityTab {
                 console.error("Error while trying to add an entity property", exception);
                 this.base.showNotification("notification", `Item is niet succesvol ${notification}, probeer het opnieuw`, "error");
             }
+        }
+    }
+    
+    async copyEntityPropertyToOtherLanguages(id, tabOption) {
+        if (!id) {
+            return;
+        }
+
+        try {
+            const selectedTab = this.tabNameDropDownList.dataItem();
+            
+            // Do the copy action.
+            await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}entity-properties/${id}/copy-to-other-languages?tabOption=${tabOption}`,
+                method: "POST"
+            });
+
+            // Re load everything, so the new entity properties will become visible.
+            await this.onEntitiesComboBoxSelect(this);
+            // Select the same tab as before.
+            this.tabNameDropDownList.value(selectedTab.tabName);
+            this.base.showNotification("notification", `Veld is succesvol gekopieerd naar alle andere talen`, "success");
+        }
+        catch (exception) {
+            console.error("Error while trying to copy an entity property to all languages", exception);
+            this.base.showNotification("notification", `Item is niet succesvol ${notification}, probeer het opnieuw`, "error");
         }
     }
 
