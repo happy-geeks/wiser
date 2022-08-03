@@ -1905,11 +1905,6 @@ export class EntityTab {
         }
 
         if (typeToSave === "entity") {
-            if (!this.entityModule.value()) {
-                this.base.showNotification("notification", "Selecteer eerst een module bij de entiteit!", "error");
-                return false;
-            }
-            
             await this.saveEntityProperties();
         } else {
             // check if tab is selected
