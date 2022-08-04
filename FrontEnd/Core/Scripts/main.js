@@ -1,7 +1,7 @@
 ﻿"use strict";
 
-import { TrackJS } from "trackjs";
-import { createApp, defineAsyncComponent } from "vue";
+import {TrackJS} from "trackjs";
+import {createApp, defineAsyncComponent} from "vue";
 import * as axios from "axios";
 
 import UsersService from "./shared/users.service";
@@ -14,32 +14,34 @@ import store from "./store/index";
 import login from "./components/login";
 import taskAlerts from "./components/task-alerts";
 
-import { DropDownList } from "@progress/kendo-vue-dropdowns";
+import {DropDownList} from "@progress/kendo-vue-dropdowns";
 import WiserDialog from "./components/wiser-dialog";
 
 import "../scss/main.scss";
 import "../scss/task-alerts.scss";
 
 import {
+    ACTIVATE_MODULE,
     AUTH_LOGOUT,
     AUTH_REQUEST,
-    OPEN_MODULE,
-    CLOSE_MODULE,
-    CLOSE_ALL_MODULES,
-    ACTIVATE_MODULE,
-    LOAD_ENTITY_TYPES_OF_ITEM_ID,
-    GET_CUSTOMER_TITLE,
-    TOGGLE_PIN_MODULE,
     CHANGE_PASSWORD,
+    CLOSE_ALL_MODULES,
+    CLOSE_MODULE,
     CREATE_BRANCH,
     CREATE_BRANCH_ERROR,
-    GET_BRANCHES, 
-    MERGE_BRANCH,
-    GET_ENTITIES_FOR_BRANCHES,
-    IS_MAIN_BRANCH,
     GET_BRANCH_CHANGES,
+    GET_BRANCHES,
+    GET_CUSTOMER_TITLE,
+    GET_ENTITIES_FOR_BRANCHES,
     HANDLE_CONFLICT,
-    HANDLE_MULTIPLE_CONFLICTS
+    HANDLE_MULTIPLE_CONFLICTS,
+    IS_MAIN_BRANCH,
+    LOAD_ENTITY_TYPES_OF_ITEM_ID,
+    MERGE_BRANCH,
+    OPEN_MODULE,
+    TOGGLE_PIN_MODULE,
+    CLEAR_CACHE,
+    CLEAR_CACHE_ERROR
 } from "./store/mutation-types";
 
 (() => {
@@ -173,7 +175,11 @@ import {
                                 id: ""
                             }
                         },
-                        batchHandleConflictSettings: { }
+                        batchHandleConflictSettings: { },
+                        clearCacheSettings: {
+                            selectedTypes: [],
+                            url: null
+                        }
                     };
                 },
                 created() {
@@ -317,6 +323,9 @@ import {
                         }
 
                         return this.$store.state.branches.mergeBranchResult.conflicts.filter(r => r.acceptChange !== true && r.acceptChange !== false).length === 0;
+                    },
+                    clearCacheError() {
+                        return this.$store.state.branches.clearCacheError;
                     }
                 },
                 components: {
@@ -462,6 +471,10 @@ import {
 
                     openMergeConflictsPrompt() {
                         this.$refs.wiserMergeConflictsPrompt.open();
+                    },
+
+                    openClearCachePrompt() {
+                        this.$refs.clearCachePrompt.open();
                     },
 
                     async openWiserItem() {
@@ -633,6 +646,15 @@ import {
                         this.$refs.wiserBranchesPrompt.close();
                     },
 
+                    async clearWebsiteCache() {
+                        if (!this.clearCacheSettings.url || this.clearCacheSettings.url.length < 5) {
+                            this.showGeneralMessagePrompt("Vul a.u.b. een geldige URL in.");
+                            return false;
+                        }
+
+                        await this.$store.dispatch(CLEAR_CACHE, this.clearCacheSettings);
+                    },
+
                     onOpenModuleClick(event, module) {
                         event.preventDefault();
                         this.openModule(module);
@@ -780,6 +802,25 @@ import {
 
                     onDenyMultipleConflictsClick() {
                         this.$store.dispatch(HANDLE_MULTIPLE_CONFLICTS, { acceptChange: false, settings: this.batchHandleConflictSettings });
+                    },
+
+                    onCacheTypeChecked(event, cacheType) {
+                        const isChecked = event.currentTarget.checked;
+                        const allTypes = [...document.querySelectorAll(".cache-type")].map(input => input.value);
+                        
+                        if (cacheType === "all") {
+                            if (!isChecked) {
+                                this.clearCacheSettings.selectedTypes = [];
+                            } else {
+                                this.clearCacheSettings.selectedTypes = ["all", ...allTypes];
+                            }
+                        } else {
+                            if (!isChecked) {
+                                this.clearCacheSettings.selectedTypes = this.clearCacheSettings.selectedTypes.filter(type => type !== "all");
+                            } else if (this.clearCacheSettings.selectedTypes.filter(type => type !== "all").length === allTypes.length && this.clearCacheSettings.selectedTypes.indexOf("all") === -1) {
+                                this.clearCacheSettings.selectedTypes.push("all");
+                            }
+                        }
                     }
                 }
             });

@@ -35,7 +35,10 @@ import {
     IS_MAIN_BRANCH,
     GET_BRANCH_CHANGES,
     HANDLE_CONFLICT,
-    HANDLE_MULTIPLE_CONFLICTS
+    HANDLE_MULTIPLE_CONFLICTS,
+    CLEAR_CACHE,
+    CLEAR_CACHE_SUCCESS,
+    CLEAR_CACHE_ERROR
 } from "./mutation-types";
 
 const baseModule = {
@@ -846,6 +849,41 @@ const branchesModule = {
     getters: {}
 };
 
+const cacheModule = {
+    state: () => ({
+        clearCacheError: null
+    }),
+
+    mutations: {
+        [CLEAR_CACHE_SUCCESS]: (state) => {
+            state.clearCacheError = null;
+        },
+        [CLEAR_CACHE_ERROR]: (state, message) => {
+            state.clearCacheError = message;
+        }
+    },
+
+    actions: {
+        async [CLEAR_CACHE]({ commit }, data = {}) {
+            commit(START_REQUEST);
+            const result = await main.cacheService.clear(data);
+            commit(END_REQUEST);
+
+            if (result.response) {
+                commit(CLEAR_CACHE_SUCCESS);
+            } else {
+                commit(CLEAR_CACHE_ERROR, result.error);
+            }
+        },
+
+        [CLEAR_CACHE_ERROR]({ commit }, error) {
+            commit(CLEAR_CACHE_ERROR, error);
+        },
+    },
+
+    getters: {}
+};
+
 export default createStore({
     // Do not enable strict mode when deploying for production! 
     // Strict mode runs a synchronous deep watcher on the state tree for detecting inappropriate mutations, and it can be quite expensive when you make large amount of mutations to the state. 
@@ -859,6 +897,7 @@ export default createStore({
         customers: customersModule,
         users: usersModule,
         items: itemsModule,
-        branches: branchesModule
+        branches: branchesModule,
+        cacheModule: cacheModule
     }
 });
