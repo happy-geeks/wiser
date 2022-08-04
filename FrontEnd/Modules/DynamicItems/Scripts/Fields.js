@@ -2306,6 +2306,7 @@ export class Fields {
                 previewWindow.one("close", (event) => resolve());
 
                 const container = previewWindow.element.find("div.k-content-frame");
+                console.log("container", container);
 
                 // Save the email data in the container, otherwise the email popup will show out dated data after opening it for a second time.
                 container.data("emailData", emailData);
@@ -2454,14 +2455,19 @@ export class Fields {
                             pdfToHtmlData.header = "";
                             pdfToHtmlData.footer = "";
 
-                            if (currentAction.pdfDocumentOptionsPropertyName) {
-                                pdfToHtmlData.documentOptions = currentTemplateDetails.property_[currentAction.pdfDocumentOptionsPropertyName] || "";
-                            }
-                            if (currentAction.pdfHeaderPropertyName) {
-                                pdfToHtmlData.header = currentTemplateDetails.property_[currentAction.pdfHeaderPropertyName] || "";
-                            }
-                            if (currentAction.pdfFooterPropertyName) {
-                                pdfToHtmlData.footer = currentTemplateDetails.property_[currentAction.pdfFooterPropertyName] || "";
+                            if (currentTemplateDetails.details && currentTemplateDetails.details.length > 0) {
+                                if (currentAction.pdfDocumentOptionsPropertyName) {
+                                    const documentOptions = currentTemplateDetails.details.find(detail => detail.key === currentAction.pdfDocumentOptionsPropertyName);
+                                    pdfToHtmlData.documentOptions = documentOptions ? (documentOptions.value || "") : "";
+                                }
+                                if (currentAction.pdfHeaderPropertyName) {
+                                    const header = currentTemplateDetails.details.find(detail => detail.key === currentAction.pdfHeaderPropertyName);
+                                    pdfToHtmlData.header = header ? (header.value || "") : "";
+                                }
+                                if (currentAction.pdfFooterPropertyName) {
+                                    const footer = currentTemplateDetails.details.find(detail => detail.key === currentAction.pdfFooterPropertyName);
+                                    pdfToHtmlData.footer = footer ? (footer.value || "") : "";
+                                }
                             }
 
                             const process = `convertHtmlToPdf_${Date.now()}`;
