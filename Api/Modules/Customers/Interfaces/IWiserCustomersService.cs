@@ -88,8 +88,9 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="customer">The data for the new customer.</param>
         /// <param name="isWebShop">Optional: Indicate whether or not this customer is getting a webshop. Default is <see langword="false"/>.</param>
         /// <param name="isConfigurator">Optional: Indicate whether or not this customer is getting a configurator. Default is <see langword="false"/>.</param>
+        /// <param name="isMultiLanguage">Optional: Indicate whether or not the website is going to support multiple languages.</param>
         /// <returns>The newly created <see cref="CustomerModel"/>.</returns>
-        Task<ServiceResult<CustomerModel>> CreateCustomerAsync(CustomerModel customer, bool isWebShop = false, bool isConfigurator = false);
+        Task<ServiceResult<CustomerModel>> CreateCustomerAsync(CustomerModel customer, bool isWebShop = false, bool isConfigurator = false, bool isMultiLanguage = false);
 
         /// <summary>
         /// Gets the title for the browser tab for a customer, based on sub domain.

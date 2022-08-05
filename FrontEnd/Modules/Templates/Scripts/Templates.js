@@ -49,7 +49,7 @@ const moduleSettings = {
             this.mainDatePicker = null;
             this.mainDateTimePicker = null;
             this.selectedId = 0;
-            this.templateSettings = null;
+            this.templateSettings = {};
             this.linkedTemplates = null;
             this.templateHistory = null;
             this.treeViewContextMenu = null;
@@ -441,6 +441,7 @@ const moduleSettings = {
             this.onMainTabStripActivate();
 
             if (dataItem.isFolder) {
+                this.initialTemplateSettings = this.getCurrentTemplateSettings();
                 return;
             }
 

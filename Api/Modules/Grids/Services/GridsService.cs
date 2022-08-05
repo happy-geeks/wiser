@@ -847,8 +847,8 @@ namespace Api.Modules.Grids.Services
                         results.Columns.Add(new GridColumn {Selectable = true, Width = "55px"});
                         results.Columns.Add(new GridColumn {Field = "id", Title = "ID", Width = "80px", Filterable = filterable});
                         results.Columns.Add(new GridColumn {Field = "linkId", Title = "Koppel-ID", Width = "55px", Filterable = filterable});
-                        results.Columns.Add(new GridColumn {Field = "entityType", Title = "Type", Width = "100px", Filterable = filterable, Template = "#: window.dynamicItems.getEntityTypeFriendlyName(entity_type) #"});
-                        results.Columns.Add(new GridColumn {Field = "publishedEnvironment", Title = "Gepubliceerde omgeving", Width = "50px", Template = "<ins title='#: published_environment #' class='icon-#: published_environment #'></ins>"});
+                        results.Columns.Add(new GridColumn {Field = "entityType", Title = "Type", Width = "100px", Filterable = filterable, Template = "#: window.dynamicItems.getEntityTypeFriendlyName(entityType) #"});
+                        results.Columns.Add(new GridColumn {Field = "publishedEnvironment", Title = "Gepubliceerde omgeving", Width = "50px", Template = "<ins title='#: publishedEnvironment #' class='icon-#: publishedEnvironment #'></ins>"});
                         results.Columns.Add(new GridColumn {Field = "title", Title = "Naam", Filterable = filterable});
                     }
 

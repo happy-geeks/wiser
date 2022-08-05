@@ -102,7 +102,7 @@ if (customQueryGrid) {
             for (var i = 0; i < gridSettings.columns.length; i++) {
                 var column = gridSettings.columns[i];
                 
-                switch (column.field || "") {
+                switch ((column.field || "").toLowerCase()) {
                     case "":
                         column.hidden = hideCheckboxColumn;
                         break;
@@ -110,34 +110,34 @@ if (customQueryGrid) {
                         column.hidden = options.hideIdColumn || false;
                         break;
                     case "link_id":
-                    case "linkId":
+                    case "linkid":
                         column.hidden = options.hideLinkIdColumn || false;
                         break;
                     case "entity_type":
-                    case "entityType":
+                    case "entitytype":
                         column.hidden = options.hideTypeColumn || false;
                         break;
                     case "published_environment":
-                    case "publishedEnvironment":
+                    case "publishedenvironment":
                         column.hidden = options.hideEnvironmentColumn || false;
                         break;
                     case "title":
                         column.hidden = options.hideTitleColumn || false;
                         break;
                     case "added_on":
-                    case "addedOn":
+                    case "addedon":
                         column.hidden = !options.showAddedOnColumn;
                         break;
                     case "added_by":
-                    case "addedBy":
+                    case "addedby":
                         column.hidden = !options.showAddedByColumn;
                         break;
                     case "changed_on":
-                    case "changedOn":
+                    case "changedon":
                         column.hidden = !options.showChangedOnColumn;
                         break;
                     case "changed_by":
-                    case "changedBy":
+                    case "changedby":
                         column.hidden = !options.showChangedByColumn;
                         break;
                 }
@@ -414,27 +414,27 @@ async function generateGrid(data, model, columns) {
                             var nonFieldProperties = [
                                 "id",
                                 "published_environment",
-                                "publishedEnvironment",
+                                "publishedenvironment",
                                 "encrypted_id",
-                                "encryptedId",
+                                "encryptedid",
                                 "entity_type",
-                                "entityType",
+                                "entitytype",
                                 "link_id",
-                                "linkId",
+                                "linkid",
                                 "link_type",
-                                "linkType",
-                                "linkTypeNumber",
+                                "linktype",
+                                "linktypenumber",
                                 "added_on",
-                                "addedOn",
+                                "addedon",
                                 "added_by",
-                                "addedBy",
+                                "addedby",
                                 "changed_on",
-                                "changedOn",
+                                "changedon",
                                 "changed_by",
-                                "changedBy"
+                                "changedby"
                             ];
                             for (var key in transportOptions.data) {
-                                if (!transportOptions.data.hasOwnProperty(key) || nonFieldProperties.indexOf(key) > -1) {
+                                if (!transportOptions.data.hasOwnProperty(key) || nonFieldProperties.indexOf(key.toLowerCase()) > -1) {
                                     continue;
                                 }
 

@@ -49,7 +49,7 @@
         case CmsAttributes.CmsTextEditorType.Auto when TypeHelpers.IsNumericType(Model.PropertyInfo.PropertyType):
             <div class="item @defaultValueClass" style="width: 50%;" data-label-style="normal" data-label-width="0" data-component-mode="@Model.CmsPropertyAttribute.ComponentMode">
                 <h4><label for="@Model.Name">@Model.PrettyName</label></h4>
-                <input id="@Model.Name" type="number" class="numeric" value="@Model.Value" min="0" step="1" autocomplete="off" data-property="@Model.Name" data-kendo-control="kendoNumericTextBox" />
+                <input id="@Model.Name" type="number" class="numeric" value="@Model.Value" min="0" step="1" autocomplete="off" data-property="@Model.Name" data-kendo-control="kendoNumericTextBox" data-decimal="@((Model.PropertyInfo.PropertyType == typeof(decimal) || Model.PropertyInfo.PropertyType == typeof(double)).ToString().ToLowerInvariant())" />
                 <div class="form-hint">@Html.Raw(Model.CmsPropertyAttribute.Description)</div>
                 <div class="form-hint developer-remarks">@Html.Raw(Model.CmsPropertyAttribute.DeveloperRemarks)</div>
             </div>

@@ -103,6 +103,7 @@ CREATE TABLE IF NOT EXISTS `wiser_entityproperty`  (
   `enable_aggregation` tinyint NOT NULL DEFAULT 0,
   `aggregate_options` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `access_key` varchar(1) NOT NULL DEFAULT '',
+  `visibility_path_regex` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_unique`(`entity_name`, `property_name`, `language_code`, `link_type`, `display_name`) USING BTREE,
   INDEX `idx_module_entity`(`module_id`, `entity_name`) USING BTREE,
