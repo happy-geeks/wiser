@@ -5,6 +5,8 @@ import {Utils} from "../../Base/Scripts/Utils.js";
 export class EntityTab {
     constructor(base) {
         this.base = base;
+        this.selectedEntityType = null;
+        this.selectedEntityProperty = null;
         this.setupBindings();
         this.initializeKendoComponents();
         // init hide/show elements
@@ -880,15 +882,26 @@ export class EntityTab {
 
         //Combobox for the "Groep" combobox
         this.groupNameComboBox = $("#groupName").kendoComboBox({
-            placeholder: "Selecteer de gewenste groep...",
             clearButton: false,
             dataTextField: "groupName",
             dataValueField: "groupName"
         }).data("kendoComboBox");
 
-        this.dependencyFields = $("#dependingField").kendoDropDownList({
-            placeholder: "Maak uw keuze...",
-            clearButton: false,
+        // Dependencies.
+        this.dependencyAction = $("#dependencyAction").kendoDropDownList({
+            optionLabel: {
+                value: "",
+                text: "Maak uw keuze..."
+            },
+            dataSource: [
+                { text: "Aleen zichtbaar maken wanneer...", value: 0 },
+                { text: "Verversen wanneer...", value: 1 }
+            ],
+            dataTextField: "text",
+            dataValueField: "value",
+        }).data("kendoDropDownList");
+
+        this.dependencyFields = $("#dependencyField").kendoDropDownList({
             dataTextField: "displayName",
             dataValueField: "propertyName",
             optionLabel: {
@@ -897,9 +910,38 @@ export class EntityTab {
             }
         }).data("kendoDropDownList");
 
+        this.dependencyOperator = $("#dependencyOperator").kendoDropDownList({
+            dataSource: [
+                { text: "gelijk is aan ...", value: 0 },
+                { text: "ongelijk is aan ...", value: 1 },
+                { text: "de waarde ... bevat", value: 2 },
+                { text: "niet de waarde ... bevat", value: 3 },
+                { text: "begint met ...", value: 4 },
+                { text: "niet begint met ...", value: 5 },
+                { text: "eindigt met ...", value: 6 },
+                { text: "niet eindigt met ...", value: 7 },
+                { text: "leeg is", value: 8 },
+                { text: "niet leeg is", value: 9 },
+                { text: "groter is dan ...", value: 10 },
+                { text: "groter is dan of gelijk is aan ...", value: 11 },
+                { text: "kleiner is dan ...", value: 13 },
+                { text: "kleiner is dan of gelijk is aan ...", value: 12 }
+            ],
+            dataTextField: "text",
+            dataValueField: "value",
+            optionLabel: {
+                value: "",
+                text: "Maak uw keuze..."
+            },
+            select: (e) => {
+                const dataItem = e.dataItem;
+                this.filterOptions = dataItem.value;
+                $('.item[data-visible*="' + dataItem.value + '"]').show();
+            }
+        }).data("kendoDropDownList");
+
         $("#typeSecureInput").kendoDropDownList({
             placeholder: "Maak uw keuze...",
-            clearButton: false,
             dataSource: [
                 { text: "Tekst", value: "text" },
                 { text: "Wachtwoord", value: "password" }
@@ -909,8 +951,6 @@ export class EntityTab {
         }).data("kendoDropDownList");
 
         $("#securityMethod").kendoDropDownList({
-            placeholder: "Maak uw keuze...",
-            clearButton: false,
             dataSource: [
                 { text: "JCL Advanced Encryption Standard", value: "JCL_AES" },
                 { text: "Advanced Encryption Standard", value: "AES" },
@@ -926,38 +966,6 @@ export class EntityTab {
                 const dataItem = e.dataItem || e.sender.dataItem();
                 $(".item.secureInput[data-visible]").hide();
                 $('.item.secureInput[data-visible*="' + dataItem.value + '"]').show();
-            }
-        }).data("kendoDropDownList");
-
-        this.dependingFilter = $("#combodepfilt").kendoDropDownList({
-            placeholder: "Maak uw keuze...",
-            clearButton: false,
-            dataSource: [
-                { text: "is gelijk aan", value: "eq" },
-                { text: "is ongelijk aan", value: "neq" },
-                { text: "bevat", value: "contains" },
-                { text: "bevat niet", value: "doesnotcontain" },
-                { text: "begint met", value: "startswith" },
-                { text: "begint niet met", value: "doesnotstartwith" },
-                { text: "eindigt met", value: "endswith" },
-                { text: "eindigt niet met", value: "doesnotendwith" },
-                { text: "is leeg", value: "isempty" },
-                { text: "is niet leeg", value: "isnotempty" },
-                { text: "is groter dan", value: "gt" },
-                { text: "is groter dan of gelijk aan", value: "gte" },
-                { text: "is kleiner dan", value: "lt" },
-                { text: "is kleiner dan of gelijk aan", value: "lte" }
-            ],
-            dataTextField: "text",
-            dataValueField: "value",
-            optionLabel: {
-                value: "",
-                text: "Maak uw keuze..."
-            },
-            select: (e) => {
-                const dataItem = e.dataItem;
-                this.filterOptions = dataItem.value;
-                $('.item[data-visible*="' + dataItem.value + '"]').show();
             }
         }).data("kendoDropDownList");
 
@@ -1490,7 +1498,7 @@ export class EntityTab {
                     },
                     {
                         field: "value",
-                        title: "Standaard waarde"
+                        title: "Standaardwaarde"
                     },
                     {
                         field: "format",
@@ -1872,17 +1880,17 @@ export class EntityTab {
         const index = event.sender.select().index();
         const dataItem = event.sender.dataItem(event.sender.select());
         const selectedEntityName = dataItem.entityName;
-        const selectedTabname = dataItem.tabName;
-        if (this.lastSelectedProperty === index && this.lastSelectedTabname === selectedTabname && !this.isSaveSelect) {
+        const selectedTabName = dataItem.tabName;
+        if (this.lastSelectedProperty === index && this.lastSelectedTabname === selectedTabName && !this.isSaveSelect) {
             this.base.openDialog("Item opnieuw openen", "Wilt u dit item opnieuw openen? (u raakt gewijzigde gegevens kwijt)", this.base.kendoPromptType.CONFIRM).then(() => {
                 // get properties if user accepts to overwrite possible changes made to the same item
-                this.getEntityFieldPropertiesOfSelected(dataItem.id, selectedEntityName, selectedTabname);
+                this.getEntityFieldPropertiesOfSelected(dataItem.id, selectedEntityName, selectedTabName);
             });
         } else {
             this.isSaveSelect = false;
             this.lastSelectedProperty = index;
-            this.lastSelectedTabname = selectedTabname;
-            await this.getEntityFieldPropertiesOfSelected(dataItem.id, selectedEntityName, selectedTabname);
+            this.lastSelectedTabname = selectedTabName;
+            await this.getEntityFieldPropertiesOfSelected(dataItem.id, selectedEntityName, selectedTabName);
         }
 
         // Refresh code mirror isntances, otherwise they won't work properly because they were initialized while they were invisible.
@@ -1903,6 +1911,8 @@ export class EntityTab {
             contentType: 'application/json',
             method: "GET"
         });
+        
+        this.selectedEntityType = resultSet;
 
         this.setEntityPropertiesToDefault();
         this.setEntityProperties(resultSet);
@@ -1920,7 +1930,7 @@ export class EntityTab {
             }
         });
 
-        const resultSet = results[0];
+        this.selectedEntityProperty = results[0];
 
         this.groupNameComboBox.setDataSource(new kendo.data.DataSource({
             transport: {
@@ -1937,10 +1947,12 @@ export class EntityTab {
                 }
             }
         }));
+        
         // first set all properties to default;
         this.setEntityFieldPropertiesToDefault();
+        
         // then set all the properties accordingly
-        this.setEntityFieldProperties(resultSet);
+        this.setEntityFieldProperties(this.selectedEntityProperty);
     }
 
     // actions handled before save, such as checks
@@ -2180,23 +2192,20 @@ export class EntityTab {
         let index = this.listOfTabProperties.select().index();
         let dataItem = this.listOfTabProperties.dataSource.view()[index];
         entityProperties.id = dataItem.id;
-        entityProperties.entityName = this.entitiesCombobox.dataItem().name;
-        entityProperties.visibleInOverview = document.getElementById("visible-in-table").checked;
-        entityProperties.overviewWidth = this.widthInTable.value();
+        entityProperties.moduleId = this.selectedEntityType.moduleId;
+        entityProperties.entityType = this.entitiesCombobox.dataItem().name;
+        entityProperties.linkType = 0;
         entityProperties.tabName = this.tabNameProperty.value();
         entityProperties.groupName = this.groupNameComboBox.value();
-        entityProperties.inputtype = this.inputTypeSelector.dataItem().text;
+        entityProperties.inputType = this.inputTypeSelector.dataItem().text;
         entityProperties.displayName = $("#displayname").val();
         entityProperties.propertyName = $("#propertyname").val();
         entityProperties.explanation = $("textarea#explanation").val();
         entityProperties.regexValidation = $('#regexValidation').val();
         entityProperties.mandatory = $("#mandatory").is(":checked");
-        entityProperties.readonly = $("#readonly").is(":checked");
+        entityProperties.readOnly = $("#readonly").is(":checked");
         entityProperties.width = $("#width").data("kendoNumericTextBox").value();
         entityProperties.height = $("#height").data("kendoNumericTextBox").value();
-        entityProperties.dependsOnField = this.dependencyFields.value();
-        entityProperties.dependsOnOperator = this.dependingFilter.value();
-        entityProperties.dependsOnValue = $("#dependingValue").val();
         entityProperties.languageCode = $('#langCode').val();
         // get value through codemirror function getValue() because textarea is empty
         entityProperties.customScript = this.scriptField.getValue();
@@ -2204,6 +2213,31 @@ export class EntityTab {
         entityProperties.alsoSaveSeoValue = document.getElementById("seofriendly").checked;
         entityProperties.defaultValue = $('#defaultValue').val();
         entityProperties.visibleInOverview = document.getElementById("visible-in-table").checked;
+        entityProperties.ordering = this.selectedEntityProperty.ordering;
+        entityProperties.dependsOn = {
+            field: this.dependencyFields.value(),
+            operator: this.dependencyOperator.value(),
+            value: $("#dependingValue").val(),
+            action: this.dependencyAction.value()
+        };
+        
+        // TODO: all properties below need to be able to changed by the user.
+        entityProperties.overview = {
+            visible: document.getElementById("visible-in-table").checked,
+            fieldType: null,
+            width: this.widthInTable.value()
+        };
+        entityProperties.extendedExplanation = false;
+        entityProperties.actionQuery = null;
+        entityProperties.searchQuery = null;
+        entityProperties.searchCountQuery = null;
+        entityProperties.saveOnChange = false;
+        entityProperties.labelStyle = null;
+        entityProperties.labelWidth = null;
+        entityProperties.enableAggregation = false;
+        entityProperties.aggregateOptions = null;
+        entityProperties.accessKey = null;
+        entityProperties.visibilityPathRegex = null;
 
         // declare empty options
         entityProperties.options = {};
@@ -2511,10 +2545,11 @@ export class EntityTab {
         
         try {
             // save to database
-            Wiser.api({
-                type: "GET",
-                url: `${this.base.settings.serviceRoot}/SAVE_INITIAL_VALUES`,
-                data: entityProperties
+            await Wiser.api({
+                type: "PUT",
+                url: `${this.base.settings.wiserApiRoot}/entity-properties/${entityProperties.id}`,
+                contentType: "application/json",
+                data: JSON.stringify(entityProperties)
             });
             
             this.base.showNotification("notification", `Item succesvol aangepast`, "success");
@@ -2710,7 +2745,8 @@ export class EntityTab {
 
         // dependencies
         this.dependencyFields.select("");
-        this.dependingFilter.select("");
+        this.dependencyOperator.select("");
+        this.dependencyAction.select("");
 
         // action button
         this.actionButtonGrid.setDataSource([]);
@@ -2893,8 +2929,12 @@ export class EntityTab {
             });
 
         // set depending filter
-        this.dependingFilter.select((dataItem) => {
+        this.dependencyOperator.select((dataItem) => {
             return dataItem.value === resultSet.dependsOnOperator;
+        });
+
+        this.dependencyAction.select((dataItem) => {
+            return dataItem.value === resultSet.dependsOnAction;
         });
 
         // set codemirror fields

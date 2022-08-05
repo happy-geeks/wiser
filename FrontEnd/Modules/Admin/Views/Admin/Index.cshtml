@@ -500,7 +500,7 @@
                                                             <div class="item" data-visible="input secure-input textbox gpslocation">
                                                                 <span class="handler">&nbsp;</span>
                                                                 <h4>
-                                                                    <label>Standaard waarde</label>
+                                                                    <label>Standaardwaarde</label>
                                                                     <span class="info" data-type="defaultValue"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
@@ -511,7 +511,7 @@
                                                             <div class="item" data-visible="numeric-input auto-increment">
                                                                 <span class="handler">&nbsp;</span>
                                                                 <h4>
-                                                                    <label>Standaard waarde</label>
+                                                                    <label>Standaardwaarde</label>
                                                                     <span class="info" data-type="defaultValue"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
@@ -522,7 +522,7 @@
                                                             <div class="item" data-visible="radiobutton checkbox">
                                                                 <span class="handler">&nbsp;</span>
                                                                 <h4>
-                                                                    <label>Standaard waarde</label>
+                                                                    <label>Standaardwaarde</label>
                                                                     <span class="info" data-type="defaultValue"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <select id="checkedCheckbox" placeholder="Maak uw keuze...">
@@ -1351,18 +1351,19 @@
 
                                                             <div class="item dynamic">
                                                                 <h4>
-                                                                    <label>Alleen tonen als</label>
+                                                                    <label>Afhankelijkheid</label>
                                                                     <span class="info" data-type="dependsOn"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <section>
                                                                     <div class="inputRow dbInput inputFlex">
-                                                                        <select id="dependingField"></select>
+                                                                        <select id="dependencyAction"></select>
+                                                                        
+                                                                        <select id="dependencyField"></select>
 
-                                                                        <select id="combodepfilt">
-                                                                        </select>
+                                                                        <select id="dependencyOperator"></select>
 
                                                                         <span class="k-widget k-input k-state-default">
-                                                                            <input id="dependingValue" type="text" class="textField k-input" autocomplete="off" maxlength="255" placeholder="..." />
+                                                                            <input id="dependingValue" type="text" class="textField k-input" autocomplete="off" maxlength="255" placeholder="Waarde" />
                                                                         </span>
                                                                     </div>
                                                                 </section>

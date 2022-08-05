@@ -845,7 +845,6 @@ ins {
 /* CUSTOM CHECKBOX / RADIOBUTTON */
 .checkbox, .radio {
     cursor: pointer;
-    display: block;
 }
 .checkbox > input, 
 .radio > input {
@@ -856,7 +855,7 @@ ins {
 }
 .checkbox span, 
 .radio span {
-    display: block;
+    display: inline-block;
     line-height: 1em;
     min-height: 28px;
     padding: 12px 5px 12px 28px;
