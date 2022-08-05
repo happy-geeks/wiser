@@ -1600,7 +1600,15 @@
                               <input id="wiserLinkType" type="number" step="1" class="numeric" autocomplete="off" />
                               </span>
                            </div>
-                            
+                            <div class="item " style="width: 25%;">
+                                <span class="handler">&nbsp;</span>
+                                <h4>
+                                    <label>Link naan</label>
+                                </h4>
+                                <span class="k-widget k-input k-state-default">
+                                    <input id="wiserLinkName" type="text" class="textField k-input" autocomplete="off" />
+                                </span>
+                            </div>
                             <div class="item" style="width: 40%;">
                                 <h4>
                                     <label>Entiteit vanaf</label>
@@ -1615,15 +1623,25 @@
                                 <select id="destinationEntity" placeholder="Maak uw keuze...">
                                 </select>
                             </div>
+                            <div class="item" style="width: 40%;">
+                                <h4>
+                                    <label>Entiteiten relatie</label>
+                                </h4>
+                                <select id="linkRelation" placeholder="Maak uw keuze...">
+                                </select>
+                            </div>
+                            <div class="flex-container">
+                                <button class="k-primary editLinkBtn" data-type="link" style="width: 25%; margin: 4px">Opslaan</button>
+                            </div>
                         </div>
-                         <div class="pane-content flex-container linkPopupContent">
+                         <div class="pane-content flex-container linkPopupContent" style="display:none">
                              <div class="item " style="width: 25%;">
                                  <span class="handler">&nbsp;</span>
                                  <h4>
                                      <label>Link naam</label>
                                  </h4>
                                  <span class="k-widget k-input k-state-default">
-                                     <input id="wiserLinkNamePopup" type="input" autocomplete="off" />
+                                     <input id="wiserLinkNamePopup" type="text" class="textField k-input" autocomplete="off" />
                                  </span>
                              </div>
                              <div class="item " style="width: 25%;">

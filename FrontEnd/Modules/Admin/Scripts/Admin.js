@@ -6,7 +6,7 @@ import { EntityFieldTab } from "../Scripts/EntityFieldTab.js";
 import { EntityPropertyTab } from "../Scripts/EntityPropertyTab.js";
 import { WiserQueryTab } from "../Scripts/WiserQueryTab.js";
 import { WiserLinkTab } from "../Scripts/WiserLinkTab.js";
-import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import { Wiser } from "../../Base/Scripts/Utils.js";
 
 
 require("@progress/kendo-ui/js/kendo.all.js");
