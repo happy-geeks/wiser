@@ -594,21 +594,21 @@
         <wiser-dialog :modal="true" :width="'400px'" :title="'Cache legen'" ref="clearCachePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'OK', primary: true, action: clearWebsiteCache }]">
             <div class="form-row">
                 <label class="checkbox" for="cache_all">
-                    <input type="checkbox" id="cache_all" name="cache_all" value="all" v-model="clearCacheSettings.selectedTypes" @@change="onCacheTypeChecked($event, 'all')" />
+                    <input type="checkbox" id="cache_all" name="cache_all" value="all" v-model="clearCacheSettings.areas" @@change="onCacheTypeChecked($event, 'all')" />
                     <span>Alles</span>
                 </label>
                 <label class="checkbox" for="cache_content">
-                    <input type="checkbox" id="cache_content" name="cache_content" value="content" class="cache-type" v-model="clearCacheSettings.selectedTypes" @@change="onCacheTypeChecked($event, 'content')" />
+                    <input type="checkbox" id="cache_content" name="cache_content" value="content" class="cache-type" v-model="clearCacheSettings.areas" @@change="onCacheTypeChecked($event, 'content')" />
                     <span>Complete HTML pagina's</span>
                 </label>
                 <label class="checkbox" for="cache_files">
-                    <input type="checkbox" id="cache_files" name="cache_files" value="files" class="cache-type" v-model="clearCacheSettings.selectedTypes" @@change="onCacheTypeChecked($event, 'files')" />
+                    <input type="checkbox" id="cache_files" name="cache_files" value="files" class="cache-type" v-model="clearCacheSettings.areas" @@change="onCacheTypeChecked($event, 'files')" />
                     <span>Bestanden / afbeeldingen</span>
                 </label>
                 @foreach (CacheAreas cacheSetting in Enum.GetValues(typeof(CacheAreas)))
                 {
                     <label class="checkbox" for="cache_@cacheSetting">
-                        <input type="checkbox" id="cache_@cacheSetting" name="cache_@cacheSetting" value="@cacheSetting" class="cache-type" v-model="clearCacheSettings.selectedTypes" @@change="onCacheTypeChecked($event, '@cacheSetting')" />
+                        <input type="checkbox" id="cache_@cacheSetting" name="cache_@cacheSetting" value="@cacheSetting" class="cache-type" v-model="clearCacheSettings.areas" @@change="onCacheTypeChecked($event, '@cacheSetting')" />
                         @switch (cacheSetting)
                         {
                             case CacheAreas.Configurators:
@@ -654,7 +654,10 @@
                 <input type="url" id="url" name="url" placeholder="URL naar website" class="full-width" v-model="clearCacheSettings.url" />
             </div>
 
-            <div class="error" v-if="clearCacheError">{{ clearCacheError }}</div>
+            <section class="full-error" v-if="clearCacheError">
+                <ins class="icon-line-alert"></ins>
+                <span v-html="clearCacheError"></span>
+            </section>
         </wiser-dialog>
     </div>
 </div>

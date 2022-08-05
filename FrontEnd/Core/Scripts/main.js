@@ -43,6 +43,7 @@ import {
     CLEAR_CACHE,
     CLEAR_CACHE_ERROR
 } from "./store/mutation-types";
+import CacheService from "./shared/cache.service";
 
 (() => {
     class Main {
@@ -55,6 +56,7 @@ import {
             this.customersService = new CustomersService(this);
             this.itemsService = new ItemsService(this);
             this.branchesService = new BranchesService(this);
+            this.cacheService = new CacheService(this);
 
             // Fire event on page ready for direct actions
             document.addEventListener("DOMContentLoaded", () => {
@@ -177,7 +179,7 @@ import {
                         },
                         batchHandleConflictSettings: { },
                         clearCacheSettings: {
-                            selectedTypes: [],
+                            areas: [],
                             url: null
                         }
                     };
@@ -325,7 +327,7 @@ import {
                         return this.$store.state.branches.mergeBranchResult.conflicts.filter(r => r.acceptChange !== true && r.acceptChange !== false).length === 0;
                     },
                     clearCacheError() {
-                        return this.$store.state.branches.clearCacheError;
+                        return this.$store.state.cache.clearCacheError;
                     }
                 },
                 components: {
@@ -648,11 +650,22 @@ import {
 
                     async clearWebsiteCache() {
                         if (!this.clearCacheSettings.url || this.clearCacheSettings.url.length < 5) {
-                            this.showGeneralMessagePrompt("Vul a.u.b. een geldige URL in.");
+                            await this.$store.dispatch(CLEAR_CACHE_ERROR, "Vul a.u.b. een geldige URL in.");
+                            return false;
+                        }
+                        
+                        if (!this.clearCacheSettings.areas || this.clearCacheSettings.areas.length === 0) {
+                            await this.$store.dispatch(CLEAR_CACHE_ERROR, "Kies a.u.b. minimaal 1 cache optie om te legen.");
                             return false;
                         }
 
                         await this.$store.dispatch(CLEAR_CACHE, this.clearCacheSettings);
+                        if (this.clearCacheError) {
+                            return false;
+                        }
+
+                        this.showGeneralMessagePrompt("De cache is succesvol geleegd.");
+                        return true;
                     },
 
                     onOpenModuleClick(event, module) {
@@ -810,15 +823,15 @@ import {
                         
                         if (cacheType === "all") {
                             if (!isChecked) {
-                                this.clearCacheSettings.selectedTypes = [];
+                                this.clearCacheSettings.areas = [];
                             } else {
-                                this.clearCacheSettings.selectedTypes = ["all", ...allTypes];
+                                this.clearCacheSettings.areas = ["all", ...allTypes];
                             }
                         } else {
                             if (!isChecked) {
-                                this.clearCacheSettings.selectedTypes = this.clearCacheSettings.selectedTypes.filter(type => type !== "all");
-                            } else if (this.clearCacheSettings.selectedTypes.filter(type => type !== "all").length === allTypes.length && this.clearCacheSettings.selectedTypes.indexOf("all") === -1) {
-                                this.clearCacheSettings.selectedTypes.push("all");
+                                this.clearCacheSettings.areas = this.clearCacheSettings.areas.filter(type => type !== "all");
+                            } else if (this.clearCacheSettings.areas.filter(type => type !== "all").length === allTypes.length && this.clearCacheSettings.areas.indexOf("all") === -1) {
+                                this.clearCacheSettings.areas.push("all");
                             }
                         }
                     }
