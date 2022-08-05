@@ -6,8 +6,6 @@ export class WiserLinkTab {
         this.setupBindings();
     }
 
-    
-
     /**
     * Setup all basis bindings for this module.
     * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
@@ -269,11 +267,6 @@ export class WiserLinkTab {
             resolve();
         });
     }
-    // actions handled before save, such as checks
-    beforeSave() {
-
-    }
-
 
     onWiserLinkComboBoxSelect() {
         if (!this.wiserLinkCombobox || !this.wiserLinkCombobox.dataItem() || !this.wiserLinkCombobox.dataItem().type) return;
