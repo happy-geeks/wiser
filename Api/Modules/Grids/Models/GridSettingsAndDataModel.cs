@@ -63,5 +63,10 @@ namespace Api.Modules.Grids.Models
         /// Gets or sets whether the current item is the source instead of the destination.
         /// </summary>
         public bool CurrentItemIsSourceId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the language code for the grid. This is used for grids with field groups, to have a group per language code.
+        /// </summary>
+        public string LanguageCode { get; set; }
     }
 }

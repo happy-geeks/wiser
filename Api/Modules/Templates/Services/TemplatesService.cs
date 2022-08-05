@@ -45,6 +45,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
 using NUglify;
@@ -75,11 +76,12 @@ namespace Api.Modules.Templates.Services
         private readonly IObjectsService objectsService;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<TemplatesService> logger;
+        private readonly GclSettings gclSettings;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IOptions<GclSettings> gclSettings)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -96,6 +98,7 @@ namespace Api.Modules.Templates.Services
             this.objectsService = objectsService;
             this.databaseHelpersService = databaseHelpersService;
             this.logger = logger;
+            this.gclSettings = gclSettings.Value;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -664,7 +667,8 @@ ORDER BY ordering ASC");
                 TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
 	entity.id,
 	IF(entity.name = '', 'ROOT', entity.name) AS name,
-	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(NULLIF(entity.friendly_name, ''), IF(entity.name = '', 'ROOT', entity.name))) AS displayName 
+	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(NULLIF(entity.friendly_name, ''), IF(entity.name = '', 'ROOT', entity.name))) AS displayName,
+    entity.module_id AS moduleId 
 FROM wiser_entity AS entity
 LEFT JOIN wiser_module AS module ON module.id = entity.module_id
 ORDER BY module.name ASC, entity.module_id ASC, entity.name ASC");
@@ -1280,8 +1284,8 @@ SET @itemname = (SELECT title FROM wiser_item WHERE id=@_itemId);
 SET @userId = {encryptedUserId:decrypt(true)};
 
 SELECT 
-	CONCAT('\'', @itemname, '\' hernoemen') AS text, 
-    'icon-album-rename' AS spriteCssClass,
+	CONCAT('\'', @itemname, '\' hernoemen (F2)') AS text, 
+    'icon-rename' AS spriteCssClass,
     'RENAME_ITEM' AS attraction,
     i.entity_type AS attrentity_type
     #the JSON must consist of a subnode with attributes, so attr is the name of the json object containing 'action' as a value, herefore the name here is attr...action
@@ -1303,8 +1307,9 @@ SELECT
 		)
     
 UNION
-    SELECT CONCAT('Nieuw(e) \'', i.name, '\' aanmaken'), 
-	i.icon_add,'CREATE_ITEM', 
+    SELECT CONCAT('Nieuw(e) \'', i.name, '\' aanmaken (SHIFT+N)'), 
+	i.icon_add,
+    'CREATE_ITEM', 
 	i.name
     FROM wiser_entity i
     JOIN wiser_entity we ON we.module_id=@_moduleId AND we.name=@entity_type
@@ -1325,7 +1330,7 @@ UNION
 		)
 
 UNION
-	SELECT CONCAT('\'', @itemname, '\' dupliceren') AS text, 
+	SELECT CONCAT('\'', @itemname, '\' dupliceren (SHIFT+D)') AS text, 
 	'icon-document-duplicate',
 	'DUPLICATE_ITEM',
     i.entity_type AS attrentity_type
@@ -1416,7 +1421,7 @@ UNION
 		)
     
 UNION
-	SELECT CONCAT('\'', @itemname, '\' verwijderen') AS text, 
+	SELECT CONCAT('\'', @itemname, '\' verwijderen (DEL)') AS text, 
 	'icon-delete',
 	'REMOVE_ITEM',
     i.entity_type AS attrentity_type
@@ -1731,7 +1736,7 @@ JOIN wiser_entity we ON we.name = i.entity_type AND we.show_in_tree_view = 1
 LEFT JOIN wiser_itemlink ilp ON ilp.item_id = i.id
 LEFT JOIN wiser_itemlink checked ON checked.item_id = i.id AND checked.destination_item_id = @_checkId AND @_checkId <> '0'
 WHERE i.moduleid = @mid
-AND (@_entityType = '' OR i.entity_type = @entityType)
+AND (@_entityType = '' OR i.entity_type = @_entityType)
 GROUP BY i.id
 ORDER BY 
     CASE WHEN @_ordering = 'title' THEN i.title END ASC,
@@ -1839,19 +1844,6 @@ AND il.type = @_linkType
 AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
 GROUP BY il.destination_item_id, id.id
 ORDER BY il.ordering, i.title, i.id");
-                TemplateQueryStrings.Add("ADD_LINK", @"SET @sourceId = {source:decrypt(true)};
-SET @destinationId = {destination:decrypt(true)};
-SET @_linkTypeNumber = IF('{linkTypeNumber}' LIKE '{%}' OR '{linkTypeNumber}' = '', '2', '{linkTypeNumber}');
-SET @newOrderNumber = IFNULL((SELECT MAX(link.ordering) + 1 FROM wiser_itemlink AS link JOIN wiser_item AS item ON item.id = link.item_id WHERE link.destination_item_id = @destinationId AND link.type = @_linkTypeNumber), 1);
-SET @_username = '{username}';
-SET @_userId = '{encryptedUserId:decrypt(true)}';
-
-INSERT IGNORE INTO wiser_itemlink (item_id, destination_item_id, ordering, type)
-SELECT @sourceId, @destinationId, @newOrderNumber, @_linkTypeNumber
-FROM DUAL
-WHERE @sourceId <> @destinationId;
-
-SELECT LAST_INSERT_ID() AS newId;");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_TABLE", @"SET @selected_id = {itemId:decrypt(true)}; # 3077
 
 SELECT 
@@ -2816,6 +2808,8 @@ LIMIT 1";
             var queryString = QueryHelpers.ParseQuery(requestModel.Url.Query);
             var ombouw = (!queryString.ContainsKey("ombouw") || !String.Equals(queryString["ombouw"].ToString(), "false", StringComparison.OrdinalIgnoreCase)) && !String.Equals(requestModel.PreviewVariables.FirstOrDefault(v => String.Equals(v.Key, "ombouw", StringComparison.OrdinalIgnoreCase))?.Value, "false", StringComparison.OrdinalIgnoreCase);
 
+            await SetupGclForPreviewAsync(identity, requestModel);
+            
             var contentToWrite = new StringBuilder();
 
             // Execute the pre load query before any replacements are being done and before any dynamic components are handled.
@@ -2836,25 +2830,12 @@ LIMIT 1";
                 contentToWrite.Append(await pagesService.GetGlobalFooter(requestModel.Url.ToString(), javascriptTemplates, cssTemplates));
             }
 
-            await SetupGclForPreviewAsync(identity, requestModel);
-
             outputHtml = contentToWrite.ToString();
-            if (requestModel.TemplateSettings.HandleStandards)
-            {
-                outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, requestModel.TemplateSettings.HandleRequests, false, true, false);
-                outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
-                outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
-            }
-
-            if (requestModel.TemplateSettings.HandleDynamicContent)
-            {
-                outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
-            }
-
-            if (requestModel.TemplateSettings.HandleLogicBlocks)
-            {
-                outputHtml = stringReplacementsService.EvaluateTemplate(outputHtml);
-            }
+            outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, requestModel.TemplateSettings.HandleRequests, false, true, false);
+            outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
+            outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
+            outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
+            outputHtml = stringReplacementsService.EvaluateTemplate(outputHtml);
 
             if (!ombouw)
             {
@@ -2877,31 +2858,93 @@ LIMIT 1";
 
             if (viewModel.Css != null)
             {
-                viewModel.Css.GeneralCssFileName = AddMainDomainToUrl(viewModel.Css.GeneralCssFileName, mainDomain);
-                viewModel.Css.PageAsyncFooterCssFileName = AddMainDomainToUrl(viewModel.Css.PageAsyncFooterCssFileName, mainDomain);
-                viewModel.Css.PageInlineHeadCss = AddMainDomainToUrl(viewModel.Css.PageInlineHeadCss, mainDomain);
-                viewModel.Css.PageStandardCssFileName = AddMainDomainToUrl(viewModel.Css.PageStandardCssFileName, mainDomain);
-                viewModel.Css.PageSyncFooterCssFileName = AddMainDomainToUrl(viewModel.Css.PageSyncFooterCssFileName, mainDomain);
+                var cssBuilder = new StringBuilder();
+                cssBuilder.AppendLine((await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Css)).Content);
+                cssBuilder.AppendLine(viewModel.Css.PageInlineHeadCss);
+                
+                var regex = new Regex("/css/gclcss_(.*).css");
+                var match = regex.Match(viewModel.Css.PageStandardCssFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Css.PageStandardCssFileName = null;
+                
+                match = regex.Match(viewModel.Css.PageAsyncFooterCssFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Css.PageAsyncFooterCssFileName = null;
+                
+                match = regex.Match(viewModel.Css.PageSyncFooterCssFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Css.PageSyncFooterCssFileName = null;
+
+                viewModel.Css.PageInlineHeadCss = cssBuilder.ToString();
             }
 
             if (viewModel.Javascript != null)
             {
-                viewModel.Javascript.GeneralJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.GeneralJavascriptFileName, mainDomain);
-                viewModel.Javascript.GeneralFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.GeneralFooterJavascriptFileName, mainDomain);
-                viewModel.Javascript.PageAsyncFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageAsyncFooterJavascriptFileName, mainDomain);
-                viewModel.Javascript.PageStandardJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageStandardJavascriptFileName, mainDomain);
-                viewModel.Javascript.PageSyncFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageSyncFooterJavascriptFileName, mainDomain);
+                viewModel.Javascript.PageInlineHeadJavascript ??= new List<string>();
+                viewModel.Javascript.PageInlineHeadJavascript.Insert(0, (await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Js)).Content);
+
+                var regex = new Regex("/css/gcljs_(.*).css");
+                var match = regex.Match(viewModel.Javascript.PageStandardJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.PageStandardJavascriptFileName = null;
+                
+                match = regex.Match(viewModel.Javascript.GeneralFooterJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.GeneralFooterJavascriptFileName = null;
+                
+                match = regex.Match(viewModel.Javascript.PageAsyncFooterJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.PageAsyncFooterJavascriptFileName = null;
+                
+                match = regex.Match(viewModel.Javascript.PageSyncFooterJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.PageSyncFooterJavascriptFileName = null;
             }
 
             // Generate HTML from view.
             await using var writer = new StringWriter();
             var executingAssemblyDirectoryAbsolutePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
-            var executingFilePath = executingAssemblyDirectoryAbsolutePath.Replace('\\', '/');
+            var executingFilePath = executingAssemblyDirectoryAbsolutePath!.Replace('\\', '/');
             const string viewPath = "~/Modules/Templates/Views/Shared/Template.cshtml";
             var viewResult = razorViewEngine.GetView(executingFilePath, viewPath, true);
 
-            var actionContext = new ActionContext(httpContextAccessor.HttpContext, new RouteData(), new ActionDescriptor());
+            var actionContext = new ActionContext(httpContextAccessor.HttpContext!, new RouteData(), new ActionDescriptor());
 
             if (viewResult.Success == false)
             {
@@ -3438,6 +3481,9 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             {
                 httpContextAccessor.HttpContext.Items.Add(Constants.WiserUriOverrideForReplacements, requestModel.Url);
             }
+
+            // Force the GCL environment to development, so that it will always use the latest versions of templates and dynamic components.
+            gclSettings.Environment = Environments.Development;
         }
 
         /// <summary>

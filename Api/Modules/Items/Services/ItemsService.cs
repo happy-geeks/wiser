@@ -15,8 +15,11 @@ using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
+using Api.Modules.EntityProperties.Enums;
+using Api.Modules.EntityProperties.Interfaces;
 using Api.Modules.EntityTypes.Models;
 using Api.Modules.Files.Interfaces;
+using Api.Modules.Google.Interfaces;
 using Api.Modules.Items.Interfaces;
 using Api.Modules.Items.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -29,6 +32,8 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Core.Services;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
+using GeeksCoreLibrary.Modules.Languages.Interfaces;
+using Google.Cloud.Translation.V2;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
@@ -53,11 +58,27 @@ namespace Api.Modules.Items.Services
         private readonly IApiReplacementsService apiReplacementsService;
         private readonly IFilesService filesService;
         private readonly IDatabaseHelpersService databaseHelpersService;
+        private readonly ILanguagesService languagesService;
+        private readonly IEntityPropertiesService entityPropertiesService;
+        private readonly IGoogleTranslateService googleTranslateService;
 
         /// <summary>
         /// Creates a new instance of <see cref="ItemsService"/>.
         /// </summary>
-        public ItemsService(Templates.Interfaces.ITemplatesService templatesService, IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, IWiserItemsService wiserItemsService, IJsonService jsonService, ILogger<ItemsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService, IFilesService filesService, IDatabaseHelpersService databaseHelpersService)
+        public ItemsService(Templates.Interfaces.ITemplatesService templatesService,
+                            IWiserCustomersService wiserCustomersService,
+                            IDatabaseConnection clientDatabaseConnection,
+                            IHttpContextAccessor httpContextAccessor,
+                            IWiserItemsService wiserItemsService,
+                            IJsonService jsonService,
+                            ILogger<ItemsService> logger,
+                            IStringReplacementsService stringReplacementsService,
+                            IApiReplacementsService apiReplacementsService,
+                            IFilesService filesService,
+                            IDatabaseHelpersService databaseHelpersService,
+                            ILanguagesService languagesService,
+                            IEntityPropertiesService entityPropertiesService,
+                            IGoogleTranslateService googleTranslateService)
         {
             this.templatesService = templatesService;
             this.wiserCustomersService = wiserCustomersService;
@@ -70,6 +91,9 @@ namespace Api.Modules.Items.Services
             this.apiReplacementsService = apiReplacementsService;
             this.filesService = filesService;
             this.databaseHelpersService = databaseHelpersService;
+            this.languagesService = languagesService;
+            this.entityPropertiesService = entityPropertiesService;
+            this.googleTranslateService = googleTranslateService;
         }
 
         /// <inheritdoc />
@@ -335,7 +359,7 @@ namespace Api.Modules.Items.Services
                 }
 
                 var userId = IdentityHelpers.GetWiserUserId(identity);
-                var (success, _, userItemPermissions) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(item.Id, EntityActions.Update, userId, onlyCheckAccessRights: true, entityType: item.EntityType);
+                var (success, _, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(item.Id, EntityActions.Update, userId, onlyCheckAccessRights: true, entityType: item.EntityType);
                 if (!success)
                 {
                     return new ServiceResult<WiserItemModel>
@@ -663,6 +687,14 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
+            catch (ArgumentOutOfRangeException exception)
+            {
+                return new ServiceResult<WiserItemModel>
+                {
+                    ErrorMessage = exception.Message,
+                    StatusCode = HttpStatusCode.Conflict
+                };
+            }
 
             return new ServiceResult<WiserItemModel>(item);
         }
@@ -740,7 +772,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
             if (String.IsNullOrWhiteSpace(item?.EntityType))
             {
-                var newItem = await wiserItemsService.GetItemDetailsAsync(itemId);
+                var newItem = await wiserItemsService.GetItemDetailsAsync(itemId, skipPermissionsCheck: true);
                 if (item == null)
                 {
                     item = newItem;
@@ -1165,7 +1197,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                             var deletedCustomActions = new List<JToken>();
                             foreach (var customAction in customActions)
                             {
-                                var rolesToken = customAction.SelectToken("roles"); ;
+                                var rolesToken = customAction.SelectToken("roles");
                                 if (rolesToken == null) continue; // No roles defined = access
 
                                 var roles = rolesToken.Values<string>().ToList();
@@ -1616,7 +1648,10 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             }
 
             var result = await wiserItemsService.GetItemDetailsAsync(itemId, entityType: entityType, skipPermissionsCheck: true);
-            result.EncryptedId = await wiserCustomersService.EncryptValue(result.Id, identity);
+            if (result != null)
+            {
+                result.EncryptedId = await wiserCustomersService.EncryptValue(result.Id, identity);
+            }
 
             return new ServiceResult<WiserItemModel>(result);
         }
@@ -1715,7 +1750,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         /// <inheritdoc />
         public async Task<(string Query, ServiceResult<T> ErrorResult, string RawOptions)> GetPropertyQueryAsync<T>(int propertyId, string queryColumnName, bool alsoGetOptions, ulong? itemId = null)
         {
-            ServiceResult<T> errorResult = null;
+            ServiceResult<T> errorResult;
 
             // Get the data query and properties of the grid.
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -1744,7 +1779,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     result = result.ReplaceCaseInsensitive("{itemId}", itemId.Value.ToString());
                 }
 
-                return (result, errorResult, options);
+                return (result, null, options);
             }
 
             errorResult = new ServiceResult<T>
@@ -2306,7 +2341,7 @@ ORDER BY IFNULL(friendly_name, name) ASC");
                 clientDatabaseConnection.AddParameter("newOrderNumber", newOrderNumber);
 
                 // Items voor of na de plaatsing (before/after) 1 plek naar achteren schuiven (niet bij plaatsen op een ander item, want dan komt het nieuwe item altijd achteraan)
-                if (!positionIsOver && sourceParentId == destinationParentId)
+                if (!positionIsOver)
                 {
                     query = $@"UPDATE {WiserTableNames.WiserItemLink}
                             SET ordering = ordering + 1
@@ -2472,6 +2507,187 @@ ORDER BY IFNULL(friendly_name, name) ASC");
             {
                 StatusCode = HttpStatusCode.NoContent
             };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> TranslateAllFieldsAsync(ClaimsIdentity identity, string encryptedId, TranslateItemRequestModel settings)
+        {
+            if (String.IsNullOrWhiteSpace(encryptedId))
+            {
+                throw new ArgumentNullException(nameof(encryptedId));
+            }
+            if (String.IsNullOrWhiteSpace(settings.SourceLanguageCode))
+            {
+                throw new ArgumentNullException(nameof(settings.SourceLanguageCode));
+            }
+            
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var username = IdentityHelpers.GetUserName(identity);
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var customer = await wiserCustomersService.GetSingleAsync(identity);
+            var encryptionKey = customer.ModelObject.EncryptionKey;
+            
+            try
+            {
+                // Get all item details that can be translated.
+                var wiserItem = await wiserItemsService.GetItemDetailsAsync(itemId, userId: userId, entityType: settings.EntityType);
+                var detailsWithSourceLanguage = wiserItem.Details.Where(detail => String.Equals(detail.LanguageCode, settings.SourceLanguageCode, StringComparison.OrdinalIgnoreCase) && detail.Value != null).ToList();
+                if (!detailsWithSourceLanguage.Any())
+                {
+                    return new ServiceResult<bool>
+                    {
+                        ErrorMessage = $"Er zijn geen ingevulde velden gevonden met de taal '{settings.SourceLanguageCode}'. Heeft u het item opgeslagen?"
+                    };
+                }
+
+                // Get
+                var properties = await entityPropertiesService.GetPropertiesOfEntityAsync(identity, settings.EntityType);
+                if (properties.StatusCode != HttpStatusCode.OK)
+                {
+                    return new ServiceResult<bool>
+                    {
+                        ErrorMessage = properties.ErrorMessage,
+                        StatusCode = properties.StatusCode
+                    };
+                }
+
+                // Build lists of texts to translate.
+                var textPropertiesToTranslate = new List<WiserItemDetailModel>();
+                var htmlPropertiesToTranslate = new List<WiserItemDetailModel>();
+                foreach (var property in properties.ModelObject)
+                {
+                    var detailWithSourceLanguage = detailsWithSourceLanguage.SingleOrDefault(detail => String.Equals(detail.Key, property.PropertyName, StringComparison.OrdinalIgnoreCase));
+                    if (detailWithSourceLanguage == null)
+                    {
+                        continue;
+                    }
+
+                    switch (property.InputType)
+                    {
+                        case EntityPropertyInputTypes.Input:
+                        case EntityPropertyInputTypes.TextBox:
+                            textPropertiesToTranslate.Add(detailWithSourceLanguage);
+                            break;
+                        case EntityPropertyInputTypes.HtmlEditor:
+                            htmlPropertiesToTranslate.Add(detailWithSourceLanguage);
+                            break;
+                        default:
+                            continue;
+                    }
+                }
+
+                // If the user didn't supply any destination languages, get all languages from Wiser and use those.
+                if (settings.TargetLanguageCodes == null || !settings.TargetLanguageCodes.Any())
+                {
+                    var languages = await languagesService.GetAllLanguagesAsync();
+                    settings.TargetLanguageCodes = languages.Select(language => language.Code).ToList();
+                }
+
+                // Do all the translations.
+                foreach (var targetLanguageCode in settings.TargetLanguageCodes)
+                {
+                    if (String.Equals(settings.SourceLanguageCode, targetLanguageCode, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    // Translate normal texts.
+                    if (textPropertiesToTranslate.Any())
+                    {
+                        var translations = await googleTranslateService.TranslateTextAsync(textPropertiesToTranslate.Select(detail => detail.Value.ToString()), targetLanguageCode, settings.SourceLanguageCode);
+                        if (translations.StatusCode != HttpStatusCode.OK)
+                        {
+                            return new ServiceResult<bool>
+                            {
+                                ErrorMessage = translations.ErrorMessage,
+                                StatusCode = translations.StatusCode
+                            };
+                        }
+
+                        for (var index = 0; index < translations.ModelObject.Count; index++)
+                        {
+                            var translatedValue = translations.ModelObject[index];
+                            var originalItemDetail = textPropertiesToTranslate[index];
+
+                            SaveTranslationInItem(wiserItem, originalItemDetail, targetLanguageCode, translatedValue);
+                        }
+                    }
+
+                    // Translate HTML fields.
+                    if (htmlPropertiesToTranslate.Any())
+                    {
+                        var translations = await googleTranslateService.TranslateHtmlAsync(htmlPropertiesToTranslate.Select(detail => detail.Value.ToString()), targetLanguageCode, settings.SourceLanguageCode);
+                        if (translations.StatusCode != HttpStatusCode.OK)
+                        {
+                            return new ServiceResult<bool>
+                            {
+                                ErrorMessage = translations.ErrorMessage,
+                                StatusCode = translations.StatusCode
+                            };
+                        }
+
+                        for (var index = 0; index < translations.ModelObject.Count; index++)
+                        {
+                            var translatedValue = translations.ModelObject[index];
+                            var originalItemDetail = htmlPropertiesToTranslate[index];
+
+                            SaveTranslationInItem(wiserItem, originalItemDetail, targetLanguageCode, translatedValue);
+                        }
+                    }
+                }
+
+                // And finally save all translations in the database for the item.
+                await wiserItemsService.UpdateAsync(itemId, wiserItem, userId, username, encryptionKey);
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.NoContent
+                };
+            }
+            catch (InvalidAccessPermissionsException invalidAccessPermissionsException)
+            {
+                logger.LogWarning(invalidAccessPermissionsException, $"User tried to translate fields for item '{invalidAccessPermissionsException.ItemId}', but did not have the required permissions ({invalidAccessPermissionsException.Action}).");
+                return new ServiceResult<bool>
+                {
+                    ErrorMessage = invalidAccessPermissionsException.Message,
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+        }
+
+        /// <summary>
+        /// Saves a translated field in a <see cref="WiserItemModel"/>. It will only do this if it doesn't have a value for that language yet.
+        /// </summary>
+        /// <param name="wiserItem">The item to save the value in.</param>
+        /// <param name="originalItemDetail">The original <see cref="WiserItemDetailModel"/> that was translated to another language.</param>
+        /// <param name="targetLanguageCode">The language code of the new value.</param>
+        /// <param name="translatedValue">The translated value.</param>
+        private static void SaveTranslationInItem(WiserItemModel wiserItem, WiserItemDetailModel originalItemDetail, string targetLanguageCode, TranslationResult translatedValue)
+        {
+            var targetLanguageDetail = wiserItem.Details.SingleOrDefault(detail => String.Equals(detail.Key, originalItemDetail.Key, StringComparison.OrdinalIgnoreCase) && String.Equals(detail.LanguageCode, targetLanguageCode));
+            if (targetLanguageDetail == null)
+            {
+                targetLanguageDetail = new WiserItemDetailModel
+                {
+                    Changed = true,
+                    Key = originalItemDetail.Key,
+                    GroupName = originalItemDetail.GroupName,
+                    LanguageCode = targetLanguageCode,
+                    LinkType = originalItemDetail.LinkType,
+                    ReadOnly = originalItemDetail.ReadOnly,
+                    IsLinkProperty = originalItemDetail.IsLinkProperty,
+                    ItemLinkId = originalItemDetail.ItemLinkId
+                };
+
+                wiserItem.Details.Add(targetLanguageDetail);
+            }
+            else if (!String.IsNullOrWhiteSpace(targetLanguageDetail.Value?.ToString()))
+            {
+                // Don't overwrite existing values, only translate fields that are still empty.
+                return;
+            }
+
+            targetLanguageDetail.Value = translatedValue.TranslatedText;
         }
 
         private static string ReadTextResourceFromAssembly(string name)

@@ -106,7 +106,8 @@ export class ModuleTab {
             optionLabel: {
                 value: "",
                 text: "Maak uw keuze..."
-            }
+            },
+            template: '<ins class="#: data.value #"></ins><span>#: data.text #</span>'
         }).data("kendoComboBox");
 
         this.moduleType = $("#moduleType").kendoComboBox({
@@ -132,7 +133,7 @@ export class ModuleTab {
 
     async addModule(name) {
         if (name === "") { return; }
-        await Wiser2.api({
+        await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}modules/settings`,
             contentType: "application/json; charset=utf-8",
             dataType: "json",
@@ -159,7 +160,7 @@ export class ModuleTab {
             return;
         }
 
-        await Wiser2.api({
+        await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}entity-types?name=&moduleId=${moduleId}`,
             contentType: "application/json; charset=utf-8",
             dataType: "json",
@@ -175,7 +176,7 @@ export class ModuleTab {
 
     async getModules(reloadDataSource = true, moduleIdToSelect = null) {
         if (reloadDataSource) {
-            this.moduleList = await Wiser2.api({
+            this.moduleList = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}modules/settings`,
                 method: "GET"
             });
@@ -200,7 +201,7 @@ export class ModuleTab {
     }
 
     async getModuleById(id) {
-        const results = await Wiser2.api({
+        const results = await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}modules/${id}/settings`,
             method: "GET"
         });
@@ -248,7 +249,7 @@ export class ModuleTab {
     }
 
     // actions handled before save, such as checks
-    beforeSave() {
+    async beforeSave() {
         if (this.checkIfModuleIsSet(true)) {
             const moduleIdElement = document.getElementById("moduleId");
 
@@ -269,7 +270,7 @@ export class ModuleTab {
                         this.base.showNotification("notification", `Controleer de instellingen van de module, er zijn ${moduleSettingsModel.errors.length} fout(en) gevonden: ${moduleSettingsModel.errors.join(", ")}`, "error");
                         return;
                     }
-                    this.updateModule(this.moduleCombobox.dataItem().id, moduleSettingsModel);
+                    await this.updateModule(this.moduleCombobox.dataItem().id, moduleSettingsModel);
                 } else {
                     this.base.showNotification("notification", `ID van de module moet een nummerieke waarde zijn!`, "error");
                 }
@@ -279,7 +280,7 @@ export class ModuleTab {
 
     async updateModule(id, moduleSettingsModel) {
         try {
-            await Wiser2.api({
+            await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}modules/${id}/settings`,
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
@@ -299,7 +300,7 @@ export class ModuleTab {
         };
     }
 
-    async setCodeMirrorFields(field, value) {
+    setCodeMirrorFields(field, value) {
         if (field != null && field) {
             field.setValue((value != null && value) ? value : "");
             field.refresh();
@@ -312,12 +313,12 @@ export class ModuleTab {
             this.moduleCombobox.dataItem().id !== "" &&
             this.moduleListInitialized === true) {
             return true;
-        } else {
-            if (showNotification)
-                this.base.showNotification("notification", `Selecteer eerst een module!`, "error");
-
-            return false;
+        }
+        
+        if (showNotification) {
+            this.base.showNotification("notification", `Selecteer eerst een module!`, "error");
         }
 
+        return false;
     }
 }

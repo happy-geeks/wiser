@@ -75,13 +75,20 @@ checkTreeElement.kendoTreeView({
         startLoader();
         
         let sourceItem = event.sender.dataItem(event.node);
-        let templateName = sourceItem.checked ? "ADD_LINK" : "REMOVE_LINK";
-        
-        Wiser2.api({
-            url: window.dynamicItems.settings.serviceRoot + "/" + encodeURIComponent(templateName) + "?source=" + encodeURIComponent(sourceItem.id) + "&destination=" + encodeURIComponent(currentItemId) + "&linkTypeNumber=" + (options.linkTypeNumber || ""),
+        let methodName = sourceItem.checked ? "add-links" : "remove-links";
+
+        Wiser.api({
+            url: `${window.dynamicItems.settings.wiserApiRoot}items/${methodName}`,
+            data: JSON.stringify({
+                encryptedSourceIds: [sourceItem.id],
+                encryptedDestinationIds: [currentItemId],
+                linkType: options.linkTypeNumber || 0,
+                sourceEntityType: sourceItem.entityType
+            }),
+            contentType: "application/json",
             dataType: "json",
-            method: "GET"
-        }).then(() => {
+            method: sourceItem.checked ? "POST" : "DELETE"
+        }).finally(() => {
             stopLoader(true);
         });
     },
@@ -89,9 +96,9 @@ checkTreeElement.kendoTreeView({
     dataSource: {
         transport: {
             read: (kendoReadOptions) => {
-                Wiser2.api({
+                Wiser.api({
                     url: !showStructure 
-                        ? window.dynamicItems.settings.serviceRoot + "GET_ALL_ITEMS_OF_TYPE?moduleid=" + options.moduleId + "&checkId=" + encodeURIComponent(currentItemId) + "&entityType=" + encodeURIComponent((!options.entityTypes ? "" : options.entityTypes.join())) + "&orderBy=" + encodeURIComponent((options.orderBy || ""))
+                        ? window.dynamicItems.settings.serviceRoot + "/GET_ALL_ITEMS_OF_TYPE?moduleid=" + options.moduleId + "&checkId=" + encodeURIComponent(currentItemId) + "&entityType=" + encodeURIComponent((!options.entityTypes ? "" : options.entityTypes.join())) + "&orderBy=" + encodeURIComponent((options.orderBy || ""))
                         : window.dynamicItems.settings.wiserApiRoot + "items/tree-view?moduleId=" + options.moduleId + "&checkId=" + encodeURIComponent(currentItemId) + (!options.entityTypes ? "" : ("&entityType=" + encodeURIComponent(options.entityTypes.join()))) + (options.orderBy ? ("&orderBy=" + encodeURIComponent(options.orderBy)) : ""),
                     dataType: "json",
                     method: "GET",
@@ -112,7 +119,7 @@ checkTreeElement.kendoTreeView({
     }
 });
 
-Wiser2.api({
+Wiser.api({
     url: window.dynamicItems.settings.serviceRoot + "/GET_COLUMNS_FOR_LINK_TABLE?linkTypeNumber=" + (options.linkTypeNumber || "") + "&id=" + encodeURIComponent(currentItemId),
     dataType: "json",
     method: "GET"
@@ -220,8 +227,8 @@ Wiser2.api({
             transport: {
                 read: function(readOptions) {
                     startLoader();
-                    
-                    Wiser2.api({
+
+                    Wiser.api({
                         url: window.dynamicItems.settings.serviceRoot + "/GET_DATA_FOR_FIELD_TABLE?itemId=" + encodeURIComponent("{itemIdEncrypted}") + "&linkTypeNumber=" + (options.linkTypeNumber || "") + "&moduleId=" + options.moduleId + "&entity_type=" + encodeURIComponent((!options.entityTypes ? "" : options.entityTypes.join())),
                         dataType: "json",
                         method: "GET"
@@ -260,8 +267,8 @@ Wiser2.api({
                             value: options.data.property_[key]
                         });
                     }
-                    
-                    Wiser2.api({
+
+                    Wiser.api({
                         url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(options.data.encryptedId),
                         method: "PUT",
                         contentType: "application/json",
@@ -283,8 +290,8 @@ Wiser2.api({
                     }
                     
                     startLoader();
-                    
-                    Wiser2.api({
+
+                    Wiser.api({
                         url: window.dynamicItems.settings.serviceRoot + "/REMOVE_LINK?source_plain=" + encodeURIComponent(options.data.id) + "&destination=" + encodeURIComponent(currentItemId) + "&linkTypeNumber=" + (options.linkTypeNumber || ""),
                         dataType: "json",
                         method: "GET"

@@ -46,7 +46,28 @@ namespace Api.Modules.Grids.Services
         private readonly ILogger<GridsService> logger;
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly IApiReplacementsService apiReplacementsService;
-        private static readonly List<string> ItemColumns = new() {"id", "unique_uuid", "entity_type", "moduleid", "published_environment", "readonly", "removed", "title", "added_on", "added_by", "changed_on", "changed_by"};
+        private static readonly List<string> ItemColumns = new()
+        {
+            "id",
+            "unique_uuid",
+            "uniqueUuid",
+            "entity_type",
+            "entityType",
+            "moduleid",
+            "published_environment",
+            "publishedEnvironment",
+            "readonly",
+            "removed",
+            "title",
+            "added_on",
+            "addedOn",
+            "added_by",
+            "addedBy",
+            "changed_on",
+            "changedOn",
+            "changed_by",
+            "changedBy"
+        };
 
         /// <summary>
         /// Creates a new instance of GridsService.
@@ -218,20 +239,20 @@ namespace Api.Modules.Grids.Services
                 case EntityGridModes.ChangeHistory:
                 {
                     // Data for the change history of an item.
-                    results.Columns.Add(new GridColumn {Field = "changed_on", Title = "Datum", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
+                    results.Columns.Add(new GridColumn {Field = "changedOn", Title = "Datum", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
                     results.Columns.Add(new GridColumn {Field = "field", Title = "Veldnaam"});
                     results.Columns.Add(new GridColumn {Field = "action", Title = "Actie type"});
                     results.Columns.Add(new GridColumn {Field = "oldvalue", Title = "Oude waarde"});
                     results.Columns.Add(new GridColumn {Field = "newvalue", Title = "Nieuwe waarde"});
-                    results.Columns.Add(new GridColumn {Field = "changed_by", Title = "Nieuwe waarde"});
+                    results.Columns.Add(new GridColumn {Field = "changedBy", Title = "Gewijzigd door"});
 
                     hasPredefinedSchema = true;
                     results.SchemaModel.Fields.Add("id", new FieldModel {Type = "number"});
-                    results.SchemaModel.Fields.Add("changed_on", new FieldModel {Type = "date"});
+                    results.SchemaModel.Fields.Add("changedOn", new FieldModel {Type = "date"});
                     results.SchemaModel.Fields.Add("tablename", new FieldModel {Type = "string"});
-                    results.SchemaModel.Fields.Add("item_id", new FieldModel {Type = "number"});
+                    results.SchemaModel.Fields.Add("itemId", new FieldModel {Type = "number"});
                     results.SchemaModel.Fields.Add("action", new FieldModel {Type = "string"});
-                    results.SchemaModel.Fields.Add("changed_by", new FieldModel {Type = "string"});
+                    results.SchemaModel.Fields.Add("changedBy", new FieldModel {Type = "string"});
                     results.SchemaModel.Fields.Add("field", new FieldModel {Type = "string"});
                     results.SchemaModel.Fields.Add("oldvalue", new FieldModel {Type = "string"});
                     results.SchemaModel.Fields.Add("newvalue", new FieldModel {Type = "string"});
@@ -243,11 +264,11 @@ namespace Api.Modules.Grids.Services
 
                     selectQuery = $@"SELECT 
 	                                    current.id AS id,
-	                                    current.changed_on AS changed_on,
+	                                    current.changed_on AS changedOn,
 	                                    current.tablename AS tablename,
-	                                    current.item_id AS item_id,
+	                                    current.item_id AS itemId,
 	                                    current.action AS action,
-	                                    current.changed_by AS changed_by,
+	                                    current.changed_by AS changedBby,
 	                                    current.field AS field,
 	                                    current.oldvalue AS oldvalue,
 	                                    current.newvalue AS newvalue
@@ -277,11 +298,11 @@ namespace Api.Modules.Grids.Services
                 }
                 case EntityGridModes.TaskHistory:
                 {
-                    results.Columns.Add(new GridColumn {Field = "due_date", Title = "Due-date", Format = "{0:dd MMMM yyyy}"});
+                    results.Columns.Add(new GridColumn {Field = "dueDate", Title = "Due-date", Format = "{0:dd MMMM yyyy}"});
                     results.Columns.Add(new GridColumn {Field = "sender", Title = "Verzonden door"});
                     results.Columns.Add(new GridColumn {Field = "receiver", Title = "Verzonden aan"});
                     results.Columns.Add(new GridColumn {Field = "content", Title = "Tekst", Width = "600px"});
-                    results.Columns.Add(new GridColumn {Field = "checked_date", Title = "Afgevinkt op", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
+                    results.Columns.Add(new GridColumn {Field = "checkedDate", Title = "Afgevinkt op", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
 
                     countQuery = $@"SELECT COUNT(*)
                                     FROM {WiserTableNames.WiserItem} i
@@ -297,15 +318,15 @@ namespace Api.Modules.Grids.Services
                     selectQuery = $@"SELECT
 	                                    i.id,
 	                                    i.id AS encryptedId_encrypt_withdate,
-	                                    STR_TO_DATE(dueDate.`value`, '%Y-%m-%d %H:%i:%s') AS due_date,
-	                                    STR_TO_DATE(checkedDate.`value`, '%Y-%m-%d %H:%i:%s') AS checked_date,
+	                                    STR_TO_DATE(dueDate.`value`, '%Y-%m-%d %H:%i:%s') AS dueDate,
+	                                    STR_TO_DATE(checkedDate.`value`, '%Y-%m-%d %H:%i:%s') AS checkedDate,
 	                                    IFNULL(sender.`value`, '') AS sender,
 	                                    receiver.`value` AS receiver,
 	                                    content.`value` AS content
                                     FROM {WiserTableNames.WiserItem} i
 
-                                    JOIN {WiserTableNames.WiserItemDetail} dueDate ON dueDate.item_id = i.id AND dueDate.`key` = 'agendering_date' [if({{due_date}}!)]AND dueDate.`value` <> ''AND DATE(dueDate.`value`) {{due_date_filter}}[endif] 
-                                    [if({{checked_date}}=)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} checkedDate ON checkedDate.item_id = i.id AND checkedDate.`key` = 'checkedon' [if({{checked_date}}!)]AND dueDate.`value` IS NOT NULL AND checkedDate.`value` IS NOT NULL AND checkedDate.`value` <> '' AND DATE(checkedDate.`value`) {{checked_date_filter}}[endif] 
+                                    JOIN {WiserTableNames.WiserItemDetail} dueDate ON dueDate.item_id = i.id AND dueDate.`key` = 'agendering_date' [if({{dueDate}}!)]AND dueDate.`value` <> ''AND DATE(dueDate.`value`) {{dueDate_filter}}[endif] 
+                                    [if({{checkedDate}}=)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} checkedDate ON checkedDate.item_id = i.id AND checkedDate.`key` = 'checkedon' [if({{checkedDate}}!)]AND dueDate.`value` IS NOT NULL AND checkedDate.`value` IS NOT NULL AND checkedDate.`value` <> '' AND DATE(checkedDate.`value`) {{checkedDate_filter}}[endif] 
                                     [if({{sender}}=)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} sender ON sender.item_id = i.id AND sender.`key` = 'placed_by_id' [if({{sender}}!)]AND sender.`value` {{sender_filter}}[endif] 
                                     JOIN {WiserTableNames.WiserItemDetail} receiver ON receiver.item_id = i.id AND receiver.`key` = 'userid' [if({{receiver}}!)]AND receiver.`value` {{receiver_filter}}[endif] 
                                     JOIN {WiserTableNames.WiserItemDetail} content ON content.item_id = i.id AND content.`key` = 'content' [if({{content}}!)]AND content.`value` {{content_filter}}[endif] 
@@ -400,9 +421,9 @@ namespace Api.Modules.Grids.Services
                 {
                     results.Columns.Add(new GridColumn {Field = "icon", Title = "&nbsp;", Filterable = false, Width = "70px", Template = "<div class='grid-icon #:icon# icon-bg-#:color#'></div>"});
                     results.Columns.Add(new GridColumn {Field = "title", Title = "Titel", Template = "<strong>#: title #</strong><br><small>#: entity_type #</small>"});
-                    results.Columns.Add(new GridColumn {Field = "added_on", Title = "Aangemaakt op", Format = "{0:dd MMMM yyyy}"});
-                    results.Columns.Add(new GridColumn {Field = "added_by", Title = "Aangemaakt door"});
-                    results.Columns.Add(new GridColumn {Field = "more_info", Title = "Overige info"});
+                    results.Columns.Add(new GridColumn {Field = "addedOn", Title = "Aangemaakt op", Format = "{0:dd MMMM yyyy}"});
+                    results.Columns.Add(new GridColumn {Field = "addedBy", Title = "Aangemaakt door"});
+                    results.Columns.Add(new GridColumn {Field = "moreInfo", Title = "Overige info"});
 
                     if (options?.Filter?.Filters == null || !options.Filter.Filters.Any())
                     {
@@ -433,7 +454,7 @@ namespace Api.Modules.Grids.Services
 
                                             {{filters}}
                                             WHERE [if({{title}}!)]i.title {{title_filter}}[else]TRUE[endif] 
-                                            [if({{unique_uuid}}!)]AND i.unique_uuid {{unique_uuid_filter}}[endif]
+                                            [if({{uniqueUuid}}!)]AND i.unique_uuid {{uniqueUuid_filter}}[endif]
                                             [if({{added_by}}!)]AND i.added_by {{added_by_filter}}[endif]
                                             [if({{changed_by}}!)]AND i.changed_by {{changed_by_filter}}[endif]
                                             [if({{id}}!)]AND i.id {{id_filter}}[endif]
@@ -445,10 +466,10 @@ namespace Api.Modules.Grids.Services
 	                                        i.id,
 	                                        i.id AS encryptedId_encrypt_withdate,
                                             i.title,
-	                                        i.entity_type,
+	                                        i.entity_type AS entityType,
 	                                        i.moduleId,
-	                                        i.added_on,
-	                                        i.added_by,
+	                                        i.added_on AS addedOn,
+	                                        i.added_by AS addedBy,
 	                                        e.icon,
 	                                        e.color,
 	                                        '' AS more_info
@@ -463,9 +484,9 @@ namespace Api.Modules.Grids.Services
 
                                         {{filters}}
                                         WHERE [if({{title}}!)]i.title {{title_filter}}[else]TRUE[endif] 
-                                        [if({{unique_uuid}}!)]AND i.unique_uuid {{unique_uuid_filter}}[endif]
-                                        [if({{added_by}}!)]AND i.added_by {{added_by_filter}}[endif]
-                                        [if({{changed_by}}!)]AND i.changed_by {{changed_by_filter}}[endif]
+                                        [if({{uniqueUuid}}!)]AND i.unique_uuid {{uniqueUuid_filter}}[endif]
+                                        [if({{addedBy}}!)]AND i.added_by {{addedBy_filter}}[endif]
+                                        [if({{changedBy}}!)]AND i.changed_by {{changedBy_filter}}[endif]
                                         [if({{id}}!)]AND i.id {{id_filter}}[endif]
                                         {versionWhereClause}
                                         AND (?entityType = '' OR i.entity_type = ?entityType)
@@ -489,9 +510,9 @@ namespace Api.Modules.Grids.Services
 
                                             {{filters}}
                                             WHERE [if({{title}}!)]i.title {{title_filter}}[else]TRUE[endif] 
-                                            [if({{unique_uuid}}!)]AND i.unique_uuid {{unique_uuid_filter}}[endif]
-                                            [if({{added_by}}!)]AND i.added_by {{added_by_filter}}[endif]
-                                            [if({{changed_by}}!)]AND i.changed_by {{changed_by_filter}}[endif]
+                                            [if({{uniqueUuid}}!)]AND i.unique_uuid {{uniqueUuid_filter}}[endif]
+                                            [if({{addedBy}}!)]AND i.added_by {{addedBy_filter}}[endif]
+                                            [if({{changedBy}}!)]AND i.changed_by {{changedBy_filter}}[endif]
                                             [if({{id}}!)]AND i.id {{id_filter}}[endif]
                                             {versionWhereClause}
                                             AND (?entityType = '' OR i.entity_type = ?entityType)
@@ -503,10 +524,10 @@ namespace Api.Modules.Grids.Services
 	                                            i.id,
 	                                            i.id AS encryptedId_encrypt_withdate,
                                                 i.title,
-	                                            i.entity_type,
+	                                            i.entity_type AS entityType,
 	                                            i.moduleId,
-	                                            i.added_on,
-	                                            i.added_by,
+	                                            i.added_on AS addedOn,
+	                                            i.added_by AS addedBy,
 	                                            e.icon,
 	                                            e.color,
 	                                            'Dit item is verwijderd' AS more_info
@@ -521,9 +542,9 @@ namespace Api.Modules.Grids.Services
 
                                             {{filters}}
                                             WHERE [if({{title}}!)]i.title {{title_filter}}[else]TRUE[endif] 
-                                            [if({{unique_uuid}}!)]AND i.unique_uuid {{unique_uuid_filter}}[endif]
-                                            [if({{added_by}}!)]AND i.added_by {{added_by_filter}}[endif]
-                                            [if({{changed_by}}!)]AND i.changed_by {{changed_by_filter}}[endif]
+                                            [if({{uniqueUuid}}!)]AND i.unique_uuid {{uniqueUuid_filter}}[endif]
+                                            [if({{addedBy}}!)]AND i.added_by {{addedBy_filter}}[endif]
+                                            [if({{changedBy}}!)]AND i.changed_by {{changedBy_filter}}[endif]
                                             [if({{id}}!)]AND i.id {{id_filter}}[endif]
                                             {versionWhereClause}
                                             AND (?entityType = '' OR i.entity_type = ?entityType)
@@ -576,13 +597,13 @@ namespace Api.Modules.Grids.Services
 	                                        i.id,
 	                                        i.id AS encryptedId_encrypt_withdate,
                                             i.title,
-	                                        i.entity_type,
+	                                        i.entity_type AS entityType,
 	                                        i.moduleId,
-	                                        i.added_on,
-	                                        i.added_by,
+	                                        i.added_on AS addedOn,
+	                                        i.added_by AS addedBy,
 	                                        e.icon,
 	                                        e.color,
-	                                        '' AS more_info
+	                                        '' AS moreInfo
                                         FROM {tablePrefix}{WiserTableNames.WiserItem} i
                                         JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
 
@@ -603,13 +624,13 @@ namespace Api.Modules.Grids.Services
 	                                        i.id,
 	                                        i.id AS encryptedId_encrypt_withdate,
                                             i.title,
-	                                        i.entity_type,
+	                                        i.entity_type AS entityType,
 	                                        i.moduleId,
-	                                        i.added_on,
-	                                        i.added_by,
+	                                        i.added_on AS addedOn,
+	                                        i.added_by AS addedby,
 	                                        e.icon,
 	                                        e.color,
-	                                        '' AS more_info
+	                                        '' AS moreInfo
                                         FROM {tablePrefix}{WiserTableNames.WiserItemDetail} id
                                         JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = id.item_id AND (?entityType = '' OR i.entity_type = ?entityType)
                                         JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
@@ -670,13 +691,13 @@ namespace Api.Modules.Grids.Services
 	                                            i.id,
 	                                            i.id AS encryptedId_encrypt_withdate,
                                                 i.title,
-	                                            i.entity_type,
+	                                            i.entity_type AS entityType,
 	                                            i.moduleId,
-	                                            i.added_on,
-	                                            i.added_by,
+	                                            i.added_on AS addedOn,
+	                                            i.added_by AS addedBy,
 	                                            e.icon,
 	                                            e.color,
-	                                            'Dit item is verwijderd' AS more_info
+	                                            'Dit item is verwijderd' AS moreInfo
                                             FROM {tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix} i
                                             JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
 
@@ -697,13 +718,13 @@ namespace Api.Modules.Grids.Services
 	                                            i.id,
 	                                            i.id AS encryptedId_encrypt_withdate,
                                                 i.title,
-	                                            i.entity_type,
+	                                            i.entity_type AS entityType,
 	                                            i.moduleId,
-	                                            i.added_on,
-	                                            i.added_by,
+	                                            i.added_on AS addedOn,
+	                                            i.added_by AS addedBy,
 	                                            e.icon,
 	                                            e.color,
-	                                            '' AS more_info
+	                                            '' AS moreInfo
                                             FROM {tablePrefix}{WiserTableNames.WiserItemDetail}{WiserTableNames.ArchiveSuffix} id
                                             JOIN {tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix} i ON i.id = id.item_id AND (?entityType = '' OR i.entity_type = ?entityType)
                                             JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
@@ -750,39 +771,56 @@ namespace Api.Modules.Grids.Services
                 {
                     results.Columns.Add(new GridColumn {Field = "key", Title = "Naam"});
                     results.Columns.Add(new GridColumn {Field = "value", Title = "Waarde"});
-                    results.Columns.Add(new GridColumn {Field = "language_code", Title = "Taalcode", Width = "100px"});
+                    if (String.IsNullOrWhiteSpace(results.LanguageCode))
+                    {
+                        results.Columns.Add(new GridColumn {Field = "languageCode", Title = "Taalcode", Width = "100px"});
+                    }
+
                     results.Columns.Add(new GridColumn {Field = "command", Title = "&nbsp;", Width = "120px", Command = new List<string> {"destroy"}});
 
                     results.SchemaModel.Fields.Add("id", new FieldModel {Editable = false, Type = "number", Nullable = false});
                     results.SchemaModel.Fields.Add("key", new FieldModel {Editable = true, Type = "string", Nullable = false});
                     results.SchemaModel.Fields.Add("value", new FieldModel {Editable = true, Type = "string", Nullable = true});
-                    results.SchemaModel.Fields.Add("language_code", new FieldModel {Editable = true, Type = "string", Nullable = true});
+                    results.SchemaModel.Fields.Add("languageCode", new FieldModel {Editable = true, Type = "string", Nullable = true});
 
                     hasPredefinedSchema = true;
 
                     clientDatabaseConnection.ClearParameters();
                     clientDatabaseConnection.AddParameter("itemId", itemId);
                     clientDatabaseConnection.AddParameter("groupName", fieldGroupName);
+                    if (!String.IsNullOrWhiteSpace(results.LanguageCode))
+                    {
+                        options ??= new GridReadOptionsModel();
+                        options.Filter ??= new GridFilterModel();
+                        options.Filter.Filters ??= new List<GridFilterModel>();
+                        options.Filter.Filters.RemoveAll(filter => filter.Field == "languageCode");
+                        options.Filter.Filters.Add(new GridFilterModel
+                        {
+                            Field = "languageCode",
+                            Value = results.LanguageCode,
+                            Operator = "eq"
+                        });
+                    }
 
                     countQuery = $@"SELECT COUNT(*)
                                 FROM {tablePrefix}{WiserTableNames.WiserItemDetail}
                                 WHERE item_id = ?itemId
                                 AND groupname = ?groupName
-                                [if({{key_has_filter}}!)]`key` {{key_filter}}[endif]
-                                [if({{value_has_filter}}!)]`value` {{value_filter}}[endif]
-                                [if({{language_code_has_filter}}!)]`language_code` {{language_code_filter}}[endif]";
+                                [if({{key_has_filter}}!)]AND `key` {{key_filter}}[endif]
+                                [if({{value_has_filter}}!)]AND `value` {{value_filter}}[endif]
+                                [if({{languageCode_has_filter}}!)]AND `language_code` {{languageCode_filter}}[endif]";
 
                     selectQuery = $@"SELECT
                                     id,
-                                    language_code,
+                                    language_code AS languageCode,
                                     `key`,
 	                                CONCAT_WS('', `value`, long_value) AS `value`
                                 FROM {tablePrefix}{WiserTableNames.WiserItemDetail}
                                 WHERE item_id = ?itemId
                                 AND groupname = ?groupName
-                                [if({{key_has_filter}}!)]`key` {{key_filter}}[endif]
-                                [if({{value_has_filter}}!)]`value` {{value_filter}}[endif]
-                                [if({{language_code_has_filter}}!)]`language_code` {{language_code_filter}}[endif]
+                                [if({{key_has_filter}}!)]AND `key` {{key_filter}}[endif]
+                                [if({{value_has_filter}}!)]AND `value` {{value_filter}}[endif]
+                                [if({{languageCode_has_filter}}!)]AND `language_code` {{languageCode_filter}}[endif]
                                 {{sort}}
                                 {{limit}}";
 
@@ -808,25 +846,25 @@ namespace Api.Modules.Grids.Services
                         var filterable = new Dictionary<string, object> {{"extra", true}};
                         results.Columns.Add(new GridColumn {Selectable = true, Width = "55px"});
                         results.Columns.Add(new GridColumn {Field = "id", Title = "ID", Width = "80px", Filterable = filterable});
-                        results.Columns.Add(new GridColumn {Field = "link_id", Title = "Koppel-ID", Width = "55px", Filterable = filterable});
-                        results.Columns.Add(new GridColumn {Field = "entity_type", Title = "Type", Width = "100px", Filterable = filterable, Template = "#: window.dynamicItems.getEntityTypeFriendlyName(entity_type) #"});
-                        results.Columns.Add(new GridColumn {Field = "published_environment", Title = "Gepubliceerde omgeving", Width = "50px", Template = "<ins title='#: published_environment #' class='icon-#: published_environment #'></ins>"});
+                        results.Columns.Add(new GridColumn {Field = "linkId", Title = "Koppel-ID", Width = "55px", Filterable = filterable});
+                        results.Columns.Add(new GridColumn {Field = "entityType", Title = "Type", Width = "100px", Filterable = filterable, Template = "#: window.dynamicItems.getEntityTypeFriendlyName(entityType) #"});
+                        results.Columns.Add(new GridColumn {Field = "publishedEnvironment", Title = "Gepubliceerde omgeving", Width = "50px", Template = "<ins title='#: publishedEnvironment #' class='icon-#: publishedEnvironment #'></ins>"});
                         results.Columns.Add(new GridColumn {Field = "title", Title = "Naam", Filterable = filterable});
                     }
 
                     hasPredefinedSchema = true;
                     results.SchemaModel.Fields.Add("id", new FieldModel {Editable = false, Type = "number", Nullable = false});
-                    results.SchemaModel.Fields.Add("encrypted_id", new FieldModel {Editable = false, Type = "string", Nullable = false});
-                    results.SchemaModel.Fields.Add("unique_uuid", new FieldModel {Editable = false, Type = "string", Nullable = false});
-                    results.SchemaModel.Fields.Add("entity_type", new FieldModel {Type = "string"});
-                    results.SchemaModel.Fields.Add("published_environment", new FieldModel {Type = "number"});
+                    results.SchemaModel.Fields.Add("encryptedId", new FieldModel {Editable = false, Type = "string", Nullable = false});
+                    results.SchemaModel.Fields.Add("uniqueUuid", new FieldModel {Editable = false, Type = "string", Nullable = false});
+                    results.SchemaModel.Fields.Add("entityType", new FieldModel {Type = "string"});
+                    results.SchemaModel.Fields.Add("publishedEnvironment", new FieldModel {Type = "number"});
                     results.SchemaModel.Fields.Add("title", new FieldModel {Type = "string"});
-                    results.SchemaModel.Fields.Add("link_type_number", new FieldModel {Type = "number"});
-                    results.SchemaModel.Fields.Add("link_id", new FieldModel {Type = "number", Editable = false});
-                    results.SchemaModel.Fields.Add("added_on", new FieldModel {Type = "date", Editable = false});
-                    results.SchemaModel.Fields.Add("added_by", new FieldModel {Type = "string", Editable = false});
-                    results.SchemaModel.Fields.Add("changed_on", new FieldModel {Type = "date", Editable = false});
-                    results.SchemaModel.Fields.Add("changed_by", new FieldModel {Type = "string", Editable = false});
+                    results.SchemaModel.Fields.Add("linkTypeNumber", new FieldModel {Type = "number"});
+                    results.SchemaModel.Fields.Add("linkId", new FieldModel {Type = "number", Editable = false});
+                    results.SchemaModel.Fields.Add("addedOn", new FieldModel {Type = "date", Editable = false});
+                    results.SchemaModel.Fields.Add("addedBy", new FieldModel {Type = "string", Editable = false});
+                    results.SchemaModel.Fields.Add("changedOn", new FieldModel {Type = "date", Editable = false});
+                    results.SchemaModel.Fields.Add("changedBy", new FieldModel {Type = "string", Editable = false});
                     results.SchemaModel.Fields.Add(WiserItemsService.LinkOrderingFieldName, new FieldModel {Type = "number", Nullable = false});
 
                     await itemsService.FixTreeViewOrderingAsync(moduleId, identity, encryptedId, linkTypeNumber);
@@ -1025,10 +1063,10 @@ namespace Api.Modules.Grids.Services
 
                     if (!hasColumnsFromOptions)
                     {
-                        results.Columns.Add(new GridColumn {Field = "added_on", Title = "Toegevoegd op", Width = "150px", Format = "{0:dd-MM-yyyy HH:mm:ss}", Hidden = true});
-                        results.Columns.Add(new GridColumn {Field = "added_by", Title = "Toegevoegd door", Width = "100px", Hidden = true});
-                        results.Columns.Add(new GridColumn {Field = "changed_on", Title = "Gewijzigd op", Width = "150px", Format = "{0:dd-MM-yyyy HH:mm:ss}", Hidden = true});
-                        results.Columns.Add(new GridColumn {Field = "changed_by", Title = "Gewijzigd door", Width = "100px", Hidden = true});
+                        results.Columns.Add(new GridColumn {Field = "addedOn", Title = "Toegevoegd op", Width = "150px", Format = "{0:dd-MM-yyyy HH:mm:ss}", Hidden = true});
+                        results.Columns.Add(new GridColumn {Field = "addedBy", Title = "Toegevoegd door", Width = "100px", Hidden = true});
+                        results.Columns.Add(new GridColumn {Field = "changedOn", Title = "Gewijzigd op", Width = "150px", Format = "{0:dd-MM-yyyy HH:mm:ss}", Hidden = true});
+                        results.Columns.Add(new GridColumn {Field = "changedBy", Title = "Gewijzigd door", Width = "100px", Hidden = true});
                     }
 
                     // Build the queries.
@@ -1092,8 +1130,8 @@ namespace Api.Modules.Grids.Services
                                                 # If we don't do this, MySQL will first get all items to group them, then it will add the limit, which is a lot slower.
                                                 SELECT 
 	                                                i.id,
-	                                                i.id AS encrypted_id_encrypt_withdate,
-                                                    i.original_item_id,
+	                                                i.id AS encryptedId_encrypt_withdate,
+                                                    i.originalItemId,
 	                                                i.title,
                                                     CASE i.published_environment
     	                                                WHEN 0 THEN 'onzichtbaar'
@@ -1101,13 +1139,13 @@ namespace Api.Modules.Grids.Services
                                                         WHEN 2 THEN 'test'
                                                         WHEN 3 THEN 'acceptatie'
                                                         WHEN 4 THEN 'live'
-                                                    END AS published_environment,
-                                                    i.entity_type,
-                                                    i.added_on,
-                                                    i.added_by,
-                                                    i.changed_on,
-                                                    i.changed_by,
-                                                    i.parent_item_id
+                                                    END AS publishedEnvironment,
+                                                    i.entity_type AS entityType,
+                                                    i.added_on AS addedOn,
+                                                    i.added_by AS addedBy,
+                                                    i.changed_on AS changedOn,
+                                                    i.changed_by AS changedBy,
+                                                    i.parent_item_id AS parentItemId
                                                 FROM {tablePrefix}{WiserTableNames.WiserItem} i
 
                                                 {{filters}}
@@ -1168,24 +1206,24 @@ namespace Api.Modules.Grids.Services
 
                                 selectQuery = $@"SELECT
 	                                                i.id,
-	                                                i.id AS encrypted_id_encrypt_withdate,
-                                                    i.unique_uuid,
+	                                                i.id AS encryptedId_encrypt_withdate,
+                                                    i.unique_uuid AS uniqueUuid,
                                                     CASE i.published_environment
     	                                                WHEN 0 THEN 'onzichtbaar'
                                                         WHEN 1 THEN 'dev'
                                                         WHEN 2 THEN 'test'
                                                         WHEN 3 THEN 'acceptatie'
                                                         WHEN 4 THEN 'live'
-                                                    END AS published_environment,
+                                                    END AS publishedEnvironment,
                                                     i.title,
-                                                    i.entity_type,
+                                                    i.entity_type AS entityType,
 	                                                GROUP_CONCAT(CONCAT(id.`key`, '=', id.`value`, '') SEPARATOR '~~~') AS fields,
-                                                    ?linkTypeNumber AS link_type_number,
-                                                    0 AS link_id,
-                                                    i.added_on,
-                                                    i.added_by,
-                                                    i.changed_on,
-                                                    i.changed_by,
+                                                    ?linkTypeNumber AS linkTypeNumber,
+                                                    0 AS linkId,
+                                                    i.added_on AS addedOn,
+                                                    i.added_by AS addedBy,
+                                                    i.changed_on AS changedOn,
+                                                    i.changed_by AS changedBy,
                                                     i.ordering AS `{WiserItemsService.LinkOrderingFieldName}`
                                                 FROM {tablePrefix}{WiserTableNames.WiserItem} i
 
@@ -1232,24 +1270,24 @@ namespace Api.Modules.Grids.Services
 
                                 selectQuery = $@"SELECT
 	                                                i.id,
-	                                                i.id AS encrypted_id_encrypt_withdate,
-                                                    i.unique_uuid,
+	                                                i.id AS encryptedId_encrypt_withdate,
+                                                    i.unique_uuid AS uniqueUuid,
                                                     CASE i.published_environment
     	                                                WHEN 0 THEN 'onzichtbaar'
                                                         WHEN 1 THEN 'dev'
                                                         WHEN 2 THEN 'test'
                                                         WHEN 3 THEN 'acceptatie'
                                                         WHEN 4 THEN 'live'
-                                                    END AS published_environment,
+                                                    END AS publishedEnvironment,
                                                     i.title,
-                                                    i.entity_type,
+                                                    i.entity_type AS entityType,
 	                                                GROUP_CONCAT(CONCAT(id.`key`, '=', id.`value`, '') SEPARATOR '~~~') AS fields,
-                                                    il.type AS link_type_number,
-                                                    il.id AS link_id,
-                                                    i.added_on,
-                                                    i.added_by,
-                                                    i.changed_on,
-                                                    i.changed_by,
+                                                    il.type AS linkTypeNumber,
+                                                    il.id AS linkId,
+                                                    i.added_on AS addedOn,
+                                                    i.added_by AS addedBy,
+                                                    i.changed_on AS changedOn,
+                                                    i.changed_by AS changedBy,
                                                     il.ordering AS `{WiserItemsService.LinkOrderingFieldName}`
                                                 FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} il
                                                 JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = il.{(currentItemIsSourceId ? "destination_item_id" : "item_id")} {(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")} {(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}
@@ -1277,24 +1315,24 @@ namespace Api.Modules.Grids.Services
 
                                                 SELECT
 	                                                i.id,
-	                                                i.id AS encrypted_id_encrypt_withdate,
-                                                    i.unique_uuid,
+	                                                i.id AS encryptedId_encrypt_withdate,
+                                                    i.unique_uuid AS uniqueUuid,
                                                     CASE i.published_environment
     	                                                WHEN 0 THEN 'onzichtbaar'
                                                         WHEN 1 THEN 'dev'
                                                         WHEN 2 THEN 'test'
                                                         WHEN 3 THEN 'acceptatie'
                                                         WHEN 4 THEN 'live'
-                                                    END AS published_environment,
+                                                    END AS publishedEnvironment,
                                                     i.title,
-                                                    i.entity_type,
+                                                    i.entity_type AS entityType,
 	                                                GROUP_CONCAT(CONCAT(id.`key`, '=', id.`value`, '') SEPARATOR '~~~') AS fields,
-                                                    il.type AS link_type_number,
-                                                    il.id AS link_id,
-                                                    i.added_on,
-                                                    i.added_by,
-                                                    i.changed_on,
-                                                    i.changed_by,
+                                                    il.type AS linkTypeNumber,
+                                                    il.id AS linkId,
+                                                    i.added_on AS addedOn,
+                                                    i.added_by AS addedBy,
+                                                    i.changed_on AS changedOn,
+                                                    i.changed_by AS changedBy,
                                                     il.ordering AS `{WiserItemsService.LinkOrderingFieldName}`
                                                 FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} il
                                                 JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = il.{(currentItemIsSourceId ? "destination_item_id" : "item_id")} {(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")} {(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}
@@ -1431,7 +1469,11 @@ namespace Api.Modules.Grids.Services
 
                     foreach (DataColumn dataColumn in dataTable.Columns)
                     {
-                        var columnName = dataColumn.ColumnName.ToLowerInvariant().Replace("_encrypt_withdate", "").Replace("_encrypt", "").Replace("_hide", "").MakeJsonPropertyName();
+                        var columnName = dataColumn.ColumnName.Replace("_encrypt_withdate", "").Replace("_encrypt", "").Replace("_hide", "").MakeJsonPropertyName();
+                        if (mode == EntityGridModes.CustomQuery)
+                        {
+                            columnName = columnName.ToLowerInvariant();
+                        }
 
                         if (dataColumn.ColumnName.Contains("_encrypt", StringComparison.OrdinalIgnoreCase)
                             || dataColumn.ColumnName.Contains("_encrypt_hide", StringComparison.OrdinalIgnoreCase)
@@ -1629,7 +1671,7 @@ namespace Api.Modules.Grids.Services
             if (!String.IsNullOrWhiteSpace(moduleSettings))
             {
                 moduleSettingsModel = JsonConvert.DeserializeObject<GridViewSettingsModel>(moduleSettings);
-                results = moduleSettingsModel.GridViewSettings;
+                results = moduleSettingsModel!.GridViewSettings;
             }
 
             if (results.PageSize <= 0)

@@ -24,7 +24,9 @@ dd {
 }
 
 .k-dialog #changeImageDataDialog,
-.k-dialog #dataSelectorTemplateDialog {
+.k-dialog #dataSelectorTemplateDialog,
+.k-dialog #youTubeDialog,
+.k-dialog #translateItemDialog {
     display: block;
 }
 
@@ -146,6 +148,8 @@ body.gridViewMode #mainScreenForm {
 
 #right-pane {
     background-color: #EEEEEE;
+    display: flex;
+    flex-direction: column;
 }
 
 #right-pane .pane-content {
@@ -153,6 +157,8 @@ body.gridViewMode #mainScreenForm {
     margin: 0;
     padding: 0;
     height: fit-content;
+    min-height: fit-content;
+    flex: 1 1 auto;
 }
 
 /** ICONS **/
@@ -278,16 +284,10 @@ body.gridViewMode #mainScreenForm {
 }
 
 #previewFrame table.k-editor {
-    height: calc(100% - 60px);
-    margin: 0;
-    position: absolute;
-    top: 0;
-    bottom: 60px;
-    left: 0;
-    right: 0;
+    height: 100%;
 }
 
-#previewFrame .k-tabstrip-wrapper #previewTabStrip .k-content {
+#previewFrame #previewTabStrip .k-tabstrip-content {
     position: absolute;
     top: 50px;
     bottom: 0;
@@ -298,13 +298,12 @@ iframe.iframe:not(.hidden) + table.k-editor {
     display: none;
 }
 
-#previewFrame .k-tabstrip-wrapper,
-#previewFrame .k-tabstrip-wrapper #previewTabStrip {
+#previewFrame #previewTabStrip {
     width: 100%;
     height: 100%;
 }
 
-    #previewFrame .k-tabstrip-wrapper #previewTabStrip .k-tabstrip-items {
+    #previewFrame #previewTabStrip .k-tabstrip-items {
         top: 0;
     }
 

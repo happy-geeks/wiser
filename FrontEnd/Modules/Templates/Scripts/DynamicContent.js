@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Wiser2, Misc } from "../../Base/Scripts/Utils.js";
+import { Wiser, Misc } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import { Preview } from "./Preview.js";
 
@@ -106,7 +106,7 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
@@ -131,7 +131,7 @@ const moduleSettings = {
 
         async initCurrentComponentData() {
             try {
-                this.selectedComponentData = await Wiser2.api({
+                this.selectedComponentData = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
                     dataType: "json",
                     method: "GET"
@@ -190,9 +190,14 @@ const moduleSettings = {
             }
 
             //NUMERIC FIELD
-            container.find(".numeric").kendoNumericTextBox({
-                change: () => this.onInputChange(true),
-                spin: () => this.onInputChange(false)
+            container.find(".numeric").each((index, element) => {
+                const isDecimal = $(element).data("decimal") === true;
+                $(element).kendoNumericTextBox({
+                    decimals: isDecimal ? 2 : 0,
+                    format: isDecimal ? "n2" : "n0",
+                    change: () => this.onInputChange(true),
+                    spin: () => this.onInputChange(false)
+                });
             });
             
             //MULTISELECT
@@ -232,7 +237,7 @@ const moduleSettings = {
                 await this.reloadComponentModes(newComponent, newComponentMode);
                 this.selectedComponentData.componentMode = this.componentModeComboBox.text();
 
-                const response = await Wiser2.api({
+                const response = await Wiser.api({
                     url: `/Modules/DynamicContent/${encodeURIComponent(newComponent)}/DynamicContentTabPane`,
                     method: "POST",
                     contentType: "application/json",
@@ -263,7 +268,7 @@ const moduleSettings = {
         }
 
         async reloadComponentModes(newComponent, newComponentMode) {
-            const componentModes = await Wiser2.api({
+            const componentModes = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dynamic-content/${encodeURIComponent(newComponent)}/component-modes`,
                 dataType: "json",
                 method: "GET"
@@ -385,7 +390,7 @@ const moduleSettings = {
             try {
                 this.saving = true;
                 const title = document.querySelector('input[name="visibleDescription"]').value;
-                const contentId = await Wiser2.api({
+                const contentId = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
                     dataType: "json",
                     method: "POST",
@@ -409,7 +414,7 @@ const moduleSettings = {
                 if (alsoDeployToTest) {
                     const version = (parseInt($(".historyContainer .historyLine:first").data("historyVersion")) || 0) + 1;
     
-                    await Wiser2.api({
+                    await Wiser.api({
                         url: `${this.settings.wiserApiRoot}dynamic-content/${contentId}/publish/test/${version}`,
                         dataType: "json",
                         type: "POST",
@@ -430,7 +435,7 @@ const moduleSettings = {
         }
 
         async addLinkToTemplate(templateId) {
-            await Wiser2.api({
+            await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}/link/${templateId}`,
                 dataType: "json",
                 method: "PUT",
@@ -525,13 +530,13 @@ const moduleSettings = {
          * Loads the History HTML and updates the right panel.
          * */
         async loadComponentHistory() {
-            const history = await Wiser2.api({
+            const history = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}/history`,
                 dataType: "json",
                 method: "GET"
             });
 
-            const historyHtml = await Wiser2.api({
+            const historyHtml = await Wiser.api({
                 url: `/Modules/DynamicContent/History`,
                 method: "POST",
                 contentType: "application/json",
@@ -545,7 +550,7 @@ const moduleSettings = {
         async loadPreviewTab() {
             // Preview
             await this.preview.loadProfiles();
-            const response = await Wiser2.api({
+            const response = await Wiser.api({
                 method: "GET",
                 url: "/Modules/Templates/PreviewTab"
             });
@@ -649,7 +654,7 @@ const moduleSettings = {
                         });
                     });
 
-                    await Wiser2.api({
+                    await Wiser.api({
                         url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}/undo-changes`,
                         dataType: "json",
                         method: "POST",
@@ -718,7 +723,7 @@ const moduleSettings = {
                 return;
             }
 
-            await Wiser2.showConfirmDialog(`Are you sure you want to delete layer ${container.find(".index").text()}?`);
+            await Wiser.showConfirmDialog(`Are you sure you want to delete layer ${container.find(".index").text()}?`);
             container.remove();
         }
     }

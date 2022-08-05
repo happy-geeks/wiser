@@ -137,28 +137,22 @@
                             Hier kan een bestaande branch geopend worden.
                         </p>
                         
-                        <div class="row no-scroll" v-if="isMainBranch">
-                            <div class="col col-12 form-row">
-                                <label for="open-branch-type">Waar wilt u de branch openen?</label>
-                                <dropdownlist id="open-branch-type" class="full-width" :data-items="openBranchTypes" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranchType"></dropdownlist>
-                            </div>
+                        <div class="col col-12 form-row" v-if="isMainBranch">
+                            <label for="open-branch-type">Waar wilt u de branch openen?</label>
+                            <dropdownlist id="open-branch-type" class="full-width" :data-items="openBranchTypes" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranchType"></dropdownlist>
                         </div>
                         
-                        <div class="row no-scroll" v-if="openBranchSettings.selectedBranchType.id === 'website'">
-                            <div class="col col-12 form-row">
-                                <label for="website-url">Geef de URL op van uw website</label>
-                                <input type="url" id="website-url" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="openBranchSettings.websiteUrl" required>
-                            </div>
+                        <div class="col col-12 form-row" v-if="openBranchSettings.selectedBranchType.id === 'website'">
+                            <label for="website-url">Geef de URL op van uw website</label>
+                            <input type="url" id="website-url" placeholder="https://happyhorizon.com/" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="openBranchSettings.websiteUrl" required>
                         </div>
                         
-                        <div class="row no-scroll" v-if="isMainBranch">
-                            <div class="col col-12 form-row">
-                                <label for="available-branches">Selecteer de branch die u wilt openen</label>
-                                <dropdownlist id="available-branches-to-open" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranch"></dropdownlist>
-                            </div>
+                        <div class="col col-12 form-row" v-if="isMainBranch">
+                            <label for="available-branches">Selecteer de branch die u wilt openen</label>
+                            <dropdownlist id="available-branches-to-open" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranch"></dropdownlist>
                         </div>
 
-                        <button class="btn btn-primary" @@click="openBranch">Branch openen</button>
+                        <a href="#" class="btn btn-primary" @@click="openBranch">Branch openen</a>
                     </div>
                     <div :class="{ 'col': true, 'col-6': isMainBranch || branches.length > 0, 'col-9': !isMainBranch || !branches.length }">
                         <h2>Branch terugzetten</h2>
@@ -477,6 +471,7 @@
                             <input type="checkbox" v-model="branchMergeSettings.deleteAfterSuccessfulMerge" />
                             <span>Verwijder deze branche na succesvol mergen</span>
                         </label>
+                        <p><strong>Let op!</strong> Deze actie kan niet meer ongedaan gemaakt worden. Als u hierboven niet alle opties aanvinkt, kunnen er wijzigingen verloren gaan.</p>
                     </div>
                 </div>
             </div>
@@ -501,105 +496,88 @@
                 </div>
             </footer>
         </wiser-dialog>
-        <wiser-dialog class="branches-dialog" :modal="true" :width="'1500px'" :title="'Conflicten'" ref="wiserMergeConflictsPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Verwerken openstaande merges', primary: true, action: handleMergeConflicts }]">
-        <div class="container stretch">
-            <div class="row no-scroll">
-                <div class="col col-12 flex-inline">
-                    <select>
-                        <option>Type</option>
-                        <option>Veldnaam</option>
-                        <option>Wijzigingsdatum</option>
-                        <option>Waarde origineel</option>
-                        <option>Waarde branche</option>
-                    </select>
+        
+        <wiser-dialog class="branches-dialog" :modal="true" :width="'1500px'" :title="'Conflicten'" ref="wiserMergeConflictsPrompt" :visible="false" :actions="[]">
+            <div class="container stretch">
+                <div class="row no-scroll">
+                    <div class="col col-12 flex-inline">
+                        <select v-model="batchHandleConflictSettings.property">
+                            <option value="type">Type</option>
+                            <option value="field">Veldnaam</option>
+                            <option value="changeDateOriginal">Wijzigingsdatum origineel</option>
+                            <option value="changeDateBranch">Wijzigingsdatum branch</option>
+                            <option value="originalValue">Waarde origineel</option>
+                            <option value="branchValue">Waarde branch</option>
+                        </select>
 
-                    <select>
-                        <option>bevat</option>
-                        <option>is gelijk aan</option>
-                        <option>is groter dan</option>
-                        <option>is kleiner dan</option>
-                        <option>is tussen</option>
-                    </select>
+                        <select v-model="batchHandleConflictSettings.operator">
+                            <option value="contains" v-if="batchHandleConflictSettings.property !== 'changeDateOriginal' && batchHandleConflictSettings.property !== 'changeDateBranch'">bevat</option>
+                            <option value="equals">is gelijk aan</option>
+                            <option value="greaterThan" v-if="batchHandleConflictSettings.property !== 'field' && batchHandleConflictSettings.property !== 'type'">is groter dan</option>
+                            <option value="lessThan" v-if="batchHandleConflictSettings.property !== 'field' && batchHandleConflictSettings.property !== 'type'">is kleiner dan</option>
+                            <option value="between" v-if="batchHandleConflictSettings.property !== 'field' && batchHandleConflictSettings.property !== 'type'">is tussen</option>
+                        </select>
 
-                    <input type="text" name="" value="" />
-                    <span>en</span>
-                    <input type="text" name="" value="" />
-                            
-                    <button class="btn btn-primary">Keur goed</button>
+                        <input :type="batchHandleConflictSettings.property === 'changeDateOriginal' || batchHandleConflictSettings.property === 'changeDateBranch' ? 'date' : 'text'" v-model="batchHandleConflictSettings.start" />
+                        <span v-if="batchHandleConflictSettings.operator === 'between'">en</span>
+                        <input v-if="batchHandleConflictSettings.operator === 'between'" :type="batchHandleConflictSettings.property === 'changeDateOriginal' || batchHandleConflictSettings.property === 'changeDateBranch' ? 'date' : 'text'" v-model="batchHandleConflictSettings.end" />
 
-                    <button class="btn btn-alert">Keur af</button>
-                </div>
-                
-                <div class="col col-12 table-row no-top-margin">
-                    <div class="fixed-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Type</th>
-                                    <th>Naam</th>
-                                    <th>Veld</th>
-                                    <th>Waarde origineel</th>
-                                    <th>Waarde branche</th>
-                                    <th>Origineel gewijzigd op</th>
-                                    <th>Branche gewijzigd op</th>
-                                    <th>Actie</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Klant</td>
-                                    <td>Happy Geeks BV</td>
-                                    <td>Telefoonnummer</td>
-                                    <td>0412-611234</td>
-                                    <td>+31 (412) 611234</td>
-                                    <td>1 januari 2022 om 09.55<br>
-                                        door Ferry</td>
-                                    <td>1 januari 2022 om 09.55<br>
-                                        door Gilian</td>
-                                    <td></td>
-                                </tr>
-                                <tr>
-                                    <td>Klant</td>
-                                    <td>Happy Geeks BV</td>
-                                    <td>Telefoonnummer</td>
-                                    <td>0412-611234</td>
-                                    <td>+31 (412) 611234</td>
-                                    <td>1 januari 2022 om 09.55<br>
-                                        door Ferry</td>
-                                    <td>1 januari 2022 om 09.55<br>
-                                        door Gilian</td>
-                                    <td></td>
-                                </tr>
-                                <tr>
-                                    <td>Klant</td>
-                                    <td>Happy Geeks BV</td>
-                                    <td>Telefoonnummer</td>
-                                    <td>0412-611234</td>
-                                    <td>+31 (412) 611234</td>
-                                    <td>1 januari 2022 om 09.55<br>
-                                        door Ferry</td>
-                                    <td>1 januari 2022 om 09.55<br>
-                                        door Gilian</td>
-                                    <td></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <button class="btn btn-primary" @@click="onAcceptMultipleConflictsClick">Keur goed</button>
+                        <button class="btn btn-alert" @@click="onDenyMultipleConflictsClick">Keur af</button>
+                    </div>
+                    <div class="col col-12 flex-inline">
+                        <p>Het goedkeuren van een conflict betekent dat de aanpassing van de geselecteerde branch wordt gebruikt en de waarde in de originele/productie branch wordt overschreven en dus verloren gaat. Het afkeuren van een wijziging is andersom, dan wordt de wijziging van de originele/productie branch behouden en gaat de wijziging van de geselecteerde branch verloren.</p>
+                    </div>
+                    
+                    <div class="col col-12 table-row no-top-margin">
+                        <div class="fixed-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Naam</th>
+                                        <th>Veld</th>
+                                        <th>Waarde origineel</th>
+                                        <th>Waarde branche</th>
+                                        <th>Origineel gewijzigd op</th>
+                                        <th>Branche gewijzigd op</th>
+                                        <th>Actie</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="conflict in mergeBranchResult.conflicts" :key="conflict.id" :class="{ 'accepted': conflict.acceptChange === true, 'denied': conflict.acceptChange === false }">
+                                        <td>{{ conflict.typeDisplayName }}</td>
+                                        <td>{{ conflict.title }}</td>
+                                        <td>{{ conflict.fieldDisplayName }}</td>
+                                        <td>{{ conflict.valueInMain }}</td>
+                                        <td>{{ conflict.valueInBranch }}</td>
+                                        <td>{{ conflict.prettyChangeDateInMain }}<br>
+                                            door {{ conflict.changedByInMain }}</td>
+                                        <td>{{ conflict.prettyChangeDateInBranch }}<br>
+                                            door {{ conflict.changedByInBranch }}</td>
+                                        <td>
+                                            <button class="btn btn-primary" @@click="onApproveConflictClick(conflict)">Keur goed</button>
+                                            <button class="btn btn-alert" @@click="onDenyConflictClick(conflict)">Keur af</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
+                <footer class="row fixed no-bottom-padding">
+                    <div class="col col-6 inline">
+                        <span class="error" v-if="!areAllConflictsHandled">
+                            LET OP: nog niet alle conflicten hebben een akkoord of deny toegekend gekregen!
+                        </span>
+                    </div>
+                    <div class="col col-6 align-right">
+                        <span>{{ totalAmountOfApprovedMergeConflicts }} van {{ totalAmountOfMergeConflicts }} conflicten akkoord</span>
+                        <button class="btn btn-primary" @@click="mergeBranch">Start terugzet procedure</button>
+                    </div>
+                </footer>
             </div>
-            <footer class="row fixed no-bottom-padding">
-                <div class="col col-6 inline">
-                    <span class="error">
-                        LET OP: nog niet alle conflicten hebben een akkoord of deny toegekend gekregen!
-                    </span>
-                </div>
-                <div class="col col-6 align-right">
-                    <span>10 van 100 conflicten akkoord</span>
-                    <button class="btn btn-primary">Verwerken openstaande merges</button>
-                </div>
-            </footer>
-        </div>
-    </wiser-dialog>
+        </wiser-dialog>
         <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een ID in'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]" @@open="onWiserIdPromptOpen">
             <div class="form-row">
                 <input type="number" id="wiserId" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" @@keypress="onWiserIdFieldKeyPress" required>
@@ -704,8 +682,8 @@
         <h1>Nieuwe Wiser account toevoegen...</h1>
         <p class="success" v-if="currentStep === 'end'">
             De klant is successvol aangemaakt en heeft als ID '<em>{{ createCustomerResult.data.id }}</em>' gekregen.<br />
-            De URL voor Wiser Live is geworden: <a :href="'https://' + newCustomerData.subDomain + '.wiser3.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.nl</a>. (Deze werkt pas nadat er een DNS-record is toegevoegd voor dit subdomein.)<br />
-            De URL voor Wiser dev is geworden: <a :href="'http://' + newCustomerData.subDomain + '.wiser3.juicedev.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.juicedev.nl</a>. (Deze kan al direct gebruikt worden.)
+            De URL voor Wiser Live is geworden: <a :href="'https://' + newCustomerData.subDomain + '.wiser3.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.nl</a>.<br />
+            De URL voor Wiser dev is geworden: <a :href="'http://' + newCustomerData.subDomain + '.wiser3.juicedev.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.juicedev.nl</a>.
         </p>
         <p v-if="newCustomerData.createNewDatabase">Verder zijn nog de volgende databasegebruikers aangemaakt:</p>
         <p v-else>Je hebt de volgende databasegebruiker ingevuld:</p>
@@ -728,13 +706,20 @@
                 </div>
 
                 <div class="form-row">
-                    <label for="subDomain">Wat is het subdomein dat gebruikt moet worden voor Wiser 2?</label>
+                    <label for="subDomain">Wat is het subdomein dat gebruikt moet worden voor Wiser?</label>
                     <input type="text" id="subDomain" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.subDomain" required :class="{ error: errors.indexOf('SubDomainNotAvailable') > -1, small: true }" placeholder="happygeeks"><span class="hint">.wiser.nl</span>
-                    <p class="hint">Alleen het subdomein, met kleine letters, bijvoorbeeld 'happygeeks'. Dit is verplicht voor Wiser 2 klanten, die moeten kunnen inloggen via een subdomein, zoals 'happygeeks.wiser.nl'.</p>
+                    <p class="hint">Alleen het subdomein, met kleine letters, bijvoorbeeld 'happygeeks'. Dit is verplicht voor Wiser klanten, die moeten kunnen inloggen via een subdomein, zoals 'happygeeks.wiser.nl'.</p>
                 </div>
                 <div class="form-row error-row" v-if="errors.indexOf('SubDomainNotAvailable') > -1">
                     <ins class="icon-line-alert"></ins>
                     <span>Er bestaat al een klant met dit subdomein. Kies a.u.b. een ander subdomein.</span>
+                </div>
+                <div class="form-row">
+                    <label>
+                        <input type="checkbox" name="isConfigurator" v-model="newCustomerData.isMultiLanguage" />
+                        Is meertalig
+                    </label>
+                    <p class="hint">Zet dit vinkje aan indien de website van de klant meertalig wordt. Dan wordt de vertalingenmodule en bijbehorende entiteit toegevoegd.</p>
                 </div>
                 <div class="form-row">
                     <label>

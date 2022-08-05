@@ -4,7 +4,7 @@ using Newtonsoft.Json.Linq;
 namespace Api.Modules.Modules.Models
 {
     /// <summary>
-    /// A model for information about a Wiser 2.0 module.
+    /// A model for information about a Wiser module.
     /// </summary>
     public class ModuleSettingsModel
     {
@@ -38,11 +38,6 @@ namespace Api.Modules.Modules.Models
         /// Gets or sets the icon of the module.
         /// </summary>
         public string Icon { get; set; }
-
-        /// <summary>
-        /// Gets or sets the main color of the module.
-        /// </summary>
-        public string Color { get; set; }
 
         /// <summary>
         /// Gets or sets the group name of the module.
