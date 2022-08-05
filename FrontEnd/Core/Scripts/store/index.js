@@ -869,10 +869,10 @@ const cacheModule = {
             const result = await main.cacheService.clear(data);
             commit(END_REQUEST);
 
-            if (result.response) {
+            if (result.success) {
                 commit(CLEAR_CACHE_SUCCESS);
             } else {
-                commit(CLEAR_CACHE_ERROR, result.error);
+                commit(CLEAR_CACHE_ERROR, result.message);
             }
         },
 
@@ -898,6 +898,6 @@ export default createStore({
         users: usersModule,
         items: itemsModule,
         branches: branchesModule,
-        cacheModule: cacheModule
+        cache: cacheModule
     }
 });
