@@ -374,9 +374,9 @@ const moduleSettings = {
                 this.handleWindowMessage(e.data);
             });
 
-            $(document).on("moduleClosing", (e) => {
+            document.addEventListener("moduleClosing", (event) => {
                 // You can do anything here that needs to happen before closing the module.
-                e.success();
+                event.detail();
             });
         }
 

@@ -159,6 +159,11 @@ const moduleSettings = {
                     event.returnValue = "";
                 }
             });
+            
+            document.addEventListener("moduleClosing", (event) => {
+                // You can do anything here that needs to happen before closing the module.
+                event.detail();
+            });
         }
 
         /**

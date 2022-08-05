@@ -256,20 +256,20 @@ const moduleSettings = {
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
          */
         setupBindings() {
-            // Do stuff when the module is being closed in Wiser 1.0.
-            $(document).on("moduleClosing", (event) => {
+            // Do stuff when the module is being closed in Wiser.
+            document.addEventListener("moduleClosing", async (event) => {
                 try {
                     const kendoWindows = $(".popup-container:not(#itemWindow_template)");
                     if (!kendoWindows.length) {
-                        event.success();
+                        event.detail();
                         return;
                     }
 
                     var promises = [];
-                    kendoWindows.each((index, element) => {
+                    for (let element of kendoWindows) {
                         // If the current item is a new item and it's not being saved at the moment, then delete it because it was a temporary item.
                         if (!$(element).data("isNewItem") || $(element).data("saving")) {
-                            return;
+                            continue;
                         }
 
                         let canDelete = true;
@@ -288,13 +288,14 @@ const moduleSettings = {
                         if (canDelete) {
                             promises.push(this.base.deleteItem($(element).data("itemId"), $(element).data("entityType")));
                         }
-                    });
+                    }
 
-                    Promise.all(promises).then(event.success);
+                    await Promise.all(promises);
+                    event.detail();
                 } catch (exception) {
                     console.error(exception);
                     // To make sure the module can always be closed.
-                    event.success();
+                    event.detail();
                 }
             });
 
@@ -832,7 +833,7 @@ const moduleSettings = {
                 if (!this.settings.iframeMode) {
                     this.mainTreeView.dataSource.read();
                 }
-                if (this.selectedItem || this.settings.initialItemId) {
+                if (this.selectedItem || (this.settings.iframeMode && this.settings.initialItemId)) {
                     const previouslySelectedTab = this.mainTabStrip.select().index();
                     this.loadItem(this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
                 }
