@@ -35,7 +35,26 @@
     </div>
 </script>
 
-<div class="item {containerCssClass}" style="{style}" id="container_{propertyIdWithSuffix}" data-property-id="{propertyId}" data-item-id="{itemId}" data-depends-on-field="{dependsOnField}" data-depends-on-operator="{dependsOnOperator}" data-depends-on-value="{dependsOnValue}" data-depends-on-action="{dependsOnAction}" data-property-name="{propertyName}" data-item-link-id="{itemLinkId}" data-language-code="{languageCode}" data-width="{width}" data-encrypted-item-id="{itemIdEncrypted}" data-save-on-change="{saveOnChange}" data-label-style="{labelStyle}" data-label-width="{labelWidth}" data-input-type="file-upload" data-link-type="{linkType}">
+<div class="item {containerCssClass}"
+     style="{style}"
+     id="container_{propertyIdWithSuffix}"
+     data-property-id="{propertyId}"
+     data-item-id="{itemId}"
+     data-depends-on-field="{dependsOnField}"
+     data-depends-on-operator="{dependsOnOperator}"
+     data-depends-on-value="{dependsOnValue}"
+     data-depends-on-action="{dependsOnAction}"
+     data-property-name="{propertyName}"
+     data-item-link-id="{itemLinkId}"
+     data-language-code="{languageCode}"
+     data-width="{width}"
+     data-encrypted-item-id="{itemIdEncrypted}"
+     data-save-on-change="{saveOnChange}"
+     data-label-style="{labelStyle}"
+     data-label-width="{labelWidth}"
+     data-input-type="file-upload"
+     data-link-type="{linkType}"
+     data-visibility-path-regex="{visibilityPathRegex}">
     <span class="handler">&nbsp;</span>
     <h4 class="{titleClass}">
         <label for="field_{propertyIdWithSuffix}">{title}</label>
@@ -43,7 +62,7 @@
             <ins class="icon-info-full"></ins>
         </span>
     </h4>
-    <input name="{propertyName}_{languageCode}" id="field_{propertyIdWithSuffix}" type="file" />
+    <input name="{propertyName}_{languageCode}" id="field_{propertyIdWithSuffix}" type="file"/>
     <button type="button" class="k-button addFileUrl">URL toevoegen</button>
     <div class="form-hint {formHintClass}"><span>{hint}</span></div>
 </div>

@@ -193,5 +193,11 @@ namespace Api.Modules.EntityProperties.Models
         /// Gets or sets the access key for the field in Wiser.
         /// </summary>
         public string AccessKey { get; set; }
+
+        /// <summary>
+        /// Gets or sets the regular expression to decide whether the field should be visible in Wiser, based on the full path of this item in the tree view.
+        /// This is only used when the item is loaded via the tree view, not if it's loaded in other ways.
+        /// </summary>
+        public string VisibilityPathRegex { get; set; }
     }
 }

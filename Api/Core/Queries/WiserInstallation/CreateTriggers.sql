@@ -240,6 +240,11 @@ CREATE TRIGGER `EntityPropertyInsert` AFTER INSERT ON `wiser_entityproperty` FOR
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY','wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'access_key', '', NEW.`access_key`);
         END IF;
+
+        IF IFNULL(NEW.`visibility_path_regex`, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_ENTITYPROPERTY','wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'visibility_path_regex', '', NEW.`visibility_path_regex`);
+        END IF;
     END IF;
 END;
 
@@ -459,6 +464,11 @@ CREATE TRIGGER `EntityPropertyUpdate` AFTER UPDATE ON `wiser_entityproperty` FOR
         IF IFNULL(NEW.`access_key`, '') <> IFNULL(OLD.`access_key`, '') THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'access_key', OLD.`access_key`, NEW.`access_key`);
+        END IF;
+
+        IF IFNULL(NEW.`visibility_path_regex`, '') <> IFNULL(OLD.`visibility_path_regex`, '') THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'visibility_path_regex', OLD.`visibility_path_regex`, NEW.`visibility_path_regex`);
         END IF;
     END IF;
 END;

@@ -171,6 +171,7 @@ namespace Api.Modules.EntityProperties.Services
             clientDatabaseConnection.AddParameter("enable_aggregation", entityProperty.EnableAggregation);
             clientDatabaseConnection.AddParameter("aggregate_options", entityProperty.AggregateOptions);
             clientDatabaseConnection.AddParameter("access_key", entityProperty.AccessKey);
+            clientDatabaseConnection.AddParameter("visibility_path_regex", entityProperty.VisibilityPathRegex);
 
             var query = $@"SET @_username = ?username;
 INSERT INTO {WiserTableNames.WiserEntityProperty}
@@ -215,7 +216,8 @@ INSERT INTO {WiserTableNames.WiserEntityProperty}
     label_width,
     enable_aggregation,
     aggregate_options,
-    access_key
+    access_key,
+    visibility_path_regex
 )
 VALUES
 (
@@ -259,7 +261,8 @@ VALUES
     ?label_width,
     ?enable_aggregation,
     ?aggregate_options,
-    ?access_key
+    ?access_key,
+    ?visibility_path_regex
 ); SELECT LAST_INSERT_ID();";
 
             try
@@ -350,6 +353,7 @@ VALUES
             clientDatabaseConnection.AddParameter("enable_aggregation", entityProperty.EnableAggregation);
             clientDatabaseConnection.AddParameter("aggregate_options", entityProperty.AggregateOptions);
             clientDatabaseConnection.AddParameter("access_key", entityProperty.AccessKey);
+            clientDatabaseConnection.AddParameter("visibility_path_regex", entityProperty.VisibilityPathRegex);
 
             var query = $@"SET @_username = ?username;
 UPDATE {WiserTableNames.WiserEntityProperty}
@@ -393,7 +397,8 @@ SET module_id = ?module_id,
     label_width = ?label_width,
     enable_aggregation = ?enable_aggregation,
     aggregate_options = ?aggregate_options,
-    access_key = ?access_key
+    access_key = ?access_key,
+    visibility_path_regex = ?visibility_path_regex
 WHERE id = ?id";
 
             try

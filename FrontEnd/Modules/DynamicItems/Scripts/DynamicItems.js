@@ -949,11 +949,13 @@ const moduleSettings = {
             const parents = $(event.node).add($(event.node).parentsUntil(".k-treeview", ".k-item"));
             const amountOfItems = parents.length;
             let counter = 0;
+            const fullPath = [];
 
             const texts = $.map(parents, (node) => {
                 counter++;
 
                 const text = $(node).find(">div span.k-in").text();
+                fullPath.push(text);
                 const newCrumbTrailNode = $("<li/>");
 
                 if (counter < amountOfItems) {
@@ -984,9 +986,30 @@ const moduleSettings = {
             });
 
             await this.base.loadItem(itemId, 0, dataItem.entityType || dataItem.entityType);
+            
+            const pathString = `/${fullPath.join("/")}/`;
+            // Show / hide fields based on path regex.
+            $("#right-pane .item").each((index, element) => {
+                const fieldContainer = $(element);
+                const pathRegex = fieldContainer.data("visibilityPathRegex");
+                if (!pathRegex) {
+                    return;
+                }
+
+                try {
+                    const regex = new RegExp(pathRegex);
+                    const showField = regex.test(pathString);
+                    fieldContainer.toggleClass("hidden", !showField);
+                    if (!showField) {
+                        console.log(`Field '${fieldContainer.data("propertyName")}' has been hidden because of visibility_path_regex '${pathRegex}'`);
+                    }
+                } catch(exception) {
+                    console.error(`Error occurred while trying to hide/show field '${fieldContainer.data("propertyName")}' based on regex '${pathRegex}'`, exception);
+                }
+            });
 
             // Get available entity types, for creating new sub items.
-            this.base.dialogs.loadAvailableEntityTypesInDropDown(itemId);
+            await this.base.dialogs.loadAvailableEntityTypesInDropDown(itemId);
         }
 
         /**
