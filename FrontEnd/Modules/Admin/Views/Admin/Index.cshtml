@@ -40,32 +40,96 @@
                 <!-- TABS -->
                 <div class="tabstrip k-tabstrip-wrapper" id="MainTabStrip">
                     <ul>
-                        <li style="display:none">Entiteiten Genereren</li>
-                        <li class="k-state-active">Entiteiten</li>
-                        <li style="display:none">Modules</li>
+                        <li class="k-state-active">Modules</li>
+                        <li>Entiteiten</li>
                         <li>Rollen</li>
                         <li>Query's</li>
-                        <li>Modules</li>
+                        <li style="display:none">Entiteiten Genereren</li>
                     </ul>
-                    <div>
-                        <div class="formview full">
-                            <div class="item" id="generateEntitiesGroup">
-                                <span class="inline">
-                                    <label class="checkbox">
-                                        <input id="generateEcommerceEntity" data-entity-group="ecommerce" data-entity-pretty-name="Ë-commerce" type="checkbox" />
-                                        <span>E-commerce entiteiten</span>
-                                    </label>
-
-                                    <label class="checkbox">
-                                        <input id="generateExtra" data-entity-group="extra" data-entity-pretty-name="Extra" type="checkbox" />
-                                        <span>Extra entiteiten</span>
-                                    </label>
-                                </span>
-                            </div>
+                    <div class="tabSplit">
+                        <div class="left-pane">
                             <div class="item">
-                                <span class="k-widget k-input k-state-default">
-                                    <button type="button" id="generateStandardEntities">Genereer standaard entiteiten</button>
-                                </span>
+                                <h4>
+                                    <label>Module selecteren of toevoegen</label>
+                                </h4>
+                                <div class="item">
+                                    <select id="moduleList"></select>
+                                </div>
+                                <div class="buttons">
+                                    <span>
+                                        <button class="k-primary addModuleBtn">Toevoegen</button>
+                                        <button class="k-primary delModuleBtn" style="display: none">Verwijderen</button>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="right-pane">
+                            <div class="pane-content">
+                                <div class="formview full">
+                                    <div class="item" style="width: 25%;">
+                                        <h4>
+                                            <label>ID van de module</label>
+                                        </h4>
+                                        <span class="k-widget k-input k-state-default">
+                                            <input id="moduleId" type="text" class="textField k-input" autocomplete="off" />
+                                        </span>
+                                    </div>
+                                    <div class="item" style="width: 50%;">
+                                        <h4>
+                                            <label>Naam van de module</label>
+                                        </h4>
+                                        <span class="k-widget k-input k-state-default">
+                                            <input id="moduleName" type="text" class="textField k-input" autocomplete="off" />
+                                        </span>
+                                    </div>
+                                    <div class="item" style="width: 25%;">
+                                        <h4>
+                                            <label for="input-type">Icoon</label>
+                                            <span class="info" data-type="moduleIcon"><ins class="icon-info-full"></ins></span>
+                                        </h4>
+                                        <select id="moduleIcon">
+                                        </select>
+                                    </div>
+                                    <div class="item" style="width: 50%;">
+                                        <h4>
+                                            <label>Type</label>
+                                        </h4>
+                                        <select id="moduleType" placeholder="Maak uw keuze...">
+                                        </select>
+                                    </div>
+                                    <div class="item" style="width: 50%;">
+                                        <h4>
+                                            <label>Groep</label>
+                                        </h4>
+                                        <span class="k-widget k-input k-state-default">
+                                            <input id="moduleGroup" type="text" class="textField k-input" autocomplete="off" />
+                                        </span>
+                                    </div>
+                                    <div class="item" style="width: 100%;">
+                                        <h4>
+                                            <label>Query</label>
+                                        </h4>
+                                        <span class="k-widget k-input k-state-default">
+                                            <textarea id="moduleCustomQuery"></textarea>
+                                        </span>
+                                    </div>
+                                    <div class="item" style="width: 100%;">
+                                        <h4>
+                                            <label>Query voor het aantal records</label>
+                                        </h4>
+                                        <span class="k-widget k-input k-state-default">
+                                            <textarea id="moduleCountQuery"></textarea>
+                                        </span>
+                                    </div>
+                                    <div class="item" style="width: 100%;">
+                                        <h4>
+                                            <label>Opties</label>
+                                        </h4>
+                                        <span class="k-widget k-input k-state-default">
+                                            <textarea id="moduleOptions"></textarea>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -492,7 +556,7 @@
                                                                     </label>
                                                                     <label class="checkbox" data-show-for-panel="panel2">
                                                                         <input id="searchEverywhere" type="checkbox">
-                                                                        <span>Toon alle gekoppelde items</span>
+                                                                        <span>Toon alle items, i.p.v. alleen gekoppelde items</span>
                                                                     </label>
                                                                     <label class="checkbox" data-visible="input secure-input textbox radiobutton checkbox combobox multiselect numeric-input date-time-picker color-picker">
                                                                         <input id="saveOnChange" type="checkbox">
@@ -1435,71 +1499,6 @@
                             </div>
                         </div>
                     </div>
-                    <div style="display:none">
-                        <ul class="panelbar" id="moduleListOld"></ul>
-
-                        <script type="text/x-kendo-template" id="myTemplate">
-                            <li class="modulebar" data-module-id="#:id#" data-module-type="#:type#" data-is-valid-json="#:isValidJson#" >#:id#
-                                    <div class="flex-container">
-                                        <div class="item" style="width: 25%;">
-                                            <h4><label>Mode</label></h4>
-                                            <select class="combo-select" placeholder="Maak uw keuze...">
-                                                #if(isGridview){#
-                                                    <option value="gridview" selected>Gridview</option>
-                                                    <option value="treeview">Treeview</option>
-                                                #}else{#
-                                                    <option value="gridview">Gridview</option>
-                                                    <option value="treeview" selected>Treeview</option>
-                                                #}#
-                                            </select>
-                                        </div>
-                                        <div class="item gridview" style="width: 25%;">
-                                            <h4><label>Aantal records per pagina</label></h4>
-                                            <input class="recordsPerPage" value="#:pageSize#" />
-                                        </div>
-                                        <div class="item gridview" style="width: 25%;">
-                                            <h4><label>&nbsp;</label></h4>
-                                            <span class="inline">
-                                                <label class="checkbox">
-                                                    <input type="checkbox" class="addNewItemOption" value="" #if(hideCreationButton){#checked#}# />
-                                                    <span>Mogelijkheid om nieuwe items aan te maken</span>
-                                                </label>
-                                            </span>
-                                        </div>
-                                        <div class="item gridview" style="width: 25%;">
-                                            <h4><label>&nbsp;</label></h4>
-                                            <span class="inline">
-                                                <label class="checkbox">
-                                                    <input type="checkbox" class="clickOption" value="" #if(hideCommandButton){#checked#}#>
-                                                    <span>Mogelijkheid om door te klikken</span>
-                                                </label>
-                                            </span>
-                                        </div>
-                                        <div class="item gridview" style="width: 100%;">
-                                            <div class="fieldsGrid" ><!-- Filled by Javascript --></div>
-                                        </div>
-                                        <div class="item" style="width: 100%;">
-                                            <h4><label>Query voor ophalen data</label></h4>
-                                            <span class="k-widget k-input k-state-default">
-                                                <textarea class="customQueryBuilder" >#:customQuery#</textarea>
-                                            </span>
-                                        </div>
-                                        <div class="item" style="width: 100%;">
-                                            <h4><label>Count query</label></h4>
-                                            <span class="k-widget k-input k-state-default">
-                                                <textarea class="countQueryBuilder" >#:countQuery#</textarea>
-                                            </span>
-                                        </div>
-                                        <div class="item buttons" style="width: 100%;">
-                                            <button class="k-primary deleteModule">Verwijder deze module</button>
-                                            <button class="k-primary saveModuleSettings">Opslaan</button>
-                                        </div>
-                                    </div>
-                                </li>
-                        </script>
-
-                        <button id="addModuleButton" class="k-primary k-button-round"></button>
-                    </div>
                     <div class="tabSplit">
                         <div class="left-pane">
                             <div class="pane-content">
@@ -1587,90 +1586,25 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tabSplit">
-                        <div class="left-pane">
-                            <div class="item">
-                                <h4>
-                                    <label>Module selecteren of toevoegen</label>
-                                </h4>
-                                <div class="item">
-                                    <select id="moduleList"></select>
-                                </div>
-                                <div class="buttons">
-                                    <span>
-                                        <button class="k-primary addModuleBtn">Toevoegen</button>
-                                        <button class="k-primary delModuleBtn" style="display: none">Verwijderen</button>
-                                    </span>
-                                </div>
+                    <div>
+                        <div class="formview full">
+                            <div class="item" id="generateEntitiesGroup">
+                                <span class="inline">
+                                    <label class="checkbox">
+                                        <input id="generateEcommerceEntity" data-entity-group="ecommerce" data-entity-pretty-name="Ë-commerce" type="checkbox" />
+                                        <span>E-commerce entiteiten</span>
+                                    </label>
+
+                                    <label class="checkbox">
+                                        <input id="generateExtra" data-entity-group="extra" data-entity-pretty-name="Extra" type="checkbox" />
+                                        <span>Extra entiteiten</span>
+                                    </label>
+                                </span>
                             </div>
-                        </div>
-                        <div class="right-pane">
-                            <div class="pane-content">
-                                <div class="formview full">
-                                    <div class="item" style="width: 25%;">
-                                        <h4>
-                                            <label>ID van de module</label>
-                                        </h4>
-                                        <span class="k-widget k-input k-state-default">
-                                            <input id="moduleId" type="text" class="textField k-input" autocomplete="off" />
-                                        </span>
-                                    </div>
-                                    <div class="item" style="width: 50%;">
-                                        <h4>
-                                            <label>Naam van de module</label>
-                                        </h4>
-                                        <span class="k-widget k-input k-state-default">
-                                            <input id="moduleName" type="text" class="textField k-input" autocomplete="off" />
-                                        </span>
-                                    </div>
-                                    <div class="item" style="width: 25%;">
-                                        <h4>
-                                            <label for="input-type">Icoon</label>
-                                            <span class="info" data-type="moduleIcon"><ins class="icon-info-full"></ins></span>
-                                        </h4>
-                                        <select id="moduleIcon">
-                                        </select>
-                                    </div>
-                                    <div class="item" style="width: 50%;">
-                                        <h4>
-                                            <label>Type</label>
-                                        </h4>
-                                        <select id="moduleType" placeholder="Maak uw keuze...">
-                                        </select>
-                                    </div>
-                                    <div class="item" style="width: 50%;">
-                                        <h4>
-                                            <label>Groep</label>
-                                        </h4>
-                                        <span class="k-widget k-input k-state-default">
-                                            <input id="moduleGroup" type="text" class="textField k-input" autocomplete="off" />
-                                        </span>
-                                    </div>
-                                    <div class="item" style="width: 100%;">
-                                        <h4>
-                                            <label>Query</label>
-                                        </h4>
-                                        <span class="k-widget k-input k-state-default">
-                                            <textarea id="moduleCustomQuery"></textarea>
-                                        </span>
-                                    </div>
-                                    <div class="item" style="width: 100%;">
-                                        <h4>
-                                            <label>Query voor het aantal records</label>
-                                        </h4>
-                                        <span class="k-widget k-input k-state-default">
-                                            <textarea id="moduleCountQuery"></textarea>
-                                        </span>
-                                    </div>
-                                    <div class="item" style="width: 100%;">
-                                        <h4>
-                                            <label>Opties</label>
-                                        </h4>
-                                        <span class="k-widget k-input k-state-default">
-                                            <textarea id="moduleOptions"></textarea>
-                                        </span>
-                                    </div>
-                                </div>
+                            <div class="item">
+                                <span class="k-widget k-input k-state-default">
+                                    <button type="button" id="generateStandardEntities">Genereer standaard entiteiten</button>
+                                </span>
                             </div>
                         </div>
                     </div>
