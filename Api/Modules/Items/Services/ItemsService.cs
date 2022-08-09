@@ -1073,7 +1073,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                                 LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail}{{0}} d ON d.item_id = ?itemId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
                                 # TODO: Find a more efficient way to load images and files?
                                 LEFT JOIN (
-                                    SELECT item_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'added_on', added_on, 'content_url', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
+                                    SELECT item_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'addedOn', added_on, 'contentUrl', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
                                     FROM {wiserItemFileTable}{{0}}
                                     WHERE item_id = ?itemId
                                     GROUP BY property_name
@@ -1107,7 +1107,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                                 LEFT JOIN {linkTablePrefix}{WiserTableNames.WiserItemLinkDetail}{{0}} d ON d.itemlink_id = ?itemLinkId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
                                 # TODO: Find a more efficient way to load images and files?
                                 LEFT JOIN (
-                                    SELECT itemlink_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'added_on', added_on, 'content_url', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
+                                    SELECT itemlink_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'addedOn', added_on, 'contentUrl', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
                                     FROM {wiserItemFileTableForLink}{{0}}
                                     WHERE itemlink_id = ?itemLinkId
                                     GROUP BY property_name
@@ -2016,43 +2016,43 @@ ORDER BY IFNULL(friendly_name, name) ASC");
             }
 
             // Get items via wiser_itemlink.
-            var query = $@"SELECT 
-	                        item.id,
-	                        item.original_item_id,
-	                        IF(item.title IS NULL OR item.title = '', item.id, item.title) AS name,
-	                        entity.icon,
-	                        entity.icon_expanded,
-	                        IF(MAX(item.published_environment) = 0, 'hiddenOnWebsite', '') AS nodeCssClass,
-	                        item.entity_type,
-	                        GROUP_CONCAT(DISTINCT entity.accepted_childtypes) AS accepted_childtypes,
-                            {(checkId > 0 ? "IF(checked.id IS NULL, 0, 1)" : "0")} AS checked
+            var query = $@"SELECT
+	item.id,
+	item.original_item_id,
+	IF(item.title IS NULL OR item.title = '', item.id, item.title) AS name,
+	IFNULL(entityModule.icon, entity.icon) AS icon,
+	IFNULL(entityModule.icon_expanded, entity.icon_expanded) AS icon_expanded,
+	IF(MAX(item.published_environment) = 0, 'hiddenOnWebsite', '') AS nodeCssClass,
+	item.entity_type,
+	GROUP_CONCAT(DISTINCT IFNULL(entityModule.accepted_childtypes, entity.accepted_childtypes)) AS accepted_childtypes,
+    {(checkId > 0 ? "IF(checked.id IS NULL, 0, 1)" : "0")} AS checked
 
-                        # Get the items linked to the parent.
-                        FROM {WiserTableNames.WiserItem} AS item
-                        JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
-                        LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
-                        JOIN {WiserTableNames.WiserItemLink} AS link_parent ON link_parent.destination_item_id = ?parentId AND link_parent.item_id = item.id
+# Get the items linked to the parent.
+FROM {WiserTableNames.WiserItem} AS item
+JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
+LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
+JOIN {WiserTableNames.WiserItemLink} AS link_parent ON link_parent.destination_item_id = ?parentId AND link_parent.item_id = item.id
 
-                        # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                        LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
-                        LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
+# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
+LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
 
-                        # Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
-                        LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = link_parent.destination_item_id
-                        JOIN {WiserTableNames.WiserEntity} AS parent_entity ON ((link_parent.destination_item_id = 0 AND parent_entity.`name` = '') OR parent_entity.`name` = parent_item.entity_type) AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
+# Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
+LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = link_parent.destination_item_id
+JOIN {WiserTableNames.WiserEntity} AS parent_entity ON ((link_parent.destination_item_id = 0 AND parent_entity.`name` = '') OR parent_entity.`name` = parent_item.entity_type) AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
 
-                        # Link settings to check if these links should be shown.
-                        LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.type = link_parent.type AND link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
+# Link settings to check if these links should be shown.
+LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.type = link_parent.type AND link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
 
-                        {checkIdJoin}
+{checkIdJoin}
 
-                        WHERE {(String.IsNullOrWhiteSpace(entityType) ? "TRUE" : $"item.entity_type IN({String.Join(",", entityType.Split(',').Select(x => x.ToMySqlSafeValue(true)))})")}
-                        AND item.moduleid = ?moduleId
-                        AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                        AND IFNULL(link_settings.show_in_tree_view, 1) = 1
-                        GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
+WHERE {(String.IsNullOrWhiteSpace(entityType) ? "TRUE" : $"item.entity_type IN({String.Join(",", entityType.Split(',').Select(x => x.ToMySqlSafeValue(true)))})")}
+AND item.moduleid = ?moduleId
+AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+AND IFNULL(link_settings.show_in_tree_view, 1) = 1
+GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
 
-                        ORDER BY {orderByClause}";
+ORDER BY {orderByClause}";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count > 0)
@@ -2095,40 +2095,40 @@ ORDER BY IFNULL(friendly_name, name) ASC");
 
                 // Get children via the column parent_item_id of the table wiser_item.
                 query = $@"SELECT 
-	                        item.id,
-	                        item.original_item_id,
-	                        IF(item.title IS NULL OR item.title = '', item.id, item.title) AS name,
-	                        entity.icon,
-	                        entity.icon_expanded,
-	                        IF(MAX(item.published_environment) = 0, 'hiddenOnWebsite', '') AS nodeCssClass,
-	                        item.entity_type,
-	                        GROUP_CONCAT(DISTINCT entity.accepted_childtypes) AS accepted_childtypes,
-                            IF(item.parent_item_id > 0 AND item.parent_item_id = ?checkId, 1, 0) AS checked
+	item.id,
+	item.original_item_id,
+	IF(item.title IS NULL OR item.title = '', item.id, item.title) AS name,
+	IFNULL(entityModule.icon, entity.icon) AS icon,
+	IFNULL(entityModule.icon_expanded, entity.icon_expanded) AS icon_expanded,
+	IF(MAX(item.published_environment) = 0, 'hiddenOnWebsite', '') AS nodeCssClass,
+	item.entity_type,
+	GROUP_CONCAT(DISTINCT IFNULL(entityModule.accepted_childtypes, entity.accepted_childtypes)) AS accepted_childtypes,
+    IF(item.parent_item_id > 0 AND item.parent_item_id = ?checkId, 1, 0) AS checked
 
-                        # Get the items linked to the parent.
-                        FROM {WiserTableNames.WiserItem} AS item
-                        JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
-                        LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
+# Get the items linked to the parent.
+FROM {WiserTableNames.WiserItem} AS item
+JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
+LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
 
-                        # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                        LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
-                        LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
+# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
+LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
 
-                        # Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
-                        LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = item.parent_item_id
-                        JOIN {WiserTableNames.WiserEntity} AS parent_entity ON {(parentId == 0 ? "parent_entity.module_id = ?moduleId AND parent_entity.`name` = ''" : "parent_entity.`name` = parent_item.entity_type")} AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
+# Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
+LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = item.parent_item_id
+JOIN {WiserTableNames.WiserEntity} AS parent_entity ON {(parentId == 0 ? "parent_entity.module_id = ?moduleId AND parent_entity.`name` = ''" : "parent_entity.`name` = parent_item.entity_type")} AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
 
-                        # Link settings to check if these links should be shown.
-                        LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
+# Link settings to check if these links should be shown.
+LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
 
-                        WHERE item.parent_item_id = ?parentId
-                        AND (?entityType = '' OR FIND_IN_SET(item.entity_type, ?entityType))
-                        AND item.moduleid = ?moduleId
-                        AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                        AND IFNULL(link_settings.show_in_tree_view, 1) = 1
-                        GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
+WHERE item.parent_item_id = ?parentId
+AND (?entityType = '' OR FIND_IN_SET(item.entity_type, ?entityType))
+AND item.moduleid = ?moduleId
+AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+AND IFNULL(link_settings.show_in_tree_view, 1) = 1
+GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
 
-                        ORDER BY {orderByClause}";
+ORDER BY {orderByClause}";
                 dataTable = await clientDatabaseConnection.GetAsync(query);
 
                 if (dataTable.Rows.Count > 0)

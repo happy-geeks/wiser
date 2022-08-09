@@ -419,7 +419,31 @@ import CacheService from "./shared/cache.service";
                     },
 
                     closeModule(module) {
-                        this.$store.dispatch(CLOSE_MODULE, module);
+                        let timeout = null;
+                        
+                        const callback = () => {
+                            if (timeout) {
+                                clearTimeout(timeout);
+                            }
+                            
+                            this.$store.dispatch(CLOSE_MODULE, module);
+                        };
+                        
+                        // In case the module does not handle the moduleClosing event.
+                        timeout = setTimeout(callback, 800);
+                        
+                        if (!module || !module.id) {
+                            callback();
+                            return;
+                        }
+                        
+                        const moduleIframe = document.getElementById(module.id);
+                        if (!moduleIframe || !moduleIframe.contentWindow || !moduleIframe.contentWindow.document) {
+                            callback();
+                            return;
+                        }
+                        
+                        moduleIframe.contentWindow.document.dispatchEvent(new CustomEvent("moduleClosing", { detail: callback }));
                     },
 
                     setActiveModule(event, moduleId) {

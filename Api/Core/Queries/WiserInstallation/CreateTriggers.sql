@@ -46,11 +46,6 @@ CREATE TRIGGER `EntityPropertyInsert` AFTER INSERT ON `wiser_entityproperty` FOR
             VALUES ('UPDATE_ENTITYPROPERTY','wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'visible_in_overview', '', NEW.`visible_in_overview`);
         END IF;
 
-        IF IFNULL(NEW.`overview_fieldtype`, '') <> '' THEN
-            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ENTITYPROPERTY','wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'overview_fieldtype', '', NEW.`overview_fieldtype`);
-        END IF;
-
         IF IFNULL(NEW.`overview_width`, '') <> '' THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY','wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'overview_width', '', NEW.`overview_width`);
@@ -269,11 +264,6 @@ CREATE TRIGGER `EntityPropertyUpdate` AFTER UPDATE ON `wiser_entityproperty` FOR
         IF IFNULL(NEW.`visible_in_overview`, '') <> IFNULL(OLD.`visible_in_overview`, '') THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'visible_in_overview', OLD.`visible_in_overview`, NEW.`visible_in_overview`);
-        END IF;
-
-        IF IFNULL(NEW.`overview_fieldtype`, '') <> IFNULL(OLD.`overview_fieldtype`, '') THEN
-            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'overview_fieldtype', OLD.`overview_fieldtype`, NEW.`overview_fieldtype`);
         END IF;
 
         IF IFNULL(NEW.`overview_width`, '') <> IFNULL(OLD.`overview_width`, '') THEN

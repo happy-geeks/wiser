@@ -53,15 +53,15 @@
             { name: "width", text: "Vul de breedte van het veld in" },
             { name: "height", text: "Vul de hoogte van het veld in" },
             { name: "overviewWidth", text: "Vul de breedte van het veld in het overzicht in" },
-            { name: "overviewFieldtype", text: "Kies een invoertype voor het overzicht" },
-            { name: "defaultValue", text: "Standaard waarde" },
+            { name: "defaultValue", text: "Standaardwaarde" },
             { name: "html editor layout", text: "Kies een layout voor de html editor" },
             { name: "datasource", text: "Kies waar de brondata vandaanmoet komen" },
             { name: "dataQuery", text: "Geef een query op. Let op! Geef id en name op." },
             { name: "qrContentQuery", text: "Geef een query op die de waarde van de QR-code geeft. Dat kan een URL of gewoon een stuk tekst zijn." },
             { name: "automation", text: "" },
-            { name: "dependsOn", text: "Kies in de volgende 3 velden wanneer dit veld pas zichtbaar kan/mag zijn" },
+            { name: "dependsOn", text: "Velden kunnen afhankelijk van elkaar zijn. Hier kan ingesteld worden dat bijvoorbeeld veld X alleen getoond mag worden inden veld Y een bepaalde waarde heeft. Of dat veld X ververst moet worden nadat de waarde van veld Y wordt gewijzigd." },
             { name: "explanation", text: "Schrijf hier een duidelijke uitleg over wat het veld precies moet doen" },
+            { name: "extendedExplanation", text: "Vink dit aan wanneer dit veld een lange (meer dan 1 zin) uitleg nodig heeft. De uitleg wordt dan niet meer onder het veld getoond, maar dit veld krijgt dan een info-icoon en als de gebruiker daarop klikt, wordt deze informatie aan de rechterkant van het scherm getoond." },
             { name: "css", text: "Geef hier de custom-css in op" },
             { name: "customScript", text: "Geef hier custom-scripting in op" },
             { name: "data-selector-tex", text: "Wanneer er geen tekst wordt opgegeven is de standaardtekst van deze knop is 'Bewerken'" },
@@ -78,7 +78,12 @@
             { name: "entityIconExpanded", text: "Het icoon dat getoond moet worden voor items van dit type in de boom, wanneer die wel uitgeklapt is." },
             { name: "defaultOrdering", text: "De manier waarop items gesorteerd moeten worden in de boom (treeview), of andere plekken waar de template GET_ITEMS wordt gebruikt." },
             { name: "friendlyName", text: "De naam van dit entiteitstype zoals die aan de gebruiker getoond moet worden." },
-            { name: "entityDedicatedTablePrefix", text: "Items van Wiser kunnen in verschillende tabellen worden opgeslagen. Standaard worden all items opgeslagen in wiser_item en wiser_itemdetail, behalve wanneer hier een voorvoegsel is ingevuld. Dan worden items van dit type opgeslagen in [voorvoegsel]_wiser_item en [voorvoegsel]_wiser_itemdetail." }
+            { name: "entityDedicatedTablePrefix", text: "Items van Wiser kunnen in verschillende tabellen worden opgeslagen. Standaard worden all items opgeslagen in wiser_item en wiser_itemdetail, behalve wanneer hier een voorvoegsel is ingevuld. Dan worden items van dit type opgeslagen in [voorvoegsel]_wiser_item en [voorvoegsel]_wiser_itemdetail." },
+            { name: "searchQuery", text: "Dit wordt gebruikt bij velden van het type sub-entities-grid. Bij die velden kan een knop toegevoegd worden welke een popup opent waarin gezocht kan worden naar items om te koppelen. De query daarvoor kan hier gevuld worden. Zie Wiser documentatie voor meer informatie." },
+            { name: "searchCountQuery", text: "Deze kolom gaat samen met search_query, hier moet dezelfde query in komen te staan, maar dan zonder limit en met een  count, zodat het grid weet hoeveel items er in totaal zijn." },
+            { name: "labelStyle", text: "De manier waarop het label getoond wordt. Heeft deze mogelijke waardes: normal: Het label wordt boven het veld getoond, inline: Het label wordt links van het veld getoond, float: Het label wordt in het veld getoond wanneer die leeg en niet geselecteerd is en erboven wanner die een waarde heeft of de focus heeft." },
+            { name: "accessKey", text: "De sneltoets waarmee de gebruiker de focus naar dit veld kan brengen." },
+            { name: "aggregateOptions", text: "Extra aggregatie-instellingen. Zie Wiser documentatie voor meer informatie." }
         ];
     }
 }

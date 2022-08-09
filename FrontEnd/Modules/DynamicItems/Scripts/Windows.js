@@ -1073,9 +1073,14 @@ export class Windows {
         if (extension) {
             fileName = `${fileName.substr(0, fileName.lastIndexOf("."))}.${extension}`;
         }
+        
+        let domain = this.base.settings.mainDomain;
+        if (!domain.endsWith("/")) {
+            domain += "/";
+        }
 
         return {
-            url: `${this.base.settings.mainDomain}image/wiser2/${selectedItem.plainId}/direct/${selectedItem.property_name}/${resizeMode}/${width}/${height}/${fileName}`,
+            url: `${domain}image/wiser2/${selectedItem.plainId}/direct/${selectedItem.property_name}/${resizeMode}/${width}/${height}/${fileName}`,
             altText: altText
         };
     }

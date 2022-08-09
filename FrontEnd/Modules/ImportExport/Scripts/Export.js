@@ -106,7 +106,7 @@ const exportModuleSettings = {
             this.setupBindings();
 
             this.initializeKendoWindows();
-            this.initializeKendoComponents(this.exportHtml);
+            await this.initializeKendoComponents(this.exportHtml);
 
             this.toggleMainLoader(false);
         }
@@ -128,9 +128,9 @@ const exportModuleSettings = {
             this.startExportButton.addEventListener("click", this.performExport.bind(this));
 
             if (!window.importExport) {
-                $(document).on("moduleClosing", (e) => {
+                document.addEventListener("moduleClosing", (event) => {
                     // You can do anything here that needs to happen before closing the module.
-                    e.success();
+                    event.detail();
                 });
             }
         }

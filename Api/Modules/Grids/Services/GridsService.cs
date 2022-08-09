@@ -872,7 +872,6 @@ namespace Api.Modules.Grids.Services
                     var columnsQuery = $@"SELECT  
 	                                        IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name) AS field,
                                             p.display_name AS title,
-                                            p.overview_fieldtype AS fieldType,
                                             p.overview_width AS width,
                                             p.inputtype,
                                             p.options,
