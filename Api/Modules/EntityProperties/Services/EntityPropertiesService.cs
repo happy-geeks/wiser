@@ -133,7 +133,6 @@ namespace Api.Modules.EntityProperties.Services
             clientDatabaseConnection.AddParameter("module_id", entityProperty.ModuleId);
             clientDatabaseConnection.AddParameter("entity_name", entityProperty.EntityType ?? "");
             clientDatabaseConnection.AddParameter("visible_in_overview", entityProperty.Overview?.Visible ?? false);
-            clientDatabaseConnection.AddParameter("overview_fieldtype", entityProperty.Overview?.FieldType ?? "");
             clientDatabaseConnection.AddParameter("overview_width", entityProperty.Overview?.Width ?? 100);
             clientDatabaseConnection.AddParameter("tab_name", entityProperty.TabName ?? "");
             clientDatabaseConnection.AddParameter("group_name", entityProperty.GroupName ?? "");
@@ -179,7 +178,6 @@ INSERT INTO {WiserTableNames.WiserEntityProperty}
     module_id,
     entity_name,
     visible_in_overview,
-    overview_fieldtype,
     overview_width,
     tab_name,
     group_name,
@@ -224,7 +222,6 @@ VALUES
     ?module_id,
     ?entity_name,
     ?visible_in_overview,
-    ?overview_fieldtype,
     ?overview_width,
     ?tab_name,
     ?group_name,
@@ -315,7 +312,6 @@ VALUES
             clientDatabaseConnection.AddParameter("module_id", entityProperty.ModuleId);
             clientDatabaseConnection.AddParameter("entity_name", entityProperty.EntityType ?? "");
             clientDatabaseConnection.AddParameter("visible_in_overview", entityProperty.Overview?.Visible ?? false);
-            clientDatabaseConnection.AddParameter("overview_fieldtype", entityProperty.Overview?.FieldType ?? "");
             clientDatabaseConnection.AddParameter("overview_width", entityProperty.Overview?.Width ?? 100);
             clientDatabaseConnection.AddParameter("tab_name", entityProperty.TabName ?? "");
             clientDatabaseConnection.AddParameter("group_name", entityProperty.GroupName ?? "");
@@ -360,7 +356,6 @@ UPDATE {WiserTableNames.WiserEntityProperty}
 SET module_id = ?module_id,
     entity_name = ?entity_name,
     visible_in_overview = ?visible_in_overview,
-    overview_fieldtype = ?overview_fieldtype,
     overview_width = ?overview_width,
     tab_name = ?tab_name,
     group_name = ?group_name,
@@ -461,7 +456,6 @@ INSERT INTO {WiserTableNames.WiserEntityProperty}
 	module_id,
 	entity_name,
 	visible_in_overview,
-	overview_fieldtype,
 	overview_width,
 	tab_name,
 	group_name,
@@ -504,7 +498,6 @@ SELECT
 	entityProperty.module_id,
 	entityProperty.entity_name,
 	entityProperty.visible_in_overview,
-	entityProperty.overview_fieldtype,
 	entityProperty.overview_width,
     CASE ?tabOption
         WHEN {(int)CopyToOtherLanguagesTabOptions.General} THEN ''
@@ -804,7 +797,6 @@ AND otherEntityProperty.id IS NULL";
             result.LabelWidth = Convert.ToInt32(dataRow.Field<object>("label_width"));
             result.Overview = new EntityPropertyOverviewModel();
             result.Overview.Visible = Convert.ToBoolean(dataRow["visible_in_overview"]);
-            result.Overview.FieldType = dataRow.Field<string>("overview_fieldtype");
             result.Overview.Width = Convert.ToInt32(dataRow["overview_width"]);
             result.DependsOn = new EntityPropertyDependencyModel();
             result.DependsOn.Action = ToDependencyAction(dataRow.Field<string>("depends_on_action"));

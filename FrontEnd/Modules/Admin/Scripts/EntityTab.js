@@ -2221,12 +2221,12 @@ export class EntityTab {
             action: this.dependencyAction.value()
         };
         
-        // TODO: all properties below need to be able to changed by the user.
         entityProperties.overview = {
             visible: document.getElementById("visible-in-table").checked,
-            fieldType: null,
             width: this.widthInTable.value()
         };
+        
+        // TODO: all properties below need to be able to changed by the user.
         entityProperties.extendedExplanation = false;
         entityProperties.actionQuery = null;
         entityProperties.searchQuery = null;
@@ -2440,6 +2440,7 @@ export class EntityTab {
                     entityProperties.options.refreshGridAfterInlineEdit = document.getElementById("refreshGridAfterInlineEdit").checked;
                     entityProperties.options.showDeleteConformations = document.getElementById("showDeleteConformations").checked;
                     entityProperties.options.checkboxes = document.getElementById("checkboxes").checked;
+                    entityProperties.options.keepFiltersState = document.getElementById("keepFiltersState").checked;
 
                     entityProperties.options.showChangedByColumn = document.getElementById("showChangedByColumn").checked;
                     entityProperties.options.showChangedOnColumn = document.getElementById("showChangedOnColumn").checked;

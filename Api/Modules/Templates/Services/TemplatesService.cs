@@ -1021,7 +1021,6 @@ SET @_display_name = '{displayName}';
 SET @_property_name = IF('{propertyName}' = '', @_display_name, '{propertyName}');
 SET @_overviewvisibility = '{visibleInOverview}';
 SET @_overviewvisibility = IF(@_overviewvisibility = TRUE OR @_overviewvisibility = 'true', 1, 0);
-SET @_overviewType = '{overviewFieldType}';
 SET @_overviewWidth = '{overviewWidth}';
 SET @_groupName = '{groupName}';
 SET @_input_type = '{inputtype}';
@@ -1057,7 +1056,6 @@ inputtype = @_input_type,
 display_name = @_display_name,
 property_name = @_property_name,
 visible_in_overview= @_overviewvisibility,
-overview_fieldtype= @_overviewType,
 overview_width= @_overviewWidth,
 group_name= @_groupName,
 explanation= @_explanation,
@@ -1089,8 +1087,7 @@ LIMIT 1; ");
     module_id,
     entity_name,
     link_type,
-    visible_in_overview AS visibleInOverview, 
-    overview_fieldtype AS overviewFieldType, 
+    visible_in_overview AS visibleInOverview,
     overview_width AS overviewWidth, 
     IF(tab_name = '', 'Gegevens', tab_name) AS tabName,
     group_name AS groupName,
@@ -1365,27 +1362,12 @@ UNION ALL
 SELECT 'Media' AS type_text, 4 AS type_value 
 UNION ALL
 SELECT DISTINCT type AS type_text, type AS type_value FROM `wiser_itemlink` WHERE type > 100");
-                TemplateQueryStrings.Add("GET_COLUMNS_FOR_FIELD_TABLE", @"#Verkrijg de kolommen die getoond moeten worden bij een specifiek soort entiteit
-SET @entitytype = '{entity_type}';
-SET @_linkType = '{linkType}';
-
-SELECT  
-	CONCAT('property_.', CreateJsonSafeProperty(LOWER(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)))) AS field,
-    p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
-    p.overview_width AS width
-FROM wiser_entityproperty p 
-WHERE (p.entity_name = @entitytype OR (p.link_type > 0 AND p.link_type = @_linkType))
-AND p.visible_in_overview = 1
-GROUP BY IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)
-ORDER BY p.ordering;");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_LINK_TABLE", @"SET @destinationId = {id:decrypt(true)};
 SET @_linkTypeNumber = IF('{linkTypeNumber}' LIKE '{%}' OR '{linkTypeNumber}' = '', '2', '{linkTypeNumber}');
 
 SELECT 
 	CONCAT('property_.', CreateJsonSafeProperty(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name))) AS field,
     p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
     p.overview_width AS width
 FROM wiser_entityproperty p 
 JOIN wiser_item i ON i.entity_type = p.entity_name
@@ -1729,7 +1711,6 @@ ORDER BY il.ordering, i.title, i.id");
 SELECT 
 	CONCAT('property_.', CreateJsonSafeProperty(LOWER(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)))) AS field,
     p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
     p.overview_width AS width
 FROM wiser_itemlink il
 JOIN wiser_item i ON i.id=il.item_id
