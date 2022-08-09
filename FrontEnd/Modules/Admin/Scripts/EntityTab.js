@@ -2167,7 +2167,7 @@ export class EntityTab {
         try {
             const entity = new EntityModel();
             const entityDataItem = this.entitiesCombobox.dataItem();
-            const oldName = entityDataItem.name;
+            const oldName = entityDataItem.name === "ROOT" ? "" : entityDataItem.name;
             const oldModuleId = entityDataItem.moduleId;
 
             entity.id = entityDataItem.id;
