@@ -153,6 +153,21 @@ export class EntityTab {
             lineNumbers: true
         });
 
+        this.searchQueryField = CodeMirror.fromTextArea(document.getElementById("searchQuery"), {
+            mode: "text/x-mysql",
+            lineNumbers: true
+        });
+
+        this.searchCountQueryField = CodeMirror.fromTextArea(document.getElementById("searchCountQuery"), {
+            mode: "text/x-mysql",
+            lineNumbers: true
+        });
+
+        this.aggregateOptionsField = CodeMirror.fromTextArea(document.getElementById("aggregateOptions"), {
+            mode: "application/json",
+            lineNumbers: true
+        });
+
         this.queryContentField = CodeMirror.fromTextArea(document.getElementById("queryContent"), {
             mode: "text/x-mysql",
             lineNumbers: true
@@ -419,6 +434,8 @@ export class EntityTab {
                     this.queryAfterUpdate.refresh();
                     this.queryBeforeUpdate.refresh();
                     this.queryBeforeDelete.refresh();
+                    this.searchQueryField.refresh();
+                    this.searchCountQueryField.refresh();
                 }
             }
         }).data("kendoTabStrip");
@@ -1260,6 +1277,32 @@ export class EntityTab {
             format: "dd-MM-yyyy",
             culture: "nl-NL"
         }).data("kendoDatePicker");
+        
+        this.labelStyle = $("#labelStyle").kendoDropDownList({
+            dataTextField: "text",
+            dataValueField: "value",
+            dataSource: [
+                { text: "Normal", value: "normal" },
+                { text: "Inline", value: "inline" },
+                { text: "Float", value: "float" }
+            ],
+            cascade: (event) => {
+                $("#labelWidthContainer").toggle(event.sender.value() === "inline");
+            }
+        }).data("kendoDropDownList");
+
+        this.labelWidth = $("#labelWidth").kendoDropDownList({
+            dataTextField: "text",
+            dataValueField: "value",
+            dataSource: [
+                { text: "0", value: 0 },
+                { text: "10%", value: 10 },
+                { text: "20%", value: 20 },
+                { text: "30%", value: 30 },
+                { text: "40%", value: 40 },
+                { text: "50%", value: 50 }
+            ]
+        }).data("kendoDropDownList");
 
         // set entity dropdown lists 
         this.reloadEntityList();
@@ -1648,7 +1691,7 @@ export class EntityTab {
                         rows.push({
                             name: up[i].name,
                             question: up[i].question,
-                            fieldType: this.base.fieldTypesDropDown[up[i].fieldTypeId.toUpperCase()] || this.base.fieldTypesDropDown["INPUT"],
+                            fieldType: this.base.fieldTypesDropDown[up[i].fieldType.toUpperCase()] || this.base.fieldTypesDropDown["INPUT"],
                             value: up[i].value,
                             format: up[i].format,
                             dataTextField: up[i].dataTextField,
@@ -1826,6 +1869,8 @@ export class EntityTab {
         this.queryAfterUpdate.refresh();
         this.queryBeforeUpdate.refresh();
         this.queryBeforeDelete.refresh();
+        this.searchQueryField.refresh();
+        this.searchCountQueryField.refresh();
     }
 
     async setTabNameDropDown() {
@@ -1903,6 +1948,9 @@ export class EntityTab {
         this.queryInsertField.refresh();
         this.queryUpdateField.refresh();
         this.queryContentField.refresh();
+        this.searchQueryField.refresh();
+        this.searchCountQueryField.refresh();
+        this.aggregateOptionsField.refresh();
     }
 
     async getEntityPropertiesOfSelected(id) {
@@ -2045,14 +2093,6 @@ export class EntityTab {
                 case inputTypes.ACTIONBUTTON:
                     break;
                 case inputTypes.SUBENTITIESGRID:
-                    if (this.subEntityGridEntity.value() === "") {
-                        this.base.showNotification("notification", "Selecteer soort entiteit om te linken!", "error");
-                        return false;
-                    }
-                    if (this.subEntitiesGridSelectOptions.value() === "") {
-                        this.base.showNotification("notification", "Kies een selecteer optie!", "error");
-                        return false;
-                    }
                     if (document.getElementById("customQuery").checked && this.queryFieldSubEntities.getValue() === "") {
                         this.base.showNotification("notification", "Voer iets in bij query!", "error");
                         return false;
@@ -2119,7 +2159,6 @@ export class EntityTab {
 
             this.isSaveSelect = true;
             // if everything went right, we move on to the save function.
-            await this.saveEntityProperties();
             await this.saveEntityFieldProperties();
         }
     }
@@ -2196,8 +2235,11 @@ export class EntityTab {
         entityProperties.entityType = this.entitiesCombobox.dataItem().name;
         entityProperties.linkType = 0;
         entityProperties.tabName = this.tabNameProperty.value();
+        if (entityProperties.tabName === "Gegevens") {
+            entityProperties.tabName = "";
+        }
         entityProperties.groupName = this.groupNameComboBox.value();
-        entityProperties.inputType = this.inputTypeSelector.dataItem().text;
+        entityProperties.inputType = this.inputTypeSelector.value();
         entityProperties.displayName = $("#displayname").val();
         entityProperties.propertyName = $("#propertyname").val();
         entityProperties.explanation = $("textarea#explanation").val();
@@ -2207,13 +2249,21 @@ export class EntityTab {
         entityProperties.width = $("#width").data("kendoNumericTextBox").value();
         entityProperties.height = $("#height").data("kendoNumericTextBox").value();
         entityProperties.languageCode = $('#langCode').val();
-        // get value through codemirror function getValue() because textarea is empty
         entityProperties.customScript = this.scriptField.getValue();
         entityProperties.css = this.cssField.getValue();
         entityProperties.alsoSaveSeoValue = document.getElementById("seofriendly").checked;
         entityProperties.defaultValue = $('#defaultValue').val();
         entityProperties.visibleInOverview = document.getElementById("visible-in-table").checked;
         entityProperties.ordering = this.selectedEntityProperty.ordering;
+        entityProperties.extendedExplanation = document.getElementById("extendedExplanation").checked;
+        entityProperties.saveOnChange = document.getElementById("saveOnChange").checked;
+        entityProperties.labelStyle = this.labelStyle.value();
+        entityProperties.labelWidth = this.labelWidth.value();
+        entityProperties.accessKey = $("#accessKey").val();
+        entityProperties.visibilityPathRegex = $("#visibilityPathRegex").val();
+        entityProperties.enableAggregation = document.getElementById("enableAggregation").checked;
+        entityProperties.aggregateOptions = this.aggregateOptionsField.getValue();
+        
         entityProperties.dependsOn = {
             field: this.dependencyFields.value(),
             operator: this.dependencyOperator.value(),
@@ -2225,26 +2275,13 @@ export class EntityTab {
             visible: document.getElementById("visible-in-table").checked,
             width: this.widthInTable.value()
         };
-        
-        // TODO: all properties below need to be able to changed by the user.
-        entityProperties.extendedExplanation = false;
-        entityProperties.actionQuery = null;
-        entityProperties.searchQuery = null;
-        entityProperties.searchCountQuery = null;
-        entityProperties.saveOnChange = false;
-        entityProperties.labelStyle = null;
-        entityProperties.labelWidth = null;
-        entityProperties.enableAggregation = false;
-        entityProperties.aggregateOptions = null;
-        entityProperties.accessKey = null;
-        entityProperties.visibilityPathRegex = null;
 
         // declare empty options
         entityProperties.options = {};
 
         //inputtype specific
         const inputTypes = this.base.inputTypes;
-        switch (entityProperties.inputtype) {
+        switch (this.inputTypeSelector.text()) {
             case inputTypes.RADIOBUTTON:
                 entityProperties.defaultValue = $("#checkedCheckbox").data("kendoComboBox").value();
                 entityProperties.dataQuery = this.queryContentField.getValue();
@@ -2261,7 +2298,7 @@ export class EntityTab {
                 entityProperties.options.min = this.minNumber.value();
                 entityProperties.options.step = this.stepNumber.value() || 1;
                 entityProperties.options.factor = this.factorNumber.value() || 1;
-                var culture = document.getElementById("cultureNumber").value;
+                const culture = document.getElementById("cultureNumber").value;
                 entityProperties.options.culture = culture === "" ? null : culture;
                 entityProperties.defaultValue = $("#defaultNumeric").val();
                 break;
@@ -2282,7 +2319,7 @@ export class EntityTab {
                 break;
             case inputTypes.COMBOBOX:
             case inputTypes.MULTISELECT:
-                if (entityProperties.inputtype === inputTypes.COMBOBOX) {
+                if (this.inputTypeSelector.text() === inputTypes.COMBOBOX) {
                     entityProperties.options.useDropDownList = document.getElementById("useDropDownList").checked;
                 } else {
                     entityProperties.options.useDropDownList = null;
@@ -2359,7 +2396,7 @@ export class EntityTab {
             case inputTypes.ACTIONBUTTON:
 
                 // shared properties through out sub entities grid and item linker
-                if (entityProperties.inputtype !== inputTypes.ACTIONBUTTON) {
+                if (this.inputTypeSelector.text() !== inputTypes.ACTIONBUTTON) {
                     // check if set, if not use the manual input
                     entityProperties.options.linkTypeNumber = (!this.itemLinkerTypeNumber.dataItem() && this.itemLinkerTypeNumber.value() === "" ? "" : (!this.itemLinkerTypeNumber.dataItem() ? this.itemLinkerTypeNumber.value() : this.itemLinkerTypeNumber.dataItem().typeValue));
                     entityProperties.options.hideCommandColumn = document.getElementById("hideCommandColumn").checked;
@@ -2376,7 +2413,7 @@ export class EntityTab {
 
                 // module id is only available for item linker 
                 // entity is a multiselect for item linker
-                if (entityProperties.inputtype === inputTypes.ITEMLINKER) {
+                if (this.inputTypeSelector.text() === inputTypes.ITEMLINKER) {
                     const moduleId = $("#itemLinkerModuleId").data("kendoNumericTextBox").value();
                     // 0 is the default value
                     entityProperties.options.moduleId = moduleId === "" ? 0 : moduleId;
@@ -2412,7 +2449,7 @@ export class EntityTab {
                             actions: actions
                         });
                     }
-                    if (entityProperties.inputtype === inputTypes.ACTIONBUTTON) {
+                    if (this.inputTypeSelector.text() === inputTypes.ACTIONBUTTON) {
                         if (buttons.length === 0 || buttons[0].actions.length === 0) {
                             console.warn("entityProperties.options.actions is missing!", entityProperties.options);
                             this.base.showNotification("notification", `Item is niet succesvol toegevoegd, actie(s) ontbreken, probeer het opnieuw`, "error");
@@ -2433,7 +2470,7 @@ export class EntityTab {
                 }
 
                 // properties for sub entities grid
-                if (entityProperties.inputtype === inputTypes.SUBENTITIESGRID) {
+                if (this.inputTypeSelector.text() === inputTypes.SUBENTITIESGRID) {
                     entityProperties.options.dataSelectorId = this.dataSelectorIdSubEntitiesGrid.value();
                     entityProperties.options.entityType = this.subEntityGridEntity.value();
                     entityProperties.options.selectable = (this.subEntitiesGridSelectOptions.value() === "false") ? false : this.subEntitiesGridSelectOptions.value();
@@ -2467,6 +2504,8 @@ export class EntityTab {
                         entityProperties.gridInsertQuery = this.queryInsertField.getValue();
                     }
 
+                    entityProperties.searchQuery = this.searchQueryField.getValue();
+                    entityProperties.searchCountQuery = this.searchCountQueryField.getValue();
                     entityProperties.options.disableInlineEditing = document.getElementById("disableInlineEditing").checked;
                     entityProperties.options.disableOpeningOfItems = document.getElementById("disableOpeningOfItems").checked;
                     entityProperties.options.hideTitleColumn = document.getElementById("hideTitleColumn").checked;
@@ -2533,7 +2572,7 @@ export class EntityTab {
         }
 
         // we create the json for chart in the module
-        if (entityProperties.inputtype !== inputTypes.CHART) {
+        if (this.inputTypeSelector.text() !== inputTypes.CHART) {
             // when the admin tool hasnt been updated to handle options that might appear in the options json, dont want to lose any options that were entered previously
             entityProperties.options = $.extend(true, this.fieldOptions, entityProperties.options);
 
@@ -2548,7 +2587,7 @@ export class EntityTab {
             // save to database
             await Wiser.api({
                 type: "PUT",
-                url: `${this.base.settings.wiserApiRoot}/entity-properties/${entityProperties.id}`,
+                url: `${this.base.settings.wiserApiRoot}entity-properties/${entityProperties.id}`,
                 contentType: "application/json",
                 data: JSON.stringify(entityProperties)
             });
@@ -2806,6 +2845,9 @@ export class EntityTab {
         this.queryInsertField.setValue("");
         this.queryUpdateField.setValue("");
         this.queryContentField.setValue("");
+        this.searchQueryField.setValue("");
+        this.searchCountQueryField.setValue("");
+        this.aggregateOptionsField.setValue("");
 
         //textbox
         this.textboxTypeDropDown.select(0);
@@ -2891,19 +2933,22 @@ export class EntityTab {
 
     // set all properties values to the fields accordingly
     setEntityFieldProperties(resultSet) {
-
+        console.log("setEntityFieldProperties", resultSet);
         // set dropdown value for inputtype field
         this.inputTypeSelector.select((dataItem) => {
-            return dataItem.text === resultSet.inputtype;
+            return dataItem.text === resultSet.inputType;
         });
 
         // hide/show all elements which are shown based on a type of input
-        this.hideShowElementsBasedOnValue(resultSet.inputtype);
+        this.hideShowElementsBasedOnValue(resultSet.inputType);
         // checkboxes proper set
         document.getElementById("visible-in-table").checked = resultSet.visibleInOverview;
         document.getElementById("mandatory").checked = resultSet.mandatory;
         document.getElementById("readonly").checked = resultSet.readonly;
         document.getElementById("seofriendly").checked = resultSet.alsoSaveSeoValue;
+        document.getElementById("saveOnChange").checked = resultSet.saveOnChange;
+        document.getElementById("extendedExplanation").checked = resultSet.extendedExplanation;
+        document.getElementById("enableAggregation").checked = resultSet.enableAggregation;
 
         // numeric textboxes
         this.widthInTable.value(resultSet.overviewWidth);
@@ -2917,6 +2962,8 @@ export class EntityTab {
         document.getElementById("langCode").value = resultSet.languageCode;
         document.getElementById("explanation").value = resultSet.explanation;
         document.getElementById("defaultValue").value = resultSet.defaultValue;
+        document.getElementById("accessKey").value = resultSet.accessKey;
+        document.getElementById("visibilityPathRegex").value = resultSet.visibilityPathRegex;
 
         // dependencies
         document.getElementById("dependingValue").value = resultSet.dependsOnValue;
@@ -2938,6 +2985,14 @@ export class EntityTab {
             return dataItem.value === resultSet.dependsOnAction;
         });
 
+        this.labelStyle.select((dataItem) => {
+            return dataItem.value === resultSet.labelStyle;
+        });
+
+        this.labelWidth.select((dataItem) => {
+            return dataItem.value == resultSet.labelWidth;
+        });
+
         // set codemirror fields
         if (resultSet.css && resultSet.css !== "") {
             this.cssField.setValue(resultSet.css);
@@ -2945,6 +3000,10 @@ export class EntityTab {
         }
         if (resultSet.customScript && resultSet.customScript !== "") {
             this.scriptField.setValue(resultSet.customScript);
+            this.scriptField.refresh();
+        }
+        if (resultSet.aggregateOptions && resultSet.aggregateOptions !== "") {
+            this.aggregateOptionsField.setValue(resultSet.aggregateOptions);
             this.scriptField.refresh();
         }
 
@@ -2999,7 +3058,7 @@ export class EntityTab {
         this.fieldOptions = options;
 
         const inputTypes = this.base.inputTypes;
-        switch (resultSet.inputtype) {
+        switch (resultSet.inputType) {
             case inputTypes.TEXTBOX:
                 this.textboxTypeDropDown.select((dataItem) => {
                     return dataItem.id === options.type;
@@ -3058,7 +3117,7 @@ export class EntityTab {
                 break;
             case inputTypes.COMBOBOX:
             case inputTypes.MULTISELECT:
-                if (resultSet.inputtype === inputTypes.COMBOBOX) {
+                if (resultSet.inputType === inputTypes.COMBOBOX) {
                     document.getElementById("useDropDownList").checked = options.useDropDownList;
                 }
                 var panel = "";
@@ -3140,7 +3199,7 @@ export class EntityTab {
 
                 // module id is only available for item linker 
                 // entity is a multiselect for item linker
-                if (resultSet.inputtype === inputTypes.ITEMLINKER) {
+                if (resultSet.inputType === inputTypes.ITEMLINKER) {
                     $("#itemLinkerModuleId").data("kendoNumericTextBox").value(options.moduleId);
                     // select multiselect options
                     this.itemLinkerEntity.value(options.entityTypes);
@@ -3148,7 +3207,7 @@ export class EntityTab {
                 }
 
                 // shared properties through out sub entities grid and item linker
-                if (resultSet.inputtype !== inputTypes.ACTIONBUTTON) {
+                if (resultSet.inputType !== inputTypes.ACTIONBUTTON) {
                     // select item linker type number
                     this.itemLinkerTypeNumber.select((dataItem) => {
                         return dataItem.typeValue === options.linkTypeNumber;
@@ -3173,9 +3232,9 @@ export class EntityTab {
                 }
 
                 // actions which are available for action button and sub entities grid.
-                if (resultSet.inputtype !== inputTypes.ITEMLINKER) {
+                if (resultSet.inputType !== inputTypes.ITEMLINKER) {
                     const buttonArray = [];
-                    if (resultSet.inputtype === inputTypes.ACTIONBUTTON) {
+                    if (resultSet.inputType === inputTypes.ACTIONBUTTON) {
                         // set button array options
                         buttonArray.push({
                             text: options.text,
@@ -3204,7 +3263,7 @@ export class EntityTab {
                 }
 
                 // only available to sub entities grid
-                if (resultSet.inputtype === inputTypes.SUBENTITIESGRID) {
+                if (resultSet.inputType === inputTypes.SUBENTITIESGRID) {
                     // set entity dropdown 
                     this.subEntityGridEntity.select((dataItem) => {
                         return dataItem.id === options.entityType;
@@ -3245,11 +3304,20 @@ export class EntityTab {
                         this.queryUpdateField.refresh();
                     }
 
-
                     if (options.hasCustomInsertQuery && resultSet.gridInsertQuery && resultSet.gridInsertQuery !== "") {
                         $("#hasCustomInsertQuery").trigger("click");
                         this.queryInsertField.setValue(resultSet.gridInsertQuery);
                         this.queryInsertField.refresh();
+                    }
+
+                    if (resultSet.searchQuery && resultSet.searchQuery !== "") {
+                        this.searchQueryField.setValue(resultSet.searchQuery);
+                        this.searchQueryField.refresh();
+                    }
+
+                    if (resultSet.searchCountQuery && resultSet.searchCountQuery !== "") {
+                        this.searchCountQueryField.setValue(resultSet.searchCountQuery);
+                        this.searchCountQueryField.refresh();
                     }
 
                     document.getElementById("disableInlineEditing").checked = options.disableInlineEditing;

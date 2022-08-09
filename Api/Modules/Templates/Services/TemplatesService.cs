@@ -1091,7 +1091,7 @@ LIMIT 1; ");
     overview_width AS overviewWidth, 
     IF(tab_name = '', 'Gegevens', tab_name) AS tabName,
     group_name AS groupName,
-    inputtype,
+    inputtype AS inputType,
     display_name AS displayName,
     property_name AS propertyName,
     explanation,

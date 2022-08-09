@@ -166,7 +166,7 @@ namespace Api.Modules.EntityProperties.Services
             clientDatabaseConnection.AddParameter("link_type", entityProperty.LinkType);
             clientDatabaseConnection.AddParameter("extended_explanation", entityProperty.ExtendedExplanation);
             clientDatabaseConnection.AddParameter("label_style", ToDatabaseValue(entityProperty.LabelStyle));
-            clientDatabaseConnection.AddParameter("label_width", entityProperty.LabelWidth);
+            clientDatabaseConnection.AddParameter("label_width", entityProperty.LabelWidth.ToString());
             clientDatabaseConnection.AddParameter("enable_aggregation", entityProperty.EnableAggregation);
             clientDatabaseConnection.AddParameter("aggregate_options", entityProperty.AggregateOptions);
             clientDatabaseConnection.AddParameter("access_key", entityProperty.AccessKey);
@@ -345,7 +345,7 @@ VALUES
             clientDatabaseConnection.AddParameter("link_type", entityProperty.LinkType);
             clientDatabaseConnection.AddParameter("extended_explanation", entityProperty.ExtendedExplanation);
             clientDatabaseConnection.AddParameter("label_style", ToDatabaseValue(entityProperty.LabelStyle));
-            clientDatabaseConnection.AddParameter("label_width", entityProperty.LabelWidth);
+            clientDatabaseConnection.AddParameter("label_width", entityProperty.LabelWidth.ToString());
             clientDatabaseConnection.AddParameter("enable_aggregation", entityProperty.EnableAggregation);
             clientDatabaseConnection.AddParameter("aggregate_options", entityProperty.AggregateOptions);
             clientDatabaseConnection.AddParameter("access_key", entityProperty.AccessKey);
@@ -794,7 +794,7 @@ AND otherEntityProperty.id IS NULL";
             result.AlsoSaveSeoValue = Convert.ToBoolean(dataRow["also_save_seo_value"]);
             result.SaveOnChange = Convert.ToBoolean(dataRow["save_on_change"]);
             result.LabelStyle = ToLabelStyle(dataRow.Field<string>("label_style"));
-            result.LabelWidth = Convert.ToInt32(dataRow.Field<object>("label_width"));
+            result.LabelWidth = Convert.ToInt32(dataRow["label_width"]);
             result.Overview = new EntityPropertyOverviewModel();
             result.Overview.Visible = Convert.ToBoolean(dataRow["visible_in_overview"]);
             result.Overview.Width = Convert.ToInt32(dataRow["overview_width"]);
