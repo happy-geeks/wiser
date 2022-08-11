@@ -759,6 +759,9 @@ ins {
 .item[data-label-style="float"] .k-dropdownlist .k-input-inner {
 	padding-top: 20px;
 }
+.item[data-label-style="float"] .k-combobox .k-input-inner {
+	line-height: 28px;
+}
 .item[data-label-style="float"] > .k-button {
     height: 50px;
     padding-top: 20px;

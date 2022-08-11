@@ -834,6 +834,7 @@ input[type=search] + button {
 	width: 42px;
 }
 .k-input[type=text], 
+.k-input-inner[type=text], 
 .k-input[type=number], 
 .k-input[type=search], 
 .k-input[type=url], 
@@ -960,6 +961,7 @@ textarea.k-textbox {
 	border-color: #ebebeb;
 }
 .k-input[type=text],
+.k-input-inner[type=text],
 .k-input[type=number],
 .k-input[type=search],
 .k-input[type=url],
@@ -984,7 +986,22 @@ span.k-input .k-input {
 .k-combobox .k-input-inner,
 .k-dropdown .k-input-inner,
 .k-dropdownlist .k-input-inner {
+	border: 1px solid var(--border-color);
 	background-color: var(--white-color);
+	border-right: none;
+}
+.k-combobox .k-input-button,
+.k-dropdown .k-input-button,
+.k-dropdownlist .k-input-button {
+	border: 1px solid var(--border-color);
+	border-left: none;
+}
+.k-combobox .k-clear-value,
+.k-dropdown .k-clear-value,
+.k-dropdownlist .k-clear-value {
+	border-top: 1px solid var(--border-color);
+	border-bottom: 1px solid var(--border-color);
+	height: 100%;
 }
 .k-widget > textarea {
 	line-height: 22px;
@@ -1286,6 +1303,11 @@ span.k-input .k-input:hover {
 	min-width: 40px;
 	padding: 4px 6px;
 	height: 24px;
+}
+.k-grid .k-command-cell>.k-button+.k-button {
+	margin-left: 5px;
+	-webkit-margin-start: 0;
+	margin-inline-start: 0;
 }
 k-filter-menu .k-autocomplete, 
 .k-filter-menu .k-combobox, 
