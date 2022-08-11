@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import { Wiser } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import { Preview } from "./Preview.js";
 
@@ -49,7 +49,7 @@ const moduleSettings = {
             this.mainDatePicker = null;
             this.mainDateTimePicker = null;
             this.selectedId = 0;
-            this.templateSettings = null;
+            this.templateSettings = {};
             this.linkedTemplates = null;
             this.templateHistory = null;
             this.treeViewContextMenu = null;
@@ -136,7 +136,7 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
@@ -158,6 +158,11 @@ const moduleSettings = {
                     event.preventDefault();
                     event.returnValue = "";
                 }
+            });
+            
+            document.addEventListener("moduleClosing", (event) => {
+                // You can do anything here that needs to happen before closing the module.
+                event.detail();
             });
         }
 
@@ -217,7 +222,7 @@ const moduleSettings = {
             }).data("kendoTabStrip");
 
             // Load the tabs via the API.
-            this.treeViewTabs = await Wiser2.api({
+            this.treeViewTabs = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}templates/0/tree-view`,
                 dataType: "json",
                 method: "GET"
@@ -254,7 +259,7 @@ const moduleSettings = {
                     dataSource: {
                         transport: {
                             read: (readOptions) => {
-                                Wiser2.api({
+                                Wiser.api({
                                     url: `${this.settings.wiserApiRoot}templates/${readOptions.data.templateId || treeViewElement.data("id")}/tree-view`,
                                     dataType: "json",
                                     type: "GET"
@@ -441,6 +446,8 @@ const moduleSettings = {
             this.onMainTabStripActivate();
 
             if (dataItem.isFolder) {
+                await this.loadTemplate(0);
+                this.initialTemplateSettings = this.getCurrentTemplateSettings();
                 return;
             }
 
@@ -460,7 +467,7 @@ const moduleSettings = {
                 const sourceDataItem = event.sender.dataItem(event.sourceNode);
                 const destinationDataItem = event.sender.dataItem(event.destinationNode);
 
-                await Wiser2.api({
+                await Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}templates/${encodeURIComponent(sourceDataItem.templateId)}/move/${encodeURIComponent(destinationDataItem.templateId)}?dropPosition=${encodeURIComponent(event.dropPosition)}`,
                     method: "PUT",
                     contentType: "application/json"
@@ -569,7 +576,7 @@ const moduleSettings = {
                     });
                     break;
                 case "delete":
-                    Wiser2.showConfirmDialog(`Weet u zeker dat u het item "${selectedItem.templateName}" en alle onderliggende items wilt verwijderen?`).then(() => {
+                    Wiser.showConfirmDialog(`Weet u zeker dat u het item "${selectedItem.templateName}" en alle onderliggende items wilt verwijderen?`).then(() => {
                         this.deleteItem(selectedItem.templateId).then(() => {
                             treeView.remove(node);
                         });
@@ -586,18 +593,33 @@ const moduleSettings = {
          * @param {any} id The ID of the template to load.
          */
         async loadTemplate(id) {
+            const dynamicContentTab = this.mainTabStrip.element.find(".dynamic-tab");
+            const previewTab = this.mainTabStrip.element.find(".preview-tab");
+            
+            if (id <= 0) {
+                this.templateSettings = {};
+                this.linkedTemplates = null;
+                this.templateHistory = null;
+                
+                document.getElementById("developmentTab").innerHTML = "";
+                document.getElementById("previewTab").innerHTML = "";
+                this.mainTabStrip.disable(dynamicContentTab);
+                this.mainTabStrip.disable(previewTab);
+                return;
+            }
+            
             const process = `onTreeViewSelect_${Date.now()}`;
             window.processing.addProcess(process);
 
             try {
                 // Get template settings and linked templates.
                 let promises = [
-                    Wiser2.api({
+                    Wiser.api({
                         url: `${this.settings.wiserApiRoot}templates/${id}/settings`,
                         dataType: "json",
                         method: "GET"
                     }),
-                    Wiser2.api({
+                    Wiser.api({
                         url: `${this.settings.wiserApiRoot}templates/${id}/linked-templates`,
                         dataType: "json",
                         method: "GET"
@@ -614,7 +636,7 @@ const moduleSettings = {
 
                 // Development
                 promises.push(
-                    Wiser2.api({
+                    Wiser.api({
                         method: "POST",
                         contentType: "application/json",
                         url: "/Modules/Templates/DevelopmentTab",
@@ -634,8 +656,6 @@ const moduleSettings = {
 
                 // Only load dynamic content and previews for HTML templates.
                 const isHtmlTemplate = this.templateSettings.type.toUpperCase() === "HTML";
-                const dynamicContentTab = this.mainTabStrip.element.find(".dynamic-tab");
-                const previewTab = this.mainTabStrip.element.find(".preview-tab");
 
                 if (!isHtmlTemplate) {
                     this.mainTabStrip.disable(dynamicContentTab);
@@ -658,7 +678,7 @@ const moduleSettings = {
                     dataSource: {
                         transport: {
                             read: (readOptions) => {
-                                Wiser2.api({
+                                Wiser.api({
                                     url: `${this.settings.wiserApiRoot}templates/${id}/linked-dynamic-content`,
                                     dataType: "json",
                                     method: "GET"
@@ -779,17 +799,16 @@ const moduleSettings = {
                 dynamicGridDiv.on("dblclick", "tr.k-state-selected", this.onDynamicContentOpenClick.bind(this));
 
                 // Preview
-                this.preview.loadProfiles().then(() => {
-                    Wiser2.api({
-                        method: "GET",
-                        url: "/Modules/Templates/PreviewTab"
-                    }).then((response) => {
-                        document.getElementById("previewTab").innerHTML = response;
-
-                        this.preview.initPreviewProfileInputs(true, true);
-                        this.preview.bindPreviewButtons();
-                    })
+                await this.preview.loadProfiles();
+                const response = await Wiser.api({
+                    method: "GET",
+                    url: "/Modules/Templates/PreviewTab"
                 });
+
+                document.getElementById("previewTab").innerHTML = response;
+
+                this.preview.initPreviewProfileInputs(true, true);
+                this.preview.bindPreviewButtons();
             } catch (exception) {
                 console.error(exception);
                 kendo.alert(`Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.<br>${exception.responseText || exception}`);
@@ -818,7 +837,7 @@ const moduleSettings = {
 
                 // Add promises based on parameters.
                 if (isDefaultHeader) {
-                    promises.push(Wiser2.api({
+                    promises.push(Wiser.api({
                         url: `${this.settings.wiserApiRoot}templates/${templateId}/check-default-header-conflict`,
                         data: {
                             regexString: defaultHeaderFooterRegex
@@ -828,7 +847,7 @@ const moduleSettings = {
                     }));
                 }
                 if (isDefaultFooter) {
-                    promises.push(Wiser2.api({
+                    promises.push(Wiser.api({
                         url: `${this.settings.wiserApiRoot}templates/${templateId}/check-default-footer-conflict`,
                         data: {
                             regexString: defaultHeaderFooterRegex
@@ -1327,13 +1346,13 @@ const moduleSettings = {
                     return;
                 }
 
-                const selectedComponentData = await Wiser2.api({
+                const selectedComponentData = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}dynamic-content/${selectedDataItem.id}?includeSettings=false`,
                     dataType: "json",
                     method: "GET"
                 });
 
-                const html = await Wiser2.api({
+                const html = await Wiser.api({
                     url: `/Modules/DynamicContent/PublishedEnvironments`,
                     method: "POST",
                     contentType: "application/json",
@@ -1379,7 +1398,7 @@ const moduleSettings = {
                 return;
             }
 
-            await Wiser2.api({
+            await Wiser.api({
                 url: `${this.settings.wiserApiRoot}templates/${templateId}/publish/${encodeURIComponent(environment)}/${version}`,
                 dataType: "json",
                 type: "POST",
@@ -1398,7 +1417,7 @@ const moduleSettings = {
                 return;
             }
 
-            await Wiser2.api({
+            await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dynamic-content/${contentId}/publish/${encodeURIComponent(environment)}/${version}`,
                 dataType: "json",
                 type: "POST",
@@ -1452,7 +1471,7 @@ const moduleSettings = {
 
             let success = true;
             try {
-                const response = await Wiser2.api({
+                const response = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}templates/${id}/rename?newName=${encodeURIComponent(newName)}`,
                     dataType: "json",
                     type: "POST",
@@ -1480,7 +1499,7 @@ const moduleSettings = {
 
             let success = true;
             try {
-                const response = await Wiser2.api({
+                const response = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}templates/${id}`,
                     dataType: "json",
                     type: "DELETE",
@@ -1563,6 +1582,15 @@ const moduleSettings = {
                 return false;
             }
 
+            const selectedTabIndex = this.treeViewTabStrip.select().index();
+            const selectedTabContentElement = this.treeViewTabStrip.contentElement(selectedTabIndex);
+            const treeViewElement = selectedTabContentElement.querySelector("ul");
+            const treeView = $(treeViewElement).data("kendoTreeView");
+            const dataItem = treeView.dataItem(treeView.select());
+            if (!dataItem || dataItem.isFolder) {
+                return false;
+            }
+
             const process = `saveTemplate_${Date.now()}`;
             window.processing.addProcess(process);
             let success = true;
@@ -1587,7 +1615,7 @@ const moduleSettings = {
                 // No conflicts, continue saving.
                 this.saving = true;
 
-                const response = await Wiser2.api({
+                const response = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}templates/${data.templateId}`,
                     dataType: "json",
                     type: "POST",
@@ -1598,7 +1626,7 @@ const moduleSettings = {
                 window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
                 this.historyLoaded = false;
 
-                if (alsoDeployToTest) {
+                if (alsoDeployToTest === true) {
                     const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
                     await this.deployEnvironment("test", this.selectedId, version);
                 }
@@ -1634,7 +1662,7 @@ const moduleSettings = {
                 }
 
                 // Call back-end to search.
-                const response = await Wiser2.api({
+                const response = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}templates/search?searchValue=${encodeURIComponent(value)}`,
                     dataType: "json",
                     type: "GET",
@@ -1675,14 +1703,14 @@ const moduleSettings = {
          * @param {any} templateId The ID of the template.
          */
         async reloadMetaData(templateId) {
-            const templateMetaData = await Wiser2.api({
+            const templateMetaData = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}templates/${templateId}/meta`,
                 dataType: "json",
                 type: "GET",
                 contentType: "application/json"
             });
 
-            const response = await Wiser2.api({
+            const response = await Wiser.api({
                 method: "POST",
                 contentType: "application/json",
                 url: "/Modules/Templates/PublishedEnvironments",
@@ -1711,13 +1739,13 @@ const moduleSettings = {
             window.processing.addProcess(process);
 
             try {
-                const templateHistory = await Wiser2.api({
+                const templateHistory = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}templates/${templateId}/history`,
                     dataType: "json",
                     method: "GET"
                 });
 
-                const historyTab = await Wiser2.api({
+                const historyTab = await Wiser.api({
                     method: "POST",
                     contentType: "application/json",
                     url: "/Modules/Templates/HistoryTab",
@@ -1747,7 +1775,7 @@ const moduleSettings = {
 
             let success = true;
             try {
-                const result = await Wiser2.api({
+                const result = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}templates/${parentId}`,
                     dataType: "json",
                     type: "PUT",

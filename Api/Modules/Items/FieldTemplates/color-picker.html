@@ -1,4 +1,22 @@
-﻿<div class="item {containerCssClass}" id="container_{propertyIdWithSuffix}" style="{style}" data-property-id="{propertyId}" data-item-id="{itemId}" data-depends-on-field="{dependsOnField}" data-depends-on-operator="{dependsOnOperator}" data-depends-on-value="{dependsOnValue}" data-property-name="{propertyName}" data-depends-on-action="{dependsOnAction}" data-language-code="{languageCode}" data-item-link-id="{itemLinkId}" data-width="{width}" data-save-on-change="{saveOnChange}" data-label-style="{labelStyle}" data-label-width="{labelWidth}" data-input-type="color-picker" data-link-type="{linkType}">
+﻿<div class="item {containerCssClass}"
+     id="container_{propertyIdWithSuffix}"
+     style="{style}"
+     data-property-id="{propertyId}"
+     data-item-id="{itemId}"
+     data-depends-on-field="{dependsOnField}"
+     data-depends-on-operator="{dependsOnOperator}"
+     data-depends-on-value="{dependsOnValue}"
+     data-property-name="{propertyName}"
+     data-depends-on-action="{dependsOnAction}"
+     data-language-code="{languageCode}"
+     data-item-link-id="{itemLinkId}"
+     data-width="{width}"
+     data-save-on-change="{saveOnChange}"
+     data-label-style="{labelStyle}"
+     data-label-width="{labelWidth}"
+     data-input-type="color-picker"
+     data-link-type="{linkType}"
+     data-visibility-path-regex="{visibilityPathRegex}">
     <span class="handler">&nbsp;</span>
     <h4 class="{titleClass}">
         <label for="field_{propertyIdWithSuffix}">{title}</label>
@@ -6,6 +24,8 @@
             <ins class="icon-info-full"></ins>
         </span>
     </h4>
-    <input id="field_{propertyIdWithSuffix}" class="colorpicker" name="{propertyName}_{languageCode}" data-kendo-control="kendoColorPicker" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..." value="{default_value}" {required} pattern="{pattern}" data-lpignore="true" />
+    <input id="field_{propertyIdWithSuffix}" class="colorpicker" name="{propertyName}_{languageCode}"
+           data-kendo-control="kendoColorPicker" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."
+           value="{default_value}" {required} pattern="{pattern}" data-lpignore="true"/>
     <div class="form-hint {formHintClass}">{hint}</div>
 </div>

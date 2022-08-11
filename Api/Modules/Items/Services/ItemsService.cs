@@ -15,8 +15,11 @@ using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
+using Api.Modules.EntityProperties.Enums;
+using Api.Modules.EntityProperties.Interfaces;
 using Api.Modules.EntityTypes.Models;
 using Api.Modules.Files.Interfaces;
+using Api.Modules.Google.Interfaces;
 using Api.Modules.Items.Interfaces;
 using Api.Modules.Items.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -29,6 +32,8 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Core.Services;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
+using GeeksCoreLibrary.Modules.Languages.Interfaces;
+using Google.Cloud.Translation.V2;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
@@ -53,11 +58,27 @@ namespace Api.Modules.Items.Services
         private readonly IApiReplacementsService apiReplacementsService;
         private readonly IFilesService filesService;
         private readonly IDatabaseHelpersService databaseHelpersService;
+        private readonly ILanguagesService languagesService;
+        private readonly IEntityPropertiesService entityPropertiesService;
+        private readonly IGoogleTranslateService googleTranslateService;
 
         /// <summary>
         /// Creates a new instance of <see cref="ItemsService"/>.
         /// </summary>
-        public ItemsService(Templates.Interfaces.ITemplatesService templatesService, IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, IWiserItemsService wiserItemsService, IJsonService jsonService, ILogger<ItemsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService, IFilesService filesService, IDatabaseHelpersService databaseHelpersService)
+        public ItemsService(Templates.Interfaces.ITemplatesService templatesService,
+                            IWiserCustomersService wiserCustomersService,
+                            IDatabaseConnection clientDatabaseConnection,
+                            IHttpContextAccessor httpContextAccessor,
+                            IWiserItemsService wiserItemsService,
+                            IJsonService jsonService,
+                            ILogger<ItemsService> logger,
+                            IStringReplacementsService stringReplacementsService,
+                            IApiReplacementsService apiReplacementsService,
+                            IFilesService filesService,
+                            IDatabaseHelpersService databaseHelpersService,
+                            ILanguagesService languagesService,
+                            IEntityPropertiesService entityPropertiesService,
+                            IGoogleTranslateService googleTranslateService)
         {
             this.templatesService = templatesService;
             this.wiserCustomersService = wiserCustomersService;
@@ -70,6 +91,9 @@ namespace Api.Modules.Items.Services
             this.apiReplacementsService = apiReplacementsService;
             this.filesService = filesService;
             this.databaseHelpersService = databaseHelpersService;
+            this.languagesService = languagesService;
+            this.entityPropertiesService = entityPropertiesService;
+            this.googleTranslateService = googleTranslateService;
         }
 
         /// <inheritdoc />
@@ -335,7 +359,7 @@ namespace Api.Modules.Items.Services
                 }
 
                 var userId = IdentityHelpers.GetWiserUserId(identity);
-                var (success, _, userItemPermissions) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(item.Id, EntityActions.Update, userId, onlyCheckAccessRights: true, entityType: item.EntityType);
+                var (success, _, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(item.Id, EntityActions.Update, userId, onlyCheckAccessRights: true, entityType: item.EntityType);
                 if (!success)
                 {
                     return new ServiceResult<WiserItemModel>
@@ -748,7 +772,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
             if (String.IsNullOrWhiteSpace(item?.EntityType))
             {
-                var newItem = await wiserItemsService.GetItemDetailsAsync(itemId);
+                var newItem = await wiserItemsService.GetItemDetailsAsync(itemId, skipPermissionsCheck: true);
                 if (item == null)
                 {
                     item = newItem;
@@ -1042,14 +1066,14 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
     	                            e.save_on_change, files.JSON AS filesJSON, 0 AS itemLinkId, e.regex_validation, e.mandatory, e.language_code,
     	                            # A user can have multiple roles. So we need to check if they have at least one role that has update rights. If it doesn't, then the field should be readonly.
     	                            IF(e.readonly > 0 OR i.readonly > 0 OR SUM(IF(permission.permissions IS NULL OR (permission.permissions & 4) > 0, 1, 0)) = 0, TRUE, FALSE) AS readonly,
-    	                            e.custom_script, permission.permissions, i.readonly AS itemIsReadOnly
+    	                            e.custom_script, permission.permissions, i.readonly AS itemIsReadOnly, e.visibility_path_regex
                                 FROM {WiserTableNames.WiserEntityProperty} e
                                 JOIN {tablePrefix}{WiserTableNames.WiserItem}{{0}} i ON i.id = ?itemId AND i.entity_type = e.entity_name
                                 LEFT JOIN {WiserTableNames.WiserFieldTemplates} t ON t.field_type = e.inputtype
                                 LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail}{{0}} d ON d.item_id = ?itemId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
                                 # TODO: Find a more efficient way to load images and files?
                                 LEFT JOIN (
-                                    SELECT item_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'added_on', added_on, 'content_url', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
+                                    SELECT item_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'addedOn', added_on, 'contentUrl', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
                                     FROM {wiserItemFileTable}{{0}}
                                     WHERE item_id = ?itemId
                                     GROUP BY property_name
@@ -1075,7 +1099,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
     	                            e.save_on_change, files.JSON AS filesJSON, il.id AS itemLinkId, e.regex_validation, e.mandatory, e.language_code,
     	                            # A user can have multiple roles. So we need to check if they have at least one role that has update rights. If it doesn't, then the field should be readonly.
     	                            IF(e.readonly > 0 OR SUM(IF(permission.permissions IS NULL OR (permission.permissions & 4) > 0, 1, 0)) = 0, TRUE, FALSE) AS readonly, 
-    	                            e.custom_script, permission.permissions, i.readonly AS itemIsReadOnly
+    	                            e.custom_script, permission.permissions, i.readonly AS itemIsReadOnly, e.visibility_path_regex
                                 FROM {WiserTableNames.WiserEntityProperty} e
                                 JOIN {tablePrefix}{WiserTableNames.WiserItem}{{0}} i ON i.id = ?itemId
                                 JOIN {linkTablePrefix}{WiserTableNames.WiserItemLink}{{0}} il ON il.id = ?itemLinkId AND il.type = e.link_type
@@ -1083,7 +1107,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                                 LEFT JOIN {linkTablePrefix}{WiserTableNames.WiserItemLinkDetail}{{0}} d ON d.itemlink_id = ?itemLinkId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
                                 # TODO: Find a more efficient way to load images and files?
                                 LEFT JOIN (
-                                    SELECT itemlink_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'added_on', added_on, 'content_url', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
+                                    SELECT itemlink_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'addedOn', added_on, 'contentUrl', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
                                     FROM {wiserItemFileTableForLink}{{0}}
                                     WHERE itemlink_id = ?itemLinkId
                                     GROUP BY property_name
@@ -1173,7 +1197,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                             var deletedCustomActions = new List<JToken>();
                             foreach (var customAction in customActions)
                             {
-                                var rolesToken = customAction.SelectToken("roles"); ;
+                                var rolesToken = customAction.SelectToken("roles");
                                 if (rolesToken == null) continue; // No roles defined = access
 
                                 var roles = rolesToken.Values<string>().ToList();
@@ -1274,6 +1298,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 var labelStyle = dataRow.Field<string>("label_style") ?? "";
                 var labelWidth = labelStyle == "normal" ? "0" : dataRow.Field<string>("label_width") ?? "";
                 var accessKey = dataRow.Field<string>("access_key") ?? "";
+                var visibilityPathRegex = dataRow.Field<string>("visibility_path_regex") ?? "";
 
                 if (!String.IsNullOrWhiteSpace(filesJson))
                 {
@@ -1536,6 +1561,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         .Replace("{labelWidth}", labelWidth)
                         .Replace("{accessKey}", accessKey)
                         .Replace("{fieldMode}", fieldMode)
+                        .Replace("{visibilityPathRegex}", visibilityPathRegex)
                         .Replace("{containerCssClass}", String.Join(" ", containerCssClasses))
                         .Replace("{linkType}", linkType.ToString())
                         .Replace("{entityType}", entityType)
@@ -1624,7 +1650,10 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             }
 
             var result = await wiserItemsService.GetItemDetailsAsync(itemId, entityType: entityType, skipPermissionsCheck: true);
-            result.EncryptedId = await wiserCustomersService.EncryptValue(result.Id, identity);
+            if (result != null)
+            {
+                result.EncryptedId = await wiserCustomersService.EncryptValue(result.Id, identity);
+            }
 
             return new ServiceResult<WiserItemModel>(result);
         }
@@ -1723,7 +1752,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         /// <inheritdoc />
         public async Task<(string Query, ServiceResult<T> ErrorResult, string RawOptions)> GetPropertyQueryAsync<T>(int propertyId, string queryColumnName, bool alsoGetOptions, ulong? itemId = null)
         {
-            ServiceResult<T> errorResult = null;
+            ServiceResult<T> errorResult;
 
             // Get the data query and properties of the grid.
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -1752,7 +1781,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     result = result.ReplaceCaseInsensitive("{itemId}", itemId.Value.ToString());
                 }
 
-                return (result, errorResult, options);
+                return (result, null, options);
             }
 
             errorResult = new ServiceResult<T>
@@ -1987,43 +2016,43 @@ ORDER BY IFNULL(friendly_name, name) ASC");
             }
 
             // Get items via wiser_itemlink.
-            var query = $@"SELECT 
-	                        item.id,
-	                        item.original_item_id,
-	                        IF(item.title IS NULL OR item.title = '', item.id, item.title) AS name,
-	                        entity.icon,
-	                        entity.icon_expanded,
-	                        IF(MAX(item.published_environment) = 0, 'hiddenOnWebsite', '') AS nodeCssClass,
-	                        item.entity_type,
-	                        GROUP_CONCAT(DISTINCT entity.accepted_childtypes) AS accepted_childtypes,
-                            {(checkId > 0 ? "IF(checked.id IS NULL, 0, 1)" : "0")} AS checked
+            var query = $@"SELECT
+	item.id,
+	item.original_item_id,
+	IF(item.title IS NULL OR item.title = '', item.id, item.title) AS name,
+	IFNULL(entityModule.icon, entity.icon) AS icon,
+	IFNULL(entityModule.icon_expanded, entity.icon_expanded) AS icon_expanded,
+	IF(MAX(item.published_environment) = 0, 'hiddenOnWebsite', '') AS nodeCssClass,
+	item.entity_type,
+	GROUP_CONCAT(DISTINCT IFNULL(entityModule.accepted_childtypes, entity.accepted_childtypes)) AS accepted_childtypes,
+    {(checkId > 0 ? "IF(checked.id IS NULL, 0, 1)" : "0")} AS checked
 
-                        # Get the items linked to the parent.
-                        FROM {WiserTableNames.WiserItem} AS item
-                        JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
-                        LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
-                        JOIN {WiserTableNames.WiserItemLink} AS link_parent ON link_parent.destination_item_id = ?parentId AND link_parent.item_id = item.id
+# Get the items linked to the parent.
+FROM {WiserTableNames.WiserItem} AS item
+JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
+LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
+JOIN {WiserTableNames.WiserItemLink} AS link_parent ON link_parent.destination_item_id = ?parentId AND link_parent.item_id = item.id
 
-                        # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                        LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
-                        LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
+# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
+LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
 
-                        # Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
-                        LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = link_parent.destination_item_id
-                        JOIN {WiserTableNames.WiserEntity} AS parent_entity ON ((link_parent.destination_item_id = 0 AND parent_entity.`name` = '') OR parent_entity.`name` = parent_item.entity_type) AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
+# Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
+LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = link_parent.destination_item_id
+JOIN {WiserTableNames.WiserEntity} AS parent_entity ON ((link_parent.destination_item_id = 0 AND parent_entity.`name` = '') OR parent_entity.`name` = parent_item.entity_type) AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
 
-                        # Link settings to check if these links should be shown.
-                        LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.type = link_parent.type AND link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
+# Link settings to check if these links should be shown.
+LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.type = link_parent.type AND link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
 
-                        {checkIdJoin}
+{checkIdJoin}
 
-                        WHERE {(String.IsNullOrWhiteSpace(entityType) ? "TRUE" : $"item.entity_type IN({String.Join(",", entityType.Split(',').Select(x => x.ToMySqlSafeValue(true)))})")}
-                        AND item.moduleid = ?moduleId
-                        AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                        AND IFNULL(link_settings.show_in_tree_view, 1) = 1
-                        GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
+WHERE {(String.IsNullOrWhiteSpace(entityType) ? "TRUE" : $"item.entity_type IN({String.Join(",", entityType.Split(',').Select(x => x.ToMySqlSafeValue(true)))})")}
+AND item.moduleid = ?moduleId
+AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+AND IFNULL(link_settings.show_in_tree_view, 1) = 1
+GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
 
-                        ORDER BY {orderByClause}";
+ORDER BY {orderByClause}";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count > 0)
@@ -2066,40 +2095,40 @@ ORDER BY IFNULL(friendly_name, name) ASC");
 
                 // Get children via the column parent_item_id of the table wiser_item.
                 query = $@"SELECT 
-	                        item.id,
-	                        item.original_item_id,
-	                        IF(item.title IS NULL OR item.title = '', item.id, item.title) AS name,
-	                        entity.icon,
-	                        entity.icon_expanded,
-	                        IF(MAX(item.published_environment) = 0, 'hiddenOnWebsite', '') AS nodeCssClass,
-	                        item.entity_type,
-	                        GROUP_CONCAT(DISTINCT entity.accepted_childtypes) AS accepted_childtypes,
-                            IF(item.parent_item_id > 0 AND item.parent_item_id = ?checkId, 1, 0) AS checked
+	item.id,
+	item.original_item_id,
+	IF(item.title IS NULL OR item.title = '', item.id, item.title) AS name,
+	IFNULL(entityModule.icon, entity.icon) AS icon,
+	IFNULL(entityModule.icon_expanded, entity.icon_expanded) AS icon_expanded,
+	IF(MAX(item.published_environment) = 0, 'hiddenOnWebsite', '') AS nodeCssClass,
+	item.entity_type,
+	GROUP_CONCAT(DISTINCT IFNULL(entityModule.accepted_childtypes, entity.accepted_childtypes)) AS accepted_childtypes,
+    IF(item.parent_item_id > 0 AND item.parent_item_id = ?checkId, 1, 0) AS checked
 
-                        # Get the items linked to the parent.
-                        FROM {WiserTableNames.WiserItem} AS item
-                        JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
-                        LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
+# Get the items linked to the parent.
+FROM {WiserTableNames.WiserItem} AS item
+JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
+LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
 
-                        # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                        LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
-                        LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
+# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
+LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
 
-                        # Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
-                        LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = item.parent_item_id
-                        JOIN {WiserTableNames.WiserEntity} AS parent_entity ON {(parentId == 0 ? "parent_entity.module_id = ?moduleId AND parent_entity.`name` = ''" : "parent_entity.`name` = parent_item.entity_type")} AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
+# Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
+LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = item.parent_item_id
+JOIN {WiserTableNames.WiserEntity} AS parent_entity ON {(parentId == 0 ? "parent_entity.module_id = ?moduleId AND parent_entity.`name` = ''" : "parent_entity.`name` = parent_item.entity_type")} AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
 
-                        # Link settings to check if these links should be shown.
-                        LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
+# Link settings to check if these links should be shown.
+LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
 
-                        WHERE item.parent_item_id = ?parentId
-                        AND (?entityType = '' OR FIND_IN_SET(item.entity_type, ?entityType))
-                        AND item.moduleid = ?moduleId
-                        AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                        AND IFNULL(link_settings.show_in_tree_view, 1) = 1
-                        GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
+WHERE item.parent_item_id = ?parentId
+AND (?entityType = '' OR FIND_IN_SET(item.entity_type, ?entityType))
+AND item.moduleid = ?moduleId
+AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+AND IFNULL(link_settings.show_in_tree_view, 1) = 1
+GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
 
-                        ORDER BY {orderByClause}";
+ORDER BY {orderByClause}";
                 dataTable = await clientDatabaseConnection.GetAsync(query);
 
                 if (dataTable.Rows.Count > 0)
@@ -2480,6 +2509,187 @@ ORDER BY IFNULL(friendly_name, name) ASC");
             {
                 StatusCode = HttpStatusCode.NoContent
             };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> TranslateAllFieldsAsync(ClaimsIdentity identity, string encryptedId, TranslateItemRequestModel settings)
+        {
+            if (String.IsNullOrWhiteSpace(encryptedId))
+            {
+                throw new ArgumentNullException(nameof(encryptedId));
+            }
+            if (String.IsNullOrWhiteSpace(settings.SourceLanguageCode))
+            {
+                throw new ArgumentNullException(nameof(settings.SourceLanguageCode));
+            }
+            
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var username = IdentityHelpers.GetUserName(identity);
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var customer = await wiserCustomersService.GetSingleAsync(identity);
+            var encryptionKey = customer.ModelObject.EncryptionKey;
+            
+            try
+            {
+                // Get all item details that can be translated.
+                var wiserItem = await wiserItemsService.GetItemDetailsAsync(itemId, userId: userId, entityType: settings.EntityType);
+                var detailsWithSourceLanguage = wiserItem.Details.Where(detail => String.Equals(detail.LanguageCode, settings.SourceLanguageCode, StringComparison.OrdinalIgnoreCase) && detail.Value != null).ToList();
+                if (!detailsWithSourceLanguage.Any())
+                {
+                    return new ServiceResult<bool>
+                    {
+                        ErrorMessage = $"Er zijn geen ingevulde velden gevonden met de taal '{settings.SourceLanguageCode}'. Heeft u het item opgeslagen?"
+                    };
+                }
+
+                // Get
+                var properties = await entityPropertiesService.GetPropertiesOfEntityAsync(identity, settings.EntityType);
+                if (properties.StatusCode != HttpStatusCode.OK)
+                {
+                    return new ServiceResult<bool>
+                    {
+                        ErrorMessage = properties.ErrorMessage,
+                        StatusCode = properties.StatusCode
+                    };
+                }
+
+                // Build lists of texts to translate.
+                var textPropertiesToTranslate = new List<WiserItemDetailModel>();
+                var htmlPropertiesToTranslate = new List<WiserItemDetailModel>();
+                foreach (var property in properties.ModelObject)
+                {
+                    var detailWithSourceLanguage = detailsWithSourceLanguage.SingleOrDefault(detail => String.Equals(detail.Key, property.PropertyName, StringComparison.OrdinalIgnoreCase));
+                    if (detailWithSourceLanguage == null)
+                    {
+                        continue;
+                    }
+
+                    switch (property.InputType)
+                    {
+                        case EntityPropertyInputTypes.Input:
+                        case EntityPropertyInputTypes.TextBox:
+                            textPropertiesToTranslate.Add(detailWithSourceLanguage);
+                            break;
+                        case EntityPropertyInputTypes.HtmlEditor:
+                            htmlPropertiesToTranslate.Add(detailWithSourceLanguage);
+                            break;
+                        default:
+                            continue;
+                    }
+                }
+
+                // If the user didn't supply any destination languages, get all languages from Wiser and use those.
+                if (settings.TargetLanguageCodes == null || !settings.TargetLanguageCodes.Any())
+                {
+                    var languages = await languagesService.GetAllLanguagesAsync();
+                    settings.TargetLanguageCodes = languages.Select(language => language.Code).ToList();
+                }
+
+                // Do all the translations.
+                foreach (var targetLanguageCode in settings.TargetLanguageCodes)
+                {
+                    if (String.Equals(settings.SourceLanguageCode, targetLanguageCode, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    // Translate normal texts.
+                    if (textPropertiesToTranslate.Any())
+                    {
+                        var translations = await googleTranslateService.TranslateTextAsync(textPropertiesToTranslate.Select(detail => detail.Value.ToString()), targetLanguageCode, settings.SourceLanguageCode);
+                        if (translations.StatusCode != HttpStatusCode.OK)
+                        {
+                            return new ServiceResult<bool>
+                            {
+                                ErrorMessage = translations.ErrorMessage,
+                                StatusCode = translations.StatusCode
+                            };
+                        }
+
+                        for (var index = 0; index < translations.ModelObject.Count; index++)
+                        {
+                            var translatedValue = translations.ModelObject[index];
+                            var originalItemDetail = textPropertiesToTranslate[index];
+
+                            SaveTranslationInItem(wiserItem, originalItemDetail, targetLanguageCode, translatedValue);
+                        }
+                    }
+
+                    // Translate HTML fields.
+                    if (htmlPropertiesToTranslate.Any())
+                    {
+                        var translations = await googleTranslateService.TranslateHtmlAsync(htmlPropertiesToTranslate.Select(detail => detail.Value.ToString()), targetLanguageCode, settings.SourceLanguageCode);
+                        if (translations.StatusCode != HttpStatusCode.OK)
+                        {
+                            return new ServiceResult<bool>
+                            {
+                                ErrorMessage = translations.ErrorMessage,
+                                StatusCode = translations.StatusCode
+                            };
+                        }
+
+                        for (var index = 0; index < translations.ModelObject.Count; index++)
+                        {
+                            var translatedValue = translations.ModelObject[index];
+                            var originalItemDetail = htmlPropertiesToTranslate[index];
+
+                            SaveTranslationInItem(wiserItem, originalItemDetail, targetLanguageCode, translatedValue);
+                        }
+                    }
+                }
+
+                // And finally save all translations in the database for the item.
+                await wiserItemsService.UpdateAsync(itemId, wiserItem, userId, username, encryptionKey);
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.NoContent
+                };
+            }
+            catch (InvalidAccessPermissionsException invalidAccessPermissionsException)
+            {
+                logger.LogWarning(invalidAccessPermissionsException, $"User tried to translate fields for item '{invalidAccessPermissionsException.ItemId}', but did not have the required permissions ({invalidAccessPermissionsException.Action}).");
+                return new ServiceResult<bool>
+                {
+                    ErrorMessage = invalidAccessPermissionsException.Message,
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+        }
+
+        /// <summary>
+        /// Saves a translated field in a <see cref="WiserItemModel"/>. It will only do this if it doesn't have a value for that language yet.
+        /// </summary>
+        /// <param name="wiserItem">The item to save the value in.</param>
+        /// <param name="originalItemDetail">The original <see cref="WiserItemDetailModel"/> that was translated to another language.</param>
+        /// <param name="targetLanguageCode">The language code of the new value.</param>
+        /// <param name="translatedValue">The translated value.</param>
+        private static void SaveTranslationInItem(WiserItemModel wiserItem, WiserItemDetailModel originalItemDetail, string targetLanguageCode, TranslationResult translatedValue)
+        {
+            var targetLanguageDetail = wiserItem.Details.SingleOrDefault(detail => String.Equals(detail.Key, originalItemDetail.Key, StringComparison.OrdinalIgnoreCase) && String.Equals(detail.LanguageCode, targetLanguageCode));
+            if (targetLanguageDetail == null)
+            {
+                targetLanguageDetail = new WiserItemDetailModel
+                {
+                    Changed = true,
+                    Key = originalItemDetail.Key,
+                    GroupName = originalItemDetail.GroupName,
+                    LanguageCode = targetLanguageCode,
+                    LinkType = originalItemDetail.LinkType,
+                    ReadOnly = originalItemDetail.ReadOnly,
+                    IsLinkProperty = originalItemDetail.IsLinkProperty,
+                    ItemLinkId = originalItemDetail.ItemLinkId
+                };
+
+                wiserItem.Details.Add(targetLanguageDetail);
+            }
+            else if (!String.IsNullOrWhiteSpace(targetLanguageDetail.Value?.ToString()))
+            {
+                // Don't overwrite existing values, only translate fields that are still empty.
+                return;
+            }
+
+            targetLanguageDetail.Value = translatedValue.TranslatedText;
         }
 
         private static string ReadTextResourceFromAssembly(string name)

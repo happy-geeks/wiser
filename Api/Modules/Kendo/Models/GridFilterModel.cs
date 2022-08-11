@@ -9,7 +9,7 @@ namespace Api.Modules.Kendo.Models
     {
         /// <summary>
         /// The operator to use for filtering. Possible values:
-        /// rq, neq, startswith, contains, doesnotcontain, endswith, isnull, isnotnull, isempty, isnotempty, lt, gt, lte and gte
+        /// eq, neq, startswith, contains, doesnotcontain, endswith, isnull, isnotnull, isempty, isnotempty, lt, gt, lte and gte
         /// </summary>
         public string Operator { get; set; }
 

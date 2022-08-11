@@ -1,7 +1,7 @@
 ﻿"use strict";
 
-import { TrackJS } from "trackjs";
-import { createApp, defineAsyncComponent } from "vue";
+import {TrackJS} from "trackjs";
+import {createApp, defineAsyncComponent} from "vue";
 import * as axios from "axios";
 
 import UsersService from "./shared/users.service";
@@ -14,33 +14,36 @@ import store from "./store/index";
 import login from "./components/login";
 import taskAlerts from "./components/task-alerts";
 
-import { DropDownList } from "@progress/kendo-vue-dropdowns";
+import {DropDownList} from "@progress/kendo-vue-dropdowns";
 import WiserDialog from "./components/wiser-dialog";
 
 import "../scss/main.scss";
 import "../scss/task-alerts.scss";
 
 import {
+    ACTIVATE_MODULE,
     AUTH_LOGOUT,
     AUTH_REQUEST,
-    OPEN_MODULE,
-    CLOSE_MODULE,
-    CLOSE_ALL_MODULES,
-    ACTIVATE_MODULE,
-    LOAD_ENTITY_TYPES_OF_ITEM_ID,
-    GET_CUSTOMER_TITLE,
-    TOGGLE_PIN_MODULE,
     CHANGE_PASSWORD,
+    CLOSE_ALL_MODULES,
+    CLOSE_MODULE,
     CREATE_BRANCH,
     CREATE_BRANCH_ERROR,
-    GET_BRANCHES, 
-    MERGE_BRANCH,
-    GET_ENTITIES_FOR_BRANCHES,
-    IS_MAIN_BRANCH,
     GET_BRANCH_CHANGES,
+    GET_BRANCHES,
+    GET_CUSTOMER_TITLE,
+    GET_ENTITIES_FOR_BRANCHES,
     HANDLE_CONFLICT,
-    HANDLE_MULTIPLE_CONFLICTS
+    HANDLE_MULTIPLE_CONFLICTS,
+    IS_MAIN_BRANCH,
+    LOAD_ENTITY_TYPES_OF_ITEM_ID,
+    MERGE_BRANCH,
+    OPEN_MODULE,
+    TOGGLE_PIN_MODULE,
+    CLEAR_CACHE,
+    CLEAR_CACHE_ERROR
 } from "./store/mutation-types";
+import CacheService from "./shared/cache.service";
 
 (() => {
     class Main {
@@ -53,6 +56,7 @@ import {
             this.customersService = new CustomersService(this);
             this.itemsService = new ItemsService(this);
             this.branchesService = new BranchesService(this);
+            this.cacheService = new CacheService(this);
 
             // Fire event on page ready for direct actions
             document.addEventListener("DOMContentLoaded", () => {
@@ -173,7 +177,11 @@ import {
                                 id: ""
                             }
                         },
-                        batchHandleConflictSettings: { }
+                        batchHandleConflictSettings: { },
+                        clearCacheSettings: {
+                            areas: [],
+                            url: null
+                        }
                     };
                 },
                 created() {
@@ -317,6 +325,9 @@ import {
                         }
 
                         return this.$store.state.branches.mergeBranchResult.conflicts.filter(r => r.acceptChange !== true && r.acceptChange !== false).length === 0;
+                    },
+                    clearCacheError() {
+                        return this.$store.state.cache.clearCacheError;
                     }
                 },
                 components: {
@@ -408,7 +419,31 @@ import {
                     },
 
                     closeModule(module) {
-                        this.$store.dispatch(CLOSE_MODULE, module);
+                        let timeout = null;
+                        
+                        const callback = () => {
+                            if (timeout) {
+                                clearTimeout(timeout);
+                            }
+                            
+                            this.$store.dispatch(CLOSE_MODULE, module);
+                        };
+                        
+                        // In case the module does not handle the moduleClosing event.
+                        timeout = setTimeout(callback, 800);
+                        
+                        if (!module || !module.id) {
+                            callback();
+                            return;
+                        }
+                        
+                        const moduleIframe = document.getElementById(module.id);
+                        if (!moduleIframe || !moduleIframe.contentWindow || !moduleIframe.contentWindow.document) {
+                            callback();
+                            return;
+                        }
+                        
+                        moduleIframe.contentWindow.document.dispatchEvent(new CustomEvent("moduleClosing", { detail: callback }));
                     },
 
                     setActiveModule(event, moduleId) {
@@ -462,6 +497,10 @@ import {
 
                     openMergeConflictsPrompt() {
                         this.$refs.wiserMergeConflictsPrompt.open();
+                    },
+
+                    openClearCachePrompt() {
+                        this.$refs.clearCachePrompt.open();
                     },
 
                     async openWiserItem() {
@@ -633,6 +672,26 @@ import {
                         this.$refs.wiserBranchesPrompt.close();
                     },
 
+                    async clearWebsiteCache() {
+                        if (!this.clearCacheSettings.url || this.clearCacheSettings.url.length < 5) {
+                            await this.$store.dispatch(CLEAR_CACHE_ERROR, "Vul a.u.b. een geldige URL in.");
+                            return false;
+                        }
+                        
+                        if (!this.clearCacheSettings.areas || this.clearCacheSettings.areas.length === 0) {
+                            await this.$store.dispatch(CLEAR_CACHE_ERROR, "Kies a.u.b. minimaal 1 cache optie om te legen.");
+                            return false;
+                        }
+
+                        await this.$store.dispatch(CLEAR_CACHE, this.clearCacheSettings);
+                        if (this.clearCacheError) {
+                            return false;
+                        }
+
+                        this.showGeneralMessagePrompt("De cache is succesvol geleegd.");
+                        return true;
+                    },
+
                     onOpenModuleClick(event, module) {
                         event.preventDefault();
                         this.openModule(module);
@@ -780,6 +839,25 @@ import {
 
                     onDenyMultipleConflictsClick() {
                         this.$store.dispatch(HANDLE_MULTIPLE_CONFLICTS, { acceptChange: false, settings: this.batchHandleConflictSettings });
+                    },
+
+                    onCacheTypeChecked(event, cacheType) {
+                        const isChecked = event.currentTarget.checked;
+                        const allTypes = [...document.querySelectorAll(".cache-type")].map(input => input.value);
+                        
+                        if (cacheType === "all") {
+                            if (!isChecked) {
+                                this.clearCacheSettings.areas = [];
+                            } else {
+                                this.clearCacheSettings.areas = ["all", ...allTypes];
+                            }
+                        } else {
+                            if (!isChecked) {
+                                this.clearCacheSettings.areas = this.clearCacheSettings.areas.filter(type => type !== "all");
+                            } else if (this.clearCacheSettings.areas.filter(type => type !== "all").length === allTypes.length && this.clearCacheSettings.areas.indexOf("all") === -1) {
+                                this.clearCacheSettings.areas.push("all");
+                            }
+                        }
                     }
                 }
             });
