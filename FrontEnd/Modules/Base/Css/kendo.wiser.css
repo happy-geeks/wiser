@@ -1080,9 +1080,6 @@ span.k-input .k-input:hover {
     right: 1px;
     left: 1px;
 }
-.k-popup:not(.k-context-menu) .k-item.k-first {
-	padding-top: 24px !important;
-}
 
 /* KENDO - COLORPICKER */
 .k-colorpicker, span.k-colorpicker {
@@ -1206,11 +1203,16 @@ span.k-input .k-input:hover {
 	white-space: nowrap;
     z-index: 10;
 }
-.k-grid-header th.k-header a.k-link {
+.k-grid-header th.k-header .k-link {
     color: var(--light-txt);
     font-weight: bold;
 	position: relative;
 	text-overflow: clip;
+}
+.k-header .k-grid-filter,
+.k-header .k-header-column-menu {
+	bottom: 6px;
+	right: 5px;
 }
 .k-grid-header th.k-header .k-state-active {
     background: none;
@@ -1281,16 +1283,16 @@ span.k-input .k-input:hover {
 .k-filtercell > span {
 	display: flex;
 	padding-right: 0;
+	gap: 0;
 }
 .k-filtercell > span > span, 
 .k-filter-row .k-dropdown-operator, 
 .k-filtercell > span > .k-button {
-	display: inline-block;
-	line-height: 42px;
-	position: relative;
-	right: auto;
-	top: auto;
 	margin: 0;
+}
+.k-filtercell .k-input,
+.k-filtercell .k-picker {
+	border: none;
 }
 .k-filtercell .k-widget.k-autocomplete {
     width: 100%;

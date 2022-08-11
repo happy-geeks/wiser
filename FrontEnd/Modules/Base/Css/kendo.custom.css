@@ -487,6 +487,8 @@ textarea.k-textbox:hover,
 }
 
 .k-input,
+.k-widget.k-input,
+.k-widget.k-input:hover,
 input.k-textbox,
 textarea.k-textbox,
 input.k-textbox:hover,
@@ -1984,6 +1986,14 @@ html .km-pane-wrapper .km-widget,
 .k-column-menu .k-item,
 .k-overflow-container .k-overflow-group {
     border-color: var(--sec-color);
+}
+
+.k-menu-vertical > .k-menu-item + .k-menu-item {
+    margin-top: 0;
+}
+
+.k-menu-vertical .k-menu-link {
+    padding: 5px;
 }
 
 .k-overflow-container .k-overflow-group {
