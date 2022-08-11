@@ -729,6 +729,7 @@ ins {
 }
 .item[data-label-style="float"] h4 + * {
     width: 100%;
+	margin-top: 5px;
 }
 .item[data-label-style="float"] h4 .property-name {
     left: 10px;
@@ -750,10 +751,13 @@ ins {
 .item[data-label-style="float"] .k-textbox,
 .item[data-label-style="float"] .k-textbox > input,
 .item[data-label-style="float"] .k-widget > textarea,
-.item[data-label-style="float"] .k-dropdown .k-input,
-.item[data-label-style="float"] .k-numeric-wrap input,
-.item[data-label-style="float"] span.k-input .k-input {
+.item[data-label-style="float"] .k-numeric-wrap input {
     padding-top: 10px;
+}
+.item[data-label-style="float"] .k-combobox .k-input-inner,
+.item[data-label-style="float"] .k-dropdown .k-input-inner,
+.item[data-label-style="float"] .k-dropdownlist .k-input-inner {
+	padding-top: 20px;
 }
 .item[data-label-style="float"] > .k-button {
     height: 50px;
@@ -766,17 +770,18 @@ ins {
 }
 .item[data-label-style="float"] span.k-input .k-datetimepicker,
 .item[data-label-style="float"] span.k-input .k-numerictextbox,
-.item[data-label-style="float"] .k-multiselect-wrap .k-input {
+.item[data-label-style="float"] .k-selection-multiple .k-input {
     padding-top: 0;
 }
-.item[data-label-style="float"] .k-multiselect-wrap {
-    padding-top: 12px;
+.item[data-label-style="float"] .k-selection-multiple {
+    margin-top: 12px;
+	height: 32px;
 }
-.item[data-label-style="float"] .k-multiselect-wrap li {
+.item[data-label-style="float"] .k-selection-multiple .k-chip {
     padding: 3px 8px;
     margin-top: 8px;
 }
-.item[data-label-style="float"] .k-multiselect-wrap li span.k-icon {
+.item[data-label-style="float"] .k-selection-multiple .k-chip span.k-icon {
     line-height: 28px;
     height: 28px;
 }
@@ -819,7 +824,8 @@ ins {
 .item[data-label-style="float"] .flex-container .newItemButton,
 .item[data-label-style="float"] .flex-container .openItemButton {
     height: 100%;
-    margin: 7px;
+    margin: 5px 0 0 0;
+	padding: 16px 0;
 }
 .item[data-label-style="float"] .k-form-error {
     position: absolute;
