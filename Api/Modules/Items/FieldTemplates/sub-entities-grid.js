@@ -24,7 +24,9 @@ if (options.fieldGroupName) {
 }
 
 if (customQueryGrid) {
-    Wiser.api({ url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}" + linkTypeParameter }).then(function(customQueryResults) {
+    Wiser.api({ 
+        url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}${linkTypeParameter}` 
+    }).then(function(customQueryResults) {
         if (customQueryResults.extraJavascript) {
             jQuery.globalEval(customQueryResults.extraJavascript);
         }
@@ -190,12 +192,12 @@ if (customQueryGrid) {
     
     if (usingDataSelector) {
         Wiser.api({
-            url: window.dynamicItems.settings.getItemsUrl + "?trace=false&encryptedDataSelectorId=" + encodeURIComponent(options.dataSelectorId) + "&itemId=" + encodeURIComponent("{itemIdEncrypted}"),
+            url: `${window.dynamicItems.settings.getItemsUrl}?trace=false&encryptedDataSelectorId=${encodeURIComponent(options.dataSelectorId)}&itemId=${encodeURIComponent("{itemIdEncrypted}")}`,
             contentType: "application/json"
         }).then(done);
     } else {
         Wiser.api({
-            url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/entity-grids/" + encodeURIComponent(options.entityType) + "?propertyId={propertyId}" + linkTypeParameter.replace("?", "&") + "&mode=" + gridMode.toString() + "&fieldGroupName=" + encodeURIComponent(options.fieldGroupName || "") + "&currentItemIsSourceId=" + (options.currentItemIsSourceId || false).toString(),
+            url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType)}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
             method: "POST",
             contentType: "application/json"
         }).then(done);
@@ -324,7 +326,7 @@ async function generateGrid(data, model, columns) {
 
                         if (customQueryGrid) {
                             Wiser.api({
-                                url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids-with-filters/{propertyId}" + linkTypeParameter,
+                                url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids-with-filters/{propertyId}${linkTypeParameter}`,
                                 method: "POST",
                                 contentType: "application/json",
                                 data: JSON.stringify(transportOptions.data)
@@ -346,7 +348,7 @@ async function generateGrid(data, model, columns) {
                             });
                         } else {
                             Wiser.api({
-                                url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/entity-grids/" + encodeURIComponent(options.entityType) + "?propertyId={propertyId}" + linkTypeParameter.replace("?", "&") + "&mode=" + gridMode.toString() + "&fieldGroupName=" + encodeURIComponent(options.fieldGroupName || "") + "&currentItemIsSourceId=" + (options.currentItemIsSourceId || false).toString(),
+                                url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType)}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
                                 method: "POST",
                                 contentType: "application/json",
                                 data: JSON.stringify(transportOptions.data)
@@ -375,7 +377,7 @@ async function generateGrid(data, model, columns) {
 
                         if (customQueryGrid) {
                             Wiser.api({
-                                url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
+                                url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}`,
                                 method: "PUT",
                                 contentType: "application/json",
                                 dataType: "json",
@@ -583,7 +585,7 @@ async function generateGrid(data, model, columns) {
                             loader.addClass("loading");
 
                             Wiser.api({
-                                url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
+                                url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}`,
                                 method: "POST",
                                 contentType: "application/json",
                                 dataType: "json",
@@ -658,7 +660,7 @@ async function generateGrid(data, model, columns) {
                             loader.addClass("loading");
 
                             Wiser.api({
-                                url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
+                                url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}`,
                                 method: "DELETE",
                                 contentType: "application/json",
                                 dataType: "json",
