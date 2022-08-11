@@ -1833,12 +1833,15 @@ export class Windows {
                             column.hidden = this.searchGridSettings.hideIdColumn || false;
                             break;
                         case "link_id":
+                        case "linkid":
                             column.hidden = this.searchGridSettings.hideLinkIdColumn || false;
                             break;
                         case "entity_type":
+                        case "entitytype":
                             column.hidden = this.searchGridSettings.hideTypeColumn || false;
                             break;
                         case "published_environment":
+                        case "publishedenvironment":
                             column.hidden = this.searchGridSettings.hideEnvironmentColumn || false;
                             break;
                         case "name":

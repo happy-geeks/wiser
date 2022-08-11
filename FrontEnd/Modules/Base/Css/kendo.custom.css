@@ -487,12 +487,14 @@ textarea.k-textbox:hover,
 }
 
 .k-input,
+.k-widget.k-input,
+.k-widget.k-input:hover,
 input.k-textbox,
 textarea.k-textbox,
 input.k-textbox:hover,
 textarea.k-textbox:hover,
 .k-textbox > input,
-.k-multiselect-wrap {
+.k-selection-multiple {
     background-color: var(--white-color);
     color: var(--dark-txt);
 }
@@ -506,7 +508,8 @@ textarea.k-textbox:hover,
 .k-widget,
 .k-popup,
 .k-content,
-.k-dropdown .k-input {
+.k-dropdownlist .k-picker,
+.k-dropdown .k-picker {
     color: var(--dark-txt);
 }
 
@@ -910,6 +913,7 @@ td.k-state-focused.k-state-selected {
 .k-scheduler .k-scheduler-toolbar ul li.k-state-hover,
 .k-pager-wrap .k-link:hover,
 .k-dropdown .k-state-focused,
+.k-dropdownlist .k-state-focused,
 .k-filebrowser-dropzone,
 .k-mobile-list .k-item > .k-link:active,
 .k-mobile-list .k-item > .k-label:active,
@@ -989,7 +993,8 @@ div.k-filebrowser-dropzone em {
 .km-pane-wrapper .k-mobile-list input:not([type="checkbox"]):not([type="radio"]),
 .km-pane-wrapper .km-pane .k-mobile-list select:not([multiple]),
 .km-pane-wrapper .k-mobile-list textarea,
-.k-dropdown .k-state-focused .k-input {
+.k-dropdown .k-state-focused .k-input-inner,
+.k-dropdownlist .k-state-focused .k-input-inner {
     color: var(--dark-txt);
 }
 
@@ -1011,7 +1016,8 @@ div.k-filebrowser-dropzone em {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2), 0 2px 3px rgba(0, 0, 0, 0.05);
 }
 
-.k-dropdown .k-state-hover .k-input {
+.k-dropdown .k-state-hover .k-input-inner,
+.k-dropdownlist .k-state-hover .k-input-inner {
     color: var(--dark-txt);
 }
 
@@ -1301,8 +1307,8 @@ div.k-filebrowser-dropzone em {
 .k-autocomplete.k-state-border-up,
 .k-dropdown-wrap.k-state-active,
 .k-picker-wrap.k-state-active,
-.k-multiselect-wrap.k-state-focused,
-.k-state-focused > .k-multiselect-wrap,
+.k-selection-multiple.k-state-focused,
+.k-state-focused > .k-selection-multiple,
 .k-filebrowser .k-image,
 .k-tooltip {
     box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.2);
@@ -1534,6 +1540,7 @@ div.k-filebrowser-dropzone em {
 .k-multiselect,
 .k-combobox,
 .k-dropdown,
+.k-dropdownlist,
 .k-dropdown-wrap,
 .k-datepicker,
 .k-timepicker,
@@ -1595,7 +1602,7 @@ div.k-filebrowser-dropzone em {
     border-radius: 0 0 0 2px;
 }
 
-.k-multiselect.k-state-border-up .k-multiselect-wrap {
+.k-multiselect.k-state-border-up .k-selection-multiple {
     border-radius: 0 0 2px 2px;
 }
 
@@ -1673,7 +1680,7 @@ div.k-filebrowser-dropzone em {
     background-color: var(--item-bg-color);
 }
 
-.k-multiselect.k-state-border-down .k-multiselect-wrap {
+.k-multiselect.k-state-border-down .k-selection-multiple {
     border-radius: 1px 1px 0 0;
 }
 
@@ -1699,7 +1706,7 @@ div.k-filebrowser-dropzone em {
 
 .k-textbox > input,
 .k-autocomplete .k-input,
-.k-multiselect-wrap {
+.k-selection-multiple {
     border-radius: 1px;
 }
 
@@ -1874,13 +1881,13 @@ html .km-pane-wrapper .km-widget,
     border-color: var(--handle-bg-color);
 }
 
-.k-multiselect-wrap {
+.k-selection-multiple {
     border-color: var(--bg-color);
 }
 
-.k-multiselect-wrap.k-state-hover,
-.k-state-hover > .k-multiselect-wrap,
-.k-multiselect-wrap.k-state-hover {
+.k-selection-multiple.k-state-hover,
+.k-state-hover > .k-selection-multiple,
+.k-selection-multiple.k-state-hover {
     border-color: var(--handle-bg-color);
     background-color: var(--white-color);
     color: var(--dark-txt);
@@ -1898,8 +1905,8 @@ html .km-pane-wrapper .km-widget,
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2), 0 2px 3px rgba(0, 0, 0, 0.05);
 }
 
-.k-multiselect-wrap.k-state-focused,
-.k-state-focused > .k-multiselect-wrap {
+.k-selection-multiple.k-state-focused,
+.k-state-focused > .k-selection-multiple {
     border-color: var(--handle-bg-color);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2), 0 2px 3px rgba(0, 0, 0, 0.05);
 }
@@ -1912,8 +1919,10 @@ html .km-pane-wrapper .km-widget,
     color: var(--lighter-txt);
 }
 
-.k-dropdown .k-input,
-.k-dropdown .k-state-focused .k-input,
+.k-dropdown .k-input-inner,
+.k-dropdownlist .k-input-inner,
+.k-dropdown .k-state-focused .k-input-inner,
+.k-dropdownlist .k-state-focused .k-input-inner,
 .k-menu .k-popup {
     color: var(--dark-txt);
 }
@@ -1959,7 +1968,7 @@ html .km-pane-wrapper .km-widget,
 }
 
 .k-tabstrip .k-content.k-state-active {
-    background-color: var(--white-color);
+    background-color: var(--item-bg-color);
     color: var(--dark-txt);
 }
 
@@ -1977,6 +1986,14 @@ html .km-pane-wrapper .km-widget,
 .k-column-menu .k-item,
 .k-overflow-container .k-overflow-group {
     border-color: var(--sec-color);
+}
+
+.k-menu-vertical > .k-menu-item + .k-menu-item {
+    margin-top: 0;
+}
+
+.k-menu-vertical .k-menu-link {
+    padding: 5px;
 }
 
 .k-overflow-container .k-overflow-group {
@@ -2376,13 +2393,8 @@ div.k-splitbar.k-state-focused .k-icon,
     font-weight: 300;
 }
 
-/*.k-dropdown .k-state-default {
-    border-color: var(--handle-bg-color);
-    background-position: 50% 50%;
-    background-color: var(--handle-bg-color);
-}*/
-
 .k-dropdown,
+.k-dropdownlist,
 span.k-colorpicker {
     background-color: var(--handle-bg-color);
 }
@@ -2398,7 +2410,8 @@ span.k-colorpicker {
 .k-timepicker,
 .k-datetimepicker,
 .k-combobox .k-input,
-.k-dropdown .k-input,
+.k-dropdown .k-picker,
+.k-dropdownlist .k-picker,
 .k-datepicker .k-input,
 .k-timepicker .k-input,
 .k-datetimepicker .k-input {
@@ -2546,6 +2559,7 @@ span.k-colorpicker {
 
 .k-tabstrip .k-content.k-state-active {
     border-color: transparent;
+    outline: none;
 }
 
 .k-tabstrip-items .k-item.k-state-hover {
@@ -2910,7 +2924,7 @@ td.k-group-cell,
     border-color: var(--sec-hover);
 }
 
-.k-multiselect-wrap > ul > .k-button {
+.k-selection-multiple > ul > .k-button {
     box-shadow: none;
 }
 

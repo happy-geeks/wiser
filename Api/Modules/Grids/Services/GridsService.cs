@@ -112,6 +112,7 @@ namespace Api.Modules.Grids.Services
 
             // Get entity type settings, so see whether we can have different versions of a single item for different environments or if the items have their own dedicated table.
             var versionJoinClause = "";
+            var subQueryVersionJoinClause = "";
             var versionWhereClause = "";
             var tablePrefix = "";
             var linkTablePrefix = "";
@@ -124,6 +125,8 @@ namespace Api.Modules.Grids.Services
                 {
                     versionJoinClause = $@"# Only get the latest version of an item.
                                         LEFT JOIN {tablePrefix}{WiserTableNames.WiserItem}{{0}} AS otherVersion ON otherVersion.original_item_id > 0 AND i.original_item_id > 0 AND otherVersion.original_item_id = i.original_item_id AND (otherVersion.changed_on > i.changed_on OR (otherVersion.changed_on = i.changed_on AND otherVersion.id > i.id))";
+                    subQueryVersionJoinClause = $@"# Only get the latest version of an item.
+                                        LEFT JOIN {tablePrefix}{WiserTableNames.WiserItem}{{0}} AS otherVersion ON otherVersion.original_item_id > 0 AND i.originalItemId > 0 AND otherVersion.original_item_id = i.originalItemId AND (otherVersion.changed_on > i.changedOn OR (otherVersion.changed_on = i.changedOn AND otherVersion.id > i.id))";
                     versionWhereClause = "AND otherVersion.id IS NULL";
                 }
             }
@@ -239,20 +242,20 @@ namespace Api.Modules.Grids.Services
                 case EntityGridModes.ChangeHistory:
                 {
                     // Data for the change history of an item.
-                    results.Columns.Add(new GridColumn {Field = "changedOn", Title = "Datum", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
+                    results.Columns.Add(new GridColumn {Field = "changedon", Title = "Datum", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
                     results.Columns.Add(new GridColumn {Field = "field", Title = "Veldnaam"});
                     results.Columns.Add(new GridColumn {Field = "action", Title = "Actie type"});
                     results.Columns.Add(new GridColumn {Field = "oldvalue", Title = "Oude waarde"});
                     results.Columns.Add(new GridColumn {Field = "newvalue", Title = "Nieuwe waarde"});
-                    results.Columns.Add(new GridColumn {Field = "changedBy", Title = "Gewijzigd door"});
+                    results.Columns.Add(new GridColumn {Field = "changedby", Title = "Gewijzigd door"});
 
                     hasPredefinedSchema = true;
                     results.SchemaModel.Fields.Add("id", new FieldModel {Type = "number"});
-                    results.SchemaModel.Fields.Add("changedOn", new FieldModel {Type = "date"});
+                    results.SchemaModel.Fields.Add("changedon", new FieldModel {Type = "date"});
                     results.SchemaModel.Fields.Add("tablename", new FieldModel {Type = "string"});
-                    results.SchemaModel.Fields.Add("itemId", new FieldModel {Type = "number"});
+                    results.SchemaModel.Fields.Add("itemid", new FieldModel {Type = "number"});
                     results.SchemaModel.Fields.Add("action", new FieldModel {Type = "string"});
-                    results.SchemaModel.Fields.Add("changedBy", new FieldModel {Type = "string"});
+                    results.SchemaModel.Fields.Add("changedby", new FieldModel {Type = "string"});
                     results.SchemaModel.Fields.Add("field", new FieldModel {Type = "string"});
                     results.SchemaModel.Fields.Add("oldvalue", new FieldModel {Type = "string"});
                     results.SchemaModel.Fields.Add("newvalue", new FieldModel {Type = "string"});
@@ -298,11 +301,11 @@ namespace Api.Modules.Grids.Services
                 }
                 case EntityGridModes.TaskHistory:
                 {
-                    results.Columns.Add(new GridColumn {Field = "dueDate", Title = "Due-date", Format = "{0:dd MMMM yyyy}"});
+                    results.Columns.Add(new GridColumn {Field = "duedate", Title = "Due-date", Format = "{0:dd MMMM yyyy}"});
                     results.Columns.Add(new GridColumn {Field = "sender", Title = "Verzonden door"});
                     results.Columns.Add(new GridColumn {Field = "receiver", Title = "Verzonden aan"});
                     results.Columns.Add(new GridColumn {Field = "content", Title = "Tekst", Width = "600px"});
-                    results.Columns.Add(new GridColumn {Field = "checkedDate", Title = "Afgevinkt op", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
+                    results.Columns.Add(new GridColumn {Field = "checkeddate", Title = "Afgevinkt op", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
 
                     countQuery = $@"SELECT COUNT(*)
                                     FROM {WiserTableNames.WiserItem} i
@@ -420,10 +423,10 @@ namespace Api.Modules.Grids.Services
                 case EntityGridModes.SearchModule:
                 {
                     results.Columns.Add(new GridColumn {Field = "icon", Title = "&nbsp;", Filterable = false, Width = "70px", Template = "<div class='grid-icon #:icon# icon-bg-#:color#'></div>"});
-                    results.Columns.Add(new GridColumn {Field = "title", Title = "Titel", Template = "<strong>#: title #</strong><br><small>#: entity_type #</small>"});
-                    results.Columns.Add(new GridColumn {Field = "addedOn", Title = "Aangemaakt op", Format = "{0:dd MMMM yyyy}"});
-                    results.Columns.Add(new GridColumn {Field = "addedBy", Title = "Aangemaakt door"});
-                    results.Columns.Add(new GridColumn {Field = "moreInfo", Title = "Overige info"});
+                    results.Columns.Add(new GridColumn {Field = "title", Title = "Titel", Template = "<strong>#: title #</strong><br><small>#: entitytype #</small>"});
+                    results.Columns.Add(new GridColumn {Field = "addedon", Title = "Aangemaakt op", Format = "{0:dd MMMM yyyy}"});
+                    results.Columns.Add(new GridColumn {Field = "addedby", Title = "Aangemaakt door"});
+                    results.Columns.Add(new GridColumn {Field = "moreinfo", Title = "Overige info"});
 
                     if (options?.Filter?.Filters == null || !options.Filter.Filters.Any())
                     {
@@ -773,7 +776,7 @@ namespace Api.Modules.Grids.Services
                     results.Columns.Add(new GridColumn {Field = "value", Title = "Waarde"});
                     if (String.IsNullOrWhiteSpace(results.LanguageCode))
                     {
-                        results.Columns.Add(new GridColumn {Field = "languageCode", Title = "Taalcode", Width = "100px"});
+                        results.Columns.Add(new GridColumn {Field = "languagecode", Title = "Taalcode", Width = "100px"});
                     }
 
                     results.Columns.Add(new GridColumn {Field = "command", Title = "&nbsp;", Width = "120px", Command = new List<string> {"destroy"}});
@@ -781,7 +784,7 @@ namespace Api.Modules.Grids.Services
                     results.SchemaModel.Fields.Add("id", new FieldModel {Editable = false, Type = "number", Nullable = false});
                     results.SchemaModel.Fields.Add("key", new FieldModel {Editable = true, Type = "string", Nullable = false});
                     results.SchemaModel.Fields.Add("value", new FieldModel {Editable = true, Type = "string", Nullable = true});
-                    results.SchemaModel.Fields.Add("languageCode", new FieldModel {Editable = true, Type = "string", Nullable = true});
+                    results.SchemaModel.Fields.Add("languagecode", new FieldModel {Editable = true, Type = "string", Nullable = true});
 
                     hasPredefinedSchema = true;
 
@@ -846,25 +849,25 @@ namespace Api.Modules.Grids.Services
                         var filterable = new Dictionary<string, object> {{"extra", true}};
                         results.Columns.Add(new GridColumn {Selectable = true, Width = "55px"});
                         results.Columns.Add(new GridColumn {Field = "id", Title = "ID", Width = "80px", Filterable = filterable});
-                        results.Columns.Add(new GridColumn {Field = "linkId", Title = "Koppel-ID", Width = "55px", Filterable = filterable});
-                        results.Columns.Add(new GridColumn {Field = "entityType", Title = "Type", Width = "100px", Filterable = filterable, Template = "#: window.dynamicItems.getEntityTypeFriendlyName(entityType) #"});
-                        results.Columns.Add(new GridColumn {Field = "publishedEnvironment", Title = "Gepubliceerde omgeving", Width = "50px", Template = "<ins title='#: publishedEnvironment #' class='icon-#: publishedEnvironment #'></ins>"});
+                        results.Columns.Add(new GridColumn {Field = "linkid", Title = "Koppel-ID", Width = "55px", Filterable = filterable});
+                        results.Columns.Add(new GridColumn {Field = "entitytype", Title = "Type", Width = "100px", Filterable = filterable, Template = "#: window.dynamicItems.getEntityTypeFriendlyName(entitytype) #"});
+                        results.Columns.Add(new GridColumn {Field = "publishedenvironment", Title = "Gepubliceerde omgeving", Width = "50px", Template = "<ins title='#: publishedenvironment #' class='icon-#: publishedenvironment #'></ins>"});
                         results.Columns.Add(new GridColumn {Field = "title", Title = "Naam", Filterable = filterable});
                     }
 
                     hasPredefinedSchema = true;
                     results.SchemaModel.Fields.Add("id", new FieldModel {Editable = false, Type = "number", Nullable = false});
-                    results.SchemaModel.Fields.Add("encryptedId", new FieldModel {Editable = false, Type = "string", Nullable = false});
-                    results.SchemaModel.Fields.Add("uniqueUuid", new FieldModel {Editable = false, Type = "string", Nullable = false});
-                    results.SchemaModel.Fields.Add("entityType", new FieldModel {Type = "string"});
-                    results.SchemaModel.Fields.Add("publishedEnvironment", new FieldModel {Type = "number"});
+                    results.SchemaModel.Fields.Add("encryptedid", new FieldModel {Editable = false, Type = "string", Nullable = false});
+                    results.SchemaModel.Fields.Add("uniqueuuid", new FieldModel {Editable = false, Type = "string", Nullable = false});
+                    results.SchemaModel.Fields.Add("entitytype", new FieldModel {Type = "string"});
+                    results.SchemaModel.Fields.Add("publishedenvironment", new FieldModel {Type = "number"});
                     results.SchemaModel.Fields.Add("title", new FieldModel {Type = "string"});
-                    results.SchemaModel.Fields.Add("linkTypeNumber", new FieldModel {Type = "number"});
-                    results.SchemaModel.Fields.Add("linkId", new FieldModel {Type = "number", Editable = false});
-                    results.SchemaModel.Fields.Add("addedOn", new FieldModel {Type = "date", Editable = false});
-                    results.SchemaModel.Fields.Add("addedBy", new FieldModel {Type = "string", Editable = false});
-                    results.SchemaModel.Fields.Add("changedOn", new FieldModel {Type = "date", Editable = false});
-                    results.SchemaModel.Fields.Add("changedBy", new FieldModel {Type = "string", Editable = false});
+                    results.SchemaModel.Fields.Add("linktypenumber", new FieldModel {Type = "number"});
+                    results.SchemaModel.Fields.Add("linkid", new FieldModel {Type = "number", Editable = false});
+                    results.SchemaModel.Fields.Add("addedon", new FieldModel {Type = "date", Editable = false});
+                    results.SchemaModel.Fields.Add("addedby", new FieldModel {Type = "string", Editable = false});
+                    results.SchemaModel.Fields.Add("changedon", new FieldModel {Type = "date", Editable = false});
+                    results.SchemaModel.Fields.Add("changedby", new FieldModel {Type = "string", Editable = false});
                     results.SchemaModel.Fields.Add(WiserItemsService.LinkOrderingFieldName, new FieldModel {Type = "number", Nullable = false});
 
                     await itemsService.FixTreeViewOrderingAsync(moduleId, identity, encryptedId, linkTypeNumber);
@@ -1062,10 +1065,10 @@ namespace Api.Modules.Grids.Services
 
                     if (!hasColumnsFromOptions)
                     {
-                        results.Columns.Add(new GridColumn {Field = "addedOn", Title = "Toegevoegd op", Width = "150px", Format = "{0:dd-MM-yyyy HH:mm:ss}", Hidden = true});
-                        results.Columns.Add(new GridColumn {Field = "addedBy", Title = "Toegevoegd door", Width = "100px", Hidden = true});
-                        results.Columns.Add(new GridColumn {Field = "changedOn", Title = "Gewijzigd op", Width = "150px", Format = "{0:dd-MM-yyyy HH:mm:ss}", Hidden = true});
-                        results.Columns.Add(new GridColumn {Field = "changedBy", Title = "Gewijzigd door", Width = "100px", Hidden = true});
+                        results.Columns.Add(new GridColumn {Field = "addedon", Title = "Toegevoegd op", Width = "150px", Format = "{0:dd-MM-yyyy HH:mm:ss}", Hidden = true});
+                        results.Columns.Add(new GridColumn {Field = "addedby", Title = "Toegevoegd door", Width = "100px", Hidden = true});
+                        results.Columns.Add(new GridColumn {Field = "changedon", Title = "Gewijzigd op", Width = "150px", Format = "{0:dd-MM-yyyy HH:mm:ss}", Hidden = true});
+                        results.Columns.Add(new GridColumn {Field = "changedby", Title = "Gewijzigd door", Width = "100px", Hidden = true});
                     }
 
                     // Build the queries.
@@ -1130,7 +1133,7 @@ namespace Api.Modules.Grids.Services
                                                 SELECT 
 	                                                i.id,
 	                                                i.id AS encryptedId_encrypt_withdate,
-                                                    i.originalItemId,
+                                                    i.original_item_id AS originalItemId,
 	                                                i.title,
                                                     CASE i.published_environment
     	                                                WHEN 0 THEN 'onzichtbaar'
@@ -1165,9 +1168,9 @@ namespace Api.Modules.Grids.Services
                                                 {{limit}}
                                             ) AS i
 
-                                            {String.Format(versionJoinClause, "")}
+                                            {String.Format(subQueryVersionJoinClause, "")}
 
-                                            LEFT JOIN {WiserTableNames.WiserEntityProperty} p ON p.entity_name = i.entity_type AND p.visible_in_overview = 1
+                                            LEFT JOIN {WiserTableNames.WiserEntityProperty} p ON p.entity_name = i.entityType AND p.visible_in_overview = 1
                                             LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} id ON id.item_id = i.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` = p.property_name) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` = p.display_name))
                                             LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} idt ON idt.item_id = i.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND idt.`key` = CONCAT(p.property_name, '_input')) OR ((p.property_name IS NULL OR p.property_name = '') AND idt.`key` = CONCAT(p.display_name, '_input')))
 
