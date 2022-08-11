@@ -10,7 +10,12 @@
     overflow: hidden;
 }
 
+#left-pane #DynamicContentPane {
+    overflow-y: auto;
+}
+
 #left-pane .input-container {
+    transition: 150ms all;
     background-color: var(--white-color);
     display: flex;
     min-height: 60px;
@@ -18,8 +23,12 @@
     padding: 12px 6px 0 6px;
     position: -webkit-sticky;
     position: sticky;
-    top: 0;
+    top: -74px;
     z-index: 100;
+}
+
+#left-pane .sticky .input-container {
+    top: 0;
 }
 
 #left-pane .input-container .item {
@@ -29,11 +38,15 @@
 
 #left-pane .k-tabstrip-wrapper {
     height: calc(100% - 75px);
-    overflow-y: auto;
 }
 
 #left-pane .k-tabstrip .k-tabstrip-items {
+    transition: 150ms all;
     top: 0;
+}
+
+#left-pane .sticky .k-tabstrip .k-tabstrip-items {
+    top: 74px;
 }
 
 #right-pane .k-tabstrip .k-tabstrip-items {
@@ -184,6 +197,31 @@
     border: 0;
 }
 
+/** FIELDSET **/
+.sub-group {
+    display: flex;
+    flex-wrap: wrap;
+    border: none;
+    margin-top: 15px;
+    margin-left: -6px;
+    margin-right: -6px;
+    position: relative;
+}
+
+.sub-group legend {
+    background: var(--lightest-color);
+    font-weight: 700;
+    margin: 6px;
+    padding: 15px 6px;
+    width: calc(100% - 22px);
+}
+
+.sub-group button {
+    position: absolute;
+    bottom: calc(100% + 11px);
+    right: 0;
+}
+
 /********************** 
 * CodeMirror
 **********************/
@@ -200,4 +238,17 @@
 
 .item.has-default-value .CodeMirror-fullscreen {
     opacity: 1;
+}
+
+/** KENDO DROPDOWNS **/
+.k-combobox .k-icon,
+.k-dropdown .k-icon,
+.k-picker-wrap .k-icon {
+    top: 14px;
+}
+.item[data-label-style="float"] .k-combobox .k-icon.k-i-arrow-60-down,
+.item[data-label-style="float"] .k-dropdown .k-icon.k-i-arrow-60-down,
+.item[data-label-style="float"] .k-picker-wrap .k-icon.k-i-arrow-60-down,
+.item[data-label-style="float"] .k-input .k-datetimepicker .k-icon {
+    top: 24px;
 }

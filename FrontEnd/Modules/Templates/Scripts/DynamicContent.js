@@ -118,6 +118,8 @@ const moduleSettings = {
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
+            
+            this.stickyHeader();
 
             this.initializeKendoComponents();
 
@@ -146,6 +148,23 @@ const moduleSettings = {
             }
         }
 
+        /**
+         * Sticky header within Dynamic Content.
+         */
+        stickyHeader() {
+            const elem = document.getElementById('DynamicContentPane');
+            let lastScrollTop = 0;
+
+            elem.onscroll = (e) => {
+                if (elem.scrollTop < lastScrollTop){
+                    elem.classList.add('sticky');
+                } else {
+                    elem.classList.remove('sticky');
+                }
+                lastScrollTop = elem.scrollTop <= 0 ? 0 : elem.scrollTop;
+            }
+        }
+        
         /**
          * Initializes all kendo components for the base class.
          */

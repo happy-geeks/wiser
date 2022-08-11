@@ -3,62 +3,71 @@
     padding: 2px;
 }
 
-    .previewContainer * {
-        box-sizing: border-box;
-    }
+.previewContainer * {
+    box-sizing: border-box;
+}
 
-    .previewContainer .row {
-        display: flex;
-        justify-content: space-between;
-        flex-basis: 100%;
-        flex-wrap: wrap;
-        max-width: 100%;
-    }
+.previewContainer .row {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    max-width: 100%;
+}
 
-    .previewContainer .item {
-        max-width: 100%;
-    }
+.previewContainer .item {
+    max-width: 100%;
+}
 
-    .previewContainer .col-6 {
-        flex-basis: calc(50% - 1px);
-        max-width: 100%;
-    }
+.previewContainer .col-6 {
+    flex-basis: auto;
+    max-width: 100%;
+}
 
-    .previewContainer .col-12 {
-        flex-basis: 100%;
-        max-width: 100%;
-    }
+#right-pane .previewContainer .col-6 {
+    flex-basis: auto;
+}
 
-    .previewContainer .flex-container {
-        display: flex;
-        justify-content: space-between;
-        flex-basis: 100%;
-        flex-wrap: wrap;
-    }
+.previewContainer .col-12 {
+    flex-basis: 100%;
+    max-width: 100%;
+}
 
-    .previewContainer .dropdown-container {
-        flex: 1 1 auto;
-        margin-right: 20px;
-    }
+.previewContainer .flex-container {
+    display: flex;
+    justify-content: space-between;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+}
 
-    .previewContainer .preview-profile,
-    .previewContainer #preview-results,
-    .previewContainer #preview-variables {
-        max-width: 100%;
-    }
+.previewContainer .dropdown-container {
+    flex: 1 1 auto;
+    margin-right: 20px;
+}
 
-    .previewContainer .dropdown-button {
-        align-self: center;
-    }
+.previewContainer .preview-profile,
+.previewContainer #preview-results,
+.previewContainer #preview-variables {
+    max-width: 100%;
+}
 
-    .previewContainer .button-container {
-        display: flex;
-        justify-content: end;
-    }
+.previewContainer .dropdown-button {
+    align-self: center;
+}
 
-        .previewContainer .button-container button:nth-last-of-type(1) {
-            margin-right: 0;
-        }
+.previewContainer .button-container {
+    display: flex;
+    justify-content: end;
+}
+
+.previewContainer .button-container button:nth-last-of-type(1) {
+    margin-right: 0;
+}
+
+.previewContainer .k-grid-content {
+    min-height: 50px;
+}
 
 #previewIframe {
     border: 1px solid var(--dark-bd-color);
