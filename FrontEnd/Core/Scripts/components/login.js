@@ -105,7 +105,7 @@ export default {
                 this.loginForm.selectedUser = "";
                 this.loginForm.password = "";
             }
-            else {
+            else if(this.users && this.users.length > 0) {
                 this.loginForm.selectedUser = this.users[0];
             }
         },
