@@ -163,9 +163,9 @@ const importModuleSettings = {
             this.startImportButton.addEventListener("click", this.performImport.bind(this));
 
             if (!window.importExport) {
-                $(document).on("moduleClosing", (e) => {
+                document.addEventListener("moduleClosing", (event) => {
                     // You can do anything here that needs to happen before closing the module.
-                    e.success();
+                    event.detail();
                 });
             }
         }

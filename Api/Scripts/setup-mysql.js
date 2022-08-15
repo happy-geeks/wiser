@@ -82,6 +82,13 @@
         await connection.query(insertInitialDataQuery.replace("?newCustomerId", "1"));
         console.log(notice("Data inserted."));
 
+        if (arguments.isMultiLanguage) {
+            console.log(notice("Setting up multi language support..."));
+            const insertInitialDataMultiLanguage = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/InsertInitialDataMultiLanguage.sql"), "utf8");
+            connection.query(insertInitialDataMultiLanguage);
+            console.log(notice("Multi language support installed."));
+        }
+
         if (arguments.isConfigurator) {
             console.log(notice("Creating configurator tables..."));
             const createTablesConfigurator = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/CreateTablesConfigurator.sql"), "utf8");

@@ -49,7 +49,7 @@ const moduleSettings = {
             this.mainDatePicker = null;
             this.mainDateTimePicker = null;
             this.selectedId = 0;
-            this.templateSettings = null;
+            this.templateSettings = {};
             this.linkedTemplates = null;
             this.templateHistory = null;
             this.treeViewContextMenu = null;
@@ -158,6 +158,11 @@ const moduleSettings = {
                     event.preventDefault();
                     event.returnValue = "";
                 }
+            });
+            
+            document.addEventListener("moduleClosing", (event) => {
+                // You can do anything here that needs to happen before closing the module.
+                event.detail();
             });
         }
 
@@ -441,6 +446,8 @@ const moduleSettings = {
             this.onMainTabStripActivate();
 
             if (dataItem.isFolder) {
+                await this.loadTemplate(0);
+                this.initialTemplateSettings = this.getCurrentTemplateSettings();
                 return;
             }
 
@@ -586,6 +593,21 @@ const moduleSettings = {
          * @param {any} id The ID of the template to load.
          */
         async loadTemplate(id) {
+            const dynamicContentTab = this.mainTabStrip.element.find(".dynamic-tab");
+            const previewTab = this.mainTabStrip.element.find(".preview-tab");
+            
+            if (id <= 0) {
+                this.templateSettings = {};
+                this.linkedTemplates = null;
+                this.templateHistory = null;
+                
+                document.getElementById("developmentTab").innerHTML = "";
+                document.getElementById("previewTab").innerHTML = "";
+                this.mainTabStrip.disable(dynamicContentTab);
+                this.mainTabStrip.disable(previewTab);
+                return;
+            }
+            
             const process = `onTreeViewSelect_${Date.now()}`;
             window.processing.addProcess(process);
 
@@ -634,8 +656,6 @@ const moduleSettings = {
 
                 // Only load dynamic content and previews for HTML templates.
                 const isHtmlTemplate = this.templateSettings.type.toUpperCase() === "HTML";
-                const dynamicContentTab = this.mainTabStrip.element.find(".dynamic-tab");
-                const previewTab = this.mainTabStrip.element.find(".preview-tab");
 
                 if (!isHtmlTemplate) {
                     this.mainTabStrip.disable(dynamicContentTab);
@@ -779,17 +799,16 @@ const moduleSettings = {
                 dynamicGridDiv.on("dblclick", "tr.k-state-selected", this.onDynamicContentOpenClick.bind(this));
 
                 // Preview
-                this.preview.loadProfiles().then(() => {
-                    Wiser.api({
-                        method: "GET",
-                        url: "/Modules/Templates/PreviewTab"
-                    }).then((response) => {
-                        document.getElementById("previewTab").innerHTML = response;
-
-                        this.preview.initPreviewProfileInputs(true, true);
-                        this.preview.bindPreviewButtons();
-                    })
+                await this.preview.loadProfiles();
+                const response = await Wiser.api({
+                    method: "GET",
+                    url: "/Modules/Templates/PreviewTab"
                 });
+
+                document.getElementById("previewTab").innerHTML = response;
+
+                this.preview.initPreviewProfileInputs(true, true);
+                this.preview.bindPreviewButtons();
             } catch (exception) {
                 console.error(exception);
                 kendo.alert(`Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.<br>${exception.responseText || exception}`);
@@ -1563,6 +1582,15 @@ const moduleSettings = {
                 return false;
             }
 
+            const selectedTabIndex = this.treeViewTabStrip.select().index();
+            const selectedTabContentElement = this.treeViewTabStrip.contentElement(selectedTabIndex);
+            const treeViewElement = selectedTabContentElement.querySelector("ul");
+            const treeView = $(treeViewElement).data("kendoTreeView");
+            const dataItem = treeView.dataItem(treeView.select());
+            if (!dataItem || dataItem.isFolder) {
+                return false;
+            }
+
             const process = `saveTemplate_${Date.now()}`;
             window.processing.addProcess(process);
             let success = true;
@@ -1598,7 +1626,7 @@ const moduleSettings = {
                 window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
                 this.historyLoaded = false;
 
-                if (alsoDeployToTest) {
+                if (alsoDeployToTest === true) {
                     const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
                     await this.deployEnvironment("test", this.selectedId, version);
                 }

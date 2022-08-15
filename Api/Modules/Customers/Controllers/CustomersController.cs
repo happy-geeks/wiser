@@ -60,13 +60,14 @@ namespace Api.Modules.Customers.Controllers
         /// <param name="customer">The customer to create.</param>
         /// <param name="isWebShop">Is this customer going to have a web shop?</param>
         /// <param name="isConfigurator">Is this customer going to have a configurator?</param>
+        /// <param name="isMultiLanguage">If the customer's website going to support multiple languages?</param>
         /// <returns>A <see cref="CustomerModel"/>.</returns>
         [HttpPost]
         [ProducesResponseType(typeof(CustomerModel), StatusCodes.Status200OK)]
         [Authorize]
-        public async Task<IActionResult> Create(CustomerModel customer, [FromQuery]bool isWebShop = false, [FromQuery]bool isConfigurator = false)
+        public async Task<IActionResult> Create(CustomerModel customer, [FromQuery]bool isWebShop = false, [FromQuery]bool isConfigurator = false, [FromQuery]bool isMultiLanguage = false)
         {
-            return (await wiserCustomersService.CreateCustomerAsync(customer, isWebShop, isConfigurator)).GetHttpResponseMessage();
+            return (await wiserCustomersService.CreateCustomerAsync(customer, isWebShop, isConfigurator, isMultiLanguage)).GetHttpResponseMessage();
         }
     }
 }

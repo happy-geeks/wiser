@@ -87,6 +87,7 @@ You can use the following parameters with this command:
 - **port** (optional): The port for the database. Default value is `3306`.
 - **isConfigurator** (optional): Set to `true` if you want to make a configurator with Wiser.
 - **isWebshop** (optional): Set to `true` if you want to make a webshop with Wiser.
+- **isMultiLanguage** (optional): Set to `true` if you want to make a multi language application with Wiser.
 
 After installation, you can login with the username `admin` and password `admin`. Please change this password as soon as possible. The password can be changed via the module `Gebruikers - Wiser`. In that module you can also add other users that you want to be able to login to Wiser.
 

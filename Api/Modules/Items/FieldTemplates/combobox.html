@@ -1,4 +1,22 @@
-﻿<div class="item {containerCssClass}" id="container_{propertyIdWithSuffix}" style="{style}" data-property-id="{propertyId}" data-item-id="{itemId}" data-depends-on-field="{dependsOnField}" data-depends-on-operator="{dependsOnOperator}" data-depends-on-value="{dependsOnValue}" data-depends-on-action="{dependsOnAction}" data-property-name="{propertyName}" data-language-code="{languageCode}" data-item-link-id="{itemLinkId}" data-width="{width}" data-save-on-change="{saveOnChange}" data-label-style="{labelStyle}" data-label-width="{labelWidth}" data-input-type="combobox" data-link-type="{linkType}">
+﻿<div class="item {containerCssClass}"
+     id="container_{propertyIdWithSuffix}"
+     style="{style}"
+     data-property-id="{propertyId}"
+     data-item-id="{itemId}"
+     data-depends-on-field="{dependsOnField}"
+     data-depends-on-operator="{dependsOnOperator}"
+     data-depends-on-value="{dependsOnValue}"
+     data-depends-on-action="{dependsOnAction}"
+     data-property-name="{propertyName}"
+     data-language-code="{languageCode}"
+     data-item-link-id="{itemLinkId}"
+     data-width="{width}"
+     data-save-on-change="{saveOnChange}"
+     data-label-style="{labelStyle}"
+     data-label-width="{labelWidth}"
+     data-input-type="combobox"
+     data-link-type="{linkType}"
+     data-visibility-path-regex="{visibilityPathRegex}">
     <span class="handler">&nbsp;</span>
     <h4 class="{titleClass}">
         <label for="field_{propertyIdWithSuffix}">{title}</label>
@@ -7,7 +25,10 @@
         </span>
     </h4>
     <div class="flex-container">
-        <select id="field_{propertyIdWithSuffix}" name="{propertyName}_{languageCode}" data-kendo-control="kendoComboBox" class="select" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..." {required} pattern="{pattern}" data-default-value="{default_value}" data-lpignore="true">
+        <select id="field_{propertyIdWithSuffix}" name="{propertyName}_{languageCode}"
+                data-kendo-control="kendoComboBox" class="select" placeholder="Maak uw keuze..."
+                data-placeholder="Maak uw keuze..." {required} pattern="{pattern}" data-default-value="{default_value}"
+                data-lpignore="true">
         </select>
         <button class="hidden newItemButton"></button>
         <button class="hidden openItemButton"></button>

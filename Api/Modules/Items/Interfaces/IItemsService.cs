@@ -233,5 +233,14 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="linkType">The link type to use for all of the links.</param>
         /// <param name="sourceEntityType">Optional: The entity type of the source items. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
         Task<ServiceResult<bool>> RemoveMultipleLinksAsync(ClaimsIdentity identity, List<string> encryptedSourceIds, List<string> encryptedDestinationIds, int linkType, string sourceEntityType = null);
+
+        /// <summary>
+        /// Translate all fields of an item into one or more other languages, using the Google Translation API.
+        /// This will only translate fields that don't have a value yet for the destination language
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="encryptedId">The encrypted ID of the item to translate.</param>
+        /// <param name="settings">The settings for translating.</param>
+        Task<ServiceResult<bool>> TranslateAllFieldsAsync(ClaimsIdentity identity, string encryptedId, TranslateItemRequestModel settings);
     }
 }

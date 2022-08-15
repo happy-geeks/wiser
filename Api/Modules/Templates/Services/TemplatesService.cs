@@ -1030,7 +1030,6 @@ SET @_display_name = '{displayName}';
 SET @_property_name = IF('{propertyName}' = '', @_display_name, '{propertyName}');
 SET @_overviewvisibility = '{visibleInOverview}';
 SET @_overviewvisibility = IF(@_overviewvisibility = TRUE OR @_overviewvisibility = 'true', 1, 0);
-SET @_overviewType = '{overviewFieldtype}';
 SET @_overviewWidth = '{overviewWidth}';
 SET @_groupName = '{groupName}';
 SET @_input_type = '{inputtype}';
@@ -1066,7 +1065,6 @@ inputtype = @_input_type,
 display_name = @_display_name,
 property_name = @_property_name,
 visible_in_overview= @_overviewvisibility,
-overview_fieldtype= @_overviewType,
 overview_width= @_overviewWidth,
 group_name= @_groupName,
 explanation= @_explanation,
@@ -1094,39 +1092,53 @@ WHERE entity_name = @_entity_name AND id = @_id
 LIMIT 1; ");
 
                 TemplateQueryStrings.Add("GET_ENTITY_FIELD_PROPERTIES_FOR_SELECTED", @"SELECT
-id,
-display_name AS displayName,
-inputtype, 
-visible_in_overview AS visibleInOverview, 
-overview_width AS overviewWidth, 
-overview_fieldtype AS overviewFieldtype, 
-mandatory, 
-readonly, 
-also_save_seo_value AS alsoSaveSeoValue,
-width,
-height,
-IF(tab_name = '', 'Gegevens', tab_name) AS tabName,
-group_name AS groupName,
-property_name AS propertyName,
-explanation,
-default_value AS defaultValue,
-automation,
-options,
-depends_on_field AS dependsOnField,
-depends_on_operator AS dependsOnOperator,
-depends_on_value AS dependsOnValue,
-IFNULL(data_query,"""") AS dataQuery,
-IFNULL(grid_delete_query,"""") AS gridDeleteQuery,
-IFNULL(grid_update_query,"""") AS gridUpdateQuery,
-IFNULL(grid_insert_query,"""") AS gridInsertQuery,
-regex_validation AS regexValidation,
-IFNULL(css, '') AS css,
-language_code AS languageCode,
-IFNULL(custom_script, '') AS customScript,
-(SELECT COUNT(1) FROM wiser_itemdetail INNER JOIN wiser_item ON wiser_itemdetail.item_id = wiser_item.id WHERE wiser_itemdetail.key = wiser_entityproperty.property_name AND wiser_item.entity_type = wiser_entityproperty.entity_name) > 0 as field_in_use
+    id,
+    module_id,
+    entity_name,
+    link_type,
+    visible_in_overview AS visibleInOverview,
+    overview_width AS overviewWidth, 
+    IF(tab_name = '', 'Gegevens', tab_name) AS tabName,
+    group_name AS groupName,
+    inputtype AS inputType,
+    display_name AS displayName,
+    property_name AS propertyName,
+    explanation,
+    ordering,
+    regex_validation AS regexValidation,
+    mandatory, 
+    readonly, 
+    default_value AS defaultValue,
+    IFNULL(css, '') AS css,
+    width,
+    height,
+    options,
+    IFNULL(data_query, '') AS dataQuery,
+    IFNULL(action_query, '') AS actionQuery,
+    IFNULL(search_query, '') AS searchQuery,
+    IFNULL(search_count_query, '') AS searchCountQuery,
+    IFNULL(grid_delete_query, '') AS gridDeleteQuery,
+    IFNULL(grid_insert_query, '') AS gridInsertQuery,
+    IFNULL(grid_update_query, '') AS gridUpdateQuery,
+    depends_on_field AS dependsOnField,
+    depends_on_operator AS dependsOnOperator,
+    depends_on_value AS dependsOnValue,
+    language_code AS languageCode,
+    IFNULL(custom_script, '') AS customScript,
+    also_save_seo_value AS alsoSaveSeoValue,
+    depends_on_action AS dependsOnAction,
+    save_on_change AS saveOnChange,
+    extended_explanation AS extendedExplanation,
+    label_style AS labelStyle,
+    label_width AS labelWidth,
+    enable_aggregation AS enableAggregation,
+    aggregate_options AS aggregateOptions,
+    access_key AS accessKey,
+    visibility_path_regex AS visibilityPathRegex,
+    (SELECT COUNT(1) FROM wiser_itemdetail INNER JOIN wiser_item ON wiser_itemdetail.item_id = wiser_item.id WHERE wiser_itemdetail.key = wiser_entityproperty.property_name AND wiser_item.entity_type = wiser_entityproperty.entity_name) > 0 as field_in_use
 FROM wiser_entityproperty
-WHERE id = {id} AND entity_name = '{entityName}'
-");
+WHERE id = {id}
+AND entity_name = '{entityName}'");
                 TemplateQueryStrings.Add("MOVE_ITEM", @"#Item verplaatsen naar ander item
 SET @src_id = '{source:decrypt(true)}';
 SET @dest_id = '{destination:decrypt(true)}';
@@ -1359,27 +1371,12 @@ UNION ALL
 SELECT 'Media' AS type_text, 4 AS type_value 
 UNION ALL
 SELECT DISTINCT type AS type_text, type AS type_value FROM `wiser_itemlink` WHERE type > 100");
-                TemplateQueryStrings.Add("GET_COLUMNS_FOR_FIELD_TABLE", @"#Verkrijg de kolommen die getoond moeten worden bij een specifiek soort entiteit
-SET @entitytype = '{entity_type}';
-SET @_linkType = '{linkType}';
-
-SELECT  
-	CONCAT('property_.', CreateJsonSafeProperty(LOWER(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)))) AS field,
-    p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
-    p.overview_width AS width
-FROM wiser_entityproperty p 
-WHERE (p.entity_name = @entitytype OR (p.link_type > 0 AND p.link_type = @_linkType))
-AND p.visible_in_overview = 1
-GROUP BY IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)
-ORDER BY p.ordering;");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_LINK_TABLE", @"SET @destinationId = {id:decrypt(true)};
 SET @_linkTypeNumber = IF('{linkTypeNumber}' LIKE '{%}' OR '{linkTypeNumber}' = '', '2', '{linkTypeNumber}');
 
 SELECT 
 	CONCAT('property_.', CreateJsonSafeProperty(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name))) AS field,
     p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
     p.overview_width AS width
 FROM wiser_entityproperty p 
 JOIN wiser_item i ON i.entity_type = p.entity_name
@@ -1723,7 +1720,6 @@ ORDER BY il.ordering, i.title, i.id");
 SELECT 
 	CONCAT('property_.', CreateJsonSafeProperty(LOWER(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)))) AS field,
     p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
     p.overview_width AS width
 FROM wiser_itemlink il
 JOIN wiser_item i ON i.id=il.item_id

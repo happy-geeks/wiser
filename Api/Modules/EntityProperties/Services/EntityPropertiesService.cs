@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.EntityProperties.Enums;
 using Api.Modules.EntityProperties.Helpers;
@@ -128,10 +129,10 @@ namespace Api.Modules.EntityProperties.Services
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
             clientDatabaseConnection.AddParameter("module_id", entityProperty.ModuleId);
             clientDatabaseConnection.AddParameter("entity_name", entityProperty.EntityType ?? "");
             clientDatabaseConnection.AddParameter("visible_in_overview", entityProperty.Overview?.Visible ?? false);
-            clientDatabaseConnection.AddParameter("overview_fieldtype", entityProperty.Overview?.FieldType ?? "");
             clientDatabaseConnection.AddParameter("overview_width", entityProperty.Overview?.Width ?? 100);
             clientDatabaseConnection.AddParameter("tab_name", entityProperty.TabName ?? "");
             clientDatabaseConnection.AddParameter("group_name", entityProperty.GroupName ?? "");
@@ -165,90 +166,101 @@ namespace Api.Modules.EntityProperties.Services
             clientDatabaseConnection.AddParameter("link_type", entityProperty.LinkType);
             clientDatabaseConnection.AddParameter("extended_explanation", entityProperty.ExtendedExplanation);
             clientDatabaseConnection.AddParameter("label_style", ToDatabaseValue(entityProperty.LabelStyle));
-            clientDatabaseConnection.AddParameter("label_width", entityProperty.LabelWidth);
+            clientDatabaseConnection.AddParameter("label_width", entityProperty.LabelWidth.ToString());
+            clientDatabaseConnection.AddParameter("enable_aggregation", entityProperty.EnableAggregation);
+            clientDatabaseConnection.AddParameter("aggregate_options", entityProperty.AggregateOptions);
+            clientDatabaseConnection.AddParameter("access_key", entityProperty.AccessKey);
+            clientDatabaseConnection.AddParameter("visibility_path_regex", entityProperty.VisibilityPathRegex);
 
-            var query = $@"INSERT INTO {WiserTableNames.WiserEntityProperty}
-                        (
-                            module_id,
-                            entity_name,
-                            visible_in_overview,
-                            overview_fieldtype,
-                            overview_width,
-                            tab_name,
-                            group_name,
-                            inputtype,
-                            display_name,
-                            property_name,
-                            explanation,
-                            ordering,
-                            regex_validation,
-                            mandatory,
-                            readonly,
-                            default_value,
-                            width,
-                            height,
-                            options,
-                            data_query,
-                            action_query,
-                            search_query,
-                            search_count_query,
-                            grid_delete_query,
-                            grid_insert_query,
-                            grid_update_query,
-                            depends_on_field,
-                            depends_on_operator,
-                            depends_on_value,
-                            language_code,
-                            custom_script,
-                            also_save_seo_value,
-                            depends_on_action,
-                            save_on_change,
-                            link_type,
-                            extended_explanation,
-                            label_style,
-                            label_width
-                        )
-                        VALUES
-                        (
-                            ?module_id,
-                            ?entity_name,
-                            ?visible_in_overview,
-                            ?overview_fieldtype,
-                            ?overview_width,
-                            ?tab_name,
-                            ?group_name,
-                            ?inputtype,
-                            ?display_name,
-                            ?property_name,
-                            ?explanation,
-                            ?ordering,
-                            ?regex_validation,
-                            ?mandatory,
-                            ?readonly,
-                            ?default_value,
-                            ?width,
-                            ?height,
-                            ?options,
-                            ?data_query,
-                            ?action_query,
-                            ?search_query,
-                            ?search_count_query,
-                            ?grid_delete_query,
-                            ?grid_insert_query,
-                            ?grid_update_query,
-                            ?depends_on_field,
-                            ?depends_on_operator,
-                            ?depends_on_value,
-                            ?language_code,
-                            ?custom_script,
-                            ?also_save_seo_value,
-                            ?depends_on_action,
-                            ?save_on_change,
-                            ?link_type,
-                            ?extended_explanation,
-                            ?label_style,
-                            ?label_width
-                        ); SELECT LAST_INSERT_ID();";
+            var query = $@"SET @_username = ?username;
+INSERT INTO {WiserTableNames.WiserEntityProperty}
+(
+    module_id,
+    entity_name,
+    visible_in_overview,
+    overview_width,
+    tab_name,
+    group_name,
+    inputtype,
+    display_name,
+    property_name,
+    explanation,
+    ordering,
+    regex_validation,
+    mandatory,
+    readonly,
+    default_value,
+    width,
+    height,
+    options,
+    data_query,
+    action_query,
+    search_query,
+    search_count_query,
+    grid_delete_query,
+    grid_insert_query,
+    grid_update_query,
+    depends_on_field,
+    depends_on_operator,
+    depends_on_value,
+    language_code,
+    custom_script,
+    also_save_seo_value,
+    depends_on_action,
+    save_on_change,
+    link_type,
+    extended_explanation,
+    label_style,
+    label_width,
+    enable_aggregation,
+    aggregate_options,
+    access_key,
+    visibility_path_regex
+)
+VALUES
+(
+    ?module_id,
+    ?entity_name,
+    ?visible_in_overview,
+    ?overview_width,
+    ?tab_name,
+    ?group_name,
+    ?inputtype,
+    ?display_name,
+    ?property_name,
+    ?explanation,
+    ?ordering,
+    ?regex_validation,
+    ?mandatory,
+    ?readonly,
+    ?default_value,
+    ?width,
+    ?height,
+    ?options,
+    ?data_query,
+    ?action_query,
+    ?search_query,
+    ?search_count_query,
+    ?grid_delete_query,
+    ?grid_insert_query,
+    ?grid_update_query,
+    ?depends_on_field,
+    ?depends_on_operator,
+    ?depends_on_value,
+    ?language_code,
+    ?custom_script,
+    ?also_save_seo_value,
+    ?depends_on_action,
+    ?save_on_change,
+    ?link_type,
+    ?extended_explanation,
+    ?label_style,
+    ?label_width,
+    ?enable_aggregation,
+    ?aggregate_options,
+    ?access_key,
+    ?visibility_path_regex
+); SELECT LAST_INSERT_ID();";
 
             try
             {
@@ -295,11 +307,11 @@ namespace Api.Modules.EntityProperties.Services
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
             clientDatabaseConnection.AddParameter("id", id);
             clientDatabaseConnection.AddParameter("module_id", entityProperty.ModuleId);
             clientDatabaseConnection.AddParameter("entity_name", entityProperty.EntityType ?? "");
             clientDatabaseConnection.AddParameter("visible_in_overview", entityProperty.Overview?.Visible ?? false);
-            clientDatabaseConnection.AddParameter("overview_fieldtype", entityProperty.Overview?.FieldType ?? "");
             clientDatabaseConnection.AddParameter("overview_width", entityProperty.Overview?.Width ?? 100);
             clientDatabaseConnection.AddParameter("tab_name", entityProperty.TabName ?? "");
             clientDatabaseConnection.AddParameter("group_name", entityProperty.GroupName ?? "");
@@ -333,48 +345,56 @@ namespace Api.Modules.EntityProperties.Services
             clientDatabaseConnection.AddParameter("link_type", entityProperty.LinkType);
             clientDatabaseConnection.AddParameter("extended_explanation", entityProperty.ExtendedExplanation);
             clientDatabaseConnection.AddParameter("label_style", ToDatabaseValue(entityProperty.LabelStyle));
-            clientDatabaseConnection.AddParameter("label_width", entityProperty.LabelWidth);
+            clientDatabaseConnection.AddParameter("label_width", entityProperty.LabelWidth.ToString());
+            clientDatabaseConnection.AddParameter("enable_aggregation", entityProperty.EnableAggregation);
+            clientDatabaseConnection.AddParameter("aggregate_options", entityProperty.AggregateOptions);
+            clientDatabaseConnection.AddParameter("access_key", entityProperty.AccessKey);
+            clientDatabaseConnection.AddParameter("visibility_path_regex", entityProperty.VisibilityPathRegex);
 
-            var query = $@"UPDATE {WiserTableNames.WiserEntityProperty}
-                        SET module_id = ?module_id,
-                            entity_name = ?entity_name,
-                            visible_in_overview = ?visible_in_overview,
-                            overview_fieldtype = ?overview_fieldtype,
-                            overview_width = ?overview_width,
-                            tab_name = ?tab_name,
-                            group_name = ?group_name,
-                            inputtype = ?inputtype,
-                            display_name = ?display_name,
-                            property_name = ?property_name,
-                            explanation = ?explanation,
-                            ordering = ?ordering,
-                            regex_validation = ?regex_validation,
-                            mandatory = ?mandatory,
-                            readonly = ?readonly,
-                            default_value = ?default_value,
-                            width = ?width,
-                            height = ?height,
-                            options = ?options,
-                            data_query = ?data_query,
-                            action_query = ?action_query,
-                            search_query = ?search_query,
-                            search_count_query = ?search_count_query,
-                            grid_delete_query = ?grid_delete_query,
-                            grid_insert_query = ?grid_insert_query,
-                            grid_update_query = ?grid_update_query,
-                            depends_on_field = ?depends_on_field,
-                            depends_on_operator = ?depends_on_operator,
-                            depends_on_value = ?depends_on_value,
-                            language_code = ?language_code,
-                            custom_script = ?custom_script,
-                            also_save_seo_value = ?also_save_seo_value,
-                            depends_on_action = ?depends_on_action,
-                            save_on_change = ?save_on_change,
-                            link_type = ?link_type,
-                            extended_explanation = ?extended_explanation,
-                            label_style = ?label_style,
-                            label_width = ?label_width
-                        WHERE id = ?id";
+            var query = $@"SET @_username = ?username;
+UPDATE {WiserTableNames.WiserEntityProperty}
+SET module_id = ?module_id,
+    entity_name = ?entity_name,
+    visible_in_overview = ?visible_in_overview,
+    overview_width = ?overview_width,
+    tab_name = ?tab_name,
+    group_name = ?group_name,
+    inputtype = ?inputtype,
+    display_name = ?display_name,
+    property_name = ?property_name,
+    explanation = ?explanation,
+    ordering = ?ordering,
+    regex_validation = ?regex_validation,
+    mandatory = ?mandatory,
+    readonly = ?readonly,
+    default_value = ?default_value,
+    width = ?width,
+    height = ?height,
+    options = ?options,
+    data_query = ?data_query,
+    action_query = ?action_query,
+    search_query = ?search_query,
+    search_count_query = ?search_count_query,
+    grid_delete_query = ?grid_delete_query,
+    grid_insert_query = ?grid_insert_query,
+    grid_update_query = ?grid_update_query,
+    depends_on_field = ?depends_on_field,
+    depends_on_operator = ?depends_on_operator,
+    depends_on_value = ?depends_on_value,
+    language_code = ?language_code,
+    custom_script = ?custom_script,
+    also_save_seo_value = ?also_save_seo_value,
+    depends_on_action = ?depends_on_action,
+    save_on_change = ?save_on_change,
+    link_type = ?link_type,
+    extended_explanation = ?extended_explanation,
+    label_style = ?label_style,
+    label_width = ?label_width,
+    enable_aggregation = ?enable_aggregation,
+    aggregate_options = ?aggregate_options,
+    access_key = ?access_key,
+    visibility_path_regex = ?visibility_path_regex
+WHERE id = ?id";
 
             try
             {
@@ -407,13 +427,127 @@ namespace Api.Modules.EntityProperties.Services
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
+            clientDatabaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
 
-            var query = $"DELETE FROM {WiserTableNames.WiserEntityProperty} WHERE id = ?id";
+            var query = $@"SET @_username = ?username;
+DELETE FROM {WiserTableNames.WiserEntityProperty} WHERE id = ?id";
             await clientDatabaseConnection.ExecuteAsync(query);
             return new ServiceResult<bool>(true)
             {
                 StatusCode = HttpStatusCode.NoContent
             };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> CopyToAllAvailableLanguagesAsync(ClaimsIdentity identity, int id, CopyToOtherLanguagesTabOptions tabOption)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("id", id);
+            clientDatabaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
+            clientDatabaseConnection.AddParameter("tabOption", (int)tabOption);
+
+            var query = $@"SET @_username = ?username;
+SET @count := 0;
+
+INSERT INTO {WiserTableNames.WiserEntityProperty}
+(
+	module_id,
+	entity_name,
+	visible_in_overview,
+	overview_width,
+	tab_name,
+	group_name,
+	inputtype,
+	display_name,
+	property_name,
+	explanation,
+	ordering,
+	regex_validation,
+	mandatory,
+	readonly,
+	default_value,
+	width,
+	height,
+	`options`,
+	data_query,
+	action_query,
+	search_query,
+	search_count_query,
+	grid_delete_query,
+	grid_insert_query,
+	grid_update_query,
+	depends_on_field,
+	depends_on_operator,
+	depends_on_value,
+	depends_on_action,
+	language_code,
+	custom_script,
+	also_save_seo_value,
+	save_on_change,
+	link_type,
+	extended_explanation,
+	label_style,
+	label_width,
+	enable_aggregation,
+	aggregate_options,
+	access_key
+)
+SELECT
+	entityProperty.module_id,
+	entityProperty.entity_name,
+	entityProperty.visible_in_overview,
+	entityProperty.overview_width,
+    CASE ?tabOption
+        WHEN {(int)CopyToOtherLanguagesTabOptions.General} THEN ''
+        WHEN {(int)CopyToOtherLanguagesTabOptions.LanguageCode} THEN UPPER(languageCode.value)
+        WHEN {(int)CopyToOtherLanguagesTabOptions.LanguageName} THEN language.title
+    END AS tab_name,
+	entityProperty.group_name,
+	entityProperty.inputtype,
+	entityProperty.display_name,
+	entityProperty.property_name,
+	entityProperty.explanation,
+	entityProperty.ordering + (100 * (@count := @count + 1)) AS ordering,
+	entityProperty.regex_validation,
+	entityProperty.mandatory,
+	entityProperty.readonly,
+	entityProperty.default_value,
+	entityProperty.width,
+	entityProperty.height,
+	entityProperty.`options`,
+	entityProperty.data_query,
+	entityProperty.action_query,
+	entityProperty.search_query,
+	entityProperty.search_count_query,
+	entityProperty.grid_delete_query,
+	entityProperty.grid_insert_query,
+	entityProperty.grid_update_query,
+	entityProperty.depends_on_field,
+	entityProperty.depends_on_operator,
+	entityProperty.depends_on_value,
+	entityProperty.depends_on_action,
+	languageCode.value AS language_code,
+	entityProperty.custom_script,
+	entityProperty.also_save_seo_value,
+	entityProperty.save_on_change,
+	entityProperty.link_type,
+	entityProperty.extended_explanation,
+	entityProperty.label_style,
+	entityProperty.label_width,
+	entityProperty.enable_aggregation,
+	entityProperty.aggregate_options,
+	entityProperty.access_key
+FROM {WiserTableNames.WiserItem} AS language
+JOIN {WiserTableNames.WiserItemDetail} AS languageCode ON languageCode.item_id = language.id AND languageCode.`key` = '{GeeksCoreLibrary.Modules.Languages.Models.Constants.LanguageCodeFieldName}'
+JOIN {WiserTableNames.WiserEntityProperty} AS entityProperty ON entityProperty.id = ?id
+LEFT JOIN {WiserTableNames.WiserEntityProperty} AS otherEntityProperty ON otherEntityProperty.entity_name = entityProperty.entity_name AND otherEntityProperty.link_type = entityProperty.link_type AND otherEntityProperty.language_code = languageCode.value AND IFNULL(otherEntityProperty.property_name, otherEntityProperty.display_name) = IFNULL(entityProperty.property_name, entityProperty.display_name)
+WHERE language.entity_type = '{GeeksCoreLibrary.Modules.Languages.Models.Constants.LanguageEntityType}'
+AND otherEntityProperty.id IS NULL";
+
+            await clientDatabaseConnection.ExecuteAsync(query);
+            return new ServiceResult<bool>(true);
         }
 
         private static FilterOperators? ToFilterOperator(string value)
@@ -628,49 +762,51 @@ namespace Api.Modules.EntityProperties.Services
 
         private static EntityPropertyModel FromDataRow(DataRow dataRow)
         {
-            var row = new EntityPropertyModel();
-            row.Id = dataRow.Field<int>("id");
-            row.ModuleId = Convert.ToInt32(dataRow["module_id"]);
-            row.EntityType = dataRow.Field<string>("entity_name");
-            row.LinkType = dataRow.Field<int>("link_type");
-            row.PropertyName = dataRow.Field<string>("property_name");
-            row.LanguageCode = dataRow.Field<string>("language_code");
-            row.TabName = dataRow.Field<string>("tab_name");
-            row.GroupName = dataRow.Field<string>("group_name");
-            row.InputType = EntityPropertyHelper.ToInputType(dataRow.Field<string>("inputtype"));
-            row.DisplayName = dataRow.Field<string>("display_name");
-            row.Ordering = Convert.ToInt32(dataRow["ordering"]);
-            row.Explanation = dataRow.Field<string>("explanation");
-            row.ExtendedExplanation = Convert.ToBoolean(dataRow["extended_explanation"]);
-            row.RegexValidation = dataRow.Field<string>("regex_validation");
-            row.Mandatory = Convert.ToBoolean(dataRow["mandatory"]);
-            row.ReadOnly = Convert.ToBoolean(dataRow["readonly"]);
-            row.DefaultValue = dataRow.Field<string>("default_value");
-            row.Width = Convert.ToInt32(dataRow["width"]);
-            row.Height = Convert.ToInt32(dataRow["height"]);
-            row.Options = dataRow.Field<string>("options");
-            row.DataQuery = dataRow.Field<string>("data_query");
-            row.ActionQuery = dataRow.Field<string>("action_query");
-            row.SearchQuery = dataRow.Field<string>("search_query");
-            row.SearchCountQuery = dataRow.Field<string>("search_count_query");
-            row.GridInsertQuery = dataRow.Field<string>("grid_insert_query");
-            row.GridUpdateQuery = dataRow.Field<string>("grid_update_query");
-            row.GridDeleteQuery = dataRow.Field<string>("grid_delete_query");
-            row.CustomScript = dataRow.Field<string>("custom_script");
-            row.AlsoSaveSeoValue = Convert.ToBoolean(dataRow["also_save_seo_value"]);
-            row.SaveOnChange = Convert.ToBoolean(dataRow["save_on_change"]);
-            row.LabelStyle = ToLabelStyle(dataRow.Field<string>("label_style"));
-            row.LabelWidth = Convert.ToInt32(dataRow.Field<object>("label_width"));
-            row.Overview = new EntityPropertyOverviewModel();
-            row.Overview.Visible = Convert.ToBoolean(dataRow["visible_in_overview"]);
-            row.Overview.FieldType = dataRow.Field<string>("overview_fieldtype");
-            row.Overview.Width = Convert.ToInt32(dataRow["overview_width"]);
-            row.DependsOn = new EntityPropertyDependencyModel();
-            row.DependsOn.Action = ToDependencyAction(dataRow.Field<string>("depends_on_action"));
-            row.DependsOn.Field = dataRow.Field<string>("depends_on_field");
-            row.DependsOn.Operator = ToFilterOperator(dataRow.Field<string>("depends_on_operator"));
-            row.DependsOn.Value = dataRow.Field<string>("depends_on_value");
-            return row;
+            var result = new EntityPropertyModel();
+            result.Id = dataRow.Field<int>("id");
+            result.ModuleId = Convert.ToInt32(dataRow["module_id"]);
+            result.EntityType = dataRow.Field<string>("entity_name");
+            result.LinkType = dataRow.Field<int>("link_type");
+            result.PropertyName = dataRow.Field<string>("property_name");
+            result.LanguageCode = dataRow.Field<string>("language_code");
+            result.TabName = dataRow.Field<string>("tab_name");
+            result.GroupName = dataRow.Field<string>("group_name");
+            result.InputType = EntityPropertyHelper.ToInputType(dataRow.Field<string>("inputtype"));
+            result.DisplayName = dataRow.Field<string>("display_name");
+            result.Ordering = Convert.ToInt32(dataRow["ordering"]);
+            result.Explanation = dataRow.Field<string>("explanation");
+            result.ExtendedExplanation = Convert.ToBoolean(dataRow["extended_explanation"]);
+            result.RegexValidation = dataRow.Field<string>("regex_validation");
+            result.Mandatory = Convert.ToBoolean(dataRow["mandatory"]);
+            result.ReadOnly = Convert.ToBoolean(dataRow["readonly"]);
+            result.DefaultValue = dataRow.Field<string>("default_value");
+            result.Width = Convert.ToInt32(dataRow["width"]);
+            result.Height = Convert.ToInt32(dataRow["height"]);
+            result.Options = dataRow.Field<string>("options");
+            result.DataQuery = dataRow.Field<string>("data_query");
+            result.ActionQuery = dataRow.Field<string>("action_query");
+            result.SearchQuery = dataRow.Field<string>("search_query");
+            result.SearchCountQuery = dataRow.Field<string>("search_count_query");
+            result.GridInsertQuery = dataRow.Field<string>("grid_insert_query");
+            result.GridUpdateQuery = dataRow.Field<string>("grid_update_query");
+            result.GridDeleteQuery = dataRow.Field<string>("grid_delete_query");
+            result.CustomScript = dataRow.Field<string>("custom_script");
+            result.AlsoSaveSeoValue = Convert.ToBoolean(dataRow["also_save_seo_value"]);
+            result.SaveOnChange = Convert.ToBoolean(dataRow["save_on_change"]);
+            result.LabelStyle = ToLabelStyle(dataRow.Field<string>("label_style"));
+            result.LabelWidth = Convert.ToInt32(dataRow["label_width"]);
+            result.Overview = new EntityPropertyOverviewModel();
+            result.Overview.Visible = Convert.ToBoolean(dataRow["visible_in_overview"]);
+            result.Overview.Width = Convert.ToInt32(dataRow["overview_width"]);
+            result.DependsOn = new EntityPropertyDependencyModel();
+            result.DependsOn.Action = ToDependencyAction(dataRow.Field<string>("depends_on_action"));
+            result.DependsOn.Field = dataRow.Field<string>("depends_on_field");
+            result.DependsOn.Operator = ToFilterOperator(dataRow.Field<string>("depends_on_operator"));
+            result.DependsOn.Value = dataRow.Field<string>("depends_on_value");
+            result.EnableAggregation = Convert.ToBoolean(dataRow["enable_aggregation"]);
+            result.AggregateOptions = dataRow.Field<string>("aggregate_options");
+            result.AccessKey = dataRow.Field<string>("access_key");
+            return result;
         }
     }
 }
