@@ -404,6 +404,10 @@ li.hint {
     height: calc(100vh - 258px);
     overflow: auto;
 }
+#EntityTabStrip .k-content .right-pane {
+    overflow: hidden;
+    overflow-y: auto;
+}
 
 @keyframes lds-ellipsis1 {
     0% {
