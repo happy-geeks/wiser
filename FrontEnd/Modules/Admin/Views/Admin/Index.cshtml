@@ -1591,7 +1591,7 @@
                      </div>
                      <div class="item">
                         <div class="pane-content flex-container">
-                           <div class="item " style="width: 25%;">
+                           <div class="item " style="width: 50%;">
                               <span class="handler">&nbsp;</span>
                               <h4>
                                  <label>Link type</label>
@@ -1600,42 +1600,42 @@
                               <input id="wiserLinkType" type="number" step="1" class="numeric" autocomplete="off" />
                               </span>
                            </div>
-                            <div class="item " style="width: 25%;">
+                            <div class="item " style="width: 50%;">
                                 <span class="handler">&nbsp;</span>
                                 <h4>
-                                    <label>Link naan</label>
+                                    <label>Link naar</label>
                                 </h4>
                                 <span class="k-widget k-input k-state-default">
                                     <input id="wiserLinkName" type="text" class="textField k-input" autocomplete="off" />
                                 </span>
                             </div>
-                            <div class="item" style="width: 40%;">
+                            <div class="item" style="width: calc(100% / 3);">
                                 <h4>
                                     <label>Entiteit vanaf</label>
                                 </h4>
                                 <select id="connectedEntity" placeholder="Maak uw keuze...">
                                 </select>
                             </div>
-                            <div class="item" style="width: 40%;">
+                            <div class="item" style="width: calc(100% / 3);">
                                 <h4>
                                     <label>Entiteit naar</label>
                                 </h4>
                                 <select id="destinationEntity" placeholder="Maak uw keuze...">
                                 </select>
                             </div>
-                            <div class="item" style="width: 40%;">
+                            <div class="item" style="width: calc(100% / 3);">
                                 <h4>
                                     <label>Entiteiten relatie</label>
                                 </h4>
                                 <select id="linkRelation" placeholder="Maak uw keuze...">
                                 </select>
                             </div>
-                            <div class="flex-container">
-                                <button class="k-primary editLinkBtn" data-type="link" style="width: 25%; margin: 4px">Opslaan</button>
+                            <div class="flex-container btn-right">
+                                <button class="k-primary editLinkBtn" data-type="link">Opslaan</button>
                             </div>
                         </div>
-                         <div class="pane-content flex-container linkPopupContent" style="display:none">
-                             <div class="item " style="width: 25%;">
+                        <div class="pane-content flex-container linkPopupContent" style="display:none">
+                             <div class="item ">
                                  <span class="handler">&nbsp;</span>
                                  <h4>
                                      <label>Link naam</label>
@@ -1644,7 +1644,7 @@
                                      <input id="wiserLinkNamePopup" type="text" class="textField k-input" autocomplete="off" />
                                  </span>
                              </div>
-                             <div class="item " style="width: 25%;">
+                             <div class="item ">
                                  <span class="handler">&nbsp;</span>
                                  <h4>
                                      <label>Link type</label>
@@ -1654,30 +1654,30 @@
                                  </span>
                              </div>
                             
-                             <div class="item" style="width: 40%;">
+                             <div class="item">
                                  <h4>
                                      <label>Entiteit vanaf</label>
                                  </h4>
                                  <select id="connectedEntityPopup" placeholder="Maak uw keuze...">
                                  </select>
                              </div>
-                             <div class="item" style="width: 40%;">
+                             <div class="item">
                                  <h4>
                                      <label>Entiteit naar</label>
                                  </h4>
                                  <select id="destinationEntityPopup" placeholder="Maak uw keuze...">
                                  </select>
                              </div>
-                             <div class="item" style="width: 40%;">
+                             <div class="item">
                                  <h4>
                                      <label>Entiteiten relatie</label>
                                  </h4>
                                  <select id="relationPopup" placeholder="Maak uw keuze...">
                                  </select>
                              </div>
-                             <div class="item" style="width: 40%;">
+                             <div class="item">
                                  <div class="flex-container">
-                                     <button class="k-primary addLinkBtnPopup" style="width: 25%; margin: 4px">Toevoegen</button>
+                                     <button class="k-primary addLinkBtnPopup">Toevoegen</button>
                                  </div>
                              </div>
                          </div>

@@ -109,26 +109,26 @@ li.hint {
     color: var(--white-color);
 }
 
-    li.hint:after {
-        content: "";
-        display: block;
-        width: 0;
-        height: 0;
-        border-top: 6px solid transparent;
-        border-bottom: 6px solid transparent;
-        border-left: 6px solid var(--white-color);
-        position: absolute;
-        right: 8px;
-        top: 8px;
-    }
+li.hint:after {
+    content: "";
+    display: block;
+    width: 0;
+    height: 0;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-left: 6px solid var(--white-color);
+    position: absolute;
+    right: 8px;
+    top: 8px;
+}
 
-    li.hint:last-child {
-        border-radius: 4px;
-    }
+li.hint:last-child {
+    border-radius: 4px;
+}
 
-    li.hint span {
-        color: var(--white-color);
-    }
+li.hint span {
+    color: var(--white-color);
+}
 
 .module-admin li.placeholder, .module-admin li.placeholder:hover {
     box-sizing: border-box;
@@ -209,10 +209,10 @@ li.hint {
     justify-content: space-between;
 }
 
-    .flex-container .item.buttons > .k-button {
-        margin: 0;
-        max-width: calc(50% - 5px);
-    }
+.flex-container .item.buttons > .k-button {
+    margin: 0;
+    max-width: calc(50% - 5px);
+}
 
 .item > .k-primary.deleteModule {
     background-color: var(--error-bg-color);
@@ -223,11 +223,11 @@ li.hint {
     flex-wrap: wrap;
 }
 
-    .buttons > span .k-button {
-        margin: 2px;
-        flex-grow: 1;
-        min-width: 140px;
-    }
+.buttons > span .k-button {
+    margin: 2px;
+    flex-grow: 1;
+    min-width: 140px;
+}
 
 /* GRIDS */
 .multi-check tr.k-state-selected,
@@ -325,7 +325,6 @@ li.hint {
     display: none !important;
 }
 
-
 /* loader */
 .loaderWrap {
     background: rgba(0, 0, 0, 0.40);
@@ -393,6 +392,7 @@ li.hint {
     padding-right: 30px;
 }
 
+#wiserLinksView .flex-container,
 #entityView .flex-container {
     min-width: 50%;
 }
@@ -403,6 +403,27 @@ li.hint {
 #EntityTabStrip .k-content .right-pane {
     height: calc(100vh - 258px);
     overflow: auto;
+}
+
+/* Action button */
+.btn-right {
+    width: 100%;
+    justify-content: end;
+    padding: 15px 0;
+}
+
+/* Link tab */
+#wiserLinksView {
+    padding: 6px 12px;
+}
+#wiserLinksView > h4 {
+    padding-right: 12px;
+}
+.linkPopupContent {
+    padding: 10px;
+}
+.linkPopupContent .item {
+    width: 100%;
 }
 
 @keyframes lds-ellipsis1 {

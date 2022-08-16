@@ -110,8 +110,7 @@ export class WiserLinkTab {
                 click: () => {
                     const linkPopup = $('.linkPopupContent');
                     const dialog = linkPopup.kendoWindow({
-                        width: 350,
-                        height: 500,
+                        width: 450,
                         title: "Nieuwe link toevoegen",
                         modal: true,
                         resizable: false,
