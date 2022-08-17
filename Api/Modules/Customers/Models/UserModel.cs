@@ -83,7 +83,7 @@ namespace Api.Modules.Customers.Models
         /// <summary>
         /// Gets or sets whether the user has to change their password the next time they login.
         /// </summary>
-        public bool RequirePasswordChange { get; set; }
+        public bool? RequirePasswordChange { get; set; }
 
         /// <summary>
         /// Gets or sets the role of the user.
