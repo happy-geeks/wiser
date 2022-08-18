@@ -120,10 +120,14 @@ namespace Api.Core.Services
                 {"lastLoginIpAddress", loginResult.ModelObject.LastLoginIpAddress ?? ""},
                 {"lastLoginDate", (loginResult.ModelObject.LastLoginDate ?? DateTime.Now).ToString("dd-MM-yyyy HH:mm:ss")},
                 {"oldStyleUserId", loginResult.ModelObject.Id.ToString().EncryptWithAesWithSalt()},
-                {"cookieValue", loginResult.ModelObject.CookieValue},
-                {"requirePasswordChange", loginResult.ModelObject.RequirePasswordChange }
+                {"cookieValue", loginResult.ModelObject.CookieValue}
             };
-            
+
+            if (loginResult.ModelObject.RequirePasswordChange.HasValue)
+            {
+                customResponse.Add("requirePasswordChange", loginResult.ModelObject.RequirePasswordChange.Value);
+            }
+
             if (adminAccountId > 0)
             {
                 customResponse.Add("adminAccountId", adminAccountId.ToString());
