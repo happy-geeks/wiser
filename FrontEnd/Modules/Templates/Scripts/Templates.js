@@ -160,9 +160,18 @@ const moduleSettings = {
                     event.returnValue = "";
                 }
             });
-            
-            document.addEventListener("moduleClosing", (event) => {
+
+            window.addEventListener("unload", async () => {
+                // Remove this user from the list.
+                await this.connectedUsers.removeUser();
+            });
+
+            document.addEventListener("moduleClosing", async (event) => {
                 // You can do anything here that needs to happen before closing the module.
+                // Remove this user from the list.
+                console.log("fired moduleClosing in templates.js");
+                await this.connectedUsers.removeUser();
+
                 event.detail();
             });
             // Start the Pusher connection.

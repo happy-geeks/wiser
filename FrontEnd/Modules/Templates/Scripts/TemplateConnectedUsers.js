@@ -1,5 +1,5 @@
 ﻿import Pusher from "pusher-js/with-encryption";
-import {Wiser2} from "../../Base/Scripts/Utils";
+import {Wiser} from "../../Base/Scripts/Utils";
 
 export class TemplateConnectedUsers {
     constructor(base) {
@@ -13,7 +13,7 @@ export class TemplateConnectedUsers {
 
     async init() {
         if (!this.base.settings.pusherAppKey) {
-            console.log("No pusher app key set. Will not be able to show which users have opened this template.");
+            console.log("No pusher app key set. Wiser will not be able to show which users have opened this template.");
             return;
         }
 
@@ -105,7 +105,7 @@ export class TemplateConnectedUsers {
      * Send a message using Pusher.
      */
     async #sendPusherMessage(eventData) {
-        await Wiser2.api({
+        await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}pusher/message`,
             method: "POST",
             contentType: "application/json",

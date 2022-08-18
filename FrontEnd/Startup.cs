@@ -123,8 +123,6 @@ namespace FrontEnd
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-                endpoints.MapHub<TemplatesHub>("/templatesHub");
-
                 endpoints.MapHealthChecks("/health", new HealthCheckOptions
                 {
                     Predicate = _ => true
