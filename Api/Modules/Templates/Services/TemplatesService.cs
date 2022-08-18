@@ -2391,7 +2391,7 @@ LIMIT 1";
                     if (apiSettings.UseTerserForTemplateScriptMinification)
                     {
                         // Minification through terser is enabled, attempt to minify it using that.
-                        (terserSuccessful, terserMinifiedScript) = await MinifyJavaScriptWithTerser(template.EditorValue);
+                        (terserSuccessful, terserMinifiedScript) = await MinifyJavaScriptWithTerserAsync(template.EditorValue);
                     }
 
                     if (terserSuccessful)
@@ -3455,11 +3455,11 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
         /// </summary>
         /// <param name="script">The raw JavaScript that will be minified.</param>
         /// <returns>A <see cref="ValueTuple"/> with the first value being whether the minification was successful, and the minified script.</returns>
-        private async Task<(bool Successful, string MinifiedScript)> MinifyJavaScriptWithTerser(string script)
+        private async Task<(bool Successful, string MinifiedScript)> MinifyJavaScriptWithTerserAsync(string script)
         {
             if (String.IsNullOrWhiteSpace(script))
             {
-                return (false, null);
+                return (false, script);
             }
 
             // Create a temporary file that will contain the script. This is required because terser can only work with input files.
@@ -3523,7 +3523,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             // Remove temporary file afterwards, regardless if it succeeded or not.
             File.Delete(filePath);
 
-            return (successful, output);
+            return (successful, !String.IsNullOrWhiteSpace(output) ? output : script);
         }
     }
 }
