@@ -160,24 +160,52 @@
  *  Kendo combobox styling
  **/
 .k-dropdown,
-.k-combobox {
-    background-color: $ultra-lt-color;
+.k-combobox,
+.k-dropdownlist {
+    background-color: $white-color;
     background-image: none;
-    border-radius: 2px;
+    border-radius: 3px;
     position: relative;
     display: inline-block;
     overflow: visible;
-    border-width: 0;
+    border-width: 1px;
     vertical-align: middle;
     white-space: nowrap;
     width: 100%;
+    border-color: $line-color;
+    border-style: solid;
+    font: 16px/24px "Roboto", sans-serif;
+    padding: 0;
+    height: 42px;
 
-    .k-input {
-        display: inline;
+    .k-input-inner {
+        background: none;
+        border: none;
+        width: calc(100% - 48px);
+        
+        &:focus {
+            box-shadow: none;
+        }
     }
-
-    .k-select {
+    
+    span.k-input-inner {
+        display: inline-block;
+        
+        .k-input-value-text {
+            display: block;
+            line-height: 42px;
+            padding-left: 10px;
+        }
+    }
+    
+    .k-input-button {
+        height: 40px;
+        line-height: normal;
+        vertical-align: top;
+        padding: 8px;
         cursor: pointer;
+        background-color: $ultra-lt-color;
+        float: right;
     }
 
     .k-icon {
@@ -186,7 +214,6 @@
         font-family: 'icomoon' !important;
         font-size: 16px;
         font-variant: normal;
-        height: 16px;
         line-height: 16px;
         overflow: hidden;
         text-align: center;
@@ -195,93 +222,16 @@
         -webkit-font-smoothing: antialiased;
         vertical-align: middle;
         width: 16px;
-        top: 4px;
-
-        &:before {
+        
+        &.k-i-arrow-s:before {
             content: "\e986";
-            margin: auto;
-            width: 16px;
-            height: 16px;
-            line-height: 1;
-            display: inline-block;
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
         }
-    }
-}
 
-.k-dropdown-wrap {
-    background-repeat: repeat;
-    border-radius: 2px;
-
-    border: {
-        color: $line-color;
-        style: solid;
-        width: 1px;
-    }
-
-    display: block;
-    padding: 0 38px 0 0;
-    transition: box-shadow .15s ease-out;
-
-    &.k-state-default {
-        background-color: $ultra-lt-color;
-        background-position: 50% 50%;
-        border-color: $line-md-color;
-        color: $form-text-color;
-    }
-
-    &.k-state-hover {
-        background-color: $white-color;
-        background-image: none;
-        background-position: 50% 50%;
-        border-color: $line-lt-color;
-        box-shadow: 0 2px 6px rgba(0,0,0,.2), 0 2px 3px rgba(0,0,0,.05);
-    }
-
-    .k-input {
-        border-radius: 1px 0 0 1px;
-        border: 0;
-        box-sizing: border-box;
-        display: inline;
-        font-family: inherit;
-        font-size: 100%;
-        line-height: 34px;
-        margin: 0;
-        outline: 0;
-        padding: 3px 40px 3px 0;
-        text-indent: 13px;
-        width: 100%;
-
-        &:before {
-            content: "";
-            display: inline-block;
-            width: 0;
+        &.k-i-x:before {
+            content: "\e98d";
+            cursor: pointer;
+            font-size: 12px;
         }
-    }
-
-    .k-select {
-        border: 0;
-        border-radius: 0 2px 2px 0;
-        color: inherit;
-        display: inline-block;
-        height: 100%;
-        line-height: 38px;
-        overflow: hidden;
-        position: absolute;
-        top: 0;
-        right: 0;
-        text-align: center;
-        text-decoration: none;
-        vertical-align: middle;
-        width: 38px;
-    }
-
-    .k-hidden {
-        display: none !important;
     }
 }
 
@@ -289,21 +239,6 @@
     .k-input {
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-}
-
-.k-dropdown {
-    width: 100%;
-
-    .k-dropdown-wrap {
-        .k-input {
-            display: block;
-            padding: 4px 40px 4px 0;
-        }
-    }
-
-    .k-icon {
-        top: 3px;
     }
 }
 
@@ -333,7 +268,7 @@
     }
 
     .k-list {
-        .k-item {
+        .k-list-item {
             border: {
                 color: transparent;
                 style: solid;
@@ -358,12 +293,12 @@
                 text-transform: uppercase;
             }
 
-            &.k-state-hover {
-                background-color: $line-color;
+            &:hover {
+                background-color: $line-lt-color;
             }
         }
 
-        .k-state-focused {
+        .k-focus {
             border: {
                 color: transparent;
                 style: solid;
@@ -379,6 +314,8 @@
     > div {
         color: $form-text-color;
         background-color: $white-color;
+        max-height: 400px;
+        overflow: auto;
     }
 }
 
@@ -395,7 +332,7 @@
 .k-list {
     height: auto;
 
-    .k-state-focused {
+    .k-focus {
         background-color: $line-color;
         border-radius: 1px;
         box-shadow: none;
@@ -406,7 +343,7 @@
 .k-group-header {
     + div {
         > .k-list {
-            > .k-item {
+            > .k-list-item {
                 &.k-first {
                     &:before {
                         content: " ";
@@ -466,6 +403,10 @@
 
         &.k-i-close:before {
             content: "\e98d";
+        }
+
+        &.k-i-vertalen:before {
+            content: "\e963";
         }
 
         &.k-i-plus {

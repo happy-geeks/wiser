@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import { Wiser } from "../../Base/Scripts/Utils.js";
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
@@ -80,7 +80,7 @@ const moduleSettings = {
             
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
@@ -208,9 +208,9 @@ const moduleSettings = {
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
          */
         setupBindings() {
-            $(document).on("moduleClosing", (event) => {
+            document.addEventListener("moduleClosing", (event) => {
                 // You can do anything here that needs to happen before closing the module.
-                event.success();
+                event.detail();
             });
 
             // Search field.
@@ -247,7 +247,7 @@ const moduleSettings = {
          * @returns {Promise} A promise that will return the search results.
          */
         async getPropertiesOfEntity(entityType) {
-            return Wiser2.api({ url: `${this.settings.serviceRoot}/GET_PROPERTIES_OF_ENTITY?entityType=${entityType}` });
+            return Wiser.api({ url: `${this.settings.serviceRoot}/GET_PROPERTIES_OF_ENTITY?entityType=${entityType}` });
         }
 
         /**
@@ -302,7 +302,7 @@ const moduleSettings = {
                     });
                 }
 
-                const searchResults = await Wiser2.api({
+                const searchResults = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(this.settings.zeroEncrypted)}/entity-grids/${encodeURIComponent(entityType || "all")}?mode=5`,
                     method: "POST",
                     contentType: "application/json",

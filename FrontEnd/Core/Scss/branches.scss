@@ -26,7 +26,9 @@
                 padding-right: 0;
     
                 .col {
-                    flex: 0 0 auto;
+                    &.open-branches-container {
+                        flex: 0 0 auto;
+                    }
                     
                     &.align-right {
                         display: flex;
@@ -43,10 +45,6 @@
                         align-items: center;
                         gap: 20px;
                         padding: 20px 0;
-    
-                        * {
-                            max-width: 20%;
-                        }
     
                         button {
                             margin: 0;
@@ -144,6 +142,22 @@
                                 background-color: $lt-color;
                             }
                         }
+                        
+                        &.accepted {
+                            td {
+                                background-color: $primary-color;
+                                color: $white-color;
+                                border-top: 1px solid $white-color;
+                            }
+                        }
+
+                        &.denied {
+                            td {
+                                background-color: $alert-color;
+                                color: $white-color;
+                                border-top: 1px solid $white-color;
+                            }
+                        }
                     }
                 }
     
@@ -197,99 +211,5 @@
                 }
             }
         }
-    }
-
-    /* Form elements */
-    input[type=text],
-    input[type=number],
-    input[type=search],
-    input[type=url],
-    input[type=password],
-    input[type=email],
-    input[type=date],
-    input[type=datetime-local],
-    select {
-        background-color: $white-color;
-        border-color: $line-color;
-        border-style: solid;
-        border-width: 1px;
-        border-radius: 3px;
-        font: 16px/24px $font-body;
-        padding: 9px;
-        height: 42px;
-    }
-
-    .full-width {
-        width: 100%;
-    }
-
-    .checkbox,
-    .radio {
-        cursor: pointer;
-        display: block;
-
-        > input {
-            height: 1px;
-            opacity: 0;
-            position: absolute;
-            width: 1px;
-        }
-
-        span {
-            display: block;
-            line-height: 2em;
-            min-height: 28px;
-            padding: 5px 5px 5px 28px;
-            position: relative;
-
-            &:before {
-                background: $white-color;
-                border: 1px solid $button-cancel-color;
-                box-sizing: content-box;
-                content: "";
-                height: 18px;
-                position: absolute;
-                left: 0;
-                top: 8px;
-                width: 18px;
-            }
-
-            &:after {
-                background: $selected-color;
-                content: "";
-                height: 10px;
-                position: absolute;
-                left: 5px;
-                top: 13px;
-                width: 10px;
-                opacity: 0;
-            }
-        }
-
-        input:checked {
-            + span {
-                &:after {
-                    opacity: 1;
-                }
-            }
-        }
-    }
-
-    .radio {
-        span {
-            &:before,
-            &:after {
-                border-radius: 100%;
-            }
-        }
-    }
-
-    .error {
-        color: $alert-color;
-    }
-
-    .btn-alert {
-        background-color: $alert-color;
-        color: $white-color;
     }
 }

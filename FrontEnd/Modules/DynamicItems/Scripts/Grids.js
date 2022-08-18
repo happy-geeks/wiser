@@ -1,4 +1,4 @@
-﻿import { Wiser2 } from "../../Base/Scripts/Utils.js";
+﻿import { Wiser } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 
 require("@progress/kendo-ui/js/kendo.tooltip.js");
@@ -155,7 +155,7 @@ export class Grids {
                 gridDataResult = {
                     columns: gridViewSettings.columns,
                     pageSize: gridViewSettings.pageSize || 100,
-                    data: await Wiser2.api({
+                    data: await Wiser.api({
                         url: `${this.base.settings.getItemsUrl}?encryptedDataSelectorId=${encodeURIComponent(gridViewSettings.dataSelectorId)}`,
                         contentType: "application/json"
                     })
@@ -189,7 +189,7 @@ export class Grids {
                     previousFilters = JSON.stringify(options.filter);
                 }
 
-                gridDataResult = await Wiser2.api({
+                gridDataResult = await Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}modules/${encodeURIComponent(this.base.settings.moduleId)}/overview-grid`,
                     method: "POST",
                     contentType: "application/json",
@@ -232,10 +232,10 @@ export class Grids {
                         if (!gridViewSettings || gridViewSettings.showDeleteConformations !== false) {
                             const itemName = mainItemDetails.title || mainItemDetails.name;
                             const deleteConfirmationText = itemName ? `het item '${itemName}'` : "het geselecteerde item";
-                            await Wiser2.showConfirmDialog(`Weet u zeker dat u ${deleteConfirmationText} wilt verwijderen?`)
+                            await Wiser.showConfirmDialog(`Weet u zeker dat u ${deleteConfirmationText} wilt verwijderen?`)
                         }
 
-                        await Wiser2.api({
+                        await Wiser.api({
                             method: "POST",
                             url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid || this.base.settings.zeroEncrypted)}/action-button/0?queryId=${encodeURIComponent(gridViewSettings.deleteItemQueryId)}&itemLinkId=${encodeURIComponent(mainItemDetails.linkId || mainItemDetails.linkId || 0)}`,
                             data: JSON.stringify(mainItemDetails),
@@ -421,13 +421,13 @@ export class Grids {
                                     newGridDataResult = {
                                         columns: gridViewSettings.columns,
                                         pageSize: gridViewSettings.pageSize || 100,
-                                        data: await Wiser2.api({
+                                        data: await Wiser.api({
                                             url: `${this.base.settings.getItemsUrl}?encryptedDataSelectorId=${encodeURIComponent(gridViewSettings.dataSelectorId)}`,
                                             contentType: "application/json"
                                         })
                                     };
                                 } else {
-                                    newGridDataResult = await Wiser2.api({
+                                    newGridDataResult = await Wiser.api({
                                         url: `${this.base.settings.wiserApiRoot}modules/${encodeURIComponent(this.base.settings.moduleId)}/overview-grid`,
                                         method: "POST",
                                         contentType: "application/json",
@@ -555,7 +555,7 @@ export class Grids {
      */
     async saveGridViewState(key, dataToSave) {
         sessionStorage.setItem(key, dataToSave);
-        return Wiser2.api({
+        return Wiser.api({
             url: `${this.base.settings.wiserApiRoot}users/grid-settings/${encodeURIComponent(key)}`,
             method: "POST",
             contentType: "application/json",
@@ -573,7 +573,7 @@ export class Grids {
         
         value = sessionStorage.getItem(key);
         if (!value) {
-            value = await Wiser2.api({
+            value = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}users/grid-settings/${encodeURIComponent(key)}`,
                 method: "GET",
                 contentType: "application/json"
@@ -651,7 +651,7 @@ export class Grids {
             };
 
             if (customQueryGrid) {
-                const customQueryResults = await Wiser2.api({
+                const customQueryResults = await Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/custom?mode=4&queryId=${options.queryId || this.base.settings.zeroEncrypted}&countQueryId=${options.countQueryId || this.base.settings.zeroEncrypted}`,
                     method: "POST",
                     contentType: "application/json",
@@ -662,7 +662,7 @@ export class Grids {
                     $.globalEval(customQueryResults.extraJavascript);
                 }
 
-                if (Wiser2.validateArray(options.columns)) {
+                if (Wiser.validateArray(options.columns)) {
                     customQueryResults.columns = options.columns;
                 }
 
@@ -712,7 +712,7 @@ export class Grids {
 
                 kendoGrid = this.generateGrid(field, loader, options, customQueryGrid, customQueryResults, propertyId, height, itemId, extraData);
             } else {
-                const gridSettings = await Wiser2.api({
+                const gridSettings = await Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}items/${itemId}/entity-grids/${encodeURIComponent(options.entityType)}?propertyId=${propertyId}&mode=1`,
                     method: "POST",
                     contentType: "application/json",
@@ -855,7 +855,7 @@ export class Grids {
                             transportOptions.data.pageSize = transportOptions.data.pageSize;
 
                             if (customQueryGrid) {
-                                const customQueryResults = await Wiser2.api({
+                                const customQueryResults = await Wiser.api({
                                     url: `${this.base.settings.wiserApiRoot}items/${itemId}/entity-grids/custom?mode=4&queryId=${options.queryId || this.base.settings.zeroEncrypted}&countQueryId=${options.countQueryId || this.base.settings.zeroEncrypted}`,
                                     method: "POST",
                                     contentType: "application/json",
@@ -868,7 +868,7 @@ export class Grids {
                                     loader.removeClass("loading");
                                 }
                             } else {
-                                const gridSettings = await Wiser2.api({
+                                const gridSettings = await Wiser.api({
                                     url: `${this.base.settings.wiserApiRoot}items/${itemId}/entity-grids/${encodeURIComponent(options.entityType)}?propertyId=${propertyId}&mode=1`,
                                     method: "POST",
                                     contentType: "application/json",
@@ -1341,7 +1341,7 @@ export class Grids {
             case "deleteitem":
                 {
                     if (!options || options.showDeleteConformations !== false) {
-                        await Wiser2.showConfirmDialog(`Weet u zeker dat u ${itemDeleteDialogText} wilt verwijderen?`);
+                        await Wiser.showConfirmDialog(`Weet u zeker dat u ${itemDeleteDialogText} wilt verwijderen?`);
                     }
 
                     try {
@@ -1361,7 +1361,7 @@ export class Grids {
             case "deletelink":
                 {
                     if (!options || options.showDeleteConformations !== false) {
-                        await Wiser2.showConfirmDialog(`Weet u zeker dat u de koppeling met ${itemDeleteDialogText} wilt verwijderen? Let op dat alleen de koppeling wordt verwijderd, niet het item zelf.`);
+                        await Wiser.showConfirmDialog(`Weet u zeker dat u de koppeling met ${itemDeleteDialogText} wilt verwijderen? Let op dat alleen de koppeling wordt verwijderd, niet het item zelf.`);
                     }
 
                     const destinationItemId = dataItem.encryptedDestinationItemId || dataItem.encrypted_destination_item_id || senderGrid.element.closest(".item").data("itemIdEncrypted");
@@ -1380,7 +1380,7 @@ export class Grids {
     onItemLinkerSelectAll(treeViewSelector, checkAll) {
         const treeView = $(treeViewSelector);
 
-        Wiser2.showConfirmDialog(`Weet u zeker dat u alles wilt ${checkAll ? "aanvinken" : "uitvinken"}? Indien dit veel items zijn kan dit lang duren.`, 
+        Wiser.showConfirmDialog(`Weet u zeker dat u alles wilt ${checkAll ? "aanvinken" : "uitvinken"}? Indien dit veel items zijn kan dit lang duren.`, 
             checkAll ? "Alles aanvinken" : "Alles uitvinken",
             "Annuleren",
             checkAll ? "Alles aanvinken" : "Alles uitvinken").then(() => {

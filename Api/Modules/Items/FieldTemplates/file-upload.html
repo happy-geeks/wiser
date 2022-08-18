@@ -9,7 +9,7 @@
         <span class="k-file-name-size-wrapper">
             <span class="k-file-name" title="#= name #"><span>Name:</span> <a href="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(files[0].itemId || files[0].item_id) #/files/#= encodeURIComponent(files[0].fileId || files[0].file_id) #/#= name #?encryptedCustomerId=#= encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#= encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#= window.dynamicItems.settings.isTestEnvironment #&subDomain=#= encodeURIComponent(window.dynamicItems.settings.subDomain) #&entityType=#= encodeURIComponent('{entityType}') #&linkType={linkType}" target="_blank" class="name">#= name #</a> <a class="editName" href="\#"><span class="k-icon k-i-edit"></span></a></span>
             <span class="k-file-name"><span>Omschrijving:</span> <span class="title">#= files[0].title #</span> <a class="editTitle" href="\#"><span class="k-icon k-i-edit"></span></a></span>
-            <span class="k-file-name"><span>Datum:</span> <span class="fileDate">#= dynamicItems.settings.wiserVersion < 210 ? moment(files[0].addedOn).format("dddd, D MMMM YYYY, HH:mm") : Dates.formatWiserDateString(files[0].addedOn) #</span></span>
+            <span class="k-file-name"><span>Datum:</span> <span class="fileDate">#= Dates.formatWiserDateString(files[0].addedOn) #</span></span>
             # if (size > 0) { # <span class="k-file-size">#= Strings.getTotalFileSizeMessage(size) #</span> # } #
         </span>
         <strong class="k-upload-status">
@@ -35,7 +35,26 @@
     </div>
 </script>
 
-<div class="item {containerCssClass}" style="{style}" id="container_{propertyIdWithSuffix}" data-property-id="{propertyId}" data-item-id="{itemId}" data-depends-on-field="{dependsOnField}" data-depends-on-operator="{dependsOnOperator}" data-depends-on-value="{dependsOnValue}" data-depends-on-action="{dependsOnAction}" data-property-name="{propertyName}" data-item-link-id="{itemLinkId}" data-language-code="{languageCode}" data-width="{width}" data-encrypted-item-id="{itemIdEncrypted}" data-save-on-change="{saveOnChange}" data-label-style="{labelStyle}" data-label-width="{labelWidth}" data-input-type="file-upload" data-link-type="{linkType}">
+<div class="item {containerCssClass}"
+     style="{style}"
+     id="container_{propertyIdWithSuffix}"
+     data-property-id="{propertyId}"
+     data-item-id="{itemId}"
+     data-depends-on-field="{dependsOnField}"
+     data-depends-on-operator="{dependsOnOperator}"
+     data-depends-on-value="{dependsOnValue}"
+     data-depends-on-action="{dependsOnAction}"
+     data-property-name="{propertyName}"
+     data-item-link-id="{itemLinkId}"
+     data-language-code="{languageCode}"
+     data-width="{width}"
+     data-encrypted-item-id="{itemIdEncrypted}"
+     data-save-on-change="{saveOnChange}"
+     data-label-style="{labelStyle}"
+     data-label-width="{labelWidth}"
+     data-input-type="file-upload"
+     data-link-type="{linkType}"
+     data-visibility-path-regex="{visibilityPathRegex}">
     <span class="handler">&nbsp;</span>
     <h4 class="{titleClass}">
         <label for="field_{propertyIdWithSuffix}">{title}</label>
@@ -43,7 +62,7 @@
             <ins class="icon-info-full"></ins>
         </span>
     </h4>
-    <input name="{propertyName}_{languageCode}" id="field_{propertyIdWithSuffix}" type="file" />
+    <input name="{propertyName}_{languageCode}" id="field_{propertyIdWithSuffix}" type="file"/>
     <button type="button" class="k-button addFileUrl">URL toevoegen</button>
     <div class="form-hint {formHintClass}"><span>{hint}</span></div>
 </div>

@@ -33,7 +33,12 @@ import {
     MERGE_BRANCH_SUCCESS,
     GET_ENTITIES_FOR_BRANCHES,
     IS_MAIN_BRANCH,
-    GET_BRANCH_CHANGES
+    GET_BRANCH_CHANGES,
+    HANDLE_CONFLICT,
+    HANDLE_MULTIPLE_CONFLICTS,
+    CLEAR_CACHE,
+    CLEAR_CACHE_SUCCESS,
+    CLEAR_CACHE_ERROR
 } from "./mutation-types";
 
 const baseModule = {
@@ -644,6 +649,112 @@ const branchesModule = {
 
         [GET_BRANCH_CHANGES](state, branchChanges) {
             state.branchChanges = branchChanges;
+        },
+        
+        [HANDLE_CONFLICT](state, { acceptChange, id }) {
+            if (!state.mergeBranchResult || !state.mergeBranchResult.conflicts || !state.mergeBranchResult.conflicts.length) {
+                console.warn("Tried to handle conflict, but there are no conflicts.");
+                return;
+            }
+            
+            const conflict = state.mergeBranchResult.conflicts.find(c => c.id === id);
+            if (!conflict) {
+                console.warn("Tried to handle a conflict that doesn't exist.");
+                return;
+            }
+
+            conflict.acceptChange = acceptChange;
+        },
+
+        [HANDLE_MULTIPLE_CONFLICTS](state, { acceptChange, settings }) {
+            if (!settings || !settings.property || !settings.operator || !settings.start) {
+                return;
+            }
+            
+            if (!state.mergeBranchResult || !state.mergeBranchResult.conflicts || !state.mergeBranchResult.conflicts.length) {
+                console.warn("Tried to handle conflicts, but there are no conflicts.");
+                return;
+            }
+
+            for (let conflict of state.mergeBranchResult.conflicts) {
+                let isDate = false;
+                let valueToCheck;
+                let startValue = settings.start;
+                let endValue = settings.end;
+                
+                // Get the value of the property we want to check for the conflict to accept or deny.
+                switch (settings.property) {
+                    case "type":
+                        valueToCheck = conflict.typeDisplayName; 
+                        break;
+                    case "field":
+                        valueToCheck = conflict.fieldDisplayName;
+                        break
+                    case "changeDateOriginal":
+                        isDate = true;
+                        valueToCheck = conflict.changeDateInMain;
+                        break;
+                    case "changeDateBranch":
+                        isDate = true;
+                        valueToCheck = conflict.changeDateInBranch;
+                        break;
+                    case "originalValue":
+                        valueToCheck = conflict.valueInMain;
+                        break;
+                    case "branchValue":
+                        valueToCheck = conflict.valueInBranch;
+                        break;
+                    default:
+                        console.warn(`${HANDLE_MULTIPLE_CONFLICTS} - Unsupported property '${settings.property}'`)
+                        continue;
+                }
+                
+                if (!valueToCheck) {
+                    continue;
+                }
+                
+                // Format dates so that they're all the same format.
+                if (isDate) {
+                    valueToCheck = new Date(valueToCheck);
+                    valueToCheck = new Date(valueToCheck.getFullYear(), valueToCheck.getMonth(), valueToCheck.getDate());
+                    
+                    startValue = new Date(startValue);
+                    startValue = new Date(startValue.getFullYear(), startValue.getMonth(), startValue.getDate());
+                    if (endValue) {
+                        endValue = new Date(endValue);
+                        endValue = new Date(endValue.getFullYear(), endValue.getMonth(), endValue.getDate());
+                    }
+                }
+                
+                let found = false;
+                switch (settings.operator) {
+                    case "contains":
+                        found = valueToCheck.indexOf(startValue) > -1;
+                        break;
+                    case "equals":
+                        if (isDate) {
+                            found = valueToCheck.getTime() === startValue.getTime();
+                        } else {
+                            found = valueToCheck.toString().toUpperCase() === startValue.toString().toUpperCase();
+                        }
+                        break;
+                    case "greaterThan":
+                        found = valueToCheck > startValue;
+                        break;
+                    case "lessThan":
+                        found = valueToCheck < startValue;
+                        break;
+                    case "between":
+                        found = valueToCheck >= startValue && valueToCheck <= endValue;
+                        break;
+                }
+                
+                if (!found) {
+                    continue;
+                }
+                
+                conflict.acceptChange = acceptChange;
+            }
         }
     },
 
@@ -675,9 +786,9 @@ const branchesModule = {
             commit(END_REQUEST);
         },
 
-        async [MERGE_BRANCH]({ commit }, id) {
+        async [MERGE_BRANCH]({ commit }, data) {
             commit(START_REQUEST);
-            const result = await main.branchesService.merge(id);
+            const result = await main.branchesService.merge(data);
 
             if (result.success) {
                 if (result.data) {
@@ -724,7 +835,50 @@ const branchesModule = {
             const changesResponse = await main.branchesService.getChanges(branchId);
             commit(GET_BRANCH_CHANGES, changesResponse.data);
             commit(END_REQUEST);
+        },
+
+        [HANDLE_CONFLICT]({ commit }, payload) {
+            commit(HANDLE_CONFLICT, payload);
+        },
+
+        [HANDLE_MULTIPLE_CONFLICTS]({ commit }, payload) {
+            commit(HANDLE_MULTIPLE_CONFLICTS, payload);
         }
+    },
+
+    getters: {}
+};
+
+const cacheModule = {
+    state: () => ({
+        clearCacheError: null
+    }),
+
+    mutations: {
+        [CLEAR_CACHE_SUCCESS]: (state) => {
+            state.clearCacheError = null;
+        },
+        [CLEAR_CACHE_ERROR]: (state, message) => {
+            state.clearCacheError = message;
+        }
+    },
+
+    actions: {
+        async [CLEAR_CACHE]({ commit }, data = {}) {
+            commit(START_REQUEST);
+            const result = await main.cacheService.clear(data);
+            commit(END_REQUEST);
+
+            if (result.success) {
+                commit(CLEAR_CACHE_SUCCESS);
+            } else {
+                commit(CLEAR_CACHE_ERROR, result.message);
+            }
+        },
+
+        [CLEAR_CACHE_ERROR]({ commit }, error) {
+            commit(CLEAR_CACHE_ERROR, error);
+        },
     },
 
     getters: {}
@@ -743,6 +897,7 @@ export default createStore({
         customers: customersModule,
         users: usersModule,
         items: itemsModule,
-        branches: branchesModule
+        branches: branchesModule,
+        cache: cacheModule
     }
 });

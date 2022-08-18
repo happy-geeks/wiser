@@ -18,7 +18,7 @@ body.embedded {
     position: fixed;
 }
 
-.k-multiselect-wrap .k-reset {
+.k-selection-multiple .k-reset {
     float: left;
     overflow: hidden;
 }
@@ -120,7 +120,8 @@ body.embedded {
     width: calc(100% - 8px);
 }
 
-    .dbInput > .itemProperties .k-dropdown {
+    .dbInput > .itemProperties .k-dropdown,
+    .dbInput > .itemProperties .k-dropdownlist {
         width: 100%;
     }
 
@@ -150,7 +151,8 @@ body.embedded {
         }
 
     .dbInput > .k-combobox,
-    .dbInput .k-dropdown {
+    .dbInput .k-dropdown,
+    .dbInput .k-dropdownlist {
         width: calc(30% - 8px);
     }
 

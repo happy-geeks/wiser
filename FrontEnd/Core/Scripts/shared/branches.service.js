@@ -14,16 +14,13 @@ export default class BranchesService extends BaseService {
                 startOn: data.startOn,
                 entities: []
             };
-
-            const all = data.entities.all || { mode: -1 };
             
             for (let key in data.entities) {
                 if (!data.entities.hasOwnProperty(key) || key === "all") {
                     continue;
                 }
                 
-                // If the user selected something in the "all" option, use that for everything.
-                const settings = parseInt(all.mode) === -1 ? data.entities[key] : all;
+                const settings = data.entities[key];
                 
                 postData.entities.push({
                     entityType: key,
@@ -39,7 +36,7 @@ export default class BranchesService extends BaseService {
             result.data = response.data;
         } catch (error) {
             result.success = false;
-            console.error("Error create customer", typeof(error.toJSON) === "function" ? error.toJSON() : error);
+            console.error("Error create branch", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             
             let errorMessage = error.message;
             if (error.response && error.response.data && error.response.data.error) {
@@ -117,11 +114,16 @@ export default class BranchesService extends BaseService {
                 startOn: data.startOn,
                 deleteAfterSuccessfulMerge: data.deleteAfterSuccessfulMerge,
                 entities: [],
-                settings: []
+                settings: [],
+                conflictSettings: data.conflicts.map(conflict => { 
+                    return { 
+                        id: conflict.id,
+                        objectId: conflict.objectId,
+                        acceptChange: conflict.acceptChange
+                    }; 
+                })
             };
             
-            const allEntities = data.entities.all || { everything: false, create: false, update: false, delete: false };
-
             for (let key in data.entities) {
                 if (!data.entities.hasOwnProperty(key) || key === "all") {
                     continue;
@@ -131,13 +133,12 @@ export default class BranchesService extends BaseService {
                 
                 postData.entities.push({
                     type: key,
-                    create: entity.create || allEntities.create || entity.everything || allEntities.everything,
-                    update: entity.update || allEntities.update || entity.everything || allEntities.everything,
-                    delete: entity.delete || allEntities.delete || entity.everything || allEntities.everything
+                    create: entity.create || entity.everything,
+                    update: entity.update || entity.everything,
+                    delete: entity.delete || entity.everything
                 });
             }
             
-            const allSettings = data.settings.all || { everything: false, create: false, update: false, delete: false };
             for (let key in data.settings) {
                 if (!data.settings.hasOwnProperty(key) || key === "all") {
                     continue;
@@ -147,9 +148,9 @@ export default class BranchesService extends BaseService {
 
                 postData.settings.push({
                     type: key,
-                    create: setting.create || allSettings.create || setting.everything || allSettings.everything,
-                    update: setting.update || allSettings.update || setting.everything || allSettings.everything,
-                    delete: setting.delete || allSettings.delete || setting.everything || allSettings.everything
+                    create: setting.create || setting.everything,
+                    update: setting.update || setting.everything,
+                    delete: setting.delete || setting.everything
                 });
             }
             

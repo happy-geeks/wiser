@@ -1,4 +1,4 @@
-﻿import { Wiser2 } from "../../Base/Scripts/Utils.js";
+﻿import { Wiser } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
@@ -75,7 +75,7 @@ const importModuleSettings = {
                 headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
             });
 
-            const html = await Wiser2.api({ url: "/Modules/ImportExport/Import/Html" });
+            const html = await Wiser.api({ url: "/Modules/ImportExport/Import/Html" });
             this.importHtml.insertAdjacentHTML("beforeend", html);
 
             this.mainLoader = $("#mainLoader");
@@ -94,7 +94,7 @@ const importModuleSettings = {
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
-                Wiser2.alert({
+                Wiser.alert({
                     title: "Niet ingelogd",
                     content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
@@ -108,7 +108,7 @@ const importModuleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = user.adminAccountName;
             
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
@@ -131,13 +131,13 @@ const importModuleSettings = {
         async readServerData() {
             const promises = [];
             promises.push(new Promise((resolve) => {
-                Wiser2.api({ url: `${this.settings.serviceRoot}/IMPORTEXPORT_GET_ENTITY_NAMES` }).then((data) => {
+                Wiser.api({ url: `${this.settings.serviceRoot}/IMPORTEXPORT_GET_ENTITY_NAMES` }).then((data) => {
                     this.entityNames = data;
                     resolve();
                 });
             }));
             promises.push(new Promise((resolve) => {
-                Wiser2.api({ url: `${this.settings.serviceRoot}/IMPORTEXPORT_GET_LINK_TYPES` }).then((data) => {
+                Wiser.api({ url: `${this.settings.serviceRoot}/IMPORTEXPORT_GET_LINK_TYPES` }).then((data) => {
                     this.linkTypes = data;
                     resolve();
                 });
@@ -163,9 +163,9 @@ const importModuleSettings = {
             this.startImportButton.addEventListener("click", this.performImport.bind(this));
 
             if (!window.importExport) {
-                $(document).on("moduleClosing", (e) => {
+                document.addEventListener("moduleClosing", (event) => {
                     // You can do anything here that needs to happen before closing the module.
-                    e.success();
+                    event.detail();
                 });
             }
         }
@@ -356,7 +356,7 @@ const importModuleSettings = {
                 const selectedImportLinkDetailsFields = this.importLinkDetailsGrid.select().toArray();
 
                 if (selectedImportFields.length === 0 && selectedImportLinksFields.length === 0) {
-                    Wiser2.showMessage({ title: "Import ongeldig", content: "Kies eerst eigenschappen of koppelingen om te importeren." });
+                    Wiser.showMessage({ title: "Import ongeldig", content: "Kies eerst eigenschappen of koppelingen om te importeren." });
                     return;
                 }
 
@@ -364,7 +364,7 @@ const importModuleSettings = {
                     // Import item details grid.
                     const importFieldsValidation = this.validateImportSettings(selectedImportFields);
                     if (!importFieldsValidation.valid) {
-                        Wiser2.showMessage({ title: "Eigenschappen ongeldig", content: importFieldsValidation.message });
+                        Wiser.showMessage({ title: "Eigenschappen ongeldig", content: importFieldsValidation.message });
                         return;
                     }
 
@@ -387,7 +387,7 @@ const importModuleSettings = {
                     // Import item links grid.
                     const importLinksFieldsValidation = this.validateImportLinksSettings(selectedImportLinksFields);
                     if (!importLinksFieldsValidation.valid) {
-                        Wiser2.showMessage({ title: "Koppelingen ongeldig", content: importLinksFieldsValidation.message });
+                        Wiser.showMessage({ title: "Koppelingen ongeldig", content: importLinksFieldsValidation.message });
                         return;
                     }
 
@@ -408,7 +408,7 @@ const importModuleSettings = {
                         // Import link details grid.
                         const importLinkFieldsValidation = this.validateImportLinkDetailsSettings(selectedImportLinkDetailsFields);
                         if (!importLinkFieldsValidation.valid) {
-                            Wiser2.showMessage({ title: "Eigenschappen van koppeling ongeldig", content: importLinkFieldsValidation.message });
+                            Wiser.showMessage({ title: "Eigenschappen van koppeling ongeldig", content: importLinkFieldsValidation.message });
                             return;
                         }
 
@@ -445,7 +445,7 @@ const importModuleSettings = {
                 data.importLinkSettings = importLinkSettings;
                 data.importLinkDetailSettings = importLinkDetailSettings;
 
-                const results = await Wiser2.api({
+                const results = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}imports/prepare`,
                     method: "POST",
                     contentType: "application/json",
@@ -463,19 +463,19 @@ const importModuleSettings = {
                 });
 
                 if (!results || results.failed > 0) {
-                    if (results && Wiser2.validateArray(results.errors)) {
+                    if (results && Wiser.validateArray(results.errors)) {
                         console.error(`Import reported these errors:\n${results.errors.join("\n")}`);
                     }
 
                     let userFriendlyErrors = "";
-                    if (results && Wiser2.validateArray(results.userFriendlyErrors)) {
+                    if (results && Wiser.validateArray(results.userFriendlyErrors)) {
                         userFriendlyErrors = `<br><br><ul><li>${results.userFriendlyErrors.join("</li><li>")}</li></ul>`;
                     }
-                    if (results && Wiser2.validateArray(results.userFriendlyErrors)) {
+                    if (results && Wiser.validateArray(results.userFriendlyErrors)) {
                         userFriendlyErrors = `<br><br><ul><li>${results.userFriendlyErrors.join("</li><li>")}</li></ul>`;
                     }
 
-                    Wiser2.showMessage({
+                    Wiser.showMessage({
                         title: "Import gefaald",
                         content: `De import kan niet uitgevoerd worden vanwege een fout. Controleer of alles goed is ingevuld en probeer het opnieuw, of neem contact met ons op.${userFriendlyErrors}`
                     });
@@ -485,14 +485,14 @@ const importModuleSettings = {
                         sessionStorage.removeItem("userSettings");
                     }
 
-                    Wiser2.showMessage({
+                    Wiser.showMessage({
                         title: "Import geslaagd",
                         content: "De import is bezig. U ontvangt een bericht wanneer deze klaar is."
                     });
                 }
             } catch (exception) {
                 console.error(exception);
-                Wiser2.showMessage({
+                Wiser.showMessage({
                     title: "Import gefaald",
                     content: "De import kan niet uitgevoerd worden vanwege een fout. Controleer of alles goed is ingevuld en probeer het opnieuw, of neem contact met ons op."
                 });
@@ -558,7 +558,7 @@ const importModuleSettings = {
                     this.updateImportGrid(e.response.columns);
                     this.importFilename = e.response.filename;
                     if (e.response.rowCount > e.response.importLimit) {
-                        Wiser2.alert({
+                        Wiser.alert({
                             title: "Import limiet overschreden",
                             content: `De import bevat meer dan ${e.response.importLimit} rijen. Alleen de eerste ${e.response.importLimit} van de ${e.response.rowCount} rijen zullen worden geïmporteerd.`
                         });
@@ -601,7 +601,7 @@ const importModuleSettings = {
 
             const gridDataBound = (e) => {
                 const selectedIndexes = e.sender.element.data("selectedIndexes");
-                if (!Wiser2.validateArray(selectedIndexes)) {
+                if (!Wiser.validateArray(selectedIndexes)) {
                     return;
                 }
 
@@ -635,7 +635,30 @@ const importModuleSettings = {
                 }
             };
 
+            //BUTTONS
+            $(context).find(".saveButton").kendoButton({
+                icon: "save"
+            });
+
+            $(context).find(".button").kendoButton();
+
+            //DATE PICKER
+            $(context).find(".datepicker").kendoDatePicker({
+                format: "dd MMMM yyyy",
+                culture: "nl-NL"
+            }).data("kendoDatePicker");
+
+            //DATE & TIME PICKER
+            $(context).find(".datetimepicker").kendoDateTimePicker({
+                format: "dd MMMM yyyy HH:mm",
+                culture: "nl-NL"
+            }).data("kendoDateTimePicker");
+
             //GRID - IMPORT
+            if (this.importGrid) {
+                return;
+            }
+            
             this.importGrid = $("#importGrid").kendoGrid({
                 height: 350,
                 resizable: true,
@@ -668,7 +691,7 @@ const importModuleSettings = {
 
                                     //Get properties of selected entity.
                                     const promiseResults = await Promise.all([
-                                        Wiser2.api({ url: `${this.settings.wiserApiRoot}imports/entity-properties?entityName=${encodeURIComponent(options.model.importTo)}` })
+                                        Wiser.api({ url: `${this.settings.wiserApiRoot}imports/entity-properties?entityName=${encodeURIComponent(options.model.importTo)}` })
                                     ]);
 
                                     const propertiesOfEntity = [];
@@ -742,7 +765,7 @@ const importModuleSettings = {
                                 dataSource: {
                                     transport: {
                                         read: (kendoReadOptions) => {
-                                            Wiser2.api({
+                                            Wiser.api({
                                                 url: `${this.settings.wiserApiRoot}imports/entity-properties?entityName=${encodeURIComponent(options.model.importTo)}`,
                                                 dataType: "json",
                                                 method: "GET",
@@ -915,25 +938,6 @@ const importModuleSettings = {
                 dataBound: gridDataBound,
                 change: gridChange
             }).data("kendoGrid");
-
-            //BUTTONS
-            $(context).find(".saveButton").kendoButton({
-                icon: "save"
-            });
-
-            $(context).find(".button").kendoButton();
-
-            //DATE PICKER
-            $(context).find(".datepicker").kendoDatePicker({
-                format: "dd MMMM yyyy",
-                culture: "nl-NL"
-            }).data("kendoDatePicker");
-
-            //DATE & TIME PICKER
-            $(context).find(".datetimepicker").kendoDateTimePicker({
-                format: "dd MMMM yyyy HH:mm",
-                culture: "nl-NL"
-            }).data("kendoDateTimePicker");
         }
 
         // Set the information for a data item for the selected property.

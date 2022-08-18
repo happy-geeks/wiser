@@ -27,7 +27,7 @@ using StringHelpers = Api.Core.Helpers.StringHelpers;
 namespace Api.Modules.Customers.Services
 {
     /// <summary>
-    /// Service for operations related to Wiser 2 users (users that can log in to Wiser 2.0).
+    /// Service for operations related to Wiser users (users that can log in to Wiser).
     /// </summary>
     public class UsersService : IUsersService, IScopedService
     {
@@ -450,6 +450,15 @@ namespace Api.Modules.Customers.Services
         /// <inheritdoc />
         public async Task<ServiceResult<UserModel>> ChangePasswordAsync(ClaimsIdentity identity, ChangePasswordModel passwords)
         {
+            if (passwords.OldPassword.Equals(passwords.NewPassword))
+            {
+                return new ServiceResult<UserModel>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Provided old password and new password are not allowed to match"
+                };
+            }
+            
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));

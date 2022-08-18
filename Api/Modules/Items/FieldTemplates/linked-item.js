@@ -13,7 +13,7 @@ if (options.reversed) {
     templateName = "GET_DESTINATION_ITEMS_REVERSED";
 }
 
-Wiser2.api({
+Wiser.api({
     url: window.dynamicItems.settings.serviceRoot + "/" + templateName + "?itemId={itemId}&entityType=" + encodeURIComponent(options.entityType) + "&linkTypeNumber=" + encodeURIComponent(options.linkType)
 }).then(function(results) {
     var field = $("#field_{propertyIdWithSuffix}").html("");

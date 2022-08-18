@@ -7,7 +7,7 @@ using Api.Modules.Modules.Models;
 namespace Api.Modules.Modules.Interfaces
 {
     /// <summary>
-    /// Service for getting information / settings for Wiser 2.0+ modules.
+    /// Service for getting information / settings for Wiser modules.
     /// </summary>
     public interface IModulesService
     {

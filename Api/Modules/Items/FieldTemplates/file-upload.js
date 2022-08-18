@@ -37,8 +37,8 @@ var addFileUrl = function(event) {
         name: event.sender.element.find("#fileName").val(),
         title: event.sender.element.find("#fileTitle").val()
     };
-    
-    Wiser2.api({
+
+    Wiser.api({
         method: "POST",
         contentType: "application/json",
         dataType: "json",
@@ -124,7 +124,7 @@ var initialize = function() {
             const fileId = fileContainer.data("fileId");
             const propertyName = container.data("propertyName");
 
-            Wiser2.api({
+            Wiser.api({
                 method: "PUT",
                 contentType: "application/json",
                 dataType: "json",
@@ -143,7 +143,7 @@ var initialize = function() {
 if (!options.queryId) {
     initialize();
 } else {
-    Wiser2.api({
+    Wiser.api({
         method: "POST",
         contentType: "application/json",
         dataType: "json",

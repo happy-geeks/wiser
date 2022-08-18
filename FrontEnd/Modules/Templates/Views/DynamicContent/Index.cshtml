@@ -9,8 +9,8 @@
     <title>Wiser 3 - Dynamic content</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.material.min.css" rel="stylesheet" />
 
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
@@ -19,7 +19,6 @@
 <body class="@Model.BodyCssClass"
       data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
       data-wiser-api-root="@Model.ApiRoot"
-      data-wiser-api-v21-root="@Model.ApiRoot"
       data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
       data-sub-domain="@Model.SubDomain"
       data-track-js-token="@Model.Settings.TrackJsToken"
@@ -115,6 +114,7 @@
 
             <div class="window-footer">
                 <button id="saveAndCloseButton" class="btn btn-secondary btn-right">Opslaan &amp; sluiten</button>
+                <button id="saveAndDeployToTestButton" class="btn k-primary saveButton btn-right">Opslaan &amp; deploy naar test-omgeving</button>
                 <button id="saveButton" class="btn btn-primary btn-right">Opslaan</button>
             </div>
         </div>

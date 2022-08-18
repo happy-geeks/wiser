@@ -26,6 +26,7 @@ using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Imports.Models;
 using Microsoft.VisualBasic.FileIO;
 
 namespace Api.Modules.Imports.Services
@@ -52,7 +53,6 @@ namespace Api.Modules.Imports.Services
         /// <inheritdoc />
         public async Task<ServiceResult<ImportResultModel>> PrepareImportAsync(ClaimsIdentity identity, ImportRequestModel importRequest)
         {
-            // !!! NOTE: Any and all changes done here, should also be done in the Wiser 2.0 in Wiser2/Modules/ImportExport/Import.aspx.vb/PerformImport !!!
             if (String.IsNullOrWhiteSpace(importRequest.FilePath) || !File.Exists(importRequest.FilePath))
             {
                 return new ServiceResult<ImportResultModel>
@@ -134,6 +134,7 @@ namespace Api.Modules.Imports.Services
                     string[] headerFields = null;
                     var firstLine = true;
                     var rowsHandled = 0;
+                    var idIndex = -1;
 
                     while (!reader.EndOfData)
                     {
@@ -141,6 +142,16 @@ namespace Api.Modules.Imports.Services
                         {
                             headerFields = reader.ReadFields();
                             firstLine = false;
+                            idIndex = Array.FindIndex(headerFields, s => s.Equals("id", StringComparison.OrdinalIgnoreCase));
+
+                            if (idIndex < 0)
+                            {
+                                importResult.Failed += 1U;
+                                importResult.Errors.Add("Can't do import because of missing ID column");
+                                importResult.UserFriendlyErrors.Add("De import kan niet gedaan worden omdat er geen kolom genaamd 'id' is gevonden in het importbestand. Er moet altijd een kolom met de naam 'id' zijn. Bij het wijzigen van bestaande items, moet daar het ID van het item im komen te staan. Bij het toevoegen van nieuwe items, kan de kolon leeg blijven, of '0' zijn. Bij het importeren van koppelingen moet daar het ID van een van de items in staan (en het andere ID moet dan in een andere kolom staan).");
+                                return new ServiceResult<ImportResultModel>(importResult);
+                            }
+
                             continue;
                         }
 
@@ -168,7 +179,6 @@ namespace Api.Modules.Imports.Services
                         };
                         importData.Add(importItem);
 
-                        var idIndex = Array.FindIndex(headerFields, s => s.Equals("id", StringComparison.OrdinalIgnoreCase));
 
                         var isNewItem = true;
 
@@ -272,6 +282,18 @@ namespace Api.Modules.Imports.Services
                                     // Link item in settings to newly made item.
                                     itemLink.ItemId = Convert.ToUInt64(value.Trim());
                                     itemLink.DestinationItemId = importItem.Item.Id;
+                                }
+                                
+                                // Make sure an item won't get linked to itself.
+                                if (itemLink.ItemId == itemLink.DestinationItemId)
+                                {
+                                    continue;
+                                }
+
+                                // Make sure that we don't import duplicate links.
+                                if (importItem.Links.Any(x => x.ItemId == itemLink.ItemId && x.DestinationItemId == itemLink.DestinationItemId && x.Type == itemLink.Type))
+                                {
+                                    continue;
                                 }
 
                                 importItem.Links.Add(itemLink);
@@ -545,7 +567,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("data", json);
                 clientDatabaseConnection.AddParameter("server_name", Environment.MachineName);
                 clientDatabaseConnection.AddParameter("sub_domain", subDomain);
-                wiserImportId = await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>("wiser_import");
+                wiserImportId = await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>(WiserTableNames.WiserImport);
             }
             catch (Exception ex)
             {
@@ -563,7 +585,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("errors", String.Join(Environment.NewLine, importResult.Errors));
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
                 clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity));
-                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>("wiser_import_log");
+                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>(WiserTableNames.WiserImportLog);
             }
             catch (Exception exception)
             {

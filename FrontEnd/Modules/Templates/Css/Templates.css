@@ -448,7 +448,9 @@
 
 
 #published-environments .item .flex-container .k-dropdown,
-#published-environments-dynamic-component .item .flex-container .k-dropdown {
+#published-environments .item .flex-container .k-dropdownlist,
+#published-environments-dynamic-component .item .flex-container .k-dropdown,
+#published-environments-dynamic-component .item .flex-container .k-dropdownlist {
     width: 100%;
 }
 

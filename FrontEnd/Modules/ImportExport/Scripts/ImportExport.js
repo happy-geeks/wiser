@@ -66,9 +66,9 @@ const importModuleSettings = {
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
          */
         setupBindings() {
-            $(document).on("moduleClosing", (e) => {
+            document.addEventListener("moduleClosing", (event) => {
                 // You can do anything here that needs to happen before closing the module.
-                e.success();
+                event.detail();
             });
         }
 

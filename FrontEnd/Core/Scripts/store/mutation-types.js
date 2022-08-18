@@ -46,3 +46,10 @@ export const MERGE_BRANCH_ERROR = "mergeBranchError";
 export const GET_ENTITIES_FOR_BRANCHES = "getEntitiesForBranches";
 export const IS_MAIN_BRANCH = "isMainBranch";
 export const GET_BRANCH_CHANGES = "getBranchChanges"
+export const HANDLE_CONFLICT = "handleConflict";
+export const HANDLE_MULTIPLE_CONFLICTS = "handleMultipleConflicts";
+
+// Cache module.
+export const CLEAR_CACHE = "clearCache";
+export const CLEAR_CACHE_SUCCESS = "clearCacheSuccess";
+export const CLEAR_CACHE_ERROR = "clearCacheError";
