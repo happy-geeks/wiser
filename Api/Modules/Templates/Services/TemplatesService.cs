@@ -2412,7 +2412,7 @@ LIMIT 1";
                         {
                             // Use non-minified editor value as the minified value so the changes don't go lost.
                             template.MinifiedValue = template.EditorValue;
-                            logger.LogWarning(exception, $"An error occurred while trying to minify the JavaScript of template ID {template.TemplateId}");
+                            logger.LogWarning(exception, $"An error occurred while trying to minify the JavaScript using NUglify of template ID {template.TemplateId}");
                         }
                     }
 
@@ -3498,16 +3498,16 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
 
                 process.ErrorDataReceived += (_, eventArgs) =>
                 {
-                    // eventArgs.Data holds the response from terser.
-                    if (!String.IsNullOrWhiteSpace(eventArgs.Data))
-                    {
-                        output = eventArgs.Data;
-                    }
+                    successful = false;
+
+                    var message = !String.IsNullOrWhiteSpace(eventArgs.Data)
+                        ? $"Error trying to minify script with terser: {eventArgs.Data}"
+                        : "Unknown error trying to minify script with terser";
+
+                    logger.LogWarning(message);
                 };
 
                 process.Start();
-
-                //process.EnableRaisingEvents = true;
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
 
