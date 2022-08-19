@@ -524,6 +524,11 @@
     padding: 0;
 }
 
+/** DYNAMIC CONTENT **/
+#dynamicContentWindow {
+    padding-bottom: 0;
+}
+
 /********************** 
 * CodeMirror
 **********************/
