@@ -417,6 +417,20 @@ a.k-icon:hover {
     border-color: var(--sec-color);
 }
 
+.item > .k-input,
+.item > .k-picker,
+.item > textarea,
+.item > .CodeMirror {
+    margin: 5px 0;
+}
+
+.k-input .k-input, 
+.k-input .k-picker, 
+.k-picker .k-input, 
+.k-picker .k-picker {
+    margin: 0;
+}
+
 .k-group,
 .k-grouping-header,
 .k-pager-wrap,
@@ -4607,13 +4621,18 @@ table.k-editor {
 
 /* TREEVIEW */
 .k-treeview span.k-in {
+    cursor: pointer;
     display: inline-flex;
     align-items: start;
     line-height: 21px;
+    flex-grow: 1;
 }
 .k-treeview.k-widget .k-icon.k-i-collapse,
 .k-treeview.k-widget .k-icon.k-i-expand {
     top: -2px;
+}
+.k-treeview .k-treeview-leaf-text {
+    flex-grow: 1;
 }
 
 /* DROPZONE */
