@@ -136,7 +136,21 @@
 	background: var(--white-color);
 }
 .uploader .product {
-    background-color: var(--black-color);
+    background-color: var(--white-color);
+	background-image: repeating-linear-gradient(45deg, 
+						var(--medium-color) 25%, 
+						transparent 25%, 
+						transparent 75%,
+						var(--medium-color) 75%,
+						var(--medium-color)), 
+					repeating-linear-gradient(45deg,
+						var(--medium-color) 25%,
+						var(--white-color) 25%,
+						var(--white-color) 75%,
+						var(--medium-color) 75%,
+						var(--medium-color));
+	background-size: 34px 34px;
+	background-position: 0 0, 17px 17px;
 	float: left;
 	position: relative;
 	margin: 0;
