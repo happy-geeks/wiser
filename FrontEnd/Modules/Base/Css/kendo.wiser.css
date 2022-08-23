@@ -418,6 +418,7 @@
     padding-right: 16px;
 	white-space: break-spaces;
 	line-height: 1em;
+	align-items: center;
 }
 @media (min-width: 1025px) {
     .k-window-titlebar .k-window-title {
@@ -491,7 +492,12 @@
 	text-transform: none;
 }
 /* KENDO - BUTTON ICONS */
-.k-button-icon .k-icon {
+.k-button:after {
+	box-shadow: none;
+}
+
+.k-button-icon .k-icon,
+.k-button-icon.k-icon {
 	font-family: 'icomoon' !important;
 	speak: none;
 	font-style: normal;
@@ -509,19 +515,30 @@
 	width: 24px;
 	min-width: 24px;
 }
-.k-scheduler-toolbar .k-button-icon .k-icon {
+.k-scheduler-toolbar .k-button-icon .k-icon,
+.k-scheduler-toolbar .k-button-icon.k-icon,
+.k-grid .k-button .k-icon,
+footer .k-button .k-icon {
     font-family: 'WebComponentsIcons' !important;
+	font-size: 16px;
 }
-.k-button-icon.k-primary .k-icon {
+.k-primary .k-icon {
     color: var(--white-color);
 }
-.k-button-icon .k-icon.k-i-verwijderen:before, .k-button-icon .k-icon.k-i-delete:before {
+.k-button-icon .k-icon.k-i-verwijderen:before,
+.k-button-icon .k-icon.k-i-delete:before,
+.k-button-icon.k-icon.k-i-verwijderen:before,
+.k-button-icon.k-icon.k-i-delete:before {
 	content: "\e9c7";
 }
-.k-button-icon .k-icon.k-i-verversen:before, .k-button-icon .k-icon.k-i-refresh:before {
+.k-button-icon .k-icon.k-i-verversen:before,
+.k-button-icon .k-icon.k-i-refresh:before,
+.k-button-icon.k-icon.k-i-verversen:before,
+.k-button-icon.k-icon.k-i-refresh:before {
 	content: "\e9b9";
 }
-.k-button-icon .k-icon.k-i-close:before {
+.k-button-icon .k-icon.k-i-close:before,
+.k-button-icon.k-icon.k-i-close:before {
 	content: "\e98d";
 }
 .k-i-css:before {
