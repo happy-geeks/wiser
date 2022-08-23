@@ -11,7 +11,7 @@ Wiser v3. This includes the API and the front-end projects.
 1. Run `npm install`.
 1. Run `node_modules\.bin\webpack --mode=development`.
 
-### Setup secrets
+### Setup secrets<a name="setup-secrets"></a>
 1. Create 2 files named `appsettings-secrets.json`, one for the API and one for the front-end, somewhere outside of the project directory.
 1. Open `appSettings.json` in both projects and save the directory to the secrets in the property `GCL.SecretsBaseDirectory`.
 1. The `appsettings-secrets.json` files should look like this:
@@ -32,7 +32,8 @@ Wiser v3. This includes the API and the front-end projects.
     "PusherAppKey": "", // The app key for pusher.
     "PusherAppSecret": "", // The app secret for pusher.
     "PusherSalt": "", // A salt to use when hashing event IDs for pusher.,
-    "SigningCredentialCertificate": "" // The fully qualified name of the certificate in the store of the server, of the certificate to use for IdentityServer4 (OAUTH2) authentication.
+    "SigningCredentialCertificate": "", // The fully qualified name of the certificate in the store of the server, of the certificate to use for IdentityServer4 (OAUTH2) authentication.
+    "UseTerserForTemplateScriptMinification": false // Whether terser should be used to handle the minification of JavaScript templates made in the Templates module.
   },
   "DigitalOcean": {
     "ClientId": "", // If you want to use the Digital Ocean API, enter the client ID for that here.
@@ -97,6 +98,24 @@ We have several SQL scripts to create these tables and add the minimum amount of
 3. `InsertInitialData.sql`
 
 The scripts `InsertInitialDataConfigurator.sql` and `InsertInitialDataEcommerce.sql` can be used if you want to run a website that uses the GeeksCoreLibrary that can be managed in Wiser. If you have a website with a webshop, run `InsertInitialDataEcommerce.sql` and if you have a website with a product configurator, run `InsertInitialDataConfigurator.sql` to setup Wiser to work with those kinds of websites.
+
+# Using terser for JavaScript template minification (optional)
+The API can be configured to use an npm package called [terser](https://terser.org/) to handle the minification of JavaScript templates that are created in the Templates module instead of [NUglify](https://github.com/trullock/NUglify). To do this, the terser npm package must be installed in the root directory where the API is running on the server:
+1. Open PowerShell/CMD window in the directory where the API is running.
+1. Run the command `npm install terser`. This will install terser and all its dependencies, and create terser command files in the `node_modules/.bin` folder. After the installation is done, verify that the `node_modules/.bin` directory exists in the root directory of the API and that it contains these files:
+    - `terser`
+    - `terser.cmd`
+    - `terser.ps1`
+1. Open the `appsettings-secrets.json` file of the API in an editor.
+    - See the [Setup secrets](#setup-secrets) section above to check where this file is located.
+1. Set the value of the setting `Api.UseTerserForTemplateScriptMinification` to `true`.
+    - See the [Setup secrets](#setup-secrets) section above for an example.
+1. (Re)start the API.
+
+The reason the setting is saved in the `appsettings-secrets.json` file instead of the `appSettings.json` file is to avoid the value getting overwritten when deploying a new version.
+
+## How terser is used to minify
+Because terser works with input files, the API will create a temporary file where the script will temporarily be stored. The directory where these scripts are temporarily stored is `temp/minify` in the API base directory. Wiser will attempt to create this directory, but it's not a bad idea to create it manually so the right permissions can be set. Wiser will automatically delete the temporary file after the minification has been completed.
 
 # Debugging
 1. Open PowerShell/CMS Window in the directory that contains the `FrontEnd.csproj` file (__NOT__ the root directory, that contains the `WiserCore.sln` file!).
