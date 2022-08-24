@@ -9,6 +9,16 @@
     display: revert;
 }
 
+.k-dialog .k-dialog-title {
+    font: 20px var(--title-txt) !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    padding: 2px;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
 :root {
     --live-color: #7CBD00;
     --test-color: #FFF300;
