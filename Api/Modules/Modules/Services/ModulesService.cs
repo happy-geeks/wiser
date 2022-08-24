@@ -81,7 +81,8 @@ namespace Api.Modules.Modules.Services
                 737, // Admin
                 738, // Import / export
                 806, // Wiser users
-                5505 // Webpagina's
+                5505, // Webpagina's
+                6000 // Version control
             };
 
             var isAdminAccount = IdentityHelpers.IsAdminAccount(identity);
@@ -448,6 +449,27 @@ namespace Api.Modules.Modules.Services
                                 ModuleId = moduleId,
                                 Name = "Webpagina's 2.0",
                                 Type = "DynamicItems",
+                                Pinned = isPinned,
+                                PinnedGroup = PinnedModulesGroupName
+                            });
+                            break;
+                        case 6000: // Version control
+                            groupName = isPinned ? PinnedModulesGroupName : "Systeem";
+                            if (!results.ContainsKey(groupName))
+                            {
+                                results.Add(groupName, new List<ModuleAccessRightsModel>());
+                            }
+                            results[groupName].Add(new ModuleAccessRightsModel
+                            {
+                                Group = "Systeem",
+                                CanCreate = true,
+                                CanDelete = true,
+                                CanRead = true,
+                                CanWrite = true,
+                                Icon = "git",
+                                ModuleId = moduleId,
+                                Name = "Version control",
+                                Type = "Systeem",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
