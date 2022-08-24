@@ -1287,7 +1287,7 @@ const moduleSettings = {
 
             htmlWindow.find(".k-primary").kendoButton({
                 click: async () => {
-                    await this.base.setHtmlAndSave(codeMirrorInstance.getValue());
+                    await this.base.setHtmlAndSave(codeMirrorInstance);
                     kendoWindow.close();
                 },
                 icon: "save"
