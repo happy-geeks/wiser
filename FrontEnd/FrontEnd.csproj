@@ -35,6 +35,5 @@
   <ItemGroup>
     <Folder Include="Modules\Base\Scripts\codemirror\" />
     <Folder Include="Modules\VersionControl\Models" />
-    <Folder Include="Modules\VersionControl\Scripts" />
   </ItemGroup>
 </Project>

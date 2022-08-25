@@ -8,7 +8,7 @@
 
 <!DOCTYPE html>
 <html>
-<head>
+<head runat="server">
     <meta charset="utf-8" />
     <title>Wiser 3 - Version Control module</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,11 +17,6 @@
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
-    <style>
-        #wiser {
-            display: none;
-        }
-    </style>
 </head>
 <body class="@Model.BodyCssClass"
       data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
@@ -33,27 +28,29 @@
       data-api-client-secret="@Model.Settings.ApiClientSecret">
     <h2>title</h2>
     <span id="popupNotification"></span>
-    <div id="wiser">
-        <div id="window" style="margin: 0 auto; padding: 0;">
-            <div class="window-header">
-                Window header
-            </div>
-            <div class="window-content">
-                Window content
-            </div>
-        </div>
-    </div>
+    <div id="templateChangesGrid"></div>
 
-    <div id="mainLoader" class="fullscreen-loader loading">
-        <div class="loader-icon">
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-        </div>
-    </div>
+    @* <div id="wiser"> *@
+    @*     <div id="window" style="margin: 0 auto; padding: 0;"> *@
+    @*         <div class="window-header"> *@
+    @*             Window header *@
+    @*         </div> *@
+    @*         <div class="window-content"> *@
+    @*             Window content *@
+    @*         </div> *@
+    @*     </div> *@
+    @* </div> *@
+    @* *@
+    @* <div id="mainLoader" class="fullscreen-loader loading"> *@
+    @*     <div class="loader-icon"> *@
+    @*         <div></div> *@
+    @*         <div></div> *@
+    @*         <div></div> *@
+    @*         <div></div> *@
+    @*     </div> *@
+    @* </div> *@
 
     <script src="/scripts/Utils.min.js"></script>
-    <script src="/scripts/Base.min.js"></script>
+    <script src="/scripts/VersionControl.min.js"></script>
 </body>
 </html>
