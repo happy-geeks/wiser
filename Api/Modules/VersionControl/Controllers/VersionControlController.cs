@@ -24,7 +24,7 @@ public class VersionControlController : Controller
     }
     
     /// <summary>
-    /// Get all templates that have uncommitted changes.
+    ///     Get all templates that have uncommitted changes.
     /// </summary>
     [HttpGet]
     [Route("templates-to-commit")]

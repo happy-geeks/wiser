@@ -53,7 +53,7 @@ public class CommitDataService : ICommitDataService
 			IF(acceptatie_template.version IS NULL, 0, 1) AS accept,
 			IF(live_template.version IS NULL, 0, 1) AS live 
 		FROM {WiserTableNames.WiserTemplate} AS template
-		JOIN {WiserTableNames.WiserTemplate} AS parent ON parent.template_id = template.parent_id AND parent.version = (SELECT MAX(x.version) FROM wiser_template AS x WHERE x.template_id = template.parent_id)
+		JOIN {WiserTableNames.WiserTemplate} AS parent ON parent.template_id = template.parent_id AND parent.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserTemplate} AS x WHERE x.template_id = template.parent_id)
 		LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
 		LEFT JOIN {WiserTableNames.WiserTemplate} AS test_template ON test_template.template_id = template.template_id AND (test_template.published_environment & 2) = 2
 		LEFT JOIN {WiserTableNames.WiserTemplate} AS acceptatie_template ON acceptatie_template.template_id = template.template_id AND (acceptatie_template.published_environment & 4) = 4

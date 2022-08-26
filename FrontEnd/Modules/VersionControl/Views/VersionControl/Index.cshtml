@@ -26,11 +26,45 @@
       data-track-js-token="@Model.Settings.TrackJsToken"
       data-api-client-id="@Model.Settings.ApiClientId"
       data-api-client-secret="@Model.Settings.ApiClientSecret">
-    <h2>title</h2>
+    <h2>Versie beheer</h2>
     <span id="popupNotification"></span>
-    <div id="templateChangesGrid"></div>
+    <div id="wiser">
+        <div id="tabstrip" class="tabstrip k-tabstrip-wrapper">
+            <ul>
+                <li class="template-change-history-tab k-state-active" data-name="change-history">Change history</li>
+                <li class="deploy-tab" data-name="deploy">Deploy</li>
+                <li class="history-tab" data-name="history">History</li>
+            </ul>
+            <div id="template-change-history">
+                <div class="formData">
+                    <div id="commit-data">
+                        <div>
+                            <label>Commit description: </label>
+                            <input type="text" id="commit-description" />                            
+                        </div>
+                        <div>
+                            <label>Commit to test</label>
+                            <input type="checkbox" id="commit-test" class="commit-checkbox" />    
+                        </div>
+                        <div>
+                            <label>Commit to staging</label>
+                            <input type="checkbox" id="commit-stage" class="commit-checkbox" />    
+                        </div>
+                        <div>
+                            <label>Commit to live</label>
+                            <input type="checkbox" id="commit-live" class="commit-checkbox" />    
+                        </div>
+                    </div>
+                </div>
+                <div id="template-changes-grid"></div>
+                <button id="commit-button" class="formButton">Commit</button>
+            </div>
+            <div id="deploy">deploy</div>
+            <div id="history">deploy history</div>
+        </div>
+    </div>
 
-    @* <div id="wiser"> *@
+@* <div id="wiser"> *@
     @*     <div id="window" style="margin: 0 auto; padding: 0;"> *@
     @*         <div class="window-header"> *@
     @*             Window header *@

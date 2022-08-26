@@ -2,8 +2,11 @@ import { TrackJS } from "trackjs";
 import { Wiser } from "../../Base/Scripts/Utils";
 import { Grids } from "./Grids";
 import "../../Base/Scripts/Processing.js";
-
 window.JSZip = require("jszip");
+
+require("@progress/kendo-ui/js/kendo.tabstrip.js");
+
+import "../Css/VersionControl.css"
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -93,7 +96,33 @@ const moduleSettings = {
                 refresh: "refresh"
             });
 
-            // Create instances of sub classes.
+            // Tabstrip
+            this.mainTabStrip = $("#tabstrip").kendoTabStrip({
+                animation: {
+                    open: {
+                        effects: "fadeIn"
+                    }
+                }
+            }).data("kendoTabStrip");
+            
+            // Commit button
+            this.commitButton = $("#commit-button").kendoButton({
+                click: this.onCommit.bind(this),
+                icon: "save"
+            }).data();
+            
+            // Click action for each checkbox. 
+            document.querySelectorAll("#commit-data .commit-checkbox").forEach(x => {
+                x.addEventListener("click", (event) => {
+                    // (Un)check all checkboxes when commit to live is checked
+                    if (event.target.id === "commit-live") {
+                        document.querySelector("#commit-test").checked = event.target.checked;
+                        document.querySelector("#commit-stage").checked = event.target.checked;
+                    }
+                });
+            });
+
+             // Create instances of sub classes.
             this.grids = new Grids(this);
             // this.commit = new Commit(this);
             // this.template = new Template(this);
@@ -173,6 +202,21 @@ const moduleSettings = {
             }
 
             this.toggleMainLoader(false);
+        }
+        
+        async onCommit(event) {
+            const selectedChanges = document.querySelectorAll("#template-change-history .k-state-selected");
+            selectedChanges.forEach(x => {
+                let [key, value] = Object.entries(selectedChanges);
+                console.log(value);
+                let id = value.querySelector("[data-field='template_id']");
+                console.log(id);
+                let templateId = value.querySelector("[data-field='template_id']").innerHTML;
+                console.log(templateId);
+            });
+            console.log(arr);
+            console.log("commit");
+            console.log(selectedChanges);
         }
 
         /**

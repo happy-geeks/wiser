@@ -19,8 +19,7 @@ export class Grids {
      */
     constructor(base) {
         this.base = base;
-
-        this.templateChangesGrid = null;
+        this.templateChanges = null;
     }
 
     async initialize() {
@@ -72,17 +71,17 @@ export class Grids {
                 columns: [
                     {
                         "selectable": "true",
-                        "width": "50px"
+                        "width": "40px"
                     },
                     {
                         "field": "templateId",
                         "title": "ID",
-                        "width": "100px"
+                        "width": "50px"
                     },
                     {
                         "field": "templateType",
                         "title": "Type",
-                        "width": "150px"
+                        "width": "75px"
                     },
                     {
                         "field": "templateParentName",
@@ -91,42 +90,44 @@ export class Grids {
                     },
                     {
                         "field": "templateName",
-                        "title": "Template"
+                        "title": "Template",
+                        "width": "150px"
                     },
                     {
                         "field": "version",
                         "title": "Versie",
-                        "width": "150px"
+                        "width": "75px"
                     },
                     {
                         "field": "versionTest",
                         "title": "Versie test",
-                        "width": "150px"
+                        "width": "75px"
                     },
                     {
                         "field": "versionAcceptance",
                         "title": "Versie acceptatie",
-                        "width": "150px"
+                        "width": "100px"
                     },
                     {
                         "field": "versionLive",
                         "title": "Versie live",
-                        "width": "150px"
+                        "width": "75px"
                     },
                     {
                         "field": "changedOn",
-                        "format": "{0:F}",
+                        "format": "{0:yyyy-MM-dd}",
                         "title": "Datum",
-                        "width": "300px"
+                        "width": "100px"
                     },
                     {
                         "field": "changedBy",
-                        "title": "Door"
+                        "title": "Door",
+                        "width": "100px"
                     }
                 ]
             };
 
-            this.templateChangesGrid = $("#templateChangesGrid").kendoGrid(gridSettings).data("kendoGrid");
+            this.templateChanges = $("#template-changes-grid").kendoGrid(gridSettings).data("kendoGrid");
 
         } catch (exception) {
             console.error(exception);

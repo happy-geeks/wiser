@@ -1,0 +1,25 @@
+.k-master-row td:first-child {
+    text-overflow: clip;
+}
+
+.k-grid-header-wrap thead tr th:first-child {
+    text-overflow: clip;
+}
+
+#commit-data {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+}
+
+#template-changes-grid {
+    height: 70vh;
+}
+
+#commit-button {
+    margin-top: 10px;
+}
+
+body {
+    margin: 0;
+}
