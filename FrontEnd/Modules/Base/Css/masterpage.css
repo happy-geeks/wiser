@@ -88,7 +88,7 @@ ins {
     float: right;
     position: -webkit-sticky;
     position: sticky;
-	top: 62px;
+	top: 68px;
 	right: 0;
 	z-index: 200;
 }
@@ -96,7 +96,7 @@ ins {
     top: 0;
 }
 .editMenu > li {
-	height: 42px;
+	height: 48px;
 	width: 42px;
 }
 .editMenu:hover > li, .editMenu.hover > li {
@@ -104,8 +104,8 @@ ins {
 }
 .editMenu > li > ins {
 	color: var(--black-color);
-	height: 42px;
-	line-height: 42px;
+	height: 48px;
+	line-height: 48px;
 	width: 42px;
 	display: block;
 	font-size: 18px;
