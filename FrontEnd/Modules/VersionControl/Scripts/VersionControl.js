@@ -1,12 +1,12 @@
-import { TrackJS } from "trackjs";
-import { Wiser } from "../../Base/Scripts/Utils";
-import { Grids } from "./Grids";
+import {TrackJS} from "trackjs";
+import {Wiser} from "../../Base/Scripts/Utils";
+import {Grids} from "./Grids";
 import "../../Base/Scripts/Processing.js";
+import "../Css/VersionControl.css"
+
 window.JSZip = require("jszip");
 
 require("@progress/kendo-ui/js/kendo.tabstrip.js");
-
-import "../Css/VersionControl.css"
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -205,18 +205,26 @@ const moduleSettings = {
         }
         
         async onCommit(event) {
-            const selectedChanges = document.querySelectorAll("#template-change-history .k-state-selected");
-            selectedChanges.forEach(x => {
-                let [key, value] = Object.entries(selectedChanges);
-                console.log(value);
-                let id = value.querySelector("[data-field='template_id']");
-                console.log(id);
-                let templateId = value.querySelector("[data-field='template_id']").innerHTML;
-                console.log(templateId);
-            });
-            console.log(arr);
-            console.log("commit");
-            console.log(selectedChanges);
+            let results = [];
+            const selectedData = this.grids.getSelectedData();
+            console.log("selectedData", selectedData);
+            
+            for (const x of selectedData) {
+                results.push(await this.dynamicContentInTemplates(x.templateId));
+            }
+        }
+
+        async dynamicContentInTemplates(templateId) {
+            try {
+                return await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control/dynamic-content-in-template/${templateId}`,
+                    method: "GET",
+                    contentType: "application/json",
+                });
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+            }
         }
 
         /**

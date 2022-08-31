@@ -17,10 +17,17 @@ namespace Api.Modules.VersionControl.Controllers;
 public class VersionControlController : Controller
 {
     private readonly ICommitService commitService;
-
-    public VersionControlController(ICommitService commitService)
+    private readonly IVersionControlService versionControlService;
+    
+    /// <summary>
+    ///     ctor
+    /// </summary>
+    /// <param name="commitService"></param>
+    /// <param name="versionControlService"></param>
+    public VersionControlController(ICommitService commitService, IVersionControlService versionControlService)
     {
         this.commitService = commitService;
+        this.versionControlService = versionControlService;
     }
     
     /// <summary>
@@ -32,5 +39,19 @@ public class VersionControlController : Controller
     public async Task<IActionResult> GetTemplatesToCommitAsync(CreateCommitModel commitModel)
     {
         return (await commitService.GetTemplatesToCommitAsync()).GetHttpResponseMessage();
+    }
+    
+    /// <summary>
+    /// Gets the dynamic content that are part of the given template
+    /// </summary>
+    /// <param name="templateId">the ID of the template</param>
+    /// <returns>Returns all the dynamic content that are linked to the given template in a list of dynamic content</returns>
+    [HttpGet]
+    [Route("dynamic-content-in-template/{templateId:int}")]
+    [ProducesResponseType(typeof(List<DynamicContentModel>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetDynamicContentInTemplate(int templateId)
+    {
+        return (await versionControlService.GetDynamicContentInTemplateAsync(templateId)).GetHttpResponseMessage();
     }
 }

@@ -19,7 +19,7 @@ export class Grids {
      */
     constructor(base) {
         this.base = base;
-        this.templateChanges = null;
+        this.grid = undefined;
     }
 
     async initialize() {
@@ -68,11 +68,8 @@ export class Grids {
                         }
                     }
                 },
+                selectable: "multiple, row",
                 columns: [
-                    {
-                        "selectable": "true",
-                        "width": "40px"
-                    },
                     {
                         "field": "templateId",
                         "title": "ID",
@@ -127,12 +124,16 @@ export class Grids {
                 ]
             };
 
-            this.templateChanges = $("#template-changes-grid").kendoGrid(gridSettings).data("kendoGrid");
+            this.grid = $("#template-changes-grid").kendoGrid(gridSettings).data("kendoGrid");
 
         } catch (exception) {
             console.error(exception);
             kendo.alert("Er is iets fout gegaan met het laden van de wijzigingen in templates. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
         }
+    }
+    
+    getSelectedData() {
+        return this.grid.getSelectedData();
     }
 
     async getModuleGridData(moduleId) {
