@@ -197,6 +197,14 @@
     border: 0;
 }
 
+/** ONLY CHILD **/
+.CustomSql-group .item:only-of-type {
+    width: 100% !important;
+}
+.CustomSql-group .CodeMirror {
+    width: 100%;
+}
+
 /** FIELDSET **/
 .sub-group {
     display: flex;

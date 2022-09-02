@@ -512,7 +512,7 @@
 
 .k-button-icon .k-icon,
 .k-button-icon.k-icon {
-	font-family: 'icomoon' !important;
+/*	font-family: 'icomoon' !important; */
 	speak: none;
 	font-style: normal;
 	font-weight: normal;
@@ -529,6 +529,13 @@
 	width: 24px;
 	min-width: 24px;
 }
+.k-window-titlebar .k-window-action .k-icon,
+.k-input-button.k-button > .k-button-icon, 
+.k-input-button > .k-button-icon,
+.k-input-spinner .k-spinner-decrease > .k-button-icon, 
+.k-input-spinner .k-spinner-increase > .k-button-icon {
+	font-family: 'icomoon' !important;
+}
 .k-scheduler-toolbar .k-button-icon .k-icon,
 .k-scheduler-toolbar .k-button-icon.k-icon,
 .k-grid .k-button .k-icon,
@@ -543,7 +550,7 @@ footer .k-button .k-icon {
 .k-button-icon .k-icon.k-i-delete:before,
 .k-button-icon.k-icon.k-i-verwijderen:before,
 .k-button-icon.k-icon.k-i-delete:before {
-	content: "\e9c7";
+	content: "\e10c";
 }
 .k-button-icon .k-icon.k-i-verversen:before,
 .k-button-icon .k-icon.k-i-refresh:before,
@@ -566,6 +573,14 @@ footer .k-button .k-icon {
 }
 .k-i-vertalen:before {
 	content: "\e963";
+}
+.k-i-arrow-s:before {
+	content: "\e926";
+	font-size: 16px;
+}
+.k-i-arrow-n:before {
+	content: "\e929";
+	font-size: 16px;
 }
 
 /* KENDO - NOTIFICATION */
@@ -643,9 +658,19 @@ footer .k-button .k-icon {
 .k-tabstrip {
     background-color: transparent;
     position: relative;
+	max-width: 100%;
 }
 .k-tabstrip:focus {
 	box-shadow: none;
+}
+.pane-content .k-tabstrip .k-tabstrip-items-wrapper {
+	position: -webkit-sticky;
+	position: sticky;
+	top: 0;
+	z-index: 100;
+}
+.pane-content header ~ .k-tabstrip .k-tabstrip-items-wrapper {
+	top: 68px;
 }
 .k-tabstrip-items-wrapper {
 	background-color: var(--white-color);
@@ -774,6 +799,11 @@ span.k-multiselect,
 .k-editor-toolbar .k-tool-group span.k-widget {
 	float: left;
 	width: auto;
+}
+.k-editor-toolbar .k-picker.k-icon-picker .k-input-inner {
+	width: 3em;
+	height: 100%;
+	box-sizing: border-box;
 }
 .item .readOnlyValue {
     line-height: 22px;
@@ -910,6 +940,12 @@ input[type=search] + button {
 
 .k-colorpicker .k-picker-wrap {
     padding-right: 32px;
+}
+
+.k-colorpicker input {}
+
+.k-colorpicker .k-input-button {
+	margin: 0;
 }
 
 textarea {
@@ -1142,6 +1178,8 @@ span.k-input .k-input:hover {
 	max-width: calc(100% - 120px);
 	width: 100%;
 	background: none;
+	
+	visibility: hidden;
 }
 .k-colorpicker .k-selected-color .k-i-line {
 	border: 1px solid var(--medium-color);
