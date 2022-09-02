@@ -72,7 +72,7 @@ namespace Api.Core.Services
                 var adminAccountLoginResult = await usersService.LoginAdminAccountAsync(context.UserName, context.Password);
                 if (adminAccountLoginResult.StatusCode != HttpStatusCode.OK)
                 {
-                    context.Result = new GrantValidationResult(TokenRequestErrors.InvalidClient, adminAccountLoginResult.ErrorMessage);
+                    context.Result = new GrantValidationResult(TokenRequestErrors.InvalidClient, loginResult.ErrorMessage);
                     return;
                 }
 
