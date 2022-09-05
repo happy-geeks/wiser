@@ -364,7 +364,6 @@ const moduleSettings = {
         initializeButtons() {
             document.body.addEventListener("keydown", (event) => {
                 if ((event.ctrlKey || event.metaKey) && event.keyCode === 83) {
-                    console.log("ctrl+s dynamic content", event);
                     event.preventDefault();
                     this.save();
                 }

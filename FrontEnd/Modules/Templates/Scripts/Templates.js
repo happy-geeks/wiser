@@ -1433,7 +1433,6 @@ const moduleSettings = {
         bindEvents() {
             document.body.addEventListener("keydown", (event) => {
                 if ((event.ctrlKey || event.metaKey) && event.keyCode === 83) {
-                    console.log("ctrl+s template", event);
                     event.preventDefault();
 
                     if (!this.dynamicContentWindowIsOpen()) {

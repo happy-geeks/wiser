@@ -300,6 +300,19 @@ const moduleSettings = {
             });
 
             // Keyboard shortcuts
+            $("body").on("keydown", async (event) => {
+                const target = $(event.target);
+
+                if ((event.ctrlKey || event.metaKey) && event.key.toUpperCase() === "S") {
+                    event.preventDefault();
+
+                    const entityContainer = target.closest(".entity-container");
+                    if (entityContainer.length > 0) {
+                        entityContainer.find(".saveButton").first().click();
+                    }
+                }
+            });
+            
             $("body").on("keyup", async (event) => {
                 const target = $(event.target);
 
