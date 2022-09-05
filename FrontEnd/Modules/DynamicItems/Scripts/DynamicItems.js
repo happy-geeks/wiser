@@ -413,15 +413,15 @@ const moduleSettings = {
 
             $("#mainEditMenu .reloadItem").click(async (event) => {
                 const previouslySelectedTab = this.mainTabStrip.select().index();
-                await this.loadItem(this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
+                await this.loadItem(this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.initialItemId ? this.settings.entityType : this.selectedItem.entityType);
             });
 
             $("#mainEditMenu .deleteItem").click(async (event) => {
-                await this.onDeleteItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
+                await this.onDeleteItemClick(event, this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id, this.settings.initialItemId ? this.settings.entityType : this.selectedItem.entityType);
             });
 
             $("#mainEditMenu .undeleteItem").click(async (event) => {
-                await this.onUndeleteItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id);
+                await this.onUndeleteItemClick(event, this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id);
             });
 
             $("#mainEditMenu .copyToEnvironment").click(async (event) => {
@@ -431,7 +431,7 @@ const moduleSettings = {
             });
 
             $("#mainEditMenu .translateItem").click(async (event) => {
-                await this.onTranslateItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
+                await this.onTranslateItemClick(event, this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id, this.settings.initialItemId ? this.settings.entityType : this.selectedItem.entityType);
             });
         }
 

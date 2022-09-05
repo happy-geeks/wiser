@@ -2131,7 +2131,7 @@ export class Fields {
                         if (kendoWindow.length === 0) {
                             // The opened item is in the main window.
                             const previouslySelectedTab = this.base.mainTabStrip.select().index();
-                            await this.base.loadItem(this.base.settings.iframeMode ? this.base.settings.initialItemId : this.base.selectedItem.id, previouslySelectedTab);
+                            await this.base.loadItem(this.base.settings.initialItemId ? this.base.settings.initialItemId : this.base.selectedItem.id, previouslySelectedTab);
                         } else {
                             // The opened item is in a window.
                             const previouslySelectedTab = kendoWindow.find(".tabStripPopup").data("kendoTabStrip").select().index();
