@@ -196,6 +196,51 @@ namespace Api.Modules.Templates.Services.DataLayer
             return await connection.ExecuteAsync(query + ";" + logQuery);
         }
 
+        /// <inheritdoc />
+        public async Task DuplicateAsync(int contentId, int newTemplateId, string username)
+        {
+            var dataTable = await connection.GetAsync($"SELECT IFNULL(MAX(content_id), 0) AS max_content_id FROM {WiserTableNames.WiserDynamicContent}");
+            var newContentId = (dataTable.Rows.Count == 0 ? 0 : Convert.ToInt32(dataTable.Rows[0]["max_content_id"])) + 1;
+            
+            var query = $@"INSERT INTO {WiserTableNames.WiserDynamicContent}
+(
+    content_id,
+    settings,
+    component,
+    component_mode,
+    version,
+    title,
+    changed_on,
+    changed_by,
+    published_environment
+)
+SELECT 
+    ?newContentId,
+    content.settings,
+    content.component,
+    content.component_mode,
+    1,
+    CONCAT(content.title, ' - Duplicate'),
+    ?now,
+    ?username,
+    0
+FROM {WiserTableNames.WiserDynamicContent} AS content
+LEFT JOIN {WiserTableNames.WiserDynamicContent} AS otherVersion ON otherVersion.content_id = content.content_id AND otherVersion.version > content.version
+WHERE content.content_id = ?contentId
+AND content.removed = 0
+AND otherVersion.id IS NULL;
+
+INSERT INTO {WiserTableNames.WiserTemplateDynamicContent} (content_id, destination_template_id, added_on, added_by)
+VALUES (?newContentId, ?templateId, ?now, ?username);";
+            
+            connection.AddParameter("contentId", contentId);
+            connection.AddParameter("newContentId", newContentId);
+            connection.AddParameter("now", DateTime.Now);
+            connection.AddParameter("username", username);
+            connection.AddParameter("templateId", newTemplateId);
+            await connection.ExecuteAsync(query);
+        }
+
         private async Task<KeyValuePair<string, string>> GetDatabaseData(int contentId)
         {
             connection.ClearParameters();

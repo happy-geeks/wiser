@@ -243,5 +243,12 @@ namespace Api.Modules.Templates.Services
                 StatusCode = HttpStatusCode.NoContent
             };
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DuplicateAsync(ClaimsIdentity identity, int contentId, int newTemplateId)
+        {
+            await dataService.DuplicateAsync(contentId, newTemplateId, IdentityHelpers.GetUserName(identity, true));
+            return new ServiceResult<bool>(true);
+        }
     }
 }
