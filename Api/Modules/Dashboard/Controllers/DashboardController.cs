@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Api.Modules.Dashboard.Enums;
 using Api.Modules.Dashboard.Interfaces;
 using Api.Modules.Dashboard.Models;
+using GeeksCoreLibrary.Modules.WiserDashboard.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -44,5 +45,16 @@ public class DashboardController : ControllerBase
     public async Task<IActionResult> Get([FromQuery]DateTime? periodFrom = null, [FromQuery]DateTime? periodTo = null, [FromQuery]int branchId = 0, [FromQuery]bool forceRefresh = false)
     {
         return (await dashboardService.GetDataAsync((ClaimsIdentity)User.Identity, periodFrom, periodTo, branchId, forceRefresh)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get the services from the AIS.
+    /// </summary>
+    /// <returns>A <see cref="Service"/> object containing various information about the usage of Wiser.</returns>
+    [HttpGet, Route("services")]
+    [ProducesResponseType(typeof(List<Service>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAisServicesAsync()
+    {
+        return (await dashboardService.GetAisServicesAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
     }
 }

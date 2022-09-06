@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Dashboard.Enums;
 using Api.Modules.Dashboard.Models;
+using GeeksCoreLibrary.Modules.WiserDashboard.Models;
 
 namespace Api.Modules.Dashboard.Interfaces;
 
@@ -23,4 +25,11 @@ public interface IDashboardService
     /// <param name="forceRefresh">Whether to force a refresh of the data.</param>
     /// <returns>A <see cref="DashboardDataModel"/> object containing various information about the usage of Wiser.</returns>
     Task<ServiceResult<DashboardDataModel>> GetDataAsync(ClaimsIdentity identity, DateTime? periodFrom = null, DateTime? periodTo = null, int branchId = 0, bool forceRefresh = false);
+
+    /// <summary>
+    /// Retrieves the latest state of the services managed by the AIS.
+    /// </summary>
+    /// <param name="identity">The identity of the authenticated user.</param>
+    /// <returns>A collection of <see cref="Service"/> objects.</returns>
+    Task<ServiceResult<List<Service>>> GetAisServicesAsync(ClaimsIdentity identity);
 }

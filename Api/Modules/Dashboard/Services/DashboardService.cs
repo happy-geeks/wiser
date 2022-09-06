@@ -18,6 +18,7 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Enums;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Models;
+using GeeksCoreLibrary.Modules.WiserDashboard.Models;
 using MySql.Data.MySqlClient;
 
 namespace Api.Modules.Dashboard.Services;
@@ -686,5 +687,48 @@ public class DashboardService : IDashboardService, IScopedService
         clientDatabaseConnection.AddParameter("user_login_time_top10", userData.UserLoginTimeTop10);
         clientDatabaseConnection.AddParameter("user_login_time_other", userData.UserLoginTimeOther);
         await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {databasePart}wiser_dashboard (last_update, items_data, entities_data, user_login_count_top10, user_login_count_other, user_login_time_top10, user_login_time_other) VALUES (?last_update, ?items_data, ?entities_data, ?user_login_count_top10, ?user_login_count_other, ?user_login_time_top10, ?user_login_time_other)");
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<List<Service>>> GetAisServicesAsync(ClaimsIdentity identity)
+    {
+        var services = new List<Service>();
+
+        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT * FROM {WiserTableNames.AisServices}");
+
+        if (dataTable.Rows.Count == 0)
+        {
+            return new ServiceResult<List<Service>>
+            {
+                ModelObject = services,
+                StatusCode = HttpStatusCode.OK
+            };
+        }
+
+        foreach (DataRow row in dataTable.Rows)
+        {
+            var runTime = row.Field<string>("run_time");
+
+            var service = new Service()
+            {
+                Id = row.Field<int>("id"),
+                Configuration = row.Field<string>("configuration"),
+                TimeId = row.Field<int>("time_id"),
+                Action = row.Field<string>("action"),
+                Scheme = row.Field<string>("scheme"),
+                LastRun = row.Field<DateTime?>("last_run"),
+                NextRun = row.Field<DateTime?>("next_run"),
+                RunTime = String.IsNullOrWhiteSpace(runTime) ? TimeSpan.Zero : TimeSpan.Parse(runTime),
+                State = row.Field<string>("state")
+            };
+            
+            services.Add(service);
+        }
+        
+        return new ServiceResult<List<Service>>
+        {
+            ModelObject = services,
+            StatusCode = HttpStatusCode.OK
+        };
     }
 }

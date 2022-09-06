@@ -28,6 +28,8 @@ const moduleSettings = {
             this.itemsData = null;
             this.userData = null;
             this.entityData = null;
+            
+            this.servicesGrid = null;
 
             // Fire event on page ready for direct actions
             document.addEventListener("DOMContentLoaded", () => {
@@ -181,7 +183,7 @@ const moduleSettings = {
             });
 
             // create Tiles
-            var tileLayout = $("#tiles").kendoTileLayout({
+            $("#tiles").kendoTileLayout({
                 containers: [{
                     colSpan: 7,
                     rowSpan: 4,
@@ -268,124 +270,172 @@ const moduleSettings = {
                 }
             }).data("kendoTileLayout");
 
-            // create Charts
-            function createChart() {
-                // create Column Chart
-                $("#data-chart").kendoChart({
-                    title: {
-                        text: "Aantal items in Wiser"
+            // create Column Chart
+            $("#data-chart").kendoChart({
+                title: {
+                    text: "Aantal items in Wiser"
+                },
+                legend: {
+                    position: "top"
+                },
+                seriesDefaults: {
+                    type: "column"
+                },
+                series: [{
+                    name: "Actief",
+                    field: "amountOfItems",
+                    color: "#FF6800"
+                }, {
+                    name: "Archief",
+                    field: "amountOfArchivedItems",
+                    color: "#2ECC71"
+                }],
+                valueAxis: {
+                    labels: {
+                        format: "{0}"
                     },
-                    legend: {
-                        position: "top"
+                    line: {
+                        visible: false
                     },
-                    seriesDefaults: {
-                        type: "column"
+                    axisCrossingValue: 0
+                },
+                categoryAxis: {
+                    categories: [],
+                    line: {
+                        visible: false
                     },
-                    series: [{
-                        name: "Actief",
-                        field: "amountOfItems",
-                        color: "#FF6800"
-                    }, {
-                        name: "Archief",
-                        field: "amountOfArchivedItems",
+                    labels: {
+                        padding: { top: 10 }
+                    }
+                },
+                tooltip: {
+                    visible: true,
+                    format: "{0}",
+                    template: "#= series.name #: #= value #"
+                }
+            });
+
+            // create Pie Chart
+            $("#users-chart").kendoChart({
+                title: {
+                    position: "top",
+                    text: "Top 10 gebruikers met meeste tijd / aantal x ingelogd"
+                },
+                legend: {
+                    visible: false
+                },
+                chartArea: {
+                    background: ""
+                },
+                seriesDefaults: {
+                    labels: {
+                        visible: true,
+                        background: "transparent",
+                        template: "#= category #: \n #= value#%"
+                    }
+                },
+                series: [{
+                    type: "pie",
+                    startAngle: 90,
+                    data: [{
+                        category: "Rest",
+                        value: 0,
                         color: "#2ECC71"
-                    }],
-                    valueAxis: {
-                        labels: {
-                            format: "{0}"
-                        },
-                        line: {
-                            visible: false
-                        },
-                        axisCrossingValue: 0
-                    },
-                    categoryAxis: {
-                        categories: [],
-                        line: {
-                            visible: false
-                        },
-                        labels: {
-                            padding: { top: 10 }
-                        }
-                    },
-                    tooltip: {
-                        visible: true,
-                        format: "{0}",
-                        template: "#= series.name #: #= value #"
-                    }
-                });
+                    }, {
+                        category: "Top 10 gebruikers",
+                        value: 0,
+                        color: "#FF6800"
+                    }]
+                }],
+                tooltip: {
+                    visible: true,
+                    format: "{0}%"
+                }
+            });
 
-                // create Pie Chart
-                $("#users-chart").kendoChart({
-                    title: {
-                        position: "top",
-                        text: "Top 10 gebruikers met meeste tijd / aantal x ingelogd"
-                    },
-                    legend: {
-                        visible: false
-                    },
-                    chartArea: {
-                        background: ""
-                    },
-                    seriesDefaults: {
-                        labels: {
-                            visible: true,
-                            background: "transparent",
-                            template: "#= category #: \n #= value#%"
-                        }
-                    },
-                    series: [{
-                        type: "pie",
-                        startAngle: 90,
-                        data: [{
-                            category: "Rest",
-                            value: 0,
-                            color: "#2ECC71"
-                        }, {
-                            category: "Top 10 gebruikers",
-                            value: 0,
-                            color: "#FF6800"
-                        }]
-                    }],
-                    tooltip: {
-                        visible: true,
-                        format: "{0}%"
+            // create Pie Chart
+            $("#status-chart").kendoChart({
+                title: {
+                    text: "Openstaande agenderingen per gebruiker",
+                    visible: false
+                },
+                legend: {
+                    visible: false
+                },
+                chartArea: {
+                    background: ""
+                },
+                seriesDefaults: {
+                    labels: {
+                        visible: false,
+                        background: "transparent",
+                        template: "#= category #: \n #= value#"
                     }
-                });
+                },
+                series: [{
+                    type: "pie",
+                    startAngle: 90,
+                    data: []
+                }],
+                tooltip: {
+                    visible: true,
+                    template: "#= category #: #= value#"
+                }
+            });
 
-                // create Pie Chart
-                $("#status-chart").kendoChart({
-                    title: {
-                        text: "Openstaande agenderingen per gebruiker",
-                        visible: false
+            this.servicesGrid = $("#services-grid").kendoGrid({
+                columns: [
+                    {
+                        title: "Configuratie",
+                        field: "configuration"
                     },
-                    legend: {
-                        visible: false
+                    {
+                        title: "Actie",
+                        field: "action"
                     },
-                    chartArea: {
-                        background: ""
+                    {
+                        title: "Schema",
+                        field: "scheme"
                     },
-                    seriesDefaults: {
-                        labels: {
-                            visible: false,
-                            background: "transparent",
-                            template: "#= category #: \n #= value#"
-                        }
+                    {
+                        title: "Laatste run",
+                        field: "lastRun"
                     },
-                    series: [{
-                        type: "pie",
-                        startAngle: 90,
-                        data: []
-                    }],
-                    tooltip: {
-                        visible: true,
-                        template: "#= category #: #= value#"
-                    }
-                });
-            }
-
-            $(document).ready(createChart);
-            $(document).bind("kendo:skinChange", createChart);
+                    {
+                        title: "Laatste tijd",
+                        field: "runTime"
+                    },
+                    {
+                        title: "Status",
+                        field: "state"
+                    },
+                    {
+                        title: "Volgende run",
+                        field: "nextRun"
+                    },
+                    {
+                        title: "Beheer",
+                        commands: [
+                            {
+                                name: "Edit",
+                                iconClass: "k-icon k-i-pencil"
+                            },
+                            {
+                                name: "Start",
+                                iconClass: "k-icon k-i-play"
+                            },
+                            {
+                                name: "Pause",
+                                iconClass: "k-icon k-i-pause"
+                            },
+                            {
+                                name: "Logs",
+                                iconClass: "k-icon k-i-file-txt"
+                            }
+                        ]
+                    },
+                ]
+            }).data("kendoGrid");
         }
 
         async updateBranches() {
@@ -436,6 +486,8 @@ const moduleSettings = {
             if (forceRefresh) {
                 getParameters.forceRefresh = forceRefresh;
             }
+            
+            await this.updateServices();
 
             const data = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dashboard`,
@@ -567,6 +619,14 @@ const moduleSettings = {
             document.getElementById("totalOpenTaskAlerts").innerText = totalOpenTaskAlerts.toString();
         }
 
+        async updateServices() {
+            const data = await Wiser.api({
+                url: `${this.settings.wiserApiRoot}dashboard/services`
+            });
+
+            this.servicesGrid.setDataSource(data);
+        }
+        
         async onPeriodFilterChange(event) {
             const currentDate = new Date();
             const value = event.sender.value();
