@@ -373,7 +373,7 @@ const moduleSettings = {
         onMainTabStripActivate(event) {
             switch (this.mainTabStrip.select().data("name")) {
                 case "preview":
-                    this.preview.generatePreview();
+                    this.preview.generatePreview(false);
                     break;
                 case "history":
                     this.reloadHistoryTab();
