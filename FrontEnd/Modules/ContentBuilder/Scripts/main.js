@@ -5,7 +5,7 @@ import ContentBuilder from "@innovastudio/contentbuilder"
 import "./lang/en.js";
 import "../Css/contentbuilder.css"
 import "../Css/contentbuilder-wiser.scss"
-import { createApp, ref } from "vue";
+import { createApp, ref, isProxy, toRaw } from "vue";
 import * as axios from "axios";
 
 import ContentBuildersService from "../../../Core/Scripts/shared/contentBuilders.service";
@@ -130,7 +130,9 @@ import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.ser
                     },
 
                     viewHtml() {
-                        this.contentBuilder.viewHtml();
+                        // We use toRaw here, because Vue adds a Proxy around the object, but that causes problems when calling some functions from the content builder. 
+                        // For example, the vieHtml function crashes the browser tab when you try to call it via the proxy of Vue.
+                        toRaw(this.contentBuilder).viewHtml();
                     }
                 }
             });
