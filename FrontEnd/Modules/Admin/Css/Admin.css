@@ -29,6 +29,15 @@
 .module-admin .pane-content > .k-tabstrip-wrapper > .k-tabstrip > .k-tabstrip-items {
     z-index: 200;
 }
+
+.iconpreview-icon {
+    padding: 10px 0;
+}
+
+.iconpreview-name {
+    padding: 10px;
+}
+
 /* TABS SPLIT */
 .tabSplit.k-state-active,
 .tabSplit.staticSplit {
