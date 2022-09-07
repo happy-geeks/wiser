@@ -152,5 +152,17 @@ namespace Api.Modules.Templates.Controllers
                 ? currentPublished.GetHttpResponseMessage() 
                 : (await dynamicContentService.PublishToEnvironmentAsync((ClaimsIdentity)User.Identity, contentId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Duplicate a dynamic component (only the latest version).
+        /// </summary>
+        /// <param name="id">The id of the component.</param>
+        [HttpPost]
+        [Route("{id:int}/duplicate")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        public async Task<IActionResult> DuplicateAsync(int id, [FromQuery]int templateId)
+        {
+            return (await dynamicContentService.DuplicateAsync((ClaimsIdentity)User.Identity, id, templateId)).GetHttpResponseMessage();
+        }
     }
 }

@@ -33,7 +33,7 @@ const moduleSettings = {
             // Kendo components.
             this.mainWindow = null;
 
-            this.activeMainTab = "entiteiten"; 
+            this.activeMainTab = "Modules"; 
             
             //classes
             this.entityTab = null;
@@ -403,7 +403,7 @@ const moduleSettings = {
                 },
                 activate: (event) => {
                     const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
-                    admin.activeMainTab = tabName;
+                    this.activeMainTab = tabName;
 
                     // Refresh code mirrors in the currently activated tab.
                     if (event.contentElement) {

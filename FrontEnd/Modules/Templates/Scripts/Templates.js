@@ -373,7 +373,7 @@ const moduleSettings = {
         onMainTabStripActivate(event) {
             switch (this.mainTabStrip.select().data("name")) {
                 case "preview":
-                    this.preview.generatePreview();
+                    this.preview.generatePreview(false);
                     break;
                 case "history":
                     this.reloadHistoryTab();
@@ -772,6 +772,12 @@ const moduleSettings = {
                                     text: "",
                                     iconClass: "k-icon k-i-edit",
                                     click: this.onDynamicContentOpenClick.bind(this)
+                                },
+                                {
+                                    name: "Duplicate",
+                                    text: "",
+                                    iconClass: "k-icon k-i-copy",
+                                    click: this.onDynamicContentDuplicateClick.bind(this, id)
                                 }
                             ],
                             title: "&nbsp;",
@@ -1313,6 +1319,26 @@ const moduleSettings = {
             const tr = $(event.currentTarget).closest("tr");
             const data = grid.dataItem(tr);
             this.openDynamicContentWindow(data.id, data.title);
+        }
+
+        onDynamicContentDuplicateClick(templateId, event) {
+            const process = `duplicateComponent_${Date.now()}`;
+            window.processing.addProcess(process);
+            
+            const grid = $("#dynamic-grid").data("kendoGrid");
+            const tr = $(event.currentTarget).closest("tr");
+            const data = grid.dataItem(tr);
+
+            Wiser.api({
+                url: `${this.settings.wiserApiRoot}dynamic-content/${data.id}/duplicate?templateId=${templateId}`,
+                dataType: "json",
+                type: "POST",
+                contentType: "application/json"
+            }).then(() => {
+                grid.dataSource.read();
+            }).finally(() => {
+                window.processing.removeProcess(process);
+            });
         }
 
         onDynamicContentGridChange(event) {

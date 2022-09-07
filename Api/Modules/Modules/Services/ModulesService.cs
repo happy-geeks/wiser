@@ -634,6 +634,18 @@ namespace Api.Modules.Modules.Services
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<List<string>>> GetModuleGroupsAsync(ClaimsIdentity identity)
+        {
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT DISTINCT `group`
+FROM {WiserTableNames.WiserModule}
+WHERE `group` IS NOT NULL
+AND `group` <> ''
+ORDER BY `group` ASC");
+            var results = dataTable.Rows.Cast<DataRow>().Select(dataRow => dataRow.Field<string>("group"));
+            return new ServiceResult<List<string>>(results.ToList());
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<bool>> UpdateSettingsAsync(int id, ClaimsIdentity identity, ModuleSettingsModel moduleSettingsModel)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();

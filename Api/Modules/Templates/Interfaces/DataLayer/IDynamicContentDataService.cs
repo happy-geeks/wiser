@@ -68,11 +68,19 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <summary>
         /// Publish the dynamic component to an environment. This method will execute the publishmodel instructions it recieves, logic for publishing linked environments should be handled in the servicelayer.
         /// </summary>
-        /// <param name="contentId">The id of the template of which the enviroment should be published.</param>
+        /// <param name="contentId">The id of the component of which the enviroment should be published.</param>
         /// <param name="publishModel">A publish model containing the versions that should be altered and their respective values to be altered with.</param>
         /// <param name="publishLog"></param>
         /// <param name="username">The name of the authenticated user.</param>
         /// <returns>An int confirming the rows altered by the query.</returns>
         Task<int> UpdatePublishedEnvironmentAsync(int contentId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username);
+
+        /// <summary>
+        /// Duplicates a dynamic component (only the latest version).
+        /// </summary>
+        /// <param name="contentId">The ID of the component.</param>
+        /// <param name="newTemplateId">The id of the template to link the new component to.</param>
+        /// <param name="username">The name of the authenticated user.</param>
+        Task DuplicateAsync(int contentId, int newTemplateId, string username);
     }
 }

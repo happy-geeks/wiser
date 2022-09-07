@@ -209,6 +209,10 @@ INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `publis
 # Data selector templates
 INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (6, '', 'map', 700, 15, 0, 'Data selector templates', NOW(), 'Systeem', NULL, '');
 INSERT INTO `wiser_item`(`id`, `unique_uuid`, `parent_item_id`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (7, '', 6, 'dataselector-template', 700, 15, 0, 'Voorbeeld', NOW(), 'Systeem', NULL, '');
+# Content builder snippets
+INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (8, '', 'map', 700, 15, 0, 'Content builder snippets', NOW(), 'Systeem', NULL, '');
+INSERT INTO `wiser_item`(`id`, `unique_uuid`, `parent_item_id`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (9, '', 8, 'map', 700, 15, 0, 'Voorbeeld', NOW(), 'Systeem', NULL, '');
+INSERT INTO `wiser_item`(`id`, `unique_uuid`, `parent_item_id`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (10, '', 9, 'content-builder-snippet', 700, 15, 0, 'Voorbeeld', NOW(), 'Systeem', NULL, '');
 
 -- ----------------------------
 -- Records of wiser_itemdetail

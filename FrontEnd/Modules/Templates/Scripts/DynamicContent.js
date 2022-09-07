@@ -577,7 +577,7 @@ const moduleSettings = {
 
             this.preview.initPreviewProfileInputs(true, true);
             this.preview.bindPreviewButtons();
-            this.preview.generatePreview();
+            this.preview.generatePreview(false);
         }
 
         async transformCodeMirrorViews(container = null) {
