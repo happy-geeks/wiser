@@ -399,11 +399,13 @@ const moduleSettings = {
                     },
                     {
                         title: "Laatste run",
-                        field: "lastRun"
+                        field: "lastRun",
+                        format: "{0:dd-MM-yyyy HH:mm}"
                     },
                     {
                         title: "Laatste tijd",
-                        field: "runTime"
+                        field: "runTime",
+                        template: "#=kendo.toString(runTime, '0.000')# minuten"
                     },
                     {
                         title: "Status",
@@ -411,7 +413,8 @@ const moduleSettings = {
                     },
                     {
                         title: "Volgende run",
-                        field: "nextRun"
+                        field: "nextRun",
+                        format: "{0:dd-MM-yyyy HH:mm}"
                     },
                     {
                         title: "Beheer",
@@ -620,11 +623,22 @@ const moduleSettings = {
         }
 
         async updateServices() {
-            const data = await Wiser.api({
+            const dataSource = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dashboard/services`
             });
 
-            this.servicesGrid.setDataSource(data);
+            this.servicesGrid.setDataSource(new kendo.data.DataSource({
+                data: dataSource,
+                schema: {
+                    model: {
+                        fields: {
+                            lastRun: {from: "lastRun", type: "date"},
+                            nextRun: {from: "nextRun", type: "date"},
+                            runTime: {from: "runTime", type: "number"}
+                        }
+                    }
+                }
+            }));
         }
         
         async onPeriodFilterChange(event) {

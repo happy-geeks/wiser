@@ -707,8 +707,6 @@ public class DashboardService : IDashboardService, IScopedService
 
         foreach (DataRow row in dataTable.Rows)
         {
-            var runTime = row.Field<string>("run_time");
-
             var service = new Service()
             {
                 Id = row.Field<int>("id"),
@@ -718,7 +716,7 @@ public class DashboardService : IDashboardService, IScopedService
                 Scheme = row.Field<string>("scheme"),
                 LastRun = row.Field<DateTime?>("last_run"),
                 NextRun = row.Field<DateTime?>("next_run"),
-                RunTime = String.IsNullOrWhiteSpace(runTime) ? TimeSpan.Zero : TimeSpan.Parse(runTime),
+                RunTime = row.Field<double>("run_time"),
                 State = row.Field<string>("state")
             };
             
