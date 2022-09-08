@@ -97,5 +97,12 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="contentId">The id of the component.</param>
         /// <param name="newTemplateId">The id of the template to link the new component to.</param>
         Task<ServiceResult<bool>> DuplicateAsync(ClaimsIdentity identity, int contentId, int newTemplateId);
+        
+        /// <summary>
+        /// Gets all dynamic content that can be linked to the given template.
+        /// </summary>
+        /// <param name="templateId">The ID of the template.</param>
+        /// <returns>A list of dynamic components from other templates.</returns>
+        Task<ServiceResult<List<DynamicContentOverviewModel>>> GetLinkableDynamicContentAsync(int templateId);
     }
 }
