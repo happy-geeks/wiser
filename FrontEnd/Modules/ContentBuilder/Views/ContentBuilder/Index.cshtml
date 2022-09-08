@@ -1,4 +1,5 @@
-﻿@model FrontEnd.Core.Models.BaseViewModel
+﻿@using System.Web
+@model FrontEnd.Modules.ContentBuilder.Models.ContentBuilderViewModel
 
 <!DOCTYPE html>
 <html lang="nl">
@@ -8,7 +9,8 @@
     <title>Content Builder</title>
 
     <link href="/ContentBuilder/assets/minimalist-blocks/content.css" rel="stylesheet" type="text/css" />
-    <link href="/ContentBuilder/assets/ionicons/css/ionicons.min.css" rel="stylesheet">
+    <link href="/ContentBuilder/assets/ionicons/css/ionicons.min.css" rel="stylesheet" type="text/css">
+    <link href="@(Model.ApiRoot)templates/css-for-html-editors?encryptedUserId=@HttpUtility.UrlEncode(Model.UserId)&subDomain=@HttpUtility.UrlEncode(Model.SubDomain)" rel="stylesheet" type="text/css">
 </head>
 <body>
     <div id="app" v-cloak>
