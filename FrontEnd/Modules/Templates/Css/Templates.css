@@ -5,7 +5,8 @@
 }
 
 .k-dialog #createNewItemDialog,
-.k-dialog #addDynamicContentToHtmlDialog {
+.k-dialog #addDynamicContentToHtmlDialog,
+.k-dialog #linkExistingDynamicContentDialog {
     display: revert;
 }
 

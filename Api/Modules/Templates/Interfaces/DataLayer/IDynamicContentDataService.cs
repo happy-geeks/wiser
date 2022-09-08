@@ -11,6 +11,13 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
     public interface IDynamicContentDataService
     {
         /// <summary>
+        /// Gets all dynamic content that can be linked to the given template.
+        /// </summary>
+        /// <param name="templateId">The ID of the template.</param>
+        /// <returns>A list of dynamic components from other templates.</returns>
+        Task<List<DynamicContentOverviewModel>> GetLinkableDynamicContentAsync(int templateId);
+        
+        /// <summary>
         /// Retrieve the variable data of a set version. This can be used for retrieving past versions or the current version if the version number is known.
         /// </summary>
         /// <param name="version">The version number to distinguish the values by</param>

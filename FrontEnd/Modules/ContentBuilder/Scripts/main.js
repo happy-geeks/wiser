@@ -90,10 +90,15 @@ import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.ser
                     const params = new URLSearchParams(uri);
                     promises.push(main.contentBuildersService.getHtml(params.get("wiserItemId"), params.get("languageCode"), params.get("propertyName")));
                     promises.push(main.contentBuildersService.getCustomerSnippets());
+                    promises.push(main.contentBuildersService.getFramework());
                     const data = await Promise.all(promises);
                     this.html = data[0].data || "";
                     window.customerSnippets = data[1].data.customerSnippets;
                     const snippetCategories = data[1].data.snippetCategories;
+                    let framework = (data[2].data || "").toLowerCase();
+                    if (framework === "contentbuilder") {
+                        framework = "";
+                    }
 
                     this.contentBuilder = new ContentBuilder({
                         container: ".container",
@@ -109,6 +114,7 @@ import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.ser
                         snippetData: "/ContentBuilder/assets/minimalist-blocks/snippetlist.html",
                         snippetCategories: snippetCategories,
                         defaultSnippetCategory: snippetCategories[0][0],
+                        framework: framework,
                         plugins: [
                             { name: 'WiserDataSelector', showInMainToolbar: true, showInElementToolbar: true }
                         ],

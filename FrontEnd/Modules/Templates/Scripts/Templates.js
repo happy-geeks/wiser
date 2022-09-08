@@ -809,6 +809,11 @@ const moduleSettings = {
                             template: `<a class='k-button k-button-icontext' href='\\#' onclick='return window.Templates.openDynamicContentWindow(0, "Nieuw dynamische content toevoegen")'><span class='k-icon k-i-file-add'></span>Nieuw item toevoegen</a>`
                         },
                         {
+                            name: "linkExisting",
+                            text: "Component van andere template koppelen",
+                            template: `<a class='k-button k-button-icontext' href='\\#' onclick='return window.Templates.openLinkableComponentsDialog(${id})'><span class='k-icon k-i-hyperlink-insert'></span>Component van andere template koppelen</a>`
+                        },
+                        {
                             name: "publishToEnvironments",
                             text: "Deploy",
                             template: `<a class='k-button k-button-icontext deploy-button hidden' href='\\#' onclick='return window.Templates.openDeployDynamicContentWindow()'><span class='k-icon k-i-cloud'></span>&nbsp;Deploy</a>`
@@ -1332,9 +1337,8 @@ const moduleSettings = {
         }
 
         onDynamicContentOpenClick(event) {
-            const grid = $("#dynamic-grid").data("kendoGrid");
             const tr = $(event.currentTarget).closest("tr");
-            const data = grid.dataItem(tr);
+            const data = this.dynamicContentGrid.dataItem(tr);
             this.openDynamicContentWindow(data.id, data.title);
         }
 
@@ -1342,9 +1346,8 @@ const moduleSettings = {
             const process = `duplicateComponent_${Date.now()}`;
             window.processing.addProcess(process);
             
-            const grid = $("#dynamic-grid").data("kendoGrid");
             const tr = $(event.currentTarget).closest("tr");
-            const data = grid.dataItem(tr);
+            const data = this.dynamicContentGrid.dataItem(tr);
 
             Wiser.api({
                 url: `${this.settings.wiserApiRoot}dynamic-content/${data.id}/duplicate?templateId=${templateId}`,
@@ -1352,22 +1355,18 @@ const moduleSettings = {
                 type: "POST",
                 contentType: "application/json"
             }).then(() => {
-                grid.dataSource.read();
+                this.dynamicContentGrid.dataSource.read();
             }).finally(() => {
                 window.processing.removeProcess(process);
             });
         }
 
         onDynamicContentGridChange(event) {
-            const grid = $("#dynamic-grid").data("kendoGrid");
-
-            grid.element.find(".k-toolbar .deploy-button").toggleClass("hidden", grid.select().length === 0);
+            this.dynamicContentGrid.element.find(".k-toolbar .deploy-button").toggleClass("hidden", this.dynamicContentGrid.select().length === 0);
         }
 
         openDynamicContentWindow(contentId, title) {
             return new Promise((resolve) => {
-                const grid = $("#dynamic-grid").data("kendoGrid");
-
                 this.newContentId = 0;
                 this.newContentTitle = null;
 
@@ -1379,7 +1378,7 @@ const moduleSettings = {
                     iframe: true,
                     content: `/Modules/DynamicContent/${contentId || 0}?templateId=${this.selectedId}`,
                     close: (closeWindowEvent) => {
-                        grid.dataSource.read();
+                        this.dynamicContentGrid.dataSource.read();
                         resolve({ id: this.newContentId, title: this.newContentTitle });
                     }
                 }).data("kendoWindow").maximize().open();
@@ -1389,14 +1388,69 @@ const moduleSettings = {
             });
         }
 
+        async openLinkableComponentsDialog(templateId) {
+            let dropDown = $("#allDynamicContentDropDown").data("kendoDropDownList");
+            if (!dropDown) {
+                dropDown = $("#allDynamicContentDropDown").kendoDropDownList({
+                    dataTextField: "title",
+                    dataValueField: "id",
+                    optionLabel: "Kies een component"
+                }).data("kendoDropDownList");
+            }
+            
+            const allDynamicContent = await Wiser.api({
+                url: `${this.settings.wiserApiRoot}dynamic-content/linkable?templateId=${templateId}`,
+                dataType: "json",
+                method: "GET"
+            });
+
+            dropDown.setDataSource({
+                data: allDynamicContent,
+                group: { field: "templatePath" }
+            });
+
+            const dialog = $("#linkExistingDynamicContentDialog").kendoDialog({
+                width: "500px",
+                title: `Dynamische inhoud koppelen`,
+                closable: true,
+                modal: true,
+                actions: [
+                    {
+                        text: "Annuleren"
+                    },
+                    {
+                        text: "Koppelen",
+                        primary: true,
+                        action: async () => {
+                            let id = dropDown.value();
+
+                            if (!id) {
+                                return;
+                            }
+
+                            await Wiser.api({
+                                url: `${this.settings.wiserApiRoot}dynamic-content/${id}/link/${templateId}`,
+                                dataType: "json",
+                                method: "PUT",
+                                contentType: "application/json"
+                            });
+
+                            this.dynamicContentGrid.dataSource.read();
+                        }
+                    }
+                ]
+            }).data("kendoDialog");
+
+            dialog.open();
+        }
+
         dynamicContentWindowIsOpen() {
             return $("#dynamicContentWindow").data("kendoWindow") && $("#dynamicContentWindow").is(":visible");
         }
 
         openDeployDynamicContentWindow() {
             return new Promise(async (resolve) => {
-                const grid = $("#dynamic-grid").data("kendoGrid");
-                const selectedDataItem = grid.dataItem(grid.select());
+                const selectedDataItem = this.dynamicContentGrid.dataItem(this.dynamicContentGrid.select());
                 if (!selectedDataItem) {
                     resolve();
                     return;
@@ -1422,7 +1476,7 @@ const moduleSettings = {
                     actions: ["close"],
                     modal: true,
                     close: (closeWindowEvent) => {
-                        grid.dataSource.read();
+                        this.dynamicContentGrid.dataSource.read();
                         resolve();
                     }
                 }).data("kendoWindow").content(html).maximize().open();

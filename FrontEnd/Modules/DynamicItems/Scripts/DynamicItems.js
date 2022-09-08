@@ -190,7 +190,7 @@ const moduleSettings = {
             this.settings.mainDomain = userData.mainDomain;
 
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
-            this.settings.htmlEditorCssUrl = `${this.settings.wiserApiRoot}templates/css-for-html-editors?encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&isTest=${this.base.settings.isTestEnvironment}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&username=${encodeURIComponent(this.base.settings.username)}&userType=${encodeURIComponent(this.base.settings.userType)}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`
+            this.settings.htmlEditorCssUrl = `${this.settings.wiserApiRoot}templates/css-for-html-editors?encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`
 
             // Get list of all entity types, so we can show friendly names wherever we need to and don't have to get them from database via different places.
             try {

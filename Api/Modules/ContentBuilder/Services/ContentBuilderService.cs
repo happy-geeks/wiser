@@ -113,5 +113,12 @@ namespace Api.Modules.ContentBuilder.Services
                 ? new ServiceResult<string>("") 
                 : new ServiceResult<string>(await wiserItemsService.ReplaceHtmlForViewingAsync(dataTable.Rows[0].Field<string>("html")));
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> GetFrameworkAsync()
+        {
+            var framework = await objectsService.FindSystemObjectByDomainNameAsync("ContentBuilder_Framework");
+            return new ServiceResult<string>(framework);
+        }
     }
 }

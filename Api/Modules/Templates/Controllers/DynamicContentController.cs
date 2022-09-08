@@ -157,12 +157,26 @@ namespace Api.Modules.Templates.Controllers
         /// Duplicate a dynamic component (only the latest version).
         /// </summary>
         /// <param name="id">The id of the component.</param>
+        /// <param name="templateId">The id of the template to link the new component to.</param>
         [HttpPost]
         [Route("{id:int}/duplicate")]
-        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> DuplicateAsync(int id, [FromQuery]int templateId)
         {
             return (await dynamicContentService.DuplicateAsync((ClaimsIdentity)User.Identity, id, templateId)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Gets all dynamic content that can be linked to the given template.
+        /// </summary>
+        /// <param name="templateId">The ID of the template.</param>
+        /// <returns>A list of dynamic components from other templates.</returns>
+        [HttpGet]
+        [Route("linkable")]
+        [ProducesResponseType(typeof(List<DynamicContentOverviewModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetLinkableDynamicContentAsync([FromQuery]int templateId)
+        {
+            return (await dynamicContentService.GetLinkableDynamicContentAsync(templateId)).GetHttpResponseMessage();
         }
     }
 }

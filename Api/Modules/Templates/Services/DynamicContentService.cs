@@ -250,5 +250,17 @@ namespace Api.Modules.Templates.Services
             await dataService.DuplicateAsync(contentId, newTemplateId, IdentityHelpers.GetUserName(identity, true));
             return new ServiceResult<bool>(true);
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<DynamicContentOverviewModel>>> GetLinkableDynamicContentAsync(int templateId)
+        {
+            if (templateId <= 0)
+            {
+                throw new ArgumentException("The Id cannot be zero.");
+            }
+
+            var results = await dataService.GetLinkableDynamicContentAsync(templateId);
+            return new ServiceResult<List<DynamicContentOverviewModel>>(results);
+        }
     }
 }
