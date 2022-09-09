@@ -2868,7 +2868,12 @@ export class Fields {
         const textArea = htmlWindow.find("textarea").val(editor.value());
         // Prettify code from minified text.
         const pretty = await require('pretty');
-        textArea[0].value = pretty(textArea[0].value, { ocd: false });
+        textArea[0].value = pretty(textArea[0].value, { 
+            ocd: false,
+            indent_size: 4,
+            unformatted: [],
+            inline: []
+        });
         let codeMirrorInstance;
 
         htmlWindow.kendoWindow({
