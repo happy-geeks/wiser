@@ -7,11 +7,7 @@
     <projectFile profileName="IIS Express">FrontEnd/FrontEnd.csproj</projectFile>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7451bec1-cd19-4584-80b4-3bcf493e408d" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Wiser/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Wiser/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Api/Modules/Templates/Services/DataLayer/TemplateDataService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Api/Modules/Templates/Services/DataLayer/TemplateDataService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FrontEnd/Modules/Templates/Scripts/Templates.js" beforeDir="false" afterPath="$PROJECT_DIR$/FrontEnd/Modules/Templates/Scripts/Templates.js" afterDir="false" />
-    </list>
+    <list default="true" id="7451bec1-cd19-4584-80b4-3bcf493e408d" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
