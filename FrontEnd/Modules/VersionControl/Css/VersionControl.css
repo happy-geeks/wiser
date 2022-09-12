@@ -1,25 +1,23 @@
-.k-master-row td:first-child {
-    text-overflow: clip;
+@import "../../Base/scss/base.scss";
+
+#wiser {
+    display: block;
+    height: 100%;
 }
 
-.k-grid-header-wrap thead tr th:first-child {
-    text-overflow: clip;
+#templateChangesGrid,
+#dynamicContentChangesGrid {
+    height: 34vh;
 }
 
-#commit-data {
-    display: flex;
-    gap: 10px;
-    padding: 10px;
-}
-
-#template-changes-grid {
-    height: 70vh;
-}
-
-#commit-button {
+#commitButton {
     margin-top: 10px;
 }
 
 body {
     margin: 0;
+}
+
+#commitDescription {
+    width: 99%;
 }

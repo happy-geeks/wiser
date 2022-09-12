@@ -37,14 +37,5 @@ namespace Api.Modules.VersionControl.Interfaces
         /// <param name="commitId">The id of the commit.</param>
         /// <returns>Returns a list of dynamic contnet items.</returns>
         Task<ServiceResult<List<DynamicContentCommitModel>>> GetDynamicContentFromCommitAsync(int commitId);
-
-        /// <summary>
-        /// Gets all the dynamic content items that belong to a specific template.
-        /// </summary>
-        /// <param name="templateId">The id of the template.</param>
-        /// <returns>Returns a list of dynamic content items</returns>
-        Task<ServiceResult<List<DynamicContentModel>>> GetDynamicContentInTemplateAsync(int templateId);
-
-
     }
 }

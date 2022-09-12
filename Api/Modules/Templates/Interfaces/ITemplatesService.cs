@@ -108,7 +108,7 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="environment">The environment to publish the template to.</param>
         /// <param name="currentPublished">A PublishedEnvironmentModel containing the current published templates.</param>
         /// <returns>A int of the rows affected.</returns>
-        Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, string environment, PublishedEnvironmentModel currentPublished);
+        Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished);
 
         /// <summary>
         /// Save the template as a new version and save the linked templates if necessary. This method will calculate if links are to be added or removed from the current situation.

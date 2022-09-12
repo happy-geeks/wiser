@@ -4,14 +4,15 @@ using Api.Core.Services;
 using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
+using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 
 namespace Api.Modules.VersionControl.Services
 {
     /// <inheritdoc cref="IVersionControlService" />
-    public class VersionControlService : IVersionControlService
+    public class VersionControlService : IVersionControlService, IScopedService
     {
-
         private readonly IVersionControlDataService versionControlDataService;
+        
         /// <summary>
         /// Creates a new instance of <see cref="VersionControlService"/>.
         /// </summary>
@@ -50,14 +51,5 @@ namespace Api.Modules.VersionControl.Services
             var result = await versionControlDataService.GetDynamicContentFromCommitAsync(commitId);
             return new ServiceResult<List<DynamicContentCommitModel>>(result);
         }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<List<DynamicContentModel>>> GetDynamicContentInTemplateAsync(int templateId)
-        {
-            var result = await versionControlDataService.GetDynamicContentInTemplateAsync(templateId);
-
-            return new ServiceResult<List<DynamicContentModel>>(result);
-        }
-
     }
 }

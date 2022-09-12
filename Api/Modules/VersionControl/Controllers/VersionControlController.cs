@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Models;
@@ -9,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.Modules.VersionControl.Controllers;
 
 /// <summary>
-///     Controller for getting or doing things with templates and dynamic content from the version control module in Wiser.
+/// Controller for getting or doing things with templates and dynamic content from the version control module in Wiser.
 /// </summary>
 [Route("api/v3/version-control")]
 [ApiController]
@@ -17,21 +18,17 @@ namespace Api.Modules.VersionControl.Controllers;
 public class VersionControlController : Controller
 {
     private readonly ICommitService commitService;
-    private readonly IVersionControlService versionControlService;
     
     /// <summary>
-    ///     ctor
+    /// Creates a new instance of <see cref="VersionControlController"/>.
     /// </summary>
-    /// <param name="commitService"></param>
-    /// <param name="versionControlService"></param>
-    public VersionControlController(ICommitService commitService, IVersionControlService versionControlService)
+    public VersionControlController(ICommitService commitService)
     {
         this.commitService = commitService;
-        this.versionControlService = versionControlService;
     }
     
     /// <summary>
-    ///     Get all templates that have uncommitted changes.
+    /// Get all templates that have uncommitted changes.
     /// </summary>
     [HttpGet]
     [Route("templates-to-commit")]
@@ -42,16 +39,26 @@ public class VersionControlController : Controller
     }
     
     /// <summary>
-    /// Gets the dynamic content that are part of the given template
+    /// Get all dynamic content that have uncommitted changes.
     /// </summary>
-    /// <param name="templateId">the ID of the template</param>
-    /// <returns>Returns all the dynamic content that are linked to the given template in a list of dynamic content</returns>
     [HttpGet]
-    [Route("dynamic-content-in-template/{templateId:int}")]
-    [ProducesResponseType(typeof(List<DynamicContentModel>), StatusCodes.Status200OK)]
+    [Route("dynamic-content-to-commit")]
+    [ProducesResponseType(typeof(List<DynamicContentCommitModel>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetDynamicContentInTemplate(int templateId)
+    public async Task<IActionResult> GetDynamicContentInTemplate()
     {
-        return (await versionControlService.GetDynamicContentInTemplateAsync(templateId)).GetHttpResponseMessage();
+        return (await commitService.GetDynamicContentsToCommitAsync()).GetHttpResponseMessage();
+    }
+    
+    /// <summary>
+    /// Creates new commit item in the database.
+    /// </summary>
+    /// <param name="data">The data of the commit</param>
+    /// <returns>Returns a model of the commit.</returns>
+    [HttpPost]
+    [ProducesResponseType(typeof(CreateCommitModel), StatusCodes.Status200OK)]
+    public async Task<IActionResult> CreateNewCommitAsync(CreateCommitModel data)
+    {
+        return (await commitService.CreateCommitAsync(data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
     }
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
+using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.Templates.Interfaces
 {
@@ -88,6 +89,6 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="version">The version of the template to publish.</param>
         /// <param name="environment">The environment to publish the template to.</param>
         /// <param name="currentPublished">A PublishedEnvironmentModel containing the current published templates.</param>
-        Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int contentId, int version, string environment, PublishedEnvironmentModel currentPublished);
+        Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int contentId, int version, Environments environment, PublishedEnvironmentModel currentPublished);
     }
 }

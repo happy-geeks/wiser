@@ -1,12 +1,17 @@
-import {TrackJS} from "trackjs";
-import {Wiser} from "../../Base/Scripts/Utils";
-import {Grids} from "./Grids";
+import { TrackJS } from "trackjs";
+import { Wiser } from "../../Base/Scripts/Utils";
 import "../../Base/Scripts/Processing.js";
 import "../Css/VersionControl.css"
 
 window.JSZip = require("jszip");
 
 require("@progress/kendo-ui/js/kendo.tabstrip.js");
+require("@progress/kendo-ui/js/kendo.tooltip.js");
+require("@progress/kendo-ui/js/kendo.button.js");
+require("@progress/kendo-ui/js/kendo.dialog.js");
+require("@progress/kendo-ui/js/kendo.grid.js");
+require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
+require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -23,109 +28,26 @@ const moduleSettings = {
         constructor(settings) {
             this.base = this;
 
-            // Sub classes.
-            this.grids = null;
-            this.commit = null;
-            this.template = null;
-
-            this.newItemId = null;
-
-            // Kendo components.
-            this.notification = null;
-
-            // Other.
+            // Components.
             this.mainLoader = null;
+            this.commitEnvironmentField = null;
+            this.commitDescriptionField = null;
+            this.templateChangesGrid = null;
+            this.dynamicContentChangesGrid = null;
+            this.mainTabStrip = null;
+            this.commitButton = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
 
-            // Flags to use in wiser_field_templates, so that we can add code there that depends on code in this file, without having to deploy this to live right away.
-            this.fieldTemplateFlags = {
-                enableSubEntitiesGridsOrdering: true
-            };
-
             // Default settings
             this.settings = {
-                moduleId: 6001,
-                encryptedModuleId: "",
                 customerId: 0,
-                initialItemId: null,
-                iframeMode: false,
-                gridViewMode: false,
-                openGridItemsInBlock: false,
                 username: "Onbekend",
                 userEmailAddress: "",
                 userType: ""
             };
             Object.assign(this.settings, settings);
-
-            this.permissionsEnum = Object.freeze({
-                read: 1 << 0,
-                create: 1 << 1,
-                update: 1 << 2,
-                delete: 1 << 3
-            });
-
-            this.environmentsEnum = Object.freeze({
-                hidden: 0,
-                development: 1 << 0,
-                test: 1 << 1,
-                acceptance: 1 << 2,
-                live: 1 << 3
-            });
-
-            this.comparisonOperatorsEnum = Object.freeze({
-                equals: "eq",
-                doesNotEqual: "neq",
-                contains: "contains",
-                doesNotContain: "doesnotcontain",
-                startsWith: "startswith",
-                doesNotStartWith: "doesnotstartwith",
-                endsWith: "endswith",
-                doesNotEndWith: "doesnotendwith",
-                isEmpty: "isempty",
-                isNotEmpty: "isnotempty",
-                isGreaterThan: "gt",
-                isGreaterThanOrEquals: "gte",
-                isLessThan: "lt",
-                isLessThanOrEquals: "lte"
-            });
-
-            this.dependencyActionsEnum = Object.freeze({
-                toggleVisibility: "toggle-visibility",
-                refresh: "refresh"
-            });
-
-            // Tabstrip
-            this.mainTabStrip = $("#tabstrip").kendoTabStrip({
-                animation: {
-                    open: {
-                        effects: "fadeIn"
-                    }
-                }
-            }).data("kendoTabStrip");
-            
-            // Commit button
-            this.commitButton = $("#commit-button").kendoButton({
-                click: this.onCommit.bind(this),
-                icon: "save"
-            }).data();
-            
-            // Click action for each checkbox. 
-            document.querySelectorAll("#commit-data .commit-checkbox").forEach(x => {
-                x.addEventListener("click", (event) => {
-                    // (Un)check all checkboxes when commit to live is checked
-                    if (event.target.id === "commit-live") {
-                        document.querySelector("#commit-test").checked = event.target.checked;
-                        document.querySelector("#commit-stage").checked = event.target.checked;
-                    }
-                });
-            });
-
-             // Create instances of sub classes.
-            this.grids = new Grids(this);
-            // this.commit = new Commit(this);
-            // this.template = new Template(this);
 
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
@@ -147,11 +69,6 @@ const moduleSettings = {
             // Setup processing.
             document.addEventListener("processing.Busy", this.toggleMainLoader.bind(this, true));
             document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
-
-            // Fullscreen event for elements that can go fullscreen, such as HTML editors.
-            const classHolder = $(document.documentElement);
-            const fullscreenChange = "webkitfullscreenchange mozfullscreenchange fullscreenchange MSFullscreenChange";
-            $(document).bind(fullscreenChange, $.proxy(classHolder.toggleClass, classHolder, "k-fullscreen"));
 
             // Setup any settings from the body element data. These settings are added via the Wiser backend and they take preference.
             Object.assign(this.settings, $("body").data());
@@ -176,55 +93,286 @@ const moduleSettings = {
             this.settings.templatesRootId = userData.templatesRootId;
             this.settings.mainDomain = userData.mainDomain;
 
-            console.log(this.settings.wiserApiRoot);
-
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
-            this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
-            this.settings.htmlEditorCssUrl = `${this.settings.wiserApiRoot}templates/css-for-html-editors?encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&isTest=${this.base.settings.isTestEnvironment}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&username=${encodeURIComponent(this.base.settings.username)}&userType=${encodeURIComponent(this.base.settings.userType)}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`
-            this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
-            $("body").toggleClass("gridViewMode", this.settings.gridViewMode);
-
-            //this.setupBindings();
-            //this.initializeKendoComponents();
 
             // Initialize sub classes.
-            await this.grids.initialize();
-            //this.commit.initialize();
-            //this.template.initialize();
-
-            if (this.settings.iframeMode && this.settings.hideHeader) {
-                $("#tabstrip > ul").addClass("hidden");
-            }
-            if (this.settings.iframeMode && this.settings.hideFooter) {
-                $("#right-pane > footer").addClass("hidden");
-            }
-
+            await this.initializeComponents();
+            this.initializeBindings();
+            
             this.toggleMainLoader(false);
+        }
+
+        async initializeComponents() {
+            this.commitDescriptionField = document.getElementById("commitDescription");
+            
+            // Tab strip.
+            this.mainTabStrip = $("#tabstrip").kendoTabStrip().data("kendoTabStrip");
+
+            // Commit button
+            this.commitButton = $("#commitButton").kendoButton({
+                click: this.onCommit.bind(this),
+                icon: "save"
+            }).data();
+            
+            this.commitEnvironmentField = $("#commitEnvironment").kendoDropDownList({
+                optionLabel: "Selecteer omgeving",
+                dataTextField: "text",
+                dataValueField: "value",
+                dataSource: [
+                    { text: "Test", value: 2 },
+                    { text: "Acceptatie", value: 4 },
+                    { text: "Live", value: 8 }
+                ]
+            }).data("kendoDropDownList");
+            
+            // noinspection ES6MissingAwait
+            this.setupTemplateChangesGrid();
+            // noinspection ES6MissingAwait
+            this.setupDynamicContentChangesGrid();
+        }
+        
+        initializeBindings() {
+        }
+
+        async setupTemplateChangesGrid() {
+            try {
+                const gridSettings = {
+                    dataSource: {
+                        transport: {
+                            read: async (transportOptions) => {
+                                const initialProcess = `GetTemplatesToCommit_${Date.now()}`;
+                                window.processing.addProcess(initialProcess);
+
+                                try {
+                                    const templatesToCommit = await Wiser.api({
+                                        url: `${this.base.settings.wiserApiRoot}version-control/templates-to-commit`,
+                                        method: "GET",
+                                        contentType: "application/json"
+                                    });
+
+                                    transportOptions.success(templatesToCommit);
+                                } catch (exception) {
+                                    console.error(exception);
+                                    kendo.alert("Er is iets fout gegaan met het laden van de wijzigingen in templates. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+                                    transportOptions.error(exception);
+                                }
+
+                                window.processing.removeProcess(initialProcess);
+                            }
+                        },
+                        schema: {
+                            model: {
+                                id: "templateId",
+                                fields: {
+                                    changedOn: {
+                                        type: "date"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    selectable: "multiple, row",
+                    columns: [
+                        {
+                            "field": "templateId",
+                            "title": "ID",
+                            "width": "50px"
+                        },
+                        {
+                            "field": "templateType",
+                            "title": "Type",
+                            "width": "75px"
+                        },
+                        {
+                            "field": "templateParentName",
+                            "title": "Map",
+                            "width": "150px"
+                        },
+                        {
+                            "field": "templateName",
+                            "title": "Template",
+                            "width": "150px"
+                        },
+                        {
+                            "field": "version",
+                            "title": "Versie",
+                            "width": "75px"
+                        },
+                        {
+                            "field": "versionTest",
+                            "title": "Versie test",
+                            "width": "75px"
+                        },
+                        {
+                            "field": "versionAcceptance",
+                            "title": "Versie acceptatie",
+                            "width": "100px"
+                        },
+                        {
+                            "field": "versionLive",
+                            "title": "Versie live",
+                            "width": "75px"
+                        },
+                        {
+                            "field": "changedOn",
+                            "format": "{0:dd-MM-yyyy HH:mm:ss}",
+                            "title": "Datum",
+                            "width": "100px"
+                        },
+                        {
+                            "field": "changedBy",
+                            "title": "Door",
+                            "width": "100px"
+                        }
+                    ]
+                };
+
+                this.templateChangesGrid = $("#templateChangesGrid").kendoGrid(gridSettings).data("kendoGrid");
+
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het laden van de wijzigingen in templates. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+            }
+        }
+
+        async setupDynamicContentChangesGrid() {
+            try {
+                const gridSettings = {
+                    dataSource: {
+                        transport: {
+                            read: async (transportOptions) => {
+                                const initialProcess = `GetDynamicContentToCommit_${Date.now()}`;
+                                window.processing.addProcess(initialProcess);
+
+                                try {
+                                    const templatesToCommit = await Wiser.api({
+                                        url: `${this.base.settings.wiserApiRoot}version-control/dynamic-content-to-commit`,
+                                        method: "GET",
+                                        contentType: "application/json"
+                                    });
+
+                                    transportOptions.success(templatesToCommit);
+                                } catch (exception) {
+                                    console.error(exception);
+                                    kendo.alert("Er is iets fout gegaan met het laden van de wijzigingen in templates. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+                                    transportOptions.error(exception);
+                                }
+
+                                window.processing.removeProcess(initialProcess);
+                            }
+                        },
+                        schema: {
+                            model: {
+                                id: "dynamicContentId",
+                                fields: {
+                                    changedOn: {
+                                        type: "date"
+                                    },
+                                    templateNames: {
+                                        type: "array"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    selectable: "multiple, row",
+                    columns: [
+                        {
+                            "field": "dynamicContentId",
+                            "title": "ID",
+                            "width": "50px"
+                        },
+                        {
+                            "field": "templateNames",
+                            "title": "Gebruikt in",
+                            "width": "150px",
+                            "template": "#: templateNames ? templateNames.join(', ') : '' #"
+                        },
+                        {
+                            "field": "title",
+                            "title": "Naam",
+                            "width": "150px"
+                        },
+                        {
+                            "field": "version",
+                            "title": "Versie",
+                            "width": "75px"
+                        },
+                        {
+                            "field": "versionTest",
+                            "title": "Versie test",
+                            "width": "75px"
+                        },
+                        {
+                            "field": "versionAcceptance",
+                            "title": "Versie acceptatie",
+                            "width": "100px"
+                        },
+                        {
+                            "field": "versionLive",
+                            "title": "Versie live",
+                            "width": "75px"
+                        },
+                        {
+                            "field": "changedOn",
+                            "format": "{0:dd-MM-yyyy HH:mm:ss}",
+                            "title": "Datum",
+                            "width": "100px"
+                        },
+                        {
+                            "field": "changedBy",
+                            "title": "Door",
+                            "width": "100px"
+                        }
+                    ]
+                };
+
+                this.dynamicContentChangesGrid = $("#dynamicContentChangesGrid").kendoGrid(gridSettings).data("kendoGrid");
+
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het laden van de wijzigingen in templates. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+            }
         }
         
         async onCommit(event) {
-            let results = [];
-            const selectedData = this.grids.getSelectedData();
-            console.log("selectedData", selectedData);
+            const initialProcess = `CreateCommit_${Date.now()}`;
+            window.processing.addProcess(initialProcess);
             
-            for (const x of selectedData) {
-                results.push(await this.dynamicContentInTemplates(x.templateId));
-            }
-        }
-
-        async dynamicContentInTemplates(templateId) {
             try {
-                return await Wiser.api({
-                    url: `${this.base.settings.wiserApiRoot}version-control/dynamic-content-in-template/${templateId}`,
-                    method: "GET",
+                event.preventDefault();
+                const selectedTemplates = this.templateChangesGrid.getSelectedData();
+                const selectedDynamicContent = this.dynamicContentChangesGrid.getSelectedData();
+
+                const result = await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control`,
+                    method: "POST",
                     contentType: "application/json",
+                    data: JSON.stringify({
+                        environment: this.commitEnvironmentField.value(),
+                        description: this.commitDescriptionField.value,
+                        templates: selectedTemplates.map(t => {
+                            return {templateId: t.templateId, version: t.version};
+                        }),
+                        dynamicContents: selectedDynamicContent.map(d => {
+                            return {dynamicContentId: d.dynamicContentId, version: d.version};
+                        })
+                    })
                 });
-            } catch (exception) {
-                console.error(exception);
-                kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+
+                this.templateChangesGrid.dataSource.read();
+                this.dynamicContentChangesGrid.dataSource.read();
+                this.commitDescriptionField.value = "";
+                this.commitEnvironmentField.value("");
             }
+            catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het maken van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+            }
+            
+            window.processing.removeProcess(initialProcess);
         }
 
         /**
