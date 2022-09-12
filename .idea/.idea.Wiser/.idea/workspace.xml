@@ -8,13 +8,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7451bec1-cd19-4584-80b4-3bcf493e408d" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.Wiser/.idea/projectSettingsUpdater.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.Wiser/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Api/Modules/Templates/Controllers/DynamicContentController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Api/Modules/Templates/Controllers/DynamicContentController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Api/Modules/Templates/Interfaces/DataLayer/IDynamicContentDataService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Api/Modules/Templates/Interfaces/DataLayer/IDynamicContentDataService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Api/Modules/Templates/Interfaces/IDynamicContentService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Api/Modules/Templates/Interfaces/IDynamicContentService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Api/Modules/Templates/Services/DataLayer/DynamicContentDataService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Api/Modules/Templates/Services/DataLayer/DynamicContentDataService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Api/Modules/Templates/Services/DynamicContentService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Api/Modules/Templates/Services/DynamicContentService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.Wiser/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Wiser/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Api/Modules/Templates/Services/DataLayer/TemplateDataService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Api/Modules/Templates/Services/DataLayer/TemplateDataService.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/FrontEnd/Modules/Templates/Scripts/Templates.js" beforeDir="false" afterPath="$PROJECT_DIR$/FrontEnd/Modules/Templates/Scripts/Templates.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -121,7 +116,7 @@
       <workItem from="1662533348788" duration="9260000" />
       <workItem from="1662545404595" duration="2362000" />
       <workItem from="1662619820686" duration="3679000" />
-      <workItem from="1662966012712" duration="14852000" />
+      <workItem from="1662966012712" duration="19850000" />
     </task>
     <servers />
   </component>

@@ -386,6 +386,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                 resultDao.ChangedOn = row.Field<DateTime>("changed_on");
                 resultDao.ChangedBy = row.Field<string>("changed_by");
                 resultDao.Title = row.Field<string>("title");
+                
 
                 resultList.Add(resultDao);
             }
