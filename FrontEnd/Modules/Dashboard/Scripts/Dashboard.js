@@ -395,7 +395,13 @@ const moduleSettings = {
                     },
                     {
                         title: "Schema",
-                        field: "scheme"
+                        field: "scheme",
+                        values: [
+                            { text: "Doorlopend", value: "continuous" },
+                            { text: "Dagelijks", value: "daily" },
+                            { text: "Wekelijks", value: "weekly" },
+                            { text: "Maandelijks", value: "monthly" }
+                        ]
                     },
                     {
                         title: "Laatste run",
@@ -409,7 +415,15 @@ const moduleSettings = {
                     },
                     {
                         title: "Status",
-                        field: "state"
+                        field: "state",
+                        values: [
+                            { text: "Actief", value: "active" },
+                            { text: "Succesvol", value: "success" },
+                            { text: "Waarschuwing", value: "warning" },
+                            { text: "Mislukt", value: "failed" },
+                            { text: "Gepauzeerd", value: "paused" },
+                            { text: "Gestopt", value: "stopped" }
+                        ]
                     },
                     {
                         title: "Volgende run",
@@ -418,27 +432,33 @@ const moduleSettings = {
                     },
                     {
                         title: "Beheer",
-                        commands: [
+                        command: [
                             {
-                                name: "Edit",
+                                name: "edit",
+                                text: "",
                                 iconClass: "k-icon k-i-pencil"
                             },
                             {
-                                name: "Start",
+                                name: "start",
+                                text: "",
                                 iconClass: "k-icon k-i-play"
                             },
                             {
-                                name: "Pause",
+                                name: "pause",
+                                text: "",
                                 iconClass: "k-icon k-i-pause"
                             },
                             {
-                                name: "Logs",
+                                name: "logs",
+                                text: "",
                                 iconClass: "k-icon k-i-file-txt"
                             }
                         ]
                     },
-                ]
+                ],
+                dataBound: this.setServiceStateColor
             }).data("kendoGrid");
+            this.servicesGrid.scrollables[1].classList.add("fixed-table");
         }
 
         async updateBranches() {
@@ -639,6 +659,35 @@ const moduleSettings = {
                     }
                 }
             }));
+        }
+        
+        setServiceStateColor(e) {
+            const columnIndex = this.wrapper.find("[data-field=state]").index();
+
+            const rows = e.sender.tbody.children();
+            for(let i = 0; i < rows.length; i++) {
+                const row = $(rows[i]);
+                const dataItem = e.sender.dataItem(row);
+                const state = dataItem.get("state");
+                const cell = row.children().eq(columnIndex);
+                
+                switch(state) {
+                    case "active":
+                    case "success":
+                        cell.addClass("status success");
+                        break;
+                    case "warning":
+                        cell.addClass("status warning");
+                        break;
+                    case "failed":
+                        cell.addClass("status failed");
+                        break;
+                    case "paused":
+                    case "stopped":
+                        cell.addClass("status paused");
+                        break;
+                }
+            }
         }
         
         async onPeriodFilterChange(event) {
