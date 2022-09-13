@@ -453,7 +453,7 @@ namespace Api.Modules.Files.Services
                     }
                 }
             }
-            else
+            else if(!String.IsNullOrWhiteSpace(fileUrl))
             {
                 // CLoudFlare file?
                 if (fileUrl.StartsWith("https://imagedelivery.net"))

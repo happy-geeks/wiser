@@ -401,7 +401,10 @@ FodyWeavers.xsd
 *.msp
 
 # JetBrains Rider
+.idea/
 *.sln.iml
+
+# Content builder
 /FrontEnd/wwwroot/ContentBuilder/*
 !/FrontEnd/wwwroot/ContentBuilder/plugins/
 /FrontEnd/wwwroot/ContentBuilder/plugins/*
