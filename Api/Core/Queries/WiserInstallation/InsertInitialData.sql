@@ -79,7 +79,7 @@ INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (737, '
 # Stamgegevens
 INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (700, 'Stamgegevens', 'line-sliders', 'DynamicItems', 'Instellingen');
 # Import / export
-INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (5536, 'Import/Export', 'im-ex', 'ImportExport', 'Contentbeheer');
+INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (738, 'Import/Export', 'im-ex', 'ImportExport', 'Contentbeheer');
 # Data selector
 INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (706, 'Dataselector', 'settings', 'DataSelector', 'Contentbeheer');
 # Templates
@@ -257,7 +257,7 @@ INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_prop
 # Search module.
 INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 709);
 # Import/export module.
-INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 5536);
+INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 738);
 # Data selector module.
 INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 706);
 # Templates module.
