@@ -33,7 +33,7 @@
 }
 
 .k-window .window-header {
-    background-color: var(--item-bg-color);
+    background-color: transparent;
     box-sizing: border-box;
     height: 75px;
     position: absolute;
@@ -41,8 +41,16 @@
     left: 0;
     right: 0;
     display: flex;
-    justify-content: space-between;
+    justify-content: end;
     padding: 16px;
+    z-index: 1100;
+}
+
+.k-window .k-window-content:not(.html-source-window) {
+    top: 0;
+    position: absolute;
+    bottom: 0;
+    overflow-x: hidden;
 }
 
 .search-container {
@@ -86,17 +94,42 @@
 }
 
 .version-block .item {
-    max-width: 300px;
+    max-width: 275px;
     width: calc(100% / 3);
 }
 
 .version-block .item .flex-container {
-    flex-direction: column;
+    flex-direction: row;
     position: relative;
+}
+
+.version-block .item .flex-container .k-dropdownlist {
+    flex-grow: 0;
+    margin: 0 5px 0 0;
 }
 
 .version-block .item button {
     margin-right: 0;
+}
+
+.version-block .item .flex-container > button {
+    flex-grow: 1;
+    min-width: 160px;
+}
+
+.version-block .version-actions {
+    max-width: fit-content;
+    display: flex;
+    gap: 5px;
+}
+
+.version-block .version-actions > button {
+    width: auto;
+    margin: 0;
+}
+
+.version-block .version-test {
+    margin-right: auto;
 }
 
 /** TREEVIEW **/
@@ -465,6 +498,11 @@
     width: 100%;
 }
 
+#published-environments .item .flex-container .k-dropdownlist {
+    min-width: 90px;
+    width: 40%;
+}
+
 /** ICONS **/
 .k-sprite {
     color: var(--dark-txt);
@@ -538,6 +576,10 @@
 /** DYNAMIC CONTENT **/
 #dynamicContentWindow {
     padding-bottom: 0;
+    position: relative;
+    top: auto;
+    bottom: auto;
+    overflow-x: auto;
 }
 
 /********************** 

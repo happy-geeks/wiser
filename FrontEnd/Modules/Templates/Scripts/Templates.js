@@ -192,10 +192,6 @@ const moduleSettings = {
                 click: () => this.openCreateNewItemDialog()
             });
 
-            $("#saveButton, #saveAndDeployToTestButton").kendoButton({
-                icon: "save"
-            });
-
             // Main window
             this.mainWindow = $("#window").kendoWindow({
                 width: "1500",
@@ -915,6 +911,12 @@ const moduleSettings = {
         async initKendoDeploymentTab() {
             $("#deployLive, #deployAccept, #deployTest").kendoButton();
 
+            $("#saveButton, #saveAndDeployToTestButton").kendoButton({
+                icon: "save"
+            });
+            
+            this.bindDeploymentTabEvents();
+
             // ComboBox
             $(".combo-select").kendoDropDownList();
 
@@ -1558,9 +1560,6 @@ const moduleSettings = {
                 }
             });
 
-            document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
-            document.getElementById("saveAndDeployToTestButton").addEventListener("click", this.saveTemplate.bind(this, true));
-
             document.getElementById("searchForm").addEventListener("submit", this.onSearchFormSubmit.bind(this));
 
             $(".window-content #left-pane div.k-content").on("dragover", (event) => {
@@ -1575,6 +1574,11 @@ const moduleSettings = {
                     list.innerHTML = event.detail.join(", ");
                 });
             });
+        }
+        
+        bindDeploymentTabEvents() {
+            document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
+            document.getElementById("saveAndDeployToTestButton").addEventListener("click", this.saveTemplate.bind(this, true));
         }
 
         /**

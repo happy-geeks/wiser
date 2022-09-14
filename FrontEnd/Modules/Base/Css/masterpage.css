@@ -278,6 +278,10 @@ ins {
 	min-width: 10%;
 	max-width: 100%;
 }
+.emptyItem {
+	padding: 9px;
+	padding-top: 18px;
+}
 .item h4 > label {
 	color: var(--light-txt);
 	font-family: var(--regular-txt);
@@ -719,6 +723,7 @@ ins {
 
 /* FLOATING LABELS */
 .item[data-label-style="float"] h4 {
+	box-sizing: border-box;
 	font-size: 11px;
 	margin-bottom: -25px;
 	padding: 0 8px;
@@ -761,6 +766,10 @@ ins {
 }
 .item[data-label-style="float"] .k-combobox .k-input-inner {
 	line-height: 28px;
+}
+.item[data-label-style="float"] .k-dropdownlist .k-input-inner {
+	line-height: 28px;
+	padding-bottom: 0;
 }
 .item[data-label-style="float"] > .k-button {
 	height: 50px;
