@@ -294,7 +294,7 @@ VALUES (?newContentId, ?templateId, ?now, ?username);";
             return new KeyValuePair<string, string>(title, settings);
         }
 
-
+        /// <inheritdoc />
         public async Task DeleteAsync(int contentId)
         {
             connection.ClearParameters();

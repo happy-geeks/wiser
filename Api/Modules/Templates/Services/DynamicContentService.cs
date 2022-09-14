@@ -251,6 +251,7 @@ namespace Api.Modules.Templates.Services
             return new ServiceResult<bool>(true);
         }
 
+        /// <inheritdoc />
         public async Task<ServiceResult<bool>> DeleteAsync(int contentId)
         {
             if (contentId <= 0)
