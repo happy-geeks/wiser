@@ -167,6 +167,19 @@ namespace Api.Modules.Templates.Controllers
         }
         
         /// <summary>
+        /// Deletes a dynamic content component
+        /// </summary>
+        /// <param name="contentId">The id of the dynamic content</param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Route("{contentId:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteAsync(int contentId)
+        {
+            return (await dynamicContentService.DeleteAsync(contentId)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
         /// Gets all dynamic content that can be linked to the given template.
         /// </summary>
         /// <param name="templateId">The ID of the template.</param>

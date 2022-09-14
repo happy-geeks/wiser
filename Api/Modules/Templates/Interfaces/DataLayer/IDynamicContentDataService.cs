@@ -89,5 +89,12 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="newTemplateId">The id of the template to link the new component to.</param>
         /// <param name="username">The name of the authenticated user.</param>
         Task DuplicateAsync(int contentId, int newTemplateId, string username);
+
+        /// <summary>
+        /// Deletes a dynamic component by putting the field 'removed' to 1
+        /// </summary>
+        /// <param name="contentID"> The ID of the dynamic component</param>
+        /// <returns></returns>
+        Task DeleteAsync(int contentID);
     }
 }

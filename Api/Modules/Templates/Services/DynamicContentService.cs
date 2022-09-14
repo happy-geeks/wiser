@@ -252,6 +252,17 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeleteAsync(int contentId)
+        {
+            if (contentId <= 0)
+            {
+                throw new ArgumentException("The Id is invalid");
+            }
+            await dataService.DeleteAsync(contentId);
+            return new ServiceResult<bool>(true); 
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<List<DynamicContentOverviewModel>>> GetLinkableDynamicContentAsync(int templateId)
         {
             if (templateId <= 0)

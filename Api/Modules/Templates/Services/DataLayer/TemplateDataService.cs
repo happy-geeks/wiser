@@ -356,23 +356,23 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("templateId", templateId);
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
-                wdc.content_id, 
-                wdc.component, 
-                wdc.component_mode, 
-                GROUP_CONCAT(DISTINCT otherdc.`usages`) AS `usages`,
-                wdc.changed_on,
-                wdc.changed_by,
-                wdc.`title`
-                FROM {WiserTableNames.WiserTemplateDynamicContent} tdclink 
-                LEFT JOIN {WiserTableNames.WiserDynamicContent} wdc ON wdc.content_id = tdclink.content_id 
-                LEFT JOIN (
-	                SELECT dcusages.content_id, tt.template_name AS `usages` 
-	                FROM {WiserTableNames.WiserTemplateDynamicContent} dcusages 
-	                JOIN {WiserTableNames.WiserTemplate} tt ON tt.template_id=dcusages.destination_template_id AND tt.removed = 0
-                ) AS otherdc ON otherdc.content_id=tdclink.content_id
-                WHERE tdclink.destination_template_id = ?templateid
-                AND wdc.version = (SELECT MAX(dc.version) FROM {WiserTableNames.WiserDynamicContent} dc WHERE dc.content_id = wdc.content_id)
-                GROUP BY wdc.content_id");
+    wdc.content_id, 
+    wdc.component, 
+    wdc.component_mode, 
+    GROUP_CONCAT(DISTINCT otherdc.`usages`) AS `usages`,
+    wdc.changed_on,
+    wdc.changed_by,
+    wdc.`title`
+FROM {WiserTableNames.WiserTemplateDynamicContent} tdclink 
+JOIN {WiserTableNames.WiserDynamicContent} wdc ON wdc.content_id = tdclink.content_id AND wdc.removed = 0
+LEFT JOIN (
+	SELECT dcusages.content_id, tt.template_name AS `usages` 
+	FROM {WiserTableNames.WiserTemplateDynamicContent} dcusages 
+	JOIN {WiserTableNames.WiserTemplate} tt ON tt.template_id=dcusages.destination_template_id AND tt.removed = 0
+) AS otherdc ON otherdc.content_id=tdclink.content_id
+WHERE tdclink.destination_template_id = ?templateid
+AND wdc.version = (SELECT MAX(dc.version) FROM {WiserTableNames.WiserDynamicContent} dc WHERE dc.content_id = wdc.content_id)
+GROUP BY wdc.content_id");
             var resultList = new List<LinkedDynamicContentDao>();
 
             foreach (DataRow row in dataTable.Rows)
@@ -386,6 +386,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                 resultDao.ChangedOn = row.Field<DateTime>("changed_on");
                 resultDao.ChangedBy = row.Field<string>("changed_by");
                 resultDao.Title = row.Field<string>("title");
+                
 
                 resultList.Add(resultDao);
             }

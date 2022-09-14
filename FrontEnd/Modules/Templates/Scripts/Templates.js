@@ -796,7 +796,13 @@ const moduleSettings = {
                                     text: "",
                                     iconClass: "k-icon k-i-copy",
                                     click: this.onDynamicContentDuplicateClick.bind(this, id)
-                                }
+                                },
+                                {
+                                    name: "Delete",
+                                    text: "",
+                                    iconClass: "k-icon k-i-trash",
+                                    click: this.onDynamicContentDeleteClick.bind(this)
+                                },
                             ],
                             title: "&nbsp;",
                             width: 160,
@@ -1360,6 +1366,26 @@ const moduleSettings = {
             }).finally(() => {
                 window.processing.removeProcess(process);
             });
+        }
+        
+        onDynamicContentDeleteClick(event) {
+            const tr = $(event.currentTarget).closest("tr");
+            const data = this.dynamicContentGrid.dataItem(tr);
+            
+            Wiser.showConfirmDialog(`Weet u zeker dat u het item '${data.title}' wilt verwijderen?`).then(async () => {
+                    Wiser.api({
+                        url: `${this.settings.wiserApiRoot}dynamic-content/${data.id}`,
+                        dataType: "json",
+                        type: "DELETE",
+                        contentType: "application/json"
+                    }).then(() => {
+                        this.dynamicContentGrid.dataSource.read();
+                    }).fail((jqXhr, textStatus, errorThrown) => {
+                        console.error(errorThrown);
+                        kendo.alert("Er is iets fout gegaan tijdens het verwijderen van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                    });
+            })
+            
         }
 
         onDynamicContentGridChange(event) {
