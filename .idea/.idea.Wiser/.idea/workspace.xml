@@ -7,7 +7,10 @@
     <projectFile profileName="IIS Express">FrontEnd/FrontEnd.csproj</projectFile>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7451bec1-cd19-4584-80b4-3bcf493e408d" name="Changes" comment="" />
+    <list default="true" id="7451bec1-cd19-4584-80b4-3bcf493e408d" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.Wiser/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Wiser/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FrontEnd/Modules/Templates/Scripts/Templates.js" beforeDir="false" afterPath="$PROJECT_DIR$/FrontEnd/Modules/Templates/Scripts/Templates.js" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -113,6 +116,8 @@
       <workItem from="1662545404595" duration="2362000" />
       <workItem from="1662619820686" duration="3679000" />
       <workItem from="1662966012712" duration="19850000" />
+      <workItem from="1663059847064" duration="1739000" />
+      <workItem from="1663144180742" duration="376000" />
     </task>
     <servers />
   </component>

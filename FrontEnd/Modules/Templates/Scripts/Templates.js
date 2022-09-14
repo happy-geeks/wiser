@@ -1373,7 +1373,6 @@ const moduleSettings = {
             const data = this.dynamicContentGrid.dataItem(tr);
             
             Wiser.showConfirmDialog(`Weet u zeker dat u het item '${data.title}' wilt verwijderen?`).then(async () => {
-                try {
                     Wiser.api({
                         url: `${this.settings.wiserApiRoot}dynamic-content/${data.id}`,
                         dataType: "json",
@@ -1381,11 +1380,10 @@ const moduleSettings = {
                         contentType: "application/json"
                     }).then(() => {
                         this.dynamicContentGrid.dataSource.read();
-                    }) 
-                } catch (exception){
-                    console.error(exception);
-                    kendo.alert("Er is iets fout gegaan tijdens het verwijderen van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
-                }
+                    }).fail((jqXhr, textStatus, errorThrown) => {
+                        console.error(errorThrown);
+                        kendo.alert("Er is iets fout gegaan tijdens het verwijderen van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                    });
             })
             
         }
