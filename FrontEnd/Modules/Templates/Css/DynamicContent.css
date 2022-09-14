@@ -248,6 +248,11 @@
     opacity: 1;
 }
 
+.item .CodeMirror,
+.item table.k-editor {
+    flex-grow: 1;
+}
+
 /** KENDO DROPDOWNS **/
 .k-combobox .k-icon,
 .k-dropdown .k-icon,
