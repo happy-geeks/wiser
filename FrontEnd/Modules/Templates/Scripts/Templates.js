@@ -1839,9 +1839,18 @@ const moduleSettings = {
             });
 
             document.querySelector("#published-environments").outerHTML = response;
+            
+            // Bind deploy buttons.
             $("#deployLive, #deployAccept, #deployTest").kendoButton();
             $("#published-environments .combo-select").kendoDropDownList();
             this.bindDeployButtons(templateId);
+            
+            // Bind save buttons.
+            $("#saveButton, #saveAndDeployToTestButton").kendoButton({
+                icon: "save"
+            });
+
+            this.bindDeploymentTabEvents();
         }
 
         /**
