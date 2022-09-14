@@ -706,7 +706,8 @@ const moduleSettings = {
                                     readOptions.error(error);
                                 });
                             }
-                        }
+                        },
+                        pageSize: 20
                     },
                     scrollable: true,
                     resizable: true,
