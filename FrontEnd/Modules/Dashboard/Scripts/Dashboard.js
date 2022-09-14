@@ -422,7 +422,8 @@ const moduleSettings = {
                             { text: "Waarschuwing", value: "warning" },
                             { text: "Mislukt", value: "failed" },
                             { text: "Gepauzeerd", value: "paused" },
-                            { text: "Gestopt", value: "stopped" }
+                            { text: "Gestopt", value: "stopped" },
+                            { text: "Gecrasht", value: "crashed" }
                         ]
                     },
                     {
@@ -680,6 +681,7 @@ const moduleSettings = {
                         cell.addClass("status warning");
                         break;
                     case "failed":
+                    case "crashed":
                         cell.addClass("status failed");
                         break;
                     case "paused":
