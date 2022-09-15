@@ -52,6 +52,11 @@ var youTubeTool = {
     tooltip: "YouTube video invoegen",
     exec: function(e) { window.dynamicItems.fields.onHtmlEditorYouTubeExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor")); }
 };
+var translationsTool = {
+    name: "wiserTranslation",
+    tooltip: "Vertaling invoegen",
+    exec: function(e) { window.dynamicItems.fields.onHtmlEditorTranslationExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor")); }
+};
 
 var options = $.extend(true, {
 	resizable: true,
@@ -104,6 +109,7 @@ var allTools = {
     entityBlockTool: [99],
     dataSelectorTool: [99],
     youTubeTool: [2,3,99],
+    translationsTool: [2,3,99],
     "subscript": [99],
     "superscript": [99],
     "tableWizard": [3,99],
@@ -174,6 +180,9 @@ for (var toolName in allTools) {
             break;
         case "youTubeTool":
             tool = youTubeTool;
+            break;
+        case "translationsTool":
+            tool = translationsTool;
             break;
         default:
             tool = toolName;

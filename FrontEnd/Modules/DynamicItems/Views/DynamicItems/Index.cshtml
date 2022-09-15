@@ -35,7 +35,8 @@
         #dataSelectorTemplateDialog,
         #searchItemsWindow,
         #youTubeDialog,
-        #translateItemDialog {
+        #translateItemDialog,
+        #translationsDialog {
             display: none;
         }
     </style>
@@ -767,6 +768,15 @@
                 <span class="inline">
                     <label class="checkbox"><input type="checkbox" id="youTubeShowRelatedVideos" class="textField k-input" name="youTubeShowRelatedVideos" /><span>Gerelateerde video's weergeven</span></label>
                 </span>
+            </div>
+        </div>
+    </div>
+
+    <div id="translationsDialog">
+        <div class="formview full static-fields">
+            <div class="item">
+                <h4><label>Hiermee kan een vertaalwoord ingevoegd worden. Dit woord wordt dan automatisch op de website vertaald naar de taal die de gebruiker heeft gekozen. Deze vertaalwoorden kunnen in de module "Vertalingen" ingevuld worden.</label></h4>
+                <select id="translationsDropDown" class="select"></select>
             </div>
         </div>
     </div>

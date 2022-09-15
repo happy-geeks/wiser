@@ -15,6 +15,8 @@ using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Services;
 using Api.Modules.DigitalOcean.Models;
 using Api.Modules.Google.Models;
+using Api.Modules.Languages.Interfaces;
+using Api.Modules.Languages.Services;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Services;
 using GeeksCoreLibrary.Core.Extensions;
@@ -240,6 +242,7 @@ namespace Api
             services.Decorate<IDatabaseConnection, ClientDatabaseConnection>();
             services.Decorate<ITemplatesService, CachedTemplatesService>();
             services.Decorate<IUsersService, CachedUsersService>();
+            services.Decorate<ILanguagesService, CachedLanguagesService>();
 
             // Add JavaScriptEngineSwitcher services to the services container.
             services.AddJsEngineSwitcher(options => options.DefaultEngineName = ChakraCoreJsEngine.EngineName).AddChakraCore();
