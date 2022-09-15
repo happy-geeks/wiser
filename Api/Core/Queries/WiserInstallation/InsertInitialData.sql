@@ -79,7 +79,7 @@ INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (737, '
 # Stamgegevens
 INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (700, 'Stamgegevens', 'line-sliders', 'DynamicItems', 'Instellingen');
 # Import / export
-INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (5536, 'Import/Export', 'im-ex', 'ImportExport', 'Contentbeheer');
+INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (738, 'Import/Export', 'im-ex', 'ImportExport', 'Contentbeheer');
 # Data selector
 INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (706, 'Dataselector', 'settings', 'DataSelector', 'Contentbeheer');
 # Templates
@@ -257,7 +257,7 @@ INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_prop
 # Search module.
 INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 709);
 # Import/export module.
-INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 5536);
+INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 738);
 # Data selector module.
 INSERT INTO `wiser_permission`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `permissions`, `module_id`) VALUES (1, '', 0, 0, 15, 706);
 # Templates module.
@@ -284,7 +284,7 @@ INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_t
 -- ----------------------------
 -- Records of wiser_data_selector
 -- ----------------------------
-INSERT INTO `wiser_data_selector` (`name`, `removed`, `module_selection`, `request_json`, `saved_json`, `added_on`, `changed_on`, `show_in_export_module`, `available_for_rendering`, `default_template`) VALUES ('Voorbeeld', 0, '', '{\"main\":{\"entityName\":\"map\",\"fields\":[{\"fieldname\":\"id\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"},{\"fieldname\":\"itemtitle\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"}]},\"orderBy\":[{\"fieldname\":\"itemtitle\",\"direction\":\"ASC\"}],\"limit\":\"0\"}', '{\"main\":{\"entityName\":\"map\",\"fields\":[{\"fieldname\":\"id\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"},{\"fieldname\":\"itemtitle\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"}]},\"useExportMode\":false,\"orderBy\":[{\"entityName\":\"map\",\"fieldName\":\"itemtitle\",\"fieldAlias\":\"\",\"direction\":\"ASC\"}],\"limit\":\"0\"}', NOW(), NOW(), 1, 1, 0);
+INSERT INTO `wiser_data_selector` (`name`, `removed`, `module_selection`, `request_json`, `saved_json`, `added_on`, `changed_on`, `show_in_export_module`, `available_for_rendering`, `default_template`) VALUES ('Voorbeeld', 0, '', '{\"main\":{\"entityName\":\"map\",\"fields\":[{\"fieldname\":\"id\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"},{\"fieldname\":\"itemtitle\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"}]},\"orderBy\":[{\"fieldname\":\"itemtitle\",\"direction\":\"ASC\"}],\"limit\":\"0\",\"insecure\":true}', '{\"main\":{\"entityName\":\"map\",\"fields\":[{\"fieldname\":\"id\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"},{\"fieldname\":\"itemtitle\",\"fieldalias\":\"\",\"dataType\":\"string\",\"havingDataType\":\"string\",\"languagecode\":\"\",\"aggregationfunction\":\"\",\"formatting\":\"\"}]},\"useExportMode\":false,\"orderBy\":[{\"entityName\":\"map\",\"fieldName\":\"itemtitle\",\"fieldAlias\":\"\",\"direction\":\"ASC\"}],\"limit\":\"0\",\"insecure\":true}', NOW(), NOW(), 1, 1, 0);
 
 -- ----------------------------
 -- Records of wiser_module

@@ -189,7 +189,7 @@ const moduleSettings = {
             // Buttons
             $("#addButton").kendoButton({
                 icon: "plus",
-                click: () => this.openCreateNewItemDialog()
+                click: () => this.openCreateNewItemDialog(false)
             });
 
             // Main window
@@ -323,10 +323,12 @@ const moduleSettings = {
 
         /**
          * Opens the dialog for creating a new item.
+         * @param {boolean} isFromContextMenu When calling this from context menu, set this to true.
          * @param {any} dataItem When calling this from context menu, the selected data item from the tree view or tab sheet should be entered here.
-         * @param isFromRootItem {boolean} When calling this from context menu, indicate whether this was a context menu of a root item or a tree node.
+         * @param {boolean} isFromRootItem When calling this from context menu, indicate whether this was a context menu of a root item or a tree node.
+         * @param {any} selectedTreeViewNode When calling this from context menu, the selected node of the tree view or tab sheet should be entered here.
          */
-        async openCreateNewItemDialog(dataItem = null, isFromRootItem = false) {
+        async openCreateNewItemDialog(isFromContextMenu = false, dataItem = null, isFromRootItem = false, selectedTreeViewNode = null) {
             try {
                 const selectedTabIndex = this.treeViewTabStrip.select().index();
                 const selectedTabContentElement = this.treeViewTabStrip.contentElement(selectedTabIndex);
@@ -337,6 +339,10 @@ const moduleSettings = {
                 const newItemIsDirectoryCheckBox = $("#newItemIsDirectoryCheckBox").prop("checked", false);
                 const newItemTitleField = $("#newItemTitleField").val("");
                 const parentIsDirectory = dataItem.isFolder;
+                
+                if (!isFromContextMenu) {
+                    selectedTreeViewNode = treeView.select();
+                }
 
                 newItemIsDirectoryCheckBox.toggleClass("hidden", !parentIsDirectory);
 
@@ -363,7 +369,7 @@ const moduleSettings = {
 
                                     const type = isDirectory ? this.templateTypes.DIRECTORY : this.templateTypes[treeViewElement.dataset.title.toUpperCase()];
 
-                                    this.createNewTemplate(parentId, title, type, treeView, !parentId || isFromRootItem ? undefined : treeView.select());
+                                    this.createNewTemplate(parentId, title, type, treeView, !parentId || isFromRootItem ? undefined : selectedTreeViewNode);
                                 } catch (exception) {
                                     console.error(exception);
                                     kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
@@ -576,7 +582,7 @@ const moduleSettings = {
 
             switch (action) {
                 case "addNewItem":
-                    this.openCreateNewItemDialog(selectedItem, isFromRootItem);
+                    this.openCreateNewItemDialog(true, selectedItem, isFromRootItem, node);
                     break;
                 case "rename":
                     kendo.prompt("Vul een nieuwe naam in", selectedItem.templateName).then((newName) => {
