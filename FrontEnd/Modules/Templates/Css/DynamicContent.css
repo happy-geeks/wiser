@@ -230,6 +230,21 @@
     right: 0;
 }
 
+/** FIELD ELEMENTS **/
+#DynamicContentComponentInputs span.k-widget,
+#DynamicContentComponentInputs span.k-picker,
+#DynamicContentComponentInputs span.k-combobox,
+#DynamicContentComponentInputs span.k-multiselect,
+#DynamicContentComponentInputs .item .inline {
+    margin: 0;
+}
+
+#DynamicContentComponentInputs span.k-input {
+    border: 1px solid var(--border-color);
+    margin: 5px 0;
+    max-height: 50px;
+}
+
 /********************** 
 * CodeMirror
 **********************/
