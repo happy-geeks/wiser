@@ -2032,6 +2032,10 @@ const moduleSettings = {
         }
 
         canUnloadTemplate() {
+            if (!this.initialTemplateSettings) {
+                return true;
+            }
+
             const initialData = JSON.stringify(this.initialTemplateSettings);
             const currentData = JSON.stringify(this.getCurrentTemplateSettings());
             return initialData === currentData;
