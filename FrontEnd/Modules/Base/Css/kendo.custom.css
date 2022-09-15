@@ -3133,7 +3133,7 @@ td.k-group-cell,
     border-left-color: var(--bg-color);
 }
 
-.k-filter-menu > div > div:last-child {
+.k-filter-menu > div > div:not(:only-child):last-child {
     border-color: var(--bg-color);
 	margin: 1em -1.25em 0;
 }
@@ -4488,6 +4488,10 @@ div.k-scheduler-marquee:after {
     color: var(--dark-txt);
 }
 
+.k-editor-toolbar .k-button.k-disabled {
+    display: none;
+}
+
 table.k-editor {
     border-color: var(--sec-color);
 }
@@ -4523,6 +4527,10 @@ table.k-editor {
 .k-editor-toolbar .k-button-group .k-button.k-state-active,
 .k-toolbar .k-button-group .k-button.k-state-active {
     box-shadow: none;
+}
+
+.k-editor-toolbar .k-editor-dropdown .k-button {
+    padding: 10px;
 }
 
 .k-editor .k-tool:hover,

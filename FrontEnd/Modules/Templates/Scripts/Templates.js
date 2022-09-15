@@ -192,10 +192,6 @@ const moduleSettings = {
                 click: () => this.openCreateNewItemDialog(false)
             });
 
-            $("#saveButton, #saveAndDeployToTestButton").kendoButton({
-                icon: "save"
-            });
-
             // Main window
             this.mainWindow = $("#window").kendoWindow({
                 width: "1500",
@@ -802,7 +798,13 @@ const moduleSettings = {
                                     text: "",
                                     iconClass: "k-icon k-i-copy",
                                     click: this.onDynamicContentDuplicateClick.bind(this, id)
-                                }
+                                },
+                                {
+                                    name: "Delete",
+                                    text: "",
+                                    iconClass: "k-icon k-i-trash",
+                                    click: this.onDynamicContentDeleteClick.bind(this)
+                                },
                             ],
                             title: "&nbsp;",
                             width: 160,
@@ -921,6 +923,12 @@ const moduleSettings = {
         //Initializes the kendo components on the deployment tab. These are seperated from other components since these can be reloaded by the application.
         async initKendoDeploymentTab() {
             $("#deployLive, #deployAccept, #deployTest").kendoButton();
+
+            $("#saveButton, #saveAndDeployToTestButton").kendoButton({
+                icon: "save"
+            });
+            
+            this.bindDeploymentTabEvents();
 
             // ComboBox
             $(".combo-select").kendoDropDownList();
@@ -1367,6 +1375,26 @@ const moduleSettings = {
                 window.processing.removeProcess(process);
             });
         }
+        
+        onDynamicContentDeleteClick(event) {
+            const tr = $(event.currentTarget).closest("tr");
+            const data = this.dynamicContentGrid.dataItem(tr);
+            
+            Wiser.showConfirmDialog(`Weet u zeker dat u het item '${data.title}' wilt verwijderen?`).then(async () => {
+                    Wiser.api({
+                        url: `${this.settings.wiserApiRoot}dynamic-content/${data.id}`,
+                        dataType: "json",
+                        type: "DELETE",
+                        contentType: "application/json"
+                    }).then(() => {
+                        this.dynamicContentGrid.dataSource.read();
+                    }).fail((jqXhr, textStatus, errorThrown) => {
+                        console.error(errorThrown);
+                        kendo.alert("Er is iets fout gegaan tijdens het verwijderen van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                    });
+            })
+            
+        }
 
         onDynamicContentGridChange(event) {
             this.dynamicContentGrid.element.find(".k-toolbar .deploy-button").toggleClass("hidden", this.dynamicContentGrid.select().length === 0);
@@ -1565,9 +1593,6 @@ const moduleSettings = {
                 }
             });
 
-            document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
-            document.getElementById("saveAndDeployToTestButton").addEventListener("click", this.saveTemplate.bind(this, true));
-
             document.getElementById("searchForm").addEventListener("submit", this.onSearchFormSubmit.bind(this));
 
             $(".window-content #left-pane div.k-content").on("dragover", (event) => {
@@ -1582,6 +1607,11 @@ const moduleSettings = {
                     list.innerHTML = event.detail.join(", ");
                 });
             });
+        }
+        
+        bindDeploymentTabEvents() {
+            document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
+            document.getElementById("saveAndDeployToTestButton").addEventListener("click", this.saveTemplate.bind(this, true));
         }
 
         /**
@@ -1842,9 +1872,18 @@ const moduleSettings = {
             });
 
             document.querySelector("#published-environments").outerHTML = response;
+            
+            // Bind deploy buttons.
             $("#deployLive, #deployAccept, #deployTest").kendoButton();
             $("#published-environments .combo-select").kendoDropDownList();
             this.bindDeployButtons(templateId);
+            
+            // Bind save buttons.
+            $("#saveButton, #saveAndDeployToTestButton").kendoButton({
+                icon: "save"
+            });
+
+            this.bindDeploymentTabEvents();
         }
 
         /**

@@ -543,6 +543,15 @@
 .k-i-vertalen:before {
 	content: "\e963";
 }
+.html-source-window .k-i-css:before {
+	content: "\e919";
+}
+.html-source-window .k-i-template-manager:before {
+	content: "\e647";
+}
+.html-source-window .k-i-image-insert:before {
+	content: "\e652";
+}
 
 /* KENDO - NOTIFICATION */
 .k-notification img {
@@ -840,6 +849,9 @@ input[type=search] + button {
 	text-align: center;
 	width: 42px;
 }
+.k-input-inner {
+	padding: 8px;
+}
 .k-input[type=text],
 .k-input-inner[type=text],
 .k-input[type=number],
@@ -1062,6 +1074,7 @@ span.k-input .k-input:hover {
 .k-selection-multiple {
 	max-height: 42px;
 	overflow-y: auto;
+	padding-left: 6px;
 }
 .k-selection-multiple .k-chip {
 	font-family: var(--medium-txt);
@@ -1069,6 +1082,10 @@ span.k-input .k-input:hover {
 	line-height: 16px;
 	padding: 8px;
 	height: 20px;
+}
+.k-selection-multiple .k-chip-content:first-child {
+	-webkit-margin-start: 0;
+	margin-inline-start: 0;
 }
 .k-selection-multiple .k-input {
 	border: none;

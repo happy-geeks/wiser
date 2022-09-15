@@ -293,5 +293,14 @@ VALUES (?newContentId, ?templateId, ?now, ?username);";
 
             return new KeyValuePair<string, string>(title, settings);
         }
+
+        /// <inheritdoc />
+        public async Task DeleteAsync(int contentId)
+        {
+            connection.ClearParameters();
+            connection.AddParameter("contentId", contentId);
+            var query = $@"UPDATE {WiserTableNames.WiserDynamicContent} SET removed = 1 WHERE content_id = ?contentID";
+            await connection.ExecuteAsync(query);
+        }
     }
 }

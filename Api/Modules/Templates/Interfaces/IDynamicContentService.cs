@@ -97,6 +97,13 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="contentId">The id of the component.</param>
         /// <param name="newTemplateId">The id of the template to link the new component to.</param>
         Task<ServiceResult<bool>> DuplicateAsync(ClaimsIdentity identity, int contentId, int newTemplateId);
+
+        /// <summary>
+        /// Deletes a dynamic component
+        /// </summary>
+        /// <param name="contentId">The id of the component</param>
+        /// <returns></returns>
+        Task<ServiceResult<bool>> DeleteAsync(int contentId);
         
         /// <summary>
         /// Gets all dynamic content that can be linked to the given template.
