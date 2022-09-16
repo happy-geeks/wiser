@@ -1751,6 +1751,9 @@ textarea[readonly],
 .k-editor .k-i-wiser-you-tube:before {
 	content: "\e82b";
 }
+.k-editor .k-i-wiser-translation:before {
+	content: "\e701";
+}
 .maximize-editor-window table.k-editor-widget {
 	height: calc(100vh - 10px);
 }
