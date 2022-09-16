@@ -11,6 +11,9 @@ Wiser v3. This includes the API and the front-end projects.
 1. Run `npm install`.
 1. Run `node_modules\.bin\webpack --mode=development`.
 
+If you get an error for not having enough rights to execute the script please execute the following in PowerShell as administrator:
+```Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted```
+
 ### Setup secrets<a name="setup-secrets"></a>
 1. Create 2 files named `appsettings-secrets.json`, one for the API and one for the front-end, somewhere outside of the project directory.
 1. Open `appSettings.json` in both projects and save the directory to the secrets in the property `GCL.SecretsBaseDirectory`.
