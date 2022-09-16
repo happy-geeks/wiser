@@ -1,5 +1,45 @@
 ﻿import { createStore } from "vuex";
-import { START_REQUEST, END_REQUEST, AUTH_REQUEST, AUTH_LIST, AUTH_SUCCESS, AUTH_ERROR, AUTH_LOGOUT, MODULES_LOADED, OPEN_MODULE, ACTIVATE_MODULE, CLOSE_MODULE, CLOSE_ALL_MODULES, MODULES_REQUEST, LOAD_ENTITY_TYPES_OF_ITEM_ID, FORGOT_PASSWORD, RESET_PASSWORD_SUCCESS, RESET_PASSWORD_ERROR, CHANGE_PASSWORD_LOGIN, CHANGE_PASSWORD_SUCCESS, CHANGE_PASSWORD_ERROR, GET_CUSTOMER_TITLE, VALID_SUB_DOMAIN, TOGGLE_PIN_MODULE, CHANGE_PASSWORD } from "./mutation-types";
+import {
+    START_REQUEST,
+    END_REQUEST,
+    AUTH_REQUEST,
+    AUTH_LIST,
+    AUTH_SUCCESS,
+    AUTH_ERROR,
+    AUTH_LOGOUT,
+    MODULES_LOADED,
+    OPEN_MODULE,
+    ACTIVATE_MODULE,
+    CLOSE_MODULE,
+    CLOSE_ALL_MODULES,
+    MODULES_REQUEST,
+    LOAD_ENTITY_TYPES_OF_ITEM_ID,
+    FORGOT_PASSWORD,
+    RESET_PASSWORD_SUCCESS,
+    RESET_PASSWORD_ERROR,
+    CHANGE_PASSWORD,
+    CHANGE_PASSWORD_LOGIN,
+    CHANGE_PASSWORD_SUCCESS,
+    CHANGE_PASSWORD_ERROR,
+    GET_CUSTOMER_TITLE,
+    VALID_SUB_DOMAIN,
+    TOGGLE_PIN_MODULE,
+    CREATE_BRANCH,
+    CREATE_BRANCH_SUCCESS,
+    CREATE_BRANCH_ERROR,
+    GET_BRANCHES,
+    MERGE_BRANCH,
+    MERGE_BRANCH_ERROR,
+    MERGE_BRANCH_SUCCESS,
+    GET_ENTITIES_FOR_BRANCHES,
+    IS_MAIN_BRANCH,
+    GET_BRANCH_CHANGES,
+    HANDLE_CONFLICT,
+    HANDLE_MULTIPLE_CONFLICTS,
+    CLEAR_CACHE,
+    CLEAR_CACHE_SUCCESS,
+    CLEAR_CACHE_ERROR
+} from "./mutation-types";
 
 const baseModule = {
     state: () => ({
@@ -108,7 +148,6 @@ const loginModule = {
     actions: {
         async [AUTH_REQUEST]({ commit }, data = {}) {
             const user = data.user;
-            commit(START_REQUEST);
             commit(AUTH_REQUEST, user);
 
             // Check if we have user data in the local storage and if that data is still valid.
@@ -145,7 +184,6 @@ const loginModule = {
                 }
 
                 commit(AUTH_SUCCESS, user);
-                commit(END_REQUEST);
 
                 await this.dispatch(MODULES_REQUEST);
                 return;
@@ -235,7 +273,8 @@ const modulesModule = {
             if (!modules) {
                 return;
             }
-            
+
+            var hasAutoload = false;
             for (let groupName in modules) {
                 if (!modules.hasOwnProperty(groupName)) {
                     continue;
@@ -255,6 +294,22 @@ const modulesModule = {
 
                     state.allModules.push(module);
                     moduleGroup.modules.push(module);
+
+                    if (module.autoLoad) {
+                        hasAutoload = true;
+                    }
+                }
+            }
+
+            if (!hasAutoload) {
+                if (document.body.classList.contains("on-canvas")) {
+                    document.body.classList.add("menu-active");
+                    document.body.classList.remove("on-canvas");
+                }            
+            } else {
+                if (document.body.classList.contains("off-canvas")) {
+                    document.body.classList.remove("off-canvas");
+                    document.body.classList.add("on-canvas");
                 }
             }
         },
@@ -492,7 +547,10 @@ const usersModule = {
 const customersModule = {
     state: () => ({
         title: null,
-        validSubDomain: true
+        validSubDomain: true,
+        createBranchError: null,
+        createBranchResult: null,
+        branches: []
     }),
 
     mutations: {
@@ -546,6 +604,286 @@ const itemsModule = {
     getters: {}
 };
 
+const branchesModule = {
+    state: () => ({
+        createBranchError: null,
+        createBranchResult: null,
+        branches: [],
+        entities: [],
+        isMainBranch: false,
+        branchChanges: {}
+    }),
+
+    mutations: {
+        [CREATE_BRANCH_SUCCESS](state, result) {
+            state.createBranchResult = result;
+            state.createBranchError = null;
+        },
+
+        [CREATE_BRANCH_ERROR](state, error) {
+            state.createBranchResult = null;
+            state.createBranchError = error;
+        },
+
+        [GET_BRANCHES](state, branches) {
+            state.branches = branches;
+        },
+
+        [MERGE_BRANCH_SUCCESS](state, result) {
+            state.mergeBranchResult = result;
+            state.mergeBranchError = null;
+        },
+
+        [MERGE_BRANCH_ERROR](state, error) {
+            state.mergeBranchResult = null;
+            state.mergeBranchError = error;
+        },
+
+        [GET_ENTITIES_FOR_BRANCHES](state, entities) {
+            state.entities = entities;
+        },
+
+        [IS_MAIN_BRANCH](state, isMainBranch) {
+            state.isMainBranch = isMainBranch;
+        },
+
+        [GET_BRANCH_CHANGES](state, branchChanges) {
+            state.branchChanges = branchChanges;
+        },
+        
+        [HANDLE_CONFLICT](state, { acceptChange, id }) {
+            if (!state.mergeBranchResult || !state.mergeBranchResult.conflicts || !state.mergeBranchResult.conflicts.length) {
+                console.warn("Tried to handle conflict, but there are no conflicts.");
+                return;
+            }
+            
+            const conflict = state.mergeBranchResult.conflicts.find(c => c.id === id);
+            if (!conflict) {
+                console.warn("Tried to handle a conflict that doesn't exist.");
+                return;
+            }
+
+            conflict.acceptChange = acceptChange;
+        },
+
+        [HANDLE_MULTIPLE_CONFLICTS](state, { acceptChange, settings }) {
+            if (!settings || !settings.property || !settings.operator || !settings.start) {
+                return;
+            }
+            
+            if (!state.mergeBranchResult || !state.mergeBranchResult.conflicts || !state.mergeBranchResult.conflicts.length) {
+                console.warn("Tried to handle conflicts, but there are no conflicts.");
+                return;
+            }
+
+            for (let conflict of state.mergeBranchResult.conflicts) {
+                let isDate = false;
+                let valueToCheck;
+                let startValue = settings.start;
+                let endValue = settings.end;
+                
+                // Get the value of the property we want to check for the conflict to accept or deny.
+                switch (settings.property) {
+                    case "type":
+                        valueToCheck = conflict.typeDisplayName; 
+                        break;
+                    case "field":
+                        valueToCheck = conflict.fieldDisplayName;
+                        break
+                    case "changeDateOriginal":
+                        isDate = true;
+                        valueToCheck = conflict.changeDateInMain;
+                        break;
+                    case "changeDateBranch":
+                        isDate = true;
+                        valueToCheck = conflict.changeDateInBranch;
+                        break;
+                    case "originalValue":
+                        valueToCheck = conflict.valueInMain;
+                        break;
+                    case "branchValue":
+                        valueToCheck = conflict.valueInBranch;
+                        break;
+                    default:
+                        console.warn(`${HANDLE_MULTIPLE_CONFLICTS} - Unsupported property '${settings.property}'`)
+                        continue;
+                }
+                
+                if (!valueToCheck) {
+                    continue;
+                }
+                
+                // Format dates so that they're all the same format.
+                if (isDate) {
+                    valueToCheck = new Date(valueToCheck);
+                    valueToCheck = new Date(valueToCheck.getFullYear(), valueToCheck.getMonth(), valueToCheck.getDate());
+                    
+                    startValue = new Date(startValue);
+                    startValue = new Date(startValue.getFullYear(), startValue.getMonth(), startValue.getDate());
+                    if (endValue) {
+                        endValue = new Date(endValue);
+                        endValue = new Date(endValue.getFullYear(), endValue.getMonth(), endValue.getDate());
+                    }
+                }
+                
+                let found = false;
+                switch (settings.operator) {
+                    case "contains":
+                        found = valueToCheck.indexOf(startValue) > -1;
+                        break;
+                    case "equals":
+                        if (isDate) {
+                            found = valueToCheck.getTime() === startValue.getTime();
+                        } else {
+                            found = valueToCheck.toString().toUpperCase() === startValue.toString().toUpperCase();
+                        }
+                        break;
+                    case "greaterThan":
+                        found = valueToCheck > startValue;
+                        break;
+                    case "lessThan":
+                        found = valueToCheck < startValue;
+                        break;
+                    case "between":
+                        found = valueToCheck >= startValue && valueToCheck <= endValue;
+                        break;
+                }
+                
+                if (!found) {
+                    continue;
+                }
+                
+                conflict.acceptChange = acceptChange;
+            }
+        }
+    },
+
+    actions: {
+        async [CREATE_BRANCH]({ commit }, data) {
+            commit(START_REQUEST);
+            const result = await main.branchesService.create(data);
+
+            if (result.success) {
+                if (result.data) {
+                    commit(CREATE_BRANCH_SUCCESS, result.data);
+                } else {
+                    commit(CREATE_BRANCH_ERROR, result.message);
+                }
+            } else {
+                commit(CREATE_BRANCH_ERROR, result.message);
+            }
+            commit(END_REQUEST);
+        },
+        
+        [CREATE_BRANCH_ERROR]({ commit }, error) {
+            commit(CREATE_BRANCH_ERROR, error);
+        },
+
+        async [GET_BRANCHES]({ commit }) {
+            commit(START_REQUEST);
+            const branchesResponse = await main.branchesService.get();
+            commit(GET_BRANCHES, branchesResponse.data);
+            commit(END_REQUEST);
+        },
+
+        async [MERGE_BRANCH]({ commit }, data) {
+            commit(START_REQUEST);
+            const result = await main.branchesService.merge(data);
+
+            if (result.success) {
+                if (result.data) {
+                    if (result.data.errors && result.data.errors.length > 0) {
+                        let errorMessage;
+                        if (result.data.successfulChanges) {
+                            errorMessage = `Een deel van het overzetten is goed gegaan en een deel is fout gegaan. Er zijn ${result.data.successfulChanges} wijzigingen succesvol overgezet en de volgende fouten zijn opgetreden: ${result.data.errors.join("<br>")}`;
+                        } else {
+                            errorMessage = `Het overzetten is mislulkt. De volgende fouten zijn opgetreden: ${result.data.errors.join("<br>")}`;
+                        }
+                        commit(MERGE_BRANCH_ERROR, errorMessage);
+                    } else {
+                        commit(MERGE_BRANCH_SUCCESS, result.data);
+                    }
+                } else {
+                    commit(MERGE_BRANCH_ERROR, result.message);
+                }
+            } else {
+                commit(MERGE_BRANCH_ERROR, result.message);
+            }
+            commit(END_REQUEST);
+        },
+
+        [MERGE_BRANCH_ERROR]({ commit }, error) {
+            commit(MERGE_BRANCH_ERROR, error);
+        },
+
+        async [GET_ENTITIES_FOR_BRANCHES]({ commit }) {
+            commit(START_REQUEST);
+            const entitiesResponse = await main.branchesService.getEntities();
+            commit(GET_ENTITIES_FOR_BRANCHES, entitiesResponse.data);
+            commit(END_REQUEST);
+        },
+
+        async [IS_MAIN_BRANCH]({ commit }) {
+            commit(START_REQUEST);
+            const entitiesResponse = await main.branchesService.isMainBranch();
+            commit(IS_MAIN_BRANCH, entitiesResponse.data);
+            commit(END_REQUEST);
+        },
+
+        async [GET_BRANCH_CHANGES]({ commit }, branchId) {
+            commit(START_REQUEST);
+            const changesResponse = await main.branchesService.getChanges(branchId);
+            commit(GET_BRANCH_CHANGES, changesResponse.data);
+            commit(END_REQUEST);
+        },
+
+        [HANDLE_CONFLICT]({ commit }, payload) {
+            commit(HANDLE_CONFLICT, payload);
+        },
+
+        [HANDLE_MULTIPLE_CONFLICTS]({ commit }, payload) {
+            commit(HANDLE_MULTIPLE_CONFLICTS, payload);
+        }
+    },
+
+    getters: {}
+};
+
+const cacheModule = {
+    state: () => ({
+        clearCacheError: null
+    }),
+
+    mutations: {
+        [CLEAR_CACHE_SUCCESS]: (state) => {
+            state.clearCacheError = null;
+        },
+        [CLEAR_CACHE_ERROR]: (state, message) => {
+            state.clearCacheError = message;
+        }
+    },
+
+    actions: {
+        async [CLEAR_CACHE]({ commit }, data = {}) {
+            commit(START_REQUEST);
+            const result = await main.cacheService.clear(data);
+            commit(END_REQUEST);
+
+            if (result.success) {
+                commit(CLEAR_CACHE_SUCCESS);
+            } else {
+                commit(CLEAR_CACHE_ERROR, result.message);
+            }
+        },
+
+        [CLEAR_CACHE_ERROR]({ commit }, error) {
+            commit(CLEAR_CACHE_ERROR, error);
+        },
+    },
+
+    getters: {}
+};
+
 export default createStore({
     // Do not enable strict mode when deploying for production! 
     // Strict mode runs a synchronous deep watcher on the state tree for detecting inappropriate mutations, and it can be quite expensive when you make large amount of mutations to the state. 
@@ -558,6 +896,8 @@ export default createStore({
         modules: modulesModule,
         customers: customersModule,
         users: usersModule,
-        items: itemsModule
+        items: itemsModule,
+        branches: branchesModule,
+        cache: cacheModule
     }
 });

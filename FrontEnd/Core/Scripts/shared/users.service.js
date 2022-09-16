@@ -51,6 +51,8 @@ export default class UsersService extends BaseService {
                 // that falls out of the range of 2xx
                 if (error.response.status !== 400 || error.response.data.error === "server_error") {
                     result.message = "Er is een onbekende fout opgetreden tijdens het inloggen. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+                } else if(error.response.data && error.response.data.error_description && error.response.data.error_description.toLowerCase().includes("blocked")) {
+                    result.message = "Gebruikersnaam is geblokkeerd vanwege te veel mislukte inlogpogingen.";
                 } else {
                     result.message = "U heeft ongeldige gegevens ingevuld. Probeer het a.u.b. opnieuw.";
                 }
@@ -101,6 +103,8 @@ export default class UsersService extends BaseService {
                 // that falls out of the range of 2xx
                 if (error.response.status !== 400 || error.response.data.error === "server_error") {
                     result.message = "Er is een onbekende fout opgetreden tijdens het inloggen. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+                } else if(error.response.data && error.response.data.error_description && error.response.data.error_description.toLowerCase().includes("blocked")) {
+                    result.message = "Gebruikersnaam is geblokkeerd vanwege te veel mislukte inlogpogingen.";
                 } else {
                     result.message = "U heeft ongeldige gegevens ingevuld. Probeer het a.u.b. opnieuw.";
                 }
@@ -125,10 +129,10 @@ export default class UsersService extends BaseService {
      * @returns {any} The user data as an object.
      */
     async getLoggedInUserData() {
-        const result = {};
+        let result = {};
 
         try {
-            let result = sessionStorage.getItem("userSettings");
+            result = sessionStorage.getItem("userSettings");
             if (result) {
                 const sessionData = JSON.parse(result);
                 if (sessionData.dateTime && new Date() - new Date(sessionData.dateTime) < 3600000) {

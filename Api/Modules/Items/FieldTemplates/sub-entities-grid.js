@@ -24,7 +24,9 @@ if (options.fieldGroupName) {
 }
 
 if (customQueryGrid) {
-    Wiser2.api({ url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}" + linkTypeParameter }).then(function(customQueryResults) {
+    Wiser.api({ 
+        url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}${linkTypeParameter}` 
+    }).then(function(customQueryResults) {
         if (customQueryResults.extraJavascript) {
             jQuery.globalEval(customQueryResults.extraJavascript);
         }
@@ -102,7 +104,7 @@ if (customQueryGrid) {
             for (var i = 0; i < gridSettings.columns.length; i++) {
                 var column = gridSettings.columns[i];
                 
-                switch (column.field || "") {
+                switch ((column.field || "").toLowerCase()) {
                     case "":
                         column.hidden = hideCheckboxColumn;
                         break;
@@ -110,27 +112,34 @@ if (customQueryGrid) {
                         column.hidden = options.hideIdColumn || false;
                         break;
                     case "link_id":
+                    case "linkid":
                         column.hidden = options.hideLinkIdColumn || false;
                         break;
                     case "entity_type":
+                    case "entitytype":
                         column.hidden = options.hideTypeColumn || false;
                         break;
                     case "published_environment":
+                    case "publishedenvironment":
                         column.hidden = options.hideEnvironmentColumn || false;
                         break;
                     case "title":
                         column.hidden = options.hideTitleColumn || false;
                         break;
                     case "added_on":
+                    case "addedon":
                         column.hidden = !options.showAddedOnColumn;
                         break;
                     case "added_by":
+                    case "addedby":
                         column.hidden = !options.showAddedByColumn;
                         break;
                     case "changed_on":
+                    case "changedon":
                         column.hidden = !options.showChangedOnColumn;
                         break;
                     case "changed_by":
+                    case "changedby":
                         column.hidden = !options.showChangedByColumn;
                         break;
                 }
@@ -182,13 +191,13 @@ if (customQueryGrid) {
     }
     
     if (usingDataSelector) {
-        Wiser2.api({
-            url: window.dynamicItems.settings.getItemsUrl + "?trace=false&encryptedDataSelectorId=" + encodeURIComponent(options.dataSelectorId) + "&itemId=" + encodeURIComponent("{itemIdEncrypted}"),
+        Wiser.api({
+            url: `${window.dynamicItems.settings.getItemsUrl}?trace=false&encryptedDataSelectorId=${encodeURIComponent(options.dataSelectorId)}&itemId=${encodeURIComponent("{itemIdEncrypted}")}`,
             contentType: "application/json"
         }).then(done);
     } else {
-        Wiser2.api({
-            url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/entity-grids/" + encodeURIComponent(options.entityType) + "?propertyId={propertyId}" + linkTypeParameter.replace("?", "&") + "&mode=" + gridMode.toString() + "&fieldGroupName=" + encodeURIComponent(options.fieldGroupName || "") + "&currentItemIsSourceId=" + (options.currentItemIsSourceId || false).toString(),
+        Wiser.api({
+            url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType)}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
             method: "POST",
             contentType: "application/json"
         }).then(done);
@@ -255,7 +264,7 @@ async function generateGrid(data, model, columns) {
             (function () {
                 var column = columns[i];
                 var editable = column.editable;
-                if (column.field) {
+                if (column.field && customQueryGrid) {
                     column.field = column.field.toLowerCase();
                 }
 
@@ -316,8 +325,8 @@ async function generateGrid(data, model, columns) {
                         }
 
                         if (customQueryGrid) {
-                            Wiser2.api({
-                                url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids-with-filters/{propertyId}" + linkTypeParameter,
+                            Wiser.api({
+                                url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids-with-filters/{propertyId}${linkTypeParameter}`,
                                 method: "POST",
                                 contentType: "application/json",
                                 data: JSON.stringify(transportOptions.data)
@@ -338,8 +347,8 @@ async function generateGrid(data, model, columns) {
                                 loader.removeClass("loading");
                             });
                         } else {
-                            Wiser2.api({
-                                url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/entity-grids/" + encodeURIComponent(options.entityType) + "?propertyId={propertyId}" + linkTypeParameter.replace("?", "&") + "&mode=" + gridMode.toString() + "&fieldGroupName=" + encodeURIComponent(options.fieldGroupName || "") + "&currentItemIsSourceId=" + (options.currentItemIsSourceId || false).toString(),
+                            Wiser.api({
+                                url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType)}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
                                 method: "POST",
                                 contentType: "application/json",
                                 data: JSON.stringify(transportOptions.data)
@@ -367,8 +376,8 @@ async function generateGrid(data, model, columns) {
                         loader.addClass("loading");
 
                         if (customQueryGrid) {
-                            Wiser2.api({
-                                url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
+                            Wiser.api({
+                                url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}`,
                                 method: "PUT",
                                 contentType: "application/json",
                                 dataType: "json",
@@ -398,11 +407,36 @@ async function generateGrid(data, model, columns) {
                         if (options.fieldGroupName) {
                             encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
+                            // If we have a predefined language code, then always force that language code, so that the user doesn't have to enter it manually.
+                            if (options.languageCode) {
+                                transportOptions.data.languageCode = options.languageCode;
+                            }
                             itemModel.details.push(transportOptions.data);
                         } else {
-                            var nonFieldProperties = ["id", "published_environment", "encrypted_id", "entity_type", "link_id", "link_type", "link_type_number", "encryptedId", "added_on", "added_by", "changed_on", "changed_by"];
+                            var nonFieldProperties = [
+                                "id",
+                                "published_environment",
+                                "publishedenvironment",
+                                "encrypted_id",
+                                "encryptedid",
+                                "entity_type",
+                                "entitytype",
+                                "link_id",
+                                "linkid",
+                                "link_type",
+                                "linktype",
+                                "linktypenumber",
+                                "added_on",
+                                "addedon",
+                                "added_by",
+                                "addedby",
+                                "changed_on",
+                                "changedon",
+                                "changed_by",
+                                "changedby"
+                            ];
                             for (var key in transportOptions.data) {
-                                if (!transportOptions.data.hasOwnProperty(key) || nonFieldProperties.indexOf(key) > -1) {
+                                if (!transportOptions.data.hasOwnProperty(key) || nonFieldProperties.indexOf(key.toLowerCase()) > -1) {
                                     continue;
                                 }
 
@@ -415,7 +449,8 @@ async function generateGrid(data, model, columns) {
                                             "key": key,
                                             "value": transportOptions.data[key],
                                             "isLinkProperty": true,
-                                            "itemLinkId": transportOptions.data.link_id
+                                            "itemLinkId": transportOptions.data.link_id,
+                                            "linkType": options.linkTypeNumber || 0
                                         });
                                     }
                                     continue;
@@ -455,12 +490,13 @@ async function generateGrid(data, model, columns) {
                                     "key": key,
                                     "value": transportOptions.data[key],
                                     "isLinkProperty": isLinkProperty,
-                                    "itemLinkId": transportOptions.data.linkId
+                                    "itemLinkId": transportOptions.data.linkId,
+                                    "linkType": options.linkTypeNumber || 0
                                 });
                             }
                         }
 
-                        Wiser2.api({
+                        Wiser.api({
                             url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
                             method: "PUT",
                             contentType: "application/json",
@@ -511,9 +547,13 @@ async function generateGrid(data, model, columns) {
                             };
                             var encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
+                            // If we have a predefined language code, then always force that language code, so that the user doesn't have to enter it manually.
+                            if (options.languageCode) {
+                                transportOptions.data.languageCode = options.languageCode;
+                            }
                             itemModel.details.push(transportOptions.data);
 
-                            Wiser2.api({
+                            Wiser.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
                                 method: "PUT",
                                 contentType: "application/json",
@@ -544,8 +584,8 @@ async function generateGrid(data, model, columns) {
                         } else if (customQueryGrid) {
                             loader.addClass("loading");
 
-                            Wiser2.api({
-                                url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
+                            Wiser.api({
+                                url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}`,
                                 method: "POST",
                                 contentType: "application/json",
                                 dataType: "json",
@@ -580,10 +620,15 @@ async function generateGrid(data, model, columns) {
                             };
                             var encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
+                            // If we have a predefined language code, then always force that language code, so that the user doesn't have to enter it manually.
+                            if (options.languageCode) {
+                                transportOptions.data.languageCode = options.languageCode;
+                            }
                             transportOptions.data.value = null;
+                            transportOptions.data.key = "";
                             itemModel.details.push(transportOptions.data);
 
-                            Wiser2.api({
+                            Wiser.api({
                                 url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
                                 method: "PUT",
                                 contentType: "application/json",
@@ -614,8 +659,8 @@ async function generateGrid(data, model, columns) {
                         } else if (customQueryGrid) {
                             loader.addClass("loading");
 
-                            Wiser2.api({
-                                url: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/grids/{propertyId}",
+                            Wiser.api({
+                                url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}`,
                                 method: "DELETE",
                                 contentType: "application/json",
                                 dataType: "json",
@@ -822,7 +867,7 @@ async function generateGrid(data, model, columns) {
 
     dynamicItems.grids.attachSelectionCounter(field[0]);
 
-    if (!customQueryGrid && dynamicItems.fieldTemplateFlags.enableSubEntitiesGridsOrdering) {
+    if (!customQueryGrid && dynamicItems.fieldTemplateFlags.enableSubEntitiesGridsOrdering && !options.fieldGroupName) {
         kendoComponent.table.kendoSortable({
             autoScroll: true,
             hint: function (element) {

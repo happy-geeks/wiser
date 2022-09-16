@@ -7,8 +7,8 @@
     <title>Wiser 3 - Dynamic items</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.material.min.css" rel="stylesheet" />
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
@@ -33,7 +33,9 @@
         #maximizeSubEntitiesGridWindow,
         #changeImageDataDialog,
         #dataSelectorTemplateDialog,
-        #searchItemsWindow {
+        #searchItemsWindow,
+        #youTubeDialog,
+        #translateItemDialog {
             display: none;
         }
     </style>
@@ -46,7 +48,6 @@
       data-iframe-mode="@Model.IframeMode.ToString().ToLowerInvariant()"
       data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
       data-wiser-api-root="@Model.ApiRoot"
-      data-wiser-api-v21-root="@Model.ApiRoot"
       data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
       data-read-only="@Model.ReadOnly.ToString().ToLowerInvariant()"
       data-hide-footer="@Model.HideFooter.ToString().ToLowerInvariant()"
@@ -80,7 +81,7 @@
                             <div class="pane-content">
                                 <div id="treeview"></div>
 
-                                <button id="addButton" class="k-primary k-button-round"></button>
+                                <button id="addButton" class="k-primary k-button-round" title="Nieuw item aanmaken (SHIFT+N)"></button>
                             </div>
                         </div>
 
@@ -121,6 +122,9 @@
                                                 <label class="deleteItem"><span>Item verwijderen</span></label>
                                             </li>
                                             <li>
+                                                <label class="translateItem"><span>Item vertalen</span></label>
+                                            </li>
+                                            <li>
                                                 <label class="undeleteItem"><span>Verwijderen ongedaan maken</span></label>
                                             </li>
                                             @if (Model.IsAllowedToChangePropertyWidth)
@@ -134,7 +138,7 @@
                                 </ul>
 
                                 <!-- TABS -->
-                                <div id="tabstrip">
+                                <div id="tabstrip" class="k-tabstrip-wrapper">
                                     <ul>
                                         <li class="k-state-active">Gegevens</li>
                                         <li class="overview-tab hidden">Overzicht</li>
@@ -710,7 +714,7 @@
             <div class="item">
                 <h4><label>Omschrijving</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="email" class="textField k-input" name="title" autocomplete="off" value="" required>
+                    <input type="text" class="textField k-input" name="title" autocomplete="off" required>
                 </span>
             </div>
         </div>
@@ -729,7 +733,65 @@
         </div>
     </div>
 
+    <div id="youTubeDialog">
+        <div class="formview full static-fields">
+            <div class="item">
+                <h4><label>Video-ID</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="text" class="textField k-input" name="youTubeVideoId" id="youTubeVideoId" autocomplete="off" required>
+                </span>
+            </div>
+            <div class="item">
+                <h4><label>Breedte</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="number" class="textField k-input" name="youTubeVideoWidth" id="youTubeVideoWidth" autocomplete="off" required value="640">
+                </span>
+            </div>
+            <div class="item">
+                <h4><label>Hoogte</label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="number" class="textField k-input" name="youTubeVideoHeight" id="youTubeVideoHeight" autocomplete="off" required value="390">
+                </span>
+            </div>
+            <div class="item">
+                <span class="inline">
+                    <label class="checkbox"><input type="checkbox" id="youTubeAllowFullScreen" class="textField k-input" name="youTubeAllowFullScreen" checked /><span>Volledig scherm toestaan</span></label>
+                </span>
+            </div>
+            <div class="item">
+                <span class="inline">
+                    <label class="checkbox"><input type="checkbox" id="youTubeAutoPlay" class="textField k-input" name="youTubeAutoPlay" /><span>Automatisch afspelen</span></label>
+                </span>
+            </div>
+            <div class="item">
+                <span class="inline">
+                    <label class="checkbox"><input type="checkbox" id="youTubeShowRelatedVideos" class="textField k-input" name="youTubeShowRelatedVideos" /><span>Gerelateerde video's weergeven</span></label>
+                </span>
+            </div>
+        </div>
+    </div>
+
     <div id="gridDeleteDialog"></div>
+
+    <div id="translateItemDialog">
+        <div class="formview full static-fields">
+            <div class="item">
+                <h4><label>Brontaal</label></h4>
+                <select id="sourceLanguageDropDown" class="select"></select>
+                <div class="form-hint">
+                    <p>Kies hier de taal die als bron dient. Alle velden op dit item met deze taal zullen dan vertaald worden in andere talen.</p>
+                </div>
+            </div>
+            <div class="item">
+                <h4><label>Doeltalen</label></h4>
+                <select id="targetLanguagesMultiSelect" class="multi-select"></select>
+                <div class="form-hint">
+                    <p>Kies hier de talen waarin alle velden vertaald moeten worden. U kunt dit veld leeglaten indien u alle talen (die ingesteld staan in de Stamgegevensmodule) wilt gebruiken.</p>
+                    <p>Alleen velden die nog geen waarde bevatten in de doeltalen, zullen vertaald worden. Deze functionaliteit zal nooit ingevulde waardes overschrijven.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="data-builder" class="x-window"></div>
 
@@ -759,8 +821,8 @@
     </script>
 
     <script id="uploaderTemplate" type="text/x-kendo-template">
-        <div class="product" data-item-id="#= itemId #" data-image-id="#= fileId #" data-item-link-id="#= itemLinkId #" data-file-name="#= name #" data-title="#= title #">
-            <img src="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(itemId) #/files/#= fileId #/#= encodeURIComponent(name) #?encryptedCustomerId=#= encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#= encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#= window.dynamicItems.settings.isTestEnvironment #&subDomain=#= encodeURIComponent(window.dynamicItems.settings.subDomain) #&itemLinkId=#= encodeURIComponent(itemLinkId) #" alt="#: name # image" />
+        <div class="product" data-item-id="#= itemId #" data-image-id="#= fileId #" data-item-link-id="#= itemLinkId #" data-file-name="#= name #" data-title="#= title #" data-entity-type="#= entityType || '' #" data-link-type="#= linkType || 0 #">
+            <img src="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(itemId) #/files/#= fileId #/#= encodeURIComponent(name) #?encryptedCustomerId=#= encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#= encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#= window.dynamicItems.settings.isTestEnvironment #&subDomain=#= encodeURIComponent(window.dynamicItems.settings.subDomain) #&itemLinkId=#= encodeURIComponent(itemLinkId) #&entityType=#= encodeURIComponent(entityType || '') #&linkType=#= linkType || 0 #" alt="#: name # image" />
             <div class="imgTools">
                 <button type="button" class="imgZoom" title="Preview"></button>
                 # if(!readonly) { #
@@ -803,7 +865,7 @@
     </script>
     <script id="userGridParameterTemplate" type="text/x-kendo-template">
         <div class="new-item-dialog-row" id="comboBoxUserParameterContainer">
-            <div class="grid" id="gridUserParameter"></grid>
+            <div class="grid" id="gridUserParameter"></div>
         </div>
     </script>
     <script id="userFileUploadParameterTemplate" type="text/x-kendo-template">

@@ -1,4 +1,22 @@
-﻿<div class="item {containerCssClass}" style="{style}" id="container_{propertyIdWithSuffix}" data-property-id="{propertyId}" data-item-id="{itemId}" data-depends-on-field="{dependsOnField}" data-depends-on-operator="{dependsOnOperator}" data-depends-on-value="{dependsOnValue}" data-depends-on-action="{dependsOnAction}" data-property-name="{propertyName}" data-item-link-id="{itemLinkId}" data-language-code="{languageCode}" data-width="{width}" data-save-on-change="{saveOnChange}" data-label-style="{labelStyle}" data-label-width="{labelWidth}" data-input-type="numeric">
+﻿<div class="item {containerCssClass}"
+     style="{style}"
+     id="container_{propertyIdWithSuffix}"
+     data-property-id="{propertyId}"
+     data-item-id="{itemId}"
+     data-depends-on-field="{dependsOnField}"
+     data-depends-on-operator="{dependsOnOperator}"
+     data-depends-on-value="{dependsOnValue}"
+     data-depends-on-action="{dependsOnAction}"
+     data-property-name="{propertyName}"
+     data-item-link-id="{itemLinkId}"
+     data-language-code="{languageCode}"
+     data-width="{width}"
+     data-save-on-change="{saveOnChange}"
+     data-label-style="{labelStyle}"
+     data-label-width="{labelWidth}"
+     data-input-type="numeric"
+     data-link-type="{linkType}"
+     data-visibility-path-regex="{visibilityPathRegex}">
     <span class="handler">&nbsp;</span>
     <h4 class="{titleClass}">
         <label for="field_{propertyIdWithSuffix}">{title}</label>
@@ -7,7 +25,9 @@
         </span>
     </h4>
     <span class="k-widget k-input k-state-default">
-        <input type="text" id="field_{propertyIdWithSuffix}" class="textField k-input" name="{propertyName}_{languageCode}" value="{default_value}" {required} {readonly} pattern="{pattern}" data-lpignore="true" />
+        <input type="text" id="field_{propertyIdWithSuffix}" class="textField k-input"
+               name="{propertyName}_{languageCode}" value="{default_value}" {required} {readonly} pattern="{pattern}"
+               data-lpignore="true"/>
     </span>
     <div class="form-hint {formHintClass}">{hint}</div>
 </div>

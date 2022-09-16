@@ -283,7 +283,7 @@ export class Dialogs {
 
         let title = "Nieuw item aanmaken";
         if (data.length === 1) {
-            title = `Nieuw(e) ${data[0].displayName} aanmaken`;
+            title = `${data[0].displayName} aanmaken`;
         }
         if (this.base.selectedItem) {
             title += ` onder '${this.base.selectedItem.name || this.base.selectedItem.title}'`;

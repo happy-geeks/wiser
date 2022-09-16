@@ -39,7 +39,7 @@ namespace Api.Modules.Modules.Controllers
         }
 
         /// <summary>
-        /// Gets all Wiser 2 module that the user is allowed to use.
+        /// Gets all Wiser module that the user is allowed to use.
         /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(List<ModuleAccessRightsModel>), StatusCodes.Status200OK)]
@@ -138,6 +138,18 @@ namespace Api.Modules.Modules.Controllers
             fileName = String.IsNullOrWhiteSpace(fileName) ? "Export.xlsx" : Path.ChangeExtension(fileName, ".xlsx");
             
             return File(exportResult.ModelObject, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
+
+        /// <summary>
+        /// Gets a list of all currently used module groups.
+        /// </summary>
+        /// <returns>A list with all group names.</returns>
+        [HttpGet]
+        [Route("groups")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetModuleGroupsAsync()
+        {
+            return (await modulesService.GetModuleGroupsAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
     }
 }

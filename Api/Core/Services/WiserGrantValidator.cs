@@ -72,7 +72,7 @@ namespace Api.Core.Services
                 var adminAccountLoginResult = await usersService.LoginAdminAccountAsync(context.UserName, context.Password);
                 if (adminAccountLoginResult.StatusCode != HttpStatusCode.OK)
                 {
-                    context.Result = new GrantValidationResult(TokenRequestErrors.InvalidClient, adminAccountLoginResult.ErrorMessage);
+                    context.Result = new GrantValidationResult(TokenRequestErrors.InvalidClient, loginResult.ErrorMessage);
                     return;
                 }
 
@@ -120,10 +120,14 @@ namespace Api.Core.Services
                 {"lastLoginIpAddress", loginResult.ModelObject.LastLoginIpAddress ?? ""},
                 {"lastLoginDate", (loginResult.ModelObject.LastLoginDate ?? DateTime.Now).ToString("dd-MM-yyyy HH:mm:ss")},
                 {"oldStyleUserId", loginResult.ModelObject.Id.ToString().EncryptWithAesWithSalt()},
-                {"cookieValue", loginResult.ModelObject.CookieValue},
-                {"requirePasswordChange", loginResult.ModelObject.RequirePasswordChange }
+                {"cookieValue", loginResult.ModelObject.CookieValue}
             };
-            
+
+            if (loginResult.ModelObject.RequirePasswordChange.HasValue)
+            {
+                customResponse.Add("requirePasswordChange", loginResult.ModelObject.RequirePasswordChange.Value);
+            }
+
             if (adminAccountId > 0)
             {
                 customResponse.Add("adminAccountId", adminAccountId.ToString());

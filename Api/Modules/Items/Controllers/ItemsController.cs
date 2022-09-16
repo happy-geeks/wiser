@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
+﻿using System.Collections.Generic;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
-using Api.Modules.Customers.Models;
 using Api.Modules.EntityTypes.Models;
 using Api.Modules.Files.Interfaces;
-using Api.Modules.Files.Models;
 using Api.Modules.Grids.Enums;
 using Api.Modules.Grids.Interfaces;
 using Api.Modules.Grids.Models;
@@ -16,7 +12,6 @@ using Api.Modules.Items.Interfaces;
 using Api.Modules.Items.Models;
 using Api.Modules.Kendo.Models;
 using GeeksCoreLibrary.Core.Enums;
-using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -72,14 +67,15 @@ namespace Api.Modules.Items.Controllers
         /// <param name="propertyIdSuffix">Optional: The suffix of every field on the item. This is used to give each field a unique ID, when multiple items are opened at the same time. Default value is <see langword="null"/>.</param>
         /// <param name="itemLinkId">Optional: The id of the item link from wiser_itemlink. This should be used when opening an item via a sub-entities-grid, to show link fields. Default value is 0.</param>
         /// <param name="entityType">Optional: The entity type of the item. Default value is <see langword="null"/>.</param>
+        /// <param name="linkType">Optional: The type number of the link, if this item also contains fields on a link.</param>
         /// <returns>A <see cref="ItemHtmlAndScriptModel"/> with the HTML and javascript needed to load this item in Wiser.</returns>
         [HttpGet]
         [Route("{encryptedId}")]
         [ProducesResponseType(typeof(ItemHtmlAndScriptModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> GetItemAsync(string encryptedId, [FromQuery]string propertyIdSuffix = null, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null)
+        public async Task<IActionResult> GetItemAsync(string encryptedId, [FromQuery]string propertyIdSuffix = null, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
         {
-            return (await itemsService.GetItemHtmlAsync(encryptedId, (ClaimsIdentity)User.Identity, propertyIdSuffix, itemLinkId, entityType)).GetHttpResponseMessage();
+            return (await itemsService.GetItemHtmlAsync(encryptedId, (ClaimsIdentity)User.Identity, propertyIdSuffix, itemLinkId, entityType, linkType)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -197,7 +193,6 @@ namespace Api.Modules.Items.Controllers
         /// Undeleting an item moves it from the archive table back to the actual table.
         /// </summary>
         /// <param name="encryptedId">The encrypted ID of the item to delete.</param>
-        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="undelete">Optional: Whether to undelete the item instead of deleting it.</param>
         /// <param name="entityType">Optional: The entity type of the item. This is needed if the item is saved in a different table than wiser_item.</param>
         [HttpDelete]
@@ -367,6 +362,7 @@ namespace Api.Modules.Items.Controllers
 
         /// <summary>
         /// Get all items for a tree view for a specific parent.
+        /// This method does not work with dedicated tables for entity types or link types, because we can't know beforehand what entity types and link types a tree view will contain, so we have no way to know which dedicated tables to use.
         /// </summary>
         /// <param name="moduleId">The ID of the module.</param>
         /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
@@ -431,6 +427,22 @@ namespace Api.Modules.Items.Controllers
         public async Task<IActionResult> GetEncryptedIdAsync(ulong id)
         {
             return (await itemsService.GetEncryptedIdAsync(id, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Translate all fields of an item into one or more other languages, using the Google Translation API.
+        /// This will only translate fields that don't have a value yet for the destination language
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item to translate.</param>
+        /// <param name="settings">The settings for translating.</param>
+        [HttpPut]
+        [Route("{encryptedId}/translate")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetEncryptedIdAsync(string encryptedId, TranslateItemRequestModel settings)
+        {
+            return (await itemsService.TranslateAllFieldsAsync((ClaimsIdentity)User.Identity, encryptedId, settings)).GetHttpResponseMessage();
         }
     }
 }

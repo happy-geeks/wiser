@@ -87,6 +87,7 @@ export default {
                 subDomain: "",
                 isWebShop: false,
                 isConfigurator: false,
+                isMultiLanguage: false,
                 createNewDatabase: true,
                 digitalOceanApiAccessToken: "",
                 databaseHost: "",
@@ -188,7 +189,7 @@ export default {
 
             const newCustomer = {
                 name: this.newCustomerData.name,
-                liveDatabase: {
+                database: {
                     host: this.newCustomerData.databaseHost,
                     username: this.newCustomerData.databaseUsername,
                     password: this.newCustomerData.databasePassword,
@@ -228,7 +229,7 @@ export default {
             };
 
             this.loading = true;
-            this.createCustomerResult = await main.customersService.create(newCustomer, this.newCustomerData.isWebShop, this.newCustomerData.isConfigurator);
+            this.createCustomerResult = await main.customersService.create(newCustomer, this.newCustomerData.isWebShop, this.newCustomerData.isConfigurator, this.newCustomerData.isMultiLanguage);
             this.createCustomerResult.databaseUsers = databaseResult.data.users;
 			// For testing CSS/HTML, comment the line above and uncomment the code below.
             /*this.createCustomerResult = {

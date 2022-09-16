@@ -20,10 +20,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Enums;
 using Api.Modules.Customers.Models;
+using Api.Modules.EntityProperties.Helpers;
+using Api.Modules.EntityProperties.Models;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Imports.Models;
 using Microsoft.VisualBasic.FileIO;
 
 namespace Api.Modules.Imports.Services
@@ -50,14 +53,12 @@ namespace Api.Modules.Imports.Services
         /// <inheritdoc />
         public async Task<ServiceResult<ImportResultModel>> PrepareImportAsync(ClaimsIdentity identity, ImportRequestModel importRequest)
         {
-            // !!! NOTE: Any and all changes done here, should also be done in the Wiser 2.0 in Wiser2/Modules/ImportExport/Import.aspx.vb/PerformImport !!!
             if (String.IsNullOrWhiteSpace(importRequest.FilePath) || !File.Exists(importRequest.FilePath))
             {
                 return new ServiceResult<ImportResultModel>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "File path is either empty, or the file does not exist.",
-                    ReasonPhrase = "File path is either empty, or the file does not exist."
+                    ErrorMessage = "File path is either empty, or the file does not exist."
                 };
             }
 
@@ -133,6 +134,7 @@ namespace Api.Modules.Imports.Services
                     string[] headerFields = null;
                     var firstLine = true;
                     var rowsHandled = 0;
+                    var idIndex = -1;
 
                     while (!reader.EndOfData)
                     {
@@ -140,6 +142,16 @@ namespace Api.Modules.Imports.Services
                         {
                             headerFields = reader.ReadFields();
                             firstLine = false;
+                            idIndex = Array.FindIndex(headerFields, s => s.Equals("id", StringComparison.OrdinalIgnoreCase));
+
+                            if (idIndex < 0)
+                            {
+                                importResult.Failed += 1U;
+                                importResult.Errors.Add("Can't do import because of missing ID column");
+                                importResult.UserFriendlyErrors.Add("De import kan niet gedaan worden omdat er geen kolom genaamd 'id' is gevonden in het importbestand. Er moet altijd een kolom met de naam 'id' zijn. Bij het wijzigen van bestaande items, moet daar het ID van het item im komen te staan. Bij het toevoegen van nieuwe items, kan de kolon leeg blijven, of '0' zijn. Bij het importeren van koppelingen moet daar het ID van een van de items in staan (en het andere ID moet dan in een andere kolom staan).");
+                                return new ServiceResult<ImportResultModel>(importResult);
+                            }
+
                             continue;
                         }
 
@@ -167,7 +179,6 @@ namespace Api.Modules.Imports.Services
                         };
                         importData.Add(importItem);
 
-                        var idIndex = Array.FindIndex(headerFields, s => s.Equals("id", StringComparison.OrdinalIgnoreCase));
 
                         var isNewItem = true;
 
@@ -271,6 +282,18 @@ namespace Api.Modules.Imports.Services
                                     // Link item in settings to newly made item.
                                     itemLink.ItemId = Convert.ToUInt64(value.Trim());
                                     itemLink.DestinationItemId = importItem.Item.Id;
+                                }
+                                
+                                // Make sure an item won't get linked to itself.
+                                if (itemLink.ItemId == itemLink.DestinationItemId)
+                                {
+                                    continue;
+                                }
+
+                                // Make sure that we don't import duplicate links.
+                                if (importItem.Links.Any(x => x.ItemId == itemLink.ItemId && x.DestinationItemId == itemLink.DestinationItemId && x.Type == itemLink.Type))
+                                {
+                                    continue;
                                 }
 
                                 importItem.Links.Add(itemLink);
@@ -544,7 +567,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("data", json);
                 clientDatabaseConnection.AddParameter("server_name", Environment.MachineName);
                 clientDatabaseConnection.AddParameter("sub_domain", subDomain);
-                wiserImportId = await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>("wiser_import");
+                wiserImportId = await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>(WiserTableNames.WiserImport);
             }
             catch (Exception ex)
             {
@@ -562,7 +585,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("errors", String.Join(Environment.NewLine, importResult.Errors));
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
                 clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity));
-                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>("wiser_import_log");
+                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>(WiserTableNames.WiserImportLog);
             }
             catch (Exception exception)
             {
@@ -929,8 +952,8 @@ FROM {tablePrefix}{WiserTableNames.WiserItem} AS item {(deleteItemsRequest.Prope
         /// <inheritdoc />
         public async Task<ServiceResult<List<DeleteLinksConfirmModel>>> PrepareDeleteLinksAsync(ClaimsIdentity identity, DeleteLinksRequestModel deleteLinksRequest)
         {
-            //Get all lines, skip first line containing column names.
-            var fileLines = File.ReadAllLines(deleteLinksRequest.FilePath).Skip(1);
+            // Get all lines, skip first line containing column names.
+            var fileLines = (await File.ReadAllLinesAsync(deleteLinksRequest.FilePath)).Skip(1).ToList();
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
 
@@ -982,21 +1005,22 @@ AND item.entity_type = ?entityName";
         /// <param name="fileLines"></param>
         /// <param name="deleteLinksRequest">The criteria for the item links to delete.</param>
         /// <returns>Returns the <see cref="DeleteLinksConfirmModel"/> containing the information to delete the links.</returns>
-        private async Task<DeleteLinksConfirmModel> CreateQueryForSingleColumn(IEnumerable<string> fileLines, DeleteLinksRequestModel deleteLinksRequest)
+        private async Task<DeleteLinksConfirmModel> CreateQueryForSingleColumn(IList<string> fileLines, DeleteLinksRequestModel deleteLinksRequest)
         {
             var linkSettings = await wiserItemsService.GetLinkTypeSettingsByIdAsync(deleteLinksRequest.LinkId);
             var destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkSettings.DestinationEntityType);
             var connectedTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkSettings.SourceEntityType);
+            var linkTablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(0, linkSettings.SourceEntityType, linkSettings.DestinationEntityType);
 
             clientDatabaseConnection.AddParameter("linkId", deleteLinksRequest.LinkId);
 
-            var query = string.Empty;
+            string query;
 
             if (linkSettings.UseItemParentId)
             {
                 query = $@"
 SELECT connected.id AS id, connected.id AS sourceId, destination.id AS destinationId
-FROM {WiserTableNames.WiserLink} AS linkSettings
+FROM {linkTablePrefix}{WiserTableNames.WiserLink} AS linkSettings
 JOIN {connectedTablePrefix}{WiserTableNames.WiserItem} AS connected ON connected.entity_type = linkSettings.connected_entity_type
 JOIN {destinationTablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id = connected.parent_item_id AND destination.entity_type = linkSettings.destination_entity_type
 WHERE linkSettings.id = ?linkId
@@ -1007,7 +1031,7 @@ AND (connected.id IN({String.Join(",", fileLines.Select(line => line.ToMySqlSafe
                 query = $@"
 SELECT itemLink.id AS id, connected.id AS sourceId, destination.id AS destinationId
 FROM {WiserTableNames.WiserLink} AS linkSettings
-JOIN {WiserTableNames.WiserItemLink} AS itemLink ON itemLink.type = linkSettings.type
+JOIN {linkTablePrefix}{WiserTableNames.WiserItemLink} AS itemLink ON itemLink.type = linkSettings.type
 JOIN {destinationTablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id = itemLink.destination_item_id AND destination.entity_type = linkSettings.destination_entity_type
 JOIN {connectedTablePrefix}{WiserTableNames.WiserItem} AS connected ON connected.id = itemLink.item_id AND connected.entity_type = linkSettings.connected_entity_type
 WHERE linkSettings.id = ?linkId
@@ -1023,7 +1047,7 @@ AND (itemLink.destination_item_id IN({String.Join(",", fileLines.Select(line => 
         /// <param name="fileLines"></param>
         /// <param name="deleteLinksRequest">The criteria for the item links to delete.</param>
         /// <returns>Returns the a collection of <see cref="DeleteLinksConfirmModel"/> containing the information to delete the links.</returns>
-        private async Task<List<DeleteLinksConfirmModel>> CreateQueryForMultipleColumns(IEnumerable<string> fileLines, DeleteLinksRequestModel deleteLinksRequest)
+        private async Task<List<DeleteLinksConfirmModel>> CreateQueryForMultipleColumns(IList<string> fileLines, DeleteLinksRequestModel deleteLinksRequest)
         {
             var firstEntity = deleteLinksRequest.DeleteSettings[0]["entity"].ToString();
             var secondEntity = deleteLinksRequest.DeleteSettings[1]["entity"].ToString();
@@ -1077,6 +1101,7 @@ AND (itemLink.destination_item_id IN({String.Join(",", fileLines.Select(line => 
 
                 var sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkSettings.SourceEntityType);
                 var destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkSettings.DestinationEntityType);
+                var linkTablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(0, linkSettings.SourceEntityType, linkSettings.DestinationEntityType);
 
                 clientDatabaseConnection.AddParameter("linkType", linkSettings.Type);
                 clientDatabaseConnection.AddParameter("sourceEntity", linkSettings.SourceEntityType);
@@ -1137,7 +1162,7 @@ AND destinationDetail.`value` IN({String.Join(",", destinationValues.Select(line
                 {
                     query.Append($@"
 SELECT itemLink.id AS id, itemLink.item_id AS sourceId, itemLink.destination_item_id AS destinationId
-FROM {WiserTableNames.WiserItemLink} AS itemLink");
+FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS itemLink");
 
                     //If the source is a property join tables.
                     if (!sourceIsId)
@@ -1257,6 +1282,74 @@ AND destinationDetail.`value` IN({String.Join(",", destinationValues.Select(line
                 await clientDatabaseConnection.RollbackTransactionAsync(false);
                 throw;
             }
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<IEnumerable<EntityPropertyModel>>> GetEntityProperties(ClaimsIdentity identity, string entityName = null, int linkType = 0)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("entityName", entityName ?? String.Empty);
+            clientDatabaseConnection.AddParameter("linkType", linkType);
+
+            var getPropertiesResult = await clientDatabaseConnection.GetAsync($@"
+                SELECT property.id, property.display_name, property.property_name, property.language_code, property.inputtype, property.`options`, property.ordering
+                FROM (
+                    SELECT
+                        0 AS id,
+                        'Item naam' AS display_name,
+                        'itemTitle' AS property_name,
+                        '' AS language_code,
+                        'input' AS inputtype,
+                        '' AS `options`,
+                        1 AS ordering,
+                        0 AS base_order
+                    FROM DUAL
+                    WHERE ?entityName <> ''
+                    UNION
+                    SELECT
+                        id,
+                        CONCAT(
+                            IF(display_name = '', property_name, display_name),
+                            IF(
+                                language_code <> '',
+                                CONCAT(' (', language_code, ')'),
+                                ''
+                            )
+                        ) AS display_name,
+                        IF(property_name = '', display_name, property_name) AS property_name,
+                        language_code,
+                        inputtype,
+                        IF(inputtype = 'image-upload', `options`, '') AS `options`,
+                        ordering AS ordering,
+                        1 AS base_order
+                    FROM `{WiserTableNames.WiserEntityProperty}`
+                    WHERE entity_name = ?entityName OR (?linkType > 0 AND link_type = ?linkType)
+                    ORDER BY base_order, display_name
+                ) AS property");
+
+            if (getPropertiesResult.Rows.Count == 0)
+            {
+                return new ServiceResult<IEnumerable<EntityPropertyModel>>(null);
+            }
+
+            var entityProperties = new List<EntityPropertyModel>(getPropertiesResult.Rows.Count);
+            foreach (var entityPropertyDataRow in getPropertiesResult.Rows.Cast<DataRow>())
+            {
+                entityProperties.Add(new EntityPropertyModel
+                {
+                    Id = Convert.ToInt32(entityPropertyDataRow["id"]),
+                    DisplayName = entityPropertyDataRow.Field<string>("display_name"),
+                    PropertyName = entityPropertyDataRow.Field<string>("property_name"),
+                    LanguageCode = entityPropertyDataRow.Field<string>("language_code"),
+                    InputType = EntityPropertyHelper.ToInputType(entityPropertyDataRow.Field<string>("inputtype")),
+                    Options = entityPropertyDataRow.Field<string>("options") ?? String.Empty,
+                    Ordering = Convert.ToInt32(entityPropertyDataRow["ordering"])
+                });
+            }
+
+            return new ServiceResult<IEnumerable<EntityPropertyModel>>(entityProperties);
         }
     }
 }

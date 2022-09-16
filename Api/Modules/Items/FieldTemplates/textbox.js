@@ -48,6 +48,7 @@ switch (options.type.toLowerCase()) {
 if (codeMirrorSettings.mode) {
 	// Only load code mirror when we actually need it.
 	Misc.ensureCodeMirror().then(function() {
+        field.parent().removeAttr("class");
 		var codeMirrorInstance = CodeMirror.fromTextArea(field[0], codeMirrorSettings);
 		field.data("CodeMirrorInstance", codeMirrorInstance);
 	});

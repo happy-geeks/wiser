@@ -11,6 +11,13 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
     public interface IDynamicContentDataService
     {
         /// <summary>
+        /// Gets all dynamic content that can be linked to the given template.
+        /// </summary>
+        /// <param name="templateId">The ID of the template.</param>
+        /// <returns>A list of dynamic components from other templates.</returns>
+        Task<List<DynamicContentOverviewModel>> GetLinkableDynamicContentAsync(int templateId);
+        
+        /// <summary>
         /// Retrieve the variable data of a set version. This can be used for retrieving past versions or the current version if the version number is known.
         /// </summary>
         /// <param name="version">The version number to distinguish the values by</param>
@@ -68,11 +75,26 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <summary>
         /// Publish the dynamic component to an environment. This method will execute the publishmodel instructions it recieves, logic for publishing linked environments should be handled in the servicelayer.
         /// </summary>
-        /// <param name="contentId">The id of the template of which the enviroment should be published.</param>
+        /// <param name="contentId">The id of the component of which the enviroment should be published.</param>
         /// <param name="publishModel">A publish model containing the versions that should be altered and their respective values to be altered with.</param>
         /// <param name="publishLog"></param>
         /// <param name="username">The name of the authenticated user.</param>
         /// <returns>An int confirming the rows altered by the query.</returns>
         Task<int> UpdatePublishedEnvironmentAsync(int contentId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username);
+
+        /// <summary>
+        /// Duplicates a dynamic component (only the latest version).
+        /// </summary>
+        /// <param name="contentId">The ID of the component.</param>
+        /// <param name="newTemplateId">The id of the template to link the new component to.</param>
+        /// <param name="username">The name of the authenticated user.</param>
+        Task DuplicateAsync(int contentId, int newTemplateId, string username);
+
+        /// <summary>
+        /// Deletes a dynamic component by putting the field 'removed' to 1
+        /// </summary>
+        /// <param name="contentID"> The ID of the dynamic component</param>
+        /// <returns></returns>
+        Task DeleteAsync(int contentID);
     }
 }

@@ -11,7 +11,7 @@ Wiser v3. This includes the API and the front-end projects.
 1. Run `npm install`.
 1. Run `node_modules\.bin\webpack --mode=development`.
 
-### Setup secrets
+### Setup secrets<a name="setup-secrets"></a>
 1. Create 2 files named `appsettings-secrets.json`, one for the API and one for the front-end, somewhere outside of the project directory.
 1. Open `appSettings.json` in both projects and save the directory to the secrets in the property `GCL.SecretsBaseDirectory`.
 1. The `appsettings-secrets.json` files should look like this:
@@ -31,8 +31,9 @@ Wiser v3. This includes the API and the front-end projects.
     "PusherAppId": "", // Some modules use pusher to send notifications to users. Enter the app ID for pusher here if you want to use that.
     "PusherAppKey": "", // The app key for pusher.
     "PusherAppSecret": "", // The app secret for pusher.
-    "PusherSalt": "" // A salt to use when hashing event IDs for pusher.,
-    "SigningCredentialCertificate": "" // The fully qualified name of the certificate in the store of the server, of the certificate to use for IdentityServer4 (OAUTH2) authentication.
+    "PusherSalt": "", // A salt to use when hashing event IDs for pusher.,
+    "SigningCredentialCertificate": "", // The fully qualified name of the certificate in the store of the server, of the certificate to use for IdentityServer4 (OAUTH2) authentication.
+    "UseTerserForTemplateScriptMinification": false // Whether terser should be used to handle the minification of JavaScript templates made in the Templates module.
   },
   "DigitalOcean": {
     "ClientId": "", // If you want to use the Digital Ocean API, enter the client ID for that here.
@@ -73,6 +74,7 @@ server=;port=;uid=;pwd=;database=;pooling=true;Convert Zero Datetime=true;CharSe
 Note the options that are added at the end of the connection string, Wiser will not work properly without these options.
 
 ## Installation script
+The installation script creates a new database schema and then creates several tables in that database. For it to work, you'll need a database user that has enough permissions to do all this.
 To setup this database, you can open a PowerShell or CMD window in the directory that contains the `Api.csproj` file and run the following command:
 ```
 npm run setup:mysql -- --host=host --database=database --user=user --password=password
@@ -85,6 +87,7 @@ You can use the following parameters with this command:
 - **port** (optional): The port for the database. Default value is `3306`.
 - **isConfigurator** (optional): Set to `true` if you want to make a configurator with Wiser.
 - **isWebshop** (optional): Set to `true` if you want to make a webshop with Wiser.
+- **isMultiLanguage** (optional): Set to `true` if you want to make a multi language application with Wiser.
 
 After installation, you can login with the username `admin` and password `admin`. Please change this password as soon as possible. The password can be changed via the module `Gebruikers - Wiser`. In that module you can also add other users that you want to be able to login to Wiser.
 
@@ -96,10 +99,29 @@ We have several SQL scripts to create these tables and add the minimum amount of
 
 The scripts `InsertInitialDataConfigurator.sql` and `InsertInitialDataEcommerce.sql` can be used if you want to run a website that uses the GeeksCoreLibrary that can be managed in Wiser. If you have a website with a webshop, run `InsertInitialDataEcommerce.sql` and if you have a website with a product configurator, run `InsertInitialDataConfigurator.sql` to setup Wiser to work with those kinds of websites.
 
+# Using terser for JavaScript template minification (optional)
+The API can be configured to use an npm package called [terser](https://terser.org/) to handle the minification of JavaScript templates that are created in the Templates module instead of [NUglify](https://github.com/trullock/NUglify). To do this, the terser npm package must be installed in the root directory where the API is running on the server:
+1. Open PowerShell/CMD window in the directory where the API is running.
+1. Run the command `npm install terser`. This will install terser and all its dependencies, and create terser command files in the `node_modules/.bin` folder. After the installation is done, verify that the `node_modules/.bin` directory exists in the root directory of the API and that it contains these files:
+    - `terser`
+    - `terser.cmd`
+    - `terser.ps1`
+1. Open the `appsettings-secrets.json` file of the API in an editor.
+    - See the [Setup secrets](#setup-secrets) section above to check where this file is located.
+1. Set the value of the setting `Api.UseTerserForTemplateScriptMinification` to `true`.
+    - See the [Setup secrets](#setup-secrets) section above for an example.
+1. (Re)start the API.
+
+The reason the setting is saved in the `appsettings-secrets.json` file instead of the `appSettings.json` file is to avoid the value getting overwritten when deploying a new version.
+
+## How terser is used to minify
+Because terser works with input files, the API will create a temporary file where the script will temporarily be stored. The directory where these scripts are temporarily stored is `temp/minify` in the API base directory. Wiser will attempt to create this directory, but it's not a bad idea to create it manually so the right permissions can be set. Wiser will automatically delete the temporary file after the minification has been completed.
+
 # Debugging
 1. Open PowerShell/CMS Window in the directory that contains the `FrontEnd.csproj` file (__NOT__ the root directory, that contains the `WiserCore.sln` file!).
 1. Run the command `node_modules\.bin\webpack --mode=development -w`. This will make webpack watch your javascript and automatically rebuild them when needed, so you don't have to rebuild it manully every time.
 1. To make debugging a little easier, you can setup Visual Studio to always start both the API and FrontEnd projects at the same time. You can do this by right clicking the solution and then `Properties`. Then go to `Common Properties --> Startup Project` and choose `Multiple startup projects`. Then set both `Api` and `FrontEnd` to `Start` and click `OK`.
+1. If you use Rider, you can also set that up to start both projects when debugging. To do this, click `Edit configuration` in the configurations dropdown (in the toolbar), this will open a new screen. In that screen select the root item `.NET Launch Settings Profile`, then click the plus icon on the top left. Now add a `Compound` and give it any name, such as "Debug both". Lastly, add the configurations `.NET Launch Settings Profile 'Api'` and `.NET Launch Settings Profile 'FrontEnd'` to that compount and click `OK`. 
 
 # Multitenancy
 Wiser works with multitenancy, but only with different (sub) domains. So for example, if Wiser runs on the domain `wiser.nl`, then you can use different sub domains for multi tenancy (eg. `foobar.wiser.nl`). Or you can just use multiple domains, like `example.com` and `foorbar.com`. When someone opens a (sub) domain of Wiser, that (sub) domain will then be looked up in `easy_customers`, via the column `subdomain`. If a row has been found, a connectionstring will be generated with the data from that row and that will be used for all requests on that sub domain.
@@ -165,7 +187,7 @@ By default, users can see and change everything. If there is no entry in wiser_p
 # Publishing
 To publish Wiser 3 to your own server, you should use the following publish settings:
 - Configuration: `Release`
-- Target Framework: `net5.0`
+- Target Framework: `net6.0`
 - Deployment Mode: `Self-Contained`
 - Target Runtime: The correct runtime for your system, for Windows this is usually `win-x64`
 - Under File Publish Option, tick the box for `Enable ReadyToRun compilation`

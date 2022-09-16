@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
+using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Kendo.Enums;
@@ -23,6 +27,7 @@ using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
@@ -34,6 +39,7 @@ using GeeksCoreLibrary.Modules.Templates.Enums;
 using GeeksCoreLibrary.Modules.Templates.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Models;
 using LibSassHost;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -44,6 +50,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
 using NUglify;
@@ -74,11 +81,14 @@ namespace Api.Modules.Templates.Services
         private readonly IObjectsService objectsService;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<TemplatesService> logger;
+        private readonly GclSettings gclSettings;
+        private readonly ApiSettings apiSettings;
+        private readonly IWebHostEnvironment webHostEnvironment;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IOptions<GclSettings> gclSettings, IOptions<ApiSettings> apiSettings, IWebHostEnvironment webHostEnvironment)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -95,6 +105,9 @@ namespace Api.Modules.Templates.Services
             this.objectsService = objectsService;
             this.databaseHelpersService = databaseHelpersService;
             this.logger = logger;
+            this.gclSettings = gclSettings.Value;
+            this.apiSettings = apiSettings.Value;
+            this.webHostEnvironment = webHostEnvironment;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -196,18 +209,21 @@ namespace Api.Modules.Templates.Services
 
             // Get stylesheets that are marked to load on every page.
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var dataTable = await clientDatabaseConnection.GetAsync(@"SELECT t.itemid, IF(t.templatetype = 'scss', t.html_minified, t.template) AS template, i.volgnr, t.development
-                                                                        FROM easy_templates t
-                                                                        JOIN (SELECT MAX(version) AS version, itemid FROM easy_templates GROUP BY itemid) t2 ON t2.itemid = t.itemid AND t2.version = t.version
-                                                                        JOIN easy_items i ON i.id = t.itemid AND i.moduleid = 143
-                                                                        WHERE t.templatetype IN ('css', 'scss') AND (t.loadalways=1 OR useinwiserhtmleditors=1)
-                                                                        ORDER BY volgnr, development DESC");
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT
+	template.template_id,
+	template.template_data_minified
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+WHERE (template.use_in_wiser_html_editors = 1 OR template.load_always = 1)
+AND template.template_type IN (2, 3)
+AND otherVersion.id IS NULL
+ORDER BY template.ordering ASC");
 
             if (dataTable.Rows.Count > 0)
             {
                 foreach (DataRow dataRow in dataTable.Rows)
                 {
-                    outputCss.Append(dataRow.Field<string>("template"));
+                    outputCss.Append(dataRow.Field<string>("template_data_minified"));
                 }
             }
 
@@ -245,24 +261,6 @@ namespace Api.Modules.Templates.Services
                 else if (!String.IsNullOrWhiteSpace(mainDomainWiser))
                 {
                     domainName = $"{(requireSsl ? "https" : "http")}://{mainDomainWiser}/";
-                }
-            }
-
-            // Get stylesheets from Wiser.
-            dataTable = await clientDatabaseConnection.GetAsync(@"SELECT t.template
-                                                                       FROM easy_templates t
-                                                                       JOIN (
-	                                                                       SELECT i.id, MAX(t.version) AS v
-	                                                                       FROM easy_templates t
-	                                                                       JOIN easy_items i ON t.itemid = i.id AND i.moduleid = 143 AND i.name IN('shopwarepro', 'wiser')
-	                                                                       GROUP BY i.id
-                                                                       ) v ON v.v = t.version AND v.id = t.itemid");
-
-            if (dataTable.Rows.Count > 0)
-            {
-                foreach (DataRow dataRow in dataTable.Rows)
-                {
-                    outputCss.Append(dataRow.Field<string>("template"));
                 }
             }
 
@@ -340,11 +338,6 @@ namespace Api.Modules.Templates.Services
                 //and version = (select MAX(version) from easy_templates M where M.name = easy_templates.name and M.deleted = 0)    //M.itemid = easy_templates.itemid => is itemid important here?
 
                 //load all the template queries into the dictionary
-                TemplateQueryStrings.Add("INSERT_ENTITY", @"
-SET @entityName = '{entityName}';
-INSERT INTO `wiser_entity`(name) VALUES(@entityName);
-");
-
                 TemplateQueryStrings.Add("GET_DATA_FOR_RADIO_BUTTONS", @"SET @_itemId = {itemId};
 SET @entityproperty_id = {propertyid};
 SET @querytext = (SELECT data_query FROM wiser_entityproperty WHERE id=@entityproperty_id);
@@ -680,9 +673,14 @@ LIMIT {skip}, {take}");
                 TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_ADMIN", @"SELECT id, entity_name AS entityName, tab_name AS tabName, display_name AS displayName, ordering FROM wiser_entityproperty
 WHERE tab_name = '{tabName}' AND entity_name = '{entityName}'
 ORDER BY ordering ASC");
-                TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT id , name FROM wiser_entity
-WHERE name != ''
-ORDER BY name ASC;");
+                TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
+	entity.id,
+	IF(entity.name = '', 'ROOT', entity.name) AS name,
+	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(NULLIF(entity.friendly_name, ''), IF(entity.name = '', 'ROOT', entity.name))) AS displayName,
+    entity.module_id AS moduleId 
+FROM wiser_entity AS entity
+LEFT JOIN wiser_module AS module ON module.id = entity.module_id
+ORDER BY module.name ASC, entity.module_id ASC, entity.name ASC");
                 TemplateQueryStrings.Add("GET_LANGUAGE_CODES", @"SELECT
     language_code AS text,
     language_code AS `value`
@@ -1025,75 +1023,6 @@ AND (({parentId:decrypt(true)} = 0 AND e.name = '') OR ({parentId:decrypt(true)}
                 TemplateQueryStrings.Add("IMPORTEXPORT_GET_LINK_TYPES", @"SELECT type AS id, `name`
 FROM wiser_link
 ORDER BY `name`");
-                TemplateQueryStrings.Add("SAVE_ENTITY_VALUES", @"
-SET @_id = {id};
-SET @_name = '{name}';
-SET @_module_id = {moduleId};
-SET @_accepted_childtypes = '{acceptedChildtypes}';
-SET @_icon = '{icon}';
-SET @_icon_add = '{iconAdd}';
-SET @_icon_expanded = '{iconExpanded}';
-SET @_show_in_tree_view = '{showInTreeView}';
-SET @_query_after_insert = '{queryAfterInsert}';
-SET @_query_after_update = '{queryAfterUpdate}';
-SET @_query_before_update = '{queryBeforeUpdate}';
-SET @_query_before_delete = '{queryBeforeDelete}';
-SET @_color = '{color}';
-SET @_show_in_search = '{showInSearch}';
-SET @_show_overview_tab = '{showOverviewTab}';
-SET @_save_title_as_seo = '{saveTitleAsSeo}';
-#SET @_api_after_insert = {apiAfterInsert};
-#SET @_api_after_update = {apiAfterUpdate};
-#SET @_api_before_update = {apiBeforeUpdate};
-#SET @_api_before_delete = {apiBeforeDelete};
-SET @_show_title_field = '{showTitleField}';
-SET @_friendly_name = '{friendlyName}';
-SET @_save_history = '{saveHistory}';
-SET @_default_ordering = '{defaultOrdering}';
-SET @_dedicated_table_prefix = '{dedicatedTablePrefix}';
-
-SET @_show_in_tree_view = IF(@_show_in_tree_view = TRUE OR @_show_in_tree_view = 'true', 1, 0);
-SET @_show_in_search = IF(@_show_in_search = TRUE OR @_show_in_search = 'true', 1, 0);
-SET @_show_overview_tab = IF(@_show_overview_tab = TRUE OR @_show_overview_tab = 'true', 1, 0);
-SET @_save_title_as_seo = IF(@_save_title_as_seo = TRUE OR @_save_title_as_seo = 'true', 1, 0);
-SET @_show_title_field = IF(@_show_title_field = TRUE OR @_show_title_field = 'true', 1, 0);
-SET @_save_history = IF(@_save_history = TRUE OR @_save_history = 'true', 1, 0);
-
-SET @_name_changed = (SELECT `name` != @_name FROM wiser_entity WHERE id = @_id);
-SET @_name_old = (SELECT `name`  FROM wiser_entity WHERE id = @_id);
-
-UPDATE wiser_entity e
-LEFT JOIN wiser_entity accepted ON accepted.accepted_childtypes LIKE CONCAT('%',@_name_old,'%') AND @_name_changed
-LEFT JOIN wiser_entityproperty propertyOption ON REPLACE(`options` , ' ', '') LIKE CONCAT('%""entityType"":""',@_name_old,'""%') AND @_name_changed
-SET 
-     accepted.accepted_childtypes = REPLACE(accepted.accepted_childtypes, @_name_old, @_name),
-     propertyOption.`options` = REPLACE(propertyOption.`options`, @_name_old, @_name),
-	 e.module_id = @_module_id,
-	 e.name= @_name,
-	 e.accepted_childtypes = @_accepted_childtypes,
-	 e.icon = @_icon,
-	 e.icon_add = @_icon_add,
-	 e.icon_expanded = @_icon_expanded,
-	 e.show_in_tree_view = @_show_in_tree_view,
-	 e.query_after_insert = @_query_after_insert,
-	 e.query_after_update = @_query_after_update,
-	 e.query_before_update = @_query_before_update,
-	 e.query_before_delete = @_query_before_delete,
-	 e.color = @_color,
-	 e.show_in_search = @_show_in_search,
-	 e.show_overview_tab = @_show_overview_tab,
-	 e.save_title_as_seo = @_save_title_as_seo,
-	 #e.api_after_insert = @_api_after_insert,
-	 #e.api_after_update = @_api_after_update,
-	 #e.api_before_update = @_api_before_update,
-	 #e.api_before_delete = @_api_before_delete,
-	 e.show_title_field = @_show_title_field,
-	 e.friendly_name = @_friendly_name,
-	 e.save_history = @_save_history,
-	 e.default_ordering = @_default_ordering,
-     e.dedicated_table_prefix = @_dedicated_table_prefix
-WHERE e.id = @_id;
-");
                 TemplateQueryStrings.Add("SAVE_INITIAL_VALUES", @"SET @_entity_name = '{entityName}';
 SET @_tab_name = '{tabName}';
 SET @_tab_name = IF( @_tab_name='gegevens', '', @_tab_name);
@@ -1101,7 +1030,6 @@ SET @_display_name = '{displayName}';
 SET @_property_name = IF('{propertyName}' = '', @_display_name, '{propertyName}');
 SET @_overviewvisibility = '{visibleInOverview}';
 SET @_overviewvisibility = IF(@_overviewvisibility = TRUE OR @_overviewvisibility = 'true', 1, 0);
-SET @_overviewType = '{overviewFieldtype}';
 SET @_overviewWidth = '{overviewWidth}';
 SET @_groupName = '{groupName}';
 SET @_input_type = '{inputtype}';
@@ -1137,7 +1065,6 @@ inputtype = @_input_type,
 display_name = @_display_name,
 property_name = @_property_name,
 visible_in_overview= @_overviewvisibility,
-overview_fieldtype= @_overviewType,
 overview_width= @_overviewWidth,
 group_name= @_groupName,
 explanation= @_explanation,
@@ -1164,71 +1091,54 @@ grid_update_query = @_grid_update_query
 WHERE entity_name = @_entity_name AND id = @_id
 LIMIT 1; ");
 
-                TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_FOR_SELECTED", @"SELECT 
-`id`, 
-`name`, 
-`module_id` AS `moduleId`, 
-`accepted_childtypes` AS `acceptedChildtypes`, 
-`icon`, 
-`icon_add` AS `iconAdd`, 
-`show_in_tree_view` AS `showInTreeView`, 
-`query_after_insert` AS `queryAfterInsert`, 
-`query_after_update` AS `queryAfterUpdate`, 
-`query_before_update` AS `queryBeforeUpdate`, 
-`query_before_delete` AS `queryBeforeDelete`, 
-`color`, 
-`show_in_search` AS `showInSearch`, 
-`show_overview_tab` AS `showOverviewTab`, 
-`save_title_as_seo` AS `saveTitle`, 
-`api_after_insert` AS `apiAfterInsert`, 
-`api_after_update` AS `apiAfterUpdate`, 
-`api_before_update` AS `apiBeforeUpdate`, 
-`api_before_delete` AS `apiBeforeDelete`, 
-`show_title_field` AS `showTitleField`, 
-`friendly_name` AS `friendlyName`, 
-`save_history` AS `saveHistory`, 
-`default_ordering` AS `defaultOrdering`,
-`enable_multiple_environments` AS `enableMultipleEnvironments`, 
-`icon_expanded` AS `iconExpanded`, 
-`dedicated_table_prefix` AS `dedicatedTablePrefix`
-FROM wiser_entity 
-WHERE id= {id};
-");
-
                 TemplateQueryStrings.Add("GET_ENTITY_FIELD_PROPERTIES_FOR_SELECTED", @"SELECT
-id,
-display_name AS displayName,
-inputtype, 
-visible_in_overview AS visibleInOverview, 
-overview_width AS overviewWidth, 
-overview_fieldtype AS overviewFieldtype, 
-mandatory, 
-readonly, 
-also_save_seo_value AS alsoSaveSeoValue,
-width,
-height,
-IF(tab_name = '', 'Gegevens', tab_name) AS tabName,
-group_name AS groupName,
-property_name AS propertyName,
-explanation,
-default_value AS defaultValue,
-automation,
-options,
-depends_on_field AS dependsOnField,
-depends_on_operator AS dependsOnOperator,
-depends_on_value AS dependsOnValue,
-IFNULL(data_query,"""") AS dataQuery,
-IFNULL(grid_delete_query,"""") AS gridDeleteQuery,
-IFNULL(grid_update_query,"""") AS gridUpdateQuery,
-IFNULL(grid_insert_query,"""") AS gridInsertQuery,
-regex_validation AS regexValidation,
-IFNULL(css, '') AS css,
-language_code AS languageCode,
-IFNULL(custom_script, '') AS customScript,
-(SELECT COUNT(1) FROM wiser_itemdetail INNER JOIN wiser_item ON wiser_itemdetail.item_id = wiser_item.id WHERE wiser_itemdetail.key = wiser_entityproperty.property_name AND wiser_item.entity_type = wiser_entityproperty.entity_name) > 0 as field_in_use
+    id,
+    module_id,
+    entity_name,
+    link_type,
+    visible_in_overview AS visibleInOverview,
+    overview_width AS overviewWidth, 
+    IF(tab_name = '', 'Gegevens', tab_name) AS tabName,
+    group_name AS groupName,
+    inputtype AS inputType,
+    display_name AS displayName,
+    property_name AS propertyName,
+    explanation,
+    ordering,
+    regex_validation AS regexValidation,
+    mandatory, 
+    readonly, 
+    default_value AS defaultValue,
+    IFNULL(css, '') AS css,
+    width,
+    height,
+    options,
+    IFNULL(data_query, '') AS dataQuery,
+    IFNULL(action_query, '') AS actionQuery,
+    IFNULL(search_query, '') AS searchQuery,
+    IFNULL(search_count_query, '') AS searchCountQuery,
+    IFNULL(grid_delete_query, '') AS gridDeleteQuery,
+    IFNULL(grid_insert_query, '') AS gridInsertQuery,
+    IFNULL(grid_update_query, '') AS gridUpdateQuery,
+    depends_on_field AS dependsOnField,
+    depends_on_operator AS dependsOnOperator,
+    depends_on_value AS dependsOnValue,
+    language_code AS languageCode,
+    IFNULL(custom_script, '') AS customScript,
+    also_save_seo_value AS alsoSaveSeoValue,
+    depends_on_action AS dependsOnAction,
+    save_on_change AS saveOnChange,
+    extended_explanation AS extendedExplanation,
+    label_style AS labelStyle,
+    label_width AS labelWidth,
+    enable_aggregation AS enableAggregation,
+    aggregate_options AS aggregateOptions,
+    access_key AS accessKey,
+    visibility_path_regex AS visibilityPathRegex,
+    (SELECT COUNT(1) FROM wiser_itemdetail INNER JOIN wiser_item ON wiser_itemdetail.item_id = wiser_item.id WHERE wiser_itemdetail.key = wiser_entityproperty.property_name AND wiser_item.entity_type = wiser_entityproperty.entity_name) > 0 as field_in_use
 FROM wiser_entityproperty
-WHERE id = {id} AND entity_name = '{entityName}'
-");
+WHERE id = {id}
+AND entity_name = '{entityName}'");
                 TemplateQueryStrings.Add("MOVE_ITEM", @"#Item verplaatsen naar ander item
 SET @src_id = '{source:decrypt(true)}';
 SET @dest_id = '{destination:decrypt(true)}';
@@ -1295,8 +1205,8 @@ SET @itemname = (SELECT title FROM wiser_item WHERE id=@_itemId);
 SET @userId = {encryptedUserId:decrypt(true)};
 
 SELECT 
-	CONCAT('\'', @itemname, '\' hernoemen') AS text, 
-    'icon-album-rename' AS spriteCssClass,
+	CONCAT('\'', @itemname, '\' hernoemen (F2)') AS text, 
+    'icon-rename' AS spriteCssClass,
     'RENAME_ITEM' AS attraction,
     i.entity_type AS attrentity_type
     #the JSON must consist of a subnode with attributes, so attr is the name of the json object containing 'action' as a value, herefore the name here is attr...action
@@ -1318,8 +1228,9 @@ SELECT
 		)
     
 UNION
-    SELECT CONCAT('Nieuw(e) \'', i.name, '\' aanmaken'), 
-	i.icon_add,'CREATE_ITEM', 
+    SELECT CONCAT('Nieuw(e) \'', i.name, '\' aanmaken (SHIFT+N)'), 
+	i.icon_add,
+    'CREATE_ITEM', 
 	i.name
     FROM wiser_entity i
     JOIN wiser_entity we ON we.module_id=@_moduleId AND we.name=@entity_type
@@ -1340,7 +1251,7 @@ UNION
 		)
 
 UNION
-	SELECT CONCAT('\'', @itemname, '\' dupliceren') AS text, 
+	SELECT CONCAT('\'', @itemname, '\' dupliceren (SHIFT+D)') AS text, 
 	'icon-document-duplicate',
 	'DUPLICATE_ITEM',
     i.entity_type AS attrentity_type
@@ -1431,7 +1342,7 @@ UNION
 		)
     
 UNION
-	SELECT CONCAT('\'', @itemname, '\' verwijderen') AS text, 
+	SELECT CONCAT('\'', @itemname, '\' verwijderen (DEL)') AS text, 
 	'icon-delete',
 	'REMOVE_ITEM',
     i.entity_type AS attrentity_type
@@ -1460,37 +1371,12 @@ UNION ALL
 SELECT 'Media' AS type_text, 4 AS type_value 
 UNION ALL
 SELECT DISTINCT type AS type_text, type AS type_value FROM `wiser_itemlink` WHERE type > 100");
-                TemplateQueryStrings.Add("REMOVE_LINK", @"SET @sourceId = IF('{source_plain}' LIKE '{%}', '{source:decrypt(true)}', '{source_plain}');
-SET @destinationId = {destination:decrypt(true)};
-SET @_linkTypeNumber = IF('{linkTypeNumber}' LIKE '{%}' OR '{linkTypeNumber}' = '', '2', '{linkTypeNumber}');
-SET @orderNumber = IFNULL((SELECT MIN(ordering) FROM wiser_itemlink WHERE item_id = @sourceId AND destination_item_id = @destinationId AND type = @_linkTypeNumber), -1);
-SET @_username = '{username}';
-SET @_userId = '{encryptedUserId:decrypt(true)}';
-
-DELETE FROM wiser_itemlink WHERE item_id = @sourceId AND destination_item_id = @destinationId AND type = @_linkTypeNumber;
-
-UPDATE wiser_itemlink SET ordering = ordering - 1 WHERE @orderNumber > -1 AND ordering > @orderNumber AND destination_item_id = @destinationId AND type = @_linkTypeNumber;");
-                TemplateQueryStrings.Add("GET_COLUMNS_FOR_FIELD_TABLE", @"#Verkrijg de kolommen die getoond moeten worden bij een specifiek soort entiteit
-SET @entitytype = '{entity_type}';
-SET @_linkType = '{linkType}';
-
-SELECT  
-	CONCAT('property_.', CreateJsonSafeProperty(LOWER(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)))) AS field,
-    p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
-    p.overview_width AS width
-FROM wiser_entityproperty p 
-WHERE (p.entity_name = @entitytype OR (p.link_type > 0 AND p.link_type = @_linkType))
-AND p.visible_in_overview = 1
-GROUP BY IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)
-ORDER BY p.ordering;");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_LINK_TABLE", @"SET @destinationId = {id:decrypt(true)};
 SET @_linkTypeNumber = IF('{linkTypeNumber}' LIKE '{%}' OR '{linkTypeNumber}' = '', '2', '{linkTypeNumber}');
 
 SELECT 
 	CONCAT('property_.', CreateJsonSafeProperty(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name))) AS field,
     p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
     p.overview_width AS width
 FROM wiser_entityproperty p 
 JOIN wiser_item i ON i.entity_type = p.entity_name
@@ -1629,31 +1515,6 @@ WHERE role.id = {role_id}");
                 TemplateQueryStrings.Add("DELETE_MODULE_RIGHT_ASSIGNMENT", @"DELETE FROM `wiser_system`.`wiser_permission`
 WHERE role_id = {role_id} AND module_id={module_id}");
 
-                TemplateQueryStrings.Add("IMPORTEXPORT_GET_ENTITY_PROPERTIES", @"SELECT property.`name`, property.`value`, property.languageCode, property.isImageField, property.allowMultipleImages
-FROM (
-    SELECT 'Item naam' AS `name`, 'itemTitle' AS `value`, '' AS languageCode, 0 AS isImageField, 0 AS allowMultipleImages, 0 AS baseOrder
-    FROM DUAL
-    WHERE '{entityName}' NOT LIKE '{%}' AND '{entityName}' <> ''
-    UNION
-    SELECT
-        CONCAT(
-            IF(display_name = '', property_name, display_name),
-            IF(
-                language_code <> '',
-                CONCAT(' (', language_code, ')'),
-                ''
-            )
-        ) AS `name`,
-        IF(property_name = '', display_name, property_name) AS `value`,
-        language_code AS languageCode,
-        inputtype = 'image-upload' AS isImageField,
-        IFNULL(JSON_UNQUOTE(JSON_EXTRACT(NULLIF(`options`, ''), '$.multiple')), 'true') = 'true' AS allowMultipleImages,
-        1 AS baseOrder
-    FROM wiser_entityproperty
-    WHERE entity_name = '{entityName}'
-    OR ('{linkType}' > 0 AND link_type = '{linkType}')
-    ORDER BY baseOrder, `name`
-) AS property");
                 TemplateQueryStrings.Add("GET_ROLE_RIGHTS", @"SELECT
 	properties.id AS `propertyId`,
 	properties.entity_name AS `entityName`,
@@ -1746,7 +1607,7 @@ JOIN wiser_entity we ON we.name = i.entity_type AND we.show_in_tree_view = 1
 LEFT JOIN wiser_itemlink ilp ON ilp.item_id = i.id
 LEFT JOIN wiser_itemlink checked ON checked.item_id = i.id AND checked.destination_item_id = @_checkId AND @_checkId <> '0'
 WHERE i.moduleid = @mid
-AND (@_entityType = '' OR i.entity_type = @entityType)
+AND (@_entityType = '' OR i.entity_type = @_entityType)
 GROUP BY i.id
 ORDER BY 
     CASE WHEN @_ordering = 'title' THEN i.title END ASC,
@@ -1854,25 +1715,11 @@ AND il.type = @_linkType
 AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
 GROUP BY il.destination_item_id, id.id
 ORDER BY il.ordering, i.title, i.id");
-                TemplateQueryStrings.Add("ADD_LINK", @"SET @sourceId = {source:decrypt(true)};
-SET @destinationId = {destination:decrypt(true)};
-SET @_linkTypeNumber = IF('{linkTypeNumber}' LIKE '{%}' OR '{linkTypeNumber}' = '', '2', '{linkTypeNumber}');
-SET @newOrderNumber = IFNULL((SELECT MAX(link.ordering) + 1 FROM wiser_itemlink AS link JOIN wiser_item AS item ON item.id = link.item_id WHERE link.destination_item_id = @destinationId AND link.type = @_linkTypeNumber), 1);
-SET @_username = '{username}';
-SET @_userId = '{encryptedUserId:decrypt(true)}';
-
-INSERT IGNORE INTO wiser_itemlink (item_id, destination_item_id, ordering, type)
-SELECT @sourceId, @destinationId, @newOrderNumber, @_linkTypeNumber
-FROM DUAL
-WHERE @sourceId <> @destinationId;
-
-SELECT LAST_INSERT_ID() AS newId;");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_TABLE", @"SET @selected_id = {itemId:decrypt(true)}; # 3077
 
 SELECT 
 	CONCAT('property_.', CreateJsonSafeProperty(LOWER(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)))) AS field,
     p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
     p.overview_width AS width
 FROM wiser_itemlink il
 JOIN wiser_item i ON i.id=il.item_id
@@ -2435,7 +2282,6 @@ LIMIT 1";
             {
                 return new ServiceResult<TemplateSettingsModel>
                 {
-                    ReasonPhrase = templateEnvironmentsResult.ReasonPhrase,
                     ErrorMessage = templateEnvironmentsResult.ErrorMessage,
                     StatusCode = templateEnvironmentsResult.StatusCode
                 };
@@ -2446,20 +2292,19 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId)
+        public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
         {
             if (templateId <= 0)
             {
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var templateData = await templateDataService.GetDataAsync(templateId);
+            var templateData = await templateDataService.GetDataAsync(templateId, environment);
             var templateEnvironmentsResult = await GetTemplateEnvironmentsAsync(templateId);
             if (templateEnvironmentsResult.StatusCode != HttpStatusCode.OK)
             {
                 return new ServiceResult<TemplateSettingsModel>
                 {
-                    ReasonPhrase = templateEnvironmentsResult.ReasonPhrase,
                     ErrorMessage = templateEnvironmentsResult.ErrorMessage,
                     StatusCode = templateEnvironmentsResult.StatusCode
                 };
@@ -2540,16 +2385,35 @@ LIMIT 1";
                         EvalTreatment = EvalTreatment.Ignore
                     };
 
-                    // Try to minify. Uglify is known to have various issues with minifying newer JavaScript features.
-                    try
+                    // Try to the minify the script.
+                    var terserSuccessful = false;
+                    string terserMinifiedScript = null;
+                    if (apiSettings.UseTerserForTemplateScriptMinification)
                     {
-                        template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
+                        // Minification through terser is enabled, attempt to minify it using that.
+                        (terserSuccessful, terserMinifiedScript) = await MinifyJavaScriptWithTerserAsync(template.EditorValue);
                     }
-                    catch (Exception exception)
+
+                    if (terserSuccessful)
                     {
-                        // Use non-minified editor value as the minified value so the changes don't go lost.
-                        template.MinifiedValue = template.EditorValue;
-                        logger.LogWarning(exception, $"An error occurred while trying to minify the JavaScript of template ID {template.TemplateId}");
+                        template.MinifiedValue = terserMinifiedScript;
+                    }
+                    else
+                    {
+                        // If minification through terser failed somehow (like a missing/outdated/corrupt installation), then
+                        // use NUglify as a fallback.
+                        try
+                        {
+                            // Wrapped in a try-catch statement, because NUglify is known to have various
+                            // issues with minifying newer JavaScript features.
+                            template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
+                        }
+                        catch (Exception exception)
+                        {
+                            // Use non-minified editor value as the minified value so the changes don't go lost.
+                            template.MinifiedValue = template.EditorValue;
+                            logger.LogWarning(exception, $"An error occurred while trying to minify the JavaScript using NUglify of template ID {template.TemplateId}");
+                        }
                     }
 
                     break;
@@ -2655,8 +2519,7 @@ LIMIT 1";
                 return new ServiceResult<TemplateHistoryOverviewModel>
                 {
                     StatusCode = dynamicContentOverview.StatusCode,
-                    ErrorMessage = dynamicContentOverview.ErrorMessage,
-                    ReasonPhrase = dynamicContentOverview.ReasonPhrase
+                    ErrorMessage = dynamicContentOverview.ErrorMessage
                 };
             }
 
@@ -2708,8 +2571,7 @@ LIMIT 1";
                 return new ServiceResult<bool>
                 {
                     StatusCode = templateDataResponse.StatusCode,
-                    ErrorMessage = templateDataResponse.ErrorMessage,
-                    ReasonPhrase = templateDataResponse.ReasonPhrase
+                    ErrorMessage = templateDataResponse.ErrorMessage
                 };
             }
 
@@ -2719,8 +2581,7 @@ LIMIT 1";
                 return new ServiceResult<bool>
                 {
                     StatusCode = linkedTemplatesResponse.StatusCode,
-                    ErrorMessage = linkedTemplatesResponse.ErrorMessage,
-                    ReasonPhrase = linkedTemplatesResponse.ReasonPhrase
+                    ErrorMessage = linkedTemplatesResponse.ErrorMessage
                 };
             }
 
@@ -2749,7 +2610,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom)
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom, Environments? environment = null)
         {
             var templates = new List<TemplateTreeViewModel>();
             var path = startFrom.Split(',');
@@ -2762,11 +2623,11 @@ LIMIT 1";
 
                 if (templateTree.HasChildren)
                 {
-                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom)).ModelObject;
+                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom, environment)).ModelObject; 
                 }
                 else
                 {
-                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(identity, templateTree.TemplateId)).ModelObject;
+                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(identity, templateTree.TemplateId, environment)).ModelObject;
                 }
 
                 if (String.IsNullOrWhiteSpace(startFrom))
@@ -2832,6 +2693,8 @@ LIMIT 1";
             var queryString = QueryHelpers.ParseQuery(requestModel.Url.Query);
             var ombouw = (!queryString.ContainsKey("ombouw") || !String.Equals(queryString["ombouw"].ToString(), "false", StringComparison.OrdinalIgnoreCase)) && !String.Equals(requestModel.PreviewVariables.FirstOrDefault(v => String.Equals(v.Key, "ombouw", StringComparison.OrdinalIgnoreCase))?.Value, "false", StringComparison.OrdinalIgnoreCase);
 
+            await SetupGclForPreviewAsync(identity, requestModel);
+            
             var contentToWrite = new StringBuilder();
 
             // Execute the pre load query before any replacements are being done and before any dynamic components are handled.
@@ -2852,25 +2715,12 @@ LIMIT 1";
                 contentToWrite.Append(await pagesService.GetGlobalFooter(requestModel.Url.ToString(), javascriptTemplates, cssTemplates));
             }
 
-            await SetupGclForPreviewAsync(identity, requestModel);
-
             outputHtml = contentToWrite.ToString();
-            if (requestModel.TemplateSettings.HandleStandards)
-            {
-                outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, requestModel.TemplateSettings.HandleRequests, false, true, false);
-                outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
-                outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
-            }
-
-            if (requestModel.TemplateSettings.HandleDynamicContent)
-            {
-                outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
-            }
-
-            if (requestModel.TemplateSettings.HandleLogicBlocks)
-            {
-                outputHtml = stringReplacementsService.EvaluateTemplate(outputHtml);
-            }
+            outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, requestModel.TemplateSettings.HandleRequests, false, true, false);
+            outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
+            outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
+            outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
+            outputHtml = stringReplacementsService.EvaluateTemplate(outputHtml);
 
             if (!ombouw)
             {
@@ -2893,31 +2743,93 @@ LIMIT 1";
 
             if (viewModel.Css != null)
             {
-                viewModel.Css.GeneralCssFileName = AddMainDomainToUrl(viewModel.Css.GeneralCssFileName, mainDomain);
-                viewModel.Css.PageAsyncFooterCssFileName = AddMainDomainToUrl(viewModel.Css.PageAsyncFooterCssFileName, mainDomain);
-                viewModel.Css.PageInlineHeadCss = AddMainDomainToUrl(viewModel.Css.PageInlineHeadCss, mainDomain);
-                viewModel.Css.PageStandardCssFileName = AddMainDomainToUrl(viewModel.Css.PageStandardCssFileName, mainDomain);
-                viewModel.Css.PageSyncFooterCssFileName = AddMainDomainToUrl(viewModel.Css.PageSyncFooterCssFileName, mainDomain);
+                var cssBuilder = new StringBuilder();
+                cssBuilder.AppendLine((await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Css)).Content);
+                cssBuilder.AppendLine(viewModel.Css.PageInlineHeadCss);
+                
+                var regex = new Regex("/css/gclcss_(.*).css");
+                var match = regex.Match(viewModel.Css.PageStandardCssFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Css.PageStandardCssFileName = null;
+                
+                match = regex.Match(viewModel.Css.PageAsyncFooterCssFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Css.PageAsyncFooterCssFileName = null;
+                
+                match = regex.Match(viewModel.Css.PageSyncFooterCssFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Css.PageSyncFooterCssFileName = null;
+
+                viewModel.Css.PageInlineHeadCss = cssBuilder.ToString();
             }
 
             if (viewModel.Javascript != null)
             {
-                viewModel.Javascript.GeneralJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.GeneralJavascriptFileName, mainDomain);
-                viewModel.Javascript.GeneralFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.GeneralFooterJavascriptFileName, mainDomain);
-                viewModel.Javascript.PageAsyncFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageAsyncFooterJavascriptFileName, mainDomain);
-                viewModel.Javascript.PageStandardJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageStandardJavascriptFileName, mainDomain);
-                viewModel.Javascript.PageSyncFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageSyncFooterJavascriptFileName, mainDomain);
+                viewModel.Javascript.PageInlineHeadJavascript ??= new List<string>();
+                viewModel.Javascript.PageInlineHeadJavascript.Insert(0, (await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Js)).Content);
+
+                var regex = new Regex("/css/gcljs_(.*).css");
+                var match = regex.Match(viewModel.Javascript.PageStandardJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.PageStandardJavascriptFileName = null;
+                
+                match = regex.Match(viewModel.Javascript.GeneralFooterJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.GeneralFooterJavascriptFileName = null;
+                
+                match = regex.Match(viewModel.Javascript.PageAsyncFooterJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.PageAsyncFooterJavascriptFileName = null;
+                
+                match = regex.Match(viewModel.Javascript.PageSyncFooterJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.PageSyncFooterJavascriptFileName = null;
             }
 
             // Generate HTML from view.
             await using var writer = new StringWriter();
             var executingAssemblyDirectoryAbsolutePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
-            var executingFilePath = executingAssemblyDirectoryAbsolutePath.Replace('\\', '/');
+            var executingFilePath = executingAssemblyDirectoryAbsolutePath!.Replace('\\', '/');
             const string viewPath = "~/Modules/Templates/Views/Shared/Template.cshtml";
             var viewResult = razorViewEngine.GetView(executingFilePath, viewPath, true);
 
-            var actionContext = new ActionContext(httpContextAccessor.HttpContext, new RouteData(), new ActionDescriptor());
+            var actionContext = new ActionContext(httpContextAccessor.HttpContext!, new RouteData(), new ActionDescriptor());
 
             if (viewResult.Success == false)
             {
@@ -3454,6 +3366,9 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             {
                 httpContextAccessor.HttpContext.Items.Add(Constants.WiserUriOverrideForReplacements, requestModel.Url);
             }
+
+            // Force the GCL environment to development, so that it will always use the latest versions of templates and dynamic components.
+            gclSettings.Environment = Environments.Development;
         }
 
         /// <summary>
@@ -3533,6 +3448,82 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 // Other exceptions; return entire exception.
                 return (false, exception.ToString());
             }
+        }
+
+        /// <summary>
+        /// Will attempt to minify JavaScript with a NodeJS package called terser.
+        /// </summary>
+        /// <param name="script">The raw JavaScript that will be minified.</param>
+        /// <returns>A <see cref="ValueTuple"/> with the first value being whether the minification was successful, and the minified script.</returns>
+        private async Task<(bool Successful, string MinifiedScript)> MinifyJavaScriptWithTerserAsync(string script)
+        {
+            if (String.IsNullOrWhiteSpace(script))
+            {
+                return (false, script);
+            }
+
+            // Create a temporary file that will contain the script. This is required because terser can only work with input files.
+            var uploadsDirectory = Path.Combine(webHostEnvironment.ContentRootPath, "temp/minify");
+            if (!Directory.Exists(uploadsDirectory))
+            {
+                Directory.CreateDirectory(uploadsDirectory);
+            }
+
+            var filePath = Path.Combine(uploadsDirectory, $"{Guid.NewGuid().ToString()}.js");
+            await File.WriteAllTextAsync(filePath, script, Encoding.UTF8);
+
+            string output = null;
+            var successful = true;
+
+            // Windows requires the ".cmd" file to run, while UNIX-based systems can just use the "terser" file (without an extension).
+            var terserCommand = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "terser.cmd" : "terser";
+
+            try
+            {
+                using var process = new Process();
+                process.StartInfo.FileName = Path.Combine(webHostEnvironment.ContentRootPath, $"node_modules/.bin/{terserCommand}");
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.StartInfo.Arguments = $"{filePath} --compress --mangle";
+
+                process.OutputDataReceived += (_, eventArgs) =>
+                {
+                    // eventArgs.Data holds the response from terser.
+                    if (!String.IsNullOrWhiteSpace(eventArgs.Data))
+                    {
+                        output = eventArgs.Data;
+                    }
+                };
+
+                process.ErrorDataReceived += (_, eventArgs) =>
+                {
+                    successful = false;
+
+                    var message = !String.IsNullOrWhiteSpace(eventArgs.Data)
+                        ? $"Error trying to minify script with terser: {eventArgs.Data}"
+                        : "Unknown error trying to minify script with terser";
+
+                    logger.LogWarning(message);
+                };
+
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+
+                using var cancellationTokenSource = new CancellationTokenSource(5000);
+                await process.WaitForExitAsync(cancellationTokenSource.Token);
+            }
+            catch (Exception exception)
+            {
+                successful = false;
+                logger.LogWarning(exception, "Error trying to minify script with terser");
+            }
+
+            // Remove temporary file afterwards, regardless if it succeeded or not.
+            File.Delete(filePath);
+
+            return (successful, !String.IsNullOrWhiteSpace(output) ? output : script);
         }
     }
 }

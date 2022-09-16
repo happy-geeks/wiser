@@ -10,8 +10,8 @@
     <title>Wiser 3 - Templates module</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.material.min.css" rel="stylesheet" />
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
@@ -19,6 +19,7 @@
         #wiser,
         #createNewItemDialog,
         #addDynamicContentToHtmlDialog,
+        #linkExistingDynamicContentDialog,
         #htmlSourceWindow {
             display: none;
         }
@@ -27,12 +28,12 @@
 <body class="@Model.BodyCssClass"
       data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
       data-wiser-api-root="@Model.ApiRoot"
-      data-wiser-api-v21-root="@Model.ApiRoot"
       data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
       data-sub-domain="@Model.SubDomain"
       data-track-js-token="@Model.Settings.TrackJsToken"
       data-api-client-id="@Model.Settings.ApiClientId"
-      data-api-client-secret="@Model.Settings.ApiClientSecret">
+      data-api-client-secret="@Model.Settings.ApiClientSecret"
+      data-pusher-app-key="@Model.Settings.PusherAppKey">
     <span id="popupNotification"></span>
     <div id="wiser">
         <div id="window" style="margin: 0 auto; padding: 0;">
@@ -42,10 +43,6 @@
                     <button class="icon-line-search"></button>
                     <div class="loader-icon"><div></div><div></div><div></div><div></div></div>
                 </form>
-
-                <div class="header-actions">
-                    <button id="saveButton" class="k-primary saveButton">Opslaan</button>
-                </div>
             </div>
 
             <div class="window-content">
@@ -56,7 +53,7 @@
 
                         <div id="left-pane" style="background-color: #cccccc;">
                             <div class="pane-content">
-                                <div class="tabstrip-treeview">
+                                <div class="tabstrip-treeview k-tabstrip-wrapper">
                                 </div>
                                 <button id="addButton" class="k-primary k-button-round"></button>
                             </div>
@@ -65,25 +62,19 @@
 
 
                         <div id="right-pane" style="background-color: #eeeeee;">
-                            <div class="tabstrip">
+                            <div class="tabstrip k-tabstrip-wrapper">
                                 <ul>
                                     <li class="development-tab k-state-active" data-name="development">Development</li>
-                                    <li class="history-tab" data-name="history">Historie</li>
                                     <li class="dynamic-tab" data-name="dynamic-content">Dynamische content</li>
                                     <li class="preview-tab" data-name="preview">Preview</li>
+                                    <li class="history-tab" data-name="history">Historie</li>
                                 </ul>
-                                <div id="developmentTab">
-
-                                </div>
-                                <div id="historyTab">
-
-                                </div>
+                                <div id="developmentTab"></div>
                                 <div>
                                     <partial name="Tabs/DynamicContentTab" />
                                 </div>
-                                <div id="previewTab">
-
-                                </div>
+                                <div id="previewTab"></div>
+                                <div id="historyTab"></div>
                             </div>
                         </div>
                     </div>
@@ -132,6 +123,17 @@
                 <h4><label for="dynamicContentDropDown">Kies een component</label></h4>
                 <div class="flex-container">
                     <select id="dynamicContentDropDown" class="select" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."></select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="linkExistingDynamicContentDialog">
+        <div class="formview full static-fields">
+            <div class="item">
+                <h4><label for="allDynamicContentDropDown">Kies een component</label></h4>
+                <div class="flex-container">
+                    <select id="allDynamicContentDropDown" class="select" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."></select>
                 </div>
             </div>
         </div>

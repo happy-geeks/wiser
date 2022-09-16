@@ -84,10 +84,32 @@ namespace Api.Modules.Templates.Interfaces
         /// This method will use a generated change log to determine the environments that need to be changed. In some cases publishing an environment will also publish underlaying environments.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <param name="contentId">The id of the template to publish.</param>
-        /// <param name="version">The version of the template to publish.</param>
-        /// <param name="environment">The environment to publish the template to.</param>
+        /// <param name="contentId">The id of the component to publish.</param>
+        /// <param name="version">The version of the component to publish.</param>
+        /// <param name="environment">The environment to publish the component to.</param>
         /// <param name="currentPublished">A PublishedEnvironmentModel containing the current published templates.</param>
         Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int contentId, int version, string environment, PublishedEnvironmentModel currentPublished);
+        
+        /// <summary>
+        /// Duplicate a dynamic component (only the latest version).
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="contentId">The id of the component.</param>
+        /// <param name="newTemplateId">The id of the template to link the new component to.</param>
+        Task<ServiceResult<bool>> DuplicateAsync(ClaimsIdentity identity, int contentId, int newTemplateId);
+
+        /// <summary>
+        /// Deletes a dynamic component
+        /// </summary>
+        /// <param name="contentId">The id of the component</param>
+        /// <returns></returns>
+        Task<ServiceResult<bool>> DeleteAsync(int contentId);
+        
+        /// <summary>
+        /// Gets all dynamic content that can be linked to the given template.
+        /// </summary>
+        /// <param name="templateId">The ID of the template.</param>
+        /// <returns>A list of dynamic components from other templates.</returns>
+        Task<ServiceResult<List<DynamicContentOverviewModel>>> GetLinkableDynamicContentAsync(int templateId);
     }
 }

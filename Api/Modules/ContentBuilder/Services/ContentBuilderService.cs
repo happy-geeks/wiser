@@ -96,8 +96,7 @@ namespace Api.Modules.ContentBuilder.Services
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "No item ID given",
-                    ReasonPhrase = "No item ID given"
+                    ErrorMessage = "No item ID given"
                 };
             }
 
@@ -113,6 +112,13 @@ namespace Api.Modules.ContentBuilder.Services
             return dataTable.Rows.Count == 0 
                 ? new ServiceResult<string>("") 
                 : new ServiceResult<string>(await wiserItemsService.ReplaceHtmlForViewingAsync(dataTable.Rows[0].Field<string>("html")));
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> GetFrameworkAsync()
+        {
+            var framework = await objectsService.FindSystemObjectByDomainNameAsync("ContentBuilder_Framework");
+            return new ServiceResult<string>(framework);
         }
     }
 }

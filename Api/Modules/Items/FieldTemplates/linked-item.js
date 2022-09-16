@@ -13,7 +13,7 @@ if (options.reversed) {
     templateName = "GET_DESTINATION_ITEMS_REVERSED";
 }
 
-Wiser2.api({
+Wiser.api({
     url: window.dynamicItems.settings.serviceRoot + "/" + templateName + "?itemId={itemId}&entityType=" + encodeURIComponent(options.entityType) + "&linkTypeNumber=" + encodeURIComponent(options.linkType)
 }).then(function(results) {
     var field = $("#field_{propertyIdWithSuffix}").html("");
@@ -47,7 +47,7 @@ Wiser2.api({
             $("<span class='openWindow' />").html(newValue).appendTo(field);
         } else {
             $("<a class='openWindow' href='#' />").html(newValue + "&nbsp;<span class='k-icon k-i-hyperlink-open-sm'></span>").appendTo(field).click(function(event) {
-                window.dynamicItems.windows.loadItemInWindow(false, result.id, result.encryptedId, result.entityType, result.title, true, null, { hideTitleColumn: false }, result.linkId);
+                window.dynamicItems.windows.loadItemInWindow(false, result.id, result.encryptedId, result.entityType, result.title, true, null, { hideTitleColumn: false }, result.linkId, null, null, options.linkType);
             });
         }
     });

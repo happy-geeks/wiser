@@ -1,4 +1,4 @@
-﻿import { Utils, Wiser2 } from "../../Base/Scripts/Utils.js";
+﻿import { Utils, Wiser } from "../../Base/Scripts/Utils.js";
 
 require("@progress/kendo-ui/js/kendo.button.js");
 require("@progress/kendo-ui/js/kendo.window.js");
@@ -402,7 +402,7 @@ export class Windows {
                     const formData = new FormData();
                     formData.append(file.name, file);
 
-                    promises.push(Wiser2.api({
+                    promises.push(Wiser.api({
                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=global_file&useTinyPng=false`,
                         method: "POST",
                         processData: false,
@@ -446,7 +446,7 @@ export class Windows {
                     switch (selectedAction) {
                         case "delete":
                             if (selectedItem.isDirectory) {
-                                Wiser2.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle afbeeldingen in deze map zullen dan ook verwijderd worden.`).then(() => {
+                                Wiser.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle afbeeldingen in deze map zullen dan ook verwijderd worden.`).then(() => {
                                     this.base.deleteItem(selectedItem.id, "filedirectory").then(() => {
                                         this.imagesUploaderWindowTreeView.remove(this.imagesUploaderWindowTreeViewContextMenuTarget);
                                         this.base.notification.show({ message: "Map succesvol verwijderd" }, "success");
@@ -454,8 +454,8 @@ export class Windows {
                                     });
                                 }).catch(() => { loader.removeClass("loading"); });
                             } else {
-                                Wiser2.showConfirmDialog(`Weet u zeker dat u de afbeelding '${selectedItem.name}' wilt verwijderen?`).then(() => {
-                                    Wiser2.api({
+                                Wiser.showConfirmDialog(`Weet u zeker dat u de afbeelding '${selectedItem.name}' wilt verwijderen?`).then(() => {
+                                    Wiser.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
                                         method: "DELETE",
                                         contentType: "application/json",
@@ -485,7 +485,7 @@ export class Windows {
                                         kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                                     });
                                 } else {
-                                    Wiser2.api({
+                                    Wiser.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}/rename/${encodeURIComponent(newName)}`,
                                         method: "PUT",
                                         contentType: "application/json",
@@ -615,7 +615,7 @@ export class Windows {
                     const formData = new FormData();
                     formData.append(file.name, file);
 
-                    promises.push(Wiser2.api({
+                    promises.push(Wiser.api({
                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=global_file&useTinyPng=false`,
                         method: "POST",
                         processData: false,
@@ -659,7 +659,7 @@ export class Windows {
                     switch (selectedAction) {
                         case "delete":
                             if (selectedItem.isDirectory) {
-                                Wiser2.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle bestanden in deze map zullen dan ook verwijderd worden.`).then(() => {
+                                Wiser.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle bestanden in deze map zullen dan ook verwijderd worden.`).then(() => {
                                     this.base.deleteItem(selectedItem.id, "filedirectory").then(() => {
                                         this.filesUploaderWindowTreeView.remove(this.filesUploaderWindowTreeViewContextMenuTarget);
                                         this.base.notification.show({ message: "Map succesvol verwijderd" }, "success");
@@ -667,8 +667,8 @@ export class Windows {
                                     });
                                 }).catch(() => { loader.removeClass("loading"); });
                             } else {
-                                Wiser2.showConfirmDialog(`Weet u zeker dat u het bestand '${selectedItem.name}' wilt verwijderen?`).then(() => {
-                                    Wiser2.api({
+                                Wiser.showConfirmDialog(`Weet u zeker dat u het bestand '${selectedItem.name}' wilt verwijderen?`).then(() => {
+                                    Wiser.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
                                         method: "DELETE",
                                         contentType: "application/json",
@@ -698,7 +698,7 @@ export class Windows {
                                         kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                                     });
                                 } else {
-                                    Wiser2.api({
+                                    Wiser.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}/rename/${encodeURIComponent(newName)}`,
                                         method: "PUT",
                                         contentType: "application/json",
@@ -843,7 +843,7 @@ export class Windows {
                     const formData = new FormData();
                     formData.append(file.name, file);
 
-                    promises.push(Wiser2.api({
+                    promises.push(Wiser.api({
                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=global_file&useTinyPng=false`,
                         method: "POST",
                         processData: false,
@@ -887,7 +887,7 @@ export class Windows {
                     switch (selectedAction) {
                         case "delete":
                             if (selectedItem.isDirectory) {
-                                Wiser2.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle templates in deze map zullen dan ook verwijderd worden.`).then(() => {
+                                Wiser.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle templates in deze map zullen dan ook verwijderd worden.`).then(() => {
                                     this.base.deleteItem(selectedItem.id, "filedirectory").then(() => {
                                         this.templatesUploaderWindowTreeView.remove(this.templatesUploaderWindowTreeViewContextMenuTarget);
                                         this.base.notification.show({ message: "Map succesvol verwijderd" }, "success");
@@ -895,8 +895,8 @@ export class Windows {
                                     });
                                 }).catch(() => { loader.removeClass("loading"); });
                             } else {
-                                Wiser2.showConfirmDialog(`Weet u zeker dat u de template '${selectedItem.name}' wilt verwijderen?`).then(() => {
-                                    Wiser2.api({
+                                Wiser.showConfirmDialog(`Weet u zeker dat u de template '${selectedItem.name}' wilt verwijderen?`).then(() => {
+                                    Wiser.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
                                         method: "DELETE",
                                         contentType: "application/json",
@@ -926,7 +926,7 @@ export class Windows {
                                         kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                                     });
                                 } else {
-                                    Wiser2.api({
+                                    Wiser.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}/rename/${encodeURIComponent(newName)}`,
                                         method: "PUT",
                                         contentType: "application/json",
@@ -1073,9 +1073,14 @@ export class Windows {
         if (extension) {
             fileName = `${fileName.substr(0, fileName.lastIndexOf("."))}.${extension}`;
         }
+        
+        let domain = this.base.settings.mainDomain;
+        if (!domain.endsWith("/")) {
+            domain += "/";
+        }
 
         return {
-            url: `${this.base.settings.mainDomain}image/wiser2/${selectedItem.plainId}/direct/${selectedItem.property_name}/${resizeMode}/${width}/${height}/${fileName}`,
+            url: `${domain}image/wiser2/${selectedItem.plainId}/direct/${selectedItem.property_name}/${resizeMode}/${width}/${height}/${fileName}`,
             altText: altText
         };
     }
@@ -1177,8 +1182,9 @@ export class Windows {
      * @param {number} linkId Optional: If the item was opened via a specific link, enter the ID of that link here.
      * @param {string} windowTitle Optional: The title of the window. If empty, it will use the item title.
      * @param {any} kendoComponent Optional: If this item is being created via a field with a kendo component (such as a grid or dropdown), add the instance of it here, so we can refresh the data source after.
+     * @param {int} linkType Optional: If the item was opened via a specific link, enter the type number of that link here.
      */
-    async loadItemInWindow(isNewItem, itemId, encryptedItemId, entityType, title, showTitleField, senderGrid, fieldOptions, linkId, windowTitle = null, kendoComponent = null) {
+    async loadItemInWindow(isNewItem, itemId, encryptedItemId, entityType, title, showTitleField, senderGrid, fieldOptions, linkId, windowTitle = null, kendoComponent = null, linkType = 0) {
         let currentItemWindow;
         try {
             // Clone the window template and initialize a new window from that clone, then open it.
@@ -1198,7 +1204,7 @@ export class Windows {
                 height: "90%",
                 visible: false,
                 modal: true,
-                actions: ["Verwijderen", "Verversen", "Close"],
+                actions: ["Verwijderen", "Verversen", "Vertalen", "Close"],
                 close: (closeEvent) => {
                     const closeFunction = () => {
                         try {
@@ -1239,7 +1245,7 @@ export class Windows {
                     };
 
                     if (!currentItemWindow.element.data("saving") && !$.isEmptyObject(this.base.fields.unsavedItemValues[windowId])) {
-                        Wiser2.showConfirmDialog("Weet u zeker dat u wilt annuleren en gewijzigde of ingevoerde gegevens wilt verwijderen?").then(closeFunction.bind(this));
+                        Wiser.showConfirmDialog("Weet u zeker dat u wilt annuleren en gewijzigde of ingevoerde gegevens wilt verwijderen?").then(closeFunction.bind(this));
                         closeEvent.preventDefault();
                         return false;
                     }
@@ -1372,7 +1378,7 @@ export class Windows {
                     // Get the information that we need about the opened item.
                     const promises = [
                         this.base.getEntityType(entityType),
-                        this.base.getItemHtml(encryptedItemId, entityType, windowId, linkId)
+                        this.base.getItemHtml(encryptedItemId, entityType, windowId, linkId, linkType)
                     ];
 
                     if (!isNewItem) {
@@ -1390,7 +1396,7 @@ export class Windows {
                     const nameField = currentItemWindow.element.find(".itemNameField");
                     currentItemWindow.element.find(".itemNameFieldContainer").toggle(lastUsedEntityType.showTitleField && showTitleField);
 
-                    currentItemTabStrip.element.find("> ul > li .addedFromDatabase").each((index, element) => {
+                    currentItemTabStrip.element.find("> .k-tabstrip-items-wrapper > ul > li .addedFromDatabase").each((index, element) => {
                         currentItemTabStrip.remove($(element).closest("li.k-item"));
                     });
 
@@ -1398,7 +1404,6 @@ export class Windows {
                     currentItemWindow.wrapper.find(".itemNameField").prop("readonly", !htmlData.canWrite).prop("disabled", !htmlData.canWrite);
                     currentItemWindow.wrapper.find(".saveButton").toggleClass("hidden", !htmlData.canWrite);
                     currentItemWindow.wrapper.find(".k-i-verwijderen").parent().toggleClass("hidden", !htmlData.canDelete);
-
                     currentItemWindow.element.find(".editMenu .undeleteItem").closest("li").toggleClass("hidden", !htmlData.canDelete);
 
                     // Add all fields and tabs to the window.
@@ -1432,6 +1437,8 @@ export class Windows {
                         }
                     }
 
+                    currentItemWindow.wrapper.find(".k-i-vertalen").parent().toggleClass("hidden", this.base.allLanguages.length <= 1 && currentItemWindow.element.find(".item[data-language-code]:not([data-language-code=''])").length === 0);
+                    
                     // Setup dependencies for all tabs.
                     for (let i = htmlData.tabs.length - 1; i >= 0; i--) {
                         const tabData = htmlData.tabs[i];
@@ -1469,15 +1476,19 @@ export class Windows {
             // Bind events for the icons on the top-right of the window.
             currentItemWindow.wrapper.find(".k-i-verversen").parent().click(async (event) => {
                 const previouslySelectedTab = currentItemTabStrip.select().index();
-                loadPopupContents(previouslySelectedTab);
+                await loadPopupContents(previouslySelectedTab);
             });
             currentItemWindow.wrapper.find(".k-i-verwijderen").parent().click(this.onDeleteItemPopupClick.bind(this));
 
             currentItemWindow.element.find(".editMenu .undeleteItem").click(async (event) => {
-                this.base.onUndeleteItemClick(event, encryptedItemId);
+                await this.base.onUndeleteItemClick(event, encryptedItemId);
             });
 
-            loadPopupContents();
+            currentItemWindow.wrapper.find(".k-i-vertalen").parent().click(async (event) => {
+                await this.base.onTranslateItemClick(event, encryptedItemId, entityType);
+            });
+
+            await loadPopupContents();
         } catch (exception) {
             console.error(exception);
             kendo.alert("Er is iets fout gegaan tijdens het laden van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
@@ -1491,7 +1502,7 @@ export class Windows {
     async onDeleteItemPopupClick(event) {
         event.preventDefault();
 
-        await Wiser2.showConfirmDialog("Weet u zeker dat u dit item wilt verwijderen?");
+        await Wiser.showConfirmDialog("Weet u zeker dat u dit item wilt verwijderen?");
 
         const popupWindowContainer = $(event.currentTarget).closest(".k-window").find(".popup-container");
 
@@ -1500,11 +1511,7 @@ export class Windows {
             popupWindowContainer.data("saving", true);
 
             const kendoWindow = popupWindowContainer.data("kendoWindow");
-            let entityType = popupWindowContainer.data("entityTypeDetails");
-
-            if (Wiser2.validateArray(entityType)) {
-                entityType = entityType[0];
-            }
+            let entityType = popupWindowContainer.data("entityTypeDetails").entityType;
 
             const data = kendoWindow.element.data();
             const encryptedItemId = data.itemId;
@@ -1551,7 +1558,7 @@ export class Windows {
             let entityType = popupWindowContainer.data("entityTypeDetails");
             const validator = popupWindowContainer.data("validator");
 
-            if (Wiser2.validateArray(entityType)) {
+            if (Wiser.validateArray(entityType)) {
                 entityType = entityType[0];
             }
 
@@ -1658,7 +1665,7 @@ export class Windows {
                     if (alreadyLinkedItems.filter((item) => (item.id || item[`ID_${this.searchItemsWindowSettings.entityType}`]) === dataItem.id).length === 0) {
                         if (dataItem.parentItemId > 0 && dataItem.parentItemId !== this.searchItemsWindowSettings.plainParentId) {
                             try {
-                                await Wiser2.showConfirmDialog(`Let op! Dit item is al gekoppeld aan een ander item (ID ${dataItem.parentItemId}). Als u op "OK" klikt, zal die koppeling vervangen worden door deze nieuwe koppeling.`, "Koppeling vervangen", "Annuleren", "Vervangen");
+                                await Wiser.showConfirmDialog(`Let op! Dit item is al gekoppeld aan een ander item (ID ${dataItem.parentItemId}). Als u op "OK" klikt, zal die koppeling vervangen worden door deze nieuwe koppeling.`, "Koppeling vervangen", "Annuleren", "Vervangen");
                             }
                             catch {
                                 row.find("td > input[type=checkbox]").prop("checked", false);
@@ -1697,7 +1704,7 @@ export class Windows {
             }
 
             if (addLinksRequest.encryptedSourceIds.length > 0 && addLinksRequest.encryptedDestinationIds.length > 0) {
-                promises.push(Wiser2.api({
+                promises.push(Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}items/add-links?moduleId=${this.base.settings.moduleId}`,
                     method: "POST",
                     contentType: "application/json",
@@ -1705,7 +1712,7 @@ export class Windows {
                 }));
             }
             if (removeLinksRequest.encryptedSourceIds.length > 0 && removeLinksRequest.encryptedDestinationIds.length > 0) {
-                promises.push(Wiser2.api({
+                promises.push(Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}items/remove-links?moduleId=${this.base.settings.moduleId}`,
                     method: "DELETE",
                     contentType: "application/json",
@@ -1803,7 +1810,7 @@ export class Windows {
                 gridTypeQueryString += `&currentItemIsSourceId=${gridOptions.currentItemIsSourceId || false}`;
             }
 
-            const gridDataResult = await Wiser2.api({
+            const gridDataResult = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(parentId)}/entity-grids/${encodeURIComponent(entityType)}?moduleId=${this.base.settings.moduleId}&propertyId=${propertyId}${gridTypeQueryString}`,
                 method: "POST",
                 contentType: "application/json",
@@ -1826,12 +1833,15 @@ export class Windows {
                             column.hidden = this.searchGridSettings.hideIdColumn || false;
                             break;
                         case "link_id":
+                        case "linkid":
                             column.hidden = this.searchGridSettings.hideLinkIdColumn || false;
                             break;
                         case "entity_type":
+                        case "entitytype":
                             column.hidden = this.searchGridSettings.hideTypeColumn || false;
                             break;
                         case "published_environment":
+                        case "publishedenvironment":
                             column.hidden = this.searchGridSettings.hideEnvironmentColumn || false;
                             break;
                         case "name":
@@ -1881,7 +1891,7 @@ export class Windows {
                                 transportOptions.data.take = transportOptions.data.pageSize;
                                 previousFilters = currentFilters;
 
-                                const newGridDataResult = await Wiser2.api({
+                                const newGridDataResult = await Wiser.api({
                                     url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(parentId)}/entity-grids/${entityType}?moduleId=${this.base.settings.moduleId}&propertyId=${propertyId}${gridTypeQueryString}`,
                                     method: "POST",
                                     contentType: "application/json",

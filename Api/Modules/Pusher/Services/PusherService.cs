@@ -38,8 +38,7 @@ namespace Api.Modules.Pusher.Services
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "UserId must be greater than 0",
-                    ReasonPhrase = "UserId must be greater than 0"
+                    ErrorMessage = "UserId must be greater than 0"
                 };
             }
 
@@ -51,13 +50,12 @@ namespace Api.Modules.Pusher.Services
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> SendMessageToUserAsync(string subDomain, PusherMessageRequestModel data)
         {
-            if (data == null || data.UserId == 0)
+            if (data == null || (data.UserId == 0 && !data.IsGlobalMessage))
             {
                 return new ServiceResult<bool>(false)
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "UserId must be greater than 0",
-                    ReasonPhrase = "UserId must be greater than 0"
+                    ErrorMessage = "UserId must be greater than 0"
                 };
             }
 
@@ -83,14 +81,16 @@ namespace Api.Modules.Pusher.Services
                 Encrypted = true
             };
 
+            // Global messages do not fire events for a specific user.
+            var eventName = data.IsGlobalMessage ? data.Channel : $"{data.Channel}_{pusherId}";
+
             var pusher = new PusherServer.Pusher(apiSettings.PusherAppId, apiSettings.PusherAppKey, apiSettings.PusherAppSecret, options);
-            var result = await pusher.TriggerAsync("Wiser", $"{data.Channel}_{pusherId}", data.EventData);
+            var result = await pusher.TriggerAsync("Wiser", eventName, data.EventData);
             var success = (int)result.StatusCode >= 200 && (int)result.StatusCode < 300;
             return new ServiceResult<bool>(success)
             {
                 StatusCode = result.StatusCode,
-                ErrorMessage = success ? null : result.Body,
-                ReasonPhrase = success ? null : "Error from pusher API"
+                ErrorMessage = success ? null : result.Body
             };
         }
     }

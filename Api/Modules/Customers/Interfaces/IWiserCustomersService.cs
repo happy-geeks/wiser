@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Customers.Enums;
@@ -14,9 +15,18 @@ namespace Api.Modules.Customers.Interfaces
         /// <summary>
         /// Get a single customer via <see cref="ClaimsIdentity"/>.
         /// </summary>
-        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user to check for rights.</param>
+        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
+        /// <param name="includeDatabaseInformation">Optional: Whether to also get the connection information for the database of the customer. Default is <see langword="false"/>.</param>
         /// <returns>The <see cref="CustomerModel"/>.</returns>
-        Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity);
+        Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity, bool includeDatabaseInformation = false);
+        
+        /// <summary>
+        /// Get a single customer via ID.
+        /// </summary>
+        /// <param name="id">The ID of the customer.</param>
+        /// <param name="includeDatabaseInformation">Optional: Whether to also get the connection information for the database of the customer. Default is <see langword="false"/>.</param>
+        /// <returns>The <see cref="CustomerModel"/>.</returns>
+        Task<ServiceResult<CustomerModel>> GetSingleAsync(int id, bool includeDatabaseInformation = false);
 
         /// <summary>
         /// Get the encryption key for a customer via <see cref="ClaimsIdentity"/>.
@@ -73,13 +83,14 @@ namespace Api.Modules.Customers.Interfaces
         Task<ServiceResult<CustomerExistsResults>> CustomerExistsAsync(string name, string subDomain);
 
         /// <summary>
-        /// Creates a new Wiser 2 customer.
+        /// Creates a new Wiser customer/tenant.
         /// </summary>
         /// <param name="customer">The data for the new customer.</param>
         /// <param name="isWebShop">Optional: Indicate whether or not this customer is getting a webshop. Default is <see langword="false"/>.</param>
         /// <param name="isConfigurator">Optional: Indicate whether or not this customer is getting a configurator. Default is <see langword="false"/>.</param>
+        /// <param name="isMultiLanguage">Optional: Indicate whether or not the website is going to support multiple languages.</param>
         /// <returns>The newly created <see cref="CustomerModel"/>.</returns>
-        Task<ServiceResult<CustomerModel>> CreateCustomerAsync(CustomerModel customer, bool isWebShop = false, bool isConfigurator = false);
+        Task<ServiceResult<CustomerModel>> CreateCustomerAsync(CustomerModel customer, bool isWebShop = false, bool isConfigurator = false, bool isMultiLanguage = false);
 
         /// <summary>
         /// Gets the title for the browser tab for a customer, based on sub domain.
@@ -97,5 +108,18 @@ namespace Api.Modules.Customers.Interfaces
         /// Get whether or not a sub domain is empty or the sub domain of the main Wiser database.
         /// </summary>
         bool IsMainDatabase(string subDomain);
+
+        /// <summary>
+        /// Inserts or updates a customer in the database, based on <see cref="CustomerModel.Id"/>.
+        /// </summary>
+        /// <param name="customer">The customer to add or update.</param>
+        Task CreateOrUpdateCustomerAsync(CustomerModel customer);
+
+        /// <summary>
+        /// Generates a connection string for a customer.
+        /// </summary>
+        /// <param name="customer">The customer.</param>
+        /// <param name="passwordIsEncrypted">Whether the password is saved encrypted in the <see cref="CustomerModel"/>.</param>
+        string GenerateConnectionStringFromCustomer(CustomerModel customer, bool passwordIsEncrypted = true);
     }
 }
