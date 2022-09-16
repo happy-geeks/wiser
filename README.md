@@ -77,13 +77,13 @@ Note the options that are added at the end of the connection string, Wiser will 
 The installation script creates a new database schema and then creates several tables in that database. For it to work, you'll need a database user that has enough permissions to do all this.
 To setup this database, you can open a PowerShell or CMD window in the directory that contains the `Api.csproj` file and run the following command:
 ```
-npm run setup:mysql -- --host=host --database=database --user=user --password=password
+npm run setup:mysql -- --host=host --database=database --user=user --password=password --port=port
 ```
 You can use the following parameters with this command:
 - **host** (required): The hostname or IP address to the MySQL database.
 - **database** (required): The name of the database scheme to create.
 - **user** (required): The username of the MySQL user.
-- **password** (required): The password of the MySQL user. Note that the script does not support the new MySQL 8 password, only `mysql_native_password`.
+- **password** (required): The password of the MySQL user. Note that the script **does not support** the new MySQL 8 password, only `mysql_native_password`.
 - **port** (optional): The port for the database. Default value is `3306`.
 - **isConfigurator** (optional): Set to `true` if you want to make a configurator with Wiser.
 - **isWebshop** (optional): Set to `true` if you want to make a webshop with Wiser.
