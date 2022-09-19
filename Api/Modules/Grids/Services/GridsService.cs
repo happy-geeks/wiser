@@ -267,11 +267,11 @@ namespace Api.Modules.Grids.Services
 
                     selectQuery = $@"SELECT 
 	                                    current.id AS id,
-	                                    current.changed_on AS changedOn,
+	                                    current.changed_on AS changedon,
 	                                    current.tablename AS tablename,
-	                                    current.item_id AS itemId,
+	                                    current.item_id AS itemid,
 	                                    current.action AS action,
-	                                    current.changed_by AS changedBby,
+	                                    current.changed_by AS changedby,
 	                                    current.field AS field,
 	                                    current.oldvalue AS oldvalue,
 	                                    current.newvalue AS newvalue

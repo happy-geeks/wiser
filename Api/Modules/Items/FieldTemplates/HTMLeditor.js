@@ -88,7 +88,7 @@ options.mode = parseInt(options.mode, 10) || 99;
 options.contentBuilderMode = options.contentBuilderMode || "basic";
 
 var allTools = {
-    "contentBuilderToolNotable": [4,99],
+    "contentBuilderToolNotable": [3,4,99],
     "bold": [1,2,3,4,99],
     "italic": [1,2,3,4,99],
     "underline": [1,2,3,4,99],
@@ -121,7 +121,7 @@ var allTools = {
     "deleteRow": [3,99],
     "deleteColumn": [3,99],
     "htmlSourceTool": [4,99],
-    "contentBuilderToolBasic": [4,99],
+    "contentBuilderToolBasic": [3,4,99],
     "formatting": [99],
     "cleanFormatting": [99],
     "fontName": [99],

@@ -3387,7 +3387,7 @@ export class Fields {
      * @returns {*} The HTML contents of the editor.
      */
     onHtmlEditorSerialization(html) {
-        return html.replace(/\[(>|&gt;)\]([\w]+)\[(<|&lt;)\]/g, "{$2}");
+        return html.replace(/\[(>|&gt;)\]([\w:?]+)\[(<|&lt;)\]/g, "{$2}");
     }
 
     /**
@@ -3396,7 +3396,7 @@ export class Fields {
      * @returns {*} The HTML contents of the editor.
      */
     onHtmlEditorDeserialization(html) {
-        return html.replace(/{([\w]+)}/g, "[>]$1[<]");
+        return html.replace(/{([\w:?]+)}/g, "[>]$1[<]");
     }
 
     /**

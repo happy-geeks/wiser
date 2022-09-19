@@ -110,7 +110,7 @@ const moduleSettings = {
                         width: 70
                     },
                     {
-                        template: "<strong>#: title #</strong><br><small>#: entity_type #</small>",
+                        template: "<strong>#: title #</strong><br><small>#: entityType #</small>",
                         field: "title",
                         title: "Titel",
                         filterable: {
