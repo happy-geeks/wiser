@@ -438,7 +438,7 @@
                             switch (scopeRow.operator) {
                                 case "is equal to":
                                 case "is not equal to":
-                                    inputRow.querySelector("div.scope-value-select").style.display = "";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "";
                                     inputRow.querySelector("div.free-input").style.display = "none";
                                     valueSelect.one("dataBound", (e) => {
                                         // Scopes might also have custom values that are not part of the data source.
@@ -451,11 +451,11 @@
                                     break;
                                 case "is empty":
                                 case "is not empty":
-                                    inputRow.querySelector("div.scope-value-select").style.display = "none";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "none";
                                     inputRow.querySelector("div.free-input").style.display = "none";
                                     break;
                                 default:
-                                    inputRow.querySelector("div.scope-value-select").style.display = "none";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "none";
                                     inputRow.querySelector("div.free-input").style.display = "";
                                     freeInput.value = scopeRow.value;
                                     break;
@@ -502,7 +502,7 @@
                             switch (havingRow.operator) {
                                 case "is equal to":
                                 case "is not equal to":
-                                    inputRow.querySelector("div.scope-value-select").style.display = "";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "";
                                     inputRow.querySelector("div.free-input").style.display = "none";
                                     valueSelect.one("dataBound", (e) => {
                                         // Scopes might also have custom values that are not part of the data source.
@@ -515,11 +515,11 @@
                                     break;
                                 case "is empty":
                                 case "is not empty":
-                                    inputRow.querySelector("div.scope-value-select").style.display = "none";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "none";
                                     inputRow.querySelector("div.free-input").style.display = "none";
                                     break;
                                 default:
-                                    inputRow.querySelector("div.scope-value-select").style.display = "none";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "none";
                                     inputRow.querySelector("div.free-input").style.display = "";
                                     freeInput.value = havingRow.value;
                                     break;
