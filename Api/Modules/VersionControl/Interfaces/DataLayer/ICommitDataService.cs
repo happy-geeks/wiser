@@ -14,7 +14,7 @@ public interface ICommitDataService
     /// </summary>
     /// <param name="data">The data for the commit.</param>
     /// <returns>Returns a model of the commit.</returns>
-    Task<CreateCommitModel> CreateCommitAsync(CreateCommitModel data);
+    Task<CommitModel> CreateCommitAsync(CommitModel data);
 
     /// <summary>
     /// Completes the commit
@@ -32,4 +32,10 @@ public interface ICommitDataService
     /// Get all dynamic contents that have uncommitted changes.
     /// </summary>
     Task<List<DynamicContentCommitModel>> GetDynamicContentsToCommitAsync();
+
+    /// <summary>
+    /// Get all commits that haven't been completed yet,
+    /// </summary>
+    /// <returns>A list of <see cref="CommitModel"/>.</returns>
+    Task<List<CommitModel>> GetNotCompletedCommitsAsync();
 }

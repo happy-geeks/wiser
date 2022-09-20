@@ -17,14 +17,13 @@ public interface ICommitService
     /// <param name="data">The data of the commit</param>
     /// <param name="identity">The authenticated user data.</param>
     /// <returns>Returns a model of the commit.</returns>
-    Task<ServiceResult<CreateCommitModel>> CreateCommitAsync(CreateCommitModel data, ClaimsIdentity identity);
+    Task<ServiceResult<CommitModel>> CreateCommitAsync(CommitModel data, ClaimsIdentity identity);
 
     /// <summary>
-    /// Completes the commit
+    /// Completes the commit.
     /// </summary>
-    /// <param name="commitId">The id of the commit</param>
-    /// <param name="commitCompleted">The bool that will set the commit to completed</param>
-    /// <returns></returns>
+    /// <param name="commitId">The id of the commit.</param>
+    /// <param name="commitCompleted">The bool that will set the commit to completed.</param>
     Task<ServiceResult<bool>> CompleteCommit(int commitId, bool commitCompleted);
 
     /// <summary>
@@ -35,5 +34,12 @@ public interface ICommitService
     /// <summary>
     /// Get all dynamic content that have uncommitted changes.
     /// </summary>
+    /// <returns>A list of <see cref="DynamicContentCommitModel"/>.</returns>
     Task<ServiceResult<List<DynamicContentCommitModel>>> GetDynamicContentsToCommitAsync();
+
+    /// <summary>
+    /// Get all commits that haven't been completed yet,
+    /// </summary>
+    /// <returns>A list of <see cref="CommitModel"/>.</returns>
+    Task<ServiceResult<List<CommitModel>>> GetNotCompletedCommitsAsync();
 }

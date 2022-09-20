@@ -33,7 +33,7 @@ public class VersionControlController : Controller
     [HttpGet]
     [Route("templates-to-commit")]
     [ProducesResponseType(typeof(List<TemplateCommitModel>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetTemplatesToCommitAsync(CreateCommitModel commitModel)
+    public async Task<IActionResult> GetTemplatesToCommitAsync(CommitModel commitModel)
     {
         return (await commitService.GetTemplatesToCommitAsync()).GetHttpResponseMessage();
     }
@@ -56,9 +56,21 @@ public class VersionControlController : Controller
     /// <param name="data">The data of the commit</param>
     /// <returns>Returns a model of the commit.</returns>
     [HttpPost]
-    [ProducesResponseType(typeof(CreateCommitModel), StatusCodes.Status200OK)]
-    public async Task<IActionResult> CreateNewCommitAsync(CreateCommitModel data)
+    [ProducesResponseType(typeof(CommitModel), StatusCodes.Status200OK)]
+    public async Task<IActionResult> CreateNewCommitAsync(CommitModel data)
     {
         return (await commitService.CreateCommitAsync(data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get all commits that haven't been completed yet,
+    /// </summary>
+    /// <returns>A list of <see cref="CommitModel"/>.</returns>
+    [HttpGet]
+    [Route("not-completed-commits")]
+    [ProducesResponseType(typeof(List<CommitModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetNotCompletedCommitsAsync()
+    {
+        return (await commitService.GetNotCompletedCommitsAsync()).GetHttpResponseMessage();
     }
 }

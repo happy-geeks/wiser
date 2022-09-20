@@ -36,6 +36,7 @@ const moduleSettings = {
             this.dynamicContentChangesGrid = null;
             this.mainTabStrip = null;
             this.commitButton = null;
+            this.deployGrid = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -61,7 +62,7 @@ const moduleSettings = {
         }
 
         /**
-         * Event that will be fired when the page is ready.
+         * Event that will be fired when the DOM is ready.
          */
         async onPageReady() {
             this.mainLoader = $("#mainLoader");
@@ -99,16 +100,20 @@ const moduleSettings = {
 
             // Initialize sub classes.
             await this.initializeComponents();
-            this.initializeBindings();
             
             this.toggleMainLoader(false);
         }
 
+        /**
+         * Initialize all components on the first tab.
+         */
         async initializeComponents() {
             this.commitDescriptionField = document.getElementById("commitDescription");
             
             // Tab strip.
-            this.mainTabStrip = $("#tabstrip").kendoTabStrip().data("kendoTabStrip");
+            this.mainTabStrip = $("#tabstrip").kendoTabStrip({
+                activate: this.onMainTabStripActivate.bind(this)
+            }).data("kendoTabStrip");
 
             // Commit button
             this.commitButton = $("#commitButton").kendoButton({
@@ -132,12 +137,79 @@ const moduleSettings = {
             // noinspection ES6MissingAwait
             this.setupDynamicContentChangesGrid();
         }
-        
-        initializeBindings() {
+
+        /**
+         * Shows or hides the main (full screen) loader.
+         * @param {boolean} show True to show the loader, false to hide it.
+         */
+        toggleMainLoader(show) {
+            this.mainLoader.toggleClass("loading", show);
         }
 
+        /**
+         * Event for when the user switches to a different tab.
+         * This will initialize all components on that tab, if the tab was opened for the first time.
+         * @param event The activate event of the kendoTabStrip component.
+         */
+        async onMainTabStripActivate(event) {
+            switch (event.sender.select().attr("id")) {
+                case "deployTab":
+                    await this.setupDeployGrid();
+                    break;
+            }
+        }
+
+        /**
+         * Event for when the user clicks the commit button in the first tab.
+         * @param event The click event of the kendoButton component.
+         */
+        async onCommit(event) {
+            const initialProcess = `CreateCommit_${Date.now()}`;
+            window.processing.addProcess(initialProcess);
+
+            try {
+                event.preventDefault();
+                const selectedTemplates = this.templateChangesGrid.getSelectedData();
+                const selectedDynamicContent = this.dynamicContentChangesGrid.getSelectedData();
+
+                const result = await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control`,
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        environment: this.commitEnvironmentField.value(),
+                        description: this.commitDescriptionField.value,
+                        templates: selectedTemplates.map(t => {
+                            return {templateId: t.templateId, version: t.version};
+                        }),
+                        dynamicContents: selectedDynamicContent.map(d => {
+                            return {dynamicContentId: d.dynamicContentId, version: d.version};
+                        })
+                    })
+                });
+
+                this.templateChangesGrid.dataSource.read();
+                this.dynamicContentChangesGrid.dataSource.read();
+                this.commitDescriptionField.value = "";
+                this.commitEnvironmentField.value("");
+            }
+            catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het maken van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+            }
+
+            window.processing.removeProcess(initialProcess);
+        }
+
+        /**
+         * Setup/initialize the grid with all uncommitted template changes.
+         */
         async setupTemplateChangesGrid() {
             try {
+                if (this.templateChangesGrid) {
+                    return;
+                }
+                
                 const gridSettings = {
                     dataSource: {
                         transport: {
@@ -237,8 +309,15 @@ const moduleSettings = {
             }
         }
 
+        /**
+         * Setup/initialize the grid with all uncommitted dynamic content changes.
+         */
         async setupDynamicContentChangesGrid() {
             try {
+                if (this.dynamicContentChangesGrid) {
+                    return;
+                }
+
                 const gridSettings = {
                     dataSource: {
                         transport: {
@@ -336,51 +415,101 @@ const moduleSettings = {
                 kendo.alert("Er is iets fout gegaan met het laden van de wijzigingen in templates. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
             }
         }
-        
-        async onCommit(event) {
-            const initialProcess = `CreateCommit_${Date.now()}`;
-            window.processing.addProcess(initialProcess);
-            
-            try {
-                event.preventDefault();
-                const selectedTemplates = this.templateChangesGrid.getSelectedData();
-                const selectedDynamicContent = this.dynamicContentChangesGrid.getSelectedData();
-
-                const result = await Wiser.api({
-                    url: `${this.base.settings.wiserApiRoot}version-control`,
-                    method: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify({
-                        environment: this.commitEnvironmentField.value(),
-                        description: this.commitDescriptionField.value,
-                        templates: selectedTemplates.map(t => {
-                            return {templateId: t.templateId, version: t.version};
-                        }),
-                        dynamicContents: selectedDynamicContent.map(d => {
-                            return {dynamicContentId: d.dynamicContentId, version: d.version};
-                        })
-                    })
-                });
-
-                this.templateChangesGrid.dataSource.read();
-                this.dynamicContentChangesGrid.dataSource.read();
-                this.commitDescriptionField.value = "";
-                this.commitEnvironmentField.value("");
-            }
-            catch (exception) {
-                console.error(exception);
-                kendo.alert("Er is iets fout gegaan met het maken van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
-            }
-            
-            window.processing.removeProcess(initialProcess);
-        }
 
         /**
-         * Shows or hides the main (full screen) loader.
-         * @param {boolean} show True to show the loader, false to hide it.
+         * Setup/initialize the grid with all unfinished commits (commits that haven't been deployed to live yet).
          */
-        toggleMainLoader(show) {
-            this.mainLoader.toggleClass("loading", show);
+        async setupDeployGrid() {
+            try {
+                if (this.deployGrid) {
+                    return;
+                }
+
+                const gridSettings = {
+                    dataSource: {
+                        transport: {
+                            read: async (transportOptions) => {
+                                const initialProcess = `GetNotCompletedCommits_${Date.now()}`;
+                                window.processing.addProcess(initialProcess);
+
+                                try {
+                                    const templatesToCommit = await Wiser.api({
+                                        url: `${this.base.settings.wiserApiRoot}version-control/not-completed-commits`,
+                                        method: "GET",
+                                        contentType: "application/json"
+                                    });
+
+                                    transportOptions.success(templatesToCommit);
+                                } catch (exception) {
+                                    console.error(exception);
+                                    kendo.alert("Er is iets fout gegaan met het laden van niet afgeronde commits. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+                                    transportOptions.error(exception);
+                                }
+
+                                window.processing.removeProcess(initialProcess);
+                            }
+                        },
+                        schema: {
+                            model: {
+                                id: "id",
+                                fields: {
+                                    addedOn: {
+                                        type: "date"
+                                    },
+                                    templateNames: {
+                                        type: "array"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    selectable: "multiple, row",
+                    columns: [
+                        {
+                            "field": "id",
+                            "title": "ID",
+                            "width": "50px"
+                        },
+                        {
+                            "field": "description",
+                            "title": "Omschrijving",
+                            "width": "150px"
+                        },
+                        {
+                            "field": "isTest",
+                            "title": "Test",
+                            "width": "50px"
+                        },
+                        {
+                            "field": "isAcceptance",
+                            "title": "Acceptatie",
+                            "width": "50px"
+                        },
+                        {
+                            "field": "isLive",
+                            "title": "Live",
+                            "width": "50px"
+                        },
+                        {
+                            "field": "addedOn",
+                            "format": "{0:dd-MM-yyyy HH:mm:ss}",
+                            "title": "Datum",
+                            "width": "100px"
+                        },
+                        {
+                            "field": "addedBy",
+                            "title": "Door",
+                            "width": "100px"
+                        }
+                    ]
+                };
+
+                this.deployGrid = $("#deployGrid").kendoGrid(gridSettings).data("kendoGrid");
+
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het laden van de nog niet afgeronde commits. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+            }
         }
     }
 

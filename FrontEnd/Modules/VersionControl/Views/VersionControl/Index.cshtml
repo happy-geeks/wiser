@@ -10,7 +10,7 @@
 <html>
 <head runat="server">
     <meta charset="utf-8" />
-    <title>Wiser 3 - Version Control module</title>
+    <title>Wiser 3 - Versiebeheermodule</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.material.min.css" rel="stylesheet" />
@@ -34,9 +34,9 @@
     <div id="wiser">
         <div id="tabstrip" class="tabstrip k-tabstrip-wrapper">
             <ul>
-                <li class="template-change-history-tab k-state-active" data-name="change-history">Change history</li>
-                <li class="deploy-tab" data-name="deploy">Deploy</li>
-                <li class="history-tab" data-name="history">History</li>
+                <li id="changeHistoryTab" class="k-state-active">Openstaande wijzigingen</li>
+                <li id="deployTab">Deploy</li>
+                <li id="historyTab">Historie</li>
             </ul>
             <div id="templateChangeHistory">
                 <form class="formData">
@@ -48,13 +48,21 @@
                     <div id="gridsContainer">
                         <h2>Templates</h2>
                         <div id="templateChangesGrid"></div>
-                        <h2>Dynamic content</h2>
+                        <h2>Dynamische content</h2>
                         <div id="dynamicContentChangesGrid"></div>
                     </div>
-                    <button id="commitButton" class="formButton">Commit</button>
+                    <button id="commitButton">Commit</button>
                 </form>
             </div>
-            <div id="deploy">Work in progress</div>
+            <div id="deploy">
+                <div class="formData">
+                    <div class="gridData">
+                        <div id="deployGrid"></div>
+                    </div>
+                </div>
+                <button class="environment-deploy" id="deployCommitToLive">deploy naar live</button>
+                <button class="environment-deploy" id="deployCommitToAcceptance">deploy naar acceptatie</button>
+                <button class="environment-deploy" id="deployCommitToTest">deploy naar test</button></div>
             <div id="history">Work in progress</div>
         </div>
     </div>

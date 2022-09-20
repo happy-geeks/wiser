@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.VersionControl.Models;
@@ -7,7 +8,7 @@ namespace Api.Modules.VersionControl.Models;
 /// <summary>
 /// A model used for creating a new commit.
 /// </summary>
-public class CreateCommitModel
+public class CommitModel
 {
     /// <summary>
     /// Gets or sets the id of the commit.
@@ -37,16 +38,31 @@ public class CreateCommitModel
     /// <summary>
     /// Gets or sets the templates that are part of this commit.
     /// </summary>
-    public List<TemplateCommitModel> Templates { get; set; }
+    public List<TemplateCommitModel> Templates { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the dynamic contents that are part of this commit.
     /// </summary>
-    public List<DynamicContentCommitModel> DynamicContents { get; set; }
+    public List<DynamicContentCommitModel> DynamicContents { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the environment to commit this.
     /// Any 'lower' environments will be automatically committed. So if it's set to live, then it will also be committed to acceptance and test.
     /// </summary>
     public Environments Environment { get; set; }
+
+    /// <summary>
+    /// Gets whether this commit has been fully deployed to test.
+    /// </summary>
+    public bool IsTest => (!Templates.Any() || Templates.All(t => t.IsTest)) && (!DynamicContents.Any() || DynamicContents.All(d => d.IsTest));
+
+    /// <summary>
+    /// Gets whether this commit has been fully deployed to test.
+    /// </summary>
+    public bool IsAcceptance => (!Templates.Any() || Templates.All(t => t.IsAcceptance)) && (!DynamicContents.Any() || DynamicContents.All(d => d.IsAcceptance));
+
+    /// <summary>
+    /// Gets whether this commit has been fully deployed to test.
+    /// </summary>
+    public bool IsLive => (!Templates.Any() || Templates.All(t => t.IsLive)) && (!DynamicContents.Any() || DynamicContents.All(d => d.IsLive));
 }

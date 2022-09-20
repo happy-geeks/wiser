@@ -11,7 +11,6 @@ using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
 namespace Api.Modules.VersionControl.Services;
@@ -36,11 +35,11 @@ public class CommitService : ICommitService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<CreateCommitModel>> CreateCommitAsync(CreateCommitModel data, ClaimsIdentity identity)
+    public async Task<ServiceResult<CommitModel>> CreateCommitAsync(CommitModel data, ClaimsIdentity identity)
     {
         if (String.IsNullOrWhiteSpace(data.Description))
         {
-            return new ServiceResult<CreateCommitModel>
+            return new ServiceResult<CommitModel>
             {
                 StatusCode = HttpStatusCode.BadRequest,
                 ErrorMessage = "Please enter a descrption"
@@ -49,7 +48,7 @@ public class CommitService : ICommitService, IScopedService
 
         if ((data.Templates == null || !data.Templates.Any()) && (data.DynamicContents == null || !data.DynamicContents.Any()))
         {
-            return new ServiceResult<CreateCommitModel>
+            return new ServiceResult<CommitModel>
             {
                 StatusCode = HttpStatusCode.BadRequest,
                 ErrorMessage = "Please select at least one template or dynamic content to commit"
@@ -97,7 +96,7 @@ public class CommitService : ICommitService, IScopedService
 
             await databaseConnection.CommitTransactionAsync();
 
-            return new ServiceResult<CreateCommitModel>(result);
+            return new ServiceResult<CommitModel>(result);
         }
         catch
         {
@@ -126,5 +125,13 @@ public class CommitService : ICommitService, IScopedService
         var results = await commitDataService.GetDynamicContentsToCommitAsync();
 
         return new ServiceResult<List<DynamicContentCommitModel>>(results);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<List<CommitModel>>> GetNotCompletedCommitsAsync()
+    {
+        var results = await commitDataService.GetNotCompletedCommitsAsync();
+
+        return new ServiceResult<List<CommitModel>>(results);
     }
 }
