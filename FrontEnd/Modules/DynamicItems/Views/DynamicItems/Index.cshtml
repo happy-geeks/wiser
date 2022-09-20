@@ -7,8 +7,8 @@
     <title>Wiser 3 - Dynamic items</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.material.min.css" rel="stylesheet" />
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
@@ -34,7 +34,9 @@
         #changeImageDataDialog,
         #dataSelectorTemplateDialog,
         #searchItemsWindow,
-        #youTubeDialog {
+        #youTubeDialog,
+        #translateItemDialog,
+        #translationsDialog {
             display: none;
         }
     </style>
@@ -119,6 +121,9 @@
                                             </li>
                                             <li>
                                                 <label class="deleteItem"><span>Item verwijderen</span></label>
+                                            </li>
+                                            <li>
+                                                <label class="translateItem"><span>Item vertalen</span></label>
                                             </li>
                                             <li>
                                                 <label class="undeleteItem"><span>Verwijderen ongedaan maken</span></label>
@@ -767,7 +772,36 @@
         </div>
     </div>
 
+    <div id="translationsDialog">
+        <div class="formview full static-fields">
+            <div class="item">
+                <h4><label>Hiermee kan een vertaalwoord ingevoegd worden. Dit woord wordt dan automatisch op de website vertaald naar de taal die de gebruiker heeft gekozen. Deze vertaalwoorden kunnen in de module "Vertalingen" ingevuld worden.</label></h4>
+                <select id="translationsDropDown" class="select"></select>
+            </div>
+        </div>
+    </div>
+
     <div id="gridDeleteDialog"></div>
+
+    <div id="translateItemDialog">
+        <div class="formview full static-fields">
+            <div class="item">
+                <h4><label>Brontaal</label></h4>
+                <select id="sourceLanguageDropDown" class="select"></select>
+                <div class="form-hint">
+                    <p>Kies hier de taal die als bron dient. Alle velden op dit item met deze taal zullen dan vertaald worden in andere talen.</p>
+                </div>
+            </div>
+            <div class="item">
+                <h4><label>Doeltalen</label></h4>
+                <select id="targetLanguagesMultiSelect" class="multi-select"></select>
+                <div class="form-hint">
+                    <p>Kies hier de talen waarin alle velden vertaald moeten worden. U kunt dit veld leeglaten indien u alle talen (die ingesteld staan in de Stamgegevensmodule) wilt gebruiken.</p>
+                    <p>Alleen velden die nog geen waarde bevatten in de doeltalen, zullen vertaald worden. Deze functionaliteit zal nooit ingevulde waardes overschrijven.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="data-builder" class="x-window"></div>
 

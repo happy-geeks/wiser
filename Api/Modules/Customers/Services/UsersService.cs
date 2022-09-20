@@ -321,12 +321,15 @@ namespace Api.Modules.Customers.Services
             var password = SecurityHelpers.GenerateRandomPassword(12);
             clientDatabaseConnection.AddParameter("id", dataTable.Rows[0].Field<ulong>("id"));
             clientDatabaseConnection.AddParameter("password", password.ToSha512Simple());
+            clientDatabaseConnection.AddParameter("username", dataTable.Rows[0].Field<string>("username"));
 
             query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, `value`) VALUES (?id, '{UserPasswordKey}', ?password)
                     ON DUPLICATE KEY UPDATE `value` = ?password;
 
                     INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, `value`) VALUES (?id, '{UserRequirePasswordChangeKey}', '1')
-                    ON DUPLICATE KEY UPDATE `value` = '1';";
+                    ON DUPLICATE KEY UPDATE `value` = '1';
+                    
+                    UPDATE {WiserTableNames.WiserLoginAttempts} SET attempts = 0, blocked = 0 WHERE username = ?username;";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             int languageId;
@@ -452,6 +455,15 @@ namespace Api.Modules.Customers.Services
         /// <inheritdoc />
         public async Task<ServiceResult<UserModel>> ChangePasswordAsync(ClaimsIdentity identity, ChangePasswordModel passwords)
         {
+            if (passwords.OldPassword.Equals(passwords.NewPassword))
+            {
+                return new ServiceResult<UserModel>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Provided old password and new password are not allowed to match"
+                };
+            }
+            
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));

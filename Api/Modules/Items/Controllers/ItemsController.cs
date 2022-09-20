@@ -428,5 +428,21 @@ namespace Api.Modules.Items.Controllers
         {
             return (await itemsService.GetEncryptedIdAsync(id, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
+        
+        /// <summary>
+        /// Translate all fields of an item into one or more other languages, using the Google Translation API.
+        /// This will only translate fields that don't have a value yet for the destination language
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item to translate.</param>
+        /// <param name="settings">The settings for translating.</param>
+        [HttpPut]
+        [Route("{encryptedId}/translate")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetEncryptedIdAsync(string encryptedId, TranslateItemRequestModel settings)
+        {
+            return (await itemsService.TranslateAllFieldsAsync((ClaimsIdentity)User.Identity, encryptedId, settings)).GetHttpResponseMessage();
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿@using FrontEnd.Core.Models
+@using GeeksCoreLibrary.Core.Enums
 
 @model BaseViewModel
 <style>
@@ -62,6 +63,7 @@
                     <li><a href="#" @@click="openWiserIdPrompt"><ins class="icon-line-database-search"></ins><span>Wiser item openen (CTRL+O)</span></a></li>
                     <li><a href="#" @@click="openChangePasswordPrompt"><ins class="icon-line-lock"></ins><span>Wachtwoord wijzigen</span></a></li>
                     <li><a href="#" @@click="openWiserBranchesPrompt"><ins class="icon-table-backup"></ins><span>Wiser branches</span></a></li>
+                    <li><a href="#" @@click="openClearCachePrompt"><ins class="icon-line-refresh"></ins><span>Cache van website legen</span></a></li>
                     <li><a href="#" @@click="logout()"><ins class="icon-line-log-out"></ins><span>Uitloggen</span></a></li>
                 </ul>
             </li>
@@ -80,7 +82,7 @@
             <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
             <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
             <section class="iframe-container">
-                <iframe v-for="module in openedModulesWithBackend" :key="module.id" :src="module.iframeUrl || `/Modules/${module.type}${module.fileName}${module.queryString}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
+                <iframe v-for="module in openedModulesWithBackend" :key="module.id" :src="module.iframeUrl || `/Modules/${module.type}${module.fileName}${module.queryString}`" :id="module.id" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
                 <iframe v-for="module in openedWiser1Modules" :key="module.id" :src="`${appSettings.wiser1BaseUrl}?singleModuleId=${module.moduleId}&autoLoginCookie=${encodeURIComponent(user.cookieValue)}&autoLoginUserId=${encodeURIComponent(user.encryptedId)}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
             </section>
 
@@ -98,7 +100,7 @@
         </wiser-dialog>
         <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een ID in'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]" @@open="onWiserIdPromptOpen">
             <div class="form-row">
-                <input type="number" id="wiserId" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" @@keypress="onWiserIdFieldKeyPress" required>
+                <input type="number" id="wiserId" class="full-width" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" @@keypress="onWiserIdFieldKeyPress" required>
             </div>
         </wiser-dialog>
         <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
@@ -591,6 +593,74 @@
                 <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
             </div>
         </wiser-dialog>
+        <wiser-dialog :modal="true" :width="'400px'" :title="'Cache legen'" ref="clearCachePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'OK', primary: true, action: clearWebsiteCache }]">
+            <div class="form-row">
+                <label class="checkbox" for="cache_all">
+                    <input type="checkbox" id="cache_all" name="cache_all" value="all" v-model="clearCacheSettings.areas" @@change="onCacheTypeChecked($event, 'all')" />
+                    <span>Alles</span>
+                </label>
+                <label class="checkbox" for="cache_content">
+                    <input type="checkbox" id="cache_content" name="cache_content" value="content" class="cache-type" v-model="clearCacheSettings.areas" @@change="onCacheTypeChecked($event, 'content')" />
+                    <span>Complete HTML pagina's</span>
+                </label>
+                <label class="checkbox" for="cache_files">
+                    <input type="checkbox" id="cache_files" name="cache_files" value="files" class="cache-type" v-model="clearCacheSettings.areas" @@change="onCacheTypeChecked($event, 'files')" />
+                    <span>Bestanden / afbeeldingen</span>
+                </label>
+                @foreach (CacheAreas cacheSetting in Enum.GetValues(typeof(CacheAreas)))
+                {
+                    <label class="checkbox" for="cache_@cacheSetting">
+                        <input type="checkbox" id="cache_@cacheSetting" name="cache_@cacheSetting" value="@cacheSetting" class="cache-type" v-model="clearCacheSettings.areas" @@change="onCacheTypeChecked($event, '@cacheSetting')" />
+                        @switch (cacheSetting)
+                        {
+                            case CacheAreas.Configurators:
+                                <span>Configuratoren</span>
+                                break;
+                            case CacheAreas.Unknown:
+                                continue;
+                            case CacheAreas.Languages:
+                                <span>Vertalingen</span>
+                                break;
+                            case CacheAreas.Objects:
+                                <span>Instellingen</span>
+                                break;
+                            case CacheAreas.Redirects:
+                                <span>Redirects</span>
+                                break;
+                            case CacheAreas.Seo:
+                                <span>SEO</span>
+                                break;
+                            case CacheAreas.Database:
+                                <span>Overige</span>
+                                break;
+                            case CacheAreas.Templates:
+                                <span>Templates</span>
+                                break;
+                            case CacheAreas.WiserItems:
+                                <span>Wiser items</span>
+                                break;
+                            case CacheAreas.ShoppingBaskets:
+                                <span>Winkelmandjes</span>
+                                break;
+                            case CacheAreas.DataSelectors:
+                                <span>Dataselectors</span>
+                                break;
+                            default:
+                                <span>@cacheSetting</span>
+                                break;
+                        }
+                    </label>
+                }
+            </div>
+            <div class="form-row">
+                <input type="url" id="url" name="url" placeholder="URL naar website" class="full-width" v-model="clearCacheSettings.url" />
+            </div>
+
+            <section class="full-error" v-if="clearCacheError">
+                <ins class="icon-line-alert"></ins>
+                <span v-html="clearCacheError"></span>
+            </section>
+        </wiser-dialog>
     </div>
 </div>
 
@@ -715,6 +785,13 @@
                 <div class="form-row error-row" v-if="errors.indexOf('SubDomainNotAvailable') > -1">
                     <ins class="icon-line-alert"></ins>
                     <span>Er bestaat al een klant met dit subdomein. Kies a.u.b. een ander subdomein.</span>
+                </div>
+                <div class="form-row">
+                    <label>
+                        <input type="checkbox" name="isConfigurator" v-model="newCustomerData.isMultiLanguage" />
+                        Is meertalig
+                    </label>
+                    <p class="hint">Zet dit vinkje aan indien de website van de klant meertalig wordt. Dan wordt de vertalingenmodule en bijbehorende entiteit toegevoegd.</p>
                 </div>
                 <div class="form-row">
                     <label>

@@ -72,7 +72,7 @@ namespace Api.Core.Services
                 var adminAccountLoginResult = await usersService.LoginAdminAccountAsync(context.UserName, context.Password);
                 if (adminAccountLoginResult.StatusCode != HttpStatusCode.OK)
                 {
-                    context.Result = new GrantValidationResult(TokenRequestErrors.InvalidClient, adminAccountLoginResult.ErrorMessage);
+                    context.Result = new GrantValidationResult(TokenRequestErrors.InvalidClient, loginResult.ErrorMessage);
                     return;
                 }
 
@@ -124,7 +124,12 @@ namespace Api.Core.Services
                 {"requirePasswordChange", loginResult.ModelObject.RequirePasswordChange},
                 {"encryptedLoginLogId", loginResult.ModelObject.EncryptedLoginLogId}
             };
-            
+
+            if (loginResult.ModelObject.RequirePasswordChange.HasValue)
+            {
+                customResponse.Add("requirePasswordChange", loginResult.ModelObject.RequirePasswordChange.Value);
+            }
+
             if (adminAccountId > 0)
             {
                 customResponse.Add("adminAccountId", adminAccountId.ToString());

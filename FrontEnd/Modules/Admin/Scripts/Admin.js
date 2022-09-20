@@ -33,7 +33,7 @@ const moduleSettings = {
             // Kendo components.
             this.mainWindow = null;
 
-            this.activeMainTab = "entiteiten"; 
+            this.activeMainTab = "Modules"; 
             
             //classes
             this.entityTab = null;
@@ -233,9 +233,9 @@ const moduleSettings = {
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
          */
         setupBindings() {
-            $(document).on("moduleClosing", (event) => {
+            document.addEventListener("moduleClosing", (event) => {
                 // You can do anything here that needs to happen before closing the module.
-                event.success();
+                event.detail();
             });
 
             //BUTTONS
@@ -403,7 +403,7 @@ const moduleSettings = {
                 },
                 activate: (event) => {
                     const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
-                    admin.activeMainTab = tabName;
+                    this.activeMainTab = tabName;
 
                     // Refresh code mirrors in the currently activated tab.
                     if (event.contentElement) {

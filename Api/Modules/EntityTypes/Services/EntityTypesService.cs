@@ -69,7 +69,7 @@ ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', en
                                 DisplayName = dataRow.Field<string>("displayName"),
                                 Id = dataRow.Field<string>("name"),
                                 ModuleId = dataRow.Field<int>("module_id"),
-                                ModuleName = dataRow.Field<string>("moduleName"),
+                                ModuleName = dataRow.Field<string>("moduleName") ?? "",
                                 DedicatedTablePrefix = wiserItemsService.GetTablePrefixForEntity(new EntitySettingsModel {DedicatedTablePrefix = dataRow.Field<string>("dedicated_table_prefix")})
                             }));
 

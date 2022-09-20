@@ -118,6 +118,8 @@ const moduleSettings = {
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
+            
+            this.stickyHeader();
 
             this.initializeKendoComponents();
 
@@ -146,6 +148,23 @@ const moduleSettings = {
             }
         }
 
+        /**
+         * Sticky header within Dynamic Content.
+         */
+        stickyHeader() {
+            const elem = document.getElementById('DynamicContentPane');
+            let lastScrollTop = 0;
+
+            elem.onscroll = (e) => {
+                if (elem.scrollTop < lastScrollTop){
+                    elem.classList.add('sticky');
+                } else {
+                    elem.classList.remove('sticky');
+                }
+                lastScrollTop = elem.scrollTop <= 0 ? 0 : elem.scrollTop;
+            }
+        }
+        
         /**
          * Initializes all kendo components for the base class.
          */
@@ -190,9 +209,14 @@ const moduleSettings = {
             }
 
             //NUMERIC FIELD
-            container.find(".numeric").kendoNumericTextBox({
-                change: () => this.onInputChange(true),
-                spin: () => this.onInputChange(false)
+            container.find(".numeric").each((index, element) => {
+                const isDecimal = $(element).data("decimal") === true;
+                $(element).kendoNumericTextBox({
+                    decimals: isDecimal ? 2 : 0,
+                    format: isDecimal ? "n2" : "n0",
+                    change: () => this.onInputChange(true),
+                    spin: () => this.onInputChange(false)
+                });
             });
             
             //MULTISELECT
@@ -340,7 +364,6 @@ const moduleSettings = {
         initializeButtons() {
             document.body.addEventListener("keydown", (event) => {
                 if ((event.ctrlKey || event.metaKey) && event.keyCode === 83) {
-                    console.log("ctrl+s dynamic content", event);
                     event.preventDefault();
                     this.save();
                 }
@@ -554,7 +577,7 @@ const moduleSettings = {
 
             this.preview.initPreviewProfileInputs(true, true);
             this.preview.bindPreviewButtons();
-            this.preview.generatePreview();
+            this.preview.generatePreview(false);
         }
 
         async transformCodeMirrorViews(container = null) {

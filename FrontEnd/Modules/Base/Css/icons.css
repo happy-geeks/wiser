@@ -25,7 +25,6 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* LOADERS */
 .icon-add:before {
     content: "\e900";
 }

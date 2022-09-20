@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
+using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Kendo.Enums;
@@ -35,6 +39,7 @@ using GeeksCoreLibrary.Modules.Templates.Enums;
 using GeeksCoreLibrary.Modules.Templates.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Models;
 using LibSassHost;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -77,11 +82,13 @@ namespace Api.Modules.Templates.Services
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<TemplatesService> logger;
         private readonly GclSettings gclSettings;
+        private readonly ApiSettings apiSettings;
+        private readonly IWebHostEnvironment webHostEnvironment;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IOptions<GclSettings> gclSettings)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IOptions<GclSettings> gclSettings, IOptions<ApiSettings> apiSettings, IWebHostEnvironment webHostEnvironment)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -99,6 +106,8 @@ namespace Api.Modules.Templates.Services
             this.databaseHelpersService = databaseHelpersService;
             this.logger = logger;
             this.gclSettings = gclSettings.Value;
+            this.apiSettings = apiSettings.Value;
+            this.webHostEnvironment = webHostEnvironment;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -1021,7 +1030,6 @@ SET @_display_name = '{displayName}';
 SET @_property_name = IF('{propertyName}' = '', @_display_name, '{propertyName}');
 SET @_overviewvisibility = '{visibleInOverview}';
 SET @_overviewvisibility = IF(@_overviewvisibility = TRUE OR @_overviewvisibility = 'true', 1, 0);
-SET @_overviewType = '{overviewFieldtype}';
 SET @_overviewWidth = '{overviewWidth}';
 SET @_groupName = '{groupName}';
 SET @_input_type = '{inputtype}';
@@ -1057,7 +1065,6 @@ inputtype = @_input_type,
 display_name = @_display_name,
 property_name = @_property_name,
 visible_in_overview= @_overviewvisibility,
-overview_fieldtype= @_overviewType,
 overview_width= @_overviewWidth,
 group_name= @_groupName,
 explanation= @_explanation,
@@ -1085,39 +1092,53 @@ WHERE entity_name = @_entity_name AND id = @_id
 LIMIT 1; ");
 
                 TemplateQueryStrings.Add("GET_ENTITY_FIELD_PROPERTIES_FOR_SELECTED", @"SELECT
-id,
-display_name AS displayName,
-inputtype, 
-visible_in_overview AS visibleInOverview, 
-overview_width AS overviewWidth, 
-overview_fieldtype AS overviewFieldtype, 
-mandatory, 
-readonly, 
-also_save_seo_value AS alsoSaveSeoValue,
-width,
-height,
-IF(tab_name = '', 'Gegevens', tab_name) AS tabName,
-group_name AS groupName,
-property_name AS propertyName,
-explanation,
-default_value AS defaultValue,
-automation,
-options,
-depends_on_field AS dependsOnField,
-depends_on_operator AS dependsOnOperator,
-depends_on_value AS dependsOnValue,
-IFNULL(data_query,"""") AS dataQuery,
-IFNULL(grid_delete_query,"""") AS gridDeleteQuery,
-IFNULL(grid_update_query,"""") AS gridUpdateQuery,
-IFNULL(grid_insert_query,"""") AS gridInsertQuery,
-regex_validation AS regexValidation,
-IFNULL(css, '') AS css,
-language_code AS languageCode,
-IFNULL(custom_script, '') AS customScript,
-(SELECT COUNT(1) FROM wiser_itemdetail INNER JOIN wiser_item ON wiser_itemdetail.item_id = wiser_item.id WHERE wiser_itemdetail.key = wiser_entityproperty.property_name AND wiser_item.entity_type = wiser_entityproperty.entity_name) > 0 as field_in_use
+    id,
+    module_id,
+    entity_name,
+    link_type,
+    visible_in_overview AS visibleInOverview,
+    overview_width AS overviewWidth, 
+    IF(tab_name = '', 'Gegevens', tab_name) AS tabName,
+    group_name AS groupName,
+    inputtype AS inputType,
+    display_name AS displayName,
+    property_name AS propertyName,
+    explanation,
+    ordering,
+    regex_validation AS regexValidation,
+    mandatory, 
+    readonly, 
+    default_value AS defaultValue,
+    IFNULL(css, '') AS css,
+    width,
+    height,
+    options,
+    IFNULL(data_query, '') AS dataQuery,
+    IFNULL(action_query, '') AS actionQuery,
+    IFNULL(search_query, '') AS searchQuery,
+    IFNULL(search_count_query, '') AS searchCountQuery,
+    IFNULL(grid_delete_query, '') AS gridDeleteQuery,
+    IFNULL(grid_insert_query, '') AS gridInsertQuery,
+    IFNULL(grid_update_query, '') AS gridUpdateQuery,
+    depends_on_field AS dependsOnField,
+    depends_on_operator AS dependsOnOperator,
+    depends_on_value AS dependsOnValue,
+    language_code AS languageCode,
+    IFNULL(custom_script, '') AS customScript,
+    also_save_seo_value AS alsoSaveSeoValue,
+    depends_on_action AS dependsOnAction,
+    save_on_change AS saveOnChange,
+    extended_explanation AS extendedExplanation,
+    label_style AS labelStyle,
+    label_width AS labelWidth,
+    enable_aggregation AS enableAggregation,
+    aggregate_options AS aggregateOptions,
+    access_key AS accessKey,
+    visibility_path_regex AS visibilityPathRegex,
+    (SELECT COUNT(1) FROM wiser_itemdetail INNER JOIN wiser_item ON wiser_itemdetail.item_id = wiser_item.id WHERE wiser_itemdetail.key = wiser_entityproperty.property_name AND wiser_item.entity_type = wiser_entityproperty.entity_name) > 0 as field_in_use
 FROM wiser_entityproperty
-WHERE id = {id} AND entity_name = '{entityName}'
-");
+WHERE id = {id}
+AND entity_name = '{entityName}'");
                 TemplateQueryStrings.Add("MOVE_ITEM", @"#Item verplaatsen naar ander item
 SET @src_id = '{source:decrypt(true)}';
 SET @dest_id = '{destination:decrypt(true)}';
@@ -1350,27 +1371,12 @@ UNION ALL
 SELECT 'Media' AS type_text, 4 AS type_value 
 UNION ALL
 SELECT DISTINCT type AS type_text, type AS type_value FROM `wiser_itemlink` WHERE type > 100");
-                TemplateQueryStrings.Add("GET_COLUMNS_FOR_FIELD_TABLE", @"#Verkrijg de kolommen die getoond moeten worden bij een specifiek soort entiteit
-SET @entitytype = '{entity_type}';
-SET @_linkType = '{linkType}';
-
-SELECT  
-	CONCAT('property_.', CreateJsonSafeProperty(LOWER(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)))) AS field,
-    p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
-    p.overview_width AS width
-FROM wiser_entityproperty p 
-WHERE (p.entity_name = @entitytype OR (p.link_type > 0 AND p.link_type = @_linkType))
-AND p.visible_in_overview = 1
-GROUP BY IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)
-ORDER BY p.ordering;");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_LINK_TABLE", @"SET @destinationId = {id:decrypt(true)};
 SET @_linkTypeNumber = IF('{linkTypeNumber}' LIKE '{%}' OR '{linkTypeNumber}' = '', '2', '{linkTypeNumber}');
 
 SELECT 
 	CONCAT('property_.', CreateJsonSafeProperty(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name))) AS field,
     p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
     p.overview_width AS width
 FROM wiser_entityproperty p 
 JOIN wiser_item i ON i.entity_type = p.entity_name
@@ -1714,7 +1720,6 @@ ORDER BY il.ordering, i.title, i.id");
 SELECT 
 	CONCAT('property_.', CreateJsonSafeProperty(LOWER(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)))) AS field,
     p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
     p.overview_width AS width
 FROM wiser_itemlink il
 JOIN wiser_item i ON i.id=il.item_id
@@ -2380,16 +2385,35 @@ LIMIT 1";
                         EvalTreatment = EvalTreatment.Ignore
                     };
 
-                    // Try to minify. Uglify is known to have various issues with minifying newer JavaScript features.
-                    try
+                    // Try to the minify the script.
+                    var terserSuccessful = false;
+                    string terserMinifiedScript = null;
+                    if (apiSettings.UseTerserForTemplateScriptMinification)
                     {
-                        template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
+                        // Minification through terser is enabled, attempt to minify it using that.
+                        (terserSuccessful, terserMinifiedScript) = await MinifyJavaScriptWithTerserAsync(template.EditorValue);
                     }
-                    catch (Exception exception)
+
+                    if (terserSuccessful)
                     {
-                        // Use non-minified editor value as the minified value so the changes don't go lost.
-                        template.MinifiedValue = template.EditorValue;
-                        logger.LogWarning(exception, $"An error occurred while trying to minify the JavaScript of template ID {template.TemplateId}");
+                        template.MinifiedValue = terserMinifiedScript;
+                    }
+                    else
+                    {
+                        // If minification through terser failed somehow (like a missing/outdated/corrupt installation), then
+                        // use NUglify as a fallback.
+                        try
+                        {
+                            // Wrapped in a try-catch statement, because NUglify is known to have various
+                            // issues with minifying newer JavaScript features.
+                            template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
+                        }
+                        catch (Exception exception)
+                        {
+                            // Use non-minified editor value as the minified value so the changes don't go lost.
+                            template.MinifiedValue = template.EditorValue;
+                            logger.LogWarning(exception, $"An error occurred while trying to minify the JavaScript using NUglify of template ID {template.TemplateId}");
+                        }
                     }
 
                     break;
@@ -3424,6 +3448,82 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 // Other exceptions; return entire exception.
                 return (false, exception.ToString());
             }
+        }
+
+        /// <summary>
+        /// Will attempt to minify JavaScript with a NodeJS package called terser.
+        /// </summary>
+        /// <param name="script">The raw JavaScript that will be minified.</param>
+        /// <returns>A <see cref="ValueTuple"/> with the first value being whether the minification was successful, and the minified script.</returns>
+        private async Task<(bool Successful, string MinifiedScript)> MinifyJavaScriptWithTerserAsync(string script)
+        {
+            if (String.IsNullOrWhiteSpace(script))
+            {
+                return (false, script);
+            }
+
+            // Create a temporary file that will contain the script. This is required because terser can only work with input files.
+            var uploadsDirectory = Path.Combine(webHostEnvironment.ContentRootPath, "temp/minify");
+            if (!Directory.Exists(uploadsDirectory))
+            {
+                Directory.CreateDirectory(uploadsDirectory);
+            }
+
+            var filePath = Path.Combine(uploadsDirectory, $"{Guid.NewGuid().ToString()}.js");
+            await File.WriteAllTextAsync(filePath, script, Encoding.UTF8);
+
+            string output = null;
+            var successful = true;
+
+            // Windows requires the ".cmd" file to run, while UNIX-based systems can just use the "terser" file (without an extension).
+            var terserCommand = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "terser.cmd" : "terser";
+
+            try
+            {
+                using var process = new Process();
+                process.StartInfo.FileName = Path.Combine(webHostEnvironment.ContentRootPath, $"node_modules/.bin/{terserCommand}");
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.StartInfo.Arguments = $"{filePath} --compress --mangle";
+
+                process.OutputDataReceived += (_, eventArgs) =>
+                {
+                    // eventArgs.Data holds the response from terser.
+                    if (!String.IsNullOrWhiteSpace(eventArgs.Data))
+                    {
+                        output = eventArgs.Data;
+                    }
+                };
+
+                process.ErrorDataReceived += (_, eventArgs) =>
+                {
+                    successful = false;
+
+                    var message = !String.IsNullOrWhiteSpace(eventArgs.Data)
+                        ? $"Error trying to minify script with terser: {eventArgs.Data}"
+                        : "Unknown error trying to minify script with terser";
+
+                    logger.LogWarning(message);
+                };
+
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+
+                using var cancellationTokenSource = new CancellationTokenSource(5000);
+                await process.WaitForExitAsync(cancellationTokenSource.Token);
+            }
+            catch (Exception exception)
+            {
+                successful = false;
+                logger.LogWarning(exception, "Error trying to minify script with terser");
+            }
+
+            // Remove temporary file afterwards, regardless if it succeeded or not.
+            File.Delete(filePath);
+
+            return (successful, !String.IsNullOrWhiteSpace(output) ? output : script);
         }
     }
 }

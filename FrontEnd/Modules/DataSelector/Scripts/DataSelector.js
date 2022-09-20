@@ -374,9 +374,9 @@ const moduleSettings = {
                 this.handleWindowMessage(e.data);
             });
 
-            $(document).on("moduleClosing", (e) => {
+            document.addEventListener("moduleClosing", (event) => {
                 // You can do anything here that needs to happen before closing the module.
-                e.success();
+                event.detail();
             });
         }
 
@@ -815,7 +815,7 @@ const moduleSettings = {
                     }
 
                     let value;
-                    if (getComputedStyle(scope.querySelector("div.scope-value-select")).display !== "none") {
+                    if (getComputedStyle(scope.querySelector("span.scope-value-select")).display !== "none") {
                         value = $(scope).find("select.scope-value-select").getKendoMultiSelect().value();
                     } else if (getComputedStyle(scope.querySelector("div.free-input")).display !== "none") {
                         value = scope.querySelector("div.free-input > input").value;
@@ -1353,16 +1353,16 @@ const moduleSettings = {
                     switch (value) {
                         case "is equal to":
                         case "is not equal to":
-                            dbInput.find("div.scope-value-select").show();
+                            dbInput.find("span.scope-value-select").show();
                             dbInput.find("div.free-input").hide();
                             break;
                         case "is empty":
                         case "is not empty":
-                            dbInput.find("div.scope-value-select").hide();
+                            dbInput.find("span.scope-value-select").hide();
                             dbInput.find("div.free-input").hide();
                             break;
                         default:
-                            dbInput.find("div.scope-value-select").hide();
+                            dbInput.find("span.scope-value-select").hide();
                             dbInput.find("div.free-input").show();
                             break;
                     }
@@ -1912,8 +1912,8 @@ const moduleSettings = {
 
             const onDataBound = (e) => {
                 const element = e.sender.element.closest(".k-multiselect");
-                element.find(".k-input").off("keyup");
-                element.find(".k-input").on("keyup", { widget: e.sender }, onClickEnter);
+                element.find(".k-input-inner").off("keyup");
+                element.find(".k-input-inner").on("keyup", { widget: e.sender }, onClickEnter);
             };
 
             return Object.assign(options, {

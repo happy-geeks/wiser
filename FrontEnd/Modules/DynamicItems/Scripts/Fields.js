@@ -2131,7 +2131,7 @@ export class Fields {
                         if (kendoWindow.length === 0) {
                             // The opened item is in the main window.
                             const previouslySelectedTab = this.base.mainTabStrip.select().index();
-                            await this.base.loadItem(this.base.settings.iframeMode ? this.base.settings.initialItemId : this.base.selectedItem.id, previouslySelectedTab);
+                            await this.base.loadItem(this.base.settings.initialItemId ? this.base.settings.initialItemId : this.base.selectedItem.id, previouslySelectedTab);
                         } else {
                             // The opened item is in a window.
                             const previouslySelectedTab = kendoWindow.find(".tabStripPopup").data("kendoTabStrip").select().index();
@@ -2306,6 +2306,7 @@ export class Fields {
                 previewWindow.one("close", (event) => resolve());
 
                 const container = previewWindow.element.find("div.k-content-frame");
+                console.log("container", container);
 
                 // Save the email data in the container, otherwise the email popup will show out dated data after opening it for a second time.
                 container.data("emailData", emailData);
@@ -2454,14 +2455,19 @@ export class Fields {
                             pdfToHtmlData.header = "";
                             pdfToHtmlData.footer = "";
 
-                            if (currentAction.pdfDocumentOptionsPropertyName) {
-                                pdfToHtmlData.documentOptions = currentTemplateDetails.property_[currentAction.pdfDocumentOptionsPropertyName] || "";
-                            }
-                            if (currentAction.pdfHeaderPropertyName) {
-                                pdfToHtmlData.header = currentTemplateDetails.property_[currentAction.pdfHeaderPropertyName] || "";
-                            }
-                            if (currentAction.pdfFooterPropertyName) {
-                                pdfToHtmlData.footer = currentTemplateDetails.property_[currentAction.pdfFooterPropertyName] || "";
+                            if (currentTemplateDetails.details && currentTemplateDetails.details.length > 0) {
+                                if (currentAction.pdfDocumentOptionsPropertyName) {
+                                    const documentOptions = currentTemplateDetails.details.find(detail => detail.key === currentAction.pdfDocumentOptionsPropertyName);
+                                    pdfToHtmlData.documentOptions = documentOptions ? (documentOptions.value || "") : "";
+                                }
+                                if (currentAction.pdfHeaderPropertyName) {
+                                    const header = currentTemplateDetails.details.find(detail => detail.key === currentAction.pdfHeaderPropertyName);
+                                    pdfToHtmlData.header = header ? (header.value || "") : "";
+                                }
+                                if (currentAction.pdfFooterPropertyName) {
+                                    const footer = currentTemplateDetails.details.find(detail => detail.key === currentAction.pdfFooterPropertyName);
+                                    pdfToHtmlData.footer = footer ? (footer.value || "") : "";
+                                }
                             }
 
                             const process = `convertHtmlToPdf_${Date.now()}`;
@@ -2862,7 +2868,12 @@ export class Fields {
         const textArea = htmlWindow.find("textarea").val(editor.value());
         // Prettify code from minified text.
         const pretty = await require('pretty');
-        textArea[0].value = pretty(textArea[0].value, { ocd: false });
+        textArea[0].value = pretty(textArea[0].value, { 
+            ocd: false,
+            indent_size: 4,
+            unformatted: [],
+            inline: []
+        });
         let codeMirrorInstance;
 
         htmlWindow.kendoWindow({
@@ -2939,7 +2950,7 @@ export class Fields {
         const htmlWindow = $("#contentBuilderWindow").clone(true);
 
         const iframe = htmlWindow.find("iframe");
-        iframe.attr("src", `/Modules/ContentBuilder?wiserItemId=${encodeURIComponent(itemId)}&propertyName=${encodeURIComponent(propertyName)}&languageCode=${encodeURIComponent(languageCode || "")}`);
+        iframe.attr("src", `/Modules/ContentBuilder?wiserItemId=${encodeURIComponent(itemId)}&propertyName=${encodeURIComponent(propertyName)}&languageCode=${encodeURIComponent(languageCode || "")}&userId=${encodeURIComponent(this.base.settings.userId)}`);
 
         htmlWindow.kendoWindow({
             width: "100%",
@@ -3159,13 +3170,13 @@ export class Fields {
     async onHtmlEditorYouTubeExec(event, editor) {
         try {
             const dialogElement = $("#youTubeDialog");
-            let dataSelectorTemplateDialog = dialogElement.data("kendoDialog");
+            let youtubeDialog = dialogElement.data("kendoDialog");
 
-            if (dataSelectorTemplateDialog) {
-                dataSelectorTemplateDialog.destroy();
+            if (youtubeDialog) {
+                youtubeDialog.destroy();
             }
 
-            dataSelectorTemplateDialog = dialogElement.kendoDialog({
+            youtubeDialog = dialogElement.kendoDialog({
                 width: "900px",
                 title: "YouTube video invoegen",
                 closable: false,
@@ -3209,7 +3220,77 @@ export class Fields {
                 ]
             }).data("kendoDialog");
 
-            dataSelectorTemplateDialog.open();
+            youtubeDialog.open();
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+        }
+    }
+
+    /**
+     * Event that gets called when the user executes the custom action for entering a translation variable.
+     * @param {any} event The event from the execute action.
+     * @param {any} editor The HTML editor where the action is executed in.
+     */
+    async onHtmlEditorTranslationExec(event, editor) {
+        try {
+            const dialogElement = $("#translationsDialog");
+            let translationsDialog = dialogElement.data("kendoDialog");
+
+            if (translationsDialog) {
+                translationsDialog.destroy();
+            }
+
+            const translationsDropDown = dialogElement.find("#translationsDropDown").kendoDropDownList({
+                optionLabel: "Selecteer een vertaalwoord",
+                dataTextField: "value",
+                dataValueField: "key",
+                dataSource: {
+                    transport: {
+                        read: async (options) => {
+                            try {
+                                const results = await Wiser.api({ url: `${this.base.settings.wiserApiRoot}languages/translations` });
+                                options.success(results);
+                            } catch (exception) {
+                                console.error(exception);
+                                options.error(exception);
+                            }
+                        }
+                    }
+                }
+            }).data("kendoDropDownList");
+
+            translationsDialog = dialogElement.kendoDialog({
+                width: "900px",
+                title: "Vertaalwoord invoegen",
+                closable: false,
+                modal: true,
+                actions: [
+                    {
+                        text: "Annuleren"
+                    },
+                    {
+                        text: "Invoegen",
+                        primary: true,
+                        action: (event) => {
+                            const selectedTranslation = translationsDropDown.value();
+                            if (!selectedTranslation) {
+                                kendo.alert("Kies a.u.b. een vertaalwoord.")
+                                return false;
+                            }
+
+                            const originalOptions = editor.options.pasteCleanup;
+                            editor.options.pasteCleanup.none = true;
+                            editor.options.pasteCleanup.span = false;
+                            editor.exec("inserthtml", { value: `[T{${selectedTranslation}}]` });
+                            editor.options.pasteCleanup.none = originalOptions.none;
+                            editor.options.pasteCleanup.span = originalOptions.span;
+                        }
+                    }
+                ]
+            }).data("kendoDialog");
+
+            translationsDialog.open();
         } catch (exception) {
             console.error(exception);
             kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
@@ -3306,7 +3387,7 @@ export class Fields {
      * @returns {*} The HTML contents of the editor.
      */
     onHtmlEditorSerialization(html) {
-        return html.replace(/\[(>|&gt;)\]([\w]+)\[(<|&lt;)\]/g, "{$2}");
+        return html.replace(/\[(>|&gt;)\]([\w:?]+)\[(<|&lt;)\]/g, "{$2}");
     }
 
     /**
@@ -3315,7 +3396,7 @@ export class Fields {
      * @returns {*} The HTML contents of the editor.
      */
     onHtmlEditorDeserialization(html) {
-        return html.replace(/{([\w]+)}/g, "[>]$1[<]");
+        return html.replace(/{([\w:?]+)}/g, "[>]$1[<]");
     }
 
     /**

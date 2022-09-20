@@ -82,7 +82,6 @@ namespace Api.Modules.Modules.Services
                 738, // Import / export
                 806, // Wiser users
                 5505 // Webpagina's
-                // TODO: Add the new settings and templates modules here once they are finished.
             };
 
             var isAdminAccount = IdentityHelpers.IsAdminAccount(identity);
@@ -116,7 +115,7 @@ namespace Api.Modules.Modules.Services
             var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
             
             // Make sure that all triggers for Wiser tables are up-to-date.
-            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2022, 6, 24))
+            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2022, 8, 5))
             {
                 var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
                 await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
@@ -632,6 +631,18 @@ namespace Api.Modules.Modules.Services
 
             var result = excelService.JsonArrayToExcel(newData);
             return new ServiceResult<byte[]>(result);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<string>>> GetModuleGroupsAsync(ClaimsIdentity identity)
+        {
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT DISTINCT `group`
+FROM {WiserTableNames.WiserModule}
+WHERE `group` IS NOT NULL
+AND `group` <> ''
+ORDER BY `group` ASC");
+            var results = dataTable.Rows.Cast<DataRow>().Select(dataRow => dataRow.Field<string>("group"));
+            return new ServiceResult<List<string>>(results.ToList());
         }
 
         /// <inheritdoc />

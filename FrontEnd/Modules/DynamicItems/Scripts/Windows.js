@@ -1073,9 +1073,14 @@ export class Windows {
         if (extension) {
             fileName = `${fileName.substr(0, fileName.lastIndexOf("."))}.${extension}`;
         }
+        
+        let domain = this.base.settings.mainDomain;
+        if (!domain.endsWith("/")) {
+            domain += "/";
+        }
 
         return {
-            url: `${this.base.settings.mainDomain}image/wiser2/${selectedItem.plainId}/direct/${selectedItem.property_name}/${resizeMode}/${width}/${height}/${fileName}`,
+            url: `${domain}image/wiser2/${selectedItem.plainId}/direct/${selectedItem.property_name}/${resizeMode}/${width}/${height}/${fileName}`,
             altText: altText
         };
     }
@@ -1199,7 +1204,7 @@ export class Windows {
                 height: "90%",
                 visible: false,
                 modal: true,
-                actions: ["Verwijderen", "Verversen", "Close"],
+                actions: ["Verwijderen", "Verversen", "Vertalen", "Close"],
                 close: (closeEvent) => {
                     const closeFunction = () => {
                         try {
@@ -1399,7 +1404,6 @@ export class Windows {
                     currentItemWindow.wrapper.find(".itemNameField").prop("readonly", !htmlData.canWrite).prop("disabled", !htmlData.canWrite);
                     currentItemWindow.wrapper.find(".saveButton").toggleClass("hidden", !htmlData.canWrite);
                     currentItemWindow.wrapper.find(".k-i-verwijderen").parent().toggleClass("hidden", !htmlData.canDelete);
-
                     currentItemWindow.element.find(".editMenu .undeleteItem").closest("li").toggleClass("hidden", !htmlData.canDelete);
 
                     // Add all fields and tabs to the window.
@@ -1433,6 +1437,8 @@ export class Windows {
                         }
                     }
 
+                    currentItemWindow.wrapper.find(".k-i-vertalen").parent().toggleClass("hidden", this.base.allLanguages.length <= 1 && currentItemWindow.element.find(".item[data-language-code]:not([data-language-code=''])").length === 0);
+                    
                     // Setup dependencies for all tabs.
                     for (let i = htmlData.tabs.length - 1; i >= 0; i--) {
                         const tabData = htmlData.tabs[i];
@@ -1470,15 +1476,19 @@ export class Windows {
             // Bind events for the icons on the top-right of the window.
             currentItemWindow.wrapper.find(".k-i-verversen").parent().click(async (event) => {
                 const previouslySelectedTab = currentItemTabStrip.select().index();
-                loadPopupContents(previouslySelectedTab);
+                await loadPopupContents(previouslySelectedTab);
             });
             currentItemWindow.wrapper.find(".k-i-verwijderen").parent().click(this.onDeleteItemPopupClick.bind(this));
 
             currentItemWindow.element.find(".editMenu .undeleteItem").click(async (event) => {
-                this.base.onUndeleteItemClick(event, encryptedItemId);
+                await this.base.onUndeleteItemClick(event, encryptedItemId);
             });
 
-            loadPopupContents();
+            currentItemWindow.wrapper.find(".k-i-vertalen").parent().click(async (event) => {
+                await this.base.onTranslateItemClick(event, encryptedItemId, entityType);
+            });
+
+            await loadPopupContents();
         } catch (exception) {
             console.error(exception);
             kendo.alert("Er is iets fout gegaan tijdens het laden van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
@@ -1823,12 +1833,15 @@ export class Windows {
                             column.hidden = this.searchGridSettings.hideIdColumn || false;
                             break;
                         case "link_id":
+                        case "linkid":
                             column.hidden = this.searchGridSettings.hideLinkIdColumn || false;
                             break;
                         case "entity_type":
+                        case "entitytype":
                             column.hidden = this.searchGridSettings.hideTypeColumn || false;
                             break;
                         case "published_environment":
+                        case "publishedenvironment":
                             column.hidden = this.searchGridSettings.hideEnvironmentColumn || false;
                             break;
                         case "name":

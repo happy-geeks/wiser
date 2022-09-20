@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Models;
 using GeeksCoreLibrary.Core.Enums;
-using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
@@ -24,22 +22,18 @@ namespace Api.Modules.Customers.Services
         private readonly IAppCache cache;
         private readonly ICacheService cacheService;
         private readonly IUsersService usersService;
-        private readonly IWiserCustomersService wiserCustomersService;
         private readonly IDatabaseConnection databaseConnection;
-        private readonly GclSettings gclSettings;
         private readonly ApiSettings apiSettings;
 
         /// <summary>
         /// Creates a new instance of CachedUsersService.
         /// </summary>
-        public CachedUsersService(IAppCache cache, IOptions<ApiSettings> apiSettings, ICacheService cacheService, IUsersService usersService, IWiserCustomersService wiserCustomersService, IDatabaseConnection databaseConnection, IOptions<GclSettings> gclSettings)
+        public CachedUsersService(IAppCache cache, IOptions<ApiSettings> apiSettings, ICacheService cacheService, IUsersService usersService, IDatabaseConnection databaseConnection)
         {
             this.cache = cache;
             this.cacheService = cacheService;
             this.usersService = usersService;
-            this.wiserCustomersService = wiserCustomersService;
             this.databaseConnection = databaseConnection;
-            this.gclSettings = gclSettings.Value;
             this.apiSettings = apiSettings.Value;
         }
 
@@ -50,7 +44,7 @@ namespace Api.Modules.Customers.Services
             return await cache.GetOrAdd($"users_{databaseConnection.GetDatabaseNameForCaching()}",
                 async cacheEntry =>
                 {
-                    cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
+                    cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
                     return await usersService.GetAsync();
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
@@ -146,7 +140,7 @@ namespace Api.Modules.Customers.Services
             return await cache.GetOrAdd($"users_{databaseConnection.GetDatabaseNameForCaching()}_{id}_email",
                 async cacheEntry =>
                 {
-                    cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
+                    cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
                     return await usersService.GetUserEmailAddressAsync(id);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
@@ -158,7 +152,7 @@ namespace Api.Modules.Customers.Services
             return await cache.GetOrAdd($"user_data_wiser_settings_{databaseConnection.GetDatabaseNameForCaching()}",
                 async cacheEntry =>
                 {
-                    cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
+                    cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
                     return await usersService.GetWiserSettingsForUserAsync(encryptionKey);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.Objects));
         }
