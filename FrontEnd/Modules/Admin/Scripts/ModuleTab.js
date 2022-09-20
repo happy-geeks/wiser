@@ -411,6 +411,7 @@ export class ModuleTab {
             ],
             dataTextField: "text",
             dataValueField: "value",
+            height: 400,
             optionLabel: {
                 value: "",
                 text: "Maak uw keuze..."
