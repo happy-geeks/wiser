@@ -158,16 +158,16 @@
                     switch (value) {
                         case "is equal to":
                         case "is not equal to":
-                            dbInput.find("div.scope-value-select").show();
+                            dbInput.find("span.scope-value-select").show();
                             dbInput.find("div.free-input").hide();
                             break;
                         case "is empty":
                         case "is not empty":
-                            dbInput.find("div.scope-value-select").hide();
+                            dbInput.find("span.scope-value-select").hide();
                             dbInput.find("div.free-input").hide();
                             break;
                         default:
-                            dbInput.find("div.scope-value-select").hide();
+                            dbInput.find("span.scope-value-select").hide();
                             dbInput.find("div.free-input").show();
                             break;
                     }

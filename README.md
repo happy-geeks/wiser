@@ -11,28 +11,32 @@ Wiser v3. This includes the API and the front-end projects.
 1. Run `npm install`.
 1. Run `node_modules\.bin\webpack --mode=development`.
 
-### Setup secrets
+If you get an error for not having enough rights to execute the script please execute the following in PowerShell as administrator:
+```Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted```
+
+### Setup secrets<a name="setup-secrets"></a>
 1. Create 2 files named `appsettings-secrets.json`, one for the API and one for the front-end, somewhere outside of the project directory.
-1. Open `appSettings.json` in both projects and save the directory to the secrets in the property `GCL.SecretsBaseDirectory`.
+1. Open `appSettings.json` in both projects and save the directory to the secrets in the property `GCL.SecretsBaseDirectory`. Please note that this directory should always end with a slash. Example: `Z:\AppSettings\Wiser\FrontEnd\`.
 1. The `appsettings-secrets.json` files should look like this:
 #### API
 ```json
 {
   "GCL": {
-    "connectionString": "", // The connection string to the main database for Wiser. See the chapter 'Database' for an example connectiom string.
-    "DefaultEncryptionKey": "", // The default encryption key that should be used for encrypting values with AES when no encryption key is given.
-    "DefaultEncryptionKeyTripleDes": "",  // The default encryption key that should be used for encrypting values with Tripe DES when no encryption key is given.
+    "connectionString": "", // Mandatory: The connection string to the main database for Wiser. See the chapter 'Database' for an example connectiom string.
+    "DefaultEncryptionKey": "", // Mandatory: The default encryption key that should be used for encrypting values with AES when no encryption key is given.
+    "DefaultEncryptionKeyTripleDes": "",  // Mandatory: The default encryption key that should be used for encrypting values with Tripe DES when no encryption key is given.
     "evoPdfLicenseKey": "" // If you're going to use the PdfService, you need a license key for Evo PDF, or make your own implementation.
   },
   "Api": {
-    "AdminUsersEncryptionKey": "", // The encryption key to use for encrypting IDs and other data for admin users.
-    "DatabasePasswordEncryptionKey": "", // The encryption key that will be used for encrypting and saving passwords for connection strings to customer databases.
-    "ClientSecret": "", // The secret for the default client for OAUTH2 authentication.
+    "AdminUsersEncryptionKey": "", // Mandatory: The encryption key to use for encrypting IDs and other data for admin users.
+    "DatabasePasswordEncryptionKey": "", // Mandatory: The encryption key that will be used for encrypting and saving passwords for connection strings to customer databases.
+    "ClientSecret": "", // Mandatory: The secret for the default client for OAUTH2 authentication.
     "PusherAppId": "", // Some modules use pusher to send notifications to users. Enter the app ID for pusher here if you want to use that.
     "PusherAppKey": "", // The app key for pusher.
     "PusherAppSecret": "", // The app secret for pusher.
     "PusherSalt": "", // A salt to use when hashing event IDs for pusher.,
-    "SigningCredentialCertificate": "" // The fully qualified name of the certificate in the store of the server, of the certificate to use for IdentityServer4 (OAUTH2) authentication.
+    "SigningCredentialCertificate": "", // Mandatory: The fully qualified name of the certificate in the store of the server, of the certificate to use for IdentityServer4 (OAUTH2) authentication.
+    "UseTerserForTemplateScriptMinification": false // Whether terser should be used to handle the minification of JavaScript templates made in the Templates module.
   },
   "DigitalOcean": {
     "ClientId": "", // If you want to use the Digital Ocean API, enter the client ID for that here.
@@ -44,11 +48,11 @@ Wiser v3. This includes the API and the front-end projects.
 ```json
 {
   "FrontEnd": {
-    "ApiClientId": "wiser", // The client ID for OAUTH2 authentication with the API, this should (at the moment) always be "wiser".
-    "ApiClientSecret": "", // The client secret for OAUTH2 authentication with the API, this should be the same value as "API.ClientSecret" in the appsettings-secrets.json of the API.
+    "ApiClientId": "wiser", // Mandatory: The client ID for OAUTH2 authentication with the API, this should (at the moment) always be "wiser".
+    "ApiClientSecret": "", // Mandatory: The client secret for OAUTH2 authentication with the API, this should be the same value as "API.ClientSecret" in the appsettings-secrets.json of the API.
     "TrackJsToken": "", // If you want to use Track JS to track all errors, enter a token for that here. TrackJS will not be loaded if this is empty.
     "MarkerIoToken": "", // If you want to use Marker.io for allowing your users to send bug reports, enter the token for that here. Marker.io will not be loaded if this is empty.
-    "ApiBaseUrl": "", // The base URL for the API.
+    "ApiBaseUrl": "", // Mandatory: The base URL for the API. Example: https://api.wiser3.nl/
     "WiserHostNames": [] // One or more host names for running the Wiser FrontEnd on. This is needed to figure out the sub domain for multi tenancy. These values well be stripped from the host name and what is left over will be considered the sub domain.
   }
 }
@@ -68,7 +72,7 @@ If you do not have SUPER privileges in the database, you might get an error whil
 ## Connection string
 The connection string in the `appsettings.json` or `appsettings-secrets.json` of the API should look like this:
 ```
-server=;port=;uid=;pwd=;database=;pooling=true;Convert Zero Datetime=true;CharSet=utf8
+server=;port=;uid=;pwd=;database=;pooling=true;Convert Zero Datetime=true;CharSet=utf8;AllowUserVariables=True
 ```
 Note the options that are added at the end of the connection string, Wiser will not work properly without these options.
 
@@ -76,13 +80,13 @@ Note the options that are added at the end of the connection string, Wiser will 
 The installation script creates a new database schema and then creates several tables in that database. For it to work, you'll need a database user that has enough permissions to do all this.
 To setup this database, you can open a PowerShell or CMD window in the directory that contains the `Api.csproj` file and run the following command:
 ```
-npm run setup:mysql -- --host=host --database=database --user=user --password=password
+npm run setup:mysql -- --host=host --database=database --user=user --password=password --port=port
 ```
 You can use the following parameters with this command:
 - **host** (required): The hostname or IP address to the MySQL database.
 - **database** (required): The name of the database scheme to create.
 - **user** (required): The username of the MySQL user.
-- **password** (required): The password of the MySQL user. Note that the script does not support the new MySQL 8 password, only `mysql_native_password`.
+- **password** (required): The password of the MySQL user. Note that the script **does not support** the new MySQL 8 password, only `mysql_native_password`.
 - **port** (optional): The port for the database. Default value is `3306`.
 - **isConfigurator** (optional): Set to `true` if you want to make a configurator with Wiser.
 - **isWebshop** (optional): Set to `true` if you want to make a webshop with Wiser.
@@ -97,6 +101,24 @@ We have several SQL scripts to create these tables and add the minimum amount of
 3. `InsertInitialData.sql`
 
 The scripts `InsertInitialDataConfigurator.sql` and `InsertInitialDataEcommerce.sql` can be used if you want to run a website that uses the GeeksCoreLibrary that can be managed in Wiser. If you have a website with a webshop, run `InsertInitialDataEcommerce.sql` and if you have a website with a product configurator, run `InsertInitialDataConfigurator.sql` to setup Wiser to work with those kinds of websites.
+
+# Using terser for JavaScript template minification (optional)
+The API can be configured to use an npm package called [terser](https://terser.org/) to handle the minification of JavaScript templates that are created in the Templates module instead of [NUglify](https://github.com/trullock/NUglify). To do this, the terser npm package must be installed in the root directory where the API is running on the server:
+1. Open PowerShell/CMD window in the directory where the API is running.
+1. Run the command `npm install terser`. This will install terser and all its dependencies, and create terser command files in the `node_modules/.bin` folder. After the installation is done, verify that the `node_modules/.bin` directory exists in the root directory of the API and that it contains these files:
+    - `terser`
+    - `terser.cmd`
+    - `terser.ps1`
+1. Open the `appsettings-secrets.json` file of the API in an editor.
+    - See the [Setup secrets](#setup-secrets) section above to check where this file is located.
+1. Set the value of the setting `Api.UseTerserForTemplateScriptMinification` to `true`.
+    - See the [Setup secrets](#setup-secrets) section above for an example.
+1. (Re)start the API.
+
+The reason the setting is saved in the `appsettings-secrets.json` file instead of the `appSettings.json` file is to avoid the value getting overwritten when deploying a new version.
+
+## How terser is used to minify
+Because terser works with input files, the API will create a temporary file where the script will temporarily be stored. The directory where these scripts are temporarily stored is `temp/minify` in the API base directory. Wiser will attempt to create this directory, but it's not a bad idea to create it manually so the right permissions can be set. Wiser will automatically delete the temporary file after the minification has been completed.
 
 # Debugging
 1. Open PowerShell/CMS Window in the directory that contains the `FrontEnd.csproj` file (__NOT__ the root directory, that contains the `WiserCore.sln` file!).
@@ -168,7 +190,7 @@ By default, users can see and change everything. If there is no entry in wiser_p
 # Publishing
 To publish Wiser 3 to your own server, you should use the following publish settings:
 - Configuration: `Release`
-- Target Framework: `net5.0`
+- Target Framework: `net6.0`
 - Deployment Mode: `Self-Contained`
 - Target Runtime: The correct runtime for your system, for Windows this is usually `win-x64`
 - Under File Publish Option, tick the box for `Enable ReadyToRun compilation`

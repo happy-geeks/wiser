@@ -244,5 +244,35 @@ namespace Api.Modules.Templates.Services
                 StatusCode = HttpStatusCode.NoContent
             };
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DuplicateAsync(ClaimsIdentity identity, int contentId, int newTemplateId)
+        {
+            await dataService.DuplicateAsync(contentId, newTemplateId, IdentityHelpers.GetUserName(identity, true));
+            return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeleteAsync(int contentId)
+        {
+            if (contentId <= 0)
+            {
+                throw new ArgumentException("The Id is invalid");
+            }
+            await dataService.DeleteAsync(contentId);
+            return new ServiceResult<bool>(true); 
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<DynamicContentOverviewModel>>> GetLinkableDynamicContentAsync(int templateId)
+        {
+            if (templateId <= 0)
+            {
+                throw new ArgumentException("The Id cannot be zero.");
+            }
+
+            var results = await dataService.GetLinkableDynamicContentAsync(templateId);
+            return new ServiceResult<List<DynamicContentOverviewModel>>(results);
+        }
     }
 }

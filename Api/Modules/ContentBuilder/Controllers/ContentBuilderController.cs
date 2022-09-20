@@ -56,5 +56,17 @@ namespace Api.Modules.ContentBuilder.Controllers
         {
             return (await contentBuilderService.GetHtmlAsync((ClaimsIdentity)User.Identity, itemId, languageCode, propertyName)).GetHttpResponseMessage(MediaTypeNames.Text.Html);
         }
+
+        /// <summary>
+        /// Gets the framework to use for the content builder.
+        /// </summary>
+        /// <returns>The name of the framework to use.</returns>
+        [HttpGet]
+        [Route("framework")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetFrameworkAsync()
+        {
+            return (await contentBuilderService.GetFrameworkAsync()).GetHttpResponseMessage();
+        }
     }
 }

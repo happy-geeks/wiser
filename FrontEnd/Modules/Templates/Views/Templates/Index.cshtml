@@ -19,6 +19,7 @@
         #wiser,
         #createNewItemDialog,
         #addDynamicContentToHtmlDialog,
+        #linkExistingDynamicContentDialog,
         #htmlSourceWindow {
             display: none;
         }
@@ -31,7 +32,8 @@
       data-sub-domain="@Model.SubDomain"
       data-track-js-token="@Model.Settings.TrackJsToken"
       data-api-client-id="@Model.Settings.ApiClientId"
-      data-api-client-secret="@Model.Settings.ApiClientSecret">
+      data-api-client-secret="@Model.Settings.ApiClientSecret"
+      data-pusher-app-key="@Model.Settings.PusherAppKey">
     <span id="popupNotification"></span>
     <div id="wiser">
         <div id="window" style="margin: 0 auto; padding: 0;">
@@ -41,11 +43,6 @@
                     <button class="icon-line-search"></button>
                     <div class="loader-icon"><div></div><div></div><div></div><div></div></div>
                 </form>
-
-                <div class="header-actions">
-                    <button id="saveAndDeployToTestButton" class="k-primary saveButton">Opslaan &amp; deploy naar test-omgeving</button>
-                    <button id="saveButton" class="k-primary saveButton">Opslaan</button>
-                </div>
             </div>
 
             <div class="window-content">
@@ -68,22 +65,16 @@
                             <div class="tabstrip k-tabstrip-wrapper">
                                 <ul>
                                     <li class="development-tab k-state-active" data-name="development">Development</li>
-                                    <li class="history-tab" data-name="history">Historie</li>
                                     <li class="dynamic-tab" data-name="dynamic-content">Dynamische content</li>
                                     <li class="preview-tab" data-name="preview">Preview</li>
+                                    <li class="history-tab" data-name="history">Historie</li>
                                 </ul>
-                                <div id="developmentTab">
-
-                                </div>
-                                <div id="historyTab">
-
-                                </div>
+                                <div id="developmentTab"></div>
                                 <div>
                                     <partial name="Tabs/DynamicContentTab" />
                                 </div>
-                                <div id="previewTab">
-
-                                </div>
+                                <div id="previewTab"></div>
+                                <div id="historyTab"></div>
                             </div>
                         </div>
                     </div>
@@ -132,6 +123,17 @@
                 <h4><label for="dynamicContentDropDown">Kies een component</label></h4>
                 <div class="flex-container">
                     <select id="dynamicContentDropDown" class="select" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."></select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="linkExistingDynamicContentDialog">
+        <div class="formview full static-fields">
+            <div class="item">
+                <h4><label for="allDynamicContentDropDown">Kies een component</label></h4>
+                <div class="flex-container">
+                    <select id="allDynamicContentDropDown" class="select" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."></select>
                 </div>
             </div>
         </div>

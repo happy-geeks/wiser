@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
@@ -23,6 +24,42 @@ namespace Api.Modules.Templates.Services.DataLayer
         public DynamicContentDataService(IDatabaseConnection connection)
         {
             this.connection = connection;
+        }
+
+        /// <inheritdoc />
+        public async Task<List<DynamicContentOverviewModel>> GetLinkableDynamicContentAsync(int templateId)
+        {
+            connection.AddParameter("templateId", templateId);
+            var query = $@"SELECT
+	component.content_id,
+	component.title,
+	component.version,
+    template.template_id,
+	CONCAT_WS(' >> ', parent5.template_name, parent4.template_name, parent3.template_name, parent2.template_name, parent1.template_name, IFNULL(template.template_name, 'Geen')) AS templatePath
+FROM {WiserTableNames.WiserDynamicContent} AS component
+LEFT JOIN {WiserTableNames.WiserDynamicContent} AS otherVersion ON otherVersion.content_id = component.content_id AND otherVersion.version > component.version
+LEFT JOIN {WiserTableNames.WiserTemplateDynamicContent} AS linkToTemplate ON linkToTemplate.content_id = component.content_id
+LEFT JOIN {WiserTableNames.WiserTemplate} AS template ON template.template_id = linkToTemplate.destination_template_id AND template.template_type = 1 AND template.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = linkToTemplate.destination_template_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent2 ON parent2.template_id = parent1.parent_id AND parent2.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent1.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent3 ON parent3.template_id = parent2.parent_id AND parent3.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent2.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent4 ON parent4.template_id = parent3.parent_id AND parent4.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent3.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent5 ON parent5.template_id = parent4.parent_id AND parent5.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent4.parent_id)
+WHERE otherVersion.id IS NULL
+AND (linkToTemplate.id IS NULL OR linkToTemplate.destination_template_id <> ?templateId)
+ORDER BY templatePath ASC, component.title ASC";
+
+            var dataTable = await connection.GetAsync(query);
+            var results = dataTable.Rows.Cast<DataRow>().Select(dataRow => new DynamicContentOverviewModel
+            {
+                Id = dataRow.Field<int>("content_id"),
+                Title = dataRow.Field<string>("title"),
+                LatestVersion = dataRow.Field<int>("version"),
+                TemplateId = dataRow.Field<int?>("template_id"),
+                TemplatePath = dataRow.Field<string>("templatePath")
+            });
+
+            return results.ToList();
         }
 
         /// <inheritdoc />
@@ -196,6 +233,51 @@ namespace Api.Modules.Templates.Services.DataLayer
             return await connection.ExecuteAsync(query + ";" + logQuery);
         }
 
+        /// <inheritdoc />
+        public async Task DuplicateAsync(int contentId, int newTemplateId, string username)
+        {
+            var dataTable = await connection.GetAsync($"SELECT IFNULL(MAX(content_id), 0) AS max_content_id FROM {WiserTableNames.WiserDynamicContent}");
+            var newContentId = (dataTable.Rows.Count == 0 ? 0 : Convert.ToInt32(dataTable.Rows[0]["max_content_id"])) + 1;
+            
+            var query = $@"INSERT INTO {WiserTableNames.WiserDynamicContent}
+(
+    content_id,
+    settings,
+    component,
+    component_mode,
+    version,
+    title,
+    changed_on,
+    changed_by,
+    published_environment
+)
+SELECT 
+    ?newContentId,
+    content.settings,
+    content.component,
+    content.component_mode,
+    1,
+    CONCAT(content.title, ' - Duplicate'),
+    ?now,
+    ?username,
+    0
+FROM {WiserTableNames.WiserDynamicContent} AS content
+LEFT JOIN {WiserTableNames.WiserDynamicContent} AS otherVersion ON otherVersion.content_id = content.content_id AND otherVersion.version > content.version
+WHERE content.content_id = ?contentId
+AND content.removed = 0
+AND otherVersion.id IS NULL;
+
+INSERT INTO {WiserTableNames.WiserTemplateDynamicContent} (content_id, destination_template_id, added_on, added_by)
+VALUES (?newContentId, ?templateId, ?now, ?username);";
+            
+            connection.AddParameter("contentId", contentId);
+            connection.AddParameter("newContentId", newContentId);
+            connection.AddParameter("now", DateTime.Now);
+            connection.AddParameter("username", username);
+            connection.AddParameter("templateId", newTemplateId);
+            await connection.ExecuteAsync(query);
+        }
+
         private async Task<KeyValuePair<string, string>> GetDatabaseData(int contentId)
         {
             connection.ClearParameters();
@@ -210,6 +292,15 @@ namespace Api.Modules.Templates.Services.DataLayer
             var title = dataTable.Rows[0].Field<string>("title");
 
             return new KeyValuePair<string, string>(title, settings);
+        }
+
+        /// <inheritdoc />
+        public async Task DeleteAsync(int contentId)
+        {
+            connection.ClearParameters();
+            connection.AddParameter("contentId", contentId);
+            var query = $@"UPDATE {WiserTableNames.WiserDynamicContent} SET removed = 1 WHERE content_id = ?contentID";
+            await connection.ExecuteAsync(query);
         }
     }
 }

@@ -27,5 +27,11 @@ namespace Api.Modules.ContentBuilder.Interfaces
         /// <param name="propertyName">Optional: The name of the property in the Wiser item that contains the HTML. Default value is "html".</param>
         /// <returns>The HTML as a string.</returns>
         Task<ServiceResult<string>> GetHtmlAsync(ClaimsIdentity identity, ulong itemId, string languageCode = "", string propertyName = "html");
+
+        /// <summary>
+        /// Gets the framework to use for the content builder.
+        /// </summary>
+        /// <returns>The name of the framework to use.</returns>
+        Task<ServiceResult<string>> GetFrameworkAsync();
     }
 }

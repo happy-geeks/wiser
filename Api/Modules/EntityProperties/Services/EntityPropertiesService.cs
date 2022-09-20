@@ -794,7 +794,7 @@ AND otherEntityProperty.id IS NULL";
             result.AlsoSaveSeoValue = Convert.ToBoolean(dataRow["also_save_seo_value"]);
             result.SaveOnChange = Convert.ToBoolean(dataRow["save_on_change"]);
             result.LabelStyle = ToLabelStyle(dataRow.Field<string>("label_style"));
-            result.LabelWidth = Convert.ToInt32(dataRow["label_width"]);
+            result.LabelWidth = dataRow.IsNull("label_width") ? 0 : Convert.ToInt32(dataRow["label_width"]);
             result.Overview = new EntityPropertyOverviewModel();
             result.Overview.Visible = Convert.ToBoolean(dataRow["visible_in_overview"]);
             result.Overview.Width = Convert.ToInt32(dataRow["overview_width"]);

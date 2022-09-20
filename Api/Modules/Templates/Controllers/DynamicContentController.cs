@@ -153,5 +153,44 @@ namespace Api.Modules.Templates.Controllers
                 ? currentPublished.GetHttpResponseMessage() 
                 : (await dynamicContentService.PublishToEnvironmentAsync((ClaimsIdentity)User.Identity, contentId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Duplicate a dynamic component (only the latest version).
+        /// </summary>
+        /// <param name="id">The id of the component.</param>
+        /// <param name="templateId">The id of the template to link the new component to.</param>
+        [HttpPost]
+        [Route("{id:int}/duplicate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> DuplicateAsync(int id, [FromQuery]int templateId)
+        {
+            return (await dynamicContentService.DuplicateAsync((ClaimsIdentity)User.Identity, id, templateId)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Deletes a dynamic content component
+        /// </summary>
+        /// <param name="contentId">The id of the dynamic content</param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Route("{contentId:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteAsync(int contentId)
+        {
+            return (await dynamicContentService.DeleteAsync(contentId)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Gets all dynamic content that can be linked to the given template.
+        /// </summary>
+        /// <param name="templateId">The ID of the template.</param>
+        /// <returns>A list of dynamic components from other templates.</returns>
+        [HttpGet]
+        [Route("linkable")]
+        [ProducesResponseType(typeof(List<DynamicContentOverviewModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetLinkableDynamicContentAsync([FromQuery]int templateId)
+        {
+            return (await dynamicContentService.GetLinkableDynamicContentAsync(templateId)).GetHttpResponseMessage();
+        }
     }
 }

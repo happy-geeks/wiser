@@ -190,7 +190,7 @@ const moduleSettings = {
             this.settings.mainDomain = userData.mainDomain;
 
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
-            this.settings.htmlEditorCssUrl = `${this.settings.wiserApiRoot}templates/css-for-html-editors?encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&isTest=${this.base.settings.isTestEnvironment}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&username=${encodeURIComponent(this.base.settings.username)}&userType=${encodeURIComponent(this.base.settings.userType)}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`
+            this.settings.htmlEditorCssUrl = `${this.settings.wiserApiRoot}templates/css-for-html-editors?encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`
 
             // Get list of all entity types, so we can show friendly names wherever we need to and don't have to get them from database via different places.
             try {
@@ -300,6 +300,19 @@ const moduleSettings = {
             });
 
             // Keyboard shortcuts
+            $("body").on("keydown", async (event) => {
+                const target = $(event.target);
+
+                if ((event.ctrlKey || event.metaKey) && event.key.toUpperCase() === "S") {
+                    event.preventDefault();
+
+                    const entityContainer = target.closest(".entity-container");
+                    if (entityContainer.length > 0) {
+                        entityContainer.find(".saveButton").first().click();
+                    }
+                }
+            });
+            
             $("body").on("keyup", async (event) => {
                 const target = $(event.target);
 
@@ -413,15 +426,15 @@ const moduleSettings = {
 
             $("#mainEditMenu .reloadItem").click(async (event) => {
                 const previouslySelectedTab = this.mainTabStrip.select().index();
-                await this.loadItem(this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
+                await this.loadItem(this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.initialItemId ? this.settings.entityType : this.selectedItem.entityType);
             });
 
             $("#mainEditMenu .deleteItem").click(async (event) => {
-                await this.onDeleteItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
+                await this.onDeleteItemClick(event, this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id, this.settings.initialItemId ? this.settings.entityType : this.selectedItem.entityType);
             });
 
             $("#mainEditMenu .undeleteItem").click(async (event) => {
-                await this.onUndeleteItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id);
+                await this.onUndeleteItemClick(event, this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id);
             });
 
             $("#mainEditMenu .copyToEnvironment").click(async (event) => {
@@ -431,7 +444,7 @@ const moduleSettings = {
             });
 
             $("#mainEditMenu .translateItem").click(async (event) => {
-                await this.onTranslateItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
+                await this.onTranslateItemClick(event, this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id, this.settings.initialItemId ? this.settings.entityType : this.selectedItem.entityType);
             });
         }
 
