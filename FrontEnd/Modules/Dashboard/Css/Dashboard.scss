@@ -147,7 +147,7 @@ ins, a {
     }
 }
 
-editMenu, .editMenu * {
+.editMenu, .editMenu * {
     list-style: none;
 }
 
@@ -574,6 +574,22 @@ progress {
 
             &.selected {
                 background-color: darken($primary-color, 5%);
+            }
+        }
+    }
+}
+
+/* GRID */
+.k-grid {
+    .k-command-cell {
+        .k-button {
+            min-width: 24px;
+            box-shadow: none;
+            
+            .k-icon {
+                height: 24px;
+                width: 24px;
+                opacity: 1;
             }
         }
     }

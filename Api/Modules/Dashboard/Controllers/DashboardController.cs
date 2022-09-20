@@ -57,4 +57,15 @@ public class DashboardController : ControllerBase
     {
         return (await dashboardService.GetAisServicesAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
     }
+
+    /// <summary>
+    /// Get the logs from a specific service.
+    /// </summary>
+    /// <param name="id">The ID of the service.</param>
+    /// <returns></returns>
+    [HttpGet, Route("services/{id:int}")]
+    public async Task<IActionResult> GetAisServiceLogsAsync(int id)
+    {
+        return (await dashboardService.GetAisServiceLogsAsync((ClaimsIdentity) User.Identity, id)).GetHttpResponseMessage();
+    }
 }

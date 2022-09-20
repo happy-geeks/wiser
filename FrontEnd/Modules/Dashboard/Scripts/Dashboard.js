@@ -30,6 +30,8 @@ const moduleSettings = {
             this.entityData = null;
             
             this.servicesGrid = null;
+            this.serviceWindow = null;
+            this.serviceLogsGrid = null;
 
             // Fire event on page ready for direct actions
             document.addEventListener("DOMContentLoaded", () => {
@@ -469,6 +471,44 @@ const moduleSettings = {
                 dataBound: this.setServiceStateColor
             }).data("kendoGrid");
             this.servicesGrid.scrollables[1].classList.add("fixed-table");
+            
+            const serviceWindowOptions = {
+                actions: ["Close"],
+                width: "90vw",
+                height: "90vh",
+                visible: false,
+                draggable: false,
+                resizable: false
+            }
+            
+            this.serviceWindow = $("#serviceLogWindow").kendoWindow(serviceWindowOptions);
+
+            this.serviceLogsGrid = $("#serviceLogGrid").kendoGrid({
+                filterable: true,
+                pageable: true,
+                columns: [
+                    {
+                        field: "id",
+                        hidden: true
+                    },
+                    {
+                        title: "Level",
+                        field: "level",
+                        width: "15%"
+                    },
+                    {
+                        title: "Toegevoegd op",
+                        field: "addedOn",
+                        format: "{0:dd-MM-yyyy HH:mm:ss}",
+                        width: "15%"
+                    },
+                    {
+                        title: "Bericht",
+                        field: "message"
+                    }
+                ]
+            }).data("kendoGrid");
+            this.serviceLogsGrid.scrollables[1].classList.add("fixed-table");
         }
 
         async updateBranches() {
@@ -703,6 +743,23 @@ const moduleSettings = {
         
         async openServiceLogs(e) {
             const serviceId = e.currentTarget.closest("tr").querySelector("td:first-child").innerText;
+            const dataSource = await Wiser.api({
+                url: `${this.settings.wiserApiRoot}dashboard/services/${serviceId}`
+            });
+            
+            this.serviceLogsGrid.setDataSource(new kendo.data.DataSource({
+                data: dataSource,
+                schema: {
+                    pageSize: 13,
+                    model: {
+                        fields: {
+                            addedOn: {from: "addedOn", type: "date"}
+                        }
+                    }
+                }
+            }));
+            
+            this.serviceWindow.data("kendoWindow").open();
         }
         
         async onPeriodFilterChange(event) {

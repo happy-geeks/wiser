@@ -32,4 +32,12 @@ public interface IDashboardService
     /// <param name="identity">The identity of the authenticated user.</param>
     /// <returns>A collection of <see cref="Service"/> objects.</returns>
     Task<ServiceResult<List<Service>>> GetAisServicesAsync(ClaimsIdentity identity);
+
+    /// <summary>
+    /// Retrieves the logs from the given service.
+    /// </summary>
+    /// <param name="identity">The identity of the authenticated user.</param>
+    /// <param name="id">The ID of the service to get the logs from.</param>
+    /// <returns>A collection of logs.</returns>
+    Task<ServiceResult<List<ServiceLog>>> GetAisServiceLogsAsync(ClaimsIdentity identity, int id);
 }

@@ -729,4 +729,41 @@ public class DashboardService : IDashboardService, IScopedService
             StatusCode = HttpStatusCode.OK
         };
     }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<List<ServiceLog>>> GetAisServiceLogsAsync(ClaimsIdentity identity, int id)
+    {
+        var logs = new List<ServiceLog>();
+        
+        clientDatabaseConnection.AddParameter("serviceId", id);
+        var datatable = await clientDatabaseConnection.GetAsync($@"SELECT log.*
+                                                                        FROM {WiserTableNames.AisServices} AS service
+                                                                        JOIN {WiserTableNames.AisLogs} AS log ON log.configuration = service.configuration AND log.time_id = service.time_id AND is_test = 0
+                                                                        WHERE service.id = ?serviceId
+                                                                        ORDER BY log.added_on DESC");
+
+        foreach (DataRow row in datatable.Rows)
+        {
+            var log = new ServiceLog()
+            {
+                Id = row.Field<int>("id"),
+                Level = row.Field<string>("level"),
+                Scope = row.Field<string>("scope"),
+                Source = row.Field<string>("source"),
+                Configuration = row.Field<string>("configuration"),
+                TimeId = row.Field<int>("time_id"),
+                Order = row.Field<int>("order"),
+                AddedOn = row.Field<DateTime>("added_on"),
+                Message = row.Field<string>("message")
+            };
+            
+            logs.Add(log);
+        }
+
+        return new ServiceResult<List<ServiceLog>>()
+        {
+            ModelObject = logs,
+            StatusCode = HttpStatusCode.OK
+        };
+    }
 }
