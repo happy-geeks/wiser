@@ -386,12 +386,17 @@ const moduleSettings = {
             this.servicesGrid = $("#services-grid").kendoGrid({
                 columns: [
                     {
+                        field: "id",
+                        hidden: true
+                    },
+                    {
                         title: "Configuratie",
                         field: "configuration"
                     },
                     {
                         title: "Actie",
-                        field: "action"
+                        field: "action",
+                        template: "#if(data.action != null) {# #: data.action # #} else {# #: data.timeId # #}#"
                     },
                     {
                         title: "Schema",
@@ -452,9 +457,13 @@ const moduleSettings = {
                             {
                                 name: "logs",
                                 text: "",
-                                iconClass: "k-icon k-i-file-txt"
+                                iconClass: "k-icon k-i-file-txt",
+                                click: this.openServiceLogs.bind(this)
                             }
-                        ]
+                        ],
+                        attributes: {
+                            "class": "admin"
+                        }
                     },
                 ],
                 dataBound: this.setServiceStateColor
@@ -690,6 +699,10 @@ const moduleSettings = {
                         break;
                 }
             }
+        }
+        
+        async openServiceLogs(e) {
+            const serviceId = e.currentTarget.closest("tr").querySelector("td:first-child").innerText;
         }
         
         async onPeriodFilterChange(event) {
