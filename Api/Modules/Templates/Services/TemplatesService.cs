@@ -2108,7 +2108,7 @@ SELECT
 	content_type AS contentType,
 	0 AS isDirectory,
 	0 AS childrenCount,
-    property_name,
+    property_name AS propertyName,
     item_id AS itemId_encrypt_withdate,
     item_id AS itemIdPlain,
     CASE
