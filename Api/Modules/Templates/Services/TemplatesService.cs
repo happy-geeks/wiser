@@ -1646,7 +1646,7 @@ AND (
 GROUP BY i.id
 ORDER BY ilp.ordering, i.title");
                 TemplateQueryStrings.Add("GET_DESTINATION_ITEMS", @"SET @_itemId = {itemId};
-SET @_entityType = IF('{entity_type}' LIKE '{%}', 'item', '{entity_type}');
+SET @_entityType = IF('{entityType}' LIKE '{%}', 'item', '{entityType}');
 SET @_linkType = IF('{linkTypeNumber}' LIKE '{%}', '1', '{linkTypeNumber}');
 SET @userId = {encryptedUserId:decrypt(true)};
 
@@ -1681,7 +1681,7 @@ AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
 GROUP BY il.item_id, id.id
 ORDER BY il.ordering, i.title, i.id");
                 TemplateQueryStrings.Add("GET_DESTINATION_ITEMS_REVERSED", @"SET @_itemId = {itemId};
-SET @_entityType = IF('{entity_type}' LIKE '{%}', 'item', '{entity_type}');
+SET @_entityType = IF('{entityType}' LIKE '{%}', 'item', '{entityType}');
 SET @_linkType = IF('{linkTypeNumber}' LIKE '{%}', '1', '{linkTypeNumber}');
 SET @userId = {encryptedUserId:decrypt(true)};
 
