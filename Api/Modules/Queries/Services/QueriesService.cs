@@ -9,9 +9,12 @@ using Api.Modules.Customers.Interfaces;
 using Api.Modules.Queries.Interfaces;
 using Api.Modules.Queries.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Extensions;
+using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using MySql.Data.MySqlClient;
+using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Queries.Services
 {
@@ -253,6 +256,38 @@ namespace Api.Modules.Queries.Services
             {
                 StatusCode = HttpStatusCode.NoContent
             };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<JArray>> GetQueryResultAsJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("id", id);
+            var query = $"SELECT query FROM {WiserTableNames.WiserQuery} WHERE id = ?id";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count == 0)
+            {
+                return new ServiceResult<JArray>
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"Wiser query with ID '{id}' does not exist."
+                };
+            }
+
+            query = dataTable.Rows[0].Field<string>("query");
+            if (parameters != null)
+            {
+                foreach (var parameter in parameters)
+                {
+                    clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName(parameter.Key), parameter.Value);
+                }
+            }
+
+            dataTable = await clientDatabaseConnection.GetAsync(query);
+            var result = dataTable.Rows.Count == 0 ? new JArray() : dataTable.ToJsonArray(skipNullValues: true);
+
+            return new ServiceResult<JArray>(result);
         }
     }
 }

@@ -25,6 +25,19 @@ export class WiserQueryTab {
         }).data("kendoDropDownList");
 
         this.queryCombobox.one("dataBound", () => { this.queryListInitialized = true; });
+        
+        this.allowedRoles = $("#allowedRoles").kendoMultiSelect({
+            dataSource: {
+                transport: {
+                    read: {
+                        url: `${this.base.settings.serviceRoot}/GET_ROLES`
+                    }
+                }
+            },
+            dataTextField: "roleName",
+            dataValueField: "id",
+            multiple: "multiple"
+        }).data("kendoMultiSelect");
 
         await Misc.ensureCodeMirror();
 

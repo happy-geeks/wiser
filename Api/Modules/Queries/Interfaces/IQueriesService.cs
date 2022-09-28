@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Queries.Models;
+using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Queries.Interfaces
 {
@@ -58,5 +59,13 @@ namespace Api.Modules.Queries.Interfaces
         /// <returns></returns>
         Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id);
 
+        /// <summary>
+        /// Execute a query and return the results in JSON format.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="id">The ID from wiser_query.</param>
+        /// <param name="parameters">The parameters to set before executing the query.</param>
+        /// <returns></returns>
+        Task<ServiceResult<JArray>> GetQueryResultAsJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters);
     }
 }

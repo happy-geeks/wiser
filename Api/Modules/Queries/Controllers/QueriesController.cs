@@ -106,5 +106,21 @@ namespace Api.Modules.Queries.Controllers
         {
             return (await queriesService.DeleteAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Execute a wiser_query by ID and return the results as JSON.
+        /// </summary>
+        /// <param name="id">The ID from wiser_query.</param>
+        /// <param name="parameters">The parameters to set before executing the query.</param>
+        /// <returns>The results of the query as JSON.</returns>
+        [HttpPost]
+        [Route("{id:int}/json-result")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetQueryResultsAsJson(int id, [FromBody] List<KeyValuePair<string, object>> parameters = null)
+        {
+            return (await queriesService.GetQueryResultAsJsonAsync((ClaimsIdentity) User.Identity, id, parameters)).GetHttpResponseMessage();
+        }
     }
 }
