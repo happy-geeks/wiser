@@ -25,7 +25,147 @@ public class CommitDataService : ICommitDataService, IScopedService
     {
         databaseConnection = clientDatabaseConnection;
     }
-    
+
+    /// <inheritdoc />
+    public async Task<CommitModel> GetCommitAsync(int id)
+    {
+	    // Get all dynamic content of the commit.
+	    var query = $@"SELECT
+	`commit`.id,
+	`commit`.description,
+	`commit`.added_on,
+	`commit`.added_by,
+	`commit`.completed,
+	`commit`.external_id,
+	content.published_environment,
+	content.component,
+	content.content_id,
+	GROUP_CONCAT(DISTINCT template.template_id) AS template_ids,
+	GROUP_CONCAT(DISTINCT template.template_name) AS template_names,
+	content.title,
+	content.version,
+	content.changed_on AS content_changed_on,
+	content.changed_by AS content_changed_by,
+	content.component_mode,
+	#contentMaxVersion.version AS max_version,
+	IFNULL(testContent.version, 0) AS version_test,
+	IFNULL(acceptanceContent.version, 0) AS version_acceptance,
+	IFNULL(liveContent.version, 0) AS version_live,
+	IFNULL(content.version, 0) <= IFNULL(testContent.version, 0) AS test,
+	IFNULL(content.version, 0) <= IFNULL(acceptanceContent.version, 0) AS accept,
+	IFNULL(content.version, 0) <= IFNULL(liveContent.version, 0) AS live
+FROM {WiserTableNames.WiserCommit} AS `commit`
+JOIN {WiserTableNames.WiserCommitDynamicContent} AS linkToContent ON `commit`.id = linkToContent.commit_id
+JOIN {WiserTableNames.WiserDynamicContent} AS content ON content.content_id = linkToContent.dynamic_content_id AND content.version = linkToContent.version
+#JOIN {WiserTableNames.WiserDynamicContent} AS contentMaxVersion ON contentMaxVersion.content_id = linkToContent.dynamic_content_id AND content.version = (SELECT (MAX(x.version) FROM {WiserTableNames.WiserDynamicContent} AS x WHERE x.content_id = linkToContent.dynamic_content_id)
+LEFT JOIN {WiserTableNames.WiserDynamicContent} AS testContent ON testContent.content_id = content.content_id AND (testContent.published_environment & {(int)Environments.Test}) = {(int)Environments.Test}
+LEFT JOIN {WiserTableNames.WiserDynamicContent} AS acceptanceContent ON acceptanceContent.content_id = content.content_id AND (acceptanceContent.published_environment & {(int)Environments.Acceptance}) = {(int)Environments.Acceptance}
+LEFT JOIN {WiserTableNames.WiserDynamicContent} AS liveContent ON liveContent.content_id = content.content_id AND (liveContent.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
+LEFT JOIN {WiserTableNames.WiserTemplateDynamicContent} AS linkToTemplate ON linkToTemplate.content_id = content.content_id
+LEFT JOIN {WiserTableNames.WiserTemplate} AS template ON template.template_id = linkToTemplate.destination_template_id AND template.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserTemplate} AS x WHERE x.template_id = linkToTemplate.destination_template_id)
+WHERE `commit`.id = ?id
+GROUP BY content.content_id";
+	    
+	    databaseConnection.AddParameter("id", id);
+	    var dataTable = await databaseConnection.GetAsync(query);
+	    if (dataTable.Rows.Count == 0)
+	    {
+		    return null;
+	    }
+
+	    var commitModel = new CommitModel
+	    {
+		    Id = id,
+		    Description = dataTable.Rows[0].Field<string>("description"),
+		    AddedBy = dataTable.Rows[0].Field<string>("added_by"),
+		    AddedOn = dataTable.Rows[0].Field<DateTime>("added_on"),
+		    ExternalId = dataTable.Rows[0].Field<string>("external_id")
+	    };
+	    
+	    foreach (DataRow dataRow in dataTable.Rows)
+	    {
+		    commitModel.DynamicContents.Add(new DynamicContentCommitModel
+		    {
+			    DynamicContentId = dataRow.Field<int>("content_id"),
+			    Component = dataRow.Field<string>("component"),
+			    Title = dataRow.Field<string>("title"),
+			    Version = dataRow.Field<int>("version"),
+			    ChangedBy = dataRow.Field<string>("content_changed_by"),
+			    ChangedOn = dataRow.Field<DateTime>("content_changed_on"),
+			    CommitId = id,
+			    ComponentMode = dataRow.Field<string>("component_mode"),
+			    IsAcceptance = Convert.ToBoolean(dataRow["accept"]),
+			    IsLive = Convert.ToBoolean(dataRow["live"]),
+			    IsTest = Convert.ToBoolean(dataRow["test"]),
+			    VersionAcceptance = dataRow.Field<int>("version_acceptance"),
+			    VersionLive = dataRow.Field<int>("version_live"),
+			    VersionTest = dataRow.Field<int>("version_test"),
+			    TemplateIds = dataRow.Field<string>("template_ids")?.Split(",").Select(Int32.Parse).ToList(),
+			    TemplateNames = dataRow.Field<string>("template_names")?.Split(",").ToList()
+		    });
+	    }
+	    
+	    // Get all templates of the commit.
+	    query = $@"	SELECT
+	`commit`.id,
+	`commit`.description,
+	`commit`.added_on,
+	`commit`.added_by,
+	`commit`.completed,
+	`commit`.external_id,
+	template.template_id,
+	template.published_environment,
+	template.template_type,
+	template.template_name,
+	template.version,
+	template.parent_id,
+	template.changed_by AS template_changed_by,
+	template.changed_on AS template_changed_on,
+	parent.template_name AS parent_name,
+	IFNULL(testTemplate.version, 0) AS version_test,
+	IFNULL(acceptanceTemplate.version, 0) AS version_acceptance,
+	IFNULL(liveTemplate.version, 0) AS version_live,
+	IFNULL(template.version, 0) <= IFNULL(testTemplate.version, 0) AS test,
+	IFNULL(template.version, 0) <= IFNULL(acceptanceTemplate.version, 0) AS accept,
+	IFNULL(template.version, 0) <= IFNULL(liveTemplate.version, 0) AS live
+FROM {WiserTableNames.WiserCommit} AS `commit`
+JOIN {WiserTableNames.WiserCommitTemplate} AS linkToTemplate ON `commit`.id = linkToTemplate.commit_id
+JOIN {WiserTableNames.WiserTemplate} AS template ON linkToTemplate.template_id = template.template_id AND linkToTemplate.version = template.version
+LEFT JOIN {WiserTableNames.WiserTemplate} AS testTemplate ON testTemplate.template_id = template.template_id AND (testTemplate.published_environment & {(int)Environments.Test}) = {(int)Environments.Test}
+LEFT JOIN {WiserTableNames.WiserTemplate} AS acceptanceTemplate ON acceptanceTemplate.template_id = template.template_id AND (acceptanceTemplate.published_environment & {(int)Environments.Acceptance}) = {(int)Environments.Acceptance}
+LEFT JOIN {WiserTableNames.WiserTemplate} AS liveTemplate ON liveTemplate.template_id = template.template_id AND (liveTemplate.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent ON template.parent_id = parent.template_id AND parent.version = (SELECT MAX(x.version) FROM wiser_template AS x WHERE x.template_id = template.parent_id)
+WHERE `commit`.id = ?id";
+	    
+	    dataTable = await databaseConnection.GetAsync(query);
+	    foreach (DataRow dataRow in dataTable.Rows)
+	    {
+		    var publishedEnvironment = (Environments)Convert.ToInt32(dataRow["published_environment"]);
+		    
+		    commitModel.Templates.Add(new TemplateCommitModel
+		    {
+			    Version = dataRow.Field<int>("version"),
+			    ChangedBy = dataRow.Field<string>("template_changed_by"),
+			    ChangedOn = dataRow.Field<DateTime>("template_changed_on"),
+			    CommitId = id,
+			    IsAcceptance = Convert.ToBoolean(dataRow["accept"]),
+			    IsLive = Convert.ToBoolean(dataRow["live"]),
+			    IsTest = Convert.ToBoolean(dataRow["test"]),
+			    VersionAcceptance = Convert.ToInt32(dataRow["version_acceptance"]),
+			    VersionLive = Convert.ToInt32(dataRow["version_live"]),
+			    VersionTest = Convert.ToInt32(dataRow["version_test"]),
+			    Environment = publishedEnvironment,
+			    TemplateId = Convert.ToInt32(dataRow["template_id"]),
+			    TemplateName = dataRow.Field<string>("template_name"),
+			    TemplateType = (TemplateTypes)Convert.ToInt32(dataRow["template_type"]),
+			    TemplateParentId = Convert.ToInt32(dataRow["parent_id"]),
+			    TemplateParentName = dataRow.Field<string>("parent_name")
+		    });
+	    }
+
+	    return commitModel;
+    }
+
     /// <inheritdoc/>
     public async Task<CommitModel> CreateCommitAsync(CommitModel data)
     {
@@ -223,14 +363,13 @@ ORDER BY content.changed_on ASC";
 	content.published_environment,
 	content.component,
 	content.content_id,
-	GROUP_CONCAT(template.template_id) AS template_ids,
-	GROUP_CONCAT(template.template_name) AS template_names,
+	GROUP_CONCAT(DISTINCT template.template_id) AS template_ids,
+	GROUP_CONCAT(DISTINCT template.template_name) AS template_names,
 	content.title,
 	content.version,
 	content.changed_on AS content_changed_on,
 	content.changed_by AS content_changed_by,
 	content.component_mode,
-	#contentMaxVersion.version AS max_version,
 	IFNULL(testContent.version, 0) AS version_test,
 	IFNULL(acceptanceContent.version, 0) AS version_acceptance,
 	IFNULL(liveContent.version, 0) AS version_live,
@@ -240,11 +379,10 @@ ORDER BY content.changed_on ASC";
 FROM {WiserTableNames.WiserCommit} AS `commit`
 JOIN {WiserTableNames.WiserCommitDynamicContent} AS linkToContent ON `commit`.id = linkToContent.commit_id
 JOIN {WiserTableNames.WiserDynamicContent} AS content ON content.content_id = linkToContent.dynamic_content_id AND content.version = linkToContent.version
-#JOIN {WiserTableNames.WiserDynamicContent} AS contentMaxVersion ON contentMaxVersion.content_id = linkToContent.dynamic_content_id AND content.version = (SELECT (MAX(x.version) FROM {WiserTableNames.WiserDynamicContent} AS x WHERE x.content_id = linkToContent.dynamic_content_id)
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS testContent ON testContent.content_id = content.content_id AND (testContent.published_environment & {(int)Environments.Test}) = {(int)Environments.Test}
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS acceptanceContent ON acceptanceContent.content_id = content.content_id AND (acceptanceContent.published_environment & {(int)Environments.Acceptance}) = {(int)Environments.Acceptance}
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS liveContent ON liveContent.content_id = content.content_id AND (liveContent.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
-LEFT JOIN {WiserTableNames.WiserTemplateDynamicContent} AS linkToTemplate ON linkToTemplate.content_id = content.id
+LEFT JOIN {WiserTableNames.WiserTemplateDynamicContent} AS linkToTemplate ON linkToTemplate.content_id = content.content_id
 LEFT JOIN {WiserTableNames.WiserTemplate} AS template ON template.template_id = linkToTemplate.destination_template_id AND template.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserTemplate} AS x WHERE x.template_id = linkToTemplate.destination_template_id)
 WHERE `commit`.completed = FALSE
 GROUP BY content.content_id";
