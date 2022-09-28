@@ -474,11 +474,7 @@ const moduleSettings = {
             
             const serviceWindowOptions = {
                 actions: ["Close"],
-                width: "90vw",
-                height: "90vh",
-                visible: false,
-                draggable: false,
-                resizable: false
+                visible: false
             }
             
             this.serviceWindow = $("#serviceLogWindow").kendoWindow(serviceWindowOptions);
@@ -749,8 +745,8 @@ const moduleSettings = {
             
             this.serviceLogsGrid.setDataSource(new kendo.data.DataSource({
                 data: dataSource,
+                pageSize: 100,
                 schema: {
-                    pageSize: 13,
                     model: {
                         fields: {
                             addedOn: {from: "addedOn", type: "date"}
@@ -759,7 +755,7 @@ const moduleSettings = {
                 }
             }));
             
-            this.serviceWindow.data("kendoWindow").open();
+            this.serviceWindow.data("kendoWindow").open().maximize();
         }
         
         async onPeriodFilterChange(event) {
