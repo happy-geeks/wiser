@@ -85,7 +85,7 @@ export class WiserQueryTab {
     // actions handled before save, such as checks
     async beforeSave() {
         if (this.checkIfQueryIsSet(true)) {
-            const queryModel = new QueryModel(this.queryCombobox.dataItem().id, document.getElementById("queryDescription").value, this.queryFromWiser.getValue(), document.getElementById("showInExportModule").checked);
+            const queryModel = new QueryModel(this.queryCombobox.dataItem().id, document.getElementById("queryDescription").value, this.queryFromWiser.getValue(), document.getElementById("showInExportModule").checked, this.allowedRoles.value().join());
             await this.updateQuery(queryModel.id, queryModel);
         }
     }
@@ -193,13 +193,15 @@ export class WiserQueryTab {
     async setQueryProperties(resultSet) {
         document.getElementById("queryDescription").value = resultSet.description;
         document.getElementById("showInExportModule").checked = resultSet.show_in_export_module;
+        this.allowedRoles.value(resultSet.allowedRoles.split(","));
         await this.setCodeMirrorFields(this.queryFromWiser, resultSet.query);
     }
 
     async setQueryPropertiesToDefault() {
         document.getElementById("queryDescription").value = "";
         document.getElementById("showInExportModule").checked = false;
-        this.queryFromWiser.setValue("");
+        this.queryFromWiser.setValue("")
+        this.allowedRoles.value([]);
     }
 
     async setCodeMirrorFields(field, value) {

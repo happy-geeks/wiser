@@ -418,6 +418,7 @@ CREATE TABLE IF NOT EXISTS `wiser_query`  (
   `description` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `query` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
   `show_in_export_module` tinyint(1) NOT NULL DEFAULT 0,
+  `allowed_roles` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `changed_on` datetime(0) NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;

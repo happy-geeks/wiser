@@ -70,7 +70,7 @@ namespace Api.Modules.Queries.Services
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id, description, query, show_in_export_module
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id, description, query, show_in_export_module, allowed_roles
                                                             FROM {WiserTableNames.WiserQuery}
                                                             ORDER BY id ASC");
 
@@ -89,6 +89,7 @@ namespace Api.Modules.Queries.Services
                     Description = dataRow.Field<string>("description"),
                     Query = dataRow.Field<string>("query"),
                     ShowInExportModule = dataRow.Field<bool>("show_in_export_module"),
+                    AllowedRoles = dataRow.Field<string>("allowed_roles")
                 });
             }
 
@@ -101,7 +102,7 @@ namespace Api.Modules.Queries.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
-            var query = $"SELECT id, description, query, show_in_export_module FROM {WiserTableNames.WiserQuery} WHERE id = ?id";
+            var query = $"SELECT id, description, query, show_in_export_module, allowed_roles FROM {WiserTableNames.WiserQuery} WHERE id = ?id";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             if (dataTable.Rows.Count == 0)
             {
@@ -120,7 +121,8 @@ namespace Api.Modules.Queries.Services
                 EncryptedId = await wiserCustomersService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
                 Description = dataRow.Field<string>("description"),
                 Query = dataRow.Field<string>("query"),
-                ShowInExportModule = dataRow.Field<bool>("show_in_export_module")
+                ShowInExportModule = dataRow.Field<bool>("show_in_export_module"),
+                AllowedRoles = dataRow.Field<string>("allowed_roles")
             };
 
             return new ServiceResult<QueryModel>(result);
@@ -142,7 +144,8 @@ namespace Api.Modules.Queries.Services
             {
                 Description = description,
                 Query = "",
-                ShowInExportModule = false
+                ShowInExportModule = false,
+                AllowedRoles = ""
             };
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -150,18 +153,21 @@ namespace Api.Modules.Queries.Services
             clientDatabaseConnection.AddParameter("description", queryModel.Description);
             clientDatabaseConnection.AddParameter("query", queryModel.Query);
             clientDatabaseConnection.AddParameter("show_in_export_module", queryModel.ShowInExportModule);
+            clientDatabaseConnection.AddParameter("allowed_roles", queryModel.AllowedRoles);
             
             var query = $@"INSERT INTO {WiserTableNames.WiserQuery}
                         (
                             description,
                             query,
-                            show_in_export_module
+                            show_in_export_module,
+                            allowed_roles
                         )
                         VALUES
                         (
                             ?description,
                             ?query,
-                            ?show_in_export_module
+                            ?show_in_export_module,
+                            ?allowed_roles
                         ); SELECT LAST_INSERT_ID();";
 
             try
@@ -215,11 +221,13 @@ namespace Api.Modules.Queries.Services
             clientDatabaseConnection.AddParameter("description", queryModel.Description);
             clientDatabaseConnection.AddParameter("query", queryModel.Query);
             clientDatabaseConnection.AddParameter("show_in_export_module", queryModel.ShowInExportModule ? 1:0);
+            clientDatabaseConnection.AddParameter("allowed_roles", queryModel.AllowedRoles);
 
             var query = $@"UPDATE {WiserTableNames.WiserQuery}
                         SET description = ?description,
                             query = ?query,
-                            show_in_export_module = ?show_in_export_module
+                            show_in_export_module = ?show_in_export_module,
+                            allowed_roles = ?allowed_roles
                         WHERE id = ?id";
 
             await clientDatabaseConnection.ExecuteAsync(query);
