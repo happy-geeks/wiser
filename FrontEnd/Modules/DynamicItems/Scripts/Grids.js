@@ -346,6 +346,8 @@ export class Grids {
                 filterable = defaultFilters;
             } else if (typeof gridViewSettings.filterable === "object") {
                 filterable = $.extend(true, {}, defaultFilters, gridViewSettings.filterable);
+            } else if (gridViewSettings.clientSideFiltering === true) {
+                filterable = defaultFilters;
             }
 
             // Delete properties that we have already defined, so that they won't be overwritten again by the $.extend below.
@@ -486,7 +488,7 @@ export class Grids {
                 },
                 filterable: filterable,
                 filterMenuInit: this.onFilterMenuInit.bind(this),
-                filterMenuOpen: this.onFilterMenuOpen.bind(this),
+                filterMenuOpen: this.onFilterMenuOpen.bind(this)
             }, gridViewSettings);
 
             finalGridViewSettings.selectable = gridViewSettings.selectable || false;
