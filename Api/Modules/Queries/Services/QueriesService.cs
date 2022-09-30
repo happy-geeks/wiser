@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Queries.Interfaces;
@@ -272,7 +274,7 @@ namespace Api.Modules.Queries.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
-            var query = $"SELECT query FROM {WiserTableNames.WiserQuery} WHERE id = ?id";
+            var query = $"SELECT query, allowed_roles FROM {WiserTableNames.WiserQuery} WHERE id = ?id";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             if (dataTable.Rows.Count == 0)
             {
@@ -284,6 +286,28 @@ namespace Api.Modules.Queries.Services
             }
 
             query = dataTable.Rows[0].Field<string>("query");
+            var allowedRoles = dataTable.Rows[0].Field<string>("allowed_roles");
+
+            if (!String.IsNullOrWhiteSpace(allowedRoles))
+            {
+                var roleNames = IdentityHelpers.GetRoles(identity);
+                
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("roleNames", roleNames);
+                var roleQuery = $"SELECT IFNULL(GROUP_CONCAT(id), '') AS ids FROM {WiserTableNames.WiserRoles} WHERE FIND_IN_SET(role_name, ?roleNames)";
+                var roleDataTable = await clientDatabaseConnection.GetAsync(roleQuery);
+
+                if (!allowedRoles.Split(",").Intersect(roleDataTable.Rows[0].Field<string>("ids").Split(",")).Any())
+                {
+                    return new ServiceResult<JArray>
+                    {
+                        StatusCode = HttpStatusCode.Unauthorized,
+                        ErrorMessage = $"None of the roles in '{roleNames}' is allowed to execute this query."
+                    };
+                }
+            }
+            
+            clientDatabaseConnection.ClearParameters();
             if (parameters != null)
             {
                 foreach (var parameter in parameters)

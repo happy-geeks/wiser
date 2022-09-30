@@ -85,7 +85,7 @@ export class WiserQueryTab {
     // actions handled before save, such as checks
     async beforeSave() {
         if (this.checkIfQueryIsSet(true)) {
-            const queryModel = new QueryModel(this.queryCombobox.dataItem().id, document.getElementById("queryDescription").value, this.queryFromWiser.getValue(), document.getElementById("showInExportModule").checked, this.allowedRoles.value().join());
+            const queryModel = new QueryModel(this.queryCombobox.dataItem().id, document.getElementById("queryDescription").value, this.queryFromWiser.getValue(), document.getElementById("showInExportModule").checked, false, this.allowedRoles.value().join());
             await this.updateQuery(queryModel.id, queryModel);
         }
     }
