@@ -1,5 +1,3 @@
-SET @customerId = ?newCustomerId;
-
 -- ----------------------------
 -- Records of wiser_roles
 -- ----------------------------
@@ -110,7 +108,7 @@ INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('filedirectory', 5531, 'filedirectory', '', '');
 # Stamgegevens
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('', 700, 'map', '', '');
-INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `icon_expanded`) VALUES ('map', 700, 'map,template,ftp_configuration,content-builder-snippet,shippingcost,deliverymethod,paymentmethod,mailtemplate,language,filter,vatrate,vatrule,country,dataselector-template,ConfiguratorApi', 'icon-folder-closed', 'icon-folder-add', 'icon-folder');
+INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `icon_expanded`) VALUES ('map', 700, 'map,template,ftp_configuration,content-builder-snippet,shippingcost,deliverymethod,paymentmethod,mailtemplate,language,filter,vatrate,vatrule,country,dataselector-template,ConfiguratorApi,WiserPaymentProvider,WiserOrderProcess', 'icon-folder-closed', 'icon-folder-add', 'icon-folder');
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('template', 700, '', 'icon-document', 'icon-document-add');
 # FTP
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('ftp_configuration', 700, '', 'icon-cloud-up', 'icon-cloud-up');
