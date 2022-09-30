@@ -405,8 +405,10 @@ CREATE TABLE IF NOT EXISTS `wiser_permission`  (
   `entity_property_id` int NOT NULL DEFAULT 0,
   `permissions` int NOT NULL DEFAULT 0 COMMENT '0 = Nothing\r\n1 = Read\r\n2 = Create\r\n4 = Update\r\n8 = Delete',
   `module_id` int NOT NULL DEFAULT 0,
+  `query_id` int NOT NULL DEFAULT 0,
+  `data_selector_id` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `role_id`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `module_id`) USING BTREE
+  UNIQUE INDEX `role_id`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `module_id`, `query_id`, `data_selector_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -418,7 +420,6 @@ CREATE TABLE IF NOT EXISTS `wiser_query`  (
   `description` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `query` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
   `show_in_export_module` tinyint(1) NOT NULL DEFAULT 0,
-  `allowed_roles` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `changed_on` datetime(0) NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;

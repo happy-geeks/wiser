@@ -34,9 +34,9 @@ namespace Api.Modules.Queries.Models
         public bool ShowInExportModule { get; set; }
 
         /// <summary>
-        /// Gets or sets if the query is only allowed to be executed by certain roles.
+        /// Gets or sets the roles that have permissions on the query.
         /// </summary>
-        public string AllowedRoles { get; set; }
+        public string RolesWithPermissions { get; set; }
 
         /// <summary>
         /// Gets or sets when the query was last changed on.
