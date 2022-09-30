@@ -1079,10 +1079,10 @@ export class Grids {
         let itemId = dataItem.id || dataItem.itemId || dataItem.itemid || dataItem.item_id;
         let encryptedId = dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid || dataItem.idencrypted;
         const originalEncryptedId = encryptedId;
-        let entityType = dataItem.entityType || dataItem.entity_type;
+        let entityType = dataItem.entityType || dataItem.entity_type || dataItem.entitytype;
         let title = dataItem.title;
-        const linkId = dataItem.linkId || dataItem.link_id;
-        const linkType = dataItem.linkTypeNumber || dataItem.link_type_number || dataItem.linkType || dataItem.link_type;
+        const linkId = dataItem.linkId || dataItem.link_id || dataItem.linkid;
+        const linkType = dataItem.linkTypeNumber || dataItem.link_type_number || dataItem.linktypenumber || dataItem.linkType || dataItem.link_type || dataItem.linktype;
 
         if (options.fromMainGrid && this.base.settings.openGridItemsInBlock) {
             this.base.grids.informationBlockIframe.attr("src", `${"/Modules/DynamicItems"}?itemId=${encryptedId}&moduleId=${this.base.settings.moduleId}&iframe=true`);
