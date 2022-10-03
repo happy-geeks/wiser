@@ -6,7 +6,7 @@
         <h4><label>Routine type</label></h4>
 
         <label class="radio">
-            <input name="routineType" type="radio" value="@((int)RoutineTypes.Function)" @(Model.RoutineType == RoutineTypes.Function ? "checked" : "") checked="checked"/>
+            <input name="routineType" type="radio" value="@((int)RoutineTypes.Function)" @(Model.RoutineType is RoutineTypes.Function or RoutineTypes.Unknown ? "checked" : "")/>
             <span>Function</span>
         </label>
 
