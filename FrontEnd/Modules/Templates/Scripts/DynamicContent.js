@@ -408,7 +408,6 @@ const moduleSettings = {
             try {
                 this.saving = true;
                 const title = document.querySelector('input[name="visibleDescription"]').value;
-                console.log(title);
                 if (!title){
                     window.popupNotification.show(`Geen naam ingevoerd! Vul een naam in.`, "info");
                 } else {
