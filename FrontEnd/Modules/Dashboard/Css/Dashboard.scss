@@ -590,8 +590,16 @@ progress {
                 height: 24px;
                 width: 24px;
                 opacity: 1;
+
+                .inactive-action {
+                    opacity: 0.5;
+                }
             }
         }
+    }
+
+    .folded-message {
+        white-space: nowrap;
     }
 }
 

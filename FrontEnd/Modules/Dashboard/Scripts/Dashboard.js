@@ -165,6 +165,10 @@ const moduleSettings = {
                     window.processing.removeProcess("dataUpdate");
                 });
             });
+            
+            document.getElementById("refreshServices").addEventListener("click", async e => {
+                await this.updateServices();
+            });
         }
 
         initializeKendoElements() {
@@ -430,7 +434,8 @@ const moduleSettings = {
                             { text: "Mislukt", value: "failed" },
                             { text: "Gepauzeerd", value: "paused" },
                             { text: "Gestopt", value: "stopped" },
-                            { text: "Gecrasht", value: "crashed" }
+                            { text: "Gecrasht", value: "crashed" },
+                            { text: "Bezig", value: "running" }
                         ]
                     },
                     {
@@ -442,11 +447,6 @@ const moduleSettings = {
                         title: "Beheer",
                         command: [
                             {
-                                name: "edit",
-                                text: "",
-                                iconClass: "k-icon k-i-pencil"
-                            },
-                            {
                                 name: "start",
                                 text: "",
                                 iconClass: "k-icon k-i-play"
@@ -454,7 +454,8 @@ const moduleSettings = {
                             {
                                 name: "pause",
                                 text: "",
-                                iconClass: "k-icon k-i-pause"
+                                iconClass: "k-icon k-i-pause",
+                                click: this.togglePauseService.bind(this)
                             },
                             {
                                 name: "logs",
@@ -467,6 +468,10 @@ const moduleSettings = {
                             "class": "admin"
                         }
                     },
+                    {
+                        field: "paused",
+                        hidden: true
+                    },
                 ],
                 dataBound: this.setServiceStateColor
             }).data("kendoGrid");
@@ -477,34 +482,7 @@ const moduleSettings = {
                 visible: false
             }
             
-            this.serviceWindow = $("#serviceLogWindow").kendoWindow(serviceWindowOptions);
-
-            this.serviceLogsGrid = $("#serviceLogGrid").kendoGrid({
-                filterable: true,
-                pageable: true,
-                columns: [
-                    {
-                        field: "id",
-                        hidden: true
-                    },
-                    {
-                        title: "Level",
-                        field: "level",
-                        width: "15%"
-                    },
-                    {
-                        title: "Toegevoegd op",
-                        field: "addedOn",
-                        format: "{0:dd-MM-yyyy HH:mm:ss}",
-                        width: "15%"
-                    },
-                    {
-                        title: "Bericht",
-                        field: "message"
-                    }
-                ]
-            }).data("kendoGrid");
-            this.serviceLogsGrid.scrollables[1].classList.add("fixed-table");
+            this.serviceWindow = $("#serviceLogWindow").kendoWindow(serviceWindowOptions).data("kendoWindow");
         }
 
         async updateBranches() {
@@ -717,9 +695,16 @@ const moduleSettings = {
                 const state = dataItem.get("state");
                 const cell = row.children().eq(columnIndex);
                 
+                const paused = dataItem.get("paused");
+                if(!paused) {
+                    rows[i].querySelector(".k-i-pause").classList.add("inactive-action")
+                }
+                console.log(paused, row, );
+                
                 switch(state) {
                     case "active":
                     case "success":
+                    case "running":
                         cell.addClass("status success");
                         break;
                     case "warning":
@@ -737,25 +722,106 @@ const moduleSettings = {
             }
         }
         
-        async openServiceLogs(e) {
-            const serviceId = e.currentTarget.closest("tr").querySelector("td:first-child").innerText;
-            const dataSource = await Wiser.api({
-                url: `${this.settings.wiserApiRoot}dashboard/services/${serviceId}`
+        async togglePauseService(e) {
+            const columns = e.currentTarget.closest("tr").querySelectorAll("td");
+            const serviceId = columns[0].innerText;
+            
+            const result = await Wiser.api({
+                url: `${this.settings.wiserApiRoot}dashboard/services/${serviceId}/pause/true`,
+                method: "PUT"
             });
             
-            this.serviceLogsGrid.setDataSource(new kendo.data.DataSource({
-                data: dataSource,
-                pageSize: 100,
-                schema: {
-                    model: {
-                        fields: {
-                            addedOn: {from: "addedOn", type: "date"}
+            console.log(result);
+        }
+        
+        async openServiceLogs(e) {
+            const columns = e.currentTarget.closest("tr").querySelectorAll("td");
+            const serviceId = columns[0].innerText;
+            
+            this.serviceWindow.title(`${columns[1].innerText} - ${columns[2].innerText}`).open().maximize();
+            this.serviceWindow.element.data("serviceId", serviceId);
+
+            if (this.serviceLogsGrid) {
+                this.serviceLogsGrid.dataSource.read();
+                return;
+            }
+            
+            this.serviceLogsGrid = $("#serviceLogGrid").kendoGrid({
+                filterable: true,
+                pageable: {
+                    refresh: true
+                },
+                height: "100%",
+                dataSource: {
+                    transport: {
+                        read: async (transportOptions) => {
+                            try {
+                                const dataSource = await Wiser.api({
+                                    url: `${this.settings.wiserApiRoot}dashboard/services/${this.serviceWindow.element.data("serviceId")}/logs`
+                                });
+
+                                transportOptions.success(dataSource);
+                            } catch(exception) {
+                                transportOptions.error(exception);
+                            }
+
+                        }
+                    },
+                    pageSize: 100,
+                    schema: {
+                        model: {
+                            fields: {
+                                addedOn: {from: "addedOn", type: "date"}
+                            }
                         }
                     }
+                },
+                columns: [
+                    {
+                        field: "id",
+                        hidden: true
+                    },
+                    {
+                        title: "Level",
+                        field: "level",
+                        width: "15%"
+                    },
+                    {
+                        title: "Toegevoegd op",
+                        field: "addedOn",
+                        format: "{0:dd-MM-yyyy HH:mm:ss}",
+                        width: "15%"
+                    },
+                    {
+                        title: "Bericht",
+                        field: "message",
+                        attributes: {
+                            "class": "folded-message"
+                        }
+                    },
+                    {
+                        title: "Omgeving",
+                        field: "isTest",
+                        width: "10%",
+                        values: [
+                            { text: "Test", value: "true" },
+                            { text: "Live", value: "false" }
+                        ]
+                    }
+                ],
+                dataBound: this.onServiceLogsGridDataBound.bind(this)
+            }).data("kendoGrid");
+            this.serviceLogsGrid.scrollables[1].classList.add("fixed-table");
+        }
+
+        onServiceLogsGridDataBound(event) {
+            event.sender.element.find(".folded-message").on("dblclick", clickEvent => {
+                if(clickEvent.currentTarget.classList.contains("folded-message")) {
+                    clickEvent.currentTarget.classList.remove("folded-message");
+                } else {
+                    clickEvent.currentTarget.classList.add("folded-message");
                 }
-            }));
-            
-            this.serviceWindow.data("kendoWindow").open().maximize();
+            });
         }
         
         async onPeriodFilterChange(event) {

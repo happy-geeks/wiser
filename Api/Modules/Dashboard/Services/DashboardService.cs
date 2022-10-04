@@ -692,6 +692,12 @@ public class DashboardService : IDashboardService, IScopedService
     /// <inheritdoc />
     public async Task<ServiceResult<List<Service>>> GetAisServicesAsync(ClaimsIdentity identity)
     {
+        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>()
+        {
+            WiserTableNames.AisLogs,
+            WiserTableNames.AisServices
+        });
+        
         var services = new List<Service>();
 
         var dataTable = await clientDatabaseConnection.GetAsync($"SELECT * FROM {WiserTableNames.AisServices}");
@@ -717,7 +723,8 @@ public class DashboardService : IDashboardService, IScopedService
                 LastRun = row.Field<DateTime?>("last_run"),
                 NextRun = row.Field<DateTime?>("next_run"),
                 RunTime = row.Field<double>("run_time"),
-                State = row.Field<string>("state")
+                State = row.Field<string>("state"),
+                Paused = row.Field<bool>("paused")
             };
             
             services.Add(service);
@@ -738,7 +745,7 @@ public class DashboardService : IDashboardService, IScopedService
         clientDatabaseConnection.AddParameter("serviceId", id);
         var datatable = await clientDatabaseConnection.GetAsync($@"SELECT log.*
                                                                         FROM {WiserTableNames.AisServices} AS service
-                                                                        JOIN {WiserTableNames.AisLogs} AS log ON log.configuration = service.configuration AND log.time_id = service.time_id AND is_test = 0
+                                                                        JOIN {WiserTableNames.AisLogs} AS log ON log.configuration = service.configuration AND log.time_id = service.time_id
                                                                         WHERE service.id = ?serviceId
                                                                         ORDER BY log.added_on DESC");
 
@@ -754,7 +761,8 @@ public class DashboardService : IDashboardService, IScopedService
                 TimeId = row.Field<int>("time_id"),
                 Order = row.Field<int>("order"),
                 AddedOn = row.Field<DateTime>("added_on"),
-                Message = row.Field<string>("message")
+                Message = row.Field<string>("message"),
+                IsTest = row.Field<bool>("is_test")
             };
             
             logs.Add(log);
@@ -764,6 +772,39 @@ public class DashboardService : IDashboardService, IScopedService
         {
             ModelObject = logs,
             StatusCode = HttpStatusCode.OK
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<ServicePauseStates>> SetAisServicePauseStateAsync(ClaimsIdentity identity, int id, bool state)
+    {
+        clientDatabaseConnection.AddParameter("serviceId", id);
+        clientDatabaseConnection.AddParameter("pauseState", state);
+
+        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT state FROM {WiserTableNames.AisServices} WHERE id = ?serviceId");
+
+        if (dataTable.Rows.Count == 0)
+        {
+            return new ServiceResult<ServicePauseStates>()
+            {
+                StatusCode = HttpStatusCode.NotFound,
+                ErrorMessage = $"There is no service with ID '{id}' and can therefore not be paused."
+            };
+        }
+
+        // If the service is currently running the pause will be activated after the run completed.
+        var currentState = dataTable.Rows[0].Field<string>("state");
+        var serviceIsCurrentlyRunning = currentState.Equals("running", StringComparison.InvariantCultureIgnoreCase);
+
+        await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.AisServices}
+SET paused = ?pauseState
+{(state && !serviceIsCurrentlyRunning ? ", state = 'paused'" : "")}
+WHERE id = ?serviceId");
+
+        return new ServiceResult<ServicePauseStates>()
+        {
+            StatusCode = HttpStatusCode.OK,
+            ModelObject = !state ? ServicePauseStates.Unpaused : serviceIsCurrentlyRunning ? ServicePauseStates.WillPauseAfterRunFinished : ServicePauseStates.Paused
         };
     }
 }

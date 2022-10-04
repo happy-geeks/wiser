@@ -40,4 +40,13 @@ public interface IDashboardService
     /// <param name="id">The ID of the service to get the logs from.</param>
     /// <returns>A collection of logs.</returns>
     Task<ServiceResult<List<ServiceLog>>> GetAisServiceLogsAsync(ClaimsIdentity identity, int id);
+
+    /// <summary>
+    /// Set the pause state of a service.
+    /// </summary>
+    /// <param name="identity">The identity of the authenticated user.</param>
+    /// <param name="id">The ID of the service to set the pause state of.</param>
+    /// <param name="state">The pause state.</param>
+    /// <returns>Returns the pause state based on the given action.</returns>
+    Task<ServiceResult<ServicePauseStates>> SetAisServicePauseStateAsync(ClaimsIdentity identity, int id, bool state);
 }

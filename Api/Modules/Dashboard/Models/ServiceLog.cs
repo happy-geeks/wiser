@@ -48,4 +48,9 @@ public class ServiceLog
     /// Gets or sets the content of the log.
     /// </summary>
     public string Message { get; set; }
+
+    /// <summary>
+    /// Gets or sets if the log is from a test environment.
+    /// </summary>
+    public bool IsTest { get; set; }
 }

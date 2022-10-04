@@ -58,12 +58,18 @@ public class DashboardController : ControllerBase
         return (await dashboardService.GetAisServicesAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
     }
 
+    [HttpPut, Route("services/{id:int}/pause/{state:bool}")]
+    public async Task<IActionResult> PauseServiceAsync(int id, bool state)
+    {
+        return (await dashboardService.SetAisServicePauseStateAsync((ClaimsIdentity) User.Identity, id, state)).GetHttpResponseMessage();
+    }
+
     /// <summary>
     /// Get the logs from a specific service.
     /// </summary>
     /// <param name="id">The ID of the service.</param>
     /// <returns></returns>
-    [HttpGet, Route("services/{id:int}")]
+    [HttpGet, Route("services/{id:int}/logs")]
     public async Task<IActionResult> GetAisServiceLogsAsync(int id)
     {
         return (await dashboardService.GetAisServiceLogsAsync((ClaimsIdentity) User.Identity, id)).GetHttpResponseMessage();
