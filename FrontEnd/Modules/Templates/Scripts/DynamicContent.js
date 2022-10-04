@@ -408,27 +408,33 @@ const moduleSettings = {
             try {
                 this.saving = true;
                 const title = document.querySelector('input[name="visibleDescription"]').value;
-                const contentId = await Wiser.api({
-                    url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
-                    dataType: "json",
-                    method: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify({
-                        component: document.getElementById("componentTypeDropDown").value,
-                        componentModeId: document.getElementById("componentMode").value,
-                        title: title,
-                        data: this.getNewSettings()
-                    })
-                });
+                console.log(title);
+                if (!title){
+                    window.popupNotification.show(`Geen naam ingevoerd! Vul een naam in.`, "info");
+                } else {
+                    const contentId = await Wiser.api({
+                        url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
+                        dataType: "json",
+                        method: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            component: document.getElementById("componentTypeDropDown").value,
+                            componentModeId: document.getElementById("componentMode").value,
+                            title: title,
+                            data: this.getNewSettings()
+                        })
+                    });
 
-                if (!this.settings.selectedId) {
-                    this.settings.selectedId = contentId;
-                    this.settings.selectedTitle = title;
-                    await this.addLinkToTemplate(this.settings.templateId);
+                    if (!this.settings.selectedId) {
+                        this.settings.selectedId = contentId;
+                        this.settings.selectedTitle = title;
+                        await this.addLinkToTemplate(this.settings.templateId);
+                    }
+
+
+                    window.popupNotification.show(`Dynamisch component '${document.querySelector('input[name="visibleDescription"]').value}' is succesvol opgeslagen.`, "info");
+
                 }
-
-                window.popupNotification.show(`Dynamisch component '${document.querySelector('input[name="visibleDescription"]').value}' is succesvol opgeslagen.`, "info");
-
                 if (alsoDeployToTest) {
                     const version = (parseInt($(".historyContainer .historyLine:first").data("historyVersion")) || 0) + 1;
     
