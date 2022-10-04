@@ -7,6 +7,7 @@ using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Template;
+using GeeksCoreLibrary.Core.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -145,7 +146,7 @@ namespace Api.Modules.Templates.Controllers
         [HttpPost]
         [Route("{contentId:int}/publish/{environment}/{version:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> PublishToEnvironmentAsync(int contentId, string environment, int version)
+        public async Task<IActionResult> PublishToEnvironmentAsync(int contentId, Environments environment, int version)
         {
             var currentPublished = await dynamicContentService.GetEnvironmentsAsync(contentId);
             return currentPublished.StatusCode != HttpStatusCode.OK 

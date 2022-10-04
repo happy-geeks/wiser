@@ -1,0 +1,23 @@
+@import "../../Base/scss/base.scss";
+
+#wiser {
+    display: block;
+    height: 100%;
+}
+
+#templateChangesGrid,
+#dynamicContentChangesGrid {
+    height: 33vh;
+}
+
+#commitButton {
+    margin-top: 10px;
+}
+
+body {
+    margin: 0;
+}
+
+#commitDescription {
+    width: 99%;
+}

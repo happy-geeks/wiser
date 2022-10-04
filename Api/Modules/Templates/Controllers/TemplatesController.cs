@@ -210,7 +210,7 @@ namespace Api.Modules.Templates.Controllers
         [HttpPost]
         [Route("{templateId:int}/publish/{environment}/{version:int}")]
         [ProducesResponseType(typeof(LinkedTemplatesModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> PublishToEnvironmentAsync(int templateId, string environment, int version)
+        public async Task<IActionResult> PublishToEnvironmentAsync(int templateId, Environments environment, int version)
         {
             var currentPublished = await templatesService.GetTemplateEnvironmentsAsync(templateId);
             return currentPublished.StatusCode != HttpStatusCode.OK 

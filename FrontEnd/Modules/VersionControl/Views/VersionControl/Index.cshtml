@@ -1,0 +1,82 @@
+@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+
+@{
+    ViewBag.Title = "VCS";
+    Layout = "";
+    //_Layout
+}
+
+<!DOCTYPE html>
+<html>
+<head runat="server">
+    <meta charset="utf-8" />
+    <title>Wiser 3 - Versiebeheermodule</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.material.min.css" rel="stylesheet" />
+    <script>
+        window.wiserVersion = "@Model.WiserVersion?.ToString()";
+    </script>
+    <style>
+        #wiser {
+            display: none;
+        }
+    </style>
+</head>
+<body class="@Model.BodyCssClass"
+      data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
+      data-wiser-api-root="@Model.ApiRoot"
+      data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
+      data-sub-domain="@Model.SubDomain"
+      data-track-js-token="@Model.Settings.TrackJsToken"
+      data-api-client-id="@Model.Settings.ApiClientId"
+      data-api-client-secret="@Model.Settings.ApiClientSecret">
+    <div id="wiser">
+        <div id="tabstrip" class="tabstrip k-tabstrip-wrapper">
+            <ul>
+                <li id="changeHistoryTab" class="k-state-active">Openstaande wijzigingen</li>
+                <li id="deployTab">Deploy</li>
+                <li id="historyTab">Historie</li>
+            </ul>
+            <div id="templateChangeHistory">
+                <form class="formData">
+                    <div id="commitData">
+                        <select id="commitEnvironment"></select>
+                        <label for="commitDescription">Omschrijving</label>
+                        <textarea type="text" id="commitDescription"></textarea>                            
+                    </div>
+                    <div id="gridsContainer">
+                        <h2>Templates</h2>
+                        <div id="templateChangesGrid"></div>
+                        <h2>Dynamische content</h2>
+                        <div id="dynamicContentChangesGrid"></div>
+                    </div>
+                    <button id="commitButton">Commit</button>
+                </form>
+            </div>
+            <div id="deploy">
+                <div class="formData">
+                    <div class="gridData">
+                        <div id="deployGrid"></div>
+                    </div>
+                </div>
+                <button class="environment-deploy" id="deployCommitToLive">deploy naar live</button>
+                <button class="environment-deploy" id="deployCommitToAcceptance">deploy naar acceptatie</button>
+                <button class="environment-deploy" id="deployCommitToTest">deploy naar test</button></div>
+            <div id="history">Work in progress</div>
+        </div>
+    </div>
+
+     <div id="mainLoader" class="fullscreen-loader loading"> 
+         <div class="loader-icon"> 
+             <div></div> 
+             <div></div> 
+             <div></div> 
+             <div></div> 
+         </div> 
+    </div>
+
+    <script src="/scripts/Utils.min.js"></script>
+    <script src="/scripts/VersionControl.min.js"></script>
+</body>
+</html>

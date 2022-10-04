@@ -1542,9 +1542,25 @@ const moduleSettings = {
                 kendo.alert("U heeft geen geldige versie geselecteerd.");
                 return;
             }
+            
+            let environmentEnum;
+            switch (environment) {
+                case "test":
+                    environmentEnum = 2;
+                    break;
+                case "accept":
+                    environmentEnum = 4;
+                    break;
+                case "live":
+                    environmentEnum = 8;
+                    break;
+                default:
+                    environmentEnum = 1;
+                    break;
+            }
 
             await Wiser.api({
-                url: `${this.settings.wiserApiRoot}templates/${templateId}/publish/${encodeURIComponent(environment)}/${version}`,
+                url: `${this.settings.wiserApiRoot}templates/${templateId}/publish/${environmentEnum}/${version}`,
                 dataType: "json",
                 type: "POST",
                 contentType: "application/json"
@@ -1562,8 +1578,24 @@ const moduleSettings = {
                 return;
             }
 
+            let environmentEnum;
+            switch (environment) {
+                case "test":
+                    environmentEnum = 2;
+                    break;
+                case "accept":
+                    environmentEnum = 4;
+                    break;
+                case "live":
+                    environmentEnum = 8;
+                    break;
+                default:
+                    environmentEnum = 1;
+                    break;
+            }
+
             await Wiser.api({
-                url: `${this.settings.wiserApiRoot}dynamic-content/${contentId}/publish/${encodeURIComponent(environment)}/${version}`,
+                url: `${this.settings.wiserApiRoot}dynamic-content/${contentId}/publish/${environmentEnum}/${version}`,
                 dataType: "json",
                 type: "POST",
                 contentType: "application/json"
