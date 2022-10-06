@@ -678,8 +678,6 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    `handle_logic_blocks` tinyint(1) NOT NULL DEFAULT 1,
    `handle_mutators` tinyint(1) NOT NULL DEFAULT 0,
    `login_required` tinyint(1) NOT NULL DEFAULT 0,
-   `login_user_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-   `login_session_prefix` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
    `login_role` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
    `login_redirect_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
    `linked_templates` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
