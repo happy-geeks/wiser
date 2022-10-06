@@ -181,5 +181,12 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="encryptedLoginLogId">The encrypted ID of the log table.</param>
         /// <returns>A <see cref="bool"/> indicating if the request was successful.</returns>
         Task<ServiceResult<bool>> ResetTimeActiveChangedAsync(ClaimsIdentity identity, string encryptedLoginLogId);
+
+        /// <summary>
+        /// Gets all available roles for users.
+        /// </summary>
+        /// <param name="includePermissions">Optional: Whether to include all permissions that each role has. Default is <see langword="false"/>.</param>
+        /// <returns>A list of <see cref="RoleModel"/> with all available roles that users can have.</returns>
+        Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false);
     }
 }

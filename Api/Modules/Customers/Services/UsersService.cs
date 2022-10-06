@@ -15,6 +15,7 @@ using Api.Modules.Templates.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
+using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Communication.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
@@ -54,12 +55,13 @@ namespace Api.Modules.Customers.Services
         private readonly IDatabaseConnection wiserDatabaseConnection;
         private readonly ITemplatesService templatesService;
         private readonly ICommunicationsService communicationsService;
+        private readonly IRolesService rolesService;
         private readonly GclSettings gclSettings;
 
         /// <summary>
         /// Initializes a new instance of <see cref="UsersService"/>.
         /// </summary>
-        public UsersService(IWiserCustomersService wiserCustomersService, IOptions<ApiSettings> apiSettings, IDatabaseConnection clientDatabaseConnection, ILogger<UsersService> logger, ITemplatesService templatesService, ICommunicationsService communicationsService, IOptions<GclSettings> gclSettings)
+        public UsersService(IWiserCustomersService wiserCustomersService, IOptions<ApiSettings> apiSettings, IDatabaseConnection clientDatabaseConnection, ILogger<UsersService> logger, ITemplatesService templatesService, ICommunicationsService communicationsService, IOptions<GclSettings> gclSettings, IRolesService rolesService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.logger = logger;
@@ -67,6 +69,7 @@ namespace Api.Modules.Customers.Services
             this.apiSettings = apiSettings.Value;
             this.templatesService = templatesService;
             this.communicationsService = communicationsService;
+            this.rolesService = rolesService;
             this.gclSettings = gclSettings.Value;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
@@ -954,6 +957,14 @@ namespace Api.Modules.Customers.Services
                 result.ErrorMessage = "Error while updating time active changed on timestamp";
                 return result;
             }
+        }
+
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false)
+        {
+            var results = await rolesService.GetRolesAsync(includePermissions);
+            return new ServiceResult<List<RoleModel>>(results);
         }
 
         /// <summary>

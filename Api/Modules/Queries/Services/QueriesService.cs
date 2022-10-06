@@ -1,17 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Queries.Interfaces;
 using Api.Modules.Queries.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Enums;
+using GeeksCoreLibrary.Core.Extensions;
+using GeeksCoreLibrary.Core.Helpers;
+using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using MySql.Data.MySqlClient;
+using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Queries.Services
 {
@@ -23,14 +30,16 @@ namespace Api.Modules.Queries.Services
     {
         private readonly IWiserCustomersService wiserCustomersService;
         private readonly IDatabaseConnection clientDatabaseConnection;
+        private readonly IWiserItemsService wiserItemsService;
 
         /// <summary>
         /// Creates a new instance of <see cref="QueriesService"/>.
         /// </summary>
-        public QueriesService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection)
+        public QueriesService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.clientDatabaseConnection = clientDatabaseConnection;
+            this.wiserItemsService = wiserItemsService;
         }
 
         /// <inheritdoc />
@@ -67,9 +76,12 @@ namespace Api.Modules.Queries.Services
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id, description, query, show_in_export_module
-                                                            FROM {WiserTableNames.WiserQuery}
-                                                            ORDER BY id ASC");
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT * FROM (
+	SELECT query.id, query.description, query.query, query.show_in_export_module, IFNULL(GROUP_CONCAT(permission.role_id), '') AS roles_with_permissions
+	FROM {WiserTableNames.WiserQuery} AS query
+	LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.query_id = query.id
+	GROUP BY query.id) x
+WHERE x.id IS NOT NULL");
 
             var results = new List<QueryModel>();
             if (dataTable.Rows.Count == 0)
@@ -86,6 +98,7 @@ namespace Api.Modules.Queries.Services
                     Description = dataRow.Field<string>("description"),
                     Query = dataRow.Field<string>("query"),
                     ShowInExportModule = dataRow.Field<bool>("show_in_export_module"),
+                    RolesWithPermissions = dataRow.Field<string>("roles_with_permissions")
                 });
             }
 
@@ -98,7 +111,12 @@ namespace Api.Modules.Queries.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
-            var query = $"SELECT id, description, query, show_in_export_module FROM {WiserTableNames.WiserQuery} WHERE id = ?id";
+            var query = $@"SELECT * FROM (
+	SELECT query.id, query.description, query.query, query.show_in_export_module, IFNULL(GROUP_CONCAT(permission.role_id), '') AS roles_with_permissions
+	FROM {WiserTableNames.WiserQuery} AS query
+	LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.query_id = query.id
+	WHERE query.id = ?id) x
+WHERE x.id IS NOT NULL";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             if (dataTable.Rows.Count == 0)
             {
@@ -117,7 +135,8 @@ namespace Api.Modules.Queries.Services
                 EncryptedId = await wiserCustomersService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
                 Description = dataRow.Field<string>("description"),
                 Query = dataRow.Field<string>("query"),
-                ShowInExportModule = dataRow.Field<bool>("show_in_export_module")
+                ShowInExportModule = dataRow.Field<bool>("show_in_export_module"),
+                RolesWithPermissions = dataRow.Field<string>("roles_with_permissions")
             };
 
             return new ServiceResult<QueryModel>(result);
@@ -139,7 +158,8 @@ namespace Api.Modules.Queries.Services
             {
                 Description = description,
                 Query = "",
-                ShowInExportModule = false
+                ShowInExportModule = false,
+                RolesWithPermissions = ""
             };
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -220,6 +240,21 @@ namespace Api.Modules.Queries.Services
                         WHERE id = ?id";
 
             await clientDatabaseConnection.ExecuteAsync(query);
+
+            // Add the permissions for the roles that have been marked. Will only add new ones to preserve limited permissions.
+            query = $@"INSERT IGNORE INTO {WiserTableNames.WiserPermission} (role_id, query_id, permissions)
+                        VALUES(?roleId, ?id, 15)";
+
+            foreach (var role in queryModel.RolesWithPermissions.Split(","))
+            {
+                clientDatabaseConnection.AddParameter("roleId", role);
+                await clientDatabaseConnection.ExecuteAsync(query);
+            }
+            
+            // Delete permissions for the roles that are missing in the allowed roles.
+            clientDatabaseConnection.AddParameter("roles_with_permissions", queryModel.RolesWithPermissions);
+            query = $"DELETE FROM {WiserTableNames.WiserPermission} WHERE query_id = ?id AND query_id != 0 AND NOT FIND_IN_SET(role_id, ?roles_with_permissions)";
+            await clientDatabaseConnection.ExecuteAsync(query);
             
             return new ServiceResult<bool>
             {
@@ -246,13 +281,69 @@ namespace Api.Modules.Queries.Services
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
 
-            var query = $"DELETE FROM {WiserTableNames.WiserQuery} WHERE id = ?id";
+            var query = $@"DELETE FROM {WiserTableNames.WiserQuery} WHERE id = ?id;
+                            DELETE FROM {WiserTableNames.WiserPermission} WHERE query_id = ?id AND query_id != 0";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             return new ServiceResult<bool>
             {
                 StatusCode = HttpStatusCode.NoContent
             };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<JToken>> GetQueryResultAsJsonAsync(ClaimsIdentity identity, int id, bool asKeyValuePair, List<KeyValuePair<string, object>> parameters)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("id", id);
+            var query = $"SELECT query FROM {WiserTableNames.WiserQuery} WHERE id = ?id";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count == 0)
+            {
+                return new ServiceResult<JToken>
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"Wiser query with ID '{id}' does not exist."
+                };
+            }
+
+            if ((await wiserItemsService.GetUserQueryPermissionsAsync(id, IdentityHelpers.GetWiserUserId(identity)) & AccessRights.Read) == AccessRights.Nothing)
+            {
+                return new ServiceResult<JToken>
+                {
+                    StatusCode = HttpStatusCode.Unauthorized,
+                    ErrorMessage = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute this query."
+                };
+            }
+
+            query = dataTable.Rows[0].Field<string>("query");
+
+            clientDatabaseConnection.ClearParameters();
+            if (parameters != null)
+            {
+                foreach (var parameter in parameters)
+                {
+                    clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName(parameter.Key), parameter.Value);
+                }
+            }
+
+            dataTable = await clientDatabaseConnection.GetAsync(query);
+            var result = dataTable.Rows.Count == 0 ? new JArray() : dataTable.ToJsonArray(skipNullValues: true);
+
+            if (!asKeyValuePair)
+            {
+                return new ServiceResult<JToken>(result);
+            }
+
+            var combinedResult = new JObject();
+
+            foreach (var item in result)
+            {
+                combinedResult.Add(item["key"].ToString(), item["value"]);
+            }
+            
+            return new ServiceResult<JToken>(combinedResult);
         }
     }
 }

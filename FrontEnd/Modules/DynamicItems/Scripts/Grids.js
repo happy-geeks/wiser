@@ -556,7 +556,14 @@ export class Grids {
      * @returns {Promise<void>} The promise of the request.
      */
     async saveGridViewState(key, dataToSave) {
-        sessionStorage.setItem(key, dataToSave);
+        // Add the ID of the logged in user to the key for local storage. Just in case someone logs in as multiple users.
+        let localStorageKey = key;
+        const userData = await Wiser.getLoggedInUserData(this.base.settings.wiserApiRoot);
+        if (userData) {
+            localStorageKey += `_${userData.id}`;
+        }
+        sessionStorage.setItem(localStorageKey, dataToSave);
+        
         return Wiser.api({
             url: `${this.base.settings.wiserApiRoot}users/grid-settings/${encodeURIComponent(key)}`,
             method: "POST",
@@ -572,8 +579,15 @@ export class Grids {
      */
     async loadGridViewState(key) {
         let value;
+        let localStorageKey = key; 
+
+        // Add the ID of the logged in user to the key for local storage. Just in case someone logs in as multiple users.
+        const userData = await Wiser.getLoggedInUserData(this.base.settings.wiserApiRoot);
+        if (userData) {
+            localStorageKey += `_${userData.id}`;
+        }
         
-        value = sessionStorage.getItem(key);
+        value = sessionStorage.getItem(localStorageKey);
         if (!value) {
             value = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}users/grid-settings/${encodeURIComponent(key)}`,
@@ -581,7 +595,7 @@ export class Grids {
                 contentType: "application/json"
             });
 
-            sessionStorage.setItem(key, value || "");
+            sessionStorage.setItem(localStorageKey, value || "");
         }
         
         return value;

@@ -950,6 +950,11 @@ CREATE TRIGGER `QueryInsert` AFTER INSERT ON `wiser_query` FOR EACH ROW BEGIN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_QUERY', 'wiser_query', NEW.id, IFNULL(@_username, USER()), 'show_in_export_module', NULL, NEW.`show_in_export_module`);
     END IF;
+    
+    IF IFNULL(NEW.`allowed_roles`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_QUERY', 'wiser_query', NEW.id, IFNULL(@_username, USER()), 'allowed_roles', NULL, NEW.`allowed_roles`);
+    END IF;
 END;
 
 DROP TRIGGER IF EXISTS `QueryUpdate`;
@@ -967,6 +972,11 @@ CREATE TRIGGER `QueryUpdate` AFTER UPDATE ON `wiser_query` FOR EACH ROW BEGIN
     IF IFNULL(NEW.`show_in_export_module`, '') <> IFNULL(OLD.`show_in_export_module`, '') THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_QUERY', 'wiser_query', NEW.id, IFNULL(@_username, USER()), 'show_in_export_module', OLD.`show_in_export_module`, NEW.`show_in_export_module`);
+    END IF;
+    
+    IF IFNULL(NEW.`allowed_roles`, '') <> IFNULL(OLD.`allowed_roles`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_QUERY', 'wiser_query', NEW.id, IFNULL(@_username, USER()), 'allowed_roles', OLD.`allowed_roles`, NEW.`allowed_roles`);
     END IF;
 END;
 

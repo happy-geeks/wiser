@@ -408,8 +408,10 @@ CREATE TABLE IF NOT EXISTS `wiser_permission`  (
   `entity_property_id` int NOT NULL DEFAULT 0,
   `permissions` int NOT NULL DEFAULT 0 COMMENT '0 = Nothing\r\n1 = Read\r\n2 = Create\r\n4 = Update\r\n8 = Delete',
   `module_id` int NOT NULL DEFAULT 0,
+  `query_id` int NOT NULL DEFAULT 0,
+  `data_selector_id` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `role_id`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `module_id`) USING BTREE
+  UNIQUE INDEX `role_id`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `module_id`, `query_id`, `data_selector_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -679,8 +681,6 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    `handle_logic_blocks` tinyint(1) NOT NULL DEFAULT 1,
    `handle_mutators` tinyint(1) NOT NULL DEFAULT 0,
    `login_required` tinyint(1) NOT NULL DEFAULT 0,
-   `login_user_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-   `login_session_prefix` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
    `login_role` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
    `login_redirect_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
    `linked_templates` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,

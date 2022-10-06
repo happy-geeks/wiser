@@ -919,7 +919,7 @@ namespace Api.Modules.Grids.Services
                             var column = new GridColumn
                             {
                                 Field = fieldName,
-                                Width = dataRow.IsNull("width") ? "" : dataRow["width"].ToString(),
+                                Width = dataRow.IsNull("width") ? "" : $"{dataRow["width"]}px",
                                 Title = dataRow.Field<string>("title"),
                                 DataQuery = dataRow.Field<string>("data_query"),
                                 IsLinkProperty = Convert.ToBoolean(dataRow["isLinkProperty"])
