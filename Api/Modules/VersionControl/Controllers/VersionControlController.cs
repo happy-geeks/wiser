@@ -51,15 +51,15 @@ public class VersionControlController : Controller
     }
     
     /// <summary>
-    /// Creates new commit item in the database.
+    /// Creates new commit item in the database and deploys the selected templates and contents to the selected environment, or gets an existing commit and deploy that to another environment.
     /// </summary>
-    /// <param name="data">The data of the commit</param>
+    /// <param name="data">The data of the commit. The ID property should be 0 for creating a new commit, or contain a value for deploying an existing commit.</param>
     /// <returns>Returns a model of the commit.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(CommitModel), StatusCodes.Status200OK)]
-    public async Task<IActionResult> CreateNewCommitAsync(CommitModel data)
+    public async Task<IActionResult> CreateAndOrDeployCommitAsync(CommitModel data)
     {
-        return (await commitService.CreateCommitAsync(data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        return (await commitService.CreateAndOrDeployCommitAsync(data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
     }
 
     /// <summary>

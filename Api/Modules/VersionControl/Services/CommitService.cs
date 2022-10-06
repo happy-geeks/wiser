@@ -11,6 +11,7 @@ using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
 namespace Api.Modules.VersionControl.Services;
@@ -35,18 +36,18 @@ public class CommitService : ICommitService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<CommitModel>> CreateCommitAsync(CommitModel data, ClaimsIdentity identity)
+    public async Task<ServiceResult<CommitModel>> CreateAndOrDeployCommitAsync(CommitModel data, ClaimsIdentity identity)
     {
-        if (String.IsNullOrWhiteSpace(data.Description))
+        if (data.Id == 0 && String.IsNullOrWhiteSpace(data.Description))
         {
             return new ServiceResult<CommitModel>
             {
                 StatusCode = HttpStatusCode.BadRequest,
-                ErrorMessage = "Please enter a descrption"
+                ErrorMessage = "Please enter a description"
             };
         }
 
-        if ((data.Templates == null || !data.Templates.Any()) && (data.DynamicContents == null || !data.DynamicContents.Any()))
+        if (data.Id == 0 && (data.Templates == null || !data.Templates.Any()) && (data.DynamicContents == null || !data.DynamicContents.Any()))
         {
             return new ServiceResult<CommitModel>
             {
@@ -64,7 +65,7 @@ public class CommitService : ICommitService, IScopedService
             data.AddedBy = IdentityHelpers.GetUserName(identity, true);
             data.AddedOn = DateTime.Now;
 
-            var result = await commitDataService.CreateCommitAsync(data);
+            var result = data.Id == 0 ? await commitDataService.CreateCommitAsync(data) : await commitDataService.GetCommitAsync(data.Id);
 
             if (result.Templates != null)
             {
@@ -94,6 +95,11 @@ public class CommitService : ICommitService, IScopedService
                 }
             }
 
+            if (data.Environment == Environments.Live)
+            {
+                await CompleteCommitAsync(result.Id, true);
+            }
+
             await databaseConnection.CommitTransactionAsync();
 
             return new ServiceResult<CommitModel>(result);
@@ -106,9 +112,10 @@ public class CommitService : ICommitService, IScopedService
     }
 
     /// <inheritdoc />
-    public Task<ServiceResult<bool>> CompleteCommit(int commitId, bool commitCompleted)
+    public async Task<ServiceResult<bool>> CompleteCommitAsync(int commitId, bool commitCompleted)
     {
-        throw new System.NotImplementedException();
+        await commitDataService.CompleteCommitAsync(commitId, commitCompleted);
+        return new ServiceResult<bool>(true);
     }
 
     /// <inheritdoc />
