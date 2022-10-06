@@ -1490,6 +1490,7 @@ const moduleSettings = {
                 closeEditor();
                 return;
             }
+
             // Save current value.
             itemProperties.data("currentValue", dataItem.value);
 
@@ -1713,9 +1714,9 @@ const moduleSettings = {
             }
 
             // Clicking on the tags.
-            subPropertySelectWidget.wrapper.on("click", "li.k-button", (e) => {
+            subPropertySelectWidget.wrapper.find("div.k-chip-list").on("click", "span.k-chip", (e) => {
                 const clickedElement = $(e.target);
-                if (clickedElement.has(".k-i-close").length > 0 || clickedElement.closest(".k-i-close").length > 0) {
+                if (clickedElement.closest("span.k-chip-remove-action").length > 0) {
                     return;
                 }
 
@@ -1957,7 +1958,7 @@ const moduleSettings = {
                 widgetElement.data("canOpen", false);
             });
             widget.wrapper.on("click", (e) => {
-                if (e.target.closest("li.k-button, span.tagListItem") !== null) {
+                if (e.target.closest("span.k-chip") !== null) {
                     widget.close();
                     return;
                 }

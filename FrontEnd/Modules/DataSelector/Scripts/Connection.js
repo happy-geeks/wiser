@@ -70,9 +70,9 @@
                 document.dispatchEvent(new CustomEvent("entitySelectionUpdate"));
             });
 
-            selectDetailsWidget.wrapper.on("click", "li.k-button", (e) => {
+            selectDetailsWidget.wrapper.on("click", "span.k-chip", (e) => {
                 const clickedElement = $(e.target);
-                if (clickedElement.has(".k-i-close").length > 0 || clickedElement.closest(".k-i-close").length > 0) {
+                if (clickedElement.closest("span.k-chip-remove-action").length > 0) {
                     return;
                 }
 
