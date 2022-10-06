@@ -881,7 +881,6 @@ ins {
 	min-height: 28px;
 	padding: 12px 5px 12px 28px;
 	position: relative;
-	user-select: none;
 }
 .checkbox span:before,
 .radio span:before {
