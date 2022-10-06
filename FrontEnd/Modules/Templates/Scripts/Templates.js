@@ -7,6 +7,7 @@ import { TemplateConnectedUsers } from "./TemplateConnectedUsers.js";
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
 require("@progress/kendo-ui/js/kendo.combobox.js");
+require("@progress/kendo-ui/js/kendo.multiselect.js");
 require("@progress/kendo-ui/js/kendo.editor.js");
 require("@progress/kendo-ui/js/kendo.splitter.js");
 require("@progress/kendo-ui/js/kendo.tabstrip.js");
@@ -311,6 +312,30 @@ const moduleSettings = {
                 open: this.onContextMenuOpen.bind(this),
                 select: this.onContextMenuSelect.bind(this)
             }).data("kendoContextMenu");
+            
+            this.userRolesDropDown = $("select#loginRoles").kendoMultiSelect({
+                placeholder: "Selecteer rol(len)...",
+                clearButton: true,
+                filter: "contains",
+                multiple: "multiple",
+                dataTextField: "name",
+                dataValueField: "id",
+                dataSource: {
+                    transport: {
+                        read: (readOptions) => {
+                            Wiser.api({
+                                url: `${this.settings.wiserApiRoot}users/roles`,
+                                dataType: "json",
+                                type: "GET"
+                            }).then((result) => {
+                                readOptions.success(result);
+                            }).catch((result) => {
+                                readOptions.error(result);
+                            });
+                        }
+                    }
+                }
+            }).data("kendoMultiSelect");
         }
 
         /**

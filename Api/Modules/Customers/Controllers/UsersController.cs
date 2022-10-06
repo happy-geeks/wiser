@@ -145,5 +145,18 @@ namespace Api.Modules.Customers.Controllers
         {
             return (await usersService.SaveAutoLoadModulesAsync((ClaimsIdentity)User.Identity, moduleIds)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Gets all available roles for users.
+        /// </summary>
+        /// <param name="includePermissions">Optional: Whether to include all permissions that each role has. Default is <see langword="false"/>.</param>
+        /// <returns>A list of <see cref="RoleModel"/> with all available roles that users can have.</returns>
+        [HttpGet]
+        [Route("roles")]
+        [ProducesResponseType(typeof(List<RoleModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetRolesAsync(bool includePermissions = false)
+        {
+            return (await usersService.GetRolesAsync(includePermissions)).GetHttpResponseMessage();
+        }
     }
 }
