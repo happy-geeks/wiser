@@ -167,5 +167,17 @@ namespace Api.Modules.Customers.Services
         {
             return usersService.UseRefreshTokenAsync(subDomain, refreshToken);
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false)
+        {
+            await databaseConnection.EnsureOpenConnectionForReadingAsync();
+            return await cache.GetOrAdd($"user_roles_{databaseConnection.GetDatabaseNameForCaching()}",
+                async cacheEntry =>
+                {
+                    cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
+                    return await usersService.GetRolesAsync(includePermissions);
+                }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.Objects));
+        }
     }
 }

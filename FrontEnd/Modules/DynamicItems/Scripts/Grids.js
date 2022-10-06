@@ -346,6 +346,8 @@ export class Grids {
                 filterable = defaultFilters;
             } else if (typeof gridViewSettings.filterable === "object") {
                 filterable = $.extend(true, {}, defaultFilters, gridViewSettings.filterable);
+            } else if (gridViewSettings.clientSideFiltering === true) {
+                filterable = defaultFilters;
             }
 
             // Delete properties that we have already defined, so that they won't be overwritten again by the $.extend below.
@@ -486,7 +488,7 @@ export class Grids {
                 },
                 filterable: filterable,
                 filterMenuInit: this.onFilterMenuInit.bind(this),
-                filterMenuOpen: this.onFilterMenuOpen.bind(this),
+                filterMenuOpen: this.onFilterMenuOpen.bind(this)
             }, gridViewSettings);
 
             finalGridViewSettings.selectable = gridViewSettings.selectable || false;
@@ -554,7 +556,14 @@ export class Grids {
      * @returns {Promise<void>} The promise of the request.
      */
     async saveGridViewState(key, dataToSave) {
-        sessionStorage.setItem(key, dataToSave);
+        // Add the ID of the logged in user to the key for local storage. Just in case someone logs in as multiple users.
+        let localStorageKey = key;
+        const userData = await Wiser.getLoggedInUserData(this.base.settings.wiserApiRoot);
+        if (userData) {
+            localStorageKey += `_${userData.id}`;
+        }
+        sessionStorage.setItem(localStorageKey, dataToSave);
+        
         return Wiser.api({
             url: `${this.base.settings.wiserApiRoot}users/grid-settings/${encodeURIComponent(key)}`,
             method: "POST",
@@ -570,8 +579,15 @@ export class Grids {
      */
     async loadGridViewState(key) {
         let value;
+        let localStorageKey = key; 
+
+        // Add the ID of the logged in user to the key for local storage. Just in case someone logs in as multiple users.
+        const userData = await Wiser.getLoggedInUserData(this.base.settings.wiserApiRoot);
+        if (userData) {
+            localStorageKey += `_${userData.id}`;
+        }
         
-        value = sessionStorage.getItem(key);
+        value = sessionStorage.getItem(localStorageKey);
         if (!value) {
             value = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}users/grid-settings/${encodeURIComponent(key)}`,
@@ -579,7 +595,7 @@ export class Grids {
                 contentType: "application/json"
             });
 
-            sessionStorage.setItem(key, value || "");
+            sessionStorage.setItem(localStorageKey, value || "");
         }
         
         return value;
@@ -1077,10 +1093,10 @@ export class Grids {
         let itemId = dataItem.id || dataItem.itemId || dataItem.itemid || dataItem.item_id;
         let encryptedId = dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid || dataItem.idencrypted;
         const originalEncryptedId = encryptedId;
-        let entityType = dataItem.entityType || dataItem.entity_type;
+        let entityType = dataItem.entityType || dataItem.entity_type || dataItem.entitytype;
         let title = dataItem.title;
-        const linkId = dataItem.linkId || dataItem.link_id;
-        const linkType = dataItem.linkTypeNumber || dataItem.link_type_number || dataItem.linkType || dataItem.link_type;
+        const linkId = dataItem.linkId || dataItem.link_id || dataItem.linkid;
+        const linkType = dataItem.linkTypeNumber || dataItem.link_type_number || dataItem.linktypenumber || dataItem.linkType || dataItem.link_type || dataItem.linktype;
 
         if (options.fromMainGrid && this.base.settings.openGridItemsInBlock) {
             this.base.grids.informationBlockIframe.attr("src", `${"/Modules/DynamicItems"}?itemId=${encryptedId}&moduleId=${this.base.settings.moduleId}&iframe=true`);

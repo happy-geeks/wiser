@@ -372,6 +372,7 @@ CREATE TABLE IF NOT EXISTS `wiser_link`  (
   `duplication` enum('none','copy-link','copy-item') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'none' COMMENT 'What to do with this link, when an item is being duplicated. None means that links of this type will not be copied/duplicatied to the new item. Copy-link means that the linked item will also be linked to the new item. Copy-item means that the linked item will also be duplicated and then that duplicated item will be linked to the new item.',
   `use_item_parent_id` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Set this to 1 to use the column \"parent_item_id\" from wiser_item for these links. This will then no longer use or need the table wiser_itemlink for these links.',
   `use_dedicated_table` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Set this to 1 to use a dedicated table for links of this type. The GCL and Wiser expect there to be a table \"[linkType]_wiser_itemlink\" to store the links in. So if your link type is \"1\", we will use the table \"1_wiser_itemlink\" instead of \"wiser_itemlink\". This table will not be created automatically. To create this table, make a copy of wiser_itemlink (including triggers, but the the name of the table in the triggers too).',
+  `cascade_delete` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Set this to 1 to also delete children when a parent is being deleted.',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_link`(`type`, `destination_entity_type`, `connected_entity_type`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
@@ -405,8 +406,10 @@ CREATE TABLE IF NOT EXISTS `wiser_permission`  (
   `entity_property_id` int NOT NULL DEFAULT 0,
   `permissions` int NOT NULL DEFAULT 0 COMMENT '0 = Nothing\r\n1 = Read\r\n2 = Create\r\n4 = Update\r\n8 = Delete',
   `module_id` int NOT NULL DEFAULT 0,
+  `query_id` int NOT NULL DEFAULT 0,
+  `data_selector_id` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `role_id`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `module_id`) USING BTREE
+  UNIQUE INDEX `role_id`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `module_id`, `query_id`, `data_selector_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -675,8 +678,6 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    `handle_logic_blocks` tinyint(1) NOT NULL DEFAULT 1,
    `handle_mutators` tinyint(1) NOT NULL DEFAULT 0,
    `login_required` tinyint(1) NOT NULL DEFAULT 0,
-   `login_user_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-   `login_session_prefix` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
    `login_role` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
    `login_redirect_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
    `linked_templates` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,

@@ -164,5 +164,12 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="refreshToken">The refresh token.</param>
         /// <returns>The serialized ticket for OWIN context.</returns>
         Task<string> UseRefreshTokenAsync(string subDomain, string refreshToken);
+
+        /// <summary>
+        /// Gets all available roles for users.
+        /// </summary>
+        /// <param name="includePermissions">Optional: Whether to include all permissions that each role has. Default is <see langword="false"/>.</param>
+        /// <returns>A list of <see cref="RoleModel"/> with all available roles that users can have.</returns>
+        Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false);
     }
 }

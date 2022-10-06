@@ -734,9 +734,7 @@ import CacheService from "./shared/cache.service";
 
 
                             const extraUserData = await main.usersService.getLoggedInUserData();
-                            console.log("extraUserData", extraUserData);
                             this.openBranchSettings.selectedBranch = this.branches.find(branch => branch.id === extraUserData.currentBranchId);
-                            console.log("this.openBranchSettings.selectedBranch", this.openBranchSettings.selectedBranch);
                         }
                     },
                     
