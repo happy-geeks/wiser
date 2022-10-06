@@ -45,6 +45,7 @@ const moduleSettings = {
 
             // Other.
             this.mainLoader = null;
+            this.dialogZindex = 20000;
 
             // Fire event on page ready for direct actions
             document.addEventListener("DOMContentLoaded", () => {
@@ -1634,6 +1635,10 @@ const moduleSettings = {
                 dialog.title(`Eigenschappen van '${dataItem.displayName}'`);
             }
             dialog.open();
+            
+            // Increase z-index, because otherwise the k-animation-container of the multiselect will be painted on top of this dialog, causing you to not be able to click everything in the dialog.
+            this.dialogZindex++;
+            dialog.wrapper.css("z-index", this.dialogZindex);
         }
 
         /**
