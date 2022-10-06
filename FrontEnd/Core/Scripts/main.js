@@ -62,6 +62,7 @@ import CacheService from "./shared/cache.service";
             document.addEventListener("DOMContentLoaded", () => {
                 this.onPageReady();
             });
+            window.addEventListener("message", this.handlePostMessage.bind(this));
         }
 
         /**
@@ -114,6 +115,18 @@ import CacheService from "./shared/cache.service";
             }
 
             this.initVue();
+        }
+
+        handlePostMessage(event) {
+            if (!event.data || !event.data.action) {
+                return;
+            }
+
+            switch (event.data.action) {
+                case "OpenModule":
+                    this.vueApp.openModule(event.data.actionData.moduleId);
+                    break;
+            }
         }
 
         initVue() {
@@ -404,8 +417,12 @@ import CacheService from "./shared/cache.service";
                     },
 
                     logout() {
-                        this.$store.dispatch(CLOSE_ALL_MODULES);
-                        this.$store.dispatch(AUTH_LOGOUT);
+                        main.usersService.stopUpdateTimeActiveTimer();
+                        // Update the user's active time one last time.
+                        main.usersService.updateActiveTime().then(() => {
+                            this.$store.dispatch(CLOSE_ALL_MODULES);
+                            this.$store.dispatch(AUTH_LOGOUT);
+                        });
                     },
 
                     openModule(module) {

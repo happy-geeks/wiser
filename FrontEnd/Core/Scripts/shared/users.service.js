@@ -2,6 +2,17 @@
 
 export default class UsersService extends BaseService {
     /**
+     * Initializes a new instance of the UsersService class.
+     * @param {Main} base An instance of the base class (Main).
+     */
+    constructor(base) {
+        super(base);
+
+        this.updateTimeActiveTimer = null;
+        this.updateTimeActiveTimerStopped = true;
+    }
+    
+    /**
      * Sends a login request to the API and returns the result.
      * If an error occurred, it will return a friendly user message.
      * @param {string} username The username.
@@ -41,6 +52,10 @@ export default class UsersService extends BaseService {
                 return user;
             });
             result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true;
+
+            if (loginResult.data.hasOwnProperty("encryptedLoginLogId")) {
+                await this.startUpdateTimeActiveTimer();
+            }
         } catch (error) {
             result.success = false;
             console.error("Error during login", error);
@@ -93,6 +108,10 @@ export default class UsersService extends BaseService {
             result.data = loginResult.data;
             result.data.expiresOn = new Date(new Date().getTime() + (loginResult.data.expires_in * 1000));
             result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true;
+
+            if (loginResult.data.hasOwnProperty("encryptedLoginLogId")) {
+                await this.startUpdateTimeActiveTimer();
+            }
         } catch (error) {
             result.success = false;
             console.error("Error during login", error);
@@ -224,5 +243,59 @@ export default class UsersService extends BaseService {
             console.error(error);
             return false;
         }
+    }
+
+    getEncryptedLoginLogId() {
+        // Retrieve the user data from the local storage.
+        const savedUserData = localStorage.getItem("userData");
+        if (!savedUserData) {
+            return null;
+        }
+
+        // Try to parse the data, and see if a key "encryptedLoginLogId" exists and if it has a value. 
+        const userData = JSON.parse(savedUserData);
+        if (!userData.hasOwnProperty("encryptedLoginLogId") || !userData.encryptedLoginLogId) {
+            return null;
+        }
+
+        return userData.encryptedLoginLogId;
+    }
+
+    async updateActiveTime() {
+        const encryptedLoginLogId = this.getEncryptedLoginLogId();
+        if (!encryptedLoginLogId) {
+            console.warn("Couldn't update the active time. There's no login log ID.");
+            return;
+        }
+
+        await this.base.api.put(`/api/v3/users/update-active-time?encryptedLoginLogId=${encodeURIComponent(encryptedLoginLogId)}`);
+    }
+
+    async startUpdateTimeActiveTimer() {
+        // Clear old interval first.
+        this.stopUpdateTimeActiveTimer();
+
+        // Retrieve the encrypted login log ID.
+        const encryptedLoginLogId = this.getEncryptedLoginLogId();
+        if (!encryptedLoginLogId) {
+            console.warn("Couldn't start the 'time active' timer. There's no login log ID.");
+            return;
+        }
+
+        await this.base.api.put(`/api/v3/users/reset-time-active-changed?encryptedLoginLogId=${encodeURIComponent(encryptedLoginLogId)}`);
+
+        // Timer runs every 5 minutes. (300000ms).
+        this.updateTimeActiveTimerStopped = false;
+        this.updateTimeActiveTimer = setInterval(async () => {
+            if (!this.updateTimeActiveTimerStopped) {
+                await this.base.api.put(`/api/v3/users/update-active-time?encryptedLoginLogId=${encodeURIComponent(encryptedLoginLogId)}`);
+            }
+        }, 300000);
+    }
+
+    stopUpdateTimeActiveTimer() {
+        // Clear old interval first.
+        this.updateTimeActiveTimerStopped = true;
+        clearInterval(this.updateTimeActiveTimer);
     }
 }

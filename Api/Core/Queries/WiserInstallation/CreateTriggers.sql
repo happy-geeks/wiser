@@ -1659,6 +1659,11 @@ CREATE TRIGGER `DataSelectorInsert` AFTER INSERT ON `wiser_data_selector` FOR EA
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'show_in_export_module', NULL, NEW.`show_in_export_module`);
     END IF;
+
+    IF IFNULL(NEW.`show_in_dashboard`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'show_in_dashboard', NULL, NEW.`show_in_dashboard`);
+    END IF;
 END;
 
 DROP TRIGGER IF EXISTS `DataSelectorUpdate`;
@@ -1691,6 +1696,11 @@ CREATE TRIGGER `DataSelectorUpdate` AFTER UPDATE ON `wiser_data_selector` FOR EA
     IF IFNULL(NEW.`show_in_export_module`, '') <> IFNULL(OLD.`show_in_export_module`, '') THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'show_in_export_module', OLD.`show_in_export_module`, NEW.`show_in_export_module`);
+    END IF;
+
+    IF IFNULL(NEW.`show_in_dashboard`, '') <> IFNULL(OLD.`show_in_dashboard`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'show_in_dashboard', OLD.`show_in_dashboard`, NEW.`show_in_dashboard`);
     END IF;
 END;
 

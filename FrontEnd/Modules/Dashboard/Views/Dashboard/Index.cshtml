@@ -1,0 +1,272 @@
+﻿@using System.IO
+@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+
+<!DOCTYPE html>
+<html>
+<head runat="server">
+    <meta charset="utf-8" />
+    <title>Wiser 3 - Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.material.min.css" rel="stylesheet" />
+
+    <script>
+        window.wiserVersion = "@Model.WiserVersion";
+    </script>
+    <style>
+        #fullForm {
+            display:  none;
+        }
+    </style>
+</head>
+<body class="@Model.BodyCssClass"
+      data-module-id="706"
+      data-wiser-api-root="@Model.ApiRoot"
+      data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
+      data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
+      data-api-client-id="@Model.Settings.ApiClientId"
+      data-api-client-secret="@Model.Settings.ApiClientSecret"
+      data-sub-domain="@Model.SubDomain"
+      data-track-js-token="@Model.Settings.TrackJsToken">
+    <form id="fullForm">
+        <div id="wiser">
+            <div id="window" class="dashboard" style="margin: 0 auto; padding: 0;">
+                <header>
+                    <div class="formview full">
+                        <div class="item">
+                            <div class="flex-container">
+                                <label>Filter periode</label>
+                                <select id="periodFilter" class="drop-down-list" placeholder="Maak uw keuze..." data-role="dropdownlist">
+                                    <option value="all" selected="selected">Geen filter</option>
+                                    <option value="currentMonth">Huidige maand</option>
+                                    <option value="lastMonth">Vorige maand</option>
+                                    <option value="currentYear">Dit jaar</option>
+                                    <option value="lastYear">Vorig jaar</option>
+                                    <option value="custom">Selecteer periode</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <div class="flex-container">
+                                <div id="periodPicker" class="daterangepicker" title="daterangepicker"></div>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <div class="flex-container">
+                                <label>Branche</label>
+                                <select id="branchesSelect" class="drop-down-list" placeholder="Maak uw keuze..." data-role="dropdownlist">
+                                    <option value="0">Actieve branch</option>
+                                    <option value="-1">Alle branches</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="item actions">
+                            <button type="button"><ins class="icon-reset" title="Reset" id="refreshDataButton"></ins></button>
+
+                            <ul id="mainEditMenu" class="editMenu">
+                                <li>
+                                    <ins class="icon-quickmenu"></ins>
+                                    <ul id="editSub" class="editSub">
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="" class="hidden" checked />
+                                                <span>Naam</span>
+                                                <ins class="icon-check"></ins>
+                                            </label>
+                                        </li>
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="" class="hidden"  />
+                                                <span>Naam</span>
+                                                <ins class="icon-check"></ins>
+                                            </label>
+                                        </li>
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="" class="hidden"  />
+                                                <span>Naam</span>
+                                                <ins class="icon-check"></ins>
+                                            </label>
+                                        </li>
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="" class="hidden"  />
+                                                <span>Naam</span>
+                                                <ins class="icon-check"></ins>
+                                            </label>
+                                        </li>
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="" class="hidden"  />
+                                                <span>Naam</span>
+                                                <ins class="icon-check"></ins>
+                                            </label>
+                                        </li>
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="" class="hidden"  />
+                                                <span>Naam</span>
+                                                <ins class="icon-check"></ins>
+                                            </label>
+                                        </li>
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="" class="hidden"  />
+                                                <span>Naam</span>
+                                                <ins class="icon-check"></ins>
+                                            </label>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </header>
+                
+                <main>
+                    <div id="tiles"></div>
+
+                    <!-- container text templates -->
+                    <script id="update-log" type="text/x-kendo-template">
+                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
+                        <div class="tile-content">
+                            @Html.Raw(await File.ReadAllTextAsync("./UpdateLog.html"))
+                        </div>
+                    </script>
+                    <script id="numbers" type="text/x-kendo-template">
+                        <div class="tile-content" id="entityData">
+                            <div class="btn-row" id="entityDataTypeFilterButtons">
+                                <button type="button" role="button" aria-label="Totaal" data-filter="All" class="selected">
+                                    <span>Totaal</span>
+                                </button>
+                                <button type="button" role="button" aria-label="Nieuw" data-filter="NewlyCreated">
+                                    <span>Nieuw</span>
+                                </button>
+                            </div>
+                        </div>
+                    </script>
+                    <script id="entity-data" type="text/x-kendo-template">
+                        <a href="javascript:;" class="number-item">
+                            <ins class=""></ins>
+                            <h3>0</h3>
+                            <span>
+                                <span class="entity-total-text">-</span>
+                                <span class="k-icon k-i-hyperlink-open-sm"></span>
+                            </span>
+                        </a>
+                    </script>
+                    <script id="dataselector-rate" type="text/x-kendo-template">
+                        <h3>Uitkomst dataselector</h3>
+                        <div>Content</div>
+                    </script>
+
+                    <!-- container chart templates -->
+                    <script id="data-chart-template" type="text/x-kendo-template">
+                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
+                        <div class="tile-content">
+                            <div id="data-chart" style="width:100%"></div>
+
+                            <div class="btn-row" id="itemsTypeFilterButtons">
+                                <button type="button" role="button" aria-label="Alles" data-filter="All" class="selected">
+                                    <span>Alles</span>
+                                </button>
+                                <button type="button" role="button" aria-label="Nieuw aangemaakt" data-filter="NewlyCreated">
+                                    <span>Nieuw aangemaakt</span>
+                                </button>
+                                <button type="button" role="button" aria-label="Gewijzigd" data-filter="Changed">
+                                    <span>Gewijzigd</span>
+                                </button>
+                                <button type="button" role="button" aria-label="Actief" data-filter="Active" disabled>
+                                    <span>Actief</span>
+                                </button>
+                                <button type="button" role="button" aria-label="Archief" data-filter="Archive" disabled>
+                                    <span>Archief</span>
+                                </button>
+                            </div>
+                        </div>
+                    </script>
+                    <script id="users-chart-template" type="text/x-kendo-template">
+                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
+                        <div class="tile-content">
+                            <div id="users-chart" style="width:100%"></div>
+
+                            <div class="btn-row" id="userDataTypeFilterButtons">
+                                <button type="button" role="button" aria-label="Aantal logins" class="selected" data-filter="loginCount">
+                                    <span>Aantal logins</span>
+                                </button>
+                                <button type="button" role="button" aria-label="Ingelogde tijd" data-filter="loginTime">
+                                    <span>Ingelogde tijd</span>
+                                </button>
+                            </div>
+                        </div>
+                    </script>
+                    <script id="subscriptions-chart-template" type="text/x-kendo-template">
+                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
+                        <div class="tile-content">
+                            <div class="tile-row">
+                                <label>Huidige abonnement: Wiser Large.</label>
+                                <span>Prijs per maand: &euro; 75,-</span>
+                                <a href="">abonnement stopzetten?</a>
+                            </div>
+                            <div class="tile-row">
+                                <label>Aantal items:</label>
+                                <div class="progress">
+                                    <span style="width: 65%;" data-value="6.500" data-percent="65"></span>
+                                    <progress max="100" value="65" data-value="6.500" data-max="10K"></progress>
+                                </div>
+                            </div>
+                            <div class="tile-row">
+                                <label>Aantal gebruikers:</label>
+                                <button type="button" role="button" aria-label="Naar gebruikers">
+                                    <span class="k-icon k-i-hyperlink-open"></span>
+                                </button>
+                                <div class="progress">
+                                    <span style="width: 40%;" data-value="10" data-percent="40"></span>
+                                    <progress max="100" value="40" data-value="10" data-max="25"></progress>
+                                </div>
+                            </div>
+                        </div>
+                    </script>
+                    <script id="status-chart-template" type="text/x-kendo-template">
+                        <div class="tile-content">
+                            <span class="number-item">
+                                <ins class="icon-list"></ins>
+                                <h3 id="totalOpenTaskAlerts">0</h3>
+                                <span>Openstaande agenderingen</span>
+                            </span>
+                            <div id="status-chart" style="height:98%;width:65%;"></div>
+                        </div>
+                    </script>
+
+                    <!-- container grid templates -->
+                    <script id="services-grid-template" type="text/x-kendo-template">
+                        <a id="refreshServices" class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button'><span class='k-button-icon k-icon k-i-refresh'></span></a>
+                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
+                        <div id="services-grid" style="height:100%;">
+                        </div>
+                    </script>
+                </main>
+            </div>
+        </div>
+    </form>
+
+    <div id="serviceLogWindow">
+        <div id="serviceLogGrid"></div>
+    </div>
+
+    <div id="mainLoader" class="fullscreen-loader loading">
+        <div class="loader-icon">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+
+    <script src="/scripts/Utils.min.js"></script>
+    <script src="/scripts/Base.min.js"></script>
+    <script src="/scripts/Dashboard.min.js"></script>
+</body>
+</html>

@@ -48,10 +48,12 @@ CREATE TABLE IF NOT EXISTS `wiser_entity`  (
   `enable_multiple_environments` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Whether or not to enable multiple environments for entities of this type. This means that the test can have a different version of an item than the live for example.',
   `dedicated_table_prefix` varchar(25) NOT NULL DEFAULT '',
   `delete_action` enum('archive','permanent','hide','disallow') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'archive',
+  `show_in_dashboard` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `name_module_id`(`name`, `module_id`) USING BTREE,
   INDEX `name`(`name`(100), `show_in_tree_view`) USING BTREE,
-  INDEX `module_id`(`module_id`) USING BTREE
+  INDEX `module_id`(`module_id`) USING BTREE,
+  INDEX `show_in_dashboard`(`show_in_dashboard`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -564,6 +566,7 @@ CREATE TABLE IF NOT EXISTS `wiser_data_selector`  (
   `show_in_export_module` tinyint(1) NOT NULL DEFAULT 1,
   `available_for_rendering` tinyint(1) NOT NULL DEFAULT 1,
   `default_template` bigint UNSIGNED NOT NULL DEFAULT 0,
+  `show_in_dashboard` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_name`(`name`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;

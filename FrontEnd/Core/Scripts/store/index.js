@@ -186,6 +186,12 @@ const loginModule = {
                 commit(AUTH_SUCCESS, user);
 
                 await this.dispatch(MODULES_REQUEST);
+
+                // If a login log ID is also set in the user data, use it to start the "time active" timer.
+                if (user.hasOwnProperty("encryptedLoginLogId")) {
+                    await main.usersService.startUpdateTimeActiveTimer();
+                }
+
                 return;
             }
 

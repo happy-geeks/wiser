@@ -89,6 +89,8 @@
             <keep-alive>
                 <customer-management v-if="user.adminAccountId && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
             </keep-alive>
+
+
         </main>
 
         <wiser-dialog :modal="true" :width="'400px'" :title="generalMessagePromptTitle" ref="generalMessagePrompt" :visible="false" :actions="[{ text: 'OK', primary: true }]">

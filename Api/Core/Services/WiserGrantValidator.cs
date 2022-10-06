@@ -120,7 +120,9 @@ namespace Api.Core.Services
                 {"lastLoginIpAddress", loginResult.ModelObject.LastLoginIpAddress ?? ""},
                 {"lastLoginDate", (loginResult.ModelObject.LastLoginDate ?? DateTime.Now).ToString("dd-MM-yyyy HH:mm:ss")},
                 {"oldStyleUserId", loginResult.ModelObject.Id.ToString().EncryptWithAesWithSalt()},
-                {"cookieValue", loginResult.ModelObject.CookieValue}
+                {"cookieValue", loginResult.ModelObject.CookieValue},
+                {"requirePasswordChange", loginResult.ModelObject.RequirePasswordChange},
+                {"encryptedLoginLogId", loginResult.ModelObject.EncryptedLoginLogId}
             };
 
             if (loginResult.ModelObject.RequirePasswordChange.HasValue)
