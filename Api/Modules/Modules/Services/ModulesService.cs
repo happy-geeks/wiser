@@ -111,7 +111,9 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,
                 WiserTableNames.WiserPreviewProfiles,
-                WiserTableNames.WiserDynamicContentPublishLog
+                WiserTableNames.WiserDynamicContentPublishLog,
+                WiserTableNames.WiserQuery,
+                WiserTableNames.WiserPermission
             });
             var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
             

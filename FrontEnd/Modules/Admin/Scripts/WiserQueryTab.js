@@ -25,6 +25,19 @@ export class WiserQueryTab {
         }).data("kendoDropDownList");
 
         this.queryCombobox.one("dataBound", () => { this.queryListInitialized = true; });
+        
+        this.rolesWithPermissions = $("#rolesWithPermissions").kendoMultiSelect({
+            dataSource: {
+                transport: {
+                    read: {
+                        url: `${this.base.settings.serviceRoot}/GET_ROLES`
+                    }
+                }
+            },
+            dataTextField: "roleName",
+            dataValueField: "id",
+            multiple: "multiple"
+        }).data("kendoMultiSelect");
 
         await Misc.ensureCodeMirror();
 
@@ -72,7 +85,7 @@ export class WiserQueryTab {
     // actions handled before save, such as checks
     async beforeSave() {
         if (this.checkIfQueryIsSet(true)) {
-            const queryModel = new QueryModel(this.queryCombobox.dataItem().id, document.getElementById("queryDescription").value, this.queryFromWiser.getValue(), document.getElementById("showInExportModule").checked);
+            const queryModel = new QueryModel(this.queryCombobox.dataItem().id, document.getElementById("queryDescription").value, this.queryFromWiser.getValue(), document.getElementById("showInExportModule").checked, false, this.rolesWithPermissions.value().join());
             await this.updateQuery(queryModel.id, queryModel);
         }
     }
@@ -180,13 +193,15 @@ export class WiserQueryTab {
     async setQueryProperties(resultSet) {
         document.getElementById("queryDescription").value = resultSet.description;
         document.getElementById("showInExportModule").checked = resultSet.show_in_export_module;
+        this.rolesWithPermissions.value(resultSet.rolesWithPermissions.split(","));
         await this.setCodeMirrorFields(this.queryFromWiser, resultSet.query);
     }
 
     async setQueryPropertiesToDefault() {
         document.getElementById("queryDescription").value = "";
         document.getElementById("showInExportModule").checked = false;
-        this.queryFromWiser.setValue("");
+        this.queryFromWiser.setValue("")
+        this.rolesWithPermissions.value([]);
     }
 
     async setCodeMirrorFields(field, value) {
