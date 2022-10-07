@@ -75,6 +75,7 @@ const moduleSettings = {
                 "DIRECTORY": 7,
                 "XML": 8,
                 "AIS": 8,
+                "SERVICES": 8,
                 "ROUTINES": 9
             });
 
