@@ -524,7 +524,8 @@
 }
 .k-button-icon .k-icon.k-i-verversen:before,
 .k-button-icon .k-icon.k-i-refresh:before,
-.k-button-icon.k-icon.k-i-verversen:before {
+.k-button-icon.k-icon.k-i-verversen:before,
+.k-button-icon.k-icon.k-i-refresh:before {
 	content: "\e9b9";
 }
 .k-button-icon .k-icon.k-i-close:before,
