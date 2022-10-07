@@ -101,8 +101,6 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.handle_logic_blocks, 
                                                                 template.handle_mutators, 
                                                                 template.login_required, 
-                                                                template.login_user_type, 
-                                                                template.login_session_prefix, 
                                                                 template.login_role, 
                                                                 template.login_redirect_url,
                                                                 template.linked_templates, 
@@ -165,9 +163,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                 HandleLogicBlocks = Convert.ToBoolean(dataTable.Rows[0]["handle_logic_blocks"]),
                 HandleMutators = Convert.ToBoolean(dataTable.Rows[0]["handle_mutators"]),
                 LoginRequired = Convert.ToBoolean(dataTable.Rows[0]["login_required"]),
-                LoginUserType = dataTable.Rows[0].Field<string>("login_user_type"),
-                LoginSessionPrefix = dataTable.Rows[0].Field<string>("login_session_prefix"),
-                LoginRole = dataTable.Rows[0].Field<string>("login_role"),
+                LoginRoles = dataTable.Rows[0].Field<string>("login_role")?.Split(",").Select(Int32.Parse).ToList(),
                 LoginRedirectUrl = dataTable.Rows[0].Field<string>("login_redirect_url"),
                 Ordering = dataTable.Rows[0].Field<int>("ordering"),
                 InsertMode = dataTable.Rows[0].Field<ResourceInsertModes>("insert_mode"),
@@ -418,9 +414,7 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.AddParameter("handleLogicBlocks", templateSettings.HandleLogicBlocks);
             clientDatabaseConnection.AddParameter("handleMutators", templateSettings.HandleMutators);
             clientDatabaseConnection.AddParameter("loginRequired", templateSettings.LoginRequired);
-            clientDatabaseConnection.AddParameter("loginUserType", templateSettings.LoginUserType);
-            clientDatabaseConnection.AddParameter("loginSessionPrefix", templateSettings.LoginSessionPrefix);
-            clientDatabaseConnection.AddParameter("loginRole", templateSettings.LoginRole);
+            clientDatabaseConnection.AddParameter("loginRole", String.Join(",", templateSettings.LoginRoles.OrderBy(x => x)));
             clientDatabaseConnection.AddParameter("loginRedirectUrl", templateSettings.LoginRedirectUrl);
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
             clientDatabaseConnection.AddParameter("username", username);
@@ -472,8 +466,6 @@ GROUP BY wdc.content_id");
                     handle_logic_blocks,
                     handle_mutators,
                     login_required,
-                    login_user_type,
-                    login_session_prefix,
                     login_role,
                     login_redirect_url,
                     linked_templates,
@@ -521,8 +513,6 @@ GROUP BY wdc.content_id");
                     ?handleLogicBlocks,
                     ?handleMutators,
                     ?loginRequired,
-                    ?loginUserType,
-                    ?loginSessionPrefix,
                     ?loginRole,
                     ?loginRedirectUrl,
                     ?templateLinks,
@@ -1043,8 +1033,6 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                                                                             template.handle_logic_blocks, 
                                                                             template.handle_mutators, 
                                                                             template.login_required, 
-                                                                            template.login_user_type, 
-                                                                            template.login_session_prefix, 
                                                                             template.login_role, 
                                                                             template.login_redirect_url, 
                                                                             template.linked_templates, 
@@ -1106,9 +1094,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                     HandleLogicBlocks = Convert.ToBoolean(dataRow["handle_logic_blocks"]),
                     HandleMutators = Convert.ToBoolean(dataRow["handle_mutators"]),
                     LoginRequired = Convert.ToBoolean(dataRow["login_required"]),
-                    LoginUserType = dataRow.Field<string>("login_user_type"),
-                    LoginSessionPrefix = dataRow.Field<string>("login_session_prefix"),
-                    LoginRole = dataRow.Field<string>("login_role"),
+                    LoginRoles = dataRow.Field<string>("login_role")?.Split(",").Select(Int32.Parse).ToList(),
                     LoginRedirectUrl = dataRow.Field<string>("login_redirect_url"),
                     Ordering = dataRow.Field<int>("ordering"),
                     InsertMode = dataRow.Field<ResourceInsertModes>("insert_mode"),

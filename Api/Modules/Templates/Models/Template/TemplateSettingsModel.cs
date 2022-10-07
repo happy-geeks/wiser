@@ -40,9 +40,7 @@ namespace Api.Modules.Templates.Models.Template
         public bool HandleLogicBlocks { get; set; }
         public bool HandleMutators { get; set; }
         public bool LoginRequired { get; set; }
-        public string LoginUserType { get; set; }
-        public string LoginSessionPrefix { get; set; }
-        public string LoginRole { get; set; }
+        public List<int> LoginRoles { get; set; }
         public string LoginRedirectUrl { get; set; }
         public string PreLoadQuery { get; set; }
         public bool IsDefaultHeader { get; set; }

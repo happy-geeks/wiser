@@ -93,8 +93,6 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.handle_logic_blocks, 
                                                                 template.handle_mutators, 
                                                                 template.login_required, 
-                                                                template.login_user_type, 
-                                                                template.login_session_prefix, 
                                                                 template.login_role, 
                                                                 template.ordering, 
                                                                 GROUP_CONCAT(CONCAT_WS(';', linkedTemplates.template_id, linkedTemplates.template_name, linkedTemplates.template_type)) AS linkedTemplates,
@@ -151,9 +149,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     HandleLogicBlocks = Convert.ToBoolean(row["handle_logic_blocks"]),
                     HandleMutators = Convert.ToBoolean(row["handle_mutators"]),
                     LoginRequired = Convert.ToBoolean(row["login_required"]),
-                    LoginUserType = row.Field<string>("login_user_type"),
-                    LoginSessionPrefix = row.Field<string>("login_session_prefix"),
-                    LoginRole = row.Field<string>("login_role"),
+                    LoginRoles = row.Field<string>("login_role")?.Split(",").Select(Int32.Parse).ToList(),
                     Ordering = row.Field<int>("ordering"),
                     LinkedTemplates = new LinkedTemplatesModel
                     {
