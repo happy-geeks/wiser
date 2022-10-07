@@ -1749,6 +1749,7 @@ const moduleSettings = {
             const routineType = document.querySelector("input[type=radio][name=routineType]:checked");
             let routineParameters = null;
             const routineReturnType = document.getElementById("routineReturnType");
+            const urlRegexElement = document.getElementById("urlRegex");
 
             const routineParametersElement = document.getElementById("routineParameters");
             if (routineParametersElement) {
@@ -1770,7 +1771,8 @@ const moduleSettings = {
                 },
                 routineType: routineType ? Number(routineType.value) : 0,
                 routineParameters: routineParameters,
-                routineReturnType: routineReturnType ? routineReturnType.value : null
+                routineReturnType: routineReturnType ? routineReturnType.value : null,
+                urlRegex: urlRegexElement ? urlRegexElement.value : null
             }, this.getNewSettings());
 
             const externalFilesGrid = $("#externalFiles").data("kendoGrid");

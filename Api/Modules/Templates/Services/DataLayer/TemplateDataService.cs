@@ -163,7 +163,6 @@ namespace Api.Modules.Templates.Services.DataLayer
                 HandleLogicBlocks = Convert.ToBoolean(dataTable.Rows[0]["handle_logic_blocks"]),
                 HandleMutators = Convert.ToBoolean(dataTable.Rows[0]["handle_mutators"]),
                 LoginRequired = Convert.ToBoolean(dataTable.Rows[0]["login_required"]),
-                LoginRoles = dataTable.Rows[0].Field<string>("login_role")?.Split(",").Select(Int32.Parse).ToList(),
                 LoginRedirectUrl = dataTable.Rows[0].Field<string>("login_redirect_url"),
                 Ordering = dataTable.Rows[0].Field<int>("ordering"),
                 InsertMode = dataTable.Rows[0].Field<ResourceInsertModes>("insert_mode"),
@@ -191,6 +190,13 @@ namespace Api.Modules.Templates.Services.DataLayer
                 IsDefaultFooter = Convert.ToBoolean(dataTable.Rows[0]["is_default_footer"]),
                 DefaultHeaderFooterRegex = dataTable.Rows[0].Field<string>("default_header_footer_regex")
             };
+            
+            
+            var loginRolesString = dataTable.Rows[0].Field<string>("login_role");
+            if (!String.IsNullOrWhiteSpace(loginRolesString))
+            {
+                templateData.LoginRoles = loginRolesString.Split(",").Select(Int32.Parse).ToList();
+            }
 
             return templateData;
         }
@@ -414,7 +420,7 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.AddParameter("handleLogicBlocks", templateSettings.HandleLogicBlocks);
             clientDatabaseConnection.AddParameter("handleMutators", templateSettings.HandleMutators);
             clientDatabaseConnection.AddParameter("loginRequired", templateSettings.LoginRequired);
-            clientDatabaseConnection.AddParameter("loginRole", String.Join(",", templateSettings.LoginRoles.OrderBy(x => x)));
+            clientDatabaseConnection.AddParameter("loginRole", templateSettings.LoginRoles == null ? "" : String.Join(",", templateSettings.LoginRoles.OrderBy(x => x)));
             clientDatabaseConnection.AddParameter("loginRedirectUrl", templateSettings.LoginRedirectUrl);
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
             clientDatabaseConnection.AddParameter("username", username);
@@ -1071,7 +1077,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
 
             foreach (DataRow dataRow in dataTable.Rows)
             {
-                result.Add(new TemplateSettingsModel
+                var templateData = new TemplateSettingsModel
                 {
                     TemplateId = dataRow.Field<int>("template_id"),
                     ParentId = dataRow.Field<int?>("parent_id"),
@@ -1081,9 +1087,9 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                     Version = dataRow.Field<int>("version"),
                     ChangedOn = dataRow.Field<DateTime>("changed_on"),
                     ChangedBy = dataRow.Field<string>("changed_by"),
-                    UseCache = (TemplateCachingModes)dataRow.Field<int>("use_cache"),
+                    UseCache = (TemplateCachingModes) dataRow.Field<int>("use_cache"),
                     CacheMinutes = dataRow.Field<int>("cache_minutes"),
-                    CacheLocation = (TemplateCachingLocations)dataRow.Field<int>("cache_location"),
+                    CacheLocation = (TemplateCachingLocations) dataRow.Field<int>("cache_location"),
                     CacheRegex = dataTable.Rows[0].Field<string>("cache_regex"),
                     HandleRequests = Convert.ToBoolean(dataRow["handle_request"]),
                     HandleSession = Convert.ToBoolean(dataRow["handle_session"]),
@@ -1094,14 +1100,13 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                     HandleLogicBlocks = Convert.ToBoolean(dataRow["handle_logic_blocks"]),
                     HandleMutators = Convert.ToBoolean(dataRow["handle_mutators"]),
                     LoginRequired = Convert.ToBoolean(dataRow["login_required"]),
-                    LoginRoles = dataRow.Field<string>("login_role")?.Split(",").Select(Int32.Parse).ToList(),
                     LoginRedirectUrl = dataRow.Field<string>("login_redirect_url"),
                     Ordering = dataRow.Field<int>("ordering"),
                     InsertMode = dataRow.Field<ResourceInsertModes>("insert_mode"),
                     LoadAlways = Convert.ToBoolean(dataRow["load_always"]),
                     DisableMinifier = Convert.ToBoolean(dataRow["disable_minifier"]),
                     UrlRegex = dataRow.Field<string>("url_regex"),
-                    ExternalFiles = dataRow.Field<string>("external_files")?.Split(new [] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
+                    ExternalFiles = dataRow.Field<string>("external_files")?.Split(new[] {';', ','}, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
                     GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(dataRow["grouping_create_object_instead_of_array"]),
                     GroupingPrefix = dataRow.Field<string>("grouping_prefix"),
                     GroupingKey = dataRow.Field<string>("grouping_key"),
@@ -1115,7 +1120,15 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                     },
                     PreLoadQuery = dataRow.Field<string>("pre_load_query"),
                     ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataRow["return_not_found_when_pre_load_query_has_no_data"])
-                });
+                };
+                
+                var loginRolesString = dataRow.Field<string>("login_role");
+                if (!String.IsNullOrWhiteSpace(loginRolesString))
+                {
+                    templateData.LoginRoles = loginRolesString.Split(",").Select(Int32.Parse).ToList();
+                }
+
+                result.Add(templateData);
             }
 
             return result;

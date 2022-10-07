@@ -57,3 +57,10 @@
         <div class="form-hint"><span>Het type van de data die terug wordt verwacht. Dit is alleen voor functions, niet voor stored procedures.</span></div>
     </div>
 </div>
+<div class="item full-width" data-label-style="float" data-label-width="0">
+    <h4><label for="cacheMinutes">URL Regex</label></h4>
+    <span class="k-widget k-input k-state-default">
+        <input type="text" id="urlRegex" class="textField k-input" name="urlRegex" value="@Model.UrlRegex" autocomplete="off" pattern=".*">
+    </span>
+    <div class="form-hint"><span>Vanaf welke URL moet deze template bereikbaar zijn? Hier kan een regular expression opgegeven worden voor dynamische waardes en parameters. Indien je de regular expression opdeelt in groepen en die groepen namen geeft, dan kunnen die namen gebruikt worden als variabelen in deze template. Voorbeeld: \/product\/(?&lt;productId&gt;[0-9]+)\/</span></div>
+</div>

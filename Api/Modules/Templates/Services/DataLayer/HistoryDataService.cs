@@ -149,7 +149,6 @@ namespace Api.Modules.Templates.Services.DataLayer
                     HandleLogicBlocks = Convert.ToBoolean(row["handle_logic_blocks"]),
                     HandleMutators = Convert.ToBoolean(row["handle_mutators"]),
                     LoginRequired = Convert.ToBoolean(row["login_required"]),
-                    LoginRoles = row.Field<string>("login_role")?.Split(",").Select(Int32.Parse).ToList(),
                     Ordering = row.Field<int>("ordering"),
                     LinkedTemplates = new LinkedTemplatesModel
                     {
@@ -176,6 +175,12 @@ namespace Api.Modules.Templates.Services.DataLayer
                     IsDefaultFooter = Convert.ToBoolean(row["is_default_footer"]),
                     DefaultHeaderFooterRegex = row.Field<string>("default_header_footer_regex")
                 };
+                
+                var loginRolesString = row.Field<string>("login_role");
+                if (!String.IsNullOrWhiteSpace(loginRolesString))
+                {
+                    templateData.LoginRoles = loginRolesString.Split(",").Select(Int32.Parse).ToList();
+                }
 
                 resultList.Add(templateData);
             }
