@@ -198,9 +198,9 @@ namespace Api.Modules.Items.Services
                     0 AS readonly,
                     CAST(JSON_ARRAYAGG(JSON_OBJECT(
                         'id', IFNULL(field.id, 0),
-                        'languageCode', field.language_code,
-                        'groupName', field.groupname,
-                        'key', IFNULL(property.property_name, property.display_name),
+                        'languageCode', IFNULL(field.language_code, property.language_code),
+                        'groupName', IFNULL(field.groupname, property.group_name),
+                        'key', COALESCE(field.`key`, property.property_name, property.display_name),
                         'value', CONCAT_WS('', field.value, field.long_value),
                         'displayName', IFNULL(property.display_name, '')
                     )) AS CHAR) AS fields
@@ -240,7 +240,7 @@ namespace Api.Modules.Items.Services
                     LIMIT {(pagedRequest.Page - 1) * pagedRequest.PageSize}, {pagedRequest.PageSize}
                 ) AS x
                 LEFT JOIN {WiserTableNames.WiserEntityProperty} AS property ON property.entity_name = x.entity_type AND property.inputtype NOT IN ('file-upload', 'querybuilder', 'grid', 'button', 'image-upload', 'sub-entities-grid', 'item-linker', 'linked-item', 'action-button', 'data-selector', 'chart', 'scheduler', 'timeline', 'empty', 'qr')
-                LEFT JOIN {WiserTableNames.WiserItemDetail} AS field ON field.item_id = x.id AND field.`key` = IFNULL(property.property_name, property.display_name)
+                LEFT JOIN {WiserTableNames.WiserItemDetail} AS field ON field.item_id = x.id AND field.`key` = IFNULL(property.property_name, property.display_name) AND field.language_code = property.language_code
                 GROUP BY x.id
 				ORDER BY IFNULL(x.changed_on, x.added_on) DESC
             ";
