@@ -408,9 +408,12 @@ const moduleSettings = {
             try {
                 this.saving = true;
                 const title = document.querySelector('input[name="visibleDescription"]').value;
-                if (!title){
-                    window.popupNotification.show(`Geen naam ingevoerd! Vul een naam in.`, "info");
-                } else {
+                if (!title) {
+                    kendo.alert("Naam is verplicht! Vul een naam in om verder te gaan");
+                    this.saving = false;
+                    window.processing.removeProcess(process);
+                    return;
+                }
                     const contentId = await Wiser.api({
                         url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
                         dataType: "json",
@@ -433,7 +436,7 @@ const moduleSettings = {
 
                     window.popupNotification.show(`Dynamisch component '${document.querySelector('input[name="visibleDescription"]').value}' is succesvol opgeslagen.`, "info");
 
-                }
+                
                 if (alsoDeployToTest) {
                     const version = (parseInt($(".historyContainer .historyLine:first").data("historyVersion")) || 0) + 1;
     
