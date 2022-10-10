@@ -1558,7 +1558,14 @@ ON DUPLICATE KEY UPDATE permissions = {permissionCode};");
 
                 TemplateQueryStrings.Add("GET_DATA_SELECTOR_BY_ID", @"SET @_id = {id};
 
-SELECT id, `name`, module_selection AS modules, request_json AS requestJson, saved_json AS savedJson, show_in_export_module AS showInExportModule, available_for_rendering AS availableForRendering
+SELECT
+    id, `name`,
+    module_selection AS modules,
+    request_json AS requestJson,
+    saved_json AS savedJson,
+    show_in_export_module AS showInExportModule,
+    show_in_communication_module AS showInCommunicationModule,
+    available_for_rendering AS availableForRendering
 FROM wiser_data_selector
 WHERE id = @_id");
 

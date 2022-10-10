@@ -1044,6 +1044,7 @@ const moduleSettings = {
                 requestJson: JSON.stringify(this.createJsonRequest()),
                 savedJson: JSON.stringify(this.createJsonRequest(true)),
                 showInExportModule: document.getElementById("showInExportModule").checked ? 1 : 0,
+                showInCommunicationModule: document.getElementById("showInCommunicationModule").checked ? 1 : 0,
                 availableForRendering: document.getElementById("availableForRendering").checked ? 1 : 0
             };
 

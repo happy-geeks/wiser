@@ -32,7 +32,8 @@ module.exports = {
         Admin: "../../Modules/Admin/Scripts/Admin.js",
         Dashboard: "../../Modules/Dashboard/Scripts/Dashboard.js",
         Base: "../../Modules/Base/Scripts/Base.js",
-        VersionControl: "../../Modules/VersionControl/Scripts/VersionControl.js"
+        VersionControl: "../../Modules/VersionControl/Scripts/VersionControl.js",
+        Communication: "../../Modules/Communication/Scripts/Communication.js"
     },
     output: {
         path: path.join(__dirname, "wwwroot/scripts"),

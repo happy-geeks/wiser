@@ -1,0 +1,246 @@
+@import "../../Base/scss/base.scss";
+
+#fullForm {
+    display: block;
+}
+
+#fullForm,
+#tabStrip {
+    height: 100%;
+}
+
+.padding-8 {
+    padding: 8px;
+}
+
+.margin-top-20 {
+    margin-top: 20px;
+}
+
+.w-10 {
+    width: 10% !important;
+}
+
+.w-20 {
+    width: 20% !important;
+}
+
+.w-45 {
+    width: 45% !important;
+}
+
+.communication-module #left-pane {
+    box-sizing: border-box;
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+}
+
+.communication-module .k-tabstrip header {
+    background: var(--item-bg-color);
+    position: relative;
+    z-index: 50;
+}
+
+.communication-module .k-tabstrip .k-tabstrip-items {
+    top: 2px;
+}
+
+.communication-module .k-tabstrip .k-tabstrip-items:before {
+    background: var(--white-color);
+    content: "";
+    height: 20px;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    top: auto;
+    width: 100%;
+}
+
+.communication-module #left-pane .k-tabstrip-wrapper {
+    padding: 2px;
+}
+
+.cToggle,
+.rToggle {
+    display: inline-block;
+    margin: 0 35px 0 5px;
+}
+
+.cToggle ~ header + div,
+.rToggle ~ header + div {
+    max-height: 0;
+    overflow: hidden;
+}
+
+.rToggle ~ header + div {
+    padding-left: 40px;
+}
+
+.cToggle:checked ~ header + div,
+.rToggle:checked ~ header + div {
+    max-height: fit-content;
+    overflow: visible;
+}
+
+.rToggle:checked ~ header + div {
+    margin-bottom: 20px;
+}
+
+.cToggle:checked ~ header + div #dataBuilder {
+    border: 1px solid #dddddd;
+}
+
+.cToggle:nth-child(1):checked ~ header .cToggle:nth-child(1) > span:after,
+.cToggle:nth-child(2):checked ~ header .cToggle:nth-child(2) > span:after,
+.cToggle:nth-child(3):checked ~ header .cToggle:nth-child(3) > span:after {
+    background: var(--color-1);
+    content: "";
+    height: 10px;
+    position: absolute;
+    left: 5px;
+    top: 13px;
+    width: 10px;
+}
+
+.rToggle:checked ~ header .rToggle > span:after {
+    background: var(--color-1);
+    border-radius: 100%;
+    content: "";
+    height: 10px;
+    position: absolute;
+    left: 5px;
+    top: 13px;
+    width: 10px;
+}
+
+.communication-module .k-tabstrip header > button {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+}
+
+.next-button .k-icon, .save-button .k-icon {
+    margin-right: 0;
+    margin-left: 3px;
+    margin-left: .1875em;
+}
+
+.communication-module span.k-widget,
+.communication-module div.k-multiselect,
+.communication-module .item .inline {
+    max-width: calc(100% - 240px);
+}
+
+.communication-module .item .inline.w-10 span.k-widget,
+.communication-module .item .inline.w-20 span.k-widget,
+.communication-module .item .inline.w-45 span.k-widget {
+    max-width: calc(100% - 2px);
+}
+
+.communication-module .k-dateinput.k-widget {
+    max-width: 100%;
+}
+
+.communication-module .k-timepicker.k-widget,
+.communication-module .half-width.k-widget {
+    max-width: 298px;
+    margin-bottom: 10px !important;
+}
+
+.communication-module .half-width.k-widget + .form-hint {
+    display: inline-block;
+    padding-left: 10px;
+    width: auto;
+}
+
+.communication-module table.k-editor,
+.communication-module .k-upload {
+    display: table;
+    width: calc(100% - 240px);
+}
+
+.communication-module textarea.k-textbox {
+    background-color: var(--white-color);
+    resize: vertical;
+    width: calc(100% - 25px);
+}
+
+.communication-module textarea[data-limit] + span {
+    position: absolute;
+    right: 34px;
+    top: 9px;
+    text-align: right;
+    z-index: 60;
+    background: rgba(204,204,204,0.75);
+    padding: 4px 8px;
+}
+
+.k-upload .k-upload-selected {
+    display: none;
+}
+
+.k-editor-toolbar .k-tool-group span.k-widget {
+    max-width: none;
+}
+
+/* SUMMARY */
+.summary > div {
+    padding: 25px 25px 5px 25px;
+}
+
+.summary > div label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.summary > div ul {
+    display: block;
+    list-style: none;
+}
+
+.summary > div ul li {
+    background-color: var(--lighter-color);
+    padding: 6px 8px;
+    margin-top: 2px;
+}
+
+/* SCROLLABLE TO BOTTOM */
+#dataSelectorContainer {
+    padding-bottom: 35px;
+}
+#dataSelectorContainer > iframe {
+    border: none;
+    left: 0;
+    width: 100%;
+}
+
+/* FOOTER */
+footer .actions {
+    float: right;
+    position: inherit;
+    right: auto;
+}
+.communication-module #right-pane footer {
+    display: flex;
+}
+
+@media screen and (max-width: 1024px) {
+    footer {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    footer .actions {
+        margin-top: 10px;
+        order: 2;
+        width: 100%;
+    }
+    footer .actions + .actions {
+        margin-top: 0;
+        order: 1;
+    }
+    footer .actions .k-button {
+        margin: 0;
+        width: 100%;
+    }
+}

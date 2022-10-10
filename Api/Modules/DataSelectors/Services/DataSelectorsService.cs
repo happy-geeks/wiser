@@ -228,7 +228,7 @@ namespace Api.Modules.DataSelectors.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity, bool forExportModule = false, bool forRendering = false)
+        public async Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity, bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserDataSelector });
@@ -238,15 +238,19 @@ namespace Api.Modules.DataSelectors.Services
             {
                 whereClauses.Add("show_in_export_module = 1");
             }
+            if (forCommunicationModule)
+            {
+                whereClauses.Add("show_in_communication_module = 1");
+            }
             if (forRendering)
             {
                 whereClauses.Add("available_for_rendering = 1");
             }
 
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id, name
-                                                                            FROM {WiserTableNames.WiserDataSelector}
-                                                                            WHERE {String.Join(" AND ", whereClauses)}
-                                                                            ORDER BY name ASC");
+FROM {WiserTableNames.WiserDataSelector}
+WHERE {String.Join(" AND ", whereClauses)}
+ORDER BY name ASC");
 
             var results = new List<DataSelectorModel>();
             if (dataTable.Rows.Count == 0)
@@ -279,18 +283,19 @@ namespace Api.Modules.DataSelectors.Services
             clientDatabaseConnection.AddParameter("requestJson", data.RequestJson);
             clientDatabaseConnection.AddParameter("savedJson", data.SavedJson);
             clientDatabaseConnection.AddParameter("showInExportModule", data.ShowInExportModule);
+            clientDatabaseConnection.AddParameter("showInCommunicationModule", data.ShowInCommunicationModule);
 
             int result;
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id FROM {WiserTableNames.WiserDataSelector} WHERE name = ?name");
             if (dataTable.Rows.Count == 0)
             {
-                result = (int)await clientDatabaseConnection.InsertRecordAsync($@"INSERT INTO {WiserTableNames.WiserDataSelector} (name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template)
-                                                                                    VALUES (?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate)");
+                result = (int)await clientDatabaseConnection.InsertRecordAsync($@"INSERT INTO {WiserTableNames.WiserDataSelector} (name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template, show_in_communication_module)
+                                                                                    VALUES (?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate, ?showInCommunicationModule)");
             }
             else
             {
                 result = dataTable.Rows[0].Field<int>("id");
-                await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.WiserDataSelector} SET request_json = ?requestJson, saved_json = ?savedJson, show_in_export_module = ?showInExportModule, available_for_rendering = ?availableForRendering, default_template = ?defaultTemplate WHERE name = ?name");
+                await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.WiserDataSelector} SET request_json = ?requestJson, saved_json = ?savedJson, show_in_export_module = ?showInExportModule, available_for_rendering = ?availableForRendering, default_template = ?defaultTemplate, show_in_communication_module = ?showInCommunicationModule WHERE name = ?name");
             }
 
             return new ServiceResult<int>(result);

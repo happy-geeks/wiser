@@ -28,7 +28,9 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="forExportModule">Optional: Set to true to only get data selectors that can be shown in the export module.</param>
         /// <param name="forRendering">Optional: Set to true to only get data selectors to use with templating rendering.</param>
-        Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity, bool forExportModule = false, bool forRendering = false);
+        /// <param name="forCommunicationModule">Optional: Set to true to only get data selectors that can be shown in the communication module.</param>
+        /// <returns>A list of <see cref="DataSelectorModel"/>.</returns>
+        Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity, bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false);
 
         /// <summary>
         /// Saves a data selector based on name. The ID will be ignored. If a data selector with the given name already exists, it will be overwritten.
