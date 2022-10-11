@@ -92,7 +92,7 @@ const moduleSettings = {
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
-          
+
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
@@ -413,7 +413,7 @@ const moduleSettings = {
                         value: "treeview",
                         entityName: "",
                         displayName: "Treeview",
-                        languageCode: "",
+                        languageCode: [],
                         aggregation: "",
                         formatting: "",
                         fieldAlias: "",
@@ -675,12 +675,19 @@ const moduleSettings = {
                     tempArray = [];
                     const selectDetails = $(item.querySelector("select.select-details")).getKendoMultiSelect();
                     selectDetails.dataItems().forEach((dataItem) => {
+                        const languageCodes = [];
+                        if (typeof dataItem.languageCode === "string") {
+                            languageCodes.push(dataItem.languageCode);
+                        } else {
+                            languageCodes.push(...Array.from(dataItem.languageCode));
+                        }
+
                         const newItem = {
                             fieldname: dataItem.propertyName,
                             fieldalias: dataItem.fieldAlias,
                             dataType: dataItem.dataType || "string",
                             havingDataType: dataItem.havingDataType || "string",
-                            languagecode: dataItem.languageCode,
+                            languageCodes: languageCodes,
                             aggregationfunction: dataItem.aggregation,
                             formatting: dataItem.formatting
                         };
@@ -689,12 +696,19 @@ const moduleSettings = {
                             const subTempArray = [];
 
                             dataItem.subSelection.fields.forEach((subDataItem) => {
+                                const languageCodes = [];
+                                if (typeof subDataItem.languageCode === "string") {
+                                    languageCodes.push(subDataItem.languageCode);
+                                } else {
+                                    languageCodes.push(...Array.from(subDataItem.languageCode));
+                                }
+
                                 subTempArray.push({
                                     fieldname: subDataItem.propertyName,
                                     fieldalias: subDataItem.fieldAlias,
                                     dataType: subDataItem.dataType || "string",
                                     havingDataType: subDataItem.havingDataType || "string",
-                                    languagecode: subDataItem.languageCode,
+                                    languageCodes: languageCodes,
                                     aggregationfunction: subDataItem.aggregation,
                                     formatting: subDataItem.formatting
                                 });
@@ -833,10 +847,17 @@ const moduleSettings = {
                     }
 
                     if (!forSaving) {
+                        const languageCodes = [];
+                        if (typeof dataItem.languageCode === "string") {
+                            languageCodes.push(dataItem.languageCode);
+                        } else {
+                            languageCodes.push(...Array.from(dataItem.languageCode));
+                        }
+
                         scopeSection[rowsArrayName].push({
                             key: {
                                 fieldname: fieldName,
-                                languagecode: dataItem.languageCode,
+                                languageCodes: languageCodes,
                                 dataType: dataItem.dataType || "string",
                                 havingDataType: dataItem.havingDataType || "string",
                                 aggregationfunction: forHaving ? dataItem.havingAggregation : dataItem.aggregation,
@@ -846,6 +867,13 @@ const moduleSettings = {
                             value: value
                         });
                     } else {
+                        const languageCodes = [];
+                        if (typeof dataItem.languageCode === "string") {
+                            languageCodes.push(dataItem.languageCode);
+                        } else {
+                            languageCodes.push(...Array.from(dataItem.languageCode));
+                        }
+
                         scopeSection[rowsArrayName].push({
                             key: {
                                 entityName: dataItem.entityName,
@@ -853,7 +881,7 @@ const moduleSettings = {
                                 fieldAlias: dataItem.fieldAlias,
                                 dataType: dataItem.dataType || "string",
                                 havingDataType: dataItem.havingDataType || "string",
-                                languageCode: dataItem.languageCode,
+                                languageCodes: languageCodes,
                                 aggregation: forHaving ? dataItem.havingAggregation : dataItem.aggregation,
                                 formatting: forHaving ? dataItem.havingFormatting : dataItem.formatting
                             },
@@ -934,12 +962,19 @@ const moduleSettings = {
                                 tempArray = [];
                                 const selectDetails = $(item.querySelector("select.select-details")).getKendoMultiSelect();
                                 Array.from(selectDetails.dataItems()).forEach((dataItem) => {
+                                    const languageCodes = [];
+                                    if (typeof dataItem.languageCode === "string") {
+                                        languageCodes.push(dataItem.languageCode);
+                                    } else {
+                                        languageCodes.push(...Array.from(dataItem.languageCode));
+                                    }
+
                                     const newItem = {
                                         fieldname: dataItem.propertyName,
                                         fieldalias: dataItem.fieldAlias,
                                         dataType: dataItem.dataType || "string",
                                         havingDataType: dataItem.havingDataType || "string",
-                                        languagecode: dataItem.languageCode,
+                                        languageCodes: languageCodes,
                                         aggregationfunction: dataItem.aggregation,
                                         formatting: dataItem.formatting
                                     };
@@ -948,12 +983,19 @@ const moduleSettings = {
                                         const subTempArray = [];
 
                                         dataItem.subSelection.fields.forEach((subDataItem) => {
+                                            const languageCodes = [];
+                                            if (typeof dataItem.languageCode === "string") {
+                                                languageCodes.push(subDataItem.languageCode);
+                                            } else {
+                                                languageCodes.push(...Array.from(subDataItem.languageCode));
+                                            }
+
                                             subTempArray.push({
                                                 fieldname: subDataItem.propertyName,
                                                 fieldalias: subDataItem.fieldAlias,
                                                 dataType: subDataItem.dataType || "string",
                                                 havingDataType: subDataItem.havingDataType || "string",
-                                                languagecode: subDataItem.languageCode,
+                                                languageCodes: languageCodes,
                                                 aggregationfunction: subDataItem.aggregation,
                                                 formatting: subDataItem.formatting
                                             });
@@ -1515,17 +1557,47 @@ const moduleSettings = {
             }
 
             if (languageCodeField.length > 0) {
-                const languageCode = languageCodeField.getKendoComboBox();
+                const languageCode = languageCodeField.getKendoMultiSelect();
+                languageCode.bind("change", (event) => {
+                    itemProperties.find("div.havingDataTypeWrapper, div.aggregationWrapper, div.formattingWrapper, div.fieldAliasWrapper, div.isItemIdWrapper, div.subSelectionWrapper").toggleClass("hidden", event.sender.value().length > 1);
+                });
 
                 // Update language codes.
-                Wiser.api({ url: `${this.settings.serviceRoot}/GET_LANGUAGE_CODES?entityName=${dataItem.entityName || ""}&linkType=${dataItem.linkType || "0"}&propertyName=${dataItem.propertyName}` }).then((response) => {
+                try {
+                    const languageCodesData = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_LANGUAGE_CODES?entityName=${dataItem.entityName || ""}&linkType=${dataItem.linkType || "0"}&propertyName=${dataItem.propertyName}` });
+                    console.log("languageCodesData", languageCodesData);
                     languageCode.setDataSource({
-                        data: [...response]
-                    });
+                        data: [...languageCodesData]
+                    })
+
+                    if (dataItem.languageCode) {
+                        if (typeof dataItem.languageCode === "string") {
+                            // Old method; single string value.
+                            languageCode.value(dataItem.languageCode || "");
+                        } else {
+                            // New method; array with language codes.
+                            const selectedLanguageCodes = Array.from(dataItem.languageCode);
+
+                            // Check if there are custom language codes in the array which should be added first.
+                            selectedLanguageCodes.forEach((lc) => {
+                                if (languageCodesData.findIndex((item) => item.value === lc) === -1) {
+                                    // Custom language code; add it first.
+                                    languageCode.dataSource.add({ text: lc, value: lc });
+                                }
+                            });
+
+                            languageCode.value(selectedLanguageCodes);
+                        }
+                    }
 
                     // Set current language code.
                     languageCode.value(dataItem.languageCode || "");
-                });
+                    if (languageCode.value().length > 1) {
+                        itemProperties.find("div.havingDataTypeWrapper, div.aggregationWrapper, div.formattingWrapper, div.fieldAliasWrapper, div.isItemIdWrapper, div.subSelectionWrapper").addClass("hidden");
+                    }
+                } catch (e) {
+                    console.error("Error while trying to update language codes", e);
+                }
             }
 
             // Update values.
@@ -1593,7 +1665,7 @@ const moduleSettings = {
                 }
 
                 if (languageCodeField.length > 0) {
-                    const languageCode = languageCodeField.getKendoComboBox();
+                    const languageCode = languageCodeField.getKendoMultiSelect();
                     dataItem.set("languageCode", languageCode.value());
                 }
 
@@ -1636,7 +1708,7 @@ const moduleSettings = {
                 dialog.title(`Eigenschappen van '${dataItem.displayName}'`);
             }
             dialog.open();
-            
+
             // Increase z-index, because otherwise the k-animation-container of the multiselect will be painted on top of this dialog, causing you to not be able to click everything in the dialog.
             this.dialogZindex++;
             dialog.wrapper.css("z-index", this.dialogZindex);
