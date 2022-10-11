@@ -29,23 +29,23 @@
     width: 45% !important;
 }
 
-.communication-module #left-pane {
+#left-pane {
     box-sizing: border-box;
     position: relative;
     -webkit-overflow-scrolling: touch;
 }
 
-.communication-module .k-tabstrip header {
+.k-tabstrip header {
     background: var(--item-bg-color);
     position: relative;
     z-index: 50;
 }
 
-.communication-module .k-tabstrip .k-tabstrip-items {
+.k-tabstrip .k-tabstrip-items {
     top: 2px;
 }
 
-.communication-module .k-tabstrip .k-tabstrip-items:before {
+.k-tabstrip .k-tabstrip-items:before {
     background: var(--white-color);
     content: "";
     height: 20px;
@@ -56,7 +56,7 @@
     width: 100%;
 }
 
-.communication-module #left-pane .k-tabstrip-wrapper {
+#left-pane .k-tabstrip-wrapper {
     padding: 2px;
 }
 
@@ -113,7 +113,7 @@
     width: 10px;
 }
 
-.communication-module .k-tabstrip header > button {
+.k-tabstrip header > button {
     position: absolute;
     right: 10px;
     top: 10px;
@@ -125,47 +125,48 @@
     margin-left: .1875em;
 }
 
-.communication-module span.k-widget,
-.communication-module div.k-multiselect,
-.communication-module .item .inline {
+span.k-widget,
+div.k-multiselect,
+.item .inline,
+.item span.k-picker {
     max-width: calc(100% - 240px);
 }
 
-.communication-module .item .inline.w-10 span.k-widget,
-.communication-module .item .inline.w-20 span.k-widget,
-.communication-module .item .inline.w-45 span.k-widget {
+.item .inline.w-10 span.k-widget,
+.item .inline.w-20 span.k-widget,
+.item .inline.w-45 span.k-widget {
     max-width: calc(100% - 2px);
 }
 
-.communication-module .k-dateinput.k-widget {
+.k-dateinput.k-widget {
     max-width: 100%;
 }
 
-.communication-module .k-timepicker.k-widget,
-.communication-module .half-width.k-widget {
+.k-timepicker.k-widget,
+.half-width.k-widget {
     max-width: 298px;
     margin-bottom: 10px !important;
 }
 
-.communication-module .half-width.k-widget + .form-hint {
+.half-width.k-widget + .form-hint {
     display: inline-block;
     padding-left: 10px;
     width: auto;
 }
 
-.communication-module table.k-editor,
-.communication-module .k-upload {
+table.k-editor,
+.k-upload {
     display: table;
     width: calc(100% - 240px);
 }
 
-.communication-module textarea.k-textbox {
+textarea.k-textbox {
     background-color: var(--white-color);
     resize: vertical;
     width: calc(100% - 25px);
 }
 
-.communication-module textarea[data-limit] + span {
+textarea[data-limit] + span {
     position: absolute;
     right: 34px;
     top: 9px;
@@ -221,7 +222,7 @@ footer .actions {
     position: inherit;
     right: auto;
 }
-.communication-module #right-pane footer {
+#right-pane footer {
     display: flex;
 }
 

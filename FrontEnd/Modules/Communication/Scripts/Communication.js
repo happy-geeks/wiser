@@ -29,6 +29,9 @@ const communicationModuleSettings = {
             this.dataSelectorDropDown = null;
             this.queryDropDown = null;
             this.mailTemplateDropDown = null;
+            this.previouslySelectedMailTemplate = null;
+            this.languageDropDown = null;
+            this.previouslySelectedLanguage = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -119,6 +122,21 @@ const communicationModuleSettings = {
                 // You can do anything here that needs to happen before closing the module.
                 event.detail();
             });
+
+            // Handle textareas with counters and max lengths.
+            $("textarea[data-limit]").on({
+                keyup: (event) => {
+                    const charLength = event.currentTarget.value.length;
+                    const charLimit = parseInt(event.currentTarget.dataset.limit);
+                    const element = $(event.currentTarget);
+
+                    element.next("span").html(charLength + " / " + charLimit);
+
+                    if (charLength > charLimit) {
+                        element.next("span").html(`<strong>Je bericht mag maximaal ${charLimit} karakters bevatten.</strong>`);
+                    }
+                }
+            });
         }
 
         /**
@@ -136,22 +154,59 @@ const communicationModuleSettings = {
                     }
                 }
             }).data("kendoTabStrip");
+            
+            this.mailBodyEditor = $("#mailBodyEditor").kendoEditor({
+                tools: [
+                    "bold",
+                    "italic",
+                    "underline",
+                    "strikethrough",
+                    "justifyLeft",
+                    "justifyCenter",
+                    "justifyRight",
+                    "justifyFull",
+                    "insertUnorderedList",
+                    "insertOrderedList",
+                    "indent",
+                    "outdent",
+                    "createLink",
+                    "unlink",
+                    "insertImage",
+                    "insertFile",
+                    "subscript",
+                    "superscript",
+                    "tableWizard",
+                    "createTable",
+                    "addRowAbove",
+                    "addRowBelow",
+                    "addColumnLeft",
+                    "addColumnRight",
+                    "deleteRow",
+                    "deleteColumn",
+                    "viewHtml",
+                    "formatting",
+                    "cleanFormatting"
+                ]
+            }).data("kendoEditor");
 
             try {
                 const promiseResults = await Promise.all([
                     Wiser.api({ url: `${this.settings.wiserApiRoot}data-selectors?forCommunicationModule=true` }),
                     Wiser.api({ url: `${this.settings.wiserApiRoot}queries/communication-module` }),
-                    Wiser.api({ url: `${this.settings.wiserApiRoot}items?entityType=mailtemplate` })
+                    Wiser.api({ url: `${this.settings.wiserApiRoot}items?entityType=mailtemplate` }),
+                    Wiser.api({ url: `${this.settings.wiserApiRoot}languages` })
                 ]);
                 
                 const dataSelectors = promiseResults[0];
                 const queries = promiseResults[1];
                 const mailTemplates = promiseResults[2];
+                const languages = promiseResults[3];
 
                 if (!dataSelectors || !dataSelectors.length) {
                     $("#DataSelectorContainer").hide();
                 } else {
                     this.dataSelectorDropDown = $("#DataSelectorList").kendoDropDownList({
+                        optionLabel: "Selecteer een reeds bestaande dataselector",
                         dataTextField: "name",
                         dataValueField: "id",
                         dataSource: dataSelectors
@@ -162,6 +217,7 @@ const communicationModuleSettings = {
                     $("#QueryContainer").hide();
                 } else {
                     this.queryDropDown = $("#QueryList").kendoDropDownList({
+                        optionLabel: "Selecteer de ontvangers via een vooraf ingestelde query",
                         dataTextField: "description",
                         dataValueField: "id",
                         dataSource: queries
@@ -169,16 +225,79 @@ const communicationModuleSettings = {
                 }
 
                 this.mailTemplateDropDown = $("#MailTemplateDropDown").kendoDropDownList({
+                    optionLabel: "Selecteer optioneel een template voor de inhoud van de mail",
                     dataTextField: "title",
                     dataValueField: "id",
-                    dataSource: mailTemplates.results
+                    dataSource: mailTemplates.results,
+                    change: this.onMailTemplateDropDownChange.bind(this)
                 }).data("kendoDropDownList");
+
+                if (!languages.length) {
+                    $("#LanguageDropDownContainer").hide();
+                } else {
+                    this.languageDropDown = $("#LanguageDropDown").kendoDropDownList({
+                        optionLabel: "Selecteer optioneel een taal voor de inhoud van de mail",
+                        dataTextField: "name",
+                        dataValueField: "id",
+                        dataSource: languages,
+                        change: this.onLanguageDropDownChange.bind(this)
+                    }).data("kendoDropDownList");
+                }
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
             }
 
             window.processing.removeProcess(process);
+        }
+
+        /**
+         * Event for when the user selects a value in the mail template drop down.
+         * @param event The change event of the Kendo dropdown list.
+         */
+        async onMailTemplateDropDownChange(event) {
+            await this.setMailBodyEditorValue();
+            this.previouslySelectedMailTemplate = event.sender.dataItem();
+        }
+
+        /**
+         * Event for when the user selects a value in the mail template drop down.
+         * @param event The change event of the Kendo dropdown list.
+         */
+        async onLanguageDropDownChange(event) {
+            await this.setMailBodyEditorValue();
+            this.previouslySelectedLanguage = event.sender.dataItem();
+        }
+
+        /**
+         * Set the mail body editor value, based on the selected mail template and language.
+         */
+        async setMailBodyEditorValue() {
+            const selectedMailTemplate = this.mailTemplateDropDown.dataItem();
+            const selectedLanguage = !this.languageDropDown ? null : this.languageDropDown.dataItem();
+            if (!selectedMailTemplate || !selectedMailTemplate.id || (this.languageDropDown && (!selectedLanguage || !selectedLanguage.id))) {
+                return;
+            }
+            
+            if (this.mailBodyEditor.value()) {
+                try {
+                    await Wiser.showConfirmDialog("U heeft al een waarde ingevuld in de inhoud van de mail. Wilt u die overschrijven met de nieuw gekozen mailtemplate/taal?", "Overschrijven inhoud", "Annuleren", "Overschrijven");
+                }
+                catch {
+                    // If the user cancelled the selection, return the dropdowns to their previous values.
+                    this.mailTemplateDropDown.value(!this.previouslySelectedMailTemplate ? "" : this.previouslySelectedMailTemplate.id);
+                    if (this.languageDropDown) this.languageDropDown.value(!this.previouslySelectedLanguage ? "" : this.previouslySelectedLanguage.id);
+                    return;
+                }
+            }
+            
+            let templatePropertyName = "Template";
+            if (selectedLanguage && selectedLanguage.code) {
+                templatePropertyName += ` (${selectedLanguage.code})`;
+            }
+            
+            const html = selectedMailTemplate[templatePropertyName] || selectedMailTemplate.Template || selectedMailTemplate.template || "";
+            this.mailBodyEditor.value(html);
         }
     }
 

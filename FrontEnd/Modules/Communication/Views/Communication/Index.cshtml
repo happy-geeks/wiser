@@ -30,40 +30,56 @@
         <div id="tabStrip">
             <ul>
                 <li class="k-state-active">
-                    Ontvanger
+                    Ontvangers
+                </li>
+                <li>
+                    Data
                 </li>
                 <li>
                     Content
                 </li>
                 <li>
-                    Wanneer
+                    Verzendpatroon
                 </li>
             </ul>
-            <div class="formview full" id="ReceiverContainer">
-                <div class="item">
-                    <div id="DataSelectorContainer">
-                        <input type="radio" name="exportType" id="ReceiverDataSelector" class="noForm rToggle" value="dataselector"/>
-                        <header>
-                            <label for="ReceiverDataSelector" class="radio rToggle"><span>Dataselector</span></label>
-                        </header>
-                        <div>
-                            <select id="DataSelectorList" name="dataSelector" class="kendo-dropdown-list">
-                            </select>
-                        </div>
+        <div class="formview full" id="ReceiverContainer">
+            <div class="item">
+                <div id="StaticValuesContainer">
+                    <input type="radio" name="receiverType" id="StaticReceiver" class="noForm rToggle" value="static"/>
+                    <header>
+                        <label for="StaticReceiver" class="radio rToggle"><span>Een of meerdere vaste ontvangers (e-mailadres of GSM-nummer). Vul kommagescheiden meerdere waardes in.</span></label>
+                    </header>
+                    <div>
+                        <textarea id="StaticReceiverInput" name="staticReceiverInput"></textarea>
                     </div>
+                </div>
+                
+                <div id="DataSelectorContainer">
+                    <input type="radio" name="receiverType" id="ReceiverDataSelector" class="noForm rToggle" value="dataSelector"/>
+                    <header>
+                        <label for="ReceiverDataSelector" class="radio rToggle"><span>Selecteer de ontvangers via een dataselector.</span></label>
+                    </header>
+                    <div>
+                        <select id="DataSelectorList" name="dataSelector" class="kendo-dropdown-list">
+                        </select>
+                    </div>
+                </div>
 
-                    <div id="QueryContainer">
-                        <input type="radio" name="exportType" id="ReceiverQuery" class="noForm rToggle" value="query"/>
-                        <header>
-                            <label for="ReceiverQuery" class="radio rToggle"><span>Query</span></label>
-                        </header>
-                        <div>
-                            <select id="QueryList" name="query" class="kendo-dropdown-list">
-                            </select>
-                        </div>
+                <div id="QueryContainer">
+                    <input type="radio" name="receiverType" id="ReceiverQuery" class="noForm rToggle" value="query"/>
+                    <header>
+                        <label for="ReceiverQuery" class="radio rToggle"><span>Selecteer de ontvangers via een vooraf ingestelde query.</span></label>
+                    </header>
+                    <div>
+                        <select id="QueryList" name="query" class="kendo-dropdown-list">
+                        </select>
                     </div>
                 </div>
             </div>
+        </div>
+        <div class="formview full" id="DataContainer">
+            
+        </div>
             <div class="formview full" id="ContentContainer">
                 <div class="formview full compact">
                     <div class="item">
@@ -74,7 +90,13 @@
                         <div>
                             <div class="item">
                                 <h4><label>Template</label></h4>
-                                <select id="MailTemplateDropDown" class="drop-down-list" data-filter="contains" data-data-text-field="name" data-data-value-field="id" data-option-label="Lijst met e-mail templates waarbinnen je kunt zoeken">
+                                <select id="MailTemplateDropDown" class="drop-down-list">
+                                </select>
+                            </div>
+
+                            <div class="item" id="LanguageDropDownContainer">
+                                <h4><label>Taal</label></h4>
+                                <select id="LanguageDropDown" class="drop-down-list">
                                 </select>
                             </div>
 
@@ -90,17 +112,19 @@
                                 <span class="k-widget k-input k-state-default">
                                     <input type="text" id="email-selector" class="textField k-input" maxlength="100" autocomplete="nope" />
                                 </span>
+                                <p class="form-hint">Hiermee kan aangegeven worden waar het e-mailadres van de ontvangers precies staat in de resultaten van de query of dataselector. Dit kan leeggelaten worden indien er vaste ontvangers zijn ingevuld. Indien er in de dataselector bijvoorbeeld een veld "emailadres" komt, dan kan hier de waarde "{emailadres}" ingevuld worden. Als het e-mailadres op een dieper niveau staat dan kan dat ook door te scheiden met punten, bijvoorbeeld "{customer.email}".</p>
                             </div>
 
                             <div class="item">
-                                <h4><label for="editor">HTML-editor</label></h4>
-                                <textarea id="editor" class="editor" rows="10" cols="30"></textarea>
+                                <h4><label for="mailBodyEditor">Inhoud mail</label></h4>
+                                <textarea id="mailBodyEditor" class="editor" rows="10" cols="30"></textarea>
+                                <p class="form-hint">Indien u hierboven een mailtemplate en een taal (indien u meertaligheid heeft in Wiser) selecteert, wordt die template automatisch hier gevuld. De mail kan dan vervolgens nog aangepast worden indien u wilt afwijken van de gekozen template. Hier kunnen dynamische waardes ingezet worden die uit een dataselector of query komen, deze dynamische waardes moeten binnen accolades staan (bijoorbeeld: "{firstName}"). Welke waardes u hier kunt invullen, kunt u zien in de dataselectormodule. Open daar de betreffende dataselector en klik op de knop "Toon resultaat", daar ziet u dan een JSON object en alle waardes die daarin staan kunt u hier gebruiken.</p>
                             </div>
 
-                            <div class="item">
-                                <h4><label>Bijlage toevoegen</label></h4>
-                                <input name="fileUpload" id="fileUpload" type="file" />
-                            </div>
+                            @* <div class="item"> *@
+                            @*     <h4><label>Bijlage toevoegen</label></h4> *@
+                            @*     <input name="fileUpload" id="fileUpload" type="file" /> *@
+                            @* </div> *@
                         </div>
                     </div>
                     <div class="item">
@@ -116,6 +140,7 @@
                                 <span class="k-widget k-input k-state-default">
                                     <input type="text" id="phone-number-selector" class="textField k-input" maxlength="100" autocomplete="nope" />
                                 </span>
+                                <p class="form-hint">Hiermee kan aangegeven worden waar het telefoonnummer van de ontvangers precies staat in de resultaten van de query of dataselector. Dit kan leeggelaten worden indien er vaste ontvangers zijn ingevuld. Indien er in de dataselector bijvoorbeeld een veld "telefoonnummer" komt, dan kan hier de waarde "{telefoonnummer}" ingevuld worden. Als het telefoonnummer op een dieper niveau staat dan kan dat ook door te scheiden met punten, bijvoorbeeld "{customer.phone}".</p>
                             </div>
 
                             <div class="item">

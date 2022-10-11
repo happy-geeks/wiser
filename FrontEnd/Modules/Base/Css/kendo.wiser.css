@@ -301,13 +301,16 @@
 	color: var(--white-color);
 }
 .k-primary,
-.item > .k-primary {
+.k-button-solid-primary,
+.item > .k-primary,
+.item > .k-button-solid-primary {
 	background-color: var(--primary-color);
 	border-color: var(--primary-color);
 	color: var(--white-color);
 	min-width: 150px;
 }
-.k-primary.k-button-round {
+.k-primary.k-button-round,
+.k-button-solid-primary.k-button-round {
 	border-radius: 100%;
 	min-height: 50px;
 	min-width: 50px;
@@ -514,7 +517,8 @@
 .k-scheduler-toolbar .k-button-icon .k-icon {
 	font-family: 'WebComponentsIcons' !important;
 }
-.k-button-icon.k-primary .k-icon {
+.k-button-icon.k-primary .k-icon,
+.k-button-icon.k-button-solid-primary .k-icon {
 	color: var(--white-color);
 }
 .k-button-icon .k-icon.k-i-verwijderen:before,
@@ -616,11 +620,13 @@
 	cursor: not-allowed;
 	opacity: 0.25;
 }
-.k-primary.delete-button {
+.k-primary.delete-button,
+.k-button-solid-primary.delete-button {
 	background-color: var(--color-2) !important;
 	width: auto;
 }
-.k-primary.delete-button:hover {
+.k-primary.delete-button:hover,
+.k-button-solid-primary.delete-button:hover{
 	background-color: var(--color-2) !important;
 	filter: brightness(0.9);
 }
@@ -2079,28 +2085,24 @@ table.k-editor {
 /********************** 
 * Focus for tab-navigation
 **********************/
-a:focus, button:focus, input:focus, select:focus, summary:focus, textarea:focus, .k-button:focus {
+a:focus,
+button:focus,
+input:focus,
+select:focus,
+summary:focus,
+textarea:focus,
+.k-button:focus {
 	outline-style: dotted;
 	outline-width: .2rem;
 	outline-color: var(--dark-txt);
 	outline-offset: .25rem;
 }
-.k-primary.k-state-focus, .k-primary.k-state-focused, .k-primary:focus {
-	color: var(--white-color);
-	background-color: var(--primary-color);
-	border-color: var(--primary-color);
-}
-
-/********************** 
-* Focus for tab-navigation
-**********************/
-a:focus, button:focus, input:focus, select:focus, summary:focus, textarea:focus, .k-button:focus {
-	outline-style: dotted;
-	outline-width: .2rem;
-	outline-color: var(--dark-txt);
-	outline-offset: .25rem;
-}
-.k-primary.k-state-focus, .k-primary.k-state-focused, .k-primary:focus {
+.k-primary.k-state-focus,
+.k-button-solid-primary.k-state-focus,
+.k-primary.k-state-focused,
+.k-button-solid-primary.k-state-focused,
+.k-primary:focus,
+.k-button-solid-primary:focus {
 	color: var(--white-color);
 	background-color: var(--primary-color);
 	border-color: var(--primary-color);
