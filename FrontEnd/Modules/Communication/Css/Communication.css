@@ -4,9 +4,12 @@
     display: block;
 }
 
-#fullForm,
-#tabStrip {
+#fullForm {
     height: 100%;
+}
+
+#tabStrip {
+    height: calc(100% - 52px);
 }
 
 .padding-8 {
@@ -29,10 +32,23 @@
     width: 45% !important;
 }
 
-#left-pane {
-    box-sizing: border-box;
-    position: relative;
-    -webkit-overflow-scrolling: touch;
+.w-90 {
+    width: 90% !important;
+}
+
+#MainHeader {
+    display: flex;
+    background: white;
+    padding: 10px 10px 0 10px;
+}
+
+#ButtonContainer {
+    margin-left: auto;
+}
+
+#NameContainer a {
+    text-decoration: none;
+    color: inherit;
 }
 
 .k-tabstrip header {
@@ -182,6 +198,10 @@ textarea[data-limit] + span {
 
 .k-editor-toolbar .k-tool-group span.k-widget {
     max-width: none;
+}
+
+.k-daterangepicker {
+    gap: 0;
 }
 
 /* SUMMARY */

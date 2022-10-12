@@ -25,6 +25,9 @@ const communicationModuleSettings = {
             this.mainLoader = null;
             
             // Kendo components.
+            this.editNameButton = null;
+            this.deleteButton = null;
+            this.saveButton = null;
             this.mainTabStrip = null;
             this.dataSelectorDropDown = null;
             this.queryDropDown = null;
@@ -32,6 +35,14 @@ const communicationModuleSettings = {
             this.previouslySelectedMailTemplate = null;
             this.languageDropDown = null;
             this.previouslySelectedLanguage = null;
+            this.fixedDateTimePicker = null;
+            this.recurringDateRangePicker = null;
+            this.recurringTimePicker = null;
+            this.recurringPeriodValueField = null;
+            this.recurringPeriodTypeDropDown = null;
+            this.variableAmountField = null;
+            this.variableTypeDropDown = null;
+            this.variableBeforeAfterDropDown = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -137,6 +148,9 @@ const communicationModuleSettings = {
                     }
                 }
             });
+            
+            this.editNameButton = $("#EditNameButton").click(this.onEditNameButtonClick.bind(this));
+            this.deleteButton = $("#DeleteButton").click(this.onDeleteButtonClick.bind(this));
         }
 
         /**
@@ -146,57 +160,31 @@ const communicationModuleSettings = {
         async initializeKendoComponents() {
             const process = `loadDropdowns_${Date.now()}`;
             window.processing.addProcess(process);
-            
-            this.mainTabStrip = $("#tabStrip").kendoTabStrip({
-                animation: {
-                    open: {
-                        effects: "fadeIn"
-                    }
-                }
-            }).data("kendoTabStrip");
-            
-            this.mailBodyEditor = $("#mailBodyEditor").kendoEditor({
-                tools: [
-                    "bold",
-                    "italic",
-                    "underline",
-                    "strikethrough",
-                    "justifyLeft",
-                    "justifyCenter",
-                    "justifyRight",
-                    "justifyFull",
-                    "insertUnorderedList",
-                    "insertOrderedList",
-                    "indent",
-                    "outdent",
-                    "createLink",
-                    "unlink",
-                    "insertImage",
-                    "insertFile",
-                    "subscript",
-                    "superscript",
-                    "tableWizard",
-                    "createTable",
-                    "addRowAbove",
-                    "addRowBelow",
-                    "addColumnLeft",
-                    "addColumnRight",
-                    "deleteRow",
-                    "deleteColumn",
-                    "viewHtml",
-                    "formatting",
-                    "cleanFormatting"
-                ]
-            }).data("kendoEditor");
 
             try {
+                // Header buttons.
+                this.saveButton = $("#SaveButton").kendoButton({
+                    icon: "save",
+                    click: this.onSaveButtonClick.bind(this)
+                });
+
+                // Main tab strip.
+                this.mainTabStrip = $("#tabStrip").kendoTabStrip({
+                    animation: {
+                        open: {
+                            effects: "fadeIn"
+                        }
+                    }
+                }).data("kendoTabStrip");
+
+                // Drop downs that need to load values from database, for tabs receivers and content.
                 const promiseResults = await Promise.all([
-                    Wiser.api({ url: `${this.settings.wiserApiRoot}data-selectors?forCommunicationModule=true` }),
-                    Wiser.api({ url: `${this.settings.wiserApiRoot}queries/communication-module` }),
-                    Wiser.api({ url: `${this.settings.wiserApiRoot}items?entityType=mailtemplate` }),
-                    Wiser.api({ url: `${this.settings.wiserApiRoot}languages` })
+                    Wiser.api({url: `${this.settings.wiserApiRoot}data-selectors?forCommunicationModule=true`}),
+                    Wiser.api({url: `${this.settings.wiserApiRoot}queries/communication-module`}),
+                    Wiser.api({url: `${this.settings.wiserApiRoot}items?entityType=mailtemplate`}),
+                    Wiser.api({url: `${this.settings.wiserApiRoot}languages`})
                 ]);
-                
+
                 const dataSelectors = promiseResults[0];
                 const queries = promiseResults[1];
                 const mailTemplates = promiseResults[2];
@@ -243,12 +231,79 @@ const communicationModuleSettings = {
                         change: this.onLanguageDropDownChange.bind(this)
                     }).data("kendoDropDownList");
                 }
+
+                // Content tab.
+                this.mailBodyEditor = $("#MailBodyEditor").kendoEditor({
+                    tools: [
+                        "bold",
+                        "italic",
+                        "underline",
+                        "strikethrough",
+                        "justifyLeft",
+                        "justifyCenter",
+                        "justifyRight",
+                        "justifyFull",
+                        "insertUnorderedList",
+                        "insertOrderedList",
+                        "indent",
+                        "outdent",
+                        "createLink",
+                        "unlink",
+                        "insertImage",
+                        "insertFile",
+                        "subscript",
+                        "superscript",
+                        "tableWizard",
+                        "createTable",
+                        "addRowAbove",
+                        "addRowBelow",
+                        "addColumnLeft",
+                        "addColumnRight",
+                        "deleteRow",
+                        "deleteColumn",
+                        "viewHtml",
+                        "formatting",
+                        "cleanFormatting"
+                    ]
+                }).data("kendoEditor");
+
+                // Sending pattern tab.
+                this.fixedDateTimePicker = $("#FixedDateTimePicker").kendoDateTimePicker({
+                    value: new Date(),
+                    dateInput: true,
+                    format: "dd MMMM yyyy HH:mm"
+                }).data("kendoDateTimePicker");
+
+                const start = new Date();
+                const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 20);
+                this.recurringDateRangePicker = $("#RecurringDateRangePicker").kendoDateRangePicker({
+                    range: {
+                        start: start,
+                        end: end
+                    },
+                    messages: {
+                        startLabel: "Periode start",
+                        endLabel: "Periode einde"
+                    },
+                    format: "dd MMMM yyyy",
+                    culture: "nl-NL"
+                }).data("kendoDateRangePicker");
+
+                this.recurringTimePicker = $("#RecurringTimePicker").kendoTimePicker({
+                    dateInput: true,
+                    format: "HH:mm"
+                }).data("kendoTimePicker");
+
+                this.recurringPeriodValueField = $("#RecurringPeriodValueField").kendoNumericTextBox({
+                    decimals: 0,
+                    format: "#"
+                }).data("kendoNumericTextBox");
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+            } finally {
+                window.processing.removeProcess(process);
             }
-
-            window.processing.removeProcess(process);
         }
 
         /**
@@ -267,6 +322,32 @@ const communicationModuleSettings = {
         async onLanguageDropDownChange(event) {
             await this.setMailBodyEditorValue();
             this.previouslySelectedLanguage = event.sender.dataItem();
+        }
+
+        /**
+         * Event for when the user clicks the button to edit the name of the communication.
+         * @param event The click event of the anchor element.
+         */
+        async onEditNameButtonClick(event) {
+            event.preventDefault();
+            console.log("onEditNameButtonClick", event);
+        }
+
+        /**
+         * Event for when the user clicks the button to delete the communication.
+         * @param event The click event of the anchor element.
+         */
+        async onDeleteButtonClick(event) {
+            event.preventDefault();
+            console.log("onDeleteButtonClick", event);
+        }
+
+        /**
+         * Event for when the user clicks the save button to save changes in the communication.
+         * @param event The click event of the Kendo button.
+         */
+        async onSaveButtonClick(event) {
+            console.log("onSaveButtonClick", event);
         }
 
         /**

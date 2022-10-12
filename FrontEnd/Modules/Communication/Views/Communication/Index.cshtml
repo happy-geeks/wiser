@@ -26,259 +26,230 @@
       data-api-client-id="@Model.Settings.ApiClientId"
       data-api-client-secret="@Model.Settings.ApiClientSecret"
       data-track-js-token="@Model.Settings.TrackJsToken">
-    <form id="fullForm">
-        <div id="tabStrip">
-            <ul>
-                <li class="k-state-active">
-                    Ontvangers
-                </li>
-                <li>
-                    Data
-                </li>
-                <li>
-                    Content
-                </li>
-                <li>
-                    Verzendpatroon
-                </li>
-            </ul>
-        <div class="formview full" id="ReceiverContainer">
-            <div class="item">
-                <div id="StaticValuesContainer">
-                    <input type="radio" name="receiverType" id="StaticReceiver" class="noForm rToggle" value="static"/>
-                    <header>
-                        <label for="StaticReceiver" class="radio rToggle"><span>Een of meerdere vaste ontvangers (e-mailadres of GSM-nummer). Vul kommagescheiden meerdere waardes in.</span></label>
-                    </header>
-                    <div>
-                        <textarea id="StaticReceiverInput" name="staticReceiverInput"></textarea>
-                    </div>
-                </div>
-                
-                <div id="DataSelectorContainer">
-                    <input type="radio" name="receiverType" id="ReceiverDataSelector" class="noForm rToggle" value="dataSelector"/>
-                    <header>
-                        <label for="ReceiverDataSelector" class="radio rToggle"><span>Selecteer de ontvangers via een dataselector.</span></label>
-                    </header>
-                    <div>
-                        <select id="DataSelectorList" name="dataSelector" class="kendo-dropdown-list">
-                        </select>
-                    </div>
-                </div>
-
-                <div id="QueryContainer">
-                    <input type="radio" name="receiverType" id="ReceiverQuery" class="noForm rToggle" value="query"/>
-                    <header>
-                        <label for="ReceiverQuery" class="radio rToggle"><span>Selecteer de ontvangers via een vooraf ingestelde query.</span></label>
-                    </header>
-                    <div>
-                        <select id="QueryList" name="query" class="kendo-dropdown-list">
-                        </select>
-                    </div>
-                </div>
+<form id="fullForm">
+<header id="MainHeader">
+    <div class="left" id="NameContainer">
+        <span id="CurrentName">Test naam voor communicatiemodule</span>
+        <input type="text" id="EditNameField" class="textField k-input hidden" maxlength="50" autocomplete="off"/>
+        <a id="EditNameButton" title="Naam wijzigen" href="#"><span class="icon-pencil"></span></a>
+        <a id="DeleteButton" title="Communicatie verwijderen" href="#"><span class="icon-delete"></span></a>
+    </div>
+    <div class="right" id="ButtonContainer">
+        <button id="SaveButton" class="k-primary">Wijzigingen opslaan</button>
+    </div>
+</header>
+<div id="tabStrip">
+<ul>
+    <li class="k-state-active">
+        Ontvangers
+    </li>
+    <li>
+        Data
+    </li>
+    <li>
+        Content
+    </li>
+    <li>
+        Verzendpatroon
+    </li>
+</ul>
+<div class="formview full" id="ReceiverContainer">
+    <div class="item">
+        <div id="StaticValuesContainer">
+            <input type="radio" name="receiverType" id="StaticReceiver" class="noForm rToggle" value="static"/>
+            <header>
+                <label for="StaticReceiver" class="radio rToggle"><span>Een of meerdere vaste ontvangers (e-mailadres of GSM-nummer). Vul kommagescheiden meerdere waardes in.</span></label>
+            </header>
+            <div>
+                <textarea id="StaticReceiverInput" name="staticReceiverInput"></textarea>
             </div>
         </div>
-        <div class="formview full" id="DataContainer">
-            
-        </div>
-            <div class="formview full" id="ContentContainer">
-                <div class="formview full compact">
-                    <div class="item">
-                        <input type="checkbox" id="mailToggle" checked="checked" class="noForm cToggle" />
-                        <header>
-                            <label for="mailToggle" class="checkbox cToggle"><span>E-mail</span></label>
-                        </header>
-                        <div>
-                            <div class="item">
-                                <h4><label>Template</label></h4>
-                                <select id="MailTemplateDropDown" class="drop-down-list">
-                                </select>
-                            </div>
 
-                            <div class="item" id="LanguageDropDownContainer">
-                                <h4><label>Taal</label></h4>
-                                <select id="LanguageDropDown" class="drop-down-list">
-                                </select>
-                            </div>
-
-                            <div class="item">
-                                <h4><label>Onderwerp</label></h4>
-                                <span class="k-widget k-input k-state-default">
-                                    <input type="text" id="mail-subject" class="textField k-input" maxlength="100" autocomplete="off" />
-                                </span>
-                            </div>
-
-                            <div class="item">
-                                <h4><label>E-mailadres selector</label></h4>
-                                <span class="k-widget k-input k-state-default">
-                                    <input type="text" id="email-selector" class="textField k-input" maxlength="100" autocomplete="nope" />
-                                </span>
-                                <p class="form-hint">Hiermee kan aangegeven worden waar het e-mailadres van de ontvangers precies staat in de resultaten van de query of dataselector. Dit kan leeggelaten worden indien er vaste ontvangers zijn ingevuld. Indien er in de dataselector bijvoorbeeld een veld "emailadres" komt, dan kan hier de waarde "{emailadres}" ingevuld worden. Als het e-mailadres op een dieper niveau staat dan kan dat ook door te scheiden met punten, bijvoorbeeld "{customer.email}".</p>
-                            </div>
-
-                            <div class="item">
-                                <h4><label for="mailBodyEditor">Inhoud mail</label></h4>
-                                <textarea id="mailBodyEditor" class="editor" rows="10" cols="30"></textarea>
-                                <p class="form-hint">Indien u hierboven een mailtemplate en een taal (indien u meertaligheid heeft in Wiser) selecteert, wordt die template automatisch hier gevuld. De mail kan dan vervolgens nog aangepast worden indien u wilt afwijken van de gekozen template. Hier kunnen dynamische waardes ingezet worden die uit een dataselector of query komen, deze dynamische waardes moeten binnen accolades staan (bijoorbeeld: "{firstName}"). Welke waardes u hier kunt invullen, kunt u zien in de dataselectormodule. Open daar de betreffende dataselector en klik op de knop "Toon resultaat", daar ziet u dan een JSON object en alle waardes die daarin staan kunt u hier gebruiken.</p>
-                            </div>
-
-                            @* <div class="item"> *@
-                            @*     <h4><label>Bijlage toevoegen</label></h4> *@
-                            @*     <input name="fileUpload" id="fileUpload" type="file" /> *@
-                            @* </div> *@
-                        </div>
-                    </div>
-                    <div class="item">
-                        <input type="checkbox" id="smsToggle" class="noForm cToggle" />
-                        <input type="checkbox" id="whatsappToggle" class="noForm cToggle" />
-                        <header>
-                            <label for="smsToggle" class="checkbox cToggle"><span>SMS</span></label>
-                            @* <label for="whatsappToggle" class="checkbox cToggle"><span>WhatsApp</span></label> *@
-                        </header>
-                        <div>
-                            <div class="item">
-                                <h4><label>Telefoonnummer selector</label></h4>
-                                <span class="k-widget k-input k-state-default">
-                                    <input type="text" id="phone-number-selector" class="textField k-input" maxlength="100" autocomplete="nope" />
-                                </span>
-                                <p class="form-hint">Hiermee kan aangegeven worden waar het telefoonnummer van de ontvangers precies staat in de resultaten van de query of dataselector. Dit kan leeggelaten worden indien er vaste ontvangers zijn ingevuld. Indien er in de dataselector bijvoorbeeld een veld "telefoonnummer" komt, dan kan hier de waarde "{telefoonnummer}" ingevuld worden. Als het telefoonnummer op een dieper niveau staat dan kan dat ook door te scheiden met punten, bijvoorbeeld "{customer.phone}".</p>
-                            </div>
-
-                            <div class="item">
-                                <textarea id="smsMessage" class="k-textbox" placeholder="Typ je bericht..." data-limit="160"></textarea>
-                                <span>0 / 160</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="formview full" id="WhenContainer">
-                <div class="formview full compact padding-8">
-                    <div class="item">
-                        <h4><label>Verstuur op</label></h4>
-                        <div class="inline">
-                            <div>
-                                <input type="radio" name="sendMoment" id="direct" class="noForm rToggle" value="direct" checked="checked" />
-                                <header>
-                                    <label for="direct" class="radio rToggle"><span>Direct</span></label>
-                                </header>
-                            </div>
-
-                            <div>
-                                <input type="radio" name="sendMoment" id="moment" class="noForm rToggle" value="fixed_datetime" />
-                                <header>
-                                    <label for="moment" class="radio rToggle"><span>Vast moment</span></label>
-                                </header>
-                                <div>
-                                    <input id="fixed-datetime-input" class="datetimepicker" title="datetimepicker" autocomplete="off" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <input type="radio" name="sendMoment" id="period" class="noForm rToggle" value="recurring" />
-                                <header>
-                                    <label for="period" class="radio rToggle"><span>Periodiek</span></label>
-                                </header>
-                                <div>
-                                    <div>
-                                        <h4 class="margin-top-20"><label>Periode</label></h4>
-                                        <span class="inline">
-                                            <div id="recurring-date-range-picker" class="daterangepicker" title="daterangepicker"></div>
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <h4><label>Verzendtijd</label></h4>
-                                        <span class="inline">
-                                            <input id="recurring-time-picker" class="timepicker" value="10:00 AM" title="timepicker" />
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <h4><label>Elke</label></h4>
-                                        <span class="inline">
-                                            <select id="recurring-period-value" class="combo-select half-width">
-                                                <option value="1" selected="selected">1</option>
-                                                <option value="2">2</option>
-                                                <option value="3">3</option>
-                                                <option value="4">4</option>
-                                                <option value="5">5</option>
-                                                <option value="6">6</option>
-                                                <option value="7">7</option>
-                                                <option value="8">8</option>
-                                                <option value="9">9</option>
-                                                <option value="10">10</option>
-                                                <option value="11">11</option>
-                                                <option value="12">12</option>
-                                                <option value="13">13</option>
-                                            </select>
-                                            <div class="form-hint"><span>week/weken</span></div>
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <h4><label>Op</label></h4>
-                                        <span class="inline">
-                                            <label class="checkbox"><input type="checkbox" name="recurring-day" value="1" /> <span>maandag</span></label>
-                                            <label class="checkbox"><input type="checkbox" name="recurring-day" value="2" /> <span>dinsdag</span></label>
-                                            <label class="checkbox"><input type="checkbox" name="recurring-day" value="3" /> <span>woensdag</span></label>
-                                            <label class="checkbox"><input type="checkbox" name="recurring-day" value="4" /> <span>donderdag</span></label>
-                                            <label class="checkbox"><input type="checkbox" name="recurring-day" value="5" /> <span>vrijdag</span></label>
-                                            <label class="checkbox"><input type="checkbox" name="recurring-day" value="6" /> <span>zaterdag</span></label>
-                                            <label class="checkbox"><input type="checkbox" name="recurring-day" value="7" /> <span>zondag</span></label>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <input type="radio" name="sendMoment" id="variableDate" class="noForm rToggle" value="variable_date" />
-                                <header>
-                                    <label for="variableDate" class="radio rToggle"><span>Variabele datum</span></label>
-                                </header>
-                                <div>
-                                    <span class="inline w-10">
-                                        <input type="number" id="variable-period-value" class="numeric" value="1" step="1" autocomplete="off" />
-                                    </span>
-                                    <span class="inline w-20">
-                                        <select id="variable-period" class="drop-down-list" data-option-label="Maak uw keuze...">
-                                            <option value="minute">minuten</option>
-                                            <option value="hour">uren</option>
-                                            <option value="day" selected="selected">dagen</option>
-                                            <option value="week">weken</option>
-                                            <option value="month">maanden</option>
-                                            <option value="year">jaren</option>
-                                        </select>
-                                    </span>
-                                    <span class="inline w-20">
-                                        <select id="variable-before-after" class="drop-down-list" data-option-label="Maak uw keuze...">
-                                            <option value="after">na</option>
-                                            <option value="before">voor</option>
-                                        </select>
-                                    </span>
-                                    <span class="inline w-45">
-                                        <select id="variable-type" class="drop-down-list" data-filter="contains" data-option-label="Maak uw keuze...">
-                                            <option value="1">offerte verzonden</option>
-                                            <option value="2">verjaardag</option>
-                                            <option value="3">start cursus</option>
-                                        </select>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <div id="DataSelectorContainer">
+            <input type="radio" name="receiverType" id="ReceiverDataSelector" class="noForm rToggle" value="dataSelector"/>
+            <header>
+                <label for="ReceiverDataSelector" class="radio rToggle"><span>Selecteer de ontvangers via een dataselector.</span></label>
+            </header>
+            <div>
+                <select id="DataSelectorList" name="dataSelector" class="kendo-dropdown-list">
+                </select>
             </div>
         </div>
-    </form>
 
-    <div id="mainLoader" class="fullscreen-loader loading">
-        <div class="loader-icon">
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
+        <div id="QueryContainer">
+            <input type="radio" name="receiverType" id="ReceiverQuery" class="noForm rToggle" value="query"/>
+            <header>
+                <label for="ReceiverQuery" class="radio rToggle"><span>Selecteer de ontvangers via een vooraf ingestelde query.</span></label>
+            </header>
+            <div>
+                <select id="QueryList" name="query" class="kendo-dropdown-list">
+                </select>
+            </div>
         </div>
     </div>
+</div>
+<div class="formview full" id="DataContainer">
+    WIP
+</div>
+<div class="formview full" id="ContentContainer">
+    <div class="formview full compact">
+        <div class="item">
+            <input type="checkbox" id="MailToggle" checked="checked" class="noForm cToggle"/>
+            <header>
+                <label for="MailToggle" class="checkbox cToggle"><span>E-mail</span></label>
+            </header>
+            <div>
+                <div class="item">
+                    <h4><label for="MailTemplateDropDown">Template</label></h4>
+                    <select id="MailTemplateDropDown" class="drop-down-list">
+                    </select>
+                </div>
 
-    <script src="/scripts/Utils.min.js"></script>
-    <script src="/scripts/Base.min.js"></script>
-    <script src="/scripts/Communication.min.js"></script>
+                <div class="item" id="LanguageDropDownContainer">
+                    <h4><label for="LanguageDropDown">Taal</label></h4>
+                    <select id="LanguageDropDown" class="drop-down-list">
+                    </select>
+                </div>
+
+                <div class="item">
+                    <h4><label for="MailSubject">Onderwerp</label></h4>
+                    <span class="k-widget k-input k-state-default">
+                        <input type="text" id="MailSubject" class="textField k-input" maxlength="100" autocomplete="off"/>
+                    </span>
+                </div>
+
+                <div class="item">
+                    <h4><label for="EmailSelector">E-mailadres selector</label></h4>
+                    <span class="k-widget k-input k-state-default">
+                        <input type="text" id="EmailSelector" class="textField k-input" maxlength="100" autocomplete="nope"/>
+                    </span>
+                    <p class="form-hint">Hiermee kan aangegeven worden waar het e-mailadres van de ontvangers precies staat in de resultaten van de query of dataselector. Dit kan leeggelaten worden indien er vaste ontvangers zijn ingevuld. Indien er in de dataselector bijvoorbeeld een veld "emailadres" komt, dan kan hier de waarde "{emailadres}" ingevuld worden. Als het e-mailadres op een dieper niveau staat dan kan dat ook door te scheiden met punten, bijvoorbeeld "{customer.email}".</p>
+                </div>
+
+                <div class="item">
+                    <h4><label for="MailBodyEditor">Inhoud mail</label></h4>
+                    <textarea id="MailBodyEditor" class="editor" rows="10" cols="30"></textarea>
+                    <p class="form-hint">Indien u hierboven een mailtemplate en een taal (indien u meertaligheid heeft in Wiser) selecteert, wordt die template automatisch hier gevuld. De mail kan dan vervolgens nog aangepast worden indien u wilt afwijken van de gekozen template. Hier kunnen dynamische waardes ingezet worden die uit een dataselector of query komen, deze dynamische waardes moeten binnen accolades staan (bijoorbeeld: "{firstName}"). Welke waardes u hier kunt invullen, kunt u zien in de dataselectormodule. Open daar de betreffende dataselector en klik op de knop "Toon resultaat", daar ziet u dan een JSON object en alle waardes die daarin staan kunt u hier gebruiken.</p>
+                </div>
+
+                @* <div class="item"> *@
+                @*     <h4><label for="FileUpload">Bijlage toevoegen</label></h4> *@
+                @*     <input name="fileUpload" id="FileUpload" type="file" /> *@
+                @* </div> *@
+            </div>
+        </div>
+        <div class="item">
+            <input type="checkbox" id="SmsToggle" class="noForm cToggle"/>
+            <input type="checkbox" id="WhatsappToggle" class="noForm cToggle"/>
+            <header>
+                <label for="SmsToggle" class="checkbox cToggle"><span>SMS</span></label>
+                @* <label for="WhatsappToggle" class="checkbox cToggle"><span>WhatsApp</span></label> *@
+            </header>
+            <div>
+                <div class="item">
+                    <h4><label for="PhoneNumberSelector">Telefoonnummer selector</label></h4>
+                    <span class="k-widget k-input k-state-default">
+                        <input type="text" id="PhoneNumberSelector" class="textField k-input" maxlength="100" autocomplete="nope"/>
+                    </span>
+                    <p class="form-hint">Hiermee kan aangegeven worden waar het telefoonnummer van de ontvangers precies staat in de resultaten van de query of dataselector. Dit kan leeggelaten worden indien er vaste ontvangers zijn ingevuld. Indien er in de dataselector bijvoorbeeld een veld "telefoonnummer" komt, dan kan hier de waarde "{telefoonnummer}" ingevuld worden. Als het telefoonnummer op een dieper niveau staat dan kan dat ook door te scheiden met punten, bijvoorbeeld "{customer.phone}".</p>
+                </div>
+
+                <div class="item">
+                    <textarea id="SmsMessage" class="k-textbox" placeholder="Het SMS-bericht dat gestuurd moet worden" data-limit="160"></textarea>
+                    <span>0 / 160</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="formview full" id="WhenContainer">
+    <div class="formview full compact padding-8">
+        <div class="item">
+            <h4><label>Verstuur op</label></h4>
+            <div class="inline">
+                <div>
+                    <input type="radio" name="sendMoment" id="Direct" class="noForm rToggle" value="direct" checked="checked"/>
+                    <header>
+                        <label for="Direct" class="radio rToggle"><span>Direct</span></label>
+                    </header>
+                </div>
+
+                <div>
+                    <input type="radio" name="sendMoment" id="FixedMoment" class="noForm rToggle" value="fixed"/>
+                    <header>
+                        <label for="FixedMoment" class="radio rToggle"><span>Vast moment</span></label>
+                    </header>
+                    <div>
+                        <input id="FixedDateTimePicker" class="datetimepicker" autocomplete="off"/>
+                    </div>
+                </div>
+
+                <div>
+                    <input type="radio" name="sendMoment" id="Periodic" class="noForm rToggle" value="recurring"/>
+                    <header>
+                        <label for="Periodic" class="radio rToggle"><span>Periodiek</span></label>
+                    </header>
+                    <div>
+                        <div>
+                            <h4 class="margin-top-20"><label for="RecurringDateRangePicker">Periode</label></h4>
+                            <span class="inline">
+                                <div id="RecurringDateRangePicker" class="daterangepicker"></div>
+                            </span>
+                        </div>
+                        <div>
+                            <h4><label for="RecurringTimePicker">Verzendtijd</label></h4>
+                            <span class="inline">
+                                <input id="RecurringTimePicker" class="timepicker" value="10:00 AM"/>
+                            </span>
+                        </div>
+                        <div>
+                            <h4><label for="RecurringPeriodValueField">Elke</label></h4>
+                            <span class="inline w-10">
+                                <input type="number" id="RecurringPeriodValueField" class="numeric half-width" value="1" />
+                            </span>
+                            <span class="inline w-90">
+                                <select id="RecurringPeriodTypeDropDown" class="combo-select half-width">
+                                    <option value="minute">minuut/minuten</option>
+                                    <option value="hour">uur/uren</option>
+                                    <option value="day" selected="selected">dag/dagen</option>
+                                    <option value="week">week/weken</option>
+                                    <option value="month">maand/maanden</option>
+                                    <option value="year">jaar/jaren</option>
+                                </select>
+                            </span>
+                        </div>
+                        <div>
+                            <h4><label>Op</label></h4>
+                            <span class="inline">
+                                <label class="checkbox"><input type="checkbox" name="recurring-day" value="1"/> <span>maandag</span></label>
+                                <label class="checkbox"><input type="checkbox" name="recurring-day" value="2"/> <span>dinsdag</span></label>
+                                <label class="checkbox"><input type="checkbox" name="recurring-day" value="3"/> <span>woensdag</span></label>
+                                <label class="checkbox"><input type="checkbox" name="recurring-day" value="4"/> <span>donderdag</span></label>
+                                <label class="checkbox"><input type="checkbox" name="recurring-day" value="5"/> <span>vrijdag</span></label>
+                                <label class="checkbox"><input type="checkbox" name="recurring-day" value="6"/> <span>zaterdag</span></label>
+                                <label class="checkbox"><input type="checkbox" name="recurring-day" value="7"/> <span>zondag</span></label>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</form>
+
+<div id="mainLoader" class="fullscreen-loader loading">
+    <div class="loader-icon">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+</div>
+
+<script src="/scripts/Utils.min.js"></script>
+<script src="/scripts/Base.min.js"></script>
+<script src="/scripts/Communication.min.js"></script>
 </body>
 </html>
