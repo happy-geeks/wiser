@@ -12,12 +12,15 @@ namespace Api.Modules.Templates.Helpers
         /// <returns>A TemplateTreeViewModel containing the data provided in the param</returns>
         public TemplateTreeViewModel ConvertTemplateTreeViewDAOToTemplateTreeViewModel (TemplateTreeViewDao rawTreeView)
         {
-            var treeViewModel = new TemplateTreeViewModel(
-                rawTreeView.TemplateId,
-                rawTreeView.TemplateName,
-                rawTreeView.TemplateType == TemplateTypes.Directory,
-                rawTreeView.HasChildren
-            );
+            var treeViewModel = new TemplateTreeViewModel
+            {
+                TemplateId = rawTreeView.TemplateId,
+                TemplateName = rawTreeView.TemplateName,
+                IsFolder = rawTreeView.TemplateType == TemplateTypes.Directory,
+                HasChildren = rawTreeView.HasChildren,
+                TemplateType = (int)rawTreeView.TemplateType,
+                IsVirtualItem = rawTreeView.IsVirtualItem
+            };
 
             return treeViewModel;
         }

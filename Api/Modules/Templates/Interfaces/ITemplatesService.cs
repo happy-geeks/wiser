@@ -218,5 +218,13 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="regexString">The regular expression that can filter whether the default footer should be used.</param>
         /// <returns>A string with the name of the template that this template conflicts with, or an empty string if there's no conflict.</returns>
         Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString);
+
+        /// <summary>
+        /// Attempt to retrieve a virtual template, which is either a database routine, view, or trigger.
+        /// </summary>
+        /// <param name="objectName">The name of the routine, view, or trigger.</param>
+        /// <param name="templateType">The type of virtual template.</param>
+        /// <returns>A <see cref="TemplateSettingsModel"/> with data about the virtual template.</returns>
+        Task<ServiceResult<TemplateSettingsModel>> GetVirtualTemplateAsync(string objectName, TemplateTypes templateType);
     }
 }

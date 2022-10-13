@@ -551,13 +551,33 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("parentId", parentId);
 
-            var query = $@"SELECT
-	                        template.id,
-	                        template.template_name,
-	                        template.template_type,
-	                        template.template_id,
-	                        template.parent_id,
-	                        COUNT(child.id) > 0 AS has_children
+            string rootTemplateName = null;
+            var query = $@"SELECT template.template_name
+                        FROM {WiserTableNames.WiserTemplate} AS template
+                        LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+                        WHERE
+                            template.template_id = ?parentId
+                            AND template.parent_id IS NULL
+                            AND template.template_type = 7
+                            AND template.removed = 0
+                            AND otherVersion.id IS NULL
+                        GROUP BY template.template_id
+                        ORDER BY template.ordering ASC";
+
+            var parentDataTable = await clientDatabaseConnection.GetAsync(query);
+            if (parentDataTable.Rows.Count > 0)
+            {
+                // Is a root element, check the name to see if additional data should be retrieved, like views or triggers.
+                rootTemplateName = parentDataTable.Rows[0].Field<string>("template_name");
+            }
+
+            query = $@"SELECT
+                            template.id,
+                            template.template_name,
+                            template.template_type,
+                            template.template_id,
+                            template.parent_id,
+                            COUNT(child.id) > 0 AS has_children
                         FROM {WiserTableNames.WiserTemplate} AS template
                         LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
                         LEFT JOIN {WiserTableNames.WiserTemplate} AS child ON child.parent_id = template.template_id
@@ -569,15 +589,37 @@ GROUP BY wdc.content_id");
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
-            return (dataTable.Rows.Cast<DataRow>()
-            .Select(row => new TemplateTreeViewDao
+            var treeViewItems = (dataTable.Rows.Cast<DataRow>()
+                .Select(row => new TemplateTreeViewDao
+                {
+                    HasChildren = Convert.ToBoolean(row["has_children"]),
+                    ParentId = row.Field<int?>("parent_id"),
+                    TemplateId = row.Field<int>("template_id"),
+                    TemplateName = row.Field<string>("template_name"),
+                    TemplateType = row.Field<TemplateTypes>("template_type")
+                })).ToList();
+
+            // Check if additional items should be retrieved when retrieving from a root item.
+            // These can be views, triggers, or routines.
+            if (!String.IsNullOrWhiteSpace(rootTemplateName))
             {
-                HasChildren = Convert.ToBoolean(row["has_children"]),
-                ParentId = row.Field<int?>("parent_id"),
-                TemplateId = row.Field<int>("template_id"),
-                TemplateName = row.Field<string>("template_name"),
-                TemplateType = row.Field<TemplateTypes>("template_type")
-            })).ToList();
+                var existingItems = treeViewItems.Select(treeViewItem => treeViewItem.TemplateName).ToList();
+
+                switch (rootTemplateName.ToUpperInvariant())
+                {
+                    case "ROUTINES":
+                        treeViewItems.AddRange(await GetRoutinesAsTreeViewItemsAsync(parentId, existingItems));
+                        break;
+                    case "VIEWS":
+                        treeViewItems.AddRange(await GetViewsAsTreeViewItemsAsync(parentId, existingItems));
+                        break;
+                    case "TRIGGERS":
+                        treeViewItems.AddRange(await GetTriggersAsTreeViewItemsAsync(parentId, existingItems));
+                        break;
+                }
+            }
+
+            return treeViewItems;
         }
 
         /// <inheritdoc />
@@ -1205,6 +1247,91 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             {
                 rawTemplateModel.EditorValue = rawTemplateModel.EditorValue.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
             }
+        }
+
+        /// <summary>
+        /// Retrieves database routines that are not managed via the templates module yet, and returns them as <see cref="TemplateTreeViewDao"/> items.
+        /// </summary>
+        /// <param name="parentId">The template ID that normally contains the routines.</param>
+        /// <param name="exclusions">The names of routines that should be excluded.</param>
+        /// <returns>A <see cref="List{T}"/> of <see cref="TemplateTreeViewDao"/> items.</returns>
+        private async Task<List<TemplateTreeViewDao>> GetRoutinesAsTreeViewItemsAsync(int parentId, IReadOnlyList<string> exclusions = null)
+        {
+            var routineNamesForStatement = new List<string>();
+            var excludeStatement = String.Empty;
+            if (exclusions is { Count: > 0 })
+            {
+                for (var i = 0; i < exclusions.Count; i++)
+                {
+                    clientDatabaseConnection.AddParameter($"routineName{i}", exclusions[i]);
+                    routineNamesForStatement.Add($"?routineName{i}");
+                }
+
+                excludeStatement = $"AND ROUTINE_NAME NOT IN ({String.Join(",", routineNamesForStatement)})";
+            }
+
+            var query = $@"SELECT ROUTINE_NAME
+                FROM information_schema.ROUTINES
+                WHERE ROUTINE_SCHEMA = DATABASE() {excludeStatement}";
+
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            return dataTable.Rows.Cast<DataRow>()
+                .Select(row => new TemplateTreeViewDao
+                {
+                    HasChildren = false,
+                    ParentId = parentId,
+                    TemplateName = row.Field<string>("ROUTINE_NAME"),
+                    TemplateType = TemplateTypes.Routine,
+                    IsVirtualItem = true
+                }).ToList();
+        }
+
+        /// <summary>
+        /// Retrieves database views that are not managed via the templates module yet, and returns them as <see cref="TemplateTreeViewDao"/> items.
+        /// </summary>
+        /// <param name="parentId">The template ID that normally contains the views.</param>
+        /// <param name="exclusions">The names of views that should be excluded.</param>
+        /// <returns>A <see cref="List{T}"/> of <see cref="TemplateTreeViewDao"/> items.</returns>
+        private async Task<List<TemplateTreeViewDao>> GetViewsAsTreeViewItemsAsync(int parentId, IReadOnlyList<string> exclusions = null)
+        {
+            var tableNamesForStatement = new List<string>();
+            var excludeStatement = String.Empty;
+            if (exclusions is { Count: > 0 })
+            {
+                for (var i = 0; i < exclusions.Count; i++)
+                {
+                    clientDatabaseConnection.AddParameter($"tableName{i}", exclusions[i]);
+                    tableNamesForStatement.Add($"?tableName{i}");
+                }
+
+                excludeStatement = $"AND TABLE_NAME NOT IN ({String.Join(",", tableNamesForStatement)})";
+            }
+
+            var query = $@"SELECT TABLE_NAME
+                FROM information_schema.VIEWS
+                WHERE TABLE_SCHEMA = DATABASE() {excludeStatement}";
+
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            return dataTable.Rows.Cast<DataRow>()
+                .Select(row => new TemplateTreeViewDao
+                {
+                    HasChildren = false,
+                    ParentId = parentId,
+                    TemplateName = row.Field<string>("TABLE_NAME"),
+                    TemplateType = TemplateTypes.View,
+                    IsVirtualItem = true
+                }).ToList();
+        }
+
+        /// <summary>
+        /// Retrieves database triggers that are not managed via the templates module yet, and returns them as <see cref="TemplateTreeViewDao"/> items.
+        /// </summary>
+        /// <param name="parentId">The template ID that normally contains the triggers.</param>
+        /// <param name="exclusions">The names of routines that should be excluded.</param>
+        /// <returns>A <see cref="List{T}"/> of <see cref="TemplateTreeViewDao"/> items.</returns>
+        private async Task<List<TemplateTreeViewDao>> GetTriggersAsTreeViewItemsAsync(int parentId, IReadOnlyList<string> exclusions = null)
+        {
+            return new List<TemplateTreeViewDao>();
         }
     }
 }

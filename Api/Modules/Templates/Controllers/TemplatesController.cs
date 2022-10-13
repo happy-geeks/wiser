@@ -15,6 +15,7 @@ using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
+using GeeksCoreLibrary.Modules.Templates.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -77,7 +78,7 @@ namespace Api.Modules.Templates.Controllers
         /// <summary>
         /// Gets a query from the wiser database and executes it in the customer database.
         /// </summary>
-        /// <param name="templateName">The encrypted name of the wiser template.</param>
+        /// <param name="templateName">The encrypted name of the wiser template.</param>f
         [HttpGet]
         [HttpPost]
         [Route("get-and-execute-query/{templateName}")]
@@ -409,6 +410,20 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> CheckDefaultFooterConflict(int templateId, string regexString)
         {
             return (await templatesService.CheckDefaultFooterConflict(templateId, regexString)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="objectName"></param>
+        /// <param name="templateType"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("get-virtual-item")]
+        [ProducesResponseType(typeof(TemplateSettingsModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetVirtualItem(string objectName, TemplateTypes templateType)
+        {
+            return (await templatesService.GetVirtualTemplateAsync(objectName, templateType)).GetHttpResponseMessage();
         }
     }
 }

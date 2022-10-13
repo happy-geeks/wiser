@@ -17,7 +17,6 @@ using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Kendo.Enums;
-using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -2448,14 +2447,33 @@ LIMIT 1";
 
             await templateDataService.SaveAsync(template, templateLinks, IdentityHelpers.GetUserName(identity, true));
 
-            if (template.Type == TemplateTypes.Routine)
+            switch (template.Type)
             {
-                // Also (re-)create the actual routine.
-                var (successful, errorMessage) = await CreateDatabaseRoutine(template.Name, template.RoutineType, template.RoutineParameters, template.RoutineReturnType, template.EditorValue);
-                if (!successful)
+                case TemplateTypes.View:
                 {
-                    throw new Exception($"The template saved successfully, but the routine could not be created due to a syntax error. Error:\n{errorMessage}");
+                    // Create or replace view.
+                    var (successful, errorMessage) = await CreateDatabaseViewAsync(template.Name, template.EditorValue);
+                    if (!successful)
+                    {
+                        throw new Exception($"The template saved successfully, but the view could not be created due to a syntax error. Error:\n{errorMessage}");
+                    }
+
+                    break;
                 }
+                case TemplateTypes.Routine:
+                {
+                    // Also (re-)create the actual routine.
+                    var (successful, errorMessage) = await CreateDatabaseRoutineAsync(template.Name, template.RoutineType, template.RoutineParameters, template.RoutineReturnType, template.EditorValue);
+                    if (!successful)
+                    {
+                        throw new Exception($"The template saved successfully, but the routine could not be created due to a syntax error. Error:\n{errorMessage}");
+                    }
+
+                    break;
+                }
+                case TemplateTypes.Trigger:
+                    // TODO.
+                    break;
             }
 
             if (template.Type != TemplateTypes.Scss || !template.IsScssIncludeTemplate || skipCompilation)
@@ -2867,6 +2885,47 @@ LIMIT 1";
         public async Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString)
         {
             return await InternalCheckDefaultHeaderOrFooterConflict("footer", templateId, regexString);
+        }/// <inheritdoc />
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateSettingsModel>> GetVirtualTemplateAsync(string objectName, TemplateTypes templateType)
+        {
+            if (String.IsNullOrWhiteSpace(objectName))
+            {
+                throw new ArgumentException("The name cannot be null or empty.");
+            }
+
+            if (!templateType.InList(TemplateTypes.View, TemplateTypes.Routine, TemplateTypes.Trigger))
+            {
+                throw new ArgumentException("Template type has to be either View, Routine, or Trigger.");
+            }
+
+            TemplateSettingsModel virtualTemplateData;
+            switch (templateType)
+            {
+                case TemplateTypes.View:
+                    virtualTemplateData = await GetDatabaseViewData(objectName);
+                    break;
+                case TemplateTypes.Routine:
+                    virtualTemplateData = await GetDatabaseRoutineData(objectName);
+                    break;
+                case TemplateTypes.Trigger:
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            // Set the rest of the data.
+            virtualTemplateData.Type = templateType;
+            virtualTemplateData.ChangedBy = "Database";
+            virtualTemplateData.PublishedEnvironments = new PublishedEnvironmentModel
+            {
+                LiveVersion = 0,
+                AcceptVersion = 0,
+                TestVersion = 0,
+                VersionList = new List<int>(0)
+            };
+
+            return new ServiceResult<TemplateSettingsModel>(virtualTemplateData);
         }
 
         /// <summary>
@@ -3371,23 +3430,157 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             gclSettings.Environment = Environments.Development;
         }
 
+        private async Task<TemplateSettingsModel> GetDatabaseViewData(string viewName)
+        {
+            var result = new TemplateSettingsModel();
+
+            if (String.IsNullOrWhiteSpace(viewName))
+            {
+                return result;
+            }
+
+            clientDatabaseConnection.AddParameter("viewName", viewName);
+            var dataTable = await clientDatabaseConnection.GetAsync("SELECT TABLE_NAME, VIEW_DEFINITION FROM information_schema.VIEWS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?viewName");
+
+            if (dataTable.Rows.Count == 0)
+            {
+                return result;
+            }
+
+            result.Name = dataTable.Rows[0].Field<string>("TABLE_NAME") ?? String.Empty;
+            result.EditorValue = dataTable.Rows[0].Field<string>("VIEW_DEFINITION")?.Trim() ?? String.Empty;;
+
+            return result;
+        }
+
+        private async Task<TemplateSettingsModel> GetDatabaseRoutineData(string routineName)
+        {
+            var result = new TemplateSettingsModel();
+
+            if (String.IsNullOrWhiteSpace(routineName))
+            {
+                return result;
+            }
+
+            // First retrieve the body.
+            clientDatabaseConnection.AddParameter("routineName", routineName);
+            var dataTable = await clientDatabaseConnection.GetAsync(@"
+                SELECT ROUTINE_NAME, ROUTINE_TYPE, DTD_IDENTIFIER, ROUTINE_DEFINITION
+                FROM information_schema.ROUTINES
+                WHERE ROUTINE_SCHEMA = DATABASE() AND ROUTINE_NAME = ?routineName;");
+
+            if (dataTable.Rows.Count == 0)
+            {
+                return result;
+            }
+
+            // Parse the routine type to the enum value, which should the same (except it's not fully uppercase).
+            if (!Enum.TryParse(dataTable.Rows[0].Field<string>("ROUTINE_TYPE"), true, out RoutineTypes routineType))
+            {
+                return result;
+            }
+
+            var routineDefinition = dataTable.Rows[0].Field<string>("ROUTINE_DEFINITION")?.Trim() ?? String.Empty;
+            if (!String.IsNullOrWhiteSpace(routineDefinition))
+            {
+                // Strip the "BEGIN" and "END" parts of the definition (Wiser doesn't need them).
+                if (routineDefinition.StartsWith("BEGIN", StringComparison.OrdinalIgnoreCase))
+                {
+                    routineDefinition = routineDefinition[5..].Trim();
+                }
+
+                if (routineDefinition.StartsWith("END", StringComparison.OrdinalIgnoreCase))
+                {
+                    routineDefinition = routineDefinition[..^3].Trim();
+                }
+            }
+
+            result.Name = dataTable.Rows[0].Field<string>("ROUTINE_NAME") ?? String.Empty;
+            result.EditorValue = routineDefinition;
+            result.RoutineType = routineType;
+            result.RoutineReturnType = routineType == RoutineTypes.Function ? dataTable.Rows[0].Field<string>("DTD_IDENTIFIER") ?? String.Empty : String.Empty;
+
+            // Now retrieve the parameters. The parameter at position 0 is the return type of a function, which is already known.
+            dataTable = await clientDatabaseConnection.GetAsync($@"
+                SELECT PARAMETER_MODE, PARAMETER_NAME, DTD_IDENTIFIER
+                FROM information_schema.PARAMETERS
+                WHERE SPECIFIC_SCHEMA = DATABASE() AND SPECIFIC_NAME = ?routineName AND ORDINAL_POSITION > 0
+                ORDER BY ORDINAL_POSITION;");
+
+            if (dataTable.Rows.Count == 0)
+            {
+                // Routine has no parameters; return the result.
+                return result;
+            }
+
+            var routineParameters = new List<string>(dataTable.Rows.Count);
+            foreach (var dataRow in dataTable.Rows.Cast<DataRow>())
+            {
+                // Parameters of a procedure have a mode (IN, OUT, and INOUT).
+                var parameterModePart = String.Empty;
+                if (routineType == RoutineTypes.Procedure)
+                {
+                    parameterModePart = $"{dataRow.Field<string>("PARAMETER_MODE")} ";
+                }
+
+                routineParameters.Add($"{parameterModePart}`{dataRow.Field<string>("PARAMETER_NAME")}` {dataRow.Field<string>("DTD_IDENTIFIER")}");
+            }
+
+            result.RoutineParameters = String.Join(", ", routineParameters);
+
+            return result;
+        }
+
+        /// <summary>
+        /// Will attempt to create a VIEW in the client's database.
+        /// </summary>
+        /// <param name="viewName">The name of the template, which will server as the name of the view.</param>
+        /// <param name="viewDefinition">The select statement of the view.</param>
+        /// <returns><see langword="true"/> if the view was successfully created; otherwise, <see langword="false"/>.</returns>
+        private async Task<(bool successful, string ErrorMessage)> CreateDatabaseViewAsync(string viewName, string viewDefinition)
+        {
+            // Build the query that will created the view.
+            var viewQueryBuilder = new StringBuilder();
+            viewQueryBuilder.AppendLine($"CREATE OR REPLACE SQL SECURITY INVOKER VIEW `{viewName}` AS");
+            viewQueryBuilder.AppendLine(viewDefinition);
+
+            var viewQuery = viewQueryBuilder.ToString();
+
+            try
+            {
+                // Execute the query. No need to drop old view first, the "CREATE OR REPLACE" part takes care of that.
+                await clientDatabaseConnection.ExecuteAsync(viewQuery);
+                return (true, String.Empty);
+            }
+            catch (MySqlException mySqlException)
+            {
+                // Remove temporary view if it was created (it has no use anymore).
+                await clientDatabaseConnection.ExecuteAsync($"DROP VIEW IF EXISTS `{viewName}_temp`;");
+                // Only the message of the MySQL exception should be enough to determine what went wrong.
+                return (false, mySqlException.Message);
+            }
+            catch (Exception exception)
+            {
+                // Other exceptions; return entire exception.
+                return (false, exception.ToString());
+            }
+        }
+
         /// <summary>
         /// Will attempt to create a FUNCTION or PROCEDURE in the client's database.
         /// </summary>
-        /// <param name="templateName">The name of the template, which will server as the name of the routine.</param>
+        /// <param name="routineName">The name of the template, which will server as the name of the routine.</param>
         /// <param name="routineType">The type of the routine, which should be either <see cref="RoutineTypes.Function"/> or <see cref="RoutineTypes.Procedure"/>.</param>
         /// <param name="parameters">A string that represent the input parameters. For procedures, OUT and INOUT parameters can also be defined.</param>
         /// <param name="returnType">The data type that is expected. This is only if <paramref name="routineType"/> is set to <see cref="RoutineTypes.Function"/>.</param>
         /// <param name="routineDefinition">The body of the routine.</param>
         /// <returns><see langword="true"/> if the routine was successfully created; otherwise, <see langword="false"/>.</returns>
-        private async Task<(bool Successful, string ErrorMessage)> CreateDatabaseRoutine(string templateName, RoutineTypes routineType, string parameters, string returnType, string routineDefinition)
+        private async Task<(bool Successful, string ErrorMessage)> CreateDatabaseRoutineAsync(string routineName, RoutineTypes routineType, string parameters, string returnType, string routineDefinition)
         {
             if (routineType == RoutineTypes.Unknown)
             {
                 return (false, "Routine type 'Unknown' is not a valid routine type.");
             }
-
-            var routineName = $"WISER_{templateName}";
 
             // Check if routine exists.
             clientDatabaseConnection.ClearParameters();

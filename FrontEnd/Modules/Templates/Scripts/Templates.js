@@ -76,7 +76,9 @@ const moduleSettings = {
                 "XML": 8,
                 "AIS": 8,
                 "SERVICES": 8,
-                "ROUTINES": 9
+                "ROUTINES": 9,
+                "VIEWS": 10,
+                "TRIGGERS": 11
             });
 
             // Default settings
@@ -429,7 +431,18 @@ const moduleSettings = {
          */
         async onTreeViewSelect(event) {
             const dataItem = event.sender.dataItem(event.node);
-            if (dataItem.id === this.selectedId) {
+
+            // Check if this is a virtual item.
+            let virtualItem = null;
+            if (dataItem.isVirtualItem) {
+                virtualItem = {
+                    objectName: dataItem.templateName,
+                    templateType: dataItem.templateType
+                };
+            }
+
+            // All virtual items have an ID of 0, so also check if it's not switching to a virtual item.
+            if (dataItem.id === this.selectedId && virtualItem === null) {
                 return;
             }
 
@@ -469,7 +482,7 @@ const moduleSettings = {
                 return;
             }
 
-            await this.loadTemplate(dataItem.id);
+            await this.loadTemplate(dataItem.id, virtualItem);
         }
 
         /**
@@ -557,6 +570,12 @@ const moduleSettings = {
                 selectedItem = treeView.dataItem(event.target);
             }
 
+            // Virtual items do not have a context menu.
+            if (selectedItem.isVirtualItem) {
+                event.preventDefault();
+                return;
+            }
+
             event.item.find("[action='addNewItem']").toggleClass("hidden", !selectedItem || !selectedItem.isFolder);
             event.item.find("[action='rename'], [action='delete']").toggleClass("hidden", selectedItemIsRootDirectory);
         }
@@ -609,45 +628,77 @@ const moduleSettings = {
         /**
          * Load a template for editing.
          * @param {any} id The ID of the template to load.
+         * @param {Object} [virtualItem=null] If the item is a virtual item, this parameter will contain the necessary data to open it.
          */
-        async loadTemplate(id) {
+        async loadTemplate(id, virtualItem = null) {
             const dynamicContentTab = this.mainTabStrip.element.find(".dynamic-tab");
             const previewTab = this.mainTabStrip.element.find(".preview-tab");
-            
-            if (id <= 0) {
+
+            if (id <= 0 && (virtualItem === null || virtualItem.templateType === 0)) {
                 this.templateSettings = {};
                 this.linkedTemplates = null;
                 this.templateHistory = null;
-                
+
                 document.getElementById("developmentTab").innerHTML = "";
                 document.getElementById("previewTab").innerHTML = "";
                 this.mainTabStrip.disable(dynamicContentTab);
                 this.mainTabStrip.disable(previewTab);
                 return;
             }
-            
+
             const process = `onTreeViewSelect_${Date.now()}`;
             window.processing.addProcess(process);
 
             try {
-                // Get template settings and linked templates.
-                let promises = [
-                    Wiser.api({
-                        url: `${this.settings.wiserApiRoot}templates/${id}/settings`,
-                        dataType: "json",
-                        method: "GET"
-                    }),
-                    Wiser.api({
-                        url: `${this.settings.wiserApiRoot}templates/${id}/linked-templates`,
-                        dataType: "json",
-                        method: "GET"
-                    })
-                ];
+                let promises;
 
-                const [templateSettings, linkedTemplates, templateHistory] = await Promise.all(promises);
-                this.templateSettings = templateSettings;
-                this.linkedTemplates = linkedTemplates;
-                this.templateHistory = templateHistory;
+                let templateSettings, linkedTemplates, templateHistory;
+                if (virtualItem !== null) {
+                    promises = [
+                        Wiser.api({
+                            url: `${this.settings.wiserApiRoot}templates/get-virtual-item?objectName=${virtualItem.objectName}&templateType=${virtualItem.templateType}`,
+                            dataType: "json",
+                            method: "GET"
+                        })
+                    ];
+
+                    [templateSettings] = await Promise.all(promises);
+                    linkedTemplates = {
+                        linkedScssTemplates: [],
+                        linkedCssTemplates: [],
+                        linkedJavascript: [],
+                        linkOptionsTemplates: []
+                    };
+
+                    // Retrieve parent ID so it can be set on the template settings.
+                    const selectedTabIndex = this.treeViewTabStrip.select().index();
+                    const selectedTabContentElement = this.treeViewTabStrip.contentElement(selectedTabIndex);
+                    const treeViewElement = selectedTabContentElement.querySelector("ul");
+                    templateSettings.parentId = Number(treeViewElement.dataset.id);
+
+                    this.templateSettings = templateSettings;
+                    this.linkedTemplates = linkedTemplates;
+                    this.templateHistory = null;
+                } else {
+                    // Get template settings and linked templates.
+                    promises = [
+                        Wiser.api({
+                            url: `${this.settings.wiserApiRoot}templates/${id}/settings`,
+                            dataType: "json",
+                            method: "GET"
+                        }),
+                        Wiser.api({
+                            url: `${this.settings.wiserApiRoot}templates/${id}/linked-templates`,
+                            dataType: "json",
+                            method: "GET"
+                        })
+                    ];
+
+                    [templateSettings, linkedTemplates, templateHistory] = await Promise.all(promises);
+                    this.templateSettings = templateSettings;
+                    this.linkedTemplates = linkedTemplates;
+                    this.templateHistory = templateHistory;
+                }
 
                 // Load the different tabs.
                 promises = [];
@@ -1792,7 +1843,7 @@ const moduleSettings = {
          * Save a new version of the selected template.
          */
         async saveTemplate(alsoDeployToTest = false) {
-            if (!this.selectedId || this.saving) {
+            if (this.saving) {
                 return false;
             }
 
@@ -1808,8 +1859,33 @@ const moduleSettings = {
             const process = `saveTemplate_${Date.now()}`;
             window.processing.addProcess(process);
             let success = true;
+            let templateId;
+            let reloadTemplateAfterSave = false;
 
             try {
+                if (dataItem.isVirtualItem) {
+                    // Virtual items don't actually have a template yet, so create one first.
+                    this.saving = true;
+                    const createResult = await this.createNewTemplate(Number(treeViewElement.dataset.id), dataItem.templateName, dataItem.templateType, treeView, undefined, "", treeView.select());
+
+                    if (!createResult.success) {
+                        window.processing.removeProcess(process);
+                        this.saving = false;
+                        return false;
+                    }
+
+                    templateId = createResult.result.templateId;
+                    reloadTemplateAfterSave = true;
+                    this.saving = false;
+                } else {
+                    templateId = this.selectedId;
+                }
+
+                if (!templateId) {
+                    window.processing.removeProcess(process);
+                    return false;
+                }
+
                 const data = this.getCurrentTemplateSettings();
 
                 // Check if there's a conflict if the template is marked as default header and/or footer.
@@ -1830,7 +1906,7 @@ const moduleSettings = {
                 this.saving = true;
 
                 const response = await Wiser.api({
-                    url: `${this.settings.wiserApiRoot}templates/${data.templateId}`,
+                    url: `${this.settings.wiserApiRoot}templates/${templateId}`,
                     dataType: "json",
                     type: "POST",
                     contentType: "application/json",
@@ -1842,9 +1918,14 @@ const moduleSettings = {
 
                 if (alsoDeployToTest === true) {
                     const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
-                    await this.deployEnvironment("test", this.selectedId, version);
+                    await this.deployEnvironment("test", templateId, version);
                 }
-                await this.reloadMetaData(this.selectedId);
+
+                if (reloadTemplateAfterSave) {
+                    await this.loadTemplate(templateId);
+                } else {
+                    await this.reloadMetaData(templateId);
+                }
 
                 // Save the current settings so that we can keep track of any changes and warn the user if they're about to leave without saving.
                 this.initialTemplateSettings = data;
@@ -1991,14 +2072,17 @@ const moduleSettings = {
          * @param {any} type The template type.
          * @param {any} treeView The tree view that the template should be added to.
          * @param {any} parentElement The parent node in the tree view to add the parent to.
+         * @param {string} body Optional: The body of the template.
+         * @param {any} treeViewElement Optional: Which tree view element to update instead of adding a new one.
          */
-        async createNewTemplate(parentId, title, type, treeView, parentElement, body = "") {
+        async createNewTemplate(parentId, title, type, treeView, parentElement, body = "", treeViewElement = null) {
             const process = `createNewTemplate_${Date.now()}`;
             window.processing.addProcess(process);
 
+            let result = null;
             let success = true;
             try {
-                const result = await Wiser.api({
+                result = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}templates/${parentId}`,
                     dataType: "json",
                     type: "PUT",
@@ -2006,24 +2090,32 @@ const moduleSettings = {
                     data: JSON.stringify({ name: title, type: type, editorvalue: body })
                 });
 
-                const dataItem = treeView.dataItem(parentElement);
-                if (dataItem && dataItem.hasChildren && parentElement.attr("aria-expanded") !== "true") {
-                    treeView.one("dataBound", () => {
-                        const node = treeView.findByUid(treeView.dataSource.get(result.templateId).uid);
-                        treeView.select(node);
-                        treeView.trigger("select", {
-                            node: node
-                        });
-                    });
-                    treeView.expand(parentElement);
+                if (treeViewElement) {
+                    const dataItem = treeView.dataItem(treeViewElement);
+                    if (dataItem) {
+                        dataItem.set("id", result.templateId);
+                        dataItem.set("templateId", result.templateId);
+                        dataItem.set("isVirtualItem", false);
+                    }
                 } else {
-                    const newTreeViewElement = parentElement && parentElement.length > 0 ? treeView.append(result, parentElement) : treeView.append(result);
-                    treeView.select(newTreeViewElement);
-                    treeView.trigger("select", {
-                        node: newTreeViewElement
-                    });
+                    const dataItem = treeView.dataItem(parentElement);
+                    if (dataItem && dataItem.hasChildren && parentElement.attr("aria-expanded") !== "true") {
+                        treeView.one("dataBound", () => {
+                            const node = treeView.findByUid(treeView.dataSource.get(result.templateId).uid);
+                            treeView.select(node);
+                            treeView.trigger("select", {
+                                node: node
+                            });
+                        });
+                        treeView.expand(parentElement);
+                    } else {
+                        const newTreeViewElement = parentElement && parentElement.length > 0 ? treeView.append(result, parentElement) : treeView.append(result);
+                        treeView.select(newTreeViewElement);
+                        treeView.trigger("select", {
+                            node: newTreeViewElement
+                        });
+                    }
                 }
-
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op.");
@@ -2031,7 +2123,10 @@ const moduleSettings = {
             }
 
             window.processing.removeProcess(process);
-            return success;
+            return {
+                success: success,
+                result: result
+            };
         }
 
         /**

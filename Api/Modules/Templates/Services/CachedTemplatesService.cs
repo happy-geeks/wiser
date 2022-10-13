@@ -192,5 +192,11 @@ namespace Api.Modules.Templates.Services
         {
             return await templatesService.CheckDefaultFooterConflict(templateId, regexString);
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateSettingsModel>> GetVirtualTemplateAsync(string objectName, TemplateTypes templateType)
+        {
+            return await templatesService.GetVirtualTemplateAsync(objectName, templateType);
+        }
     }
 }
