@@ -207,18 +207,14 @@
                             <span class="inline w-10">
                                 <input type="number" id="RecurringPeriodValueField" class="numeric half-width" value="1" />
                             </span>
-                            <span class="inline w-90">
+                            <span class="inline w-75">
                                 <select id="RecurringPeriodTypeDropDown" class="combo-select half-width">
-                                    <option value="minute">minuut/minuten</option>
-                                    <option value="hour">uur/uren</option>
-                                    <option value="day" selected="selected">dag/dagen</option>
-                                    <option value="week">week/weken</option>
+                                    <option value="week" selected>week/weken</option>
                                     <option value="month">maand/maanden</option>
-                                    <option value="year">jaar/jaren</option>
                                 </select>
                             </span>
                         </div>
-                        <div>
+                        <div id="RecurringWeeklyContainer">
                             <h4><label>Op</label></h4>
                             <span class="inline">
                                 <label class="checkbox"><input type="checkbox" name="recurring-day" value="1"/> <span>maandag</span></label>
@@ -228,6 +224,12 @@
                                 <label class="checkbox"><input type="checkbox" name="recurring-day" value="5"/> <span>vrijdag</span></label>
                                 <label class="checkbox"><input type="checkbox" name="recurring-day" value="6"/> <span>zaterdag</span></label>
                                 <label class="checkbox"><input type="checkbox" name="recurring-day" value="7"/> <span>zondag</span></label>
+                            </span>
+                        </div>
+                        <div id="RecurringMonthlyContainer" class="hidden">
+                            <h4><label for="RecurringDayOfMonth">Dag van de maand</label></h4>
+                            <span class="inline w-10">
+                                <input type="number" id="RecurringDayOfMonth" class="numeric half-width" value="1" />
                             </span>
                         </div>
                     </div>

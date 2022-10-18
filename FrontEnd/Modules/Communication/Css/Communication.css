@@ -32,6 +32,10 @@
     width: 45% !important;
 }
 
+.w-75 {
+    width: 75% !important;
+}
+
 .w-90 {
     width: 90% !important;
 }
@@ -143,8 +147,7 @@
 
 span.k-widget,
 div.k-multiselect,
-.item .inline,
-.item span.k-picker {
+.item .inline {
     max-width: calc(100% - 240px);
 }
 

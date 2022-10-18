@@ -24,8 +24,9 @@ const communicationModuleSettings = {
             this.base = this;
             this.mainLoader = null;
             
-            // Kendo components.
+            // Components.
             this.editNameButton = null;
+            this.editNameField = null;
             this.deleteButton = null;
             this.saveButton = null;
             this.mainTabStrip = null;
@@ -40,9 +41,10 @@ const communicationModuleSettings = {
             this.recurringTimePicker = null;
             this.recurringPeriodValueField = null;
             this.recurringPeriodTypeDropDown = null;
-            this.variableAmountField = null;
-            this.variableTypeDropDown = null;
-            this.variableBeforeAfterDropDown = null;
+            this.recurringDayOfMonthField = null;
+            
+            // Other properties.
+            this.currentSettingsId = 0;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -111,7 +113,7 @@ const communicationModuleSettings = {
 
             this.setupBindings();
 
-            await this.initializeKendoComponents();
+            await this.initializeComponents();
 
             this.toggleMainLoader(false);
         }
@@ -157,9 +159,11 @@ const communicationModuleSettings = {
          * Initializes all Kendo components for the base class.
          * @param {HTMLElement} context The context (HTML element) in which items will have their elements initialized with Kendo.
          */
-        async initializeKendoComponents() {
+        async initializeComponents() {
             const process = `loadDropdowns_${Date.now()}`;
             window.processing.addProcess(process);
+            
+            this.editNameField = $("#EditNameField");
 
             try {
                 // Header buttons.
@@ -298,6 +302,15 @@ const communicationModuleSettings = {
                     decimals: 0,
                     format: "#"
                 }).data("kendoNumericTextBox");
+                
+                this.recurringPeriodTypeDropDown = $("#RecurringPeriodTypeDropDown").kendoDropDownList({
+                    change: this.onRecurringPeriodTypeDropDownChange.bind(this)
+                });
+
+                this.recurringDayOfMonthField = $("#RecurringDayOfMonth").kendoNumericTextBox({
+                    decimals: 0,
+                    format: "#"
+                }).data("kendoNumericTextBox");
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
@@ -325,12 +338,34 @@ const communicationModuleSettings = {
         }
 
         /**
+         * Event for when the user changes the value of the period type drop down.
+         * @param event The change event of the Kendo dropdown list.
+         */
+        onRecurringPeriodTypeDropDownChange(event) {
+            const recurringWeeklyContainer = $("#RecurringWeeklyContainer");
+            const recurringMonthlyContainer = $("#RecurringMonthlyContainer");
+            
+            switch (event.sender.value()) {
+                case "week":
+                    recurringWeeklyContainer.removeClass("hidden");
+                    recurringMonthlyContainer.addClass("hidden");
+                    break;
+                case "month":
+                    recurringWeeklyContainer.addClass("hidden");
+                    recurringMonthlyContainer.removeClass("hidden");
+                    break;
+            }
+        }
+
+        /**
          * Event for when the user clicks the button to edit the name of the communication.
          * @param event The click event of the anchor element.
          */
         async onEditNameButtonClick(event) {
             event.preventDefault();
-            console.log("onEditNameButtonClick", event);
+            $("#CurrentName").addClass("hidden");
+            this.editNameField.removeClass("hidden");
+            this.editNameButton.addClass("hidden");
         }
 
         /**
@@ -339,7 +374,19 @@ const communicationModuleSettings = {
          */
         async onDeleteButtonClick(event) {
             event.preventDefault();
-            console.log("onDeleteButtonClick", event);
+
+            await Wiser.showConfirmDialog(`Wilt u de communicatie-instellingen met de naam "${$("#CurrentName").text()}" wilt verwijderen?`);
+            try {
+                await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}communications/${id}`,
+                    method: "DELETE"
+                });
+                
+                alert("TODO: Beginscherm tonen na verwijderen");
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert(`Er is iets fout gegaan tijdens het laden van de communicatie-instellingen met ID '${id}'. Probeer het a.u.b. opnieuw of neem contact op met ons.`);
+            }
         }
 
         /**
@@ -347,7 +394,23 @@ const communicationModuleSettings = {
          * @param event The click event of the Kendo button.
          */
         async onSaveButtonClick(event) {
-            console.log("onSaveButtonClick", event);
+            try {
+                const settings = this.getCurrentSettings();
+                
+                const result = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}communications`,
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(settings)
+                });
+                
+                this.currentSettingsId = result.id;
+
+                alert("TODO: nette melding tonen ");
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert(`Er is iets fout gegaan tijdens het laden van de communicatie-instellingen met ID '${id}'. Probeer het a.u.b. opnieuw of neem contact op met ons.`);
+            }
         }
 
         /**
@@ -379,6 +442,37 @@ const communicationModuleSettings = {
             
             const html = selectedMailTemplate[templatePropertyName] || selectedMailTemplate.Template || selectedMailTemplate.template || "";
             this.mailBodyEditor.value(html);
+        }
+
+        /**
+         * Load all communication settings with a specific ID.
+         * @param {int} id The ID of the settings to load.
+         */
+        async loadSettings(id) {
+            try {
+                const settings = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}communications/${id}`
+                });
+                
+                this.currentSettingsId = id;
+                
+                console.log("settings", settings);
+                alert("TODO: Velden vullen met instellingen");
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert(`Er is iets fout gegaan tijdens het laden van de communicatie-instellingen met ID '${id}'. Probeer het a.u.b. opnieuw of neem contact op met ons.`);
+            }
+        }
+
+        /**
+         * Get the settings as they're currently entered in all the fields by the user.
+         */
+        getCurrentSettings() {
+            return {
+                id: this.currentSettingsId,
+                name: this.editNameField.val()
+                // TODO: Rest of the settings.
+            };
         }
     }
 
