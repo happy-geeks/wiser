@@ -38,7 +38,12 @@ import {
     HANDLE_MULTIPLE_CONFLICTS,
     CLEAR_CACHE,
     CLEAR_CACHE_SUCCESS,
-    CLEAR_CACHE_ERROR
+    CLEAR_CACHE_ERROR,
+    START_UPDATE_TIME_ACTIVE_TIMER,
+    STOP_UPDATE_TIME_ACTIVE_TIMER,
+    SET_ACTIVE_TIMER_INTERVAL,
+    CLEAR_ACTIVE_TIMER_INTERVAL,
+    UPDATE_ACTIVE_TIME
 } from "./mutation-types";
 
 const baseModule = {
@@ -521,7 +526,9 @@ const modulesModule = {
 
 const usersModule = {
     state: () => ({
-        changePasswordError: null
+        changePasswordError: null,
+        updateTimeActiveTimer: null,
+        updateTimeActiveTimerStopped: true
     }),
 
     mutations: {
@@ -530,6 +537,21 @@ const usersModule = {
         },
         [CHANGE_PASSWORD_ERROR]: (state, message) => {
             state.changePasswordError = message;
+        },
+        [START_UPDATE_TIME_ACTIVE_TIMER]: (state) => {
+            state.updateTimeActiveTimerStopped = false;
+        },
+        [STOP_UPDATE_TIME_ACTIVE_TIMER]: (state) => {
+            state.updateTimeActiveTimerStopped = true;
+        },
+        [SET_ACTIVE_TIMER_INTERVAL]: (state, interval) => {
+            state.updateTimeActiveTimer = interval;
+        },
+        [CLEAR_ACTIVE_TIMER_INTERVAL]: (state) => {
+            if (state.updateTimeActiveTimer) {
+                clearInterval(state.updateTimeActiveTimer);
+            }
+            state.updateTimeActiveTimer = null;
         }
     },
 
@@ -544,6 +566,29 @@ const usersModule = {
             } else {
                 commit(CHANGE_PASSWORD_ERROR, result.error);
             }
+        },
+        
+        async [START_UPDATE_TIME_ACTIVE_TIMER]({ commit }) {
+            commit(START_REQUEST);
+            
+            // Clear old interval first.
+            commit(CLEAR_ACTIVE_TIMER_INTERVAL);
+
+            commit(START_UPDATE_TIME_ACTIVE_TIMER);
+            const interval = await main.usersService.startUpdateTimeActiveTimer();
+            commit(SET_ACTIVE_TIMER_INTERVAL, interval);
+            
+            commit(END_REQUEST);
+        },
+
+        [STOP_UPDATE_TIME_ACTIVE_TIMER]({ commit }) {
+            commit(STOP_UPDATE_TIME_ACTIVE_TIMER);
+        },
+        
+        async [UPDATE_ACTIVE_TIME]({ commit }) {
+            commit(START_REQUEST);
+            const result = await main.usersService.updateActiveTime();
+            commit(END_REQUEST);
         }
     },
 
