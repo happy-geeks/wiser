@@ -41,7 +41,10 @@ import {
     OPEN_MODULE,
     TOGGLE_PIN_MODULE,
     CLEAR_CACHE,
-    CLEAR_CACHE_ERROR
+    CLEAR_CACHE_ERROR,
+    START_UPDATE_TIME_ACTIVE_TIMER,
+    STOP_UPDATE_TIME_ACTIVE_TIMER,
+    UPDATE_ACTIVE_TIME
 } from "./store/mutation-types";
 import CacheService from "./shared/cache.service";
 
@@ -417,12 +420,11 @@ import CacheService from "./shared/cache.service";
                     },
 
                     logout() {
-                        main.usersService.stopUpdateTimeActiveTimer();
+                        this.$store.dispatch(STOP_UPDATE_TIME_ACTIVE_TIMER);
                         // Update the user's active time one last time.
-                        main.usersService.updateActiveTime().then(() => {
-                            this.$store.dispatch(CLOSE_ALL_MODULES);
-                            this.$store.dispatch(AUTH_LOGOUT);
-                        });
+                        this.$store.dispatch(UPDATE_ACTIVE_TIME);
+                        this.$store.dispatch(CLOSE_ALL_MODULES);
+                        this.$store.dispatch(AUTH_LOGOUT);
                     },
 
                     openModule(module) {
@@ -748,7 +750,6 @@ import CacheService from "./shared/cache.service";
                                 id: "website",
                                 name: "Website"
                             };
-
 
                             const extraUserData = await main.usersService.getLoggedInUserData();
                             this.openBranchSettings.selectedBranch = this.branches.find(branch => branch.id === extraUserData.currentBranchId);

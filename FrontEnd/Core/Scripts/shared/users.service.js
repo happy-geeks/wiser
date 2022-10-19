@@ -2,17 +2,6 @@
 
 export default class UsersService extends BaseService {
     /**
-     * Initializes a new instance of the UsersService class.
-     * @param {Main} base An instance of the base class (Main).
-     */
-    constructor(base) {
-        super(base);
-
-        this.updateTimeActiveTimer = null;
-        this.updateTimeActiveTimerStopped = true;
-    }
-    
-    /**
      * Sends a login request to the API and returns the result.
      * If an error occurred, it will return a friendly user message.
      * @param {string} username The username.
@@ -261,8 +250,8 @@ export default class UsersService extends BaseService {
         return userData.encryptedLoginLogId;
     }
 
-    async updateActiveTime() {
-        const encryptedLoginLogId = this.getEncryptedLoginLogId();
+    async updateActiveTime(encryptedLoginLogId) {
+        encryptedLoginLogId = encryptedLoginLogId || this.getEncryptedLoginLogId();
         if (!encryptedLoginLogId) {
             console.warn("Couldn't update the active time. There's no login log ID.");
             return;
@@ -272,30 +261,23 @@ export default class UsersService extends BaseService {
     }
 
     async startUpdateTimeActiveTimer() {
-        // Clear old interval first.
-        this.stopUpdateTimeActiveTimer();
-
-        // Retrieve the encrypted login log ID.
-        const encryptedLoginLogId = this.getEncryptedLoginLogId();
-        if (!encryptedLoginLogId) {
-            console.warn("Couldn't start the 'time active' timer. There's no login log ID.");
-            return;
-        }
-
-        await this.base.api.put(`/api/v3/users/reset-time-active-changed?encryptedLoginLogId=${encodeURIComponent(encryptedLoginLogId)}`);
-
-        // Timer runs every 5 minutes. (300000ms).
-        this.updateTimeActiveTimerStopped = false;
-        this.updateTimeActiveTimer = setInterval(async () => {
-            if (!this.updateTimeActiveTimerStopped) {
-                await this.base.api.put(`/api/v3/users/update-active-time?encryptedLoginLogId=${encodeURIComponent(encryptedLoginLogId)}`);
+        try {
+            // Retrieve the encrypted login log ID.
+            const encryptedLoginLogId = this.getEncryptedLoginLogId();
+            if (!encryptedLoginLogId) {
+                console.warn("Couldn't start the 'time active' timer. There's no login log ID.");
+                return;
             }
-        }, 300000);
-    }
 
-    stopUpdateTimeActiveTimer() {
-        // Clear old interval first.
-        this.updateTimeActiveTimerStopped = true;
-        clearInterval(this.updateTimeActiveTimer);
+            await this.base.api.put(`/api/v3/users/reset-time-active-changed?encryptedLoginLogId=${encodeURIComponent(encryptedLoginLogId)}`);
+
+            // Timer runs every 5 minutes. (300000ms).
+            return setInterval(async () => {
+                await this.updateActiveTime(encryptedLoginLogId);
+            }, 300000);
+        } catch (exception) {
+            console.error("Error in startUpdateTimeActiveTimer", exception);
+            return null;
+        }
     }
 }

@@ -34,6 +34,11 @@ export const VALID_SUB_DOMAIN = "validSubDomain";
 
 // Users module.
 export const CHANGE_PASSWORD = "changePassword";
+export const START_UPDATE_TIME_ACTIVE_TIMER = "startUpdateTimeActiveTimer";
+export const STOP_UPDATE_TIME_ACTIVE_TIMER = "stopUpdateTimeActiveTimer";
+export const SET_ACTIVE_TIMER_INTERVAL = "setActiveTimerInterval";
+export const CLEAR_ACTIVE_TIMER_INTERVAL = "clearActiveTimerInterval";
+export const UPDATE_ACTIVE_TIME = "updateActiveTime";
 
 // Branches module.
 export const CREATE_BRANCH = "createBranch";
