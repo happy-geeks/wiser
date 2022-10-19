@@ -17,14 +17,14 @@ public interface ICommitService
     /// <param name="data">The data of the commit</param>
     /// <param name="identity">The authenticated user data.</param>
     /// <returns>Returns a model of the commit.</returns>
-    Task<ServiceResult<CommitModel>> CreateCommitAsync(CommitModel data, ClaimsIdentity identity);
+    Task<ServiceResult<CommitModel>> CreateAndOrDeployCommitAsync(CommitModel data, ClaimsIdentity identity);
 
     /// <summary>
     /// Completes the commit.
     /// </summary>
     /// <param name="commitId">The id of the commit.</param>
     /// <param name="commitCompleted">The bool that will set the commit to completed.</param>
-    Task<ServiceResult<bool>> CompleteCommit(int commitId, bool commitCompleted);
+    Task<ServiceResult<bool>> CompleteCommitAsync(int commitId, bool commitCompleted);
 
     /// <summary>
     /// Get all templates that have uncommitted changes.

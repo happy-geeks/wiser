@@ -75,6 +75,7 @@ const moduleSettings = {
                 "DIRECTORY": 7,
                 "XML": 8,
                 "AIS": 8,
+                "SERVICES": 8,
                 "ROUTINES": 9
             });
 
@@ -312,30 +313,6 @@ const moduleSettings = {
                 open: this.onContextMenuOpen.bind(this),
                 select: this.onContextMenuSelect.bind(this)
             }).data("kendoContextMenu");
-            
-            this.userRolesDropDown = $("select#loginRoles").kendoMultiSelect({
-                placeholder: "Selecteer rol(len)...",
-                clearButton: true,
-                filter: "contains",
-                multiple: "multiple",
-                dataTextField: "name",
-                dataValueField: "id",
-                dataSource: {
-                    transport: {
-                        read: (readOptions) => {
-                            Wiser.api({
-                                url: `${this.settings.wiserApiRoot}users/roles`,
-                                dataType: "json",
-                                type: "GET"
-                            }).then((result) => {
-                                readOptions.success(result);
-                            }).catch((result) => {
-                                readOptions.error(result);
-                            });
-                        }
-                    }
-                }
-            }).data("kendoMultiSelect");
         }
 
         /**
@@ -1211,6 +1188,30 @@ const moduleSettings = {
                 }
             });
 
+            this.userRolesDropDown = $("select#loginRoles").kendoMultiSelect({
+                placeholder: "Selecteer rol(len)...",
+                clearButton: true,
+                filter: "contains",
+                multiple: "multiple",
+                dataTextField: "name",
+                dataValueField: "id",
+                dataSource: {
+                    transport: {
+                        read: (readOptions) => {
+                            Wiser.api({
+                                url: `${this.settings.wiserApiRoot}users/roles`,
+                                dataType: "json",
+                                type: "GET"
+                            }).then((result) => {
+                                readOptions.success(result);
+                            }).catch((result) => {
+                                readOptions.error(result);
+                            });
+                        }
+                    }
+                }
+            }).data("kendoMultiSelect");
+
             // Save the current settings so that we can keep track of any changes and warn the user if they're about to leave without saving.
             this.initialTemplateSettings = this.getCurrentTemplateSettings();
         }
@@ -1749,6 +1750,7 @@ const moduleSettings = {
             const routineType = document.querySelector("input[type=radio][name=routineType]:checked");
             let routineParameters = null;
             const routineReturnType = document.getElementById("routineReturnType");
+            const urlRegexElement = document.getElementById("urlRegex");
 
             const routineParametersElement = document.getElementById("routineParameters");
             if (routineParametersElement) {
@@ -1770,7 +1772,8 @@ const moduleSettings = {
                 },
                 routineType: routineType ? Number(routineType.value) : 0,
                 routineParameters: routineParameters,
-                routineReturnType: routineReturnType ? routineReturnType.value : null
+                routineReturnType: routineReturnType ? routineReturnType.value : null,
+                urlRegex: urlRegexElement ? urlRegexElement.value : null
             }, this.getNewSettings());
 
             const externalFilesGrid = $("#externalFiles").data("kendoGrid");

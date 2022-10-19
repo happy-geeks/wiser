@@ -386,7 +386,7 @@ export class Fields {
 
             switch (dependency.dependsOnAction || this.base.dependencyActionsEnum.toggleVisibility) {
                 case this.base.dependencyActionsEnum.refresh: {
-                    const fields = container.closest(".k-tabstrip-wrapper").find(`[data-property-id='${dependency.propertyId}'].item`).find(this.fieldSelector);
+                    const fields = container.closest(".k-tabstrip").find(`[data-property-id='${dependency.propertyId}'].item`).find(this.fieldSelector);
 
                     for (let field of fields) {
                         field = $(field);

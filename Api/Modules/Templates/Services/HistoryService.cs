@@ -170,9 +170,7 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("handleLogicBlocks", newVersion.HandleLogicBlocks, oldVersion.HandleLogicBlocks, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("handleMutators", newVersion.HandleMutators, oldVersion.HandleMutators, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRequired", newVersion.LoginRequired, oldVersion.LoginRequired, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginUserType", newVersion.LoginUserType, oldVersion.LoginUserType, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginSessionPrefix", newVersion.LoginSessionPrefix, oldVersion.LoginSessionPrefix, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRole", newVersion.LoginRole, oldVersion.LoginRole, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRole", newVersion.LoginRoles == null ? "" : String.Join(",", newVersion.LoginRoles), oldVersion.LoginRoles == null ? "" : String.Join(",", oldVersion.LoginRoles), historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("insertMode", newVersion.InsertMode, oldVersion.InsertMode, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loadAlways", newVersion.LoadAlways, oldVersion.LoadAlways, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("disableMinifier", newVersion.DisableMinifier, oldVersion.DisableMinifier, historyModel);

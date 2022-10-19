@@ -70,6 +70,13 @@ namespace Api.Modules.Templates.Helpers
 
             switch (environment)
             {
+                case Environments.Development:
+                    // Add this publish.
+                    TryAddToIntDictionary(versionsToUpdate, version, (int)environment);
+                    // Remove the old publish of this environment.
+                    TryAddToIntDictionary(versionsToUpdate, publishModel.TestVersion, -(int)Environments.Development);
+
+                    break;
                 case Environments.Test:
                     // Add this publish.
                     TryAddToIntDictionary(versionsToUpdate, version, (int)environment);

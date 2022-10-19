@@ -10,6 +10,13 @@ namespace Api.Modules.VersionControl.Interfaces.DataLayer;
 public interface ICommitDataService
 {
     /// <summary>
+    /// Gets a single commit.
+    /// </summary>
+    /// <param name="id">The ID of the commit.</param>
+    /// <returns>A <see cref="CommitModel"/> with the result.</returns>
+    Task<CommitModel> GetCommitAsync(int id);
+    
+    /// <summary>
     /// Creates new commit item in the database.
     /// </summary>
     /// <param name="data">The data for the commit.</param>

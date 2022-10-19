@@ -37,6 +37,9 @@ const moduleSettings = {
             this.mainTabStrip = null;
             this.commitButton = null;
             this.deployGrid = null;
+            this.deployTestButton = null;
+            this.deployAcceptanceButton = null;
+            this.deployLiveButton = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -119,18 +122,38 @@ const moduleSettings = {
             this.commitButton = $("#commitButton").kendoButton({
                 click: this.onCommit.bind(this),
                 icon: "save"
-            }).data();
+            }).data("kendoButton");
             
             this.commitEnvironmentField = $("#commitEnvironment").kendoDropDownList({
                 optionLabel: "Selecteer omgeving",
                 dataTextField: "text",
                 dataValueField: "value",
                 dataSource: [
+                    { text: "Ontwikkeling", value: 1 },
                     { text: "Test", value: 2 },
                     { text: "Acceptatie", value: 4 },
                     { text: "Live", value: 8 }
                 ]
             }).data("kendoDropDownList");
+            
+            // Deploy buttons (from second tab).
+            this.deployTestButton = $("#deployCommitToTest").kendoButton({
+                click: this.onDeploy.bind(this, 2),
+                icon: "data",
+                enable: false
+            }).data("kendoButton");
+            
+            this.deployAcceptanceButton = $("#deployCommitToAcceptance").kendoButton({
+                click: this.onDeploy.bind(this, 4),
+                icon: "data",
+                enable: false
+            }).data("kendoButton");
+            
+            this.deployLiveButton = $("#deployCommitToLive").kendoButton({
+                click: this.onDeploy.bind(this, 8),
+                icon: "data",
+                enable: false
+            }).data("kendoButton");
             
             // noinspection ES6MissingAwait
             this.setupTemplateChangesGrid();
@@ -201,6 +224,103 @@ const moduleSettings = {
             window.processing.removeProcess(initialProcess);
         }
 
+        /**
+         * Event for when the user (de)selects one or more rows in the deploy grid.
+         * This will show/hide the commit buttons so that the user can't deploy something to an environment that it's already on.
+         * @param event The change event of the grid.
+         */
+        onDeployGridChange(event) {
+            const selectedCommits = event.sender.getSelectedData();
+
+            // If there are now rows selected, disable all deploy buttons.
+            if (!selectedCommits || !selectedCommits.length) {
+                this.deployTestButton.enable(false);
+                this.deployAcceptanceButton.enable(false);
+                this.deployLiveButton.enable(false);
+                return;
+            }
+
+            // Only enable deploy buttons if at least one selected commit is not deployed to that environment yet.
+            let everythingIsOnTest = true;
+            let everythingIsOnAcceptance = true;
+            let everythingIsOnLive = true;
+            for (let selectedCommit of selectedCommits) {
+                if (!selectedCommit.isTest) {
+                    everythingIsOnTest = false;
+                }
+                
+                if (!selectedCommit.isAcceptance) {
+                    everythingIsOnAcceptance = false;
+                }
+                
+                if (!selectedCommit.isLive) {
+                    everythingIsOnLive = false;
+                }
+            }
+            
+            this.deployTestButton.enable(!everythingIsOnTest);
+            this.deployAcceptanceButton.enable(!everythingIsOnAcceptance);
+            this.deployLiveButton.enable(!everythingIsOnLive);
+        }
+
+        /**
+         * Event for when the deploy grid gets (re)loaded.
+         * This will disable all deploy buttons, because the user will no longer have any rows selected after reloading the grid.
+         * @param event
+         */
+        onDeployGridDataBound(event) {
+            this.deployTestButton.enable(false);
+            this.deployAcceptanceButton.enable(false);
+            this.deployLiveButton.enable(false);
+        }
+
+        /**
+         * Event for when the user clicks one of the deploy buttons to deploy one or more unfinished commits.
+         * This will push the commit(s) to the selected environment.
+         * @param environment The environment to deploy the selected commits to.
+         * @param event The click event of the Kendo button.
+         */
+        async onDeploy(environment, event) {
+            if (!environment) {
+                return;
+            }
+            
+            const selectedCommits = this.deployGrid.getSelectedData();
+            if (!selectedCommits || !selectedCommits.length) {
+                kendo.alert("Kies a.u.b. eerst een of meer commits om te deployen.");
+                return;
+            }
+
+            const initialProcess = `DeployCommit_${Date.now()}`;
+            window.processing.addProcess(initialProcess);
+
+            try {
+                event.preventDefault();
+
+                const promises = [];
+                for (let selectedCommit of selectedCommits) {
+                    promises.push(Wiser.api({
+                        url: `${this.base.settings.wiserApiRoot}version-control`,
+                        method: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            id: selectedCommit.id,
+                            environment: environment
+                        })
+                    }));
+                }
+
+                await Promise.all(promises);
+                this.deployGrid.dataSource.read();
+            }
+            catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het maken van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+            }
+
+            window.processing.removeProcess(initialProcess);
+        }
+        
         /**
          * Setup/initialize the grid with all uncommitted template changes.
          */
@@ -478,17 +598,20 @@ const moduleSettings = {
                         {
                             "field": "isTest",
                             "title": "Test",
-                            "width": "50px"
+                            "width": "50px",
+                            "template": "<span class='k-icon k-i-#:(isTest ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
                         },
                         {
                             "field": "isAcceptance",
                             "title": "Acceptatie",
-                            "width": "50px"
+                            "width": "50px",
+                            "template": "<span class='k-icon k-i-#:(isAcceptance ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
                         },
                         {
                             "field": "isLive",
                             "title": "Live",
-                            "width": "50px"
+                            "width": "50px",
+                            "template": "<span class='k-icon k-i-#:(isLive ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
                         },
                         {
                             "field": "addedOn",
@@ -500,8 +623,42 @@ const moduleSettings = {
                             "field": "addedBy",
                             "title": "Door",
                             "width": "100px"
+                        },
+                        {
+                            "field": "dynamicContents",
+                            "title": "Dynamic contents",
+                            "template": (dataItem) => {
+                                if (!dataItem.dynamicContents || !dataItem.dynamicContents.length) {
+                                    return `<span class="dynamic-content">Geen dynamic content in deze commit</span>`;
+                                }
+                                
+                                const html = [];
+                                for (let dynamicContent of dataItem.dynamicContents) {
+                                    html.push(`<span class="dynamic-content">${dynamicContent.templateNames[0]} ${dynamicContent.component} - ${dynamicContent.title} (${dynamicContent.dynamicContentId}) - Versie ${dynamicContent.version}</span>`);
+                                }
+                                
+                                return html.join("<br />")
+                            }
+                        },
+                        {
+                            "field": "templates",
+                            "title": "Templates",
+                            "template": (dataItem) => {
+                                if (!dataItem.templates || !dataItem.templates.length) {
+                                    return `<span class="template">Geen templates in deze commit</span>`;
+                                }
+
+                                const html = [];
+                                for (let template of dataItem.templates) {
+                                    html.push(`<span class="template">${template.templateParentName} (${template.templateParentId}) => ${template.templateName} (${template.templateId}) - Versie ${template.version}</span>`);
+                                }
+
+                                return html.join("<br />")
+                            }
                         }
-                    ]
+                    ],
+                    change: this.onDeployGridChange.bind(this),
+                    dataBound: this.onDeployGridDataBound.bind(this)
                 };
 
                 this.deployGrid = $("#deployGrid").kendoGrid(gridSettings).data("kendoGrid");

@@ -745,9 +745,16 @@
                         existingItem.set("dataType", field.dataType || "string");
                         existingItem.set("havingDataType", field.havingDataType || "string");
 
+                        // Support for older "languagecode" property, which is a single value.
+                        const languagesCodes = [];
                         if (field.hasOwnProperty("languagecode") && field.languagecode !== "") {
-                            existingItem.set("languageCode", field.languagecode);
+                            languagesCodes.push(field.languagecode);
                         }
+                        // Add the language codes in the "languageCodes" property, which should be an array.
+                        if (field.hasOwnProperty("languageCodes") && Array.isArray(field.languageCodes)) {
+                            languagesCodes.push(...field.languageCodes);
+                        }
+                        existingItem.set("languageCode", languagesCodes);
 
                         existingItem.set("aggregation", field.aggregationfunction);
                         existingItem.set("formatting", field.formatting);
