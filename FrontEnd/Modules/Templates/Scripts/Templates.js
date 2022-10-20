@@ -1305,7 +1305,6 @@ const moduleSettings = {
             const pretty = await require('pretty');
             textArea[0].value = pretty(textArea[0].value, { ocd: false });
             let codeMirrorInstance;
-            let templates = this.base;
 
             htmlWindow.kendoWindow({
                 width: "100%",
@@ -1323,11 +1322,7 @@ const moduleSettings = {
                             "Ctrl-Q": function (cm) {
                                 cm.foldCode(cm.getCursor());
                             },
-                            "Ctrl-Space": "autocomplete",
-                            "Ctrl-S": function (cm) {
-                                templates.setHtmlAndSave(cm);
-                                activateEvent.sender.close();
-                            }
+                            "Ctrl-Space": "autocomplete"
                         },
                         mode: "text/html"
                     };
@@ -1355,8 +1350,8 @@ const moduleSettings = {
             });
 
             htmlWindow.find(".k-primary").kendoButton({
-                click: async () => {
-                    await this.base.setHtmlAndSave(codeMirrorInstance);
+                click: () => {
+                    this.mainHtmlEditor.value(codeMirrorInstance.getValue());
                     kendoWindow.close();
                 },
                 icon: "save"
@@ -1367,14 +1362,6 @@ const moduleSettings = {
                 },
                 icon: "cancel"
             });
-        }
-        
-        /*
-            set value from cmi: CodeMirrorInstance to mainHtmlEditor and save template. 
-         */
-        async setHtmlAndSave(cmi) {
-            this.mainHtmlEditor.value(cmi.getValue());
-            await this.saveTemplate();
         }
 
         onDynamicContentOpenClick(event) {
