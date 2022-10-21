@@ -614,7 +614,7 @@ import CacheService from "./shared/cache.service";
                             return false;
                         }
                         
-                        if (this.mergeBranchResult && this.mergeBranchResult.conflicts.length > 0 && !this.areAllConflictsHandled) {
+                        if (this.mergeBranchResult && this.mergeBranchResult.conflicts && this.mergeBranchResult.conflicts.length > 0 && !this.areAllConflictsHandled) {
                             return false;
                         }
 
@@ -689,6 +689,36 @@ import CacheService from "./shared/cache.service";
                         
                         window.open(url, "_blank");
                         this.$refs.wiserBranchesPrompt.close();
+                    },
+                    
+                    updateBranchChangeList(isChecked, setting, type, operation) {
+                        if (type === "all") {
+                            for (let entityOrSettingType of this.branchChanges[setting]) {
+                                const key = entityOrSettingType.entityType || entityOrSettingType.type;
+                                this.branchMergeSettings[setting][key] = this.branchMergeSettings[setting][key] || {};
+                                switch (operation) {
+                                    case "everything":
+                                        this.branchMergeSettings[setting][key].everything = isChecked;
+                                        this.branchMergeSettings[setting][key].create = isChecked;
+                                        this.branchMergeSettings[setting][key].update = isChecked;
+                                        this.branchMergeSettings[setting][key].delete = isChecked;
+                                        break;
+                                    default:
+                                        this.branchMergeSettings[setting][key][operation] = isChecked;
+                                        break;
+                                }
+                            }
+
+                            if (operation === "everything") {
+                                this.branchMergeSettings[setting].all.create = isChecked;
+                                this.branchMergeSettings[setting].all.update = isChecked;
+                                this.branchMergeSettings[setting].all.delete = isChecked;
+                            }
+                        } else if (operation === "everything") {
+                            this.branchMergeSettings[setting][type].create = isChecked;
+                            this.branchMergeSettings[setting][type].update = isChecked;
+                            this.branchMergeSettings[setting][type].delete = isChecked;
+                        }  
                     },
 
                     async clearWebsiteCache() {
@@ -786,22 +816,12 @@ import CacheService from "./shared/cache.service";
                         }
                         
                         await this.$store.dispatch(GET_BRANCH_CHANGES, selectedBranchId);
-                        for (let entity of this.branchChanges.entities) {
-                            this.branchMergeSettings.entities[entity.entityType] = {
-                                everything: false,
-                                create: false,
-                                update: false,
-                                delete: false
-                            };
-                        }
-                        for (let entity of this.branchChanges.settings) {
-                            this.branchMergeSettings.settings[entity.type] = {
-                                everything: false,
-                                create: false,
-                                update: false,
-                                delete: false
-                            };
-                        }
+                        
+                        // Clear all checkboxes.
+                        this.branchMergeSettings.entities.all.everything = false;
+                        this.branchMergeSettings.settings.all.everything = false;
+                        this.updateBranchChangeList(false, "entities", "all", "everything");
+                        this.updateBranchChangeList(false, "settings", "all", "everything");
                     },
 
                     onCreateBranchAllSettingsChange(event) {
@@ -812,33 +832,7 @@ import CacheService from "./shared/cache.service";
 
                     onBranchMergeSettingChange(event, setting, type, operation) {
                         const isChecked = event.currentTarget.checked;
-                        if (type === "all") {
-                            for (let entityOrSettingType of this.branchChanges[setting]) {
-                                const key = entityOrSettingType.entityType || entityOrSettingType.type;
-                                this.branchMergeSettings[setting][key] = this.branchMergeSettings[setting][key] || {};
-                                switch (operation) {
-                                    case "everything":
-                                        this.branchMergeSettings[setting][key].everything = isChecked;
-                                        this.branchMergeSettings[setting][key].create = isChecked;
-                                        this.branchMergeSettings[setting][key].update = isChecked;
-                                        this.branchMergeSettings[setting][key].delete = isChecked;
-                                        break;
-                                    default:
-                                        this.branchMergeSettings[setting][key][operation] = isChecked;
-                                        break;
-                                }
-                            }
-
-                            if (operation === "everything") {
-                                this.branchMergeSettings[setting].all.create = isChecked;
-                                this.branchMergeSettings[setting].all.update = isChecked;
-                                this.branchMergeSettings[setting].all.delete = isChecked;
-                            }
-                        } else if (operation === "everything") {
-                            this.branchMergeSettings[setting][type].create = isChecked;
-                            this.branchMergeSettings[setting][type].update = isChecked;
-                            this.branchMergeSettings[setting][type].delete = isChecked;
-                        }
+                        this.updateBranchChangeList(isChecked, setting, type, operation);
                     },
 
                     onApproveConflictClick(conflict) {
