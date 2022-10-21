@@ -1469,7 +1469,7 @@ const moduleSettings = {
             event.preventDefault();
             
             const title = $("#tabstrip .itemNameFieldContainer .itemNameField").val();
-            await Wiser.showConfirmDialog(`Weet u zeker dat u het verwijderen ongedaan wilt maken voor '${title}'?`);
+            await Wiser.showConfirmDialog(`Weet u zeker dat u het verwijderen ongedaan wilt maken voor '${title}'?`, "Verwijderen ongedaan maken", "Annuleren", "Terugzetten");
 
             const process = `undeleteItem_${Date.now()}`;
             window.processing.addProcess(process);
@@ -1480,7 +1480,7 @@ const moduleSettings = {
                 popupWindowContainer.find(".popup-loader").addClass("loading");
                 popupWindowContainer.data("saving", true);
 
-                let entityType = popupWindowContainer.data("entityTypeDetails");
+                let entityType = popupWindowContainer.data("entityTypeDetails") || this.settings.entityType;
 
                 if (Wiser.validateArray(entityType)) {
                     entityType = entityType[0];
@@ -1895,8 +1895,8 @@ const moduleSettings = {
                 }
 
                 editMenu.find(".copyToEnvironment").closest("li").toggle(itemMetaData.enableMultipleEnvironments > 0);
-                deleteButtons.toggle(itemMetaData.canDelete && !itemMetaData.removed && itemId !== this.settings.initialItemId);
-                undeleteButtons.toggle(itemMetaData.canDelete && !!itemMetaData.removed && itemId !== this.settings.initialItemId); // Double exclamation mark, because jQuery expects a true/false, but removed has a 0 or 1 most of the time.
+                deleteButtons.toggle(itemMetaData.canDelete && !itemMetaData.removed);
+                undeleteButtons.toggle(itemMetaData.canDelete && !!itemMetaData.removed); // Double exclamation mark, because jQuery expects a true/false, but removed has a 0 or 1 most of the time.
 
                 $("#alert-first").addClass("hidden");
 
