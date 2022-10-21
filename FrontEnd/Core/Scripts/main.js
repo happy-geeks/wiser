@@ -581,7 +581,7 @@ import CacheService from "./shared/cache.service";
                     },
 
                     async changePassword() {
-                        await this.$store.codispatch(CHANGE_PASSWORD,
+                        await this.$store.dispatch(CHANGE_PASSWORD,
                             {
                                 oldPassword: this.changePasswordPromptOldPasswordValue,
                                 newPassword: this.changePasswordPromptNewPasswordValue,
