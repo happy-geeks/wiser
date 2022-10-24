@@ -113,11 +113,6 @@ export class EntityTab {
 
         await Misc.ensureCodeMirror();
 
-        this.cssField = CodeMirror.fromTextArea(document.getElementById("cssField"), {
-            mode: "text/css",
-            lineNumbers: true
-        });
-
         this.scriptField = CodeMirror.fromTextArea(document.getElementById("customScriptField"), {
             mode: "text/javascript",
             lineNumbers: true
@@ -503,14 +498,13 @@ export class EntityTab {
         // an item and it gets reloaded when you save it, or when a user manually selects it.
         this.isSaveSelect = false;
         //LISTVIEWS
-        this.listOfTabProperties = $("#tabNameProperties").kendoListView(
-            {
-                template: '<li class="sortable" data-item="${id}" data-ordering="${ordering}" data-display-name="${displayName}">${displayName}</li>',
-                dataTextField: "displayName",
-                dataValueField: "id",
-                selectable: true,
-                change: this.optionSelected.bind(this)
-            }).data("kendoListView");
+        this.listOfTabProperties = $("#tabNameProperties").kendoListView({
+            template: '<li class="sortable" data-item="${id}" data-ordering="${ordering}" data-display-name="${displayName}">${displayName}</li>',
+            dataTextField: "displayName",
+            dataValueField: "id",
+            selectable: true,
+            change: this.optionSelected.bind(this)
+        }).data("kendoListView");
 
         // entity module
         this.entityModule = $("#entityModule").kendoComboBox({
@@ -923,17 +917,13 @@ export class EntityTab {
                 return element.clone().addClass("hint");
             },
             change: async (e) => {
-                const dataItem = this.listOfTabProperties.dataSource.view();
-                if (!dataItem || !dataItem[e.oldIndex] || !dataItem[e.newIndex] || !e.sender.draggedElement[0].dataset.item) {
-                    // todo show error, fix if statement
-                    return;
-                }
-                if (!this.checkIfEntityIsSet()) {
+                const dataSource = this.listOfTabProperties.dataSource.view();
+                if (!this.checkIfEntityIsSet() || !dataSource || !dataSource[e.oldIndex] || !dataSource[e.newIndex] || !e.sender.draggedElement[0].dataset.item) {
                     return;
                 }
                 
                 const id = e.sender.draggedElement[0].dataset.item;
-                await this.updateEntityPropertyOrdering(e.oldIndex, e.newIndex, id);
+                await this.updateEntityPropertyOrdering(dataSource[e.oldIndex].ordering, dataSource[e.newIndex].ordering, id);
             },
             cursorOffset: {
                 top: -10,
@@ -1073,7 +1063,6 @@ export class EntityTab {
 
         //combobox to select the correct tabname
         this.tabNameDropDownList = $("#tabnames").kendoDropDownList({
-            placeholder: "Selecteer gewenste tab...",
             clearButton: false,
             dataTextField: "tabName",
             dataValueField: "tabName",
@@ -1205,8 +1194,8 @@ export class EntityTab {
                 text: "Maak uw keuze..."
             },
             dataSource: [
-                { text: "Aleen zichtbaar maken wanneer...", value: 0 },
-                { text: "Verversen wanneer...", value: 1 }
+                { text: "Aleen zichtbaar maken wanneer...", value: "toggleVisibility" },
+                { text: "Verversen wanneer...", value: "refresh" }
             ],
             dataTextField: "text",
             dataValueField: "value",
@@ -1223,20 +1212,20 @@ export class EntityTab {
 
         this.dependencyOperator = $("#dependencyOperator").kendoDropDownList({
             dataSource: [
-                { text: "gelijk is aan ...", value: 0 },
-                { text: "ongelijk is aan ...", value: 1 },
-                { text: "de waarde ... bevat", value: 2 },
-                { text: "niet de waarde ... bevat", value: 3 },
-                { text: "begint met ...", value: 4 },
-                { text: "niet begint met ...", value: 5 },
-                { text: "eindigt met ...", value: 6 },
-                { text: "niet eindigt met ...", value: 7 },
-                { text: "leeg is", value: 8 },
-                { text: "niet leeg is", value: 9 },
-                { text: "groter is dan ...", value: 10 },
-                { text: "groter is dan of gelijk is aan ...", value: 11 },
-                { text: "kleiner is dan ...", value: 13 },
-                { text: "kleiner is dan of gelijk is aan ...", value: 12 }
+                { text: "gelijk is aan ...", value: "equals" },
+                { text: "ongelijk is aan ...", value: "notEquals" },
+                { text: "de waarde ... bevat", value: "contains" },
+                { text: "niet de waarde ... bevat", value: "doesNotContain" },
+                { text: "begint met ...", value: "startsWith" },
+                { text: "niet begint met ...", value: "doesNotStartWith" },
+                { text: "eindigt met ...", value: "endsWith" },
+                { text: "niet eindigt met ...", value: "doesNotEndWith" },
+                { text: "leeg is", value: "isEmpty" },
+                { text: "niet leeg is", value: "isNotEmpty" },
+                { text: "groter is dan ...", value: "greaterThanOrEqualTo" },
+                { text: "groter is dan of gelijk is aan ...", value: "greaterThan" },
+                { text: "kleiner is dan ...", value: "lessThanOrEqualTo" },
+                { text: "kleiner is dan of gelijk is aan ...", value: "lessThan" }
             ],
             dataTextField: "text",
             dataValueField: "value",
@@ -1247,7 +1236,7 @@ export class EntityTab {
             select: (e) => {
                 const dataItem = e.dataItem;
                 this.filterOptions = dataItem.value;
-                $('.item[data-visible*="' + dataItem.value + '"]').show();
+                $(`.item[data-visible*="${dataItem.value}"]`).show();
             }
         }).data("kendoDropDownList");
 
@@ -2141,13 +2130,6 @@ export class EntityTab {
 
         // set tabnames 
         await this.setTabNameDropDown();
-        
-        // set properties of tab
-        this.tabNameDropDownList.one("dataBound", () => {
-            this.tabNameDropDownList.select((dataItem) => {
-                return dataItem.tabName === "Gegevens";
-            });
-        });
 
         // Refresh code mirrors, otherwise they won't work properly because they were invisible when they were initialized.
         this.queryAfterInsert.refresh();
@@ -2167,6 +2149,11 @@ export class EntityTab {
         });
         this.tabNameDropDownList.setDataSource(tabNames);
         this.tabNameProperty.setDataSource(tabNames);
+
+        // set properties of tab
+        this.tabNameDropDownList.select((dataItem) => {
+            return dataItem.tabName === "Gegevens";
+        });
     }
 
     // update property ordering
@@ -2227,7 +2214,6 @@ export class EntityTab {
         }
 
         // Refresh code mirror isntances, otherwise they won't work properly because they were initialized while they were invisible.
-        this.cssField.refresh();
         this.scriptField.refresh();
         this.jsonField.refresh();
         this.queryField.refresh();
@@ -2255,18 +2241,11 @@ export class EntityTab {
     }
 
     async getEntityFieldPropertiesOfSelected(id, selectedEntityName, selectedTabName) {
-        const results = await Wiser.api({
-            url: `${this.base.settings.serviceRoot}/GET_ENTITY_FIELD_PROPERTIES_FOR_SELECTED?entityName=${selectedEntityName}&id=${id}`,
-            method: "POST",
-            contentType: 'application/json',
-            data: {
-                id: id,
-                entityName: selectedEntityName,
-                tabName: selectedTabName
-            }
+        this.selectedEntityProperty = await Wiser.api({
+            url: `${this.base.settings.wiserApiRoot}entity-properties/${id}`,
+            method: "GET",
+            contentType: 'application/json'
         });
-
-        this.selectedEntityProperty = results[0];
 
         this.groupNameComboBox.setDataSource(new kendo.data.DataSource({
             transport: {
@@ -2538,7 +2517,6 @@ export class EntityTab {
         entityProperties.height = $("#height").data("kendoNumericTextBox").value();
         entityProperties.languageCode = $('#langCode').val();
         entityProperties.customScript = this.scriptField.getValue();
-        entityProperties.css = this.cssField.getValue();
         entityProperties.alsoSaveSeoValue = document.getElementById("seofriendly").checked;
         entityProperties.defaultValue = $('#defaultValue').val();
         entityProperties.visibleInOverview = document.getElementById("visible-in-table").checked;
@@ -3124,7 +3102,6 @@ export class EntityTab {
         $("#daterangeTill").data("kendoDatePicker").value("");
 
         // codemirror fields
-        this.cssField.setValue("");
         this.scriptField.setValue("");
         this.jsonField.setValue("");
         this.queryField.setValue("");
@@ -3221,25 +3198,27 @@ export class EntityTab {
 
     // set all properties values to the fields accordingly
     setEntityFieldProperties(resultSet) {
-        console.log("setEntityFieldProperties", resultSet);
+        resultSet.dependsOn = resultSet.dependsOn || {};
+        
         // set dropdown value for inputtype field
         this.inputTypeSelector.select((dataItem) => {
-            return dataItem.text === resultSet.inputType;
+            console.log("inputTypeSelector", dataItem.id, resultSet.labelStyle);
+            return (dataItem.id || "").toLowerCase() === (resultSet.inputType || "").toLowerCase();
         });
 
         // hide/show all elements which are shown based on a type of input
         this.hideShowElementsBasedOnValue(resultSet.inputType);
         // checkboxes proper set
-        document.getElementById("visible-in-table").checked = resultSet.visibleInOverview;
+        document.getElementById("visible-in-table").checked = resultSet.overview.visible;
         document.getElementById("mandatory").checked = resultSet.mandatory;
-        document.getElementById("readonly").checked = resultSet.readonly;
+        document.getElementById("readonly").checked = resultSet.readOnly;
         document.getElementById("seofriendly").checked = resultSet.alsoSaveSeoValue;
         document.getElementById("saveOnChange").checked = resultSet.saveOnChange;
         document.getElementById("extendedExplanation").checked = resultSet.extendedExplanation;
         document.getElementById("enableAggregation").checked = resultSet.enableAggregation;
 
         // numeric textboxes
-        this.widthInTable.value(resultSet.overviewWidth);
+        this.widthInTable.value(resultSet.overview.width);
         this.width.value(resultSet.width);
         this.height.value(resultSet.height);
 
@@ -3254,38 +3233,34 @@ export class EntityTab {
         document.getElementById("visibilityPathRegex").value = resultSet.visibilityPathRegex;
 
         // dependencies
-        document.getElementById("dependingValue").value = resultSet.dependsOnValue;
+        document.getElementById("dependingValue").value = resultSet.dependsOn.value;
 
         //set depending field using one time dataBound because of the racing condition when filling.
         this.dependencyFields.one("dataBound",
             (e) => {
                 this.dependencyFields.select((dataItem) => {
-                    return dataItem.propertyName === resultSet.dependsOnField;
+                    return dataItem.propertyName === resultSet.dependsOn.field;
                 });
             });
 
         // set depending filter
         this.dependencyOperator.select((dataItem) => {
-            return dataItem.value === resultSet.dependsOnOperator;
+            return (dataItem.value || "").toLowerCase() === (resultSet.dependsOn.operator || "").toLowerCase();
         });
 
         this.dependencyAction.select((dataItem) => {
-            return dataItem.value === resultSet.dependsOnAction;
+            return (dataItem.value || "").toLowerCase() === (resultSet.dependsOn.action || "").toLowerCase();
         });
 
         this.labelStyle.select((dataItem) => {
-            return dataItem.value === resultSet.labelStyle;
+            return (dataItem.value || "").toLowerCase() === (resultSet.labelStyle || "").toLowerCase();
         });
 
         this.labelWidth.select((dataItem) => {
-            return dataItem.value == resultSet.labelWidth;
+            return (dataItem.value || 0).toString().toLowerCase() === (resultSet.labelWidth || 0).toString().toLowerCase();
         });
 
         // set codemirror fields
-        if (resultSet.css && resultSet.css !== "") {
-            this.cssField.setValue(resultSet.css);
-            this.cssField.refresh();
-        }
         if (resultSet.customScript && resultSet.customScript !== "") {
             this.scriptField.setValue(resultSet.customScript);
             this.scriptField.refresh();
@@ -3297,8 +3272,9 @@ export class EntityTab {
 
         // set dropdown value for tabname field
         this.tabNameProperty.select((dataItem) => {
-            return dataItem.tabName === resultSet.tabName;
+            return (dataItem.tabName === "Gegevens" ? "" : dataItem.tabName) === (resultSet.tabName === "Gegevens" ? "" : resultSet.tabName);
         });
+        
         //set groupNameComboBox field using one time dataBound because of the racing condition when filling.
         this.groupNameComboBox.one("dataBound",
             (e) => {

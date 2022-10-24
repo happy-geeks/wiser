@@ -337,7 +337,7 @@ VALUES
             clientDatabaseConnection.AddParameter("depends_on_field", entityProperty.DependsOn?.Field ?? "");
             clientDatabaseConnection.AddParameter("depends_on_operator", ToDatabaseValue(entityProperty.DependsOn?.Operator));
             clientDatabaseConnection.AddParameter("depends_on_value", entityProperty.DependsOn?.Value ?? "");
-            clientDatabaseConnection.AddParameter("depends_on_action", entityProperty.DependsOn?.Action);
+            clientDatabaseConnection.AddParameter("depends_on_action", ToDatabaseValue(entityProperty.DependsOn?.Action));
             clientDatabaseConnection.AddParameter("language_code", entityProperty.LanguageCode ?? "");
             clientDatabaseConnection.AddParameter("custom_script", entityProperty.CustomScript ?? "");
             clientDatabaseConnection.AddParameter("also_save_seo_value", entityProperty.AlsoSaveSeoValue);
