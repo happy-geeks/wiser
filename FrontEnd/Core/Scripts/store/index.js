@@ -45,6 +45,7 @@ import {
     CLEAR_ACTIVE_TIMER_INTERVAL,
     UPDATE_ACTIVE_TIME
 } from "./mutation-types";
+import {val} from "jshint/src/options";
 
 const baseModule = {
     state: () => ({
@@ -777,6 +778,12 @@ const branchesModule = {
                     }
                 }
                 
+                // Make sure string checks are case insensitive.
+                if (!isDate) {
+                    valueToCheck = valueToCheck.toLowerCase();
+                    startValue = startValue.toLowerCase();
+                }
+                
                 let found = false;
                 switch (settings.operator) {
                     case "contains":
@@ -885,6 +892,7 @@ const branchesModule = {
             commit(START_REQUEST);
             const changesResponse = await main.branchesService.getChanges(branchId);
             commit(GET_BRANCH_CHANGES, changesResponse.data);
+            commit(MERGE_BRANCH_SUCCESS, null);
             commit(END_REQUEST);
         },
 

@@ -21,7 +21,6 @@ public interface IGoogleTranslateService
 
     /// <summary>
     /// Translates HTML into something else, using the Google Translate API.
-    /// 
     /// </summary>
     /// <param name="htmlItems">The HTML strings to translate. Must not be null or contain null elements.</param>
     /// <param name="targetLanguageCode">The code for the language to translate into. Must not be null.</param>

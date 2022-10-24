@@ -1562,21 +1562,6 @@ SELECT id, `name`, module_selection AS modules, request_json AS requestJson, sav
 FROM wiser_data_selector
 WHERE id = @_id");
 
-                TemplateQueryStrings.Add("GET_ALL_ENTITY_TYPES", @"SET @userId = {encryptedUserId:decrypt(true)};
-
-SELECT DISTINCT 
-	IF(entity.friendly_name IS NULL OR entity.friendly_name = '', entity.name, entity.friendly_name) AS name,
-    entity.name AS value
-FROM wiser_entity AS entity
-
-# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-LEFT JOIN wiser_user_roles user_role ON user_role.user_id = @userId
-LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.entity_name = entity.name
-
-WHERE entity.show_in_search = 1
-AND entity.name <> ''
-AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-ORDER BY IF(entity.friendly_name IS NULL OR entity.friendly_name = '', entity.name, entity.friendly_name)");
                 TemplateQueryStrings.Add("GET_ITEM_ENVIRONMENTS", @"SELECT
 	item.id AS id_encrypt_withdate,
 	item.id AS plainItemId,
