@@ -2171,6 +2171,9 @@ export class EntityTab {
 
     // update property ordering
     async updateEntityPropertyOrdering(oldIndex, newIndex, id) {
+        const selectedTab = this.tabNameDropDownList.dataItem();
+        const tabName = !selectedTab || selectedTab.tabName === "Gegevens" ? "" : selectedTab.tabName;
+        
         return Wiser.api({
             url: `${this.base.settings.serviceRoot}/UPDATE_ORDERING_ENTITY_PROPERTY`,
             method: "POST",
@@ -2178,7 +2181,7 @@ export class EntityTab {
                 oldIndex: oldIndex,
                 newIndex: newIndex,
                 currentId: id,
-                tabName: (this.tabNameDropDownList.dataItem().tabName === "Gegevens") ? "" : this.tabNameDropDownList.dataItem().tabName,
+                tabName: tabName,
                 entityName: this.entitiesCombobox.dataItem().name
             }
         });
