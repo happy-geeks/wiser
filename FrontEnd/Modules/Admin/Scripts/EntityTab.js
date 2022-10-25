@@ -110,6 +110,21 @@ export class EntityTab {
             },
             icon: "globe"
         });
+        
+        $(".duplicateEntityPropertyButton").kendoButton({
+            click: () => {
+                const index = this.listOfTabProperties.select().index();
+                const dataItem = this.listOfTabProperties.dataSource.view()[index];
+                if (!dataItem) {
+                    return;
+                }
+
+                this.base.openDialog("Veld dupliceren", "Voer de naam in van het nieuwe veld (vul kommagescheiden meerdere namen in om het veld meerdere keren te dupliceren).").then((data) => {
+                    this.duplicateEntityProperty(dataItem.id, data);
+                });
+            },
+            icon: "copy"
+        });
 
         await Misc.ensureCodeMirror();
 
@@ -294,7 +309,6 @@ export class EntityTab {
             await Promise.all(promises);
 
             this.listOfTabProperties.one("dataBound", () => {
-                console.log("listOfTabProperties dataBound", names[0]);
                 // select created item, except if tit is the only one.
                 this.selectPropertyInListView(names[0]);
             });
@@ -350,7 +364,12 @@ export class EntityTab {
             this.base.showNotification("notification", `Veld is niet succesvol verwijderd, probeer het opnieuw`, "error");
         }
     }
-    
+
+    /**
+     * Copy an entity property to other languages.
+     * @param id The ID of the entity property.
+     * @param tabOption The option for where to copy it to (0 = to the general tab, 1 = to create a tab per language and use the language code for the name of the tab, 2 = to create a tab per language and use the language name for the name of the tab).
+     */
     async copyEntityPropertyToOtherLanguages(id, tabOption) {
         if (!id) {
             return;
@@ -374,6 +393,56 @@ export class EntityTab {
         catch (exception) {
             console.error("Error while trying to copy an entity property to all languages", exception);
             this.base.showNotification("notification", `Item is niet succesvol ${notification}, probeer het opnieuw`, "error");
+        }
+    }
+
+    /**
+     * Duplicate an entity property with a new name.
+     * @param id The ID of the entity property to duplicate.
+     * @param name The name(s) for the new entity property (comma separated for multiple names).
+     */
+    async duplicateEntityProperty(id, name) {
+        if (!id || !name) {
+            return;
+        }
+
+        try {
+            const names = name.split(",");
+            if (!names.length) {
+                return;
+            }
+
+            const promises = [];
+            for (let actualName of names) {
+                actualName = actualName.trim();
+
+                promises.push(Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}entity-properties/${id}/duplicate`,
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(actualName)
+                }));
+            }
+
+            await Promise.all(promises);
+
+            this.listOfTabProperties.one("dataBound", () => {
+                // select created item, except if tit is the only one.
+                this.selectPropertyInListView(names[0]);
+            });
+
+            // if we have no items yet, and no data item of the tabname combobox. refresh entities combobox so the first tab will automatically be selected
+            if (!this.tabNameDropDownList.dataItem()) {
+                // reset tab names if we didnt have any before
+                await this.onEntitiesComboBoxSelect(this);
+            } else {
+                // select the right tab
+                this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem());
+            }
+        }
+        catch (exception) {
+            console.error("Error while trying to duplicate an entity property", exception);
+            this.base.showNotification("notification", `Veld is niet succesvol gedupliceerd, probeer het opnieuw`, "error");
         }
     }
 
