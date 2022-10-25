@@ -89,20 +89,20 @@ INSERT INTO `wiser_module`(`id`, `name`, `icon`, `type`, `group`) VALUES (1, 'Te
 -- ----------------------------
 # Wiser users.
 INSERT INTO `wiser_entity`(`id`, `name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `show_in_tree_view`, `query_after_insert`, `query_after_update`, `query_before_update`, `query_before_delete`, `color`, `show_in_search`, `show_overview_tab`, `save_title_as_seo`, `api_after_insert`, `api_after_update`, `api_before_update`, `api_before_delete`) VALUES (NULL, 'wiseruser', 806, '', '', '', 1, NULL, NULL, NULL, NULL, 'blue', 1, 1, 0, NULL, NULL, NULL, NULL);
-INSERT INTO `wiser_entity`(`id`, `name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `show_in_tree_view`, `query_after_insert`, `query_after_update`, `query_before_update`, `query_before_delete`, `color`, `show_in_search`, `show_overview_tab`, `save_title_as_seo`, `api_after_insert`, `api_after_update`, `api_before_update`, `api_before_delete`) VALUES (NULL, '', 806, 'wiseruser', '', '', 1, NULL, NULL, NULL, NULL, 'blue', 1, 1, 0, NULL, NULL, NULL, NULL);
+INSERT INTO `wiser_entity`(`id`, `name`, `module_id`, `accepted_childtypes`, `icon`, `icon_expanded`, `icon_add`, `show_in_tree_view`, `query_after_insert`, `query_after_update`, `query_before_update`, `query_before_delete`, `color`, `show_in_search`, `show_overview_tab`, `save_title_as_seo`, `api_after_insert`, `api_after_update`, `api_before_update`, `api_before_delete`) VALUES (NULL, '', 806, 'wiseruser', 'icon-classroom', 'icon-classroom', '', 1, NULL, NULL, NULL, NULL, 'blue', 1, 1, 0, NULL, NULL, NULL, NULL);
 # Webpages.
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('', 5505, 'map', '', '');
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, icon_expanded, `save_title_as_seo`) VALUES ('map', 5505, 'webpagina,map', 'icon-folder-closed', 'icon-folder-add', 'icon-folder', 1);
-INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `save_title_as_seo`) VALUES ('webpagina', 5505, '', '', '', 1);
+INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_expanded`, `icon_add`, `save_title_as_seo`) VALUES ('webpagina', 5505, '', 'icon-document-web', 'icon-document-web', '', 1);
 # Task alerts.
-INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('agendering', 708, '', '', '');
+INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_expanded`, `icon_add`) VALUES ('agendering', 708, '', 'icon-bell', 'icon-bell', '');
 # SEO.
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('', 5533, 'seo,map', '', '');
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `icon_expanded`) VALUES ('map', 5533, 'seo,map', 'icon-folder-closed', 'icon-folder-add', 'icon-folder');
-INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('seo', 5533, '', '', '');
+INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_expanded`, `icon_add`) VALUES ('seo', 5533, '', 'icon-line-search', 'icon-line-search', '');
 # Redirect
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('', 5534, 'redirect', '', '');
-INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('redirect', 5534, '', 'reset', '');
+INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_expanded`, `icon_add`) VALUES ('redirect', 5534, '', 'icon-routes', 'icon-routes', '');
 # Image uploader
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('', 5531, 'filedirectory', '', '');
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('filedirectory', 5531, 'filedirectory', '', '');

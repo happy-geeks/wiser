@@ -66,36 +66,32 @@ const moduleSettings = {
 
             // enum of available inputtypes
             this.inputTypes = Object.freeze({
-                ACTIONBUTTON: "action-button",
-                AUTOINCREMENT: "auto-increment",
-                // BUTTON:"button",
-                CHART: "chart",
-                CHECKBOX: "checkbox",
-                COMBOBOX: "combobox",
-                COLORPICKER: "color-picker",
-                DATASELECTOR: "data-selector",
-                DATETIMEPICKER: "date-time picker",
-                //DATERANGE: "daterange",
-                EMPTY: "empty",
-                FILEUPLOAD: "file-upload",
-                GPSLOCATION: "gpslocation",
-                // GRID: "grid",
-                HTMLEDITOR: "HTMLeditor",
-                // IMAGECOORDS:"imagecoords",
-                IMAGEUPLOAD: "image-upload",
-                INPUT: "input",
-                ITEMLINKER: "item-linker",
-                LINKEDITEM: "linked-item",
-                MULTISELECT: "multiselect",
-                NUMERIC: "numeric-input",
-                RADIOBUTTON: "radiobutton",
-                SECUREINPUT: "secure-input",
-                SUBENTITIESGRID: "sub-entities-grid",
-                TEXTBOX: "textbox",
-                TIMELINE: "timeline",
-                QR : "qr",
-                SCHEDULER : "scheduler"
-                //QUERYBUILDER: "querybuilder"
+                ACTIONBUTTON: "ActionButton",
+                AUTOINCREMENT: "AutoIncrement",
+                CHART: "Chart",
+                CHECKBOX: "CheckBox",
+                COMBOBOX: "ComboBox",
+                COLORPICKER: "ColorPicker",
+                DATASELECTOR: "DataSelector",
+                DATETIMEPICKER: "DateTimePicker",
+                EMPTY: "Empty",
+                FILEUPLOAD: "FileUpload",
+                GPSLOCATION: "GpsLocation",
+                HTMLEDITOR: "HtmlEditor",
+                IFRAME: "Iframe",
+                IMAGEUPLOAD: "ImageUpload",
+                INPUT: "Input",
+                ITEMLINKER: "ItemLinker",
+                LINKEDITEM: "LinkedItem",
+                MULTISELECT: "MultiSelect",
+                NUMERIC: "NumericInput",
+                RADIOBUTTON: "RadioButton",
+                SECUREINPUT: "SecureInput",
+                SUBENTITIESGRID: "SubEntitiesGrid",
+                TEXTBOX: "TextBox",
+                TIMELINE: "TimeLine",
+                QR : "Qr",
+                SCHEDULER : "Scheduler"
             });
 
             this.dataSourceType = Object.freeze({
@@ -433,7 +429,7 @@ const moduleSettings = {
                         if (!event.key || event.key.toLowerCase() !== "enter") {
                             return;
                         }
-                        $(event.currentTarget).closest(".k-prompt-container").next().find(".k-primary").trigger("click");
+                        $(event.currentTarget).closest(".k-prompt-container").next().find(".k-primary, .k-button-solid-primary").trigger("click");
                     });
                     return prompt.open().result;
                 case this.kendoPromptType.CONFIRM:

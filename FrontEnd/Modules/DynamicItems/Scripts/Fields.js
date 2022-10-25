@@ -1360,7 +1360,7 @@ export class Fields {
                                     return;
                                 }
 
-                                $(event.currentTarget).next().find(".k-primary").trigger("click");
+                                $(event.currentTarget).next().find(".k-primary, .k-button-solid-primary").trigger("click");
                             });
 
                             // Build the options object for the kendo component.
@@ -2925,7 +2925,7 @@ export class Fields {
             icon: "template-manager"
         });
 
-        htmlWindow.find(".k-primary").kendoButton({
+        htmlWindow.find(".k-primary, .k-button-solid-primary").kendoButton({
             click: () => {
                 editor.value(codeMirrorInstance.getValue());
                 kendoWindow.close();
@@ -2964,7 +2964,7 @@ export class Fields {
 
         const kendoWindow = htmlWindow.data("kendoWindow").maximize().open();
 
-        htmlWindow.find(".k-primary").kendoButton({
+        htmlWindow.find(".k-primary, .k-button-solid-primary").kendoButton({
             click: () => {
                 const html = iframe[0].contentWindow.main.vueApp.contentBuilder.html();
                 editor.value(html);
