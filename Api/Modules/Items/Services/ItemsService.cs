@@ -1816,10 +1816,11 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("itemId", itemId);
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT IFNULL(friendly_name, name) AS name, name AS value, dedicated_table_prefix
+
+            var query = $@"SELECT IFNULL(friendly_name, name) AS name, name AS value, dedicated_table_prefix
 FROM {WiserTableNames.WiserEntity}
-GROUP BY dedicated_table_prefix
-ORDER BY IFNULL(friendly_name, name) ASC");
+ORDER BY IFNULL(friendly_name, name) ASC";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             var results = new List<EntityTypeModel>();
             if (dataTable.Rows.Count == 0)
@@ -1832,7 +1833,15 @@ ORDER BY IFNULL(friendly_name, name) ASC");
             foreach (var group in groups)
             {
                 var tablePrefix = group.Key;
-                var query = $@"SELECT entity_type FROM {tablePrefix}{(!String.IsNullOrWhiteSpace(tablePrefix) && !tablePrefix.EndsWith("_") ? "_" : "")}{WiserTableNames.WiserItem} WHERE id = ?itemId";
+                var tableName = $"{tablePrefix}{(!String.IsNullOrWhiteSpace(tablePrefix) && !tablePrefix.EndsWith("_") ? "_" : "")}{WiserTableNames.WiserItem}";
+                if (!await databaseHelpersService.TableExistsAsync(tableName))
+                {
+                    continue;
+                }
+
+                query = $@"SELECT entity_type FROM {tableName} WHERE id = ?itemId
+UNION
+SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
                 dataTable = await clientDatabaseConnection.GetAsync(query);
                 if (dataTable.Rows.Count == 0)
                 {

@@ -368,35 +368,39 @@ export class EntityTab {
 
     setEntityLists() {
         this.entitiesCombobox.setDataSource(this.entityList);
-        this.dataSourceEntities.setDataSource(this.entityList);
-        this.linkedItemEntity.setDataSource(this.entityList);
-        this.itemLinkerEntity.setDataSource(this.entityList);
-        this.subEntityGridEntity.setDataSource(this.entityList);
-        this.timelineEntity.setDataSource(this.entityList);
+        this.dataSourceEntities.setDataSource(this.allUniqueEntityTypes);
+        this.linkedItemEntity.setDataSource(this.allUniqueEntityTypes);
+        this.itemLinkerEntity.setDataSource(this.allUniqueEntityTypes);
+        this.subEntityGridEntity.setDataSource(this.allUniqueEntityTypes);
+        this.timelineEntity.setDataSource(this.allUniqueEntityTypes);
     }
 
-    reloadEntityList(reloadDataSource = false) {
-        return new Promise((resolve) => {
-            if (reloadDataSource) {
-                // cache entity list because we have multiple dropdowns with the entity list
-                this.entityList = new kendo.data.DataSource({
-                    transport: {
-                        cache: "inmemory",
-                        read: {
-                            url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`
-                        }
-                    }
-                });
+    async reloadEntityList(reloadDataSource = false) {
+        if (reloadDataSource) {
+            // These are all entities, including duplicate ones that have the same name in different modules.
+            try {
+                this.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
+            } catch (exception) {
+                console.error("Error occurred while trying to load all entity types 1", exception);
+                this.entityList = [];
             }
-            this.setEntityLists();
-            resolve();
-        });
+            
+            // These are all entities grouped by name.
+            try {
+                this.allUniqueEntityTypes = (await Wiser.api({url: `${this.base.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
+            } catch (exception) {
+                console.error("Error occurred while trying to load all entity types 2", exception);
+                this.allUniqueEntityTypes = [];
+            }
+        }
+        
+        this.setEntityLists();
     }
 
     /**
      * Initializes all kendo components for the base class.
      */
-    initializeKendoComponents() {
+    async initializeKendoComponents() {
         this.entityTabStrip = $("#EntityTabStrip").kendoTabStrip({
             animation: {
                 open: {
@@ -1116,15 +1120,21 @@ export class EntityTab {
             }
         }).data("kendoDropDownList");
 
-        // cache entity list because we have multiple dropdowns with the entity list
-        this.entityList = new kendo.data.DataSource({
-            transport: {
-                cache: "inmemory",
-                read: {
-                    url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`
-                }
-            }
-        });
+        // These are all entities, including duplicate ones that have the same name in different modules.
+        try {
+            this.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
+        } catch (exception) {
+            console.error("Error occurred while trying to load all entity types 1", exception);
+            this.entityList = [];
+        }
+
+        // These are all entities grouped by name.
+        try {
+            this.allUniqueEntityTypes = (await Wiser.api({url: `${this.base.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
+        } catch (exception) {
+            console.error("Error occurred while trying to load all entity types", exception);
+            this.allUniqueEntityTypes = [];
+        }
 
         this.dataSourceEntities = $("#dataSourceEntities").kendoDropDownList({
             clearButton: false,
@@ -1323,19 +1333,10 @@ export class EntityTab {
         /*
          * item linker
          */
-        this.itemLinkerTypeNumber = $("#itemLinkerTypeNumber").kendoComboBox({
-            placeholder: "Maak uw keuze...",
-            clearButton: false,
-            dataSource: {
-                transport: {
-                    read: {
-                        url: `${this.base.settings.serviceRoot}/GET_ITEMLINKS_BY_ENTITY`
-                    }
-                }
-            },
-            dataTextField: "typeText",
-            dataValueField: "typeText"
-        }).data("kendoComboBox");
+        this.itemLinkerTypeNumber = $("#itemLinkerTypeNumber").kendoNumericTextBox({
+            format: "#",
+            decimals: 0
+        }).data("kendoNumericTextBox");
 
         this.itemLinkerEntity = $("#itemLinkerEntity").kendoMultiSelect({
             autoClose: false,
@@ -2682,7 +2683,7 @@ export class EntityTab {
                 // shared properties through out sub entities grid and item linker
                 if (this.inputTypeSelector.text() !== inputTypes.ACTIONBUTTON) {
                     // check if set, if not use the manual input
-                    entityProperties.options.linkTypeNumber = (!this.itemLinkerTypeNumber.dataItem() && this.itemLinkerTypeNumber.value() === "" ? "" : (!this.itemLinkerTypeNumber.dataItem() ? this.itemLinkerTypeNumber.value() : this.itemLinkerTypeNumber.dataItem().typeValue));
+                    entityProperties.options.linkTypeNumber = this.itemLinkerTypeNumber.value();
                     entityProperties.options.hideCommandColumn = document.getElementById("hideCommandColumn").checked;
                     entityProperties.options.disableInlineEditing = document.getElementById("disableInlineEditing").checked;
                     entityProperties.options.disableOpeningOfItems = document.getElementById("disableOpeningOfItems").checked;
@@ -3059,7 +3060,7 @@ export class EntityTab {
         //item linker default
         $("#itemLinkerModuleId").data("kendoNumericTextBox").value("");
         this.itemLinkerEntity.value("");
-        this.itemLinkerTypeNumber.text("");
+        this.itemLinkerTypeNumber.value("");
         $("#itemLinkerDeletionOfItems").data("kendoDropDownList").select(0);
         document.getElementById("itemLinkerOrderBy").value = "";
         document.querySelectorAll("#item-linker-checkboxes input[type=checkbox]:checked")
@@ -3493,14 +3494,7 @@ export class EntityTab {
                 // shared properties through out sub entities grid and item linker
                 if (resultSet.inputType !== inputTypes.ACTIONBUTTON) {
                     // select item linker type number
-                    this.itemLinkerTypeNumber.select((dataItem) => {
-                        return dataItem.typeValue === options.linkTypeNumber;
-                    });
-
-                    // if no linkTypeNumber has been found in the selection, link typ name hasnt been made yet and we set it manually
-                    if (this.itemLinkerTypeNumber.value() === "") {
-                        this.itemLinkerTypeNumber.text(options.linkTypeNumber);
-                    }
+                    this.itemLinkerTypeNumber.value(options.linkTypeNumber);
 
                     $("#itemLinkerDeletionOfItems").data("kendoDropDownList").select((dataItem) => {
                         return dataItem.value === options.deletionOfItems;
