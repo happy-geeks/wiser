@@ -121,9 +121,10 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Retrieve the tree view section underlying the parentId. Transforms the tree view section into a list of TemplateTreeViewModels.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="parentId">The id of the template whose child nodes are to be retrieved.</param>
         /// <returns>A List of TemplateTreeViewModels containing the id, names and types of the templates included in the requested section.</returns>
-        Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(int parentId);
+        Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(ClaimsIdentity identity, int parentId);
 
         /// <summary>
         /// Search for a template.
@@ -226,5 +227,11 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="templateType">The type of virtual template.</param>
         /// <returns>A <see cref="TemplateSettingsModel"/> with data about the virtual template.</returns>
         Task<ServiceResult<TemplateSettingsModel>> GetVirtualTemplateAsync(string objectName, TemplateTypes templateType);
+
+        /// <summary>
+        /// Retrieves a list of table names for the trigger templates.
+        /// </summary>
+        /// <returns>A list of strings.</returns>
+        Task<ServiceResult<IList<string>>> GetTableNamesForTriggerTemplatesAsync();
     }
 }

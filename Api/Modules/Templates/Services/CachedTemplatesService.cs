@@ -122,9 +122,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(int parentId)
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(ClaimsIdentity identity, int parentId)
         {
-            return await templatesService.GetTreeViewSectionAsync(parentId);
+            return await templatesService.GetTreeViewSectionAsync(identity, parentId);
         }
 
         /// <inheritdoc />
@@ -197,6 +197,13 @@ namespace Api.Modules.Templates.Services
         public async Task<ServiceResult<TemplateSettingsModel>> GetVirtualTemplateAsync(string objectName, TemplateTypes templateType)
         {
             return await templatesService.GetVirtualTemplateAsync(objectName, templateType);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<IList<string>>> GetTableNamesForTriggerTemplatesAsync()
+        {
+            // No need to cache this, because the GCL already caches the result.
+            return await templatesService.GetTableNamesForTriggerTemplatesAsync();
         }
     }
 }

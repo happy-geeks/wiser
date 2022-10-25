@@ -2437,7 +2437,7 @@ LIMIT 1";
                 case TemplateTypes.View:
                 {
                     // Create or replace view.
-                    var (successful, errorMessage) = await CreateDatabaseViewAsync(template.Name, template.EditorValue);
+                    var (successful, errorMessage) = await CreateOrReplaceDatabaseViewAsync(template.Name, template.EditorValue);
                     if (!successful)
                     {
                         throw new Exception($"The template saved successfully, but the view could not be created due to a syntax error. Error:\n{errorMessage}");
@@ -2448,7 +2448,7 @@ LIMIT 1";
                 case TemplateTypes.Routine:
                 {
                     // Also (re-)create the actual routine.
-                    var (successful, errorMessage) = await CreateDatabaseRoutineAsync(template.Name, template.RoutineType, template.RoutineParameters, template.RoutineReturnType, template.EditorValue);
+                    var (successful, errorMessage) = await CreateOrReplaceDatabaseRoutineAsync(template.Name, template.RoutineType, template.RoutineParameters, template.RoutineReturnType, template.EditorValue);
                     if (!successful)
                     {
                         throw new Exception($"The template saved successfully, but the routine could not be created due to a syntax error. Error:\n{errorMessage}");
@@ -2457,8 +2457,16 @@ LIMIT 1";
                     break;
                 }
                 case TemplateTypes.Trigger:
-                    // TODO.
+                {
+                    // Also (re-)create the actual trigger.
+                    var (successful, errorMessage) = await CreateOrReplaceDatabaseTriggerAsync(template.Name, template.TriggerTiming, template.TriggerEvent, template.TriggerTableName, template.EditorValue);
+                    if (!successful)
+                    {
+                        throw new Exception($"The template saved successfully, but the trigger could not be created due to a syntax error. Error:\n{errorMessage}");
+                    }
+
                     break;
+                }
             }
 
             if (template.Type != TemplateTypes.Scss || !template.IsScssIncludeTemplate || skipCompilation)
@@ -2477,7 +2485,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(int parentId)
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(ClaimsIdentity identity, int parentId)
         {
             // Make sure the tables are up-to-date.
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
@@ -2495,6 +2503,38 @@ LIMIT 1";
 
             // Get templates in correct order.
             var rawSection = await templateDataService.GetTreeViewSectionAsync(parentId);
+
+            if (rawSection.Count > 0 && rawSection[0].TemplateType == TemplateTypes.Routine)
+            {
+                // Routine template names should be updated to the routine's actual name if the template's name doesn't contain
+                // the "WISER_" prefix, but the routine does. This is meant for tenants that upgrade from Wiser 1/2 to Wiser 3.
+                foreach (var treeViewItem in rawSection)
+                {
+                    clientDatabaseConnection.AddParameter("routineName", treeViewItem.TemplateName);
+                    var routineData = await clientDatabaseConnection.GetAsync(@"
+                        SELECT ROUTINE_NAME
+                        FROM information_schema.ROUTINES
+                        WHERE ROUTINE_NAME = ?routineName");
+
+                    if (routineData.Rows.Count == 0) continue;
+
+                    clientDatabaseConnection.AddParameter("routineName", $"WISER_{treeViewItem.TemplateName}");
+                    routineData = await clientDatabaseConnection.GetAsync(@"
+                        SELECT ROUTINE_NAME
+                        FROM information_schema.ROUTINES
+                        WHERE ROUTINE_NAME = ?routineName");
+
+                    if (routineData.Rows.Count == 0) continue;
+
+                    // Routine doesn't exist with the template's name, but DOES exist with the "WISER_" prefix.
+                    // Update the template's name to stay consistent.
+                    var newTemplateName = routineData.Rows[0].Field<string>("ROUTINE_NAME");
+                    await RenameAsync(identity, treeViewItem.TemplateId, newTemplateName);
+
+                    treeViewItem.TemplateName = newTemplateName;
+                }
+            }
+
             var helper = new TreeViewHelper();
             var convertedList = rawSection.Select(treeViewDao => helper.ConvertTemplateTreeViewDAOToTemplateTreeViewModel(treeViewDao)).ToList();
 
@@ -2504,7 +2544,7 @@ LIMIT 1";
         /// <inheritdoc />
         public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(ClaimsIdentity identity, string searchValue)
         {
-	        var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+            var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
             return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchValue, encryptionKey));
         }
 
@@ -2588,8 +2628,28 @@ LIMIT 1";
                 };
             }
 
+            var oldName = templateDataResponse.ModelObject.Name;
             templateDataResponse.ModelObject.LinkedTemplates = linkedTemplatesResponse.ModelObject;
             templateDataResponse.ModelObject.Name = newName;
+
+            if (templateDataResponse.ModelObject.Type is not (TemplateTypes.View or TemplateTypes.Routine or TemplateTypes.Trigger))
+            {
+                return await SaveTemplateVersionAsync(identity, templateDataResponse.ModelObject);
+            }
+
+            // Also rename the view, routine, or trigger that this template is managing.
+            switch (templateDataResponse.ModelObject.Type)
+            {
+                case TemplateTypes.View:
+                    await CreateOrReplaceDatabaseViewAsync(newName, templateDataResponse.ModelObject.EditorValue, oldName);
+                    break;
+                case TemplateTypes.Routine:
+                    await CreateOrReplaceDatabaseRoutineAsync(newName, templateDataResponse.ModelObject.RoutineType, templateDataResponse.ModelObject.RoutineParameters, templateDataResponse.ModelObject.RoutineReturnType, templateDataResponse.ModelObject.EditorValue, oldName);
+                    break;
+                case TemplateTypes.Trigger:
+                    break;
+            }
+
             return await SaveTemplateVersionAsync(identity, templateDataResponse.ModelObject);
         }
 
@@ -2619,7 +2679,7 @@ LIMIT 1";
             var path = startFrom.Split(',');
             var remainingStartFrom = startFrom[(path[0].Length + (path.Length > 1 ? 1 : 0))..];
 
-            var templateTrees = (await GetTreeViewSectionAsync(parentId)).ModelObject;
+            var templateTrees = (await GetTreeViewSectionAsync(identity, parentId)).ModelObject;
             foreach (var templateTree in templateTrees)
             {
                 if (!String.IsNullOrWhiteSpace(startFrom) && !path[0].Equals(templateTree.TemplateName, StringComparison.InvariantCultureIgnoreCase)) continue;
@@ -2870,7 +2930,7 @@ LIMIT 1";
         public async Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString)
         {
             return await InternalCheckDefaultHeaderOrFooterConflict("footer", templateId, regexString);
-        }/// <inheritdoc />
+        }
 
         /// <inheritdoc />
         public async Task<ServiceResult<TemplateSettingsModel>> GetVirtualTemplateAsync(string objectName, TemplateTypes templateType)
@@ -2889,12 +2949,14 @@ LIMIT 1";
             switch (templateType)
             {
                 case TemplateTypes.View:
-                    virtualTemplateData = await GetDatabaseViewData(objectName);
+                    virtualTemplateData = await GetDatabaseViewDataAsync(objectName);
                     break;
                 case TemplateTypes.Routine:
-                    virtualTemplateData = await GetDatabaseRoutineData(objectName);
+                    virtualTemplateData = await GetDatabaseRoutineDataAsync(objectName);
                     break;
                 case TemplateTypes.Trigger:
+                    virtualTemplateData = await GetDatabaseTriggerDataAsync(objectName);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -2911,6 +2973,12 @@ LIMIT 1";
             };
 
             return new ServiceResult<TemplateSettingsModel>(virtualTemplateData);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<IList<string>>> GetTableNamesForTriggerTemplatesAsync()
+        {
+            return new ServiceResult<IList<string>>(await databaseHelpersService.GetAllTableNamesAsync());
         }
 
         /// <summary>
@@ -3415,7 +3483,12 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             gclSettings.Environment = Environments.Development;
         }
 
-        private async Task<TemplateSettingsModel> GetDatabaseViewData(string viewName)
+        /// <summary>
+        /// Retrieves data about a view from the database.
+        /// </summary>
+        /// <param name="viewName">The name of the view.</param>
+        /// <returns>A <see cref="TemplateSettingsModel"/> object containing the data of the view.</returns>
+        private async Task<TemplateSettingsModel> GetDatabaseViewDataAsync(string viewName)
         {
             var result = new TemplateSettingsModel();
 
@@ -3438,7 +3511,12 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             return result;
         }
 
-        private async Task<TemplateSettingsModel> GetDatabaseRoutineData(string routineName)
+        /// <summary>
+        /// Retrieves data about a routine from the database (function or stored procedure).
+        /// </summary>
+        /// <param name="routineName">The name of the routine.</param>
+        /// <returns>A <see cref="TemplateSettingsModel"/> object containing the data of the routine.</returns>
+        private async Task<TemplateSettingsModel> GetDatabaseRoutineDataAsync(string routineName)
         {
             var result = new TemplateSettingsModel();
 
@@ -3474,7 +3552,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     routineDefinition = routineDefinition[5..].Trim();
                 }
 
-                if (routineDefinition.StartsWith("END", StringComparison.OrdinalIgnoreCase))
+                if (routineDefinition.EndsWith("END", StringComparison.OrdinalIgnoreCase))
                 {
                     routineDefinition = routineDefinition[..^3].Trim();
                 }
@@ -3516,14 +3594,79 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             return result;
         }
 
+        private async Task<TemplateSettingsModel> GetDatabaseTriggerDataAsync(string triggerName)
+        {
+            var result = new TemplateSettingsModel();
+
+            if (String.IsNullOrWhiteSpace(triggerName))
+            {
+                return result;
+            }
+
+            // First retrieve the body.
+            clientDatabaseConnection.AddParameter("triggerName", triggerName);
+            var dataTable = await clientDatabaseConnection.GetAsync(@"
+                SELECT TRIGGER_NAME, EVENT_MANIPULATION, EVENT_OBJECT_TABLE, ACTION_STATEMENT, ACTION_TIMING
+                FROM information_schema.TRIGGERS
+                WHERE TRIGGER_SCHEMA = DATABASE() AND TRIGGER_NAME = ?triggerName;");
+
+            if (dataTable.Rows.Count == 0)
+            {
+                return result;
+            }
+
+            // Parse the trigger timing to the enum value, which should the same (except it's not fully uppercase).
+            if (!Enum.TryParse(dataTable.Rows[0].Field<string>("ACTION_TIMING"), true, out TriggerTimings triggerTiming))
+            {
+                return result;
+            }
+
+            // Parse the trigger event to the enum value, which should the same (except it's not fully uppercase).
+            if (!Enum.TryParse(dataTable.Rows[0].Field<string>("EVENT_MANIPULATION"), true, out TriggerEvents triggerEvent))
+            {
+                return result;
+            }
+
+            var triggerDefinition = dataTable.Rows[0].Field<string>("ACTION_STATEMENT")?.Trim() ?? String.Empty;
+            if (!String.IsNullOrWhiteSpace(triggerDefinition))
+            {
+                // Strip the "BEGIN" and "END" parts of the definition (Wiser doesn't need them).
+                if (triggerDefinition.StartsWith("BEGIN", StringComparison.OrdinalIgnoreCase))
+                {
+                    triggerDefinition = triggerDefinition[5..].Trim();
+                }
+
+                if (triggerDefinition.EndsWith("END", StringComparison.OrdinalIgnoreCase))
+                {
+                    triggerDefinition = triggerDefinition[..^3].Trim();
+                }
+            }
+
+            result.Name = dataTable.Rows[0].Field<string>("TRIGGER_NAME") ?? String.Empty;
+            result.EditorValue = triggerDefinition;
+            result.TriggerTableName = dataTable.Rows[0].Field<string>("EVENT_OBJECT_TABLE") ?? String.Empty;
+            result.TriggerTiming = triggerTiming;
+            result.TriggerEvent = triggerEvent;
+
+            return result;
+        }
+
         /// <summary>
         /// Will attempt to create a VIEW in the client's database.
         /// </summary>
         /// <param name="viewName">The name of the template, which will server as the name of the view.</param>
         /// <param name="viewDefinition">The select statement of the view.</param>
+        /// <param name="oldViewName">Optional: The old name of the view when the view is being renamed.</param>
         /// <returns><see langword="true"/> if the view was successfully created; otherwise, <see langword="false"/>.</returns>
-        private async Task<(bool successful, string ErrorMessage)> CreateDatabaseViewAsync(string viewName, string viewDefinition)
+        private async Task<(bool successful, string ErrorMessage)> CreateOrReplaceDatabaseViewAsync(string viewName, string viewDefinition, string oldViewName = null)
         {
+            // If the view is being renamed, the oldViewName parameter will contain the current name of the view.
+            // It should be dropped, otherwise the view will exist with both the new and the old name.
+            if (!String.IsNullOrWhiteSpace(oldViewName))
+            {
+                await clientDatabaseConnection.ExecuteAsync($"DROP VIEW IF EXISTS `{oldViewName}`;");
+            }
+
             // Build the query that will created the view.
             var viewQueryBuilder = new StringBuilder();
             viewQueryBuilder.AppendLine($"CREATE OR REPLACE SQL SECURITY INVOKER VIEW `{viewName}` AS");
@@ -3539,8 +3682,6 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             }
             catch (MySqlException mySqlException)
             {
-                // Remove temporary view if it was created (it has no use anymore).
-                await clientDatabaseConnection.ExecuteAsync($"DROP VIEW IF EXISTS `{viewName}_temp`;");
                 // Only the message of the MySQL exception should be enough to determine what went wrong.
                 return (false, mySqlException.Message);
             }
@@ -3554,17 +3695,26 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
         /// <summary>
         /// Will attempt to create a FUNCTION or PROCEDURE in the client's database.
         /// </summary>
-        /// <param name="routineName">The name of the template, which will server as the name of the routine.</param>
+        /// <param name="routineName">The name of the template, which will serve as the name of the routine.</param>
         /// <param name="routineType">The type of the routine, which should be either <see cref="RoutineTypes.Function"/> or <see cref="RoutineTypes.Procedure"/>.</param>
         /// <param name="parameters">A string that represent the input parameters. For procedures, OUT and INOUT parameters can also be defined.</param>
         /// <param name="returnType">The data type that is expected. This is only if <paramref name="routineType"/> is set to <see cref="RoutineTypes.Function"/>.</param>
         /// <param name="routineDefinition">The body of the routine.</param>
+        /// <param name="oldRoutineName">Optional: The old name of the routine when the routing is being renamed.</param>
         /// <returns><see langword="true"/> if the routine was successfully created; otherwise, <see langword="false"/>.</returns>
-        private async Task<(bool Successful, string ErrorMessage)> CreateDatabaseRoutineAsync(string routineName, RoutineTypes routineType, string parameters, string returnType, string routineDefinition)
+        private async Task<(bool Successful, string ErrorMessage)> CreateOrReplaceDatabaseRoutineAsync(string routineName, RoutineTypes routineType, string parameters, string returnType, string routineDefinition, string oldRoutineName = null)
         {
             if (routineType == RoutineTypes.Unknown)
             {
                 return (false, "Routine type 'Unknown' is not a valid routine type.");
+            }
+
+            // If the routine is being renamed, the oldRoutineName parameter will contain the current name of the routine.
+            // It should be dropped, otherwise the routine will exist with both the new and the old name.
+            if (!String.IsNullOrWhiteSpace(oldRoutineName))
+            {
+                // Drop the old routine if it exists.
+                await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{oldRoutineName}`; DROP PROCEDURE IF EXISTS `{oldRoutineName}`;");
             }
 
             // Check if routine exists.
@@ -3577,8 +3727,6 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
 
             var routineExists = getRoutineData.Rows.Count > 0 && Convert.ToBoolean(getRoutineData.Rows[0]["routine_exists"]);
 
-            var routineQueryBuilder = new StringBuilder();
-
             // Only FUNCTION routines directly return data.
             var returnsPart = routineType == RoutineTypes.Function ? $" RETURNS {returnType}" : String.Empty;
 
@@ -3587,16 +3735,22 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 routineDefinition = $"{routineDefinition.Trim()};";
             }
 
-            routineQueryBuilder.AppendLine($"CREATE DEFINER=CURRENT_USER {routineType.ToString("G").ToUpper()} `{routineName}` ({parameters}){returnsPart}");
-            routineQueryBuilder.AppendLine("    SQL SECURITY INVOKER");
-            routineQueryBuilder.AppendLine("BEGIN");
-            routineQueryBuilder.AppendLine("##############################################################################");
-            routineQueryBuilder.AppendLine("# NOTE: This routine was created in Wiser! Do not edit directly in database! #");
-            routineQueryBuilder.AppendLine("##############################################################################");
-            routineQueryBuilder.AppendLine(routineDefinition);
-            routineQueryBuilder.AppendLine("END");
+            // Create local function for creating the query to avoid having to create separate query builders.
+            string CreateQuery(string routineNameInQuery)
+            {
+                var routineQueryBuilder = new StringBuilder();
+                routineQueryBuilder.AppendLine($"CREATE DEFINER=CURRENT_USER {routineType.ToString("G").ToUpper()} `{routineNameInQuery}` ({parameters}){returnsPart}");
+                routineQueryBuilder.AppendLine("    SQL SECURITY INVOKER");
+                routineQueryBuilder.AppendLine("BEGIN");
+                routineQueryBuilder.AppendLine("##############################################################################");
+                routineQueryBuilder.AppendLine("# NOTE: This routine was created in Wiser! Do not edit directly in database! #");
+                routineQueryBuilder.AppendLine("##############################################################################");
+                routineQueryBuilder.AppendLine(routineDefinition);
+                routineQueryBuilder.AppendLine("END");
+                return routineQueryBuilder.ToString();
+            }
 
-            var routineQuery = routineQueryBuilder.ToString();
+            var routineQuery = CreateQuery(routineName);
 
             try
             {
@@ -3604,8 +3758,11 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 // That way, the old routine will remain intact.
                 if (routineExists)
                 {
-                    await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{routineName}_temp`; DROP PROCEDURE IF EXISTS `{routineName}_temp`;");
-                    await clientDatabaseConnection.ExecuteAsync(routineQuery.Replace($"`{routineName}`", $"`{routineName}_temp`"));
+                    var tempRoutineName = $"{routineName}_temp";
+                    var tempRoutineQuery = CreateQuery(tempRoutineName);
+
+                    await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{tempRoutineName}`; DROP PROCEDURE IF EXISTS `{tempRoutineName}`;");
+                    await clientDatabaseConnection.ExecuteAsync(tempRoutineQuery);
                 }
 
                 // Temp routine creation succeeded. Drop temp routine and current routine, and create the new routine.
@@ -3618,6 +3775,104 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             {
                 // Remove temporary routine if it was created (it has no use anymore).
                 await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{routineName}_temp`; DROP PROCEDURE IF EXISTS `{routineName}_temp`;");
+                // Only the message of the MySQL exception should be enough to determine what went wrong.
+                return (false, mySqlException.Message);
+            }
+            catch (Exception exception)
+            {
+                // Other exceptions; return entire exception.
+                return (false, exception.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Will attempt to create a TRIGGER in the client's database.
+        /// </summary>
+        /// <param name="triggerName">The name of the template, which will serve as the name of the trigger.</param>
+        /// <param name="triggerTiming">The timing of the trigger, which should be either <see cref="TriggerTimings.After"/> or <see cref="TriggerTimings.Before"/>.</param>
+        /// <param name="triggerEvent">The event of the trigger, which should be either <see cref="TriggerEvents.Insert"/>, <see cref="TriggerEvents.Update"/>, or  <see cref="TriggerEvents.Delete"/>.</param>
+        /// <param name="tableName">The name of the table that the trigger is for.</param>
+        /// <param name="triggerDefinition">The body of the trigger.</param>
+        /// <param name="oldTriggerName">Optional: The old name of the trigger when the trigger is being renamed.</param>
+        /// <returns><see langword="true"/> if the trigger was successfully created; otherwise, <see langword="false"/>.</returns>
+        private async Task<(bool Successful, string ErrorMessage)> CreateOrReplaceDatabaseTriggerAsync(string triggerName, TriggerTimings triggerTiming, TriggerEvents triggerEvent, string tableName, string triggerDefinition, string oldTriggerName = null)
+        {
+            if (triggerTiming == TriggerTimings.Unknown)
+            {
+                return (false, "Trigger timing 'Unknown' is not a valid trigger timing.");
+            }
+            if (triggerEvent == TriggerEvents.Unknown)
+            {
+                return (false, "Trigger event 'Unknown' is not a valid trigger event.");
+            }
+            if (String.IsNullOrWhiteSpace(tableName))
+            {
+                return (false, "The table name cannot be null or empty.");
+            }
+
+            // If the trigger is being renamed, the oldTriggerName parameter will contain the current name of the trigger.
+            // It should be dropped, otherwise the trigger will exist with both the new and the old name.
+            if (!String.IsNullOrWhiteSpace(oldTriggerName))
+            {
+                // Drop the old routine if it exists.
+                await clientDatabaseConnection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{oldTriggerName}`;");
+            }
+
+            // Check if trigger exists.
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("triggerName", triggerName);
+            var getTriggerData = await clientDatabaseConnection.GetAsync(@"
+                SELECT COUNT(*) > 0 AS trigger_exists
+                FROM information_schema.TRIGGERS
+                WHERE TRIGGER_SCHEMA = DATABASE() AND TRIGGER_NAME = ?triggerName");
+
+            var triggerExists = getTriggerData.Rows.Count > 0 && Convert.ToBoolean(getTriggerData.Rows[0]["trigger_exists"]);
+
+            if (!triggerDefinition.Trim().EndsWith(";"))
+            {
+                triggerDefinition = $"{triggerDefinition.Trim()};";
+            }
+
+            // Create local function for creating the query to avoid having to create separate query builders.
+            string CreateQuery(string triggerNameInQuery)
+            {
+                var timingAndEvent = $"{triggerTiming.ToString("G").ToUpperInvariant()} {triggerEvent.ToString("G").ToUpperInvariant()}";
+
+                var routineQueryBuilder = new StringBuilder();
+                routineQueryBuilder.AppendLine($"CREATE DEFINER=CURRENT_USER TRIGGER `{triggerNameInQuery}` {timingAndEvent} ON `{tableName}` FOR EACH ROW BEGIN");
+                routineQueryBuilder.AppendLine("##############################################################################");
+                routineQueryBuilder.AppendLine("# NOTE: This trigger was created in Wiser! Do not edit directly in database! #");
+                routineQueryBuilder.AppendLine("##############################################################################");
+                routineQueryBuilder.AppendLine(triggerDefinition);
+                routineQueryBuilder.AppendLine("END");
+                return routineQueryBuilder.ToString();
+            }
+
+            var routineQuery = CreateQuery(triggerName);
+
+            try
+            {
+                // If the trigger already exists, try to create a new one with a temporary name to check if creating the trigger will not fail.
+                // That way, the old trigger will remain intact.
+                if (triggerExists)
+                {
+                    var tempTriggerName = $"{triggerName}_temp";
+                    var tempRoutineQuery = CreateQuery(tempTriggerName);
+
+                    await clientDatabaseConnection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{tempTriggerName}`;");
+                    await clientDatabaseConnection.ExecuteAsync(tempRoutineQuery);
+                }
+
+                // Temp trigger creation succeeded. Drop temp trigger and current trigger, and create the new trigger.
+                await clientDatabaseConnection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{triggerName}_temp`; DROP TRIGGER IF EXISTS `{triggerName}`;");
+                await clientDatabaseConnection.ExecuteAsync(routineQuery);
+
+                return (true, String.Empty);
+            }
+            catch (MySqlException mySqlException)
+            {
+                // Remove temporary trigger if it was created (it has no use anymore).
+                await clientDatabaseConnection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{triggerName}_temp`;");
                 // Only the message of the MySQL exception should be enough to determine what went wrong.
                 return (false, mySqlException.Message);
             }

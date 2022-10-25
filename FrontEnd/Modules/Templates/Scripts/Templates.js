@@ -607,16 +607,59 @@ const moduleSettings = {
                     break;
                 case "rename":
                     kendo.prompt("Vul een nieuwe naam in", selectedItem.templateName).then((newName) => {
-                        this.renameItem(selectedItem.templateId, newName).then(() => {
-                            treeView.text(node, newName);
-                        });
+                        // Show extra warning for views, routines, and triggers.
+                        if ([this.templateTypes.VIEWS, this.templateTypes.ROUTINES, this.templateTypes.TRIGGERS].includes(selectedItem.templateType)) {
+                            let type;
+                            switch (selectedItem.templateType) {
+                                case this.templateTypes.VIEWS:
+                                    type = "view";
+                                    break;
+                                case this.templateTypes.ROUTINES:
+                                    type = "routine";
+                                    break;
+                                case this.templateTypes.TRIGGERS:
+                                    type = "trigger";
+                                    break;
+                            }
+
+                            Wiser.showConfirmDialog(`Let op: Als u de template hernoemt dan wordt de bijbehorende ${type} ook hernoemd. Wilt u toch doorgaan?`).then(() => {
+                                this.renameItem(selectedItem.templateId, newName).then(() => {
+                                    treeView.text(node, newName);
+                                });
+                            });
+                        } else {
+                            this.renameItem(selectedItem.templateId, newName).then(() => {
+                                treeView.text(node, newName);
+                            });
+                        }
                     });
                     break;
                 case "delete":
                     Wiser.showConfirmDialog(`Weet u zeker dat u het item "${selectedItem.templateName}" en alle onderliggende items wilt verwijderen?`).then(() => {
-                        this.deleteItem(selectedItem.templateId).then(() => {
-                            treeView.remove(node);
-                        });
+                        if ([this.templateTypes.VIEWS, this.templateTypes.ROUTINES, this.templateTypes.TRIGGERS].includes(selectedItem.templateType)) {
+                            let type;
+                            switch (selectedItem.templateType) {
+                                case this.templateTypes.VIEWS:
+                                    type = "view";
+                                    break;
+                                case this.templateTypes.ROUTINES:
+                                    type = "routine";
+                                    break;
+                                case this.templateTypes.TRIGGERS:
+                                    type = "trigger";
+                                    break;
+                            }
+
+                            Wiser.showConfirmDialog(`Let op: Als u de template verwijdert dan wordt de bijbehorende ${type} ook verwijderd. Wilt u toch doorgaan?`).then(() => {
+                                this.deleteItem(selectedItem.templateId).then(() => {
+                                    treeView.remove(node);
+                                });
+                            });
+                        } else {
+                            this.deleteItem(selectedItem.templateId).then(() => {
+                                treeView.remove(node);
+                            });
+                        }
                     });
                     break;
                 default:
@@ -633,6 +676,7 @@ const moduleSettings = {
         async loadTemplate(id, virtualItem = null) {
             const dynamicContentTab = this.mainTabStrip.element.find(".dynamic-tab");
             const previewTab = this.mainTabStrip.element.find(".preview-tab");
+            const historyTab = this.mainTabStrip.element.find(".history-tab");
 
             if (id <= 0 && (virtualItem === null || virtualItem.templateType === 0)) {
                 this.templateSettings = {};
@@ -653,7 +697,10 @@ const moduleSettings = {
                 let promises;
 
                 let templateSettings, linkedTemplates, templateHistory;
+                let isVirtualTemplate = false;
                 if (virtualItem !== null) {
+                    isVirtualTemplate = true;
+
                     promises = [
                         Wiser.api({
                             url: `${this.settings.wiserApiRoot}templates/get-virtual-item?objectName=${virtualItem.objectName}&templateType=${virtualItem.templateType}`,
@@ -721,6 +768,30 @@ const moduleSettings = {
                 );
 
                 await Promise.all(promises);
+
+                // Check if the table name select exists and if so, populate it.
+                const triggerTableNameSelect = document.getElementById("triggerTable");
+                if (triggerTableNameSelect) {
+                    // Retrieve all table names.
+                    const tableNames = await Wiser.api({
+                        method: "GET",
+                        url: `${this.settings.wiserApiRoot}templates/get-trigger-table-names`,
+                        dataType: "json"
+                    });
+
+                    // Add the table names to the data source.
+                    const kendoDropDownList = $(triggerTableNameSelect).getKendoDropDownList();
+                    tableNames.forEach((tableName) => {
+                        kendoDropDownList.dataSource.add({
+                            text: tableName,
+                            value: tableName
+                        });
+                    });
+
+                    // Select the correct table name.
+                    kendoDropDownList.value(templateSettings.triggerTableName);
+                }
+
                 window.processing.removeProcess(process);
 
                 // Add user to the connected users (uses Pusher).
@@ -728,6 +799,21 @@ const moduleSettings = {
 
                 // Only load dynamic content and previews for HTML templates.
                 const isHtmlTemplate = this.templateSettings.type.toUpperCase() === "HTML";
+
+                if (isVirtualTemplate) {
+                    // History tab is not available for virtual items.
+                    this.mainTabStrip.disable(historyTab);
+
+                    // Published environments are not available for virtual items.
+                    const publishedEnvironments = document.getElementById("published-environments");
+                    publishedEnvironments.querySelectorAll("h4, .version-live, .version-accept, .version-test").forEach((element) => {
+                        element.classList.add("hidden");
+                    });
+
+                    // Connected users information is not available for virtual items.
+                    const connectedUsers = document.querySelector("div.connected-users");
+                    connectedUsers.classList.add("hidden");
+                }
 
                 if (!isHtmlTemplate) {
                     this.mainTabStrip.disable(dynamicContentTab);
@@ -984,7 +1070,12 @@ const moduleSettings = {
             this.bindDeploymentTabEvents();
 
             // ComboBox
-            $(".combo-select").kendoDropDownList();
+            $(".combo-select").each((index, select) => {
+                const filter = select.dataset.filter || "none";
+                $(select).kendoDropDownList({
+                    filter: filter
+                });
+            });
 
             const editorElement = $(".editor");
             const editorType = editorElement.data("editorType");
@@ -1785,10 +1876,10 @@ const moduleSettings = {
                 editorValue = codeMirror.getValue();
             }
 
+            // Extra settings for routines.
             const routineType = document.querySelector("input[type=radio][name=routineType]:checked");
             let routineParameters = null;
             const routineReturnType = document.getElementById("routineReturnType");
-            const urlRegexElement = document.getElementById("urlRegex");
 
             const routineParametersElement = document.getElementById("routineParameters");
             if (routineParametersElement) {
@@ -1797,6 +1888,13 @@ const moduleSettings = {
                     routineParameters = routineParametersEditor.getValue();
                 }
             }
+
+            // Extra settings for triggers.
+            const triggerTable = document.getElementById("triggerTable");
+            const triggerTiming = document.querySelector("input[type=radio][name=triggerTiming]:checked");
+            const triggerEvent = document.getElementById("triggerEvent");
+
+            const urlRegexElement = document.getElementById("urlRegex");
 
             const settings = Object.assign({
                 templateId: this.selectedId,
@@ -1811,6 +1909,9 @@ const moduleSettings = {
                 routineType: routineType ? Number(routineType.value) : 0,
                 routineParameters: routineParameters,
                 routineReturnType: routineReturnType ? routineReturnType.value : null,
+                triggerTableName: triggerTable ? triggerTable.value : null,
+                triggerTiming: triggerTiming ? Number(triggerTiming.value) : 0,
+                triggerEvent: triggerEvent ? Number(triggerEvent.value) : 0,
                 urlRegex: urlRegexElement ? urlRegexElement.value : null
             }, this.getNewSettings());
 
