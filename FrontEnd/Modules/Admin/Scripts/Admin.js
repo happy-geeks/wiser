@@ -429,7 +429,7 @@ const moduleSettings = {
                         if (!event.key || event.key.toLowerCase() !== "enter") {
                             return;
                         }
-                        $(event.currentTarget).closest(".k-prompt-container").next().find(".k-primary").trigger("click");
+                        $(event.currentTarget).closest(".k-prompt-container").next().find(".k-primary, .k-button-solid-primary").trigger("click");
                     });
                     return prompt.open().result;
                 case this.kendoPromptType.CONFIRM:
