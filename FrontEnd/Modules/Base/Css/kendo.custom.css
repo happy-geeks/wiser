@@ -219,7 +219,9 @@
 .k-primary[disabled],
 .k-button-solid-primary[disabled],
 .k-button-solid-primary.k-state-disabled,
-.k-primary.k-state-disabled {
+.k-button-solid-primary[disabled],
+.k-primary.k-state-disabled,
+.k-button-solid-primary.k-state-disabled {
     box-shadow: none;
 }
 
@@ -356,6 +358,7 @@
     color: var(--color-1);
 }
 
+.k-in,
 .k-item,
 .k-window-action {
     border-color: transparent;

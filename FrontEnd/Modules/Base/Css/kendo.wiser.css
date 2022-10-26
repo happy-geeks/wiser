@@ -626,7 +626,7 @@
 	width: auto;
 }
 .k-primary.delete-button:hover,
-.k-button-solid-primary.delete-button:hover{
+.k-button-solid-primary.delete-button:hover {
 	background-color: var(--color-2) !important;
 	filter: brightness(0.9);
 }
@@ -2093,12 +2093,24 @@ textarea:focus,
 	outline-color: var(--dark-txt);
 	outline-offset: .25rem;
 }
-.k-primary.k-state-focus,
-.k-button-solid-primary.k-state-focus,
-.k-primary.k-state-focused,
-.k-button-solid-primary.k-state-focused,
-.k-primary:focus,
-.k-button-solid-primary:focus {
+.k-primary.k-state-focus, .k-primary.k-state-focused, .k-primary:focus,
+.k-button-solid-primary.k-state-focus, .k-button-solid-primary.k-state-focused, .k-button-solid-primary:focus {
+	color: var(--white-color);
+	background-color: var(--primary-color);
+	border-color: var(--primary-color);
+}
+
+/********************** 
+* Focus for tab-navigation
+**********************/
+a:focus, button:focus, input:focus, select:focus, summary:focus, textarea:focus, .k-button:focus {
+	outline-style: dotted;
+	outline-width: .2rem;
+	outline-color: var(--dark-txt);
+	outline-offset: .25rem;
+}
+.k-primary.k-state-focus, .k-primary.k-state-focused, .k-primary:focus,
+.k-button-solid-primary.k-state-focus, .k-button-solid-primary.k-state-focused, .k-button-solid-primary:focus {
 	color: var(--white-color);
 	background-color: var(--primary-color);
 	border-color: var(--primary-color);

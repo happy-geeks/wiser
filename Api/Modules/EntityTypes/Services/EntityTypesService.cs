@@ -79,9 +79,15 @@ ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', en
                 // Group all entities by table prefix, so that we can build one query per wiser_item table.
                 foreach (var group in result.GroupBy(entity => entity.DedicatedTablePrefix))
                 {
+                    var tableName = $"{group.Key}{WiserTableNames.WiserItem}";
+                    if (!await databaseHelpersService.TableExistsAsync(tableName))
+                    {
+                        continue;
+                    }
+
                     //  Count the amount of entity types per type per table.
                     query = $@"SELECT entity_type, COUNT(*) AS totalItems 
-FROM {group.Key}{WiserTableNames.WiserItem} 
+FROM {tableName}
 WHERE entity_type IN ({String.Join(", ", group.Select(entity => entity.Id.ToMySqlSafeValue(true)))})
 GROUP BY entity_type";
                     

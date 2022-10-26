@@ -223,7 +223,8 @@ li.hint {
         max-width: calc(50% - 5px);
     }
 
-.item > .k-primary.deleteModule {
+.item > .k-primary.deleteModule,
+.item > .k-button-solid-primary.deleteModule {
     background-color: var(--error-bg-color);
 }
 

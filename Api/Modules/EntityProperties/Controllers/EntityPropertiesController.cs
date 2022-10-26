@@ -101,6 +101,19 @@ namespace Api.Modules.EntityProperties.Controllers
         {
             return (await entityPropertiesService.UpdateAsync((ClaimsIdentity)User.Identity, id, entityProperty)).GetHttpResponseMessage();
         }
+        
+        /// <summary>
+        /// Duplicates an entity property.
+        /// </summary>
+        /// <param name="id">The ID of the entity property to duplicate.</param>
+        /// <param name="newName">The name for the new entity property.</param>
+        [HttpPost]
+        [Route("{id:int}/duplicate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> DuplicateAsync(int id, [FromBody]string newName)
+        {
+            return (await entityPropertiesService.DuplicateAsync((ClaimsIdentity)User.Identity, id, newName)).GetHttpResponseMessage();
+        }
 
         /// <summary>
         /// Deletes an entity property.

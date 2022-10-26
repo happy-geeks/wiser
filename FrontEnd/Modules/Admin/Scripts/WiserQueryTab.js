@@ -108,6 +108,7 @@ export class WiserQueryTab {
             }
         }
 
+        this.queryCombobox.value("");
         this.queryCombobox.setDataSource(this.queryList);
 
         if (queryIdToSelect !== null) {
@@ -157,8 +158,8 @@ export class WiserQueryTab {
         
         try {
             const result = await Wiser.api({
-                url: `${this.base.settings.wiserApiRoot}queries/`,
-                contentType: "application/json; charset=utf-8",
+                url: `${this.base.settings.wiserApiRoot}queries`,
+                contentType: "application/json",
                 dataType: "json",
                 data: JSON.stringify(description),
                 method: "POST"

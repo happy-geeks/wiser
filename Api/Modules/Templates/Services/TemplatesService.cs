@@ -692,23 +692,20 @@ WHERE
 GROUP BY language_code
 ORDER BY language_code");
                 TemplateQueryStrings.Add("UPDATE_ORDERING_ENTITY_PROPERTY", @"SET @old_index = {oldIndex} + 1;
-SET @new_index = {newIndex} +1;
+SET @new_index = {newIndex};
 SET @id = {currentId}; 
 SET @entity_name = '{entityName}';
-SET @tab_name = '{tabName}';
 
 # move property to given index
 UPDATE wiser_entityproperty SET ordering = @new_index WHERE id=@id;
 
 # set other items to given index
-UPDATE wiser_entityproperty
-	SET ordering = IF(@old_index > @new_index, ordering+1, ordering-1) 
-WHERE 
-	ordering > IF(@old_index > @new_index, @new_index, @old_index) AND
-	ordering < IF(@old_index > @new_index, @old_index, @new_index) AND
-	entity_name = @entity_name AND 
-	tab_name =  @tab_name AND
-	id <> @id;
+UPDATE wiser_entityproperty 
+SET ordering = IF(@old_index > @new_index, ordering, ordering) 
+WHERE ordering > IF(@old_index > @new_index, @new_index, @old_index)
+AND ordering < IF(@old_index > @new_index, @old_index, @new_index)
+AND entity_name = @entity_name
+AND id <> @id;
 
 # update record where index equals the new index value
 UPDATE wiser_entityproperty
@@ -1091,54 +1088,6 @@ grid_update_query = @_grid_update_query
 WHERE entity_name = @_entity_name AND id = @_id
 LIMIT 1; ");
 
-                TemplateQueryStrings.Add("GET_ENTITY_FIELD_PROPERTIES_FOR_SELECTED", @"SELECT
-    id,
-    module_id,
-    entity_name,
-    link_type,
-    visible_in_overview AS visibleInOverview,
-    overview_width AS overviewWidth, 
-    IF(tab_name = '', 'Gegevens', tab_name) AS tabName,
-    group_name AS groupName,
-    inputtype AS inputType,
-    display_name AS displayName,
-    property_name AS propertyName,
-    explanation,
-    ordering,
-    regex_validation AS regexValidation,
-    mandatory, 
-    readonly, 
-    default_value AS defaultValue,
-    IFNULL(css, '') AS css,
-    width,
-    height,
-    options,
-    IFNULL(data_query, '') AS dataQuery,
-    IFNULL(action_query, '') AS actionQuery,
-    IFNULL(search_query, '') AS searchQuery,
-    IFNULL(search_count_query, '') AS searchCountQuery,
-    IFNULL(grid_delete_query, '') AS gridDeleteQuery,
-    IFNULL(grid_insert_query, '') AS gridInsertQuery,
-    IFNULL(grid_update_query, '') AS gridUpdateQuery,
-    depends_on_field AS dependsOnField,
-    depends_on_operator AS dependsOnOperator,
-    depends_on_value AS dependsOnValue,
-    language_code AS languageCode,
-    IFNULL(custom_script, '') AS customScript,
-    also_save_seo_value AS alsoSaveSeoValue,
-    depends_on_action AS dependsOnAction,
-    save_on_change AS saveOnChange,
-    extended_explanation AS extendedExplanation,
-    label_style AS labelStyle,
-    label_width AS labelWidth,
-    enable_aggregation AS enableAggregation,
-    aggregate_options AS aggregateOptions,
-    access_key AS accessKey,
-    visibility_path_regex AS visibilityPathRegex,
-    (SELECT COUNT(1) FROM wiser_itemdetail INNER JOIN wiser_item ON wiser_itemdetail.item_id = wiser_item.id WHERE wiser_itemdetail.key = wiser_entityproperty.property_name AND wiser_item.entity_type = wiser_entityproperty.entity_name) > 0 as field_in_use
-FROM wiser_entityproperty
-WHERE id = {id}
-AND entity_name = '{entityName}'");
                 TemplateQueryStrings.Add("MOVE_ITEM", @"#Item verplaatsen naar ander item
 SET @src_id = '{source:decrypt(true)}';
 SET @dest_id = '{destination:decrypt(true)}';
@@ -1569,21 +1518,6 @@ SELECT
 FROM wiser_data_selector
 WHERE id = @_id");
 
-                TemplateQueryStrings.Add("GET_ALL_ENTITY_TYPES", @"SET @userId = {encryptedUserId:decrypt(true)};
-
-SELECT DISTINCT 
-	IF(entity.friendly_name IS NULL OR entity.friendly_name = '', entity.name, entity.friendly_name) AS name,
-    entity.name AS value
-FROM wiser_entity AS entity
-
-# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-LEFT JOIN wiser_user_roles user_role ON user_role.user_id = @userId
-LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.entity_name = entity.name
-
-WHERE entity.show_in_search = 1
-AND entity.name <> ''
-AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-ORDER BY IF(entity.friendly_name IS NULL OR entity.friendly_name = '', entity.name, entity.friendly_name)");
                 TemplateQueryStrings.Add("GET_ITEM_ENVIRONMENTS", @"SELECT
 	item.id AS id_encrypt_withdate,
 	item.id AS plainItemId,
