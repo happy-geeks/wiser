@@ -5,7 +5,7 @@ require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
-import "../css/Communication.css";
+import "../css/Settings.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const communicationModuleSettings = {
@@ -15,7 +15,7 @@ const communicationModuleSettings = {
     /**
      * Main class.
      */
-    class Communication {
+    class CommunicationSettings {
         /**
          * Initializes a new instance of Communication.
          * @param {any} settings An object containing the settings for this class.
@@ -25,6 +25,7 @@ const communicationModuleSettings = {
             this.mainLoader = null;
             
             // Components.
+            this.nameElement = null;
             this.editNameButton = null;
             this.editNameField = null;
             this.deleteButton = null;
@@ -42,9 +43,10 @@ const communicationModuleSettings = {
             this.recurringPeriodValueField = null;
             this.recurringPeriodTypeDropDown = null;
             this.recurringDayOfMonthField = null;
-            
-            // Other properties.
-            this.currentSettingsId = 0;
+            this.staticReceiverInput = null;
+            this.mailBodyEditor = null;
+            this.mailSubjectField = null;
+            this.emailSelectorField = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -114,6 +116,13 @@ const communicationModuleSettings = {
             this.setupBindings();
 
             await this.initializeComponents();
+            
+            if (this.settings.settingsId > 0) {
+                await this.loadSettings(this.settings.settingsId);
+            } else {
+                this.nameElement.text(this.settings.settingsName);
+                this.editNameField.val(this.settings.settingsName);
+            }
 
             this.toggleMainLoader(false);
         }
@@ -157,13 +166,16 @@ const communicationModuleSettings = {
 
         /**
          * Initializes all Kendo components for the base class.
-         * @param {HTMLElement} context The context (HTML element) in which items will have their elements initialized with Kendo.
          */
         async initializeComponents() {
             const process = `loadDropdowns_${Date.now()}`;
             window.processing.addProcess(process);
             
+            this.nameElement = $("#CurrentName");
             this.editNameField = $("#EditNameField");
+            this.staticReceiverInput = $("#StaticReceiverInput");
+            this.mailSubjectField = $("#MailSubject");
+            this.emailSelectorField = $("#EmailSelector");
 
             try {
                 // Header buttons.
@@ -363,7 +375,7 @@ const communicationModuleSettings = {
          */
         async onEditNameButtonClick(event) {
             event.preventDefault();
-            $("#CurrentName").addClass("hidden");
+            this.nameElement.addClass("hidden");
             this.editNameField.removeClass("hidden");
             this.editNameButton.addClass("hidden");
         }
@@ -375,17 +387,22 @@ const communicationModuleSettings = {
         async onDeleteButtonClick(event) {
             event.preventDefault();
 
-            await Wiser.showConfirmDialog(`Wilt u de communicatie-instellingen met de naam "${$("#CurrentName").text()}" wilt verwijderen?`);
+            await Wiser.showConfirmDialog(`Wilt u de communicatie-instellingen met de naam "${this.nameElement.text()}" wilt verwijderen?`);
+            const process = `deleteSettings_${Date.now()}`;
+            window.processing.addProcess(process);
+            
             try {
                 await Wiser.api({
                     url: `${this.settings.wiserApiRoot}communications/${id}`,
                     method: "DELETE"
                 });
                 
-                alert("TODO: Beginscherm tonen na verwijderen");
+                // Don't remove the process if everything succeeded, so that the loader will stay visible until the index page has finished loading.
+                window.location = "/Modules/Communication";
             } catch (exception) {
                 console.error(exception);
                 kendo.alert(`Er is iets fout gegaan tijdens het laden van de communicatie-instellingen met ID '${id}'. Probeer het a.u.b. opnieuw of neem contact op met ons.`);
+                window.processing.removeProcess(process);
             }
         }
 
@@ -394,6 +411,9 @@ const communicationModuleSettings = {
          * @param event The click event of the Kendo button.
          */
         async onSaveButtonClick(event) {
+            const process = `saveSettings_${Date.now()}`;
+            window.processing.addProcess(process);
+            
             try {
                 const settings = this.getCurrentSettings();
                 
@@ -404,12 +424,14 @@ const communicationModuleSettings = {
                     data: JSON.stringify(settings)
                 });
                 
-                this.currentSettingsId = result.id;
+                this.settings.settingsId = result.id;
 
-                alert("TODO: nette melding tonen ");
+                kendo.alert("De instellingen zijn succesvol opgeslagen.");
             } catch (exception) {
                 console.error(exception);
                 kendo.alert(`Er is iets fout gegaan tijdens het laden van de communicatie-instellingen met ID '${id}'. Probeer het a.u.b. opnieuw of neem contact op met ons.`);
+            } finally {
+                window.processing.removeProcess(process);
             }
         }
 
@@ -449,18 +471,66 @@ const communicationModuleSettings = {
          * @param {int} id The ID of the settings to load.
          */
         async loadSettings(id) {
+            const process = `loadSettings_${Date.now()}`;
+            window.processing.addProcess(process);
+            
             try {
+                // Get the settings from the API.
                 const settings = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}communications/${id}`
                 });
+
+                // Set default values for easier access later.
+                settings.settings = settings.settings || [];
+
+                // The name of the settings.
+                this.nameElement.text(settings.name);
+                this.editNameField.val(settings.name);
+
+                // Set the values in the first tab (receivers).
+                if (settings.receiversList && settings.receiversList.length > 0) {
+                    $("#StaticReceiver").prop("checked", true);
+                    this.staticReceiverInput.val(settings.receiversList.join("\r\n"));
+                } else if (settings.receiversDataSelectorId > 0) {
+                    $("#ReceiverDataSelector").prop("checked", true);
+                    this.dataSelectorDropDown.value(settings.receiversDataSelectorId);
+                } else if (settings.receiversQueryId > 0) {
+                    $("#ReceiverQuery").prop("checked", true);
+                    this.queryDropDown.value(settings.receiversQueryId);
+                }
                 
-                this.currentSettingsId = id;
+                // Set the values in the second tab (data).
+                // TODO
                 
-                console.log("settings", settings);
-                alert("TODO: Velden vullen met instellingen");
+                // Set the values in the third tab (content).
+                for (let setting of settings.settings) {
+                    switch (setting.type) {
+                        case "Email":
+                            $("#MailToggle").prop("checked", true);
+                            this.mailTemplateDropDown.value(setting.templateId || 0);
+                            this.languageDropDown.value(setting.languageCode);
+                            this.mailSubjectField.val(setting.subject);
+                            this.mailBodyEditor.value(setting.content);
+                            this.emailSelectorField.val(setting.selector);
+                            break;
+                        case "Sms":
+                            $("#SmsToggle").prop("checked", true);
+                            // TODO;
+                            break;
+                        default:
+                            console.error(`Unknown communication type set: ${setting.Type}`);
+                            break;
+                    }
+                }
+                
+                // Set the values in the fourth tab (pattern).
+                // TODO
+                
             } catch (exception) {
                 console.error(exception);
                 kendo.alert(`Er is iets fout gegaan tijdens het laden van de communicatie-instellingen met ID '${id}'. Probeer het a.u.b. opnieuw of neem contact op met ons.`);
+            } finally {
+                window.processing.removeProcess(process);
             }
         }
 
@@ -469,7 +539,7 @@ const communicationModuleSettings = {
          */
         getCurrentSettings() {
             return {
-                id: this.currentSettingsId,
+                id: this.settings.settingsId,
                 name: this.editNameField.val()
                 // TODO: Rest of the settings.
             };
@@ -477,5 +547,5 @@ const communicationModuleSettings = {
     }
 
     // Initialize the Communication class and make one instance of it globally available.
-    window.communication = new Communication(settings);
+    window.communicationSettings = new CommunicationSettings(settings);
 })(communicationModuleSettings);

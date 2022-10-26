@@ -215,8 +215,7 @@ namespace Api.Modules.Items.Services
                         item.added_on,
                         item.added_by,
                         item.changed_on,
-                        item.changed_by,
-                        item.removed
+                        item.changed_by
                     FROM {WiserTableNames.WiserItem} AS item
 
                     {extraJoins}

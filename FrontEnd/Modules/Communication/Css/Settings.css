@@ -2,9 +2,6 @@
 
 #fullForm {
     display: block;
-}
-
-#fullForm {
     height: 100%;
 }
 
@@ -147,7 +144,8 @@
 
 span.k-widget,
 div.k-multiselect,
-.item .inline {
+.item .inline,
+.item > .k-dropdownlist {
     max-width: calc(100% - 240px);
 }
 
@@ -182,13 +180,13 @@ table.k-editor,
 textarea.k-textbox {
     background-color: var(--white-color);
     resize: vertical;
-    width: calc(100% - 25px);
+    width: 100%;
 }
 
 textarea[data-limit] + span {
     position: absolute;
-    right: 34px;
-    top: 9px;
+    right: 0;
+    top: 0;
     text-align: right;
     z-index: 60;
     background: rgba(204,204,204,0.75);
