@@ -310,7 +310,7 @@ namespace Api.Modules.Grids.Services
                     countQuery = $@"SELECT COUNT(*)
                                     FROM {WiserTableNames.WiserItem} i
 
-                                    JOIN {WiserTableNames.WiserItemDetail} dueDate ON dueDate.item_id = i.id AND dueDate.`key` = 'agendering_date' [if({{due_date}}!)]AND dueDate.`value` IS NOT NULL AND dueDate.`value` <> '' AND DATE(dueDate.`value`) {{due_date_filter}}[endif] 
+                                    JOIN {WiserTableNames.WiserItemDetail} AS dueDate ON dueDate.item_id = i.id AND dueDate.`key` = 'agendering_date' [if({{due_date}}!)]AND dueDate.`value` IS NOT NULL AND dueDate.`value` <> '' AND DATE(dueDate.`value`) {{due_date_filter}}[endif] 
                                     [if({{checked_date}}=)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} checkedDate ON checkedDate.item_id = i.id AND checkedDate.`key` = 'checkedon' [if({{checked_date}}!)]AND checkedDate.`value` IS NOT NULL AND checkedDate.`value` <> '' AND DATE(checkedDate.`value`) {{checked_date_filter}}[endif] 
                                     [if({{sender}}=)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} sender ON sender.item_id = i.id AND sender.`key` = 'placed_by_id' [if({{sender}}!)]AND sender.`value` {{sender_filter}}[endif] 
                                     JOIN {WiserTableNames.WiserItemDetail} receiver ON receiver.item_id = i.id AND receiver.`key` = 'userid' [if({{receiver}}!)]AND receiver.`value` {{receiver_filter}}[endif] 
@@ -338,7 +338,7 @@ namespace Api.Modules.Grids.Services
                                     {{sort}}
                                     {{limit}}";
 
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY due_date DESC");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY dueDate DESC");
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
