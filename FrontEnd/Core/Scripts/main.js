@@ -519,6 +519,9 @@ import CacheService from "./shared/cache.service";
                     },
 
                     openClearCachePrompt() {
+                        if (localStorage.getItem("clear_cache_url")){
+                            this.clearCacheSettings.url = localStorage.getItem("clear_cache_url");
+                        }
                         this.$refs.clearCachePrompt.open();
                     },
 
@@ -736,7 +739,7 @@ import CacheService from "./shared/cache.service";
                         if (this.clearCacheError) {
                             return false;
                         }
-
+                        window.localStorage.setItem("clear_cache_url", this.clearCacheSettings.url);
                         this.showGeneralMessagePrompt("De cache is succesvol geleegd.");
                         return true;
                     },
