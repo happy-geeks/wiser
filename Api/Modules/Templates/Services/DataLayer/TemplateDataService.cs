@@ -121,6 +121,9 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.routine_type,
                                                                 template.routine_parameters,
                                                                 template.routine_return_type,
+                                                                template.trigger_timing,
+                                                                template.trigger_event,
+                                                                template.trigger_table_name,
                                                                 template.is_default_header,
                                                                 template.is_default_footer,
                                                                 template.default_header_footer_regex

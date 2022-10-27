@@ -269,6 +269,7 @@ const moduleSettings = {
                     collapse: this.onTreeViewCollapseItem.bind(this),
                     expand: this.onTreeViewExpandItem.bind(this),
                     select: this.onTreeViewSelect.bind(this),
+                    dragstart: this.onTreeViewDragStart.bind(this),
                     drop: this.onTreeViewDropItem.bind(this),
                     dataSource: {
                         transport: {
@@ -486,6 +487,15 @@ const moduleSettings = {
         }
 
         /**
+         * Event for when the user starts dragging an item in the tree view.
+         * @param {any} event The dragstart event of the a kendoTreeView.
+         */
+        async onTreeViewDragStart(event) {
+            // Virtual items cannot be dragged.
+            if (event.sourceNode.isVirtualItem) event.preventDefault();
+        }
+
+        /**
          * Event for when the user finished dragging an item in the tree view.
          * @param {any} event The drop event of a kendoTreeView.
          */
@@ -497,6 +507,12 @@ const moduleSettings = {
             try {
                 const sourceDataItem = event.sender.dataItem(event.sourceNode);
                 const destinationDataItem = event.sender.dataItem(event.destinationNode);
+
+                if (sourceDataItem.isVirtualItem || destinationDataItem.isVirtualItem) {
+                    // Cannot drag to or from virtual items.
+                    event.setValid(false);
+                    return;
+                }
 
                 await Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}templates/${encodeURIComponent(sourceDataItem.templateId)}/move/${encodeURIComponent(destinationDataItem.templateId)}?dropPosition=${encodeURIComponent(event.dropPosition)}`,
@@ -622,15 +638,11 @@ const moduleSettings = {
                                     break;
                             }
 
-                            Wiser.showConfirmDialog(`Let op: Als u de template hernoemt dan wordt de bijbehorende ${type} ook hernoemd. Wilt u toch doorgaan?`).then(() => {
-                                this.renameItem(selectedItem.templateId, newName).then(() => {
-                                    treeView.text(node, newName);
-                                });
+                            Wiser.showConfirmDialog(`Let op: Als u de template hernoemt dan wordt de bijbehorende ${type} ook hernoemd. Wilt u toch doorgaan?`, `Hernoemen van ${type}`, "Nee", "Ja").then(() => {
+                                this.renameItem(selectedItem.templateId, newName).then(() => treeView.text(node, newName));
                             });
                         } else {
-                            this.renameItem(selectedItem.templateId, newName).then(() => {
-                                treeView.text(node, newName);
-                            });
+                            this.renameItem(selectedItem.templateId, newName).then(() => treeView.text(node, newName));
                         }
                     });
                     break;
@@ -650,15 +662,11 @@ const moduleSettings = {
                                     break;
                             }
 
-                            Wiser.showConfirmDialog(`Let op: Als u de template verwijdert dan wordt de bijbehorende ${type} ook verwijderd. Wilt u toch doorgaan?`).then(() => {
-                                this.deleteItem(selectedItem.templateId).then(() => {
-                                    treeView.remove(node);
-                                });
+                            Wiser.showConfirmDialog(`Let op: Als u de template verwijdert dan wordt de bijbehorende ${type} ook verwijderd. Wilt u toch doorgaan?`, `Verwijderen van ${type}`, "Nee", "Ja").then(() => {
+                                this.deleteItem(selectedItem.templateId).then(() => treeView.remove(node));
                             });
                         } else {
-                            this.deleteItem(selectedItem.templateId).then(() => {
-                                treeView.remove(node);
-                            });
+                            this.deleteItem(selectedItem.templateId).then(() => treeView.remove(node));
                         }
                     });
                     break;

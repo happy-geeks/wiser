@@ -2457,7 +2457,7 @@ LIMIT 1";
             {
                 // Routine template names should be updated to the routine's actual name if the template's name doesn't contain
                 // the "WISER_" prefix, but the routine does. This is meant for tenants that upgrade from Wiser 1/2 to Wiser 3.
-                foreach (var treeViewItem in rawSection)
+                foreach (var treeViewItem in rawSection.Where(treeViewItem => !treeViewItem.IsVirtualItem))
                 {
                     clientDatabaseConnection.AddParameter("routineName", treeViewItem.TemplateName);
                     var routineData = await clientDatabaseConnection.GetAsync(@"
@@ -2596,6 +2596,7 @@ LIMIT 1";
                     await CreateOrReplaceDatabaseRoutineAsync(newName, templateDataResponse.ModelObject.RoutineType, templateDataResponse.ModelObject.RoutineParameters, templateDataResponse.ModelObject.RoutineReturnType, templateDataResponse.ModelObject.EditorValue, oldName);
                     break;
                 case TemplateTypes.Trigger:
+                    await CreateOrReplaceDatabaseTriggerAsync(newName, templateDataResponse.ModelObject.TriggerTiming, templateDataResponse.ModelObject.TriggerEvent, templateDataResponse.ModelObject.TriggerTableName, templateDataResponse.ModelObject.EditorValue, oldName);
                     break;
             }
 
@@ -3763,7 +3764,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             // It should be dropped, otherwise the trigger will exist with both the new and the old name.
             if (!String.IsNullOrWhiteSpace(oldTriggerName))
             {
-                // Drop the old routine if it exists.
+                // Drop the old trigger if it exists.
                 await clientDatabaseConnection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{oldTriggerName}`;");
             }
 
