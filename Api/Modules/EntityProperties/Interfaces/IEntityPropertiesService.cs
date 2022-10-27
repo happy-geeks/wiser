@@ -55,6 +55,14 @@ namespace Api.Modules.EntityProperties.Interfaces
         Task<ServiceResult<bool>> UpdateAsync(ClaimsIdentity identity, int id, EntityPropertyModel entityProperty);
 
         /// <summary>
+        /// Duplicates an entity property.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="id">The ID of the entity property to duplicate.</param>
+        /// <param name="newName">The name for the new entity property.</param>
+        Task<ServiceResult<int>> DuplicateAsync(ClaimsIdentity identity, int id, string newName);
+
+        /// <summary>
         /// Deletes an entity property.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>

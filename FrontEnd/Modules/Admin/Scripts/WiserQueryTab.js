@@ -108,6 +108,7 @@ export class WiserQueryTab {
             }
         }
 
+        this.queryCombobox.value("");
         this.queryCombobox.setDataSource(this.queryList);
 
         if (queryIdToSelect !== null) {
@@ -157,8 +158,8 @@ export class WiserQueryTab {
         
         try {
             const result = await Wiser.api({
-                url: `${this.base.settings.wiserApiRoot}queries/`,
-                contentType: "application/json; charset=utf-8",
+                url: `${this.base.settings.wiserApiRoot}queries`,
+                contentType: "application/json",
                 dataType: "json",
                 data: JSON.stringify(description),
                 method: "POST"
@@ -192,7 +193,7 @@ export class WiserQueryTab {
 
     async setQueryProperties(resultSet) {
         document.getElementById("queryDescription").value = resultSet.description;
-        document.getElementById("showInExportModule").checked = resultSet.show_in_export_module;
+        document.getElementById("showInExportModule").checked = resultSet.showInExportModule;
         this.rolesWithPermissions.value(resultSet.rolesWithPermissions.split(","));
         await this.setCodeMirrorFields(this.queryFromWiser, resultSet.query);
     }

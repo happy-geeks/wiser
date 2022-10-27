@@ -82,6 +82,7 @@ namespace Api.Modules.Templates.Controllers
         [HttpGet]
         [HttpPost]
         [Route("get-and-execute-query/{templateName}")]
+        [Consumes(MediaTypeNames.Application.Json, "application/x-www-form-urlencoded")]
         [ProducesResponseType(typeof(JToken), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAndExecuteQueryAsync(string templateName)
         {
