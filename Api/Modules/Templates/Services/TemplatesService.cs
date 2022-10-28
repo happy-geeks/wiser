@@ -528,68 +528,6 @@ WHERE wi.entity_type = '{entityName}' AND wid.`key` = '{propertyName}' AND wid.`
 GROUP BY wid.`value`
 ORDER BY wid.`value`
 LIMIT 25");
-                TemplateQueryStrings.Add("SAVE_COMMUNICATION_ITEM", @"SET @_item_id = '{id}';
-SET @_name = '{name}';
-SET @_receiver_list = '{receiverList}';
-SET @_send_email = {sendEmail};
-SET @_email_templateid = {emailTemplateId};
-SET @_send_sms = {sendSms};
-SET @_send_whatsapp = {sendWhatsApp};
-SET @_create_pdf = {createPdf};
-SET @_email_subject = '{emailSubject}';
-SET @_email_content = '{emailContent_urldataunescape}';
-SET @_email_address_selector = '{emailAddressSelector}';
-SET @_sms_content = '{smsContent}';
-SET @_phone_number_selector = '{phoneNumberSelector}';
-SET @_pdf_templateid = {pdfTemplateId};
-SET @_send_trigger = '{sendTrigger}';
-
-SET @_senddate = IF('{sendDate}' LIKE '{%}', NULL, '{sendDate}');
-SET @_trigger_start = IF('{triggerStart}' LIKE '{%}', NULL, '{triggerStart}');
-SET @_trigger_end = IF('{triggerEnd}' LIKE '{%}', NULL, '{triggerEnd}');
-SET @_trigger_time = IF('{triggerTime}' LIKE '{%}', NULL, '{triggerTime}');
-SET @_trigger_periodvalue = IF('{triggerPeriodValue}' LIKE '{%}', 0, CAST('{triggerPeriodValue}' AS SIGNED));
-SET @_trigger_period = IF('{triggerPeriodValue}' LIKE '{%}', 'day', '{triggerPeriod}');
-SET @_trigger_periodbeforeafter = IF('{triggerPeriodBeforeAfter}' LIKE '{%}', 'before', '{triggerPeriodBeforeAfter}');
-SET @_trigger_days = IF('{triggerDays}' LIKE '{%}', '', '{triggerDays}');
-SET @_trigger_type = IF('{triggerType}' LIKE '{%}', 0, CAST('{triggerType}' AS SIGNED));
-
-# If it's a new item, then item_id should be NULL.
-SET @_item_id = IF(@_item_id LIKE '{%}' OR @_item_id = '0', NULL, CAST(@_item_id AS SIGNED));
-
-INSERT INTO wiser_communication (id, `name`, receiver_list, send_email, email_templateid, send_sms, send_whatsapp, create_pdf, `email-subject`, `email-content`, email_address_selector, `sms-content`, phone_number_selector, pdf_templateid, send_trigger, senddate, trigger_start, trigger_end, trigger_time, trigger_periodvalue, trigger_period, trigger_periodbeforeafter, trigger_days, trigger_type)
-VALUES(@_item_id, @_name, @_receiver_list, @_send_email, @_email_templateid, @_send_sms, @_send_whatsapp, @_create_pdf, @_email_subject, @_email_content, @_email_address_selector, @_sms_content, @_phone_number_selector, @_pdf_templateid, @_send_trigger, @_senddate, @_trigger_start, @_trigger_end, @_trigger_time, @_trigger_periodvalue, @_trigger_period, @_trigger_periodbeforeafter, @_trigger_days, @_trigger_type)
-ON DUPLICATE KEY UPDATE
-    receiver_list = VALUES(receiver_list),
-    send_email = VALUES(send_email),
-    email_templateid = VALUES(email_templateid),
-    send_sms = VALUES(send_sms),
-    send_whatsapp = VALUES(send_whatsapp),
-    create_pdf = VALUES(create_pdf),
-    `email-subject` = VALUES(`email-subject`),
-    `email-content` = VALUES(`email-content`),
-    email_address_selector = VALUES(email_address_selector),
-    `sms-content` = VALUES(`sms-content`),
-    phone_number_selector = VALUES(phone_number_selector),
-    pdf_templateid = VALUES(pdf_templateid),
-    send_trigger = VALUES(send_trigger),
-    senddate = VALUES(senddate),
-    trigger_start = VALUES(trigger_start),
-    trigger_end = VALUES(trigger_end),
-    trigger_time = VALUES(trigger_time),
-    trigger_periodvalue = VALUES(trigger_periodvalue),
-    trigger_period = VALUES(trigger_period),
-    trigger_periodbeforeafter = VALUES(trigger_periodbeforeafter),
-    trigger_days = VALUES(trigger_days),
-    trigger_type = VALUES(trigger_type);
-
-SELECT IF(@_item_id IS NULL, LAST_INSERT_ID(), @_item_id) AS newId;");
-                TemplateQueryStrings.Add("CHECK_COMMUNICATION_NAME_EXISTS", @"SET @_name = '{name}';
-
-# Will automatically be NULL if it doesn't exist, which is good.
-SET @_item_id = (SELECT id FROM wiser_communication WHERE `name` = @_name LIMIT 1);
-
-SELECT IFNULL(@_item_id, 0) AS existingItemId;");
                 TemplateQueryStrings.Add("SCHEDULER_FAVORITE_CLEAR", @"SET @user_id = {userId};
 SET @favorite_id = {favId};
 

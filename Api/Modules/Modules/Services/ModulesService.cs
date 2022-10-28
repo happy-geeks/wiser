@@ -113,12 +113,13 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserPreviewProfiles,
                 WiserTableNames.WiserDynamicContentPublishLog,
                 WiserTableNames.WiserQuery,
-                WiserTableNames.WiserPermission
+                WiserTableNames.WiserPermission,
+                WiserTableNames.WiserCommunication
             });
             var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
             
             // Make sure that all triggers for Wiser tables are up-to-date.
-            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2022, 8, 5))
+            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2022, 10, 28))
             {
                 var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
                 await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);

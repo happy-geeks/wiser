@@ -1,5 +1,6 @@
 import { TrackJS } from "trackjs";
 import { Wiser, Misc } from "../../Base/Scripts/Utils.js";
+import { DateTime } from "luxon";
 import "../../Base/Scripts/Processing.js";
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
@@ -24,6 +25,17 @@ const communicationModuleSettings = {
             this.base = this;
             this.mainLoader = null;
             
+            // Enumerations.
+            this.triggerWeekDays = Object.freeze({
+                Monday: 1,
+                Tuesday: 2,
+                Wednesday: 4,
+                Thursday: 8,
+                Friday: 16,
+                Saturday: 32,
+                Sunday: 64
+            });
+            
             // Components.
             this.nameElement = null;
             this.editNameButton = null;
@@ -31,8 +43,8 @@ const communicationModuleSettings = {
             this.deleteButton = null;
             this.saveButton = null;
             this.mainTabStrip = null;
-            this.dataSelectorDropDown = null;
-            this.queryDropDown = null;
+            this.dataSelectorForReceiversDropDown = null;
+            this.queryForReceiversDropDown = null;
             this.mailTemplateDropDown = null;
             this.previouslySelectedMailTemplate = null;
             this.languageDropDown = null;
@@ -47,6 +59,14 @@ const communicationModuleSettings = {
             this.mailBodyEditor = null;
             this.mailSubjectField = null;
             this.emailSelectorField = null;
+            this.recurringWeeklyContainer = null;
+            this.recurringMonthlyContainer = null;
+            this.phoneNumberSelectorField = null;
+            this.smsMessageField = null;
+            this.mailToggleCheckBox = null;
+            this.smsToggleCheckBox = null;
+            this.dataSelectorForContentDropDown = null;
+            this.queryForContentDropDown = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -113,9 +133,9 @@ const communicationModuleSettings = {
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
 
-            this.setupBindings();
-
             await this.initializeComponents();
+
+            this.setupBindings();
             
             if (this.settings.settingsId > 0) {
                 await this.loadSettings(this.settings.settingsId);
@@ -136,46 +156,25 @@ const communicationModuleSettings = {
         }
 
         /**
-         * Setup all basis bindings for this module.
-         * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
-         */
-        setupBindings() {
-            document.addEventListener("moduleClosing", (event) => {
-                // You can do anything here that needs to happen before closing the module.
-                event.detail();
-            });
-
-            // Handle textareas with counters and max lengths.
-            $("textarea[data-limit]").on({
-                keyup: (event) => {
-                    const charLength = event.currentTarget.value.length;
-                    const charLimit = parseInt(event.currentTarget.dataset.limit);
-                    const element = $(event.currentTarget);
-
-                    element.next("span").html(charLength + " / " + charLimit);
-
-                    if (charLength > charLimit) {
-                        element.next("span").html(`<strong>Je bericht mag maximaal ${charLimit} karakters bevatten.</strong>`);
-                    }
-                }
-            });
-            
-            this.editNameButton = $("#EditNameButton").click(this.onEditNameButtonClick.bind(this));
-            this.deleteButton = $("#DeleteButton").click(this.onDeleteButtonClick.bind(this));
-        }
-
-        /**
          * Initializes all Kendo components for the base class.
          */
         async initializeComponents() {
             const process = `loadDropdowns_${Date.now()}`;
             window.processing.addProcess(process);
-            
+
+            this.editNameButton = $("#EditNameButton");
+            this.deleteButton = $("#DeleteButton");
             this.nameElement = $("#CurrentName");
             this.editNameField = $("#EditNameField");
             this.staticReceiverInput = $("#StaticReceiverInput");
             this.mailSubjectField = $("#MailSubject");
             this.emailSelectorField = $("#EmailSelector");
+            this.recurringWeeklyContainer = $("#RecurringWeeklyContainer");
+            this.recurringMonthlyContainer = $("#RecurringMonthlyContainer");
+            this.phoneNumberSelectorField = $("#PhoneNumberSelector");
+            this.smsMessageField = $("#SmsMessage");
+            this.mailToggleCheckBox = $("#MailToggle");
+            this.smsToggleCheckBox = $("#SmsToggle");
 
             try {
                 // Header buttons.
@@ -207,9 +206,9 @@ const communicationModuleSettings = {
                 const languages = promiseResults[3];
 
                 if (!dataSelectors || !dataSelectors.length) {
-                    $("#DataSelectorContainer").hide();
+                    $("#DataSelectorForReceiversContainer").hide();
                 } else {
-                    this.dataSelectorDropDown = $("#DataSelectorList").kendoDropDownList({
+                    this.dataSelectorForReceiversDropDown = $("#DataSelectorForReceiverDropDown").kendoDropDownList({
                         optionLabel: "Selecteer een reeds bestaande dataselector",
                         dataTextField: "name",
                         dataValueField: "id",
@@ -218,10 +217,10 @@ const communicationModuleSettings = {
                 }
 
                 if (!queries || !queries.length) {
-                    $("#QueryContainer").hide();
+                    $("#QueryForReceiversContainer").hide();
                 } else {
-                    this.queryDropDown = $("#QueryList").kendoDropDownList({
-                        optionLabel: "Selecteer de ontvangers via een vooraf ingestelde query",
+                    this.queryForReceiversDropDown = $("#QueryForReceiversDropDown").kendoDropDownList({
+                        optionLabel: "Selecteer een vooraf ingestelde query",
                         dataTextField: "description",
                         dataValueField: "id",
                         dataSource: queries
@@ -242,12 +241,35 @@ const communicationModuleSettings = {
                     this.languageDropDown = $("#LanguageDropDown").kendoDropDownList({
                         optionLabel: "Selecteer optioneel een taal voor de inhoud van de mail",
                         dataTextField: "name",
-                        dataValueField: "id",
+                        dataValueField: "code",
                         dataSource: languages,
                         change: this.onLanguageDropDownChange.bind(this)
                     }).data("kendoDropDownList");
                 }
+                
+                // Data tab.
+                if (!dataSelectors || !dataSelectors.length) {
+                    $("#DataSelectorForContentContainer").hide();
+                } else {
+                    this.dataSelectorForContentDropDown = $("#DataSelectorForContentDropDown").kendoDropDownList({
+                        optionLabel: "Selecteer een reeds bestaande dataselector",
+                        dataTextField: "name",
+                        dataValueField: "id",
+                        dataSource: dataSelectors
+                    }).data("kendoDropDownList");
+                }
 
+                if (!queries || !queries.length) {
+                    $("#QueryForContentContainer").hide();
+                } else {
+                    this.queryForContentDropDown = $("#QueryForContentDropDown").kendoDropDownList({
+                        optionLabel: "Selecteer een vooraf ingestelde query",
+                        dataTextField: "description",
+                        dataValueField: "id",
+                        dataSource: queries
+                    }).data("kendoDropDownList");
+                }
+                
                 // Content tab.
                 this.mailBodyEditor = $("#MailBodyEditor").kendoEditor({
                     tools: [
@@ -317,7 +339,7 @@ const communicationModuleSettings = {
                 
                 this.recurringPeriodTypeDropDown = $("#RecurringPeriodTypeDropDown").kendoDropDownList({
                     change: this.onRecurringPeriodTypeDropDownChange.bind(this)
-                });
+                }).data("kendoDropDownList");
 
                 this.recurringDayOfMonthField = $("#RecurringDayOfMonth").kendoNumericTextBox({
                     decimals: 0,
@@ -329,6 +351,36 @@ const communicationModuleSettings = {
             } finally {
                 window.processing.removeProcess(process);
             }
+        }
+
+        /**
+         * Setup all basis bindings for this module.
+         * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
+         */
+        setupBindings() {
+            document.addEventListener("moduleClosing", (event) => {
+                // You can do anything here that needs to happen before closing the module.
+                event.detail();
+            });
+
+            // Handle textareas with counters and max lengths.
+            $("textarea[data-limit]").on({
+                keyup: (event) => {
+                    const charLength = event.currentTarget.value.length;
+                    const charLimit = parseInt(event.currentTarget.dataset.limit);
+                    const element = $(event.currentTarget);
+
+                    element.next("span").html(charLength + " / " + charLimit);
+
+                    if (charLength > charLimit) {
+                        element.next("span").html(`<strong>Je bericht mag maximaal ${charLimit} karakters bevatten.</strong>`);
+                    }
+                }
+            });
+
+            this.editNameButton.click(this.onEditNameButtonClick.bind(this));
+            this.deleteButton.click(this.onDeleteButtonClick.bind(this));
+            this.editNameField.blur(this.onEditNameFieldBlur.bind(this));
         }
 
         /**
@@ -354,17 +406,14 @@ const communicationModuleSettings = {
          * @param event The change event of the Kendo dropdown list.
          */
         onRecurringPeriodTypeDropDownChange(event) {
-            const recurringWeeklyContainer = $("#RecurringWeeklyContainer");
-            const recurringMonthlyContainer = $("#RecurringMonthlyContainer");
-            
             switch (event.sender.value()) {
                 case "week":
-                    recurringWeeklyContainer.removeClass("hidden");
-                    recurringMonthlyContainer.addClass("hidden");
+                    this.recurringWeeklyContainer.removeClass("hidden");
+                    this.recurringMonthlyContainer.addClass("hidden");
                     break;
                 case "month":
-                    recurringWeeklyContainer.addClass("hidden");
-                    recurringMonthlyContainer.removeClass("hidden");
+                    this.recurringWeeklyContainer.addClass("hidden");
+                    this.recurringMonthlyContainer.removeClass("hidden");
                     break;
             }
         }
@@ -393,7 +442,7 @@ const communicationModuleSettings = {
             
             try {
                 await Wiser.api({
-                    url: `${this.settings.wiserApiRoot}communications/${id}`,
+                    url: `${this.settings.wiserApiRoot}communications/${this.settings.settingsId}`,
                     method: "DELETE"
                 });
                 
@@ -401,7 +450,7 @@ const communicationModuleSettings = {
                 window.location = "/Modules/Communication";
             } catch (exception) {
                 console.error(exception);
-                kendo.alert(`Er is iets fout gegaan tijdens het laden van de communicatie-instellingen met ID '${id}'. Probeer het a.u.b. opnieuw of neem contact op met ons.`);
+                kendo.alert(`Er is iets fout gegaan tijdens het verwijderen van de communicatie-instellingen met ID '${this.settings.settingsId}'. Probeer het a.u.b. opnieuw of neem contact op met ons.`);
                 window.processing.removeProcess(process);
             }
         }
@@ -417,6 +466,27 @@ const communicationModuleSettings = {
             try {
                 const settings = this.getCurrentSettings();
                 
+                // Check if all mandatory settings have been entered.
+                if (!settings.name) {
+                    kendo.alert("Vul a.u.b. een naam in");
+                    return;
+                } 
+                
+                if (!settings.receiversDataSelectorId && !settings.receiversQueryId && (!settings.receiversList || !settings.receiversList.length)) {
+                    kendo.alert("Vul a.u.b. de ontvangers in");
+                    return;
+                }
+                
+                if (!settings.settings || !settings.settings.length || !settings.settings.some(x => !!x.content)) {
+                    kendo.alert("Vul a.u.b. in wat voor bericht er gestuurd moet worden.");
+                    return;
+                }
+                
+                if (!settings.sendTriggerType) {
+                    kendo.alert("Vul a.u.b. een verzendpatroon in.")
+                    return;
+                }
+                
                 const result = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}communications`,
                     method: "POST",
@@ -429,10 +499,20 @@ const communicationModuleSettings = {
                 kendo.alert("De instellingen zijn succesvol opgeslagen.");
             } catch (exception) {
                 console.error(exception);
-                kendo.alert(`Er is iets fout gegaan tijdens het laden van de communicatie-instellingen met ID '${id}'. Probeer het a.u.b. opnieuw of neem contact op met ons.`);
+                kendo.alert(`Er is iets fout gegaan tijdens het laden van de communicatie-instellingen met ID '${this.settings.settingsId}'. Probeer het a.u.b. opnieuw of neem contact op met ons.`);
             } finally {
                 window.processing.removeProcess(process);
             }
+        }
+
+        /**
+         * Event for then the user leaves the edit name field.
+         * @param event The blur event.
+         */
+        onEditNameFieldBlur(event) {
+            this.nameElement.removeClass("hidden").text(this.editNameField.val());
+            this.editNameField.addClass("hidden");
+            this.editNameButton.removeClass("hidden");
         }
 
         /**
@@ -492,21 +572,27 @@ const communicationModuleSettings = {
                     $("#StaticReceiver").prop("checked", true);
                     this.staticReceiverInput.val(settings.receiversList.join("\r\n"));
                 } else if (settings.receiversDataSelectorId > 0) {
-                    $("#ReceiverDataSelector").prop("checked", true);
-                    this.dataSelectorDropDown.value(settings.receiversDataSelectorId);
+                    $("#DataSelectorForReceiver").prop("checked", true);
+                    this.dataSelectorForReceiversDropDown.value(settings.receiversDataSelectorId);
                 } else if (settings.receiversQueryId > 0) {
-                    $("#ReceiverQuery").prop("checked", true);
-                    this.queryDropDown.value(settings.receiversQueryId);
+                    $("#QueryForReceivers").prop("checked", true);
+                    this.queryForReceiversDropDown.value(settings.receiversQueryId);
                 }
                 
                 // Set the values in the second tab (data).
-                // TODO
+                if (settings.contentDataSelectorId > 0) {
+                    $("#DataSelectorForContent").prop("checked", true);
+                    this.dataSelectorForContentDropDown.value(settings.contentDataSelectorId);
+                } else if (settings.contentQueryId > 0) {
+                    $("#QueryForContent").prop("checked", true);
+                    this.queryForContentDropDown.value(settings.contentQueryId);
+                }
                 
                 // Set the values in the third tab (content).
                 for (let setting of settings.settings) {
                     switch (setting.type) {
                         case "Email":
-                            $("#MailToggle").prop("checked", true);
+                            this.mailToggleCheckBox.prop("checked", true);
                             this.mailTemplateDropDown.value(setting.templateId || 0);
                             this.languageDropDown.value(setting.languageCode);
                             this.mailSubjectField.val(setting.subject);
@@ -514,21 +600,66 @@ const communicationModuleSettings = {
                             this.emailSelectorField.val(setting.selector);
                             break;
                         case "Sms":
-                            $("#SmsToggle").prop("checked", true);
-                            // TODO;
+                            this.smsToggleCheckBox.prop("checked", true);
+                            this.phoneNumberSelectorField.val(setting.selector);
+                            this.smsMessageField.val(setting.content);
                             break;
                         default:
-                            console.error(`Unknown communication type set: ${setting.Type}`);
+                            console.error(`Unknown communication type set: ${setting.type}`);
                             break;
                     }
                 }
                 
                 // Set the values in the fourth tab (pattern).
-                // TODO
-                
+                switch (settings.sendTriggerType) {
+                    case "Direct":
+                        $("#Direct").prop("checked", true);
+                        break;
+                    case "Fixed":
+                        $("#Fixed").prop("checked", true);
+                        this.fixedDateTimePicker.value(settings.triggerStart);
+                        break;
+                    case "Recurring":
+                        $("#Recurring").prop("checked", true);
+                        this.recurringDateRangePicker.range({
+                            start: new Date(settings.triggerStart),
+                            end: new Date(settings.triggerEnd)
+                        });
+                        if (settings.triggerTime) {
+                            this.recurringTimePicker.value(settings.triggerTime);
+                        }
+                        this.recurringPeriodValueField.value(settings.triggerPeriodValue);
+                        this.recurringPeriodTypeDropDown.value(settings.triggerPeriodType);
+                        this.recurringPeriodTypeDropDown.trigger("change");
+                        
+                        switch (settings.triggerPeriodType) {
+                            case "Week":
+                                for (let weekDay in this.triggerWeekDays) {
+                                    if (!this.triggerWeekDays.hasOwnProperty(weekDay)) {
+                                        continue;
+                                    }
+
+                                    const day = this.triggerWeekDays[weekDay];
+                                    if ((settings.triggerWeekDays & day) === day) {
+                                        this.recurringWeeklyContainer.find(`input[type='checkbox'][name='recurringWeekDay'][value='${day}']`).prop("checked", true);
+                                    }
+                                }
+                                break;
+                            case "Month":
+                                this.recurringDayOfMonthField.value(settings.triggerDayOfMonth);
+                                break;
+                            default:
+                                console.error(`Unknown trigger period type set: ${settings.triggerPeriodType}`);
+                                break;
+                        }
+                        break;
+                    default:
+                        console.error(`Unknown send trigger type set: ${settings.sendTriggerType}`);
+                        break;
+                }
             } catch (exception) {
                 console.error(exception);
-                kendo.alert(`Er is iets fout gegaan tijdens het laden van de communicatie-instellingen met ID '${id}'. Probeer het a.u.b. opnieuw of neem contact op met ons.`);
+                kendo.alert(`Er is iets fout gegaan tijdens het opslaan van de communicatie-instellingen met ID '${id}'. Probeer het a.u.b. opnieuw of neem contact op met ons.`);
             } finally {
                 window.processing.removeProcess(process);
             }
@@ -538,11 +669,111 @@ const communicationModuleSettings = {
          * Get the settings as they're currently entered in all the fields by the user.
          */
         getCurrentSettings() {
-            return {
+            // Basic settings.
+            const result = {
                 id: this.settings.settingsId,
-                name: this.editNameField.val()
-                // TODO: Rest of the settings.
+                name: this.editNameField.val(),
+                settings: []
             };
+            
+            // Settings for first tab (receivers).
+            const selectedReceiverType = $("input[type='radio'][name='receiverType']:checked").val();
+            switch (selectedReceiverType) {
+                case "static": {
+                    result.receiversList = [];
+                    const inputValue = this.staticReceiverInput.val();
+                    if (inputValue) {
+                        // Split receivers on comma, semicolon and newlines, so that it doesn't matter much how users separate them.
+                        result.receiversList = inputValue.split(/[;,\r\n]/).map(value => value.trim());
+                    }
+                    break;
+                }
+                case "dataSelector":
+                    result.receiversDataSelectorId = parseInt(this.dataSelectorForReceiversDropDown.value()) || 0;
+                    break;
+                case "query":
+                    result.receiversQueryId = parseInt(this.queryForReceiversDropDown.value()) || 0;
+                    break;
+                default:
+                    console.error(`Unknown receiver type set: ${selectedReceiverType}`);
+                    break;
+            }
+            
+            // Settings for second tab (data).
+            const selectedContentDataType = $("input[type='radio'][name='contentDataType']:checked").val();
+            switch (selectedContentDataType) {
+                case "dataSelector":
+                    result.contentDataSelectorId = parseInt(this.dataSelectorForContentDropDown.value()) || 0;
+                    break;
+                case "query":
+                    result.contentQueryId = parseInt(this.queryForContentDropDown.value()) || 0;
+                    break;
+                default:
+                    console.error(`Unknown receiver type set: ${selectedReceiverType}`);
+                    break;
+            }
+            
+            // Settings for third tab (content).
+            if (this.mailToggleCheckBox.prop("checked")) {
+                result.settings.push({
+                    type: "Email",
+                    content: this.mailBodyEditor.value(),
+                    templateId: parseInt(this.mailTemplateDropDown.value()) || 0,
+                    languageCode: this.languageDropDown.value(),
+                    subject: this.mailSubjectField.val(),
+                    selector: this.emailSelectorField.val()
+                });
+            }
+            
+            if (this.smsToggleCheckBox.prop("checked")) {
+                // No else-if here, it's possible to send both an e-mail and SMS at the same time.
+                result.settings.push({
+                    type: "Sms",
+                    content: this.smsMessageField.val(),
+                    selector: this.phoneNumberSelectorField.val()
+                });
+            }
+
+            // Settings for fourth tab (pattern).
+            result.sendTriggerType = $("input[type='radio'][name='sendMoment']:checked").val();
+            switch (result.sendTriggerType) {
+                case "Direct":
+                    // Nothing to do here, the direct option does not have any extra settings.
+                    break;
+                case "Fixed":
+                    result.triggerStart = this.fixedDateTimePicker.value();
+                    break;
+                case "Recurring":
+                    const dateRange = this.recurringDateRangePicker.range();
+                    result.triggerStart = dateRange.start;
+                    result.triggerEnd = dateRange.end;
+                    result.triggerTIme = DateTime.fromJSDate(this.recurringTimePicker.value()).toSQLTime({ includeOffset: false });
+                    result.triggerPeriodValue = this.recurringPeriodValueField.value();
+                    result.triggerPeriodType = this.recurringPeriodTypeDropDown.value();
+                    switch (result.triggerPeriodType) {
+                        case "Week":
+                            let triggerWeekDays = 0;
+
+                            this.recurringWeeklyContainer.find(`input[type='checkbox'][name='recurringWeekDay']:checked`).each((index, element) => {
+                                triggerWeekDays += parseInt(element.value);
+                            });
+                            
+                            result.triggerWeekDays = triggerWeekDays;
+                            break;
+                        case "Month":
+                            result.triggerDayOfMonth = this.recurringDayOfMonthField.value();
+                            break;
+                        default:
+                            console.error(`Unknown trigger period type set: ${result.triggerPeriodType}`);
+                            break;
+                    }
+                    break;
+                default:
+                    console.error(`Unknown send trigger type set: ${result.sendTriggerType}`);
+                    break;
+            }
+            
+            return result;
         }
     }
 
