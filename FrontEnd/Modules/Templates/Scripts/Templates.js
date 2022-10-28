@@ -695,6 +695,7 @@ const moduleSettings = {
                 document.getElementById("previewTab").innerHTML = "";
                 this.mainTabStrip.disable(dynamicContentTab);
                 this.mainTabStrip.disable(previewTab);
+                this.mainTabStrip.disable(historyTab);
                 return;
             }
 
@@ -768,9 +769,9 @@ const moduleSettings = {
                             templateSettings: templateSettings,
                             linkedTemplates: linkedTemplates
                         })
-                    }).then((response) => {
+                    }).then(async (response) =>  {
                         document.getElementById("developmentTab").innerHTML = response;
-                        this.initKendoDeploymentTab();
+                        await this.initKendoDeploymentTab();
                         this.bindDeployButtons(id);
                     })
                 );
@@ -798,6 +799,7 @@ const moduleSettings = {
 
                     // Select the correct table name.
                     kendoDropDownList.value(templateSettings.triggerTableName);
+                    this.initialTemplateSettings.triggerTableName = templateSettings.triggerTableName;
                 }
 
                 window.processing.removeProcess(process);
@@ -807,20 +809,34 @@ const moduleSettings = {
 
                 // Only load dynamic content and previews for HTML templates.
                 const isHtmlTemplate = this.templateSettings.type.toUpperCase() === "HTML";
+                // Database elements (views, routines and templates) disable some functionality that do not apply to these functions.
+                const isDatabaseElementTemplate = ["VIEW", "ROUTINE", "TRIGGER"].includes(this.templateSettings.type.toUpperCase());
+
+                if (isDatabaseElementTemplate) {
+                    // Disable and hide the "save and deploy to test" button.
+                    const saveAndDeployToTestButton = document.getElementById("saveAndDeployToTestButton");
+                    $(saveAndDeployToTestButton).getKendoButton().enable(false);
+                    saveAndDeployToTestButton.classList.add("hidden");
+
+                    // Published environments are not available for database elements.
+                    const publishedEnvironments = document.getElementById("published-environments");
+                    publishedEnvironments.querySelectorAll(".version-live, .version-accept, .version-test").forEach((element) => {
+                        element.classList.add("hidden");
+                    });
+                }
 
                 if (isVirtualTemplate) {
                     // History tab is not available for virtual items.
                     this.mainTabStrip.disable(historyTab);
 
-                    // Published environments are not available for virtual items.
-                    const publishedEnvironments = document.getElementById("published-environments");
-                    publishedEnvironments.querySelectorAll("h4, .version-live, .version-accept, .version-test").forEach((element) => {
-                        element.classList.add("hidden");
-                    });
-
                     // Connected users information is not available for virtual items.
                     const connectedUsers = document.querySelector("div.connected-users");
                     connectedUsers.classList.add("hidden");
+
+                    // Hide the "last update" status.
+                    document.getElementById("published-environments").querySelector("h4").classList.add("hidden");
+                } else {
+                    this.mainTabStrip.enable(historyTab);
                 }
 
                 if (!isHtmlTemplate) {
