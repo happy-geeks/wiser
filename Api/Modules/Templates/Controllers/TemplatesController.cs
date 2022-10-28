@@ -15,6 +15,7 @@ using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
+using GeeksCoreLibrary.Modules.Templates.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -77,7 +78,7 @@ namespace Api.Modules.Templates.Controllers
         /// <summary>
         /// Gets a query from the wiser database and executes it in the customer database.
         /// </summary>
-        /// <param name="templateName">The encrypted name of the wiser template.</param>
+        /// <param name="templateName">The encrypted name of the wiser template.</param>f
         [HttpGet]
         [HttpPost]
         [Route("get-and-execute-query/{templateName}")]
@@ -104,7 +105,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(List<TemplateTreeViewModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> TreeViewAsync(int parentId = 0)
         {
-            return (await templatesService.GetTreeViewSectionAsync(parentId)).GetHttpResponseMessage();
+            return (await templatesService.GetTreeViewSectionAsync((ClaimsIdentity)User.Identity, parentId)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -410,6 +411,32 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> CheckDefaultFooterConflict(int templateId, string regexString)
         {
             return (await templatesService.CheckDefaultFooterConflict(templateId, regexString)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Retrieve a virtual item, which is a view, routine, or trigger that isn't yet managed by Wiser.
+        /// </summary>
+        /// <param name="objectName">The name of the view, routine, or trigger.</param>
+        /// <param name="templateType">The type that determines what kind of item should be retrieved (view, routine, or trigger).</param>
+        /// <returns>A <see cref="TemplateSettingsModel"/> with information about the virtual template.</returns>
+        [HttpGet]
+        [Route("get-virtual-item")]
+        [ProducesResponseType(typeof(TemplateSettingsModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetVirtualItem(string objectName, TemplateTypes templateType)
+        {
+            return (await templatesService.GetVirtualTemplateAsync(objectName, templateType)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Retrieves a list of table names that can be used to populate the table name select element for a trigger template.
+        /// </summary>
+        /// <returns>An <see cref="IList{T}"/> containing strings.</returns>
+        [HttpGet]
+        [Route("get-trigger-table-names")]
+        [ProducesResponseType(typeof(IList<string>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetTriggerTableNames()
+        {
+            return (await templatesService.GetTableNamesForTriggerTemplatesAsync()).GetHttpResponseMessage();
         }
     }
 }

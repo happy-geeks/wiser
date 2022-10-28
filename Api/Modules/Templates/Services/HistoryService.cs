@@ -188,6 +188,9 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("routineType", newVersion.RoutineType, oldVersion.RoutineType, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("routineParameters", newVersion.RoutineParameters, oldVersion.RoutineParameters, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("routineReturnType", newVersion.RoutineReturnType, oldVersion.RoutineReturnType, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("triggerTiming", newVersion.TriggerTiming, oldVersion.TriggerTiming, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("triggerEvent", newVersion.TriggerEvent, oldVersion.TriggerEvent, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("triggerTableName", newVersion.TriggerTableName, oldVersion.TriggerTableName, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("isDefaultHeader", newVersion.IsDefaultHeader, oldVersion.IsDefaultHeader, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("isDefaultFooter", newVersion.IsDefaultFooter, oldVersion.IsDefaultFooter, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("defaultHeaderFooterRegex", newVersion.DefaultHeaderFooterRegex, oldVersion.DefaultHeaderFooterRegex, historyModel);
