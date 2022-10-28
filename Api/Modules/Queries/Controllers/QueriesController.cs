@@ -43,6 +43,18 @@ namespace Api.Modules.Queries.Controllers
         }
 
         /// <summary>
+        /// Gets the queries that can be used for setting up automatic communications via the communication module.
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("communication-module")]
+        [ProducesResponseType(typeof(List<QueryModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetForCommunicationModuleAsync()
+        {
+            return (await queriesService.GetForCommunicationModuleAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
         /// Get all wiser queries.
         /// </summary>
         /// <returns>List of queries from wiser_query table</returns>

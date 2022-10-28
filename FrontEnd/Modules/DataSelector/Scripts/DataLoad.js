@@ -121,6 +121,7 @@
                 method: "GET",
                 data: { id: id }
             });
+
             if (!Wiser.validateArray(response)) {
                 window.processing.removeProcess("dataSelectorLoad");
                 return;
@@ -336,6 +337,10 @@
 
                 if (typeof savedData.showInExportModule === "boolean") {
                     document.getElementById("showInExportModule").checked = savedData.showInExportModule;
+                }
+
+                if (typeof savedData.showInCommunicationModule === "boolean") {
+                    document.getElementById("showInCommunicationModule").checked = savedData.showInCommunicationModule;
                 }
 
                 if (typeof savedData.availableForRendering === "boolean") {

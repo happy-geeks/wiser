@@ -218,6 +218,8 @@
 
 .k-primary[disabled],
 .k-button-solid-primary[disabled],
+.k-button-solid-primary.k-state-disabled,
+.k-button-solid-primary[disabled],
 .k-primary.k-state-disabled,
 .k-button-solid-primary.k-state-disabled {
     box-shadow: none;

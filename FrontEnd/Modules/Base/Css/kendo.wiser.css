@@ -1170,14 +1170,10 @@ span.k-input .k-input:hover {
 }
 
 /* KENDO - DATEPICKER */
-.k-widget.k-daterangepicker {
-	background: none;
-	max-width: 600px;
-}
-.k-widget.k-daterangepicker .k-textbox-container {
+.k-daterangepicker .k-textbox-container {
 	width: calc(50% - 2px);
 }
-.k-widget.k-daterangepicker .k-dateinput.k-widget {
+.k-daterangepicker .k-dateinput {
 	background: var(--white-color);
 }
 .k-dateinput .k-i-warning {
@@ -1325,7 +1321,7 @@ span.k-input .k-input:hover {
 .k-filtercell .k-picker {
 	border: none;
 }
-.k-filtercell .k-widget.k-autocomplete {
+.k-filtercell .k-autocomplete {
 	width: 100%;
 }
 .k-grid input.k-textbox:hover, .k-grid input.k-textbox:focus {
@@ -2085,7 +2081,13 @@ table.k-editor {
 /********************** 
 * Focus for tab-navigation
 **********************/
-a:focus, button:focus, input:focus, select:focus, summary:focus, textarea:focus, .k-button:focus {
+a:focus,
+button:focus,
+input:focus,
+select:focus,
+summary:focus,
+textarea:focus,
+.k-button:focus {
 	outline-style: dotted;
 	outline-width: .2rem;
 	outline-color: var(--dark-txt);

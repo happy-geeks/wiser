@@ -41,6 +41,11 @@
         public bool ShowInExportModule { get; set; }
 
         /// <summary>
+        /// Gets or sets whether this should be shown in the communication module.
+        /// </summary>
+        public bool ShowInCommunicationModule { get; set; }
+
+        /// <summary>
         /// Gets or sets whether this should be available for rendering as dynamic data in an HTML editor in Wiser.
         /// </summary>
         public bool AvailableForRendering { get; set; }
