@@ -24,6 +24,7 @@ const moduleSettings = {
 
             // Other.
             this.mainLoader = null;
+            this.tileLayout = null;
 
             this.itemsData = null;
             this.userData = null;
@@ -180,73 +181,82 @@ const moduleSettings = {
 
             // create DateRangePicker
             $(".daterangepicker").kendoDateRangePicker({
-                "messages": {
-                    "startLabel": "van",
-                    "endLabel": "tot"
+                messages: {
+                    startLabel: "van",
+                    endLabel: "tot"
                 },
                 culture: "nl-NL",
                 format: "dd/MM/yyyy"
             });
 
             // create Tiles
-            $("#tiles").kendoTileLayout({
-                containers: [{
-                    colSpan: 7,
-                    rowSpan: 4,
-                    header: {
-                        text: "Data"
+            this.tileLayout = $("#tiles").kendoTileLayout({
+                containers: [
+                    {
+                        colSpan: 7,
+                        rowSpan: 4,
+                        header: {
+                            text: "Data"
+                        },
+                        bodyTemplate: kendo.template($("#data-chart-template").html())
                     },
-                    bodyTemplate: kendo.template($("#data-chart-template").html())
-                }, {
-                    colSpan: 5,
-                    rowSpan: 4,
-                    header: {
-                        text: "Gebruikers"
+                    {
+                        colSpan: 5,
+                        rowSpan: 4,
+                        header: {
+                            text: "Gebruikers"
+                        },
+                        bodyTemplate: kendo.template($("#users-chart-template").html())
                     },
-                    bodyTemplate: kendo.template($("#users-chart-template").html())
-                }, {
-                    colSpan: 7,
-                    rowSpan: 2,
-                    header: {
-                        text: "Abonnement"
+                    {
+                        colSpan: 7,
+                        rowSpan: 2,
+                        header: {
+                            text: "Abonnement"
+                        },
+                        bodyTemplate: kendo.template($("#subscriptions-chart-template").html())
                     },
-                    bodyTemplate: kendo.template($("#subscriptions-chart-template").html())
-                }, {
-                    colSpan: 5,
-                    rowSpan: 2,
-                    header: {
-                        text: "Update log"
+                    {
+                        colSpan: 5,
+                        rowSpan: 2,
+                        header: {
+                            text: "Update log"
+                        },
+                        bodyTemplate: kendo.template($("#update-log").html())
                     },
-                    bodyTemplate: kendo.template($("#update-log").html())
-                }, {
-                    colSpan: 12,
-                    rowSpan: 2,
-                    header: {
-                        text: "Services"
+                    {
+                        colSpan: 12,
+                        rowSpan: 2,
+                        header: {
+                            text: "Services"
+                        },
+                        bodyTemplate: kendo.template($("#services-grid-template").html())
                     },
-                    bodyTemplate: kendo.template($("#services-grid-template").html())
-                }, {
-                    colSpan: 4,
-                    rowSpan: 2,
-                    header: {
-                        text: ""
+                    {
+                        colSpan: 4,
+                        rowSpan: 2,
+                        header: {
+                            text: ""
+                        },
+                        bodyTemplate: kendo.template($("#numbers").html())
                     },
-                    bodyTemplate: kendo.template($("#numbers").html())
-                }, {
-                    colSpan: 4,
-                    rowSpan: 2,
-                    header: {
-                        text: ""
+                    {
+                        colSpan: 4,
+                        rowSpan: 2,
+                        header: {
+                            text: ""
+                        },
+                        bodyTemplate: kendo.template($("#status-chart-template").html())
                     },
-                    bodyTemplate: kendo.template($("#status-chart-template").html())
-                }, {
-                    colSpan: 4,
-                    rowSpan: 2,
-                    header: {
-                        text: ""
-                    },
-                    bodyTemplate: kendo.template($("#dataselector-rate").html())
-                }],
+                    {
+                        colSpan: 4,
+                        rowSpan: 2,
+                        header: {
+                            text: ""
+                        },
+                        bodyTemplate: kendo.template($("#dataselector-rate").html())
+                    }
+                ],
                 columns: 12,
                 columnsWidth: 300,
                 gap: {
@@ -256,24 +266,8 @@ const moduleSettings = {
                 rowsHeight: 125,
                 reorderable: true,
                 resizable: true,
-                resize: function (e) {
-                    var rowSpan = e.container.css("grid-column-end");
-                    var chart = e.container.find(".k-chart").data("kendoChart");
-                    // hide chart labels when the space is limited
-                    if (rowSpan === "span 1" && chart) {
-                        chart.options.categoryAxis.labels.visible = false;
-                        chart.redraw();
-                    }
-                    // show chart labels when the space is enough
-                    if (rowSpan !== "span 1" && chart) {
-                        chart.options.categoryAxis.labels.visible = true;
-                        chart.redraw();
-                    }
-
-                    // for widgets that do not auto resize
-                    // https://docs.telerik.com/kendo-ui/styles-and-layout/using-kendo-in-responsive-web-pages
-                    kendo.resize(e.container, true);
-                }
+                resize: this.onTileLayoutResize.bind(this),
+                reorder: this.onTileLayoutReorder.bind(this)
             }).data("kendoTileLayout");
 
             // create Column Chart
@@ -476,12 +470,12 @@ const moduleSettings = {
                 dataBound: this.setServiceStateColor
             }).data("kendoGrid");
             this.servicesGrid.scrollables[1].classList.add("fixed-table");
-            
+
             const serviceWindowOptions = {
                 actions: ["Close"],
                 visible: false
             }
-            
+
             this.serviceWindow = $("#serviceLogWindow").kendoWindow(serviceWindowOptions).data("kendoWindow");
         }
 
@@ -876,6 +870,55 @@ const moduleSettings = {
                 await this.updateData();
                 window.processing.removeProcess("dataUpdate");
             }
+        }
+
+        onTileLayoutReorder(event) {
+            const rowSpan = event.container.css("grid-column-end");
+            const chart = event.container.find(".k-chart").data("kendoChart");
+            // hide chart labels when the space is limited
+            if (rowSpan === "span 1" && chart) {
+                chart.options.categoryAxis.labels.visible = false;
+                chart.redraw();
+            }
+            // show chart labels when the space is enough
+            if (rowSpan !== "span 1" && chart) {
+                chart.options.categoryAxis.labels.visible = true;
+                chart.redraw();
+            }
+
+            // for widgets that do not auto resize
+            // https://docs.telerik.com/kendo-ui/styles-and-layout/using-kendo-in-responsive-web-pages
+            kendo.resize(event.container, true);
+        }
+
+        onTileLayoutResize(event) {
+            //
+        }
+
+        /**
+         * Saves the tile layout settings in the user's data.
+         */
+        async saveUserSettings() {
+            // Saves the tile layout data.
+            if (!this.tileLayout) return;
+
+            const tilesInOrder = [...this.tileLayout.items].sort((a, b) => {
+                if (a.order < b.order) return -1;
+                if (a.order > b.order) return 1;
+                return 0;
+            });
+
+            // Create a JSON object out of the data that needs to be saved.
+            const data = tilesInOrder.map((tile) => {
+                return {
+                    tileId: this.tileLayout.element.find(`#${tile.id} [data-tile]`).data("tile"),
+                    order: tile.order,
+                    colSpan: tile.colSpan,
+                    rowSpan: tile.rowSpan
+                };
+            });
+
+            console.log("data to save")
         }
     }
 

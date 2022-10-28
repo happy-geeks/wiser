@@ -130,13 +130,13 @@
 
                     <!-- container text templates -->
                     <script id="update-log" type="text/x-kendo-template">
-                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
-                        <div class="tile-content">
+                        <a class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button"><span class="k-button-icon k-icon k-i-close"></span></a>
+                        <div class="tile-content" data-tile="updateLog">
                             @Html.Raw(await File.ReadAllTextAsync("./UpdateLog.html"))
                         </div>
                     </script>
                     <script id="numbers" type="text/x-kendo-template">
-                        <div class="tile-content" id="entityData">
+                        <div class="tile-content" id="entityData" data-tile="entityDate">
                             <div class="btn-row" id="entityDataTypeFilterButtons">
                                 <button type="button" role="button" aria-label="Totaal" data-filter="All" class="selected">
                                     <span>Totaal</span>
@@ -158,14 +158,16 @@
                         </a>
                     </script>
                     <script id="dataselector-rate" type="text/x-kendo-template">
-                        <h3>Uitkomst dataselector</h3>
-                        <div>Content</div>
+                        <div data-tile="dataSelector">
+                            <h3>Uitkomst dataselector</h3>
+                            <div>Content</div>
+                        </div>
                     </script>
 
                     <!-- container chart templates -->
                     <script id="data-chart-template" type="text/x-kendo-template">
                         <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
-                        <div class="tile-content">
+                        <div class="tile-content" data-tile="dataChart">
                             <div id="data-chart" style="width:100%"></div>
 
                             <div class="btn-row" id="itemsTypeFilterButtons">
@@ -188,8 +190,8 @@
                         </div>
                     </script>
                     <script id="users-chart-template" type="text/x-kendo-template">
-                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
-                        <div class="tile-content">
+                        <a class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button"><span class="k-button-icon k-icon k-i-close"></span></a>
+                        <div class="tile-content" data-tile="usersChart">
                             <div id="users-chart" style="width:100%"></div>
 
                             <div class="btn-row" id="userDataTypeFilterButtons">
@@ -203,8 +205,8 @@
                         </div>
                     </script>
                     <script id="subscriptions-chart-template" type="text/x-kendo-template">
-                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
-                        <div class="tile-content">
+                        <a class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button"><span class="k-button-icon k-icon k-i-close"></span></a>
+                        <div class="tile-content" data-tile="subscription">
                             <div class="tile-row">
                                 <label>Huidige abonnement: Wiser Large.</label>
                                 <span>Prijs per maand: &euro; 75,-</span>
@@ -230,7 +232,7 @@
                         </div>
                     </script>
                     <script id="status-chart-template" type="text/x-kendo-template">
-                        <div class="tile-content">
+                        <div class="tile-content" data-tile="taskAlerts">
                             <span class="number-item">
                                 <ins class="icon-list"></ins>
                                 <h3 id="totalOpenTaskAlerts">0</h3>
@@ -242,9 +244,9 @@
 
                     <!-- container grid templates -->
                     <script id="services-grid-template" type="text/x-kendo-template">
-                        <a id="refreshServices" class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button'><span class='k-button-icon k-icon k-i-refresh'></span></a>
-                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
-                        <div id="services-grid" style="height:100%;">
+                        <a id="refreshServices" class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button"><span class="k-button-icon k-icon k-i-refresh"></span></a>
+                        <a class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button"><span class="k-button-icon k-icon k-i-close"></span></a>
+                        <div id="services-grid" style="height:100%;" data-tile="services">
                         </div>
                     </script>
                 </main>
