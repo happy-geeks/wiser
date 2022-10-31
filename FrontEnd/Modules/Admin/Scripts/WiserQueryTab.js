@@ -85,7 +85,7 @@ export class WiserQueryTab {
     // actions handled before save, such as checks
     async beforeSave() {
         if (this.checkIfQueryIsSet(true)) {
-            const queryModel = new QueryModel(this.queryCombobox.dataItem().id, document.getElementById("queryDescription").value, this.queryFromWiser.getValue(), document.getElementById("showInExportModule").checked, false, this.rolesWithPermissions.value().join());
+            const queryModel = new QueryModel(this.queryCombobox.dataItem().id, document.getElementById("queryDescription").value, this.queryFromWiser.getValue(), document.getElementById("showInExportModule").checked, false, this.rolesWithPermissions.value().join(), document.getElementById("showInCommunicationModule").checked);
             await this.updateQuery(queryModel.id, queryModel);
         }
     }
@@ -194,6 +194,7 @@ export class WiserQueryTab {
     async setQueryProperties(resultSet) {
         document.getElementById("queryDescription").value = resultSet.description;
         document.getElementById("showInExportModule").checked = resultSet.showInExportModule;
+        document.getElementById("showInCommunicationModule").checked = resultSet.showInCommunicationModule;
         this.rolesWithPermissions.value(resultSet.rolesWithPermissions.split(","));
         await this.setCodeMirrorFields(this.queryFromWiser, resultSet.query);
     }
@@ -201,6 +202,7 @@ export class WiserQueryTab {
     async setQueryPropertiesToDefault() {
         document.getElementById("queryDescription").value = "";
         document.getElementById("showInExportModule").checked = false;
+        document.getElementById("showInCommunicationModule").checked = false;
         this.queryFromWiser.setValue("")
         this.rolesWithPermissions.value([]);
     }

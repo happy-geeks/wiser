@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Api.Modules.DataSelectors.Interfaces;
 using Api.Modules.DataSelectors.Models;
-using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -57,11 +56,15 @@ namespace Api.Modules.DataSelectors.Controllers
         /// <summary>
         /// Get the saved data selectors.
         /// </summary>
+        /// <param name="forExportModule">Optional: Set to true to only get data selectors that can be shown in the export module.</param>
+        /// <param name="forRendering">Optional: Set to true to only get data selectors to use with templating rendering.</param>
+        /// <param name="forCommunicationModule">Optional: Set to true to only get data selectors that can be shown in the communication module.</param>
+        /// <returns>A list of <see cref="DataSelectorModel"/>.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(List<DataSelectorModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAsync(bool forExportModule = false, bool forRendering = false)
+        public async Task<IActionResult> GetAsync(bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false)
         {
-            return (await dataSelectorsService.GetAsync((ClaimsIdentity)User.Identity, forExportModule, forRendering)).GetHttpResponseMessage();
+            return (await dataSelectorsService.GetAsync((ClaimsIdentity)User.Identity, forExportModule, forRendering, forCommunicationModule)).GetHttpResponseMessage();
         }
         
         /// <summary>

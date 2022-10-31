@@ -1,0 +1,56 @@
+﻿@model FrontEnd.Core.Models.BaseViewModel
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <meta charset="utf-8" />
+    <title>Wiser 3 - Communicatie</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.material.min.css" rel="stylesheet" />
+    <script>
+        window.wiserVersion = "@Model.WiserVersion?.ToString()";
+    </script>
+    <style>
+        #fullForm {
+            display:  none;
+        }
+    </style>
+</head>
+<body data-module-id="706"
+      data-wiser-api-root="@Model.ApiRoot"
+      data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
+      data-sub-domain="@Model.SubDomain"
+      data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
+      data-api-client-id="@Model.Settings.ApiClientId"
+      data-api-client-secret="@Model.Settings.ApiClientSecret"
+      data-track-js-token="@Model.Settings.TrackJsToken">
+<form id="fullForm">
+    <div id="CreateNewCommunicationSettingsContainer">
+        <h2>Nieuwe communicatie-uiting aanmaken</h2>
+        <p>Maak een nieuwe automatische communicatie-uiting aan. Bepaald ontvangers en de inhoud van de e-mail en/of SMS-berichten.</p>
+        <button class="btn btn-primary" id="CreateNewCommunicationSettingsButton">Nieuwe aanmaken</button>
+    </div>
+    <div id="OpenCommunicationSettingsContainer">
+        <h2>Bestaande communiatie-uiting openen</h2>
+        <p>Kies een van de bestaande communicatie-uitingen om te openen en te bewerken.</p>
+        <select id="CommunicationSettingsDropDown"></select>
+        <button class="btn btn-primary" id="OpenCommunicationSettingsButton">Openen</button>
+    </div>
+</form>
+
+<div id="mainLoader" class="fullscreen-loader loading">
+    <div class="loader-icon">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+</div>
+
+<script src="/scripts/Utils.min.js"></script>
+<script src="/scripts/Base.min.js"></script>
+<script src="/scripts/CommunicationIndex.min.js"></script>
+</body>
+</html>

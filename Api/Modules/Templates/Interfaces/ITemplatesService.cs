@@ -121,9 +121,10 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Retrieve the tree view section underlying the parentId. Transforms the tree view section into a list of TemplateTreeViewModels.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="parentId">The id of the template whose child nodes are to be retrieved.</param>
         /// <returns>A List of TemplateTreeViewModels containing the id, names and types of the templates included in the requested section.</returns>
-        Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(int parentId);
+        Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(ClaimsIdentity identity, int parentId);
 
         /// <summary>
         /// Search for a template.
@@ -218,5 +219,19 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="regexString">The regular expression that can filter whether the default footer should be used.</param>
         /// <returns>A string with the name of the template that this template conflicts with, or an empty string if there's no conflict.</returns>
         Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString);
+
+        /// <summary>
+        /// Attempt to retrieve a virtual template, which is either a database routine, view, or trigger.
+        /// </summary>
+        /// <param name="objectName">The name of the routine, view, or trigger.</param>
+        /// <param name="templateType">The type of virtual template.</param>
+        /// <returns>A <see cref="TemplateSettingsModel"/> with data about the virtual template.</returns>
+        Task<ServiceResult<TemplateSettingsModel>> GetVirtualTemplateAsync(string objectName, TemplateTypes templateType);
+
+        /// <summary>
+        /// Retrieves a list of table names for the trigger templates.
+        /// </summary>
+        /// <returns>A list of strings.</returns>
+        Task<ServiceResult<IList<string>>> GetTableNamesForTriggerTemplatesAsync();
     }
 }

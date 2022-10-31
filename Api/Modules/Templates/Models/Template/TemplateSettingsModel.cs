@@ -70,6 +70,11 @@ namespace Api.Modules.Templates.Models.Template
         public string RoutineParameters { get; set; }
         public string RoutineReturnType { get; set; }
 
+        // Trigger settings.
+        public string TriggerTableName { get; set; }
+        public TriggerTimings TriggerTiming { get; set; }
+        public TriggerEvents TriggerEvent { get; set; }
+
         public Dictionary<string, object> Changes { get; set; }
         
         public bool ReturnNotFoundWhenPreLoadQueryHasNoData { get; set; }

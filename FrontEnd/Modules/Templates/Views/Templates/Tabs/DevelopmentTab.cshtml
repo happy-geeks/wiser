@@ -10,6 +10,11 @@
         <partial name="Partials/RoutineDefinition" model="@Model.TemplateSettings" />
     }
 
+    @if (Model.TemplateSettings.Type == TemplateTypes.Trigger)
+    {
+        <partial name="Partials/TriggerDefinition" model="@Model.TemplateSettings" />
+    }
+
     <partial name="Partials/TemplateEditor" model="@Model" />
 
     @if (Model.TemplateSettings.Type == TemplateTypes.Html)

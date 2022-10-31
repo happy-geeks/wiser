@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Api.Modules.Kendo.Enums;
-using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
@@ -122,6 +121,9 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.routine_type,
                                                                 template.routine_parameters,
                                                                 template.routine_return_type,
+                                                                template.trigger_timing,
+                                                                template.trigger_event,
+                                                                template.trigger_table_name,
                                                                 template.is_default_header,
                                                                 template.is_default_footer,
                                                                 template.default_header_footer_regex
@@ -186,12 +188,14 @@ namespace Api.Modules.Templates.Services.DataLayer
                 RoutineType = (RoutineTypes)dataTable.Rows[0].Field<int>("routine_type"),
                 RoutineParameters = dataTable.Rows[0].Field<string>("routine_parameters"),
                 RoutineReturnType = dataTable.Rows[0].Field<string>("routine_return_type"),
+                TriggerTiming = (TriggerTimings)dataTable.Rows[0].Field<int>("trigger_timing"),
+                TriggerEvent = (TriggerEvents)dataTable.Rows[0].Field<int>("trigger_event"),
+                TriggerTableName = dataTable.Rows[0].Field<string>("trigger_table_name"),
                 IsDefaultHeader = Convert.ToBoolean(dataTable.Rows[0]["is_default_header"]),
                 IsDefaultFooter = Convert.ToBoolean(dataTable.Rows[0]["is_default_footer"]),
                 DefaultHeaderFooterRegex = dataTable.Rows[0].Field<string>("default_header_footer_regex")
             };
-            
-            
+
             var loginRolesString = dataTable.Rows[0].Field<string>("login_role");
             if (!String.IsNullOrWhiteSpace(loginRolesString))
             {
@@ -443,6 +447,9 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.AddParameter("routineType", (int)templateSettings.RoutineType);
             clientDatabaseConnection.AddParameter("routineParameters", templateSettings.RoutineParameters);
             clientDatabaseConnection.AddParameter("routineReturnType", templateSettings.RoutineReturnType);
+            clientDatabaseConnection.AddParameter("triggerTiming", (int)templateSettings.TriggerTiming);
+            clientDatabaseConnection.AddParameter("triggerEvent", (int)templateSettings.TriggerEvent);
+            clientDatabaseConnection.AddParameter("triggerTableName", templateSettings.TriggerTableName);
             clientDatabaseConnection.AddParameter("isDefaultHeader", templateSettings.IsDefaultHeader);
             clientDatabaseConnection.AddParameter("isDefaultFooter", templateSettings.IsDefaultFooter);
             clientDatabaseConnection.AddParameter("defaultHeaderFooterRegex", templateSettings.DefaultHeaderFooterRegex);
@@ -493,6 +500,9 @@ GROUP BY wdc.content_id");
                     routine_type,
                     routine_parameters,
                     routine_return_type,
+                    trigger_timing,
+                    trigger_event,
+                    trigger_table_name,
                     is_default_header,
                     is_default_footer
                 ) 
@@ -540,6 +550,9 @@ GROUP BY wdc.content_id");
                     ?routineType,
                     ?routineParameters,
                     ?routineReturnType,
+                    ?triggerTiming,
+                    ?triggerEvent,
+                    ?triggerTableName,
                     ?isDefaultHeader,
                     ?isDefaultFooter
                 )");
@@ -551,13 +564,33 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("parentId", parentId);
 
-            var query = $@"SELECT
-	                        template.id,
-	                        template.template_name,
-	                        template.template_type,
-	                        template.template_id,
-	                        template.parent_id,
-	                        COUNT(child.id) > 0 AS has_children
+            string rootTemplateName = null;
+            var query = $@"SELECT template.template_name
+                        FROM {WiserTableNames.WiserTemplate} AS template
+                        LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+                        WHERE
+                            template.template_id = ?parentId
+                            AND template.parent_id IS NULL
+                            AND template.template_type = 7
+                            AND template.removed = 0
+                            AND otherVersion.id IS NULL
+                        GROUP BY template.template_id
+                        ORDER BY template.ordering ASC";
+
+            var parentDataTable = await clientDatabaseConnection.GetAsync(query);
+            if (parentDataTable.Rows.Count > 0)
+            {
+                // Is a root element, check the name to see if additional data should be retrieved, like views or triggers.
+                rootTemplateName = parentDataTable.Rows[0].Field<string>("template_name");
+            }
+
+            query = $@"SELECT
+                            template.id,
+                            template.template_name,
+                            template.template_type,
+                            template.template_id,
+                            template.parent_id,
+                            COUNT(child.id) > 0 AS has_children
                         FROM {WiserTableNames.WiserTemplate} AS template
                         LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
                         LEFT JOIN {WiserTableNames.WiserTemplate} AS child ON child.parent_id = template.template_id
@@ -569,15 +602,37 @@ GROUP BY wdc.content_id");
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
-            return (dataTable.Rows.Cast<DataRow>()
-            .Select(row => new TemplateTreeViewDao
+            var treeViewItems = dataTable.Rows.Cast<DataRow>()
+                .Select(row => new TemplateTreeViewDao
+                {
+                    HasChildren = Convert.ToBoolean(row["has_children"]),
+                    ParentId = row.Field<int?>("parent_id"),
+                    TemplateId = row.Field<int>("template_id"),
+                    TemplateName = row.Field<string>("template_name"),
+                    TemplateType = row.Field<TemplateTypes>("template_type")
+                }).ToList();
+
+            // Check if additional items should be retrieved when retrieving from a root item.
+            // These can be views, routines, or triggers.
+            if (!String.IsNullOrWhiteSpace(rootTemplateName))
             {
-                HasChildren = Convert.ToBoolean(row["has_children"]),
-                ParentId = row.Field<int?>("parent_id"),
-                TemplateId = row.Field<int>("template_id"),
-                TemplateName = row.Field<string>("template_name"),
-                TemplateType = row.Field<TemplateTypes>("template_type")
-            })).ToList();
+                var existingItems = treeViewItems.Select(treeViewItem => treeViewItem.TemplateName).ToList();
+
+                switch (rootTemplateName.ToUpperInvariant())
+                {
+                    case "ROUTINES":
+                        treeViewItems.AddRange(await GetRoutinesAsTreeViewItemsAsync(parentId, existingItems));
+                        break;
+                    case "VIEWS":
+                        treeViewItems.AddRange(await GetViewsAsTreeViewItemsAsync(parentId, existingItems));
+                        break;
+                    case "TRIGGERS":
+                        treeViewItems.AddRange(await GetTriggersAsTreeViewItemsAsync(parentId, existingItems));
+                        break;
+                }
+            }
+
+            return treeViewItems;
         }
 
         /// <inheritdoc />
@@ -1160,9 +1215,12 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                 return false;
             }
 
+            var templateName = dataTable.Rows[0].Field<string>("template_name");
+            var templateType = (TemplateTypes)dataTable.Rows[0].Field<int>("template_type");
+
             // Add a new row/version of this template where all settings/data are empty and removed is set to 1.
             clientDatabaseConnection.AddParameter("parentId", dataTable.Rows[0].Field<int>("parent_id"));
-            clientDatabaseConnection.AddParameter("name", dataTable.Rows[0].Field<string>("template_name"));
+            clientDatabaseConnection.AddParameter("name", templateName);
             clientDatabaseConnection.AddParameter("type", dataTable.Rows[0].Field<int>("template_type"));
             clientDatabaseConnection.AddParameter("ordering", dataTable.Rows[0].Field<int>("ordering"));
             clientDatabaseConnection.AddParameter("version", dataTable.Rows[0].Field<int>("version") + 1);
@@ -1171,29 +1229,41 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                     VALUES (?templateId, ?parentId, ?name, ?type, ?ordering, ?version, 1, ?now, ?username)";
             await clientDatabaseConnection.ExecuteAsync(query);
 
-            if (!alsoDeleteChildren)
+            if (alsoDeleteChildren)
             {
-                return true;
+                // Delete all children of the template by also adding new versions with removed = 1 for them.
+                query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, changed_on, changed_by)
+                        SELECT 
+                            template.template_id,
+                            template.parent_id,
+                            template.template_name,
+                            template.template_type,
+                            template.ordering,
+                            template.version + 1,
+                            1,
+                            ?now,
+                            ?username
+                        FROM {WiserTableNames.WiserTemplate} AS template
+                        LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+                        WHERE template.parent_id = ?templateId
+                        AND template.removed = 0
+                        AND otherVersion.id IS NULL";
+                await clientDatabaseConnection.ExecuteAsync(query);
             }
 
-            // Delete all children of the template by also adding new versions with removed = 1 for them.
-            query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, changed_on, changed_by)
-                    SELECT 
-                        template.template_id,
-	                    template.parent_id,
-	                    template.template_name,
-	                    template.template_type,
-	                    template.ordering,
-	                    template.version + 1,
-                        1,
-                        ?now,
-                        ?username
-                    FROM {WiserTableNames.WiserTemplate} AS template
-                    LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-                    WHERE template.parent_id = ?templateId
-                    AND template.removed = 0
-                    AND otherVersion.id IS NULL";
-            await clientDatabaseConnection.ExecuteAsync(query);
+            // Also delete the view, routine, or trigger that this template was managing.
+            switch (templateType)
+            {
+                case TemplateTypes.View:
+                    await clientDatabaseConnection.ExecuteAsync($"DROP VIEW IF EXISTS `{templateName}`;");
+                    break;
+                case TemplateTypes.Routine:
+                    await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{templateName}`; DROP PROCEDURE IF EXISTS `{templateName}`;");
+                    break;
+                case TemplateTypes.Trigger:
+                    await clientDatabaseConnection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{templateName}`;");
+                    break;
+            }
 
             return true;
         }
@@ -1205,6 +1275,117 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             {
                 rawTemplateModel.EditorValue = rawTemplateModel.EditorValue.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
             }
+        }
+
+        /// <summary>
+        /// Retrieves database views that are not managed via the templates module yet, and returns them as <see cref="TemplateTreeViewDao"/> items.
+        /// </summary>
+        /// <param name="parentId">The template ID of the root that normally contains the views.</param>
+        /// <param name="exclusions">The names of views that should be excluded.</param>
+        /// <returns>A <see cref="List{T}"/> of <see cref="TemplateTreeViewDao"/> items.</returns>
+        private async Task<List<TemplateTreeViewDao>> GetViewsAsTreeViewItemsAsync(int parentId, IReadOnlyList<string> exclusions = null)
+        {
+            var tableNamesForStatement = new List<string>();
+            var excludeStatement = String.Empty;
+            if (exclusions is { Count: > 0 })
+            {
+                for (var i = 0; i < exclusions.Count; i++)
+                {
+                    clientDatabaseConnection.AddParameter($"tableName{i}", exclusions[i]);
+                    tableNamesForStatement.Add($"?tableName{i}");
+                }
+
+                excludeStatement = $"AND TABLE_NAME NOT IN ({String.Join(",", tableNamesForStatement)})";
+            }
+
+            var query = $@"SELECT TABLE_NAME
+                FROM information_schema.VIEWS
+                WHERE TABLE_SCHEMA = DATABASE() {excludeStatement}";
+
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            return dataTable.Rows.Cast<DataRow>()
+                .Select(row => new TemplateTreeViewDao
+                {
+                    HasChildren = false,
+                    ParentId = parentId,
+                    TemplateName = row.Field<string>("TABLE_NAME"),
+                    TemplateType = TemplateTypes.View,
+                    IsVirtualItem = true
+                }).ToList();
+        }
+
+        /// <summary>
+        /// Retrieves database routines that are not managed via the templates module yet, and returns them as <see cref="TemplateTreeViewDao"/> items.
+        /// </summary>
+        /// <param name="parentId">The template ID of the root that normally contains the routines.</param>
+        /// <param name="exclusions">The names of routines that should be excluded.</param>
+        /// <returns>A <see cref="List{T}"/> of <see cref="TemplateTreeViewDao"/> items.</returns>
+        private async Task<List<TemplateTreeViewDao>> GetRoutinesAsTreeViewItemsAsync(int parentId, IReadOnlyList<string> exclusions = null)
+        {
+            var routineNamesForStatement = new List<string>();
+            var excludeStatement = String.Empty;
+            if (exclusions is { Count: > 0 })
+            {
+                for (var i = 0; i < exclusions.Count; i++)
+                {
+                    clientDatabaseConnection.AddParameter($"routineName{i}", exclusions[i]);
+                    routineNamesForStatement.Add($"?routineName{i}");
+                }
+
+                excludeStatement = $"AND ROUTINE_NAME NOT IN ({String.Join(",", routineNamesForStatement)})";
+            }
+
+            var query = $@"SELECT ROUTINE_NAME
+                FROM information_schema.ROUTINES
+                WHERE ROUTINE_SCHEMA = DATABASE() {excludeStatement}";
+
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            return dataTable.Rows.Cast<DataRow>()
+                .Select(row => new TemplateTreeViewDao
+                {
+                    HasChildren = false,
+                    ParentId = parentId,
+                    TemplateName = row.Field<string>("ROUTINE_NAME"),
+                    TemplateType = TemplateTypes.Routine,
+                    IsVirtualItem = true
+                }).ToList();
+        }
+
+        /// <summary>
+        /// Retrieves database triggers that are not managed via the templates module yet, and returns them as <see cref="TemplateTreeViewDao"/> items.
+        /// </summary>
+        /// <param name="parentId">The template ID of the root that normally contains the triggers.</param>
+        /// <param name="exclusions">The names of triggers that should be excluded.</param>
+        /// <returns>A <see cref="List{T}"/> of <see cref="TemplateTreeViewDao"/> items.</returns>
+        private async Task<List<TemplateTreeViewDao>> GetTriggersAsTreeViewItemsAsync(int parentId, IReadOnlyList<string> exclusions = null)
+        {
+            var triggerNamesForStatement = new List<string>();
+            var excludeStatement = String.Empty;
+            if (exclusions is { Count: > 0 })
+            {
+                for (var i = 0; i < exclusions.Count; i++)
+                {
+                    clientDatabaseConnection.AddParameter($"triggerName{i}", exclusions[i]);
+                    triggerNamesForStatement.Add($"?triggerName{i}");
+                }
+
+                excludeStatement = $"AND TRIGGER_NAME NOT IN ({String.Join(",", triggerNamesForStatement)})";
+            }
+
+            var query = $@"SELECT TRIGGER_NAME
+                FROM information_schema.TRIGGERS
+                WHERE TRIGGER_SCHEMA = DATABASE() {excludeStatement}";
+
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            return dataTable.Rows.Cast<DataRow>()
+                .Select(row => new TemplateTreeViewDao
+                {
+                    HasChildren = false,
+                    ParentId = parentId,
+                    TemplateName = row.Field<string>("TRIGGER_NAME"),
+                    TemplateType = TemplateTypes.Trigger,
+                    IsVirtualItem = true
+                }).ToList();
         }
     }
 }

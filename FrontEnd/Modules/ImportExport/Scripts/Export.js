@@ -17,7 +17,7 @@ const exportModuleSettings = {
      */
     class Export {
         /**
-         * Initializes a new instance of AisDashboard.
+         * Initializes a new instance of Export.
          * @param {any} settings An object containing the settings for this class.
          */
         constructor(settings) {
