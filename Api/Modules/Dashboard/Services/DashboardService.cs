@@ -724,7 +724,8 @@ public class DashboardService : IDashboardService, IScopedService
                 NextRun = row.Field<DateTime?>("next_run"),
                 RunTime = row.Field<double>("run_time"),
                 State = row.Field<string>("state"),
-                Paused = row.Field<bool>("paused")
+                Paused = row.Field<bool>("paused"),
+                ExtraRun = row.Field<bool>("extra_run")
             };
             
             services.Add(service);
@@ -795,16 +796,67 @@ public class DashboardService : IDashboardService, IScopedService
         // If the service is currently running the pause will be activated after the run completed.
         var currentState = dataTable.Rows[0].Field<string>("state");
         var serviceIsCurrentlyRunning = currentState.Equals("running", StringComparison.InvariantCultureIgnoreCase);
+        var serviceIsNotActive = currentState.Equals("stopped", StringComparison.InvariantCultureIgnoreCase);
 
         await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.AisServices}
 SET paused = ?pauseState
-{(state && !serviceIsCurrentlyRunning ? ", state = 'paused'" : "")}
+{(state && !serviceIsCurrentlyRunning && !serviceIsNotActive ? ", state = 'paused'" : !state &&!serviceIsCurrentlyRunning && !serviceIsNotActive ? ", state = 'active'" : "")}
 WHERE id = ?serviceId");
 
         return new ServiceResult<ServicePauseStates>()
         {
             StatusCode = HttpStatusCode.OK,
             ModelObject = !state ? ServicePauseStates.Unpaused : serviceIsCurrentlyRunning ? ServicePauseStates.WillPauseAfterRunFinished : ServicePauseStates.Paused
+        };
+    }
+    
+    /// <inheritdoc />
+    public async Task<ServiceResult<ServiceExtraRunStates>> SetAisServiceExtraRunStateAsync(ClaimsIdentity identity, int id, bool state)
+    {
+        clientDatabaseConnection.AddParameter("serviceId", id);
+        clientDatabaseConnection.AddParameter("extraRunState", state);
+
+        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT state FROM {WiserTableNames.AisServices} WHERE id = ?serviceId");
+
+        if (dataTable.Rows.Count == 0)
+        {
+            return new ServiceResult<ServiceExtraRunStates>()
+            {
+                StatusCode = HttpStatusCode.NotFound,
+                ErrorMessage = $"There is no service with ID '{id}' and can therefore not be marked for an extra run."
+            };
+        }
+
+        var currentState = dataTable.Rows[0].Field<string>("state");
+        
+        // If the service is currently running the extra run state can't change.
+        if (currentState.Equals("running", StringComparison.InvariantCultureIgnoreCase))
+        {
+            return new ServiceResult<ServiceExtraRunStates>()
+            {
+                StatusCode = HttpStatusCode.OK,
+                ModelObject = ServiceExtraRunStates.ServiceRunning
+            };
+        }
+
+        // If the service is stopped no AIS instance is able to perform the extra run.
+        if (currentState.Equals("stopped", StringComparison.InvariantCultureIgnoreCase))
+        {
+            return new ServiceResult<ServiceExtraRunStates>()
+            {
+                StatusCode = HttpStatusCode.OK,
+                ModelObject = ServiceExtraRunStates.AisOffline
+            };
+        }
+
+        await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.AisServices}
+SET extra_run = ?extraRunState
+WHERE id = ?serviceId");
+
+        return new ServiceResult<ServiceExtraRunStates>()
+        {
+            StatusCode = HttpStatusCode.OK,
+            ModelObject = state ? ServiceExtraRunStates.Marked : ServiceExtraRunStates.Unmarked
         };
     }
 }

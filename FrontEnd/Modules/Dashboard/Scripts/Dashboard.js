@@ -443,12 +443,13 @@ const moduleSettings = {
                             {
                                 name: "start",
                                 text: "",
-                                iconClass: "k-icon k-i-play"
+                                iconClass: "extra-run-button-icon k-icon k-i-play",
+                                click: this.toggleExtraRunService.bind(this)
                             },
                             {
                                 name: "pause",
                                 text: "",
-                                iconClass: "k-icon k-i-pause",
+                                iconClass: "pause-button-icon wiser-icon icon-stopwatch-pauze",
                                 click: this.togglePauseService.bind(this)
                             },
                             {
@@ -464,10 +465,20 @@ const moduleSettings = {
                     },
                     {
                         field: "paused",
-                        hidden: true
+                        hidden: true,
+                        attributes: {
+                            "class": "paused-state"
+                        }
                     },
+                    {
+                        field: "extraRun",
+                        hidden: true,
+                        attributes: {
+                            "class": "extra-run-state"
+                        }
+                    }
                 ],
-                dataBound: this.setServiceStateColor
+                dataBound: this.setServiceState
             }).data("kendoGrid");
             this.servicesGrid.scrollables[1].classList.add("fixed-table");
 
@@ -679,23 +690,31 @@ const moduleSettings = {
             }));
         }
         
-        setServiceStateColor(e) {
+        setServiceState(e) {
             const columnIndex = this.wrapper.find("[data-field=state]").index();
 
             const rows = e.sender.tbody.children();
-            for(let i = 0; i < rows.length; i++) {
+            for (let i = 0; i < rows.length; i++) {
                 const row = $(rows[i]);
                 const dataItem = e.sender.dataItem(row);
                 const state = dataItem.get("state");
                 const cell = row.children().eq(columnIndex);
                 
                 const paused = dataItem.get("paused");
-                if(!paused) {
-                    rows[i].querySelector(".k-i-pause").classList.add("inactive-action")
+                if (paused) {
+                    const pauseButton = rows[i].querySelector(".pause-button-icon");
+                    pauseButton.classList.remove("icon-stopwatch-pauze");
+                    pauseButton.classList.add("icon-stopwatch-start");
                 }
-                console.log(paused, row, );
                 
-                switch(state) {
+                const extraRun = dataItem.get("extraRun");
+                if (extraRun) {
+                    const extraRunButton = rows[i].querySelector(".extra-run-button-icon");
+                    extraRunButton.classList.remove("k-i-play");
+                    extraRunButton.classList.add("k-i-stop");
+                }
+                
+                switch (state) {
                     case "active":
                     case "success":
                     case "running":
@@ -717,15 +736,47 @@ const moduleSettings = {
         }
         
         async togglePauseService(e) {
-            const columns = e.currentTarget.closest("tr").querySelectorAll("td");
-            const serviceId = columns[0].innerText;
+            const serviceId = e.currentTarget.closest("tr").querySelector("td").innerText;
+            const currentState = e.currentTarget.closest("tr").querySelector(".paused-state").innerText === 'true';
             
             const result = await Wiser.api({
-                url: `${this.settings.wiserApiRoot}dashboard/services/${serviceId}/pause/true`,
+                url: `${this.settings.wiserApiRoot}dashboard/services/${serviceId}/pause/${!currentState}`,
                 method: "PUT"
             });
             
-            console.log(result);
+            if(result === 'WillPauseAfterRunFinished') {
+                kendo.alert("De service is momenteel nog bezig. Zodra deze klaar is zal deze automatisch gepauzeerd worden.");
+            }
+            
+            await this.updateServices();
+        }
+
+        async toggleExtraRunService(e) {
+            const serviceId = e.currentTarget.closest("tr").querySelector("td").innerText;
+            const currentState = e.currentTarget.closest("tr").querySelector(".extra-run-state").innerText === 'true';
+
+            const result = await Wiser.api({
+                url: `${this.settings.wiserApiRoot}dashboard/services/${serviceId}/extra-run/${!currentState}`,
+                method: "PUT"
+            });
+            
+            switch (result)
+            {
+                case "Marked":
+                    kendo.alert("De service zal een extra keer worden uitgevoerd. De tijd waarop dit gebeurd is afhankelijk van de instellingen van de AIS waar deze service op wordt uitgevoerd.")
+                    break;
+                case "Unmarked":
+                    kendo.alert("De service zal niet meer een extra keer worden uitgevoerd.");
+                    break;
+                case "ServiceRunning":
+                    kendo.alert("De service wordt momenteel al uitgevoerd, de huidige status kan niet worden aangepast.")
+                    return;
+                case "AisOffline":
+                    kendo.alert("De service is momenteel niet beschikbaar op een instantie van de AIS en kan daardoor niet worden uitgevoerd.")
+                    return;
+            }
+
+            await this.updateServices();
         }
         
         async openServiceLogs(e) {
