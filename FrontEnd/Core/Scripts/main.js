@@ -519,7 +519,7 @@ import CacheService from "./shared/cache.service";
                     },
 
                     openClearCachePrompt() {
-                        if (localStorage.getItem("clear_cache_url")){
+                        if (localStorage.getItem("clear_cache_url")) {
                             this.clearCacheSettings.url = localStorage.getItem("clear_cache_url");
                         }
                         this.$refs.clearCachePrompt.open();
