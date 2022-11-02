@@ -148,6 +148,19 @@
     margin-right: auto;
 }
 
+.version-block .branch-container,
+.version-block .branch-container .flex-container {
+    width: 813px;
+}
+
+.version-block .branch-container #deployToBranch {
+    flex-grow: 0;
+}
+
+.version-block .branch-container .flex-container .k-dropdownlist {
+    flex-grow: 1;
+}
+
 /** TREEVIEW **/
 #right-pane {
     width: auto;

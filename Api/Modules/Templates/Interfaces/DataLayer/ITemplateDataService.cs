@@ -34,18 +34,20 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// Get published environments from a template.
         /// </summary>
         /// <param name="templateId">The id of the template which environment should be retrieved.</param>
+        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
         /// <returns>A list of all version and their published environment.</returns>
-        Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int templateId);
+        Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int templateId, string branchDatabaseName = null);
 
         /// <summary>
-        /// Publish the template to an environment. This method will execute the publishmodel instructions it recieves, logic for publishing linked environments should be handled in the servicelayer.
+        /// Publish the template to an environment. This method will execute the publish model instructions it receives, logic for publishing linked environments should be handled in the servicelayer.
         /// </summary>
-        /// <param name="templateId">The id of the template of which the enviroment should be published.</param>
+        /// <param name="templateId">The id of the template of which the environment should be published.</param>
         /// <param name="publishModel">A publish model containing the versions that should be altered and their respective values to be altered with.</param>
         /// <param name="publishLog"></param>
         /// <param name="username">The name of the authenticated user.</param>
+        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
         /// <returns>An int confirming the rows altered by the query.</returns>
-        Task<int> UpdatePublishedEnvironmentAsync(int templateId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username);
+        Task<int> UpdatePublishedEnvironmentAsync(int templateId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username, string branchDatabaseName = null);
         
         /// <summary>
         /// Get the templates linked to the current template and their relation to the current template.
@@ -171,5 +173,12 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="encryptionKey">The key used for encryption.</param>
         /// <param name="rawTemplateModel">The <see cref="TemplateSettingsModel"/> to perform the decryption on.</param>
         void DecryptEditorValueIfEncrypted(string encryptionKey, TemplateSettingsModel rawTemplateModel);
+
+        /// <summary>
+        /// Deploys a template from the main branch to a sub branch.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to deploy.</param>
+        /// <param name="branchDatabaseName">The name of the database that contains the sub branch.</param>
+        Task DeployToBranchAsync(int templateId, string branchDatabaseName);
     }
 }

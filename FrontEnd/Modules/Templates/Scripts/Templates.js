@@ -62,6 +62,7 @@ const moduleSettings = {
             this.saving = false;
             this.historyLoaded = false;
             this.initialTemplateSettings = null;
+            this.branches = null;
 
             this.templateTypes = Object.freeze({
                 "UNKNOWN": 0,
@@ -162,30 +163,21 @@ const moduleSettings = {
                 window.processing.removeProcess(process);
                 return;
             }
+            
+            try {
+                this.branches = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}branches`,
+                    dataType: "json",
+                    method: "GET"
+                });
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het ophalen van de beschikbare branches. Mogelijk kan de templatemodule nog wel gebruikt worden, maar mist alleen de functionaliteit om templates over te zetten naar een branch.")
+                this.branches = [];
+            }
 
             await this.initializeKendoComponents();
             this.bindEvents();
-
-            window.addEventListener("beforeunload", async (event) => {
-                if (!this.canUnloadTemplate()) {
-                    event.preventDefault();
-                    event.returnValue = "";
-                }
-            });
-
-            window.addEventListener("unload", async () => {
-                // Remove this user from the list.
-                await this.connectedUsers.removeUser();
-            });
-
-            document.addEventListener("moduleClosing", async (event) => {
-                // You can do anything here that needs to happen before closing the module.
-                // Remove this user from the list.
-                console.log("fired moduleClosing in templates.js");
-                await this.connectedUsers.removeUser();
-
-                event.detail();
-            });
             
             // Start the Pusher connection.
             await this.connectedUsers.init();
@@ -1094,11 +1086,22 @@ const moduleSettings = {
 
         //Initializes the kendo components on the deployment tab. These are seperated from other components since these can be reloaded by the application.
         async initKendoDeploymentTab() {
-            $("#deployLive, #deployAccept, #deployTest").kendoButton();
+            $("#deployLive, #deployAccept, #deployTest, #deployToBranchButton").kendoButton();
 
             $("#saveButton, #saveAndDeployToTestButton").kendoButton({
                 icon: "save"
             });
+
+            if (!this.branches || !this.branches.length) {
+                $(".branch-container").addClass("hidden");
+            } else {
+                $(".branch-container").removeClass("hidden");
+                $("#branchesDropDown").kendoDropDownList({
+                    dataSource: this.branches,
+                    dataValueField: "id",
+                    dataTextField: "name"
+                });
+            }
             
             this.bindDeploymentTabEvents();
 
@@ -1796,6 +1799,26 @@ const moduleSettings = {
 
         //Save the template data
         bindEvents() {
+            window.addEventListener("beforeunload", async (event) => {
+                if (!this.canUnloadTemplate()) {
+                    event.preventDefault();
+                    event.returnValue = "";
+                }
+            });
+
+            window.addEventListener("unload", async () => {
+                // Remove this user from the list.
+                await this.connectedUsers.removeUser();
+            });
+
+            document.addEventListener("moduleClosing", async (event) => {
+                // You can do anything here that needs to happen before closing the module.
+                // Remove this user from the list.
+                await this.connectedUsers.removeUser();
+
+                event.detail();
+            });
+            
             document.body.addEventListener("keydown", (event) => {
                 if ((event.ctrlKey || event.metaKey) && event.keyCode === 83) {
                     event.preventDefault();
@@ -1832,6 +1855,7 @@ const moduleSettings = {
         bindDeploymentTabEvents() {
             document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
             document.getElementById("saveAndDeployToTestButton").addEventListener("click", this.saveTemplate.bind(this, true));
+            document.getElementById("deployToBranchButton").addEventListener("click", this.deployToBranch.bind(this, true));
         }
 
         /**
@@ -1865,7 +1889,7 @@ const moduleSettings = {
 
         /**
          * Deletes a template or directory.
-         * @param {any} id
+         * @param {any} id The ID of the template to delete.
          */
         async deleteItem(id) {
             const process = `deleteItem_${Date.now()}`;
@@ -1873,7 +1897,7 @@ const moduleSettings = {
 
             let success = true;
             try {
-                const response = await Wiser.api({
+                await Wiser.api({
                     url: `${this.settings.wiserApiRoot}templates/${id}`,
                     dataType: "json",
                     type: "DELETE",
@@ -1958,6 +1982,43 @@ const moduleSettings = {
             }
 
             return settings;
+        }
+
+        /**
+         * Deploy the selected template to the selected branch.
+         */
+        async deployToBranch() {
+            if (this.saving) {
+                return;
+            }
+
+            const selectedBranch = $("#branchesDropDown").data("kendoDropDownList").value();
+            if (!selectedBranch) {
+                kendo.alert("Selecteer a.u.b. eerst een branch.")
+                return;
+            }
+
+            const process = `deleteItem_${Date.now()}`;
+            window.processing.addProcess(process);
+            try {
+                await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/deploy-to-branch/${selectedBranch}`,
+                    dataType: "json",
+                    type: "POST",
+                    contentType: "application/json"
+                });
+            }
+            catch (exception) {
+                console.error(exception);
+                if (exception.responseText) {
+                    kendo.alert(`Er is iets fout gegaan met deployen naar de gekozen branch: ${exception.responseText}`);
+                } else {
+                    kendo.alert("Er is iets fout gegaan met deployen naar de gekozen branch. Probeer het a.u.b. opnieuw.");
+                }
+            }
+            finally {
+                window.processing.removeProcess(process);
+            }
         }
 
         /**
@@ -2136,7 +2197,7 @@ const moduleSettings = {
             document.querySelector("#published-environments").outerHTML = response;
             
             // Bind deploy buttons.
-            $("#deployLive, #deployAccept, #deployTest").kendoButton();
+            $("#deployLive, #deployAccept, #deployTest, #deployToBranchButton").kendoButton();
             $("#published-environments .combo-select").kendoDropDownList();
             this.bindDeployButtons(templateId);
             
@@ -2144,6 +2205,18 @@ const moduleSettings = {
             $("#saveButton, #saveAndDeployToTestButton").kendoButton({
                 icon: "save"
             });
+
+            if (!this.branches || !this.branches.length) {
+                $(".branch-container").addClass("hidden");
+            } else {
+                $(".branch-container").removeClass("hidden");
+                $("#branchesDropDown").kendoDropDownList({
+                    dataSource: this.branches,
+                    dataValueField: "id",
+                    dataTextField: "name",
+                    optionLabel: "Kies een branch..."
+                });
+            }
 
             this.bindDeploymentTabEvents();
         }

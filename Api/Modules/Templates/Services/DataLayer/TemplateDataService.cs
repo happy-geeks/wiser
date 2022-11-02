@@ -204,13 +204,14 @@ LIMIT 1");
         }
 
         /// <inheritdoc />
-        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int templateId)
+        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int templateId, string branchDatabaseName = null)
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("templateId", templateId);
             var versionList = new Dictionary<int, int>();
 
-            var dataTable = await clientDatabaseConnection.GetAsync($"SELECT version, published_environment FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId AND removed = 0");
+            var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
+            var dataTable = await clientDatabaseConnection.GetAsync($"SELECT version, published_environment FROM {databaseNamePrefix}{WiserTableNames.WiserTemplate} WHERE template_id = ?templateId AND removed = 0");
 
             foreach (DataRow row in dataTable.Rows)
             {
@@ -221,24 +222,26 @@ LIMIT 1");
         }
 
         /// <inheritdoc />
-        public async Task<int> UpdatePublishedEnvironmentAsync(int templateId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username)
+        public async Task<int> UpdatePublishedEnvironmentAsync(int templateId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username, string branchDatabaseName = null)
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("templateId", templateId);
 
-            var baseQueryPart = $@"UPDATE {WiserTableNames.WiserTemplate} wtt 
-                SET wtt.published_environment = case wtt.version";
+            var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
+
+            var baseQueryPart = $@"UPDATE {databaseNamePrefix}{WiserTableNames.WiserTemplate} wtt 
+SET wtt.published_environment = CASE wtt.version";
 
             var dynamicQueryPart = "";
             var dynamicWherePart = " AND wtt.version IN (";
             foreach (var versionChange in publishModel)
             {
-                dynamicQueryPart += " WHEN " + versionChange.Key + " THEN wtt.published_environment+" + versionChange.Value;
-                dynamicWherePart += versionChange.Key + ",";
+                dynamicQueryPart += $" WHEN {versionChange.Key} THEN wtt.published_environment + {versionChange.Value}";
+                dynamicWherePart += $"{versionChange.Key},";
             }
-            dynamicWherePart = dynamicWherePart.Substring(0, dynamicWherePart.Length - 1) + ")";
-            var endQueryPart = @" end
-                WHERE wtt.template_id = ?templateid";
+            dynamicWherePart = $"{dynamicWherePart[..^1]})";
+            var endQueryPart = @" END
+WHERE wtt.template_id = ?templateId";
 
             var query = baseQueryPart + dynamicQueryPart + endQueryPart + dynamicWherePart;
 
@@ -251,7 +254,7 @@ LIMIT 1");
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
             clientDatabaseConnection.AddParameter("username", username);
 
-            var logQuery = $@"INSERT INTO {WiserTableNames.WiserTemplatePublishLog}
+            var logQuery = $@"INSERT INTO {databaseNamePrefix}{WiserTableNames.WiserTemplatePublishLog}
 (
     template_id,
     old_live,
@@ -276,7 +279,8 @@ VALUES
     ?username
 )";
 
-            return await clientDatabaseConnection.ExecuteAsync(query + ";" + logQuery);
+            return await clientDatabaseConnection.ExecuteAsync($@"{query};
+{logQuery}");
         }
 
         /// <inheritdoc />
@@ -1297,6 +1301,21 @@ AND otherVersion.id IS NULL";
             {
                 rawTemplateModel.EditorValue = rawTemplateModel.EditorValue.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
             }
+        }
+
+        /// <inheritdoc />
+        public async Task DeployToBranchAsync(int templateId, string branchDatabaseName)
+        {
+            clientDatabaseConnection.AddParameter("templateId", templateId);
+
+            // Branches always exist within the same database cluster, so we don't need to make a new connection for it.
+            var query = $@"INSERT INTO `{branchDatabaseName}`.{WiserTableNames.WiserTemplate}
+SELECT template.*
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+WHERE template.template_id = ?templateId
+AND otherVersion.id IS NULL";
+            await clientDatabaseConnection.ExecuteAsync(query);
         }
 
         /// <summary>
