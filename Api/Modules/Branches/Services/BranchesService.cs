@@ -185,7 +185,6 @@ namespace Api.Modules.Branches.Services
         /// <inheritdoc />
         public async Task<ServiceResult<List<CustomerModel>>> GetAsync(ClaimsIdentity identity)
         {
-
             // Make sure the queue table exists and is up-to-date.
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserBranchesQueue});
             
