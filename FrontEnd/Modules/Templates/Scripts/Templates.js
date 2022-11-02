@@ -154,6 +154,14 @@ const moduleSettings = {
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
+            
+            // Don't allow users to use this module in a branch, only in the main/production environment of a tenant.
+            if (!userData.currentBranchIsMainBranch) {
+                $("#NotMainBranchNotification").removeClass("hidden");
+                $("#wiser").addClass("hidden");
+                window.processing.removeProcess(process);
+                return;
+            }
 
             await this.initializeKendoComponents();
             this.bindEvents();
@@ -178,6 +186,7 @@ const moduleSettings = {
 
                 event.detail();
             });
+            
             // Start the Pusher connection.
             await this.connectedUsers.init();
 

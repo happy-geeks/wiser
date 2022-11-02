@@ -20,7 +20,8 @@
         #createNewItemDialog,
         #addDynamicContentToHtmlDialog,
         #linkExistingDynamicContentDialog,
-        #htmlSourceWindow {
+        #htmlSourceWindow,
+        #NotMainBranchNotification {
             display: none;
         }
     </style>
@@ -35,6 +36,12 @@
       data-api-client-secret="@Model.Settings.ApiClientSecret"
       data-pusher-app-key="@Model.Settings.PusherAppKey">
     <span id="popupNotification"></span>
+    <div id="NotMainBranchNotification" class="hidden">
+        <p>
+            Je bent op dit moment ingelogd bij een branch van deze klant. Het is niet mogelijk/toegestaan om de templatemodule te gebruiken in een branch.<br/>
+            Log a.u.b. in op de live-omgeving van de klant en werk daar in de templatemodule.
+        </p>
+    </div>
     <div id="wiser">
         <div id="window" style="margin: 0 auto; padding: 0;">
             <div class="window-header">

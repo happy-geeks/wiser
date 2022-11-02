@@ -4,6 +4,22 @@
     display: block;
 }
 
+#NotMainBranchNotification {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
+
+#NotMainBranchNotification p {
+    border: 2px dashed #F5C2C7;
+    color: #842029;
+    background-color: #F8D7DA;
+    padding: 10px;
+    font-size: large;
+}
+
 .k-dialog #createNewItemDialog,
 .k-dialog #addDynamicContentToHtmlDialog,
 .k-dialog #linkExistingDynamicContentDialog {
