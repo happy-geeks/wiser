@@ -241,8 +241,8 @@ namespace Api.Modules.Templates.Interfaces
         /// Deploy one or more templates to a branch.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <param name="templateId">The ID of the template to deploy.</param>
-        /// <param name="branchId">The ID of the branch to deploy the template to.</param>
-        Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, int templateId, int branchId);
+        /// <param name="templateIds">The IDs of the templates to deploy.</param>
+        /// <param name="branchId">The ID of the branch to deploy the templates to.</param>
+        Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, List<int> templateIds, int branchId);
     }
 }

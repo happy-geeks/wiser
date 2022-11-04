@@ -446,10 +446,10 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="branchId">The ID of the branch to deploy the template to.</param>
         [HttpPost]
         [Route("{templateId:int}/deploy-to-branch/{branchId:int}")]
-        [ProducesResponseType(typeof(LinkedTemplatesModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> DeployToBranchAsync(int templateId, int branchId)
         {
-            return (await templatesService.DeployToBranchAsync((ClaimsIdentity) User.Identity, templateId, branchId)).GetHttpResponseMessage();
+            return (await templatesService.DeployToBranchAsync((ClaimsIdentity) User.Identity, new List<int> { templateId }, branchId)).GetHttpResponseMessage();
         }
     }
 }

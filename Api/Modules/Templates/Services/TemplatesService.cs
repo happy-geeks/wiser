@@ -3199,7 +3199,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, int templateId, int branchId)
+        public async Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, List<int> templateIds, int branchId)
         {
             // The user must be logged in the main branch, otherwise they can't use this functionality.
             if (!(await branchesService.IsMainBranchAsync(identity)).ModelObject)
@@ -3238,27 +3238,41 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             // Now we can deploy the template to the branch.
             try
             {
-                await templateDataService.DeployToBranchAsync(templateId, branchToDeploy.Database.DatabaseName);
+                await templateDataService.DeployToBranchAsync(templateIds, branchToDeploy.Database.DatabaseName);
             }
             catch (MySqlException mySqlException)
             {
-                if (mySqlException.Number == 1062)
+                switch (mySqlException.Number)
                 {
-                    return new ServiceResult<bool>
-                    {
-                        StatusCode = HttpStatusCode.Conflict,
-                        ErrorMessage = "This version of this template has already been published to the selected branch."
-                    };
+                    case (int)MySqlErrorCode.DuplicateKeyEntry:
+                        // We ignore duplicate key errors, because it's possible that a template already exists in a branch, but it wasn't deployed to the correct environment.
+                        // So we ignore this error, so we can still deploy that template to production in the branch, see the next bit of code after this try/catch.
+                        break;
+                    case (int)MySqlErrorCode.WrongValueCountOnRow:
+                        return new ServiceResult<bool>
+                        {
+                            StatusCode = HttpStatusCode.Conflict,
+                            ErrorMessage = "The tables for the template module are not up-to-date in the selected branch. Please open the template module in that branch once, so that the tables will be automatically updated."
+                        };
+                    default:
+                        throw;
                 }
-
-                throw;
             }
 
-            var templateData = await templateDataService.GetMetaDataAsync(templateId);
-            var currentPublished = (await GetTemplateEnvironmentsAsync(templateId, branchToDeploy.Database.DatabaseName)).ModelObject;
+            // Publish all templates to live environment in the branch, because a branch will never actually be used on a live environment
+            // and then we can make sure that the deployed templates will be up to date on whichever website environment uses that branch. 
+            foreach (var templateId in templateIds)
+            {
+                var templateData = await templateDataService.GetMetaDataAsync(templateId);
+                var currentPublished = (await GetTemplateEnvironmentsAsync(templateId, branchToDeploy.Database.DatabaseName)).ModelObject;
 
-            await PublishToEnvironmentAsync(identity, templateId, templateData.Version, Environments.Live, currentPublished, branchToDeploy.Database.DatabaseName);
-            return new ServiceResult<bool>(true);
+                await PublishToEnvironmentAsync(identity, templateId, templateData.Version, Environments.Live, currentPublished, branchToDeploy.Database.DatabaseName);
+            }
+
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
 
         private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html)

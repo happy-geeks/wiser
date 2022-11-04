@@ -60,7 +60,7 @@ GROUP BY template_id;";
     commit.version
 FROM {WiserTableNames.WiserCommitTemplate} AS commit 
 LEFT JOIN {WiserTableNames.WiserCommitTemplate} AS otherVersion ON otherVersion.template_id = commit.template_id AND otherVersion.version > commit.version
-WHERE wct.commit_id = ?commitId
+WHERE commit.commit_id = ?commitId
 AND otherVersion.id IS NULL";
 
         clientDatabaseConnection.ClearParameters();

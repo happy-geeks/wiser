@@ -77,8 +77,9 @@ namespace Api.Modules.Templates.Interfaces
         /// containing the Live, accept and test versions and the list of other versions that are present in the data.
         /// </summary>
         /// <param name="contentId">The id of the dynamic component to retrieve the environments of.</param>
+        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
         /// <returns>A model containing the versions that are currently set for the live, accept and test environment.</returns>
-        Task<ServiceResult<PublishedEnvironmentModel>> GetEnvironmentsAsync(int contentId);
+        Task<ServiceResult<PublishedEnvironmentModel>> GetEnvironmentsAsync(int contentId, string branchDatabaseName = null);
         
         /// <summary>
         /// Publish a dynamic component version to a new environment using a content/component id. This requires you to provide a model with the current published state.
@@ -89,7 +90,8 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="version">The version of the component to publish.</param>
         /// <param name="environment">The environment to publish the component to.</param>
         /// <param name="currentPublished">A PublishedEnvironmentModel containing the current published templates.</param>
-        Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int contentId, int version, Environments environment, PublishedEnvironmentModel currentPublished);
+        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
+        Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int contentId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName = null);
         
         /// <summary>
         /// Duplicate a dynamic component (only the latest version).
@@ -112,5 +114,13 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="templateId">The ID of the template.</param>
         /// <returns>A list of dynamic components from other templates.</returns>
         Task<ServiceResult<List<DynamicContentOverviewModel>>> GetLinkableDynamicContentAsync(int templateId);
+
+        /// <summary>
+        /// Deploy one or more dynamic contents to a branch.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="dynamicContentIds">The IDs of the dynamic contents to deploy.</param>
+        /// <param name="branchId">The ID of the branch to deploy the dynamic contents to.</param>
+        Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, List<int> dynamicContentIds, int branchId);
     }
 }

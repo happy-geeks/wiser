@@ -8,6 +8,8 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
+using Api.Modules.Branches.Interfaces;
+using Api.Modules.Customers.Interfaces;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -16,6 +18,7 @@ using Api.Modules.Templates.Models.Other;
 using GeeksCoreLibrary.Components.Account;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
+using MySql.Data.MySqlClient;
 
 namespace Api.Modules.Templates.Services
 {
@@ -24,14 +27,18 @@ namespace Api.Modules.Templates.Services
     {
         private readonly IDynamicContentDataService dataService;
         private readonly IHistoryService historyService;
+        private readonly IBranchesService branchesService;
+        private readonly IWiserCustomersService wiserCustomersService;
 
         /// <summary>
         /// Creates a new instance of <see cref="DynamicContentService"/>.
         /// </summary>
-        public DynamicContentService(IDynamicContentDataService dataService, IHistoryService historyService)
+        public DynamicContentService(IDynamicContentDataService dataService, IHistoryService historyService, IBranchesService branchesService, IWiserCustomersService wiserCustomersService)
         {
             this.dataService = dataService;
             this.historyService = historyService;
+            this.branchesService = branchesService;
+            this.wiserCustomersService = wiserCustomersService;
         }
 
         /// <inheritdoc />
@@ -210,20 +217,20 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<PublishedEnvironmentModel>> GetEnvironmentsAsync(int contentId)
+        public async Task<ServiceResult<PublishedEnvironmentModel>> GetEnvironmentsAsync(int contentId, string branchDatabaseName = null)
         {
             if (contentId <= 0)
             {
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var versionsAndPublished = await dataService.GetPublishedEnvironmentsAsync(contentId);
+            var versionsAndPublished = await dataService.GetPublishedEnvironmentsAsync(contentId, branchDatabaseName);
             
             return new ServiceResult<PublishedEnvironmentModel>(PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int contentId, int version, Environments environment, PublishedEnvironmentModel currentPublished)
+        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int contentId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName = null)
         {
             if (contentId <= 0)
             {
@@ -238,7 +245,7 @@ namespace Api.Modules.Templates.Services
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(contentId, currentPublished, newPublished);
-            await dataService.UpdatePublishedEnvironmentAsync(contentId, newPublished, publishLog, IdentityHelpers.GetUserName(identity, true));
+            await dataService.UpdatePublishedEnvironmentAsync(contentId, newPublished, publishLog, IdentityHelpers.GetUserName(identity, true), branchDatabaseName);
             return new ServiceResult<int>
             {
                 StatusCode = HttpStatusCode.NoContent
@@ -273,6 +280,83 @@ namespace Api.Modules.Templates.Services
 
             var results = await dataService.GetLinkableDynamicContentAsync(templateId);
             return new ServiceResult<List<DynamicContentOverviewModel>>(results);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, List<int> dynamicContentIds, int branchId)
+        {
+            // The user must be logged in the main branch, otherwise they can't use this functionality.
+            if (!(await branchesService.IsMainBranchAsync(identity)).ModelObject)
+            {
+                return new ServiceResult<bool>
+                {
+                    ModelObject = false,
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "The current branch is not the main branch. This functionality can only be used from the main branch." 
+                };
+            }
+            
+            // Check if the branch exists.
+            var branchToDeploy = (await wiserCustomersService.GetSingleAsync(branchId, true)).ModelObject;
+            if (branchToDeploy == null)
+            {
+                return new ServiceResult<bool>
+                {
+                    ModelObject = false,
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"Branch with ID {branchId} does not exist" 
+                };
+            }
+
+            // Make sure the user did not try to enter an ID for a branch that they don't own.
+            if (!(await branchesService.CanAccessBranchAsync(identity, branchToDeploy)).ModelObject)
+            {
+                return new ServiceResult<bool>
+                {
+                    ModelObject = false,
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = $"You don't have permissions to access a branch with ID {branchId}" 
+                };
+            }
+
+            // Now we can deploy the template to the branch.
+            try
+            {
+                await dataService.DeployToBranchAsync(dynamicContentIds, branchToDeploy.Database.DatabaseName);
+            }
+            catch (MySqlException mySqlException)
+            {
+                switch (mySqlException.Number)
+                {
+                    case (int)MySqlErrorCode.DuplicateKeyEntry:
+                        // We ignore duplicate key errors, because it's possible that a dynamic content already exists in a branch, but it wasn't deployed to the correct environment.
+                        // So we ignore this error, so we can still deploy that dynamic content to production in the branch, see the next bit of code after this try/catch.
+                        break;
+                    case (int)MySqlErrorCode.WrongValueCountOnRow:
+                        return new ServiceResult<bool>
+                        {
+                            StatusCode = HttpStatusCode.Conflict,
+                            ErrorMessage = "The tables for the template module are not up-to-date in the selected branch. Please open the template module in that branch once, so that the tables will be automatically updated."
+                        };
+                    default:
+                        throw;
+                }
+            }
+
+            // Publish all templates to live environment in the branch, because a branch will never actually be used on a live environment
+            // and then we can make sure that the deployed templates will be up to date on whichever website environment uses that branch. 
+            foreach (var dynamicContentId in dynamicContentIds)
+            {
+                var contentData = await dataService.GetMetaDataAsync(dynamicContentId);
+                var currentPublished = (await GetEnvironmentsAsync(dynamicContentId, branchToDeploy.Database.DatabaseName)).ModelObject;
+
+                await PublishToEnvironmentAsync(identity, dynamicContentId, contentData.LatestVersion ?? 1, Environments.Live, currentPublished, branchToDeploy.Database.DatabaseName);
+            }
+
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
     }
 }

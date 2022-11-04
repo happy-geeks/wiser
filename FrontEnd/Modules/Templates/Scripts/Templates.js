@@ -1099,7 +1099,8 @@ const moduleSettings = {
                 $("#branchesDropDown").kendoDropDownList({
                     dataSource: this.branches,
                     dataValueField: "id",
-                    dataTextField: "name"
+                    dataTextField: "name",
+                    optionLabel: "Kies een branch..."
                 });
             }
             
@@ -1707,8 +1708,20 @@ const moduleSettings = {
                     }
                 }).data("kendoWindow").content(html).maximize().open();
 
-                $("#deployLiveComponent, #deployAcceptComponent, #deployTestComponent").kendoButton();
+                $("#deployLiveComponent, #deployAcceptComponent, #deployTestComponent, #deployComponentToBranchButton").kendoButton();
                 $("#published-environments-dynamic-component .combo-select").kendoDropDownList();
+
+                if (!this.branches || !this.branches.length) {
+                    $(".component-branch-container").addClass("hidden");
+                } else {
+                    $(".component-branch-container").removeClass("hidden");
+                    $("#componentBranchesDropDown").kendoDropDownList({
+                        dataSource: this.branches,
+                        dataValueField: "id",
+                        dataTextField: "name",
+                        optionLabel: "Kies een branch..."
+                    });
+                }
                 this.bindDynamicComponentDeployButtons(selectedDataItem.id);
             });
         }
@@ -1724,6 +1737,7 @@ const moduleSettings = {
             $("#deployLiveComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "live", contentId, null));
             $("#deployAcceptComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "accept", contentId, null));
             $("#deployTestComponent").on("click", this.deployDynamicContentEnvironment.bind(this, "test", contentId, null));
+            $("#deployComponentToBranchButton").on("click", this.deployComponentToBranch.bind(this, "test", contentId, null));
         }
 
         //Deploy a version to an enviorenment
@@ -1998,7 +2012,7 @@ const moduleSettings = {
                 return;
             }
 
-            const process = `deleteItem_${Date.now()}`;
+            const process = `deployToBranch_${Date.now()}`;
             window.processing.addProcess(process);
             try {
                 await Wiser.api({
@@ -2007,11 +2021,57 @@ const moduleSettings = {
                     type: "POST",
                     contentType: "application/json"
                 });
+
+                window.popupNotification.show(`Component is succesvol overgezet naar de geselecteerde branch.`, "info");
             }
             catch (exception) {
                 console.error(exception);
                 if (exception.responseText) {
-                    kendo.alert(`Er is iets fout gegaan met deployen naar de gekozen branch: ${exception.responseText}`);
+                    kendo.alert(`Er is iets fout gegaan met deployen naar de gekozen branch:<br><pre>${exception.responseText}</pre>`);
+                } else {
+                    kendo.alert("Er is iets fout gegaan met deployen naar de gekozen branch. Probeer het a.u.b. opnieuw.");
+                }
+            }
+            finally {
+                window.processing.removeProcess(process);
+            }
+        }
+
+        /**
+         * Deploy the selected component to the selected branch.
+         */
+        async deployComponentToBranch() {
+            if (this.saving) {
+                return;
+            }
+
+            const selectedDataItem = this.dynamicContentGrid.dataItem(this.dynamicContentGrid.select());
+            if (!selectedDataItem) {
+                return;
+            }
+
+            const selectedBranch = $("#componentBranchesDropDown").data("kendoDropDownList").value();
+            if (!selectedBranch) {
+                kendo.alert("Selecteer a.u.b. eerst een branch.")
+                return;
+            }
+
+            const process = `deployToBranch_${Date.now()}`;
+            window.processing.addProcess(process);
+            try {
+                await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}dynamic-content/${selectedDataItem.id}/deploy-to-branch/${selectedBranch}`,
+                    dataType: "json",
+                    type: "POST",
+                    contentType: "application/json"
+                });
+                
+                window.popupNotification.show(`Component is succesvol overgezet naar de geselecteerde branch.`, "info");
+            }
+            catch (exception) {
+                console.error(exception);
+                if (exception.responseText) {
+                    kendo.alert(`Er is iets fout gegaan met deployen naar de gekozen branch:<br><pre>${exception.responseText}</pre>`);
                 } else {
                     kendo.alert("Er is iets fout gegaan met deployen naar de gekozen branch. Probeer het a.u.b. opnieuw.");
                 }

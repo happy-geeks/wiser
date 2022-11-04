@@ -215,7 +215,7 @@ LIMIT 1");
 
             foreach (DataRow row in dataTable.Rows)
             {
-                versionList.Add(row.Field<int>("version"), row.Field<SByte>("published_environment"));
+                versionList.Add(row.Field<int>("version"), Convert.ToInt32(row["published_environment"]));
             }
 
             return versionList;
@@ -1304,16 +1304,14 @@ AND otherVersion.id IS NULL";
         }
 
         /// <inheritdoc />
-        public async Task DeployToBranchAsync(int templateId, string branchDatabaseName)
+        public async Task DeployToBranchAsync(List<int> templateIds, string branchDatabaseName)
         {
-            clientDatabaseConnection.AddParameter("templateId", templateId);
-
             // Branches always exist within the same database cluster, so we don't need to make a new connection for it.
             var query = $@"INSERT INTO `{branchDatabaseName}`.{WiserTableNames.WiserTemplate}
 SELECT template.*
 FROM {WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-WHERE template.template_id = ?templateId
+WHERE template.template_id IN ({String.Join(", ", templateIds)})
 AND otherVersion.id IS NULL";
             await clientDatabaseConnection.ExecuteAsync(query);
         }

@@ -207,9 +207,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, int templateId, int branchId)
+        public async Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, List<int> templateIds, int branchId)
         {
-            return await templatesService.DeployToBranchAsync(identity, templateId, branchId);
+            return await templatesService.DeployToBranchAsync(identity, templateIds, branchId);
         }
     }
 }
