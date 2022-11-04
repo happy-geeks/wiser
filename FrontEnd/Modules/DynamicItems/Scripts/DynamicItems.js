@@ -426,15 +426,15 @@ const moduleSettings = {
 
             $("#mainEditMenu .reloadItem").click(async (event) => {
                 const previouslySelectedTab = this.mainTabStrip.select().index();
-                await this.loadItem(this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.initialItemId ? this.settings.entityType : this.selectedItem.entityType);
+                await this.loadItem(this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.id : this.settings.initialItemId, previouslySelectedTab, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.entityType : this.settings.entityType);
             });
 
             $("#mainEditMenu .deleteItem").click(async (event) => {
-                await this.onDeleteItemClick(event, this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id, this.settings.initialItemId ? this.settings.entityType : this.selectedItem.entityType);
+                await this.onDeleteItemClick(event, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.id : this.settings.initialItemId, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.entityType : this.settings.entityType);
             });
 
             $("#mainEditMenu .undeleteItem").click(async (event) => {
-                await this.onUndeleteItemClick(event, this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id);
+                await this.onUndeleteItemClick(event, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.id : this.settings.initialItemId);
             });
 
             $("#mainEditMenu .copyToEnvironment").click(async (event) => {
@@ -444,7 +444,7 @@ const moduleSettings = {
             });
 
             $("#mainEditMenu .translateItem").click(async (event) => {
-                await this.onTranslateItemClick(event, this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id, this.settings.initialItemId ? this.settings.entityType : this.selectedItem.entityType);
+                await this.onTranslateItemClick(event, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.id : this.settings.initialItemId, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.entityType : this.settings.entityType);
             });
         }
 
