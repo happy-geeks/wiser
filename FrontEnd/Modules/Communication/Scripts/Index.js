@@ -145,12 +145,12 @@ const communicationModuleSettings = {
                 
                 // Buttons.
                 this.createNewCommunicationSettingsButton = $("#CreateNewCommunicationSettingsButton").kendoButton({
-                    icon: "save",
+                    icon: "folder-add",
                     click: this.onCreateNewCommunicationSettingsButton.bind(this)
                 });
                 
                 this.openCommunicationSettingsButton = $("#OpenCommunicationSettingsButton").kendoButton({
-                    icon: "save",
+                    icon: "folder-open",
                     click: this.onOpenCommunicationSettingsButtonClick.bind(this)
                 });
             } catch (exception) {
