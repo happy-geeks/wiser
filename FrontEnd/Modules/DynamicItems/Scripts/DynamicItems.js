@@ -1525,6 +1525,9 @@ const moduleSettings = {
 
             try {
                 const dialogElement = $("#translateItemDialog");
+                // Set encrypted item ID and entity type in dialog element, so that it will be updated everytime. Otherwise it will keep the old item ID when translating multiple items in a row.
+                dialogElement.data("encryptedItemId", encryptedItemId);
+                dialogElement.data("entityType", entityType);
                 let translateItemDialog = dialogElement.data("kendoDialog");
 
                 await require("@progress/kendo-ui/js/kendo.multiselect.js");                
@@ -1577,11 +1580,11 @@ const moduleSettings = {
                                     window.processing.addProcess(process);
 
                                     Wiser.api({
-                                        url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}/translate`,
+                                        url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(dialogElement.data("encryptedItemId"))}/translate`,
                                         method: "PUT",
                                         contentType: "application/json",
                                         data: JSON.stringify({
-                                            entityType: entityType,
+                                            entityType: dialogElement.data("entityType"),
                                             sourceLanguageCode: sourceLanguageDropDown.value(),
                                             targetLanguageCodes: targetLanguagesMultiSelect.value()
                                         })
