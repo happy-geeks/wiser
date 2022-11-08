@@ -36,6 +36,13 @@ namespace Api.Modules.Branches.Interfaces
         Task<ServiceResult<bool>> IsMainBranchAsync(ClaimsIdentity identity);
 
         /// <summary>
+        /// Gets whether the current branch is the main branch.
+        /// </summary>
+        /// <param name="branch">The <see cref="CustomerModel">CustomerModel</see> of the branch to check.</param>
+        /// <returns>A boolean indicating whether the current branch is the main branch.</returns>
+        ServiceResult<bool> IsMainBranch(CustomerModel branch);
+
+        /// <summary>
         /// Get the changes of a branch.
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
@@ -50,5 +57,23 @@ namespace Api.Modules.Branches.Interfaces
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
         /// <param name="settings">The settings of what exactly to merge.</param>
         Task<ServiceResult<MergeBranchResultModel>> MergeAsync(ClaimsIdentity identity, MergeBranchSettingsModel settings);
+
+        /// <summary>
+        /// Gets whether the current user can access a certain branch.
+        /// This will check if the given branch has the same parent ID as the branch that the user is currently authenticated for.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
+        /// <param name="branchId">The ID of the branch to check.</param>
+        /// <returns>A boolean indicating whether the user is allowed access to the given branch.</returns>
+        Task<ServiceResult<bool>> CanAccessBranchAsync(ClaimsIdentity identity, int branchId);
+
+        /// <summary>
+        /// Gets whether the current user can access a certain branch.
+        /// This will check if the given branch has the same parent ID as the branch that the user is currently authenticated for.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
+        /// <param name="branch">The <see cref="CustomerModel">CustomerModel</see> of the branch to check.</param>
+        /// <returns>A boolean indicating whether the user is allowed access to the given branch.</returns>
+        Task<ServiceResult<bool>> CanAccessBranchAsync(ClaimsIdentity identity, CustomerModel branch);
     }
 }

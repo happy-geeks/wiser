@@ -15,6 +15,7 @@ using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
+using Api.Modules.Branches.Interfaces;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Helpers;
@@ -83,11 +84,12 @@ namespace Api.Modules.Templates.Services
         private readonly GclSettings gclSettings;
         private readonly ApiSettings apiSettings;
         private readonly IWebHostEnvironment webHostEnvironment;
+        private readonly IBranchesService branchesService;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IOptions<GclSettings> gclSettings, IOptions<ApiSettings> apiSettings, IWebHostEnvironment webHostEnvironment)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IOptions<GclSettings> gclSettings, IOptions<ApiSettings> apiSettings, IWebHostEnvironment webHostEnvironment, IBranchesService branchesService)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -107,6 +109,7 @@ namespace Api.Modules.Templates.Services
             this.gclSettings = gclSettings.Value;
             this.apiSettings = apiSettings.Value;
             this.webHostEnvironment = webHostEnvironment;
+            this.branchesService = branchesService;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -2081,14 +2084,14 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId)
+        public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId, string branchDatabaseName = null)
         {
             if (templateId <= 0)
             {
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var versionsAndPublished = await templateDataService.GetPublishedEnvironmentsAsync(templateId);
+            var versionsAndPublished = await templateDataService.GetPublishedEnvironmentsAsync(templateId, branchDatabaseName);
 
             return new ServiceResult<PublishedEnvironmentModel>(PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
         }
@@ -2195,7 +2198,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished)
+        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName = null)
         {
             if (templateId <= 0)
             {
@@ -2211,7 +2214,7 @@ LIMIT 1";
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
-            return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, newPublished, publishLog, IdentityHelpers.GetUserName(identity, true)));
+            return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, newPublished, publishLog, IdentityHelpers.GetUserName(identity, true), branchDatabaseName));
         }
 
         /// <inheritdoc />
@@ -3193,6 +3196,83 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             }
 
             return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, List<int> templateIds, int branchId)
+        {
+            // The user must be logged in the main branch, otherwise they can't use this functionality.
+            if (!(await branchesService.IsMainBranchAsync(identity)).ModelObject)
+            {
+                return new ServiceResult<bool>
+                {
+                    ModelObject = false,
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "The current branch is not the main branch. This functionality can only be used from the main branch." 
+                };
+            }
+            
+            // Check if the branch exists.
+            var branchToDeploy = (await wiserCustomersService.GetSingleAsync(branchId, true)).ModelObject;
+            if (branchToDeploy == null)
+            {
+                return new ServiceResult<bool>
+                {
+                    ModelObject = false,
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"Branch with ID {branchId} does not exist" 
+                };
+            }
+
+            // Make sure the user did not try to enter an ID for a branch that they don't own.
+            if (!(await branchesService.CanAccessBranchAsync(identity, branchToDeploy)).ModelObject)
+            {
+                return new ServiceResult<bool>
+                {
+                    ModelObject = false,
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = $"You don't have permissions to access a branch with ID {branchId}" 
+                };
+            }
+
+            // Now we can deploy the template to the branch.
+            try
+            {
+                await templateDataService.DeployToBranchAsync(templateIds, branchToDeploy.Database.DatabaseName);
+            }
+            catch (MySqlException mySqlException)
+            {
+                switch (mySqlException.Number)
+                {
+                    case (int)MySqlErrorCode.DuplicateKeyEntry:
+                        // We ignore duplicate key errors, because it's possible that a template already exists in a branch, but it wasn't deployed to the correct environment.
+                        // So we ignore this error, so we can still deploy that template to production in the branch, see the next bit of code after this try/catch.
+                        break;
+                    case (int)MySqlErrorCode.WrongValueCountOnRow:
+                        return new ServiceResult<bool>
+                        {
+                            StatusCode = HttpStatusCode.Conflict,
+                            ErrorMessage = "The tables for the template module are not up-to-date in the selected branch. Please open the template module in that branch once, so that the tables will be automatically updated."
+                        };
+                    default:
+                        throw;
+                }
+            }
+
+            // Publish all templates to live environment in the branch, because a branch will never actually be used on a live environment
+            // and then we can make sure that the deployed templates will be up to date on whichever website environment uses that branch. 
+            foreach (var templateId in templateIds)
+            {
+                var templateData = await templateDataService.GetMetaDataAsync(templateId);
+                var currentPublished = (await GetTemplateEnvironmentsAsync(templateId, branchToDeploy.Database.DatabaseName)).ModelObject;
+
+                await PublishToEnvironmentAsync(identity, templateId, templateData.Version, Environments.Live, currentPublished, branchToDeploy.Database.DatabaseName);
+            }
+
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
 
         private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html)

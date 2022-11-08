@@ -426,15 +426,15 @@ const moduleSettings = {
 
             $("#mainEditMenu .reloadItem").click(async (event) => {
                 const previouslySelectedTab = this.mainTabStrip.select().index();
-                await this.loadItem(this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.initialItemId ? this.settings.entityType : this.selectedItem.entityType);
+                await this.loadItem(this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.id : this.settings.initialItemId, previouslySelectedTab, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.entityType : this.settings.entityType);
             });
 
             $("#mainEditMenu .deleteItem").click(async (event) => {
-                await this.onDeleteItemClick(event, this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id, this.settings.initialItemId ? this.settings.entityType : this.selectedItem.entityType);
+                await this.onDeleteItemClick(event, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.id : this.settings.initialItemId, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.entityType : this.settings.entityType);
             });
 
             $("#mainEditMenu .undeleteItem").click(async (event) => {
-                await this.onUndeleteItemClick(event, this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id);
+                await this.onUndeleteItemClick(event, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.id : this.settings.initialItemId);
             });
 
             $("#mainEditMenu .copyToEnvironment").click(async (event) => {
@@ -444,7 +444,7 @@ const moduleSettings = {
             });
 
             $("#mainEditMenu .translateItem").click(async (event) => {
-                await this.onTranslateItemClick(event, this.settings.initialItemId ? this.settings.initialItemId : this.selectedItem.id, this.settings.initialItemId ? this.settings.entityType : this.selectedItem.entityType);
+                await this.onTranslateItemClick(event, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.id : this.settings.initialItemId, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.entityType : this.settings.entityType);
             });
         }
 
@@ -1525,6 +1525,9 @@ const moduleSettings = {
 
             try {
                 const dialogElement = $("#translateItemDialog");
+                // Set encrypted item ID and entity type in dialog element, so that it will be updated everytime. Otherwise it will keep the old item ID when translating multiple items in a row.
+                dialogElement.data("encryptedItemId", encryptedItemId);
+                dialogElement.data("entityType", entityType);
                 let translateItemDialog = dialogElement.data("kendoDialog");
 
                 await require("@progress/kendo-ui/js/kendo.multiselect.js");                
@@ -1577,11 +1580,11 @@ const moduleSettings = {
                                     window.processing.addProcess(process);
 
                                     Wiser.api({
-                                        url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}/translate`,
+                                        url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(dialogElement.data("encryptedItemId"))}/translate`,
                                         method: "PUT",
                                         contentType: "application/json",
                                         data: JSON.stringify({
-                                            entityType: entityType,
+                                            entityType: dialogElement.data("entityType"),
                                             sourceLanguageCode: sourceLanguageDropDown.value(),
                                             targetLanguageCodes: targetLanguagesMultiSelect.value()
                                         })
@@ -1592,7 +1595,20 @@ const moduleSettings = {
                                         this.notification.show({message: "Vertalen is gelukt"}, "success");
                                     }).catch((error) => {
                                         console.error("An error occurred while translating an item", error);
-                                        kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                                        let errorMessage = "";
+                                        if (error.responseJSON && error.responseJSON.error) {
+                                            errorMessage = error.responseJSON.error;
+                                        } else if (error.responseText) {
+                                            errorMessage = error.responseText;
+                                        } else if (error.statusText) {
+                                            errorMessage = error.statusText;
+                                        }
+                                        
+                                        if (errorMessage) {
+                                            kendo.alert(`Er is iets fout gegaan met vertalen. De fout was:<br><pre>${errorMessage}</pre>`);
+                                        } else {
+                                            kendo.alert(`Er is iets fout gegaan met vertalen. Probeer het a.u.b. nogmaals of neem contact op.`);
+                                        }
                                     }).finally(() => {
                                         window.processing.removeProcess(process);
                                     });

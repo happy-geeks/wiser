@@ -18,7 +18,8 @@
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
     <style>
-        #wiser {
+        #wiser,
+        #NotMainBranchNotification {
             display: none;
         }
     </style>
@@ -31,6 +32,12 @@
       data-track-js-token="@Model.Settings.TrackJsToken"
       data-api-client-id="@Model.Settings.ApiClientId"
       data-api-client-secret="@Model.Settings.ApiClientSecret">
+    <div id="NotMainBranchNotification" class="hidden">
+        <p>
+            Je bent op dit moment ingelogd bij een branch van deze klant. Het is niet mogelijk/toegestaan om de templatemodule te gebruiken in een branch.<br/>
+            Log a.u.b. in op de live-omgeving van de klant en werk daar in de templatemodule.
+        </p>
+    </div>
     <div id="wiser">
         <div id="tabstrip" class="tabstrip k-tabstrip-wrapper">
             <ul>
@@ -62,7 +69,12 @@
                 </div>
                 <button class="environment-deploy" id="deployCommitToLive">deploy naar live</button>
                 <button class="environment-deploy" id="deployCommitToAcceptance">deploy naar acceptatie</button>
-                <button class="environment-deploy" id="deployCommitToTest">deploy naar test</button></div>
+                <button class="environment-deploy" id="deployCommitToTest">deploy naar test</button>
+                <div class="branch-container hidden" id="deployToBranchContainer">
+                    <select id="branchesDropDown"></select>
+                    <button class="branch-deploy" id="deployCommitToBranch">deploy naar geselecteerde branch</button>
+                </div>
+            </div>
             <div id="history">Work in progress</div>
         </div>
     </div>

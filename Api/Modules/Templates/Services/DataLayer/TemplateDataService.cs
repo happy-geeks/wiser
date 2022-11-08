@@ -37,19 +37,19 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("templateId", templateId);
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
-                                                                template.parent_id,
-                                                                template.template_type,
-                                                                template.template_name, 
-                                                                template.version, 
-                                                                template.changed_on, 
-                                                                template.changed_by, 
-                                                                template.ordering
-                                                            FROM {WiserTableNames.WiserTemplate} AS template 
-                                                            LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-                                                            WHERE template.template_id = ?templateId
-                                                            AND template.removed = 0
-                                                            AND otherVersion.id IS NULL
-                                                            LIMIT 1");
+    template.parent_id,
+    template.template_type,
+    template.template_name, 
+    template.version, 
+    template.changed_on, 
+    template.changed_by, 
+    template.ordering
+FROM {WiserTableNames.WiserTemplate} AS template 
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+WHERE template.template_id = ?templateId
+AND template.removed = 0
+AND otherVersion.id IS NULL
+LIMIT 1");
 
             return dataTable.Rows.Count == 0 ? new TemplateSettingsModel() : new TemplateSettingsModel
             {
@@ -74,65 +74,63 @@ namespace Api.Modules.Templates.Services.DataLayer
                 _ => $"AND (template.published_environment & {(int)environment}) = {(int)environment}"
             };
 
-
-
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("templateId", templateId);
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
-                                                                template.template_id, 
-                                                                template.parent_id, 
-                                                                template.template_type, 
-                                                                template.template_name, 
-                                                                template.template_data, 
-                                                                template.version, 
-                                                                template.changed_on, 
-                                                                template.changed_by, 
-                                                                template.use_cache,   
-                                                                template.cache_minutes, 
-                                                                template.cache_location, 
-                                                                template.cache_regex,
-                                                                template.handle_request, 
-                                                                template.handle_session, 
-                                                                template.handle_objects, 
-                                                                template.handle_standards, 
-                                                                template.handle_translations, 
-                                                                template.handle_dynamic_content, 
-                                                                template.handle_logic_blocks, 
-                                                                template.handle_mutators, 
-                                                                template.login_required, 
-                                                                template.login_role, 
-                                                                template.login_redirect_url,
-                                                                template.linked_templates, 
-                                                                template.ordering,
-                                                                template.insert_mode,
-                                                                template.load_always,
-                                                                template.disable_minifier,
-                                                                template.url_regex,
-                                                                template.external_files,
-                                                                template.grouping_create_object_instead_of_array,
-                                                                template.grouping_prefix,
-                                                                template.grouping_key,
-                                                                template.grouping_key_column_name,
-                                                                template.grouping_value_column_name,
-                                                                template.is_scss_include_template,
-                                                                template.use_in_wiser_html_editors,
-                                                                template.pre_load_query,
-                                                                template.return_not_found_when_pre_load_query_has_no_data,
-                                                                template.routine_type,
-                                                                template.routine_parameters,
-                                                                template.routine_return_type,
-                                                                template.trigger_timing,
-                                                                template.trigger_event,
-                                                                template.trigger_table_name,
-                                                                template.is_default_header,
-                                                                template.is_default_footer,
-                                                                template.default_header_footer_regex
-                                                            FROM {WiserTableNames.WiserTemplate} AS template 
-                                                            WHERE template.template_id = ?templateId
-                                                            {publishedVersionWhere}
-                                                            AND template.removed = 0
-                                                            ORDER BY template.version DESC 
-                                                            LIMIT 1");
+    template.template_id, 
+    template.parent_id, 
+    template.template_type, 
+    template.template_name, 
+    template.template_data, 
+    template.version, 
+    template.changed_on, 
+    template.changed_by, 
+    template.use_cache,   
+    template.cache_minutes, 
+    template.cache_location, 
+    template.cache_regex,
+    template.handle_request, 
+    template.handle_session, 
+    template.handle_objects, 
+    template.handle_standards, 
+    template.handle_translations, 
+    template.handle_dynamic_content, 
+    template.handle_logic_blocks, 
+    template.handle_mutators, 
+    template.login_required, 
+    template.login_role, 
+    template.login_redirect_url,
+    template.linked_templates, 
+    template.ordering,
+    template.insert_mode,
+    template.load_always,
+    template.disable_minifier,
+    template.url_regex,
+    template.external_files,
+    template.grouping_create_object_instead_of_array,
+    template.grouping_prefix,
+    template.grouping_key,
+    template.grouping_key_column_name,
+    template.grouping_value_column_name,
+    template.is_scss_include_template,
+    template.use_in_wiser_html_editors,
+    template.pre_load_query,
+    template.return_not_found_when_pre_load_query_has_no_data,
+    template.routine_type,
+    template.routine_parameters,
+    template.routine_return_type,
+    template.trigger_timing,
+    template.trigger_event,
+    template.trigger_table_name,
+    template.is_default_header,
+    template.is_default_footer,
+    template.default_header_footer_regex
+FROM {WiserTableNames.WiserTemplate} AS template 
+WHERE template.template_id = ?templateId
+{publishedVersionWhere}
+AND template.removed = 0
+ORDER BY template.version DESC 
+LIMIT 1");
 
             if (dataTable.Rows.Count == 0)
             {
@@ -206,41 +204,44 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int templateId)
+        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int templateId, string branchDatabaseName = null)
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("templateId", templateId);
             var versionList = new Dictionary<int, int>();
 
-            var dataTable = await clientDatabaseConnection.GetAsync($"SELECT version, published_environment FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId AND removed = 0");
+            var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
+            var dataTable = await clientDatabaseConnection.GetAsync($"SELECT version, published_environment FROM {databaseNamePrefix}{WiserTableNames.WiserTemplate} WHERE template_id = ?templateId AND removed = 0");
 
             foreach (DataRow row in dataTable.Rows)
             {
-                versionList.Add(row.Field<int>("version"), row.Field<SByte>("published_environment"));
+                versionList.Add(row.Field<int>("version"), Convert.ToInt32(row["published_environment"]));
             }
 
             return versionList;
         }
 
         /// <inheritdoc />
-        public async Task<int> UpdatePublishedEnvironmentAsync(int templateId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username)
+        public async Task<int> UpdatePublishedEnvironmentAsync(int templateId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username, string branchDatabaseName = null)
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("templateId", templateId);
 
-            var baseQueryPart = $@"UPDATE {WiserTableNames.WiserTemplate} wtt 
-                SET wtt.published_environment = case wtt.version";
+            var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
+
+            var baseQueryPart = $@"UPDATE {databaseNamePrefix}{WiserTableNames.WiserTemplate} wtt 
+SET wtt.published_environment = CASE wtt.version";
 
             var dynamicQueryPart = "";
             var dynamicWherePart = " AND wtt.version IN (";
             foreach (var versionChange in publishModel)
             {
-                dynamicQueryPart += " WHEN " + versionChange.Key + " THEN wtt.published_environment+" + versionChange.Value;
-                dynamicWherePart += versionChange.Key + ",";
+                dynamicQueryPart += $" WHEN {versionChange.Key} THEN wtt.published_environment + {versionChange.Value}";
+                dynamicWherePart += $"{versionChange.Key},";
             }
-            dynamicWherePart = dynamicWherePart.Substring(0, dynamicWherePart.Length - 1) + ")";
-            var endQueryPart = @" end
-                WHERE wtt.template_id = ?templateid";
+            dynamicWherePart = $"{dynamicWherePart[..^1]})";
+            var endQueryPart = @" END
+WHERE wtt.template_id = ?templateId";
 
             var query = baseQueryPart + dynamicQueryPart + endQueryPart + dynamicWherePart;
 
@@ -253,20 +254,33 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
             clientDatabaseConnection.AddParameter("username", username);
 
-            var logQuery = $@"INSERT INTO {WiserTableNames.WiserTemplatePublishLog} (template_id, old_live, old_accept, old_test, new_live, new_accept, new_test, changed_on, changed_by) 
-            VALUES(
-                ?templateid,
-                ?oldlive,
-                ?oldaccept,
-                ?oldtest,
-                ?newlive,
-                ?newaccept,
-                ?newtest,
-                ?now,
-                ?username
-            )";
+            var logQuery = $@"INSERT INTO {databaseNamePrefix}{WiserTableNames.WiserTemplatePublishLog}
+(
+    template_id,
+    old_live,
+    old_accept,
+    old_test,
+    new_live,
+    new_accept,
+    new_test,
+    changed_on,
+    changed_by
+) 
+VALUES
+(
+    ?templateid,
+    ?oldlive,
+    ?oldaccept,
+    ?oldtest,
+    ?newlive,
+    ?newaccept,
+    ?newtest,
+    ?now,
+    ?username
+)";
 
-            return await clientDatabaseConnection.ExecuteAsync(query + ";" + logQuery);
+            return await clientDatabaseConnection.ExecuteAsync($@"{query};
+{logQuery}");
         }
 
         /// <inheritdoc />
@@ -290,21 +304,21 @@ namespace Api.Modules.Templates.Services.DataLayer
             var linkedTemplateIds = linkedTemplateValue.Split(",").Select(Int32.Parse);
 
             dataTable = await clientDatabaseConnection.GetAsync($@"SELECT
-                                                                        template.template_id,
-                                                                        template.template_name,
-                                                                        template.template_type,
-	                                                                    CONCAT_WS(' >> ', parent5.template_name, parent4.template_name, parent3.template_name, parent2.template_name, parent1.template_name) AS path
-                                                                    FROM {WiserTableNames.WiserTemplate} AS template
-                                                                    LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-                                                                    LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
-                                                                    LEFT JOIN {WiserTableNames.WiserTemplate} AS parent2 ON parent2.template_id = parent1.parent_id AND parent2.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent1.parent_id)
-                                                                    LEFT JOIN {WiserTableNames.WiserTemplate} AS parent3 ON parent3.template_id = parent2.parent_id AND parent3.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent2.parent_id)
-                                                                    LEFT JOIN {WiserTableNames.WiserTemplate} AS parent4 ON parent4.template_id = parent3.parent_id AND parent4.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent3.parent_id)
-                                                                    LEFT JOIN {WiserTableNames.WiserTemplate} AS parent5 ON parent5.template_id = parent4.parent_id AND parent5.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent4.parent_id)
-                                                                    WHERE template.template_id IN ({String.Join(",", linkedTemplateIds)})
-                                                                    AND template.removed = 0
-                                                                    AND otherVersion.id IS NULL
-                                                                    ORDER BY template.template_type ASC, template.template_name ASC");
+    template.template_id,
+    template.template_name,
+    template.template_type,
+	CONCAT_WS(' >> ', parent5.template_name, parent4.template_name, parent3.template_name, parent2.template_name, parent1.template_name) AS path
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent2 ON parent2.template_id = parent1.parent_id AND parent2.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent1.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent3 ON parent3.template_id = parent2.parent_id AND parent3.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent2.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent4 ON parent4.template_id = parent3.parent_id AND parent4.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent3.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent5 ON parent5.template_id = parent4.parent_id AND parent5.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent4.parent_id)
+WHERE template.template_id IN ({String.Join(",", linkedTemplateIds)})
+AND template.removed = 0
+AND otherVersion.id IS NULL
+ORDER BY template.template_type ASC, template.template_name ASC");
 
             if (dataTable.Rows.Count == 0)
             {
@@ -326,21 +340,21 @@ namespace Api.Modules.Templates.Services.DataLayer
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("templateId", templateId);
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
-	                                                                        template.template_id,
-	                                                                        template.template_name,
-	                                                                        template.template_type,
-	                                                                        CONCAT_WS(' >> ', parent5.template_name, parent4.template_name, parent3.template_name, parent2.template_name, parent1.template_name) AS path
-                                                                        FROM {WiserTableNames.WiserTemplate} AS template
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent2 ON parent2.template_id = parent1.parent_id AND parent2.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent1.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent3 ON parent3.template_id = parent2.parent_id AND parent3.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent2.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent4 ON parent4.template_id = parent3.parent_id AND parent4.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent3.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent5 ON parent5.template_id = parent4.parent_id AND parent5.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent4.parent_id)
-                                                                        WHERE template.template_type IN (2, 3, 4)
-                                                                        AND template.removed = 0
-                                                                        AND otherVersion.id IS NULL
-                                                                        ORDER BY template.template_type ASC, template.template_name ASC");
+	template.template_id,
+	template.template_name,
+	template.template_type,
+	CONCAT_WS(' >> ', parent5.template_name, parent4.template_name, parent3.template_name, parent2.template_name, parent1.template_name) AS path
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent2 ON parent2.template_id = parent1.parent_id AND parent2.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent1.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent3 ON parent3.template_id = parent2.parent_id AND parent3.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent2.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent4 ON parent4.template_id = parent3.parent_id AND parent4.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent3.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent5 ON parent5.template_id = parent4.parent_id AND parent5.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent4.parent_id)
+WHERE template.template_type IN (2, 3, 4)
+AND template.removed = 0
+AND otherVersion.id IS NULL
+ORDER BY template.template_type ASC, template.template_name ASC");
 
             if (dataTable.Rows.Count == 0)
             {
@@ -454,108 +468,108 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.AddParameter("isDefaultFooter", templateSettings.IsDefaultFooter);
             clientDatabaseConnection.AddParameter("defaultHeaderFooterRegex", templateSettings.DefaultHeaderFooterRegex);
 
-            return await clientDatabaseConnection.ExecuteAsync($@"
-                SET @VersionNumber = (SELECT MAX(version)+1 FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId GROUP BY template_id);
-                INSERT INTO {WiserTableNames.WiserTemplate} (
-                    template_name, 
-                    template_data, 
-                    template_data_minified,
-                    template_type, 
-                    `version`, 
-                    template_id, 
-                    parent_id,
-                    changed_on, 
-                    changed_by, 
-                    use_cache,
-                    cache_minutes, 
-                    cache_location,
-                    cache_regex,
-                    handle_request, 
-                    handle_session, 
-                    handle_objects, 
-                    handle_standards,
-                    handle_translations,
-                    handle_dynamic_content,
-                    handle_logic_blocks,
-                    handle_mutators,
-                    login_required,
-                    login_role,
-                    login_redirect_url,
-                    linked_templates,
-                    ordering,
-                    insert_mode,
-                    load_always,
-                    disable_minifier,
-                    url_regex,
-                    external_files,
-                    grouping_create_object_instead_of_array,
-                    grouping_prefix,
-                    grouping_key,
-                    grouping_key_column_name,
-                    grouping_value_column_name,
-                    is_scss_include_template,
-                    use_in_wiser_html_editors,
-                    pre_load_query,
-                    return_not_found_when_pre_load_query_has_no_data,
-                    routine_type,
-                    routine_parameters,
-                    routine_return_type,
-                    trigger_timing,
-                    trigger_event,
-                    trigger_table_name,
-                    is_default_header,
-                    is_default_footer
-                ) 
-                VALUES (
-                    ?name,
-                    ?editorValue,
-                    ?minifiedValue,
-                    ?type,
-                    @VersionNumber,
-                    ?templateId,
-                    ?parentId,
-                    ?now,
-                    ?username,
-                    ?useCache,
-                    ?cacheMinutes,
-                    ?cacheLocation,
-                    ?cacheRegex,
-                    ?handleRequests,
-                    ?handleSession,
-                    ?handleObjects,
-                    ?handleStandards,
-                    ?handleTranslations,
-                    ?handleDynamicContent,
-                    ?handleLogicBlocks,
-                    ?handleMutators,
-                    ?loginRequired,
-                    ?loginRole,
-                    ?loginRedirectUrl,
-                    ?templateLinks,
-                    ?ordering,
-                    ?insertMode,
-                    ?loadAlways,
-                    ?disableMinifier,
-                    ?urlRegex,
-                    ?externalFiles,
-                    ?groupingCreateObjectInsteadOfArray,
-                    ?groupingPrefix,
-                    ?groupingKey,
-                    ?groupingKeyColumnName,
-                    ?groupingValueColumnName,
-                    ?isScssIncludeTemplate,
-                    ?useInWiserHtmlEditors,
-                    ?preLoadQuery,
-                    ?returnNotFoundWhenPreLoadQueryHasNoData,
-                    ?routineType,
-                    ?routineParameters,
-                    ?routineReturnType,
-                    ?triggerTiming,
-                    ?triggerEvent,
-                    ?triggerTableName,
-                    ?isDefaultHeader,
-                    ?isDefaultFooter
-                )");
+            var query = $@"SET @VersionNumber = (SELECT MAX(version)+1 FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId GROUP BY template_id);
+INSERT INTO {WiserTableNames.WiserTemplate} (
+    template_name, 
+    template_data, 
+    template_data_minified,
+    template_type, 
+    `version`, 
+    template_id, 
+    parent_id,
+    changed_on, 
+    changed_by, 
+    use_cache,
+    cache_minutes, 
+    cache_location,
+    cache_regex,
+    handle_request, 
+    handle_session, 
+    handle_objects, 
+    handle_standards,
+    handle_translations,
+    handle_dynamic_content,
+    handle_logic_blocks,
+    handle_mutators,
+    login_required,
+    login_role,
+    login_redirect_url,
+    linked_templates,
+    ordering,
+    insert_mode,
+    load_always,
+    disable_minifier,
+    url_regex,
+    external_files,
+    grouping_create_object_instead_of_array,
+    grouping_prefix,
+    grouping_key,
+    grouping_key_column_name,
+    grouping_value_column_name,
+    is_scss_include_template,
+    use_in_wiser_html_editors,
+    pre_load_query,
+    return_not_found_when_pre_load_query_has_no_data,
+    routine_type,
+    routine_parameters,
+    routine_return_type,
+    trigger_timing,
+    trigger_event,
+    trigger_table_name,
+    is_default_header,
+    is_default_footer
+) 
+VALUES (
+    ?name,
+    ?editorValue,
+    ?minifiedValue,
+    ?type,
+    @VersionNumber,
+    ?templateId,
+    ?parentId,
+    ?now,
+    ?username,
+    ?useCache,
+    ?cacheMinutes,
+    ?cacheLocation,
+    ?cacheRegex,
+    ?handleRequests,
+    ?handleSession,
+    ?handleObjects,
+    ?handleStandards,
+    ?handleTranslations,
+    ?handleDynamicContent,
+    ?handleLogicBlocks,
+    ?handleMutators,
+    ?loginRequired,
+    ?loginRole,
+    ?loginRedirectUrl,
+    ?templateLinks,
+    ?ordering,
+    ?insertMode,
+    ?loadAlways,
+    ?disableMinifier,
+    ?urlRegex,
+    ?externalFiles,
+    ?groupingCreateObjectInsteadOfArray,
+    ?groupingPrefix,
+    ?groupingKey,
+    ?groupingKeyColumnName,
+    ?groupingValueColumnName,
+    ?isScssIncludeTemplate,
+    ?useInWiserHtmlEditors,
+    ?preLoadQuery,
+    ?returnNotFoundWhenPreLoadQueryHasNoData,
+    ?routineType,
+    ?routineParameters,
+    ?routineReturnType,
+    ?triggerTiming,
+    ?triggerEvent,
+    ?triggerTableName,
+    ?isDefaultHeader,
+    ?isDefaultFooter
+)";
+            return await clientDatabaseConnection.ExecuteAsync(query);
         }
 
         /// <inheritdoc />
@@ -566,16 +580,16 @@ GROUP BY wdc.content_id");
 
             string rootTemplateName = null;
             var query = $@"SELECT template.template_name
-                        FROM {WiserTableNames.WiserTemplate} AS template
-                        LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-                        WHERE
-                            template.template_id = ?parentId
-                            AND template.parent_id IS NULL
-                            AND template.template_type = 7
-                            AND template.removed = 0
-                            AND otherVersion.id IS NULL
-                        GROUP BY template.template_id
-                        ORDER BY template.ordering ASC";
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+WHERE
+    template.template_id = ?parentId
+    AND template.parent_id IS NULL
+    AND template.template_type = 7
+    AND template.removed = 0
+    AND otherVersion.id IS NULL
+GROUP BY template.template_id
+ORDER BY template.ordering ASC";
 
             var parentDataTable = await clientDatabaseConnection.GetAsync(query);
             if (parentDataTable.Rows.Count > 0)
@@ -585,20 +599,20 @@ GROUP BY wdc.content_id");
             }
 
             query = $@"SELECT
-                            template.id,
-                            template.template_name,
-                            template.template_type,
-                            template.template_id,
-                            template.parent_id,
-                            COUNT(child.id) > 0 AS has_children
-                        FROM {WiserTableNames.WiserTemplate} AS template
-                        LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-                        LEFT JOIN {WiserTableNames.WiserTemplate} AS child ON child.parent_id = template.template_id
-                        WHERE template.parent_id {(parentId == 0 ? "IS NULL AND template.template_type = 7" : "= ?parentId")}
-                        AND template.removed = 0
-                        AND otherVersion.id IS NULL
-                        GROUP BY template.template_id
-                        ORDER BY template.ordering ASC";
+    template.id,
+    template.template_name,
+    template.template_type,
+    template.template_id,
+    template.parent_id,
+    COUNT(child.id) > 0 AS has_children
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+LEFT JOIN {WiserTableNames.WiserTemplate} AS child ON child.parent_id = template.template_id
+WHERE template.parent_id {(parentId == 0 ? "IS NULL AND template.template_type = 7" : "= ?parentId")}
+AND template.removed = 0
+AND otherVersion.id IS NULL
+GROUP BY template.template_id
+ORDER BY template.ordering ASC";
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
@@ -782,11 +796,11 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
 
             // Load all XML templates to check the search value in encrypted templates.
             query = $@"SELECT template.template_id, template.template_data
-                        FROM {WiserTableNames.WiserTemplate} AS template
-                        LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-                        WHERE template.template_type = {(int)TemplateTypes.Xml}
-                        AND template.removed = 0
-                        AND otherVersion.id IS NULL";
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+WHERE template.template_type = {(int)TemplateTypes.Xml}
+AND template.removed = 0
+AND otherVersion.id IS NULL";
 
             dataTable = await clientDatabaseConnection.GetAsync(query);
             
@@ -861,23 +875,25 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("parentId", parentId);
-            await clientDatabaseConnection.ExecuteAsync($@"SET @ordering = 0;
-                                                UPDATE {WiserTableNames.WiserTemplate} AS template
-                                                JOIN (
-	                                                SELECT
-		                                                x.template_id,
-		                                                @ordering := @ordering + 1 AS newOrdering
-	                                                FROM (
-		                                                SELECT template.template_id
-		                                                FROM {WiserTableNames.WiserTemplate} AS template
-		                                                LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-		                                                WHERE template.parent_id = ?parentId
-                                                        AND template.removed = 0
-		                                                AND otherVersion.id IS NULL
-		                                                ORDER BY template.ordering ASC, template.template_type DESC, template.template_name ASC
-	                                                ) AS x
-                                                ) AS ordering ON ordering.template_id = template.template_id
-                                                SET template.ordering = ordering.newOrdering");
+
+            var query = $@"SET @ordering = 0;
+UPDATE {WiserTableNames.WiserTemplate} AS template
+JOIN (
+	SELECT
+		x.template_id,
+		@ordering := @ordering + 1 AS newOrdering
+	FROM (
+		SELECT template.template_id
+		FROM {WiserTableNames.WiserTemplate} AS template
+		LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+		WHERE template.parent_id = ?parentId
+        AND template.removed = 0
+		AND otherVersion.id IS NULL
+		ORDER BY template.ordering ASC, template.template_type DESC, template.template_name ASC
+	) AS x
+) AS ordering ON ordering.template_id = template.template_id
+SET template.ordering = ordering.newOrdering";
+            await clientDatabaseConnection.ExecuteAsync(query);
         }
 
         /// <inheritdoc />
@@ -885,15 +901,17 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", templateId);
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT parent.template_id, parent.template_name
-                                                            FROM {WiserTableNames.WiserTemplate} AS template
-                                                            LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-                                                            JOIN {WiserTableNames.WiserTemplate} AS parent ON parent.template_id = template.parent_id AND parent.removed = 0
-                                                            WHERE template.template_id = ?id
-                                                            AND template.removed = 0
-                                                            AND otherVersion.id IS NULL
-                                                            ORDER BY parent.version DESC
-                                                            LIMIT 1");
+            
+            var query = $@"SELECT parent.template_id, parent.template_name
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+JOIN {WiserTableNames.WiserTemplate} AS parent ON parent.template_id = template.parent_id AND parent.removed = 0
+WHERE template.template_id = ?id
+AND template.removed = 0
+AND otherVersion.id IS NULL
+ORDER BY parent.version DESC
+LIMIT 1";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count == 0)
             {
@@ -918,12 +936,14 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", templateId);
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT ordering
-                                                            FROM {WiserTableNames.WiserTemplate}
-                                                            WHERE template_id = ?id
-                                                            AND removed = 0
-                                                            ORDER BY version DESC
-                                                            LIMIT 1");
+
+            var query = $@"SELECT ordering
+FROM {WiserTableNames.WiserTemplate}
+WHERE template_id = ?id
+AND removed = 0
+ORDER BY version DESC
+LIMIT 1";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
             return dataTable.Rows.Count == 0 ? 0 : dataTable.Rows[0].Field<int>("ordering");
         }
 
@@ -932,12 +952,14 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", templateId);
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT IFNULL(MAX(template.ordering), 0) AS ordering
-                                                                    FROM {WiserTableNames.WiserTemplate} AS template
-                                                                    LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-                                                                    WHERE template.parent_id = ?id
-                                                                    AND template.removed = 0
-                                                                    AND otherVersion.id IS NULL");
+
+            var query = $@"SELECT IFNULL(MAX(template.ordering), 0) AS ordering
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+WHERE template.parent_id = ?id
+AND template.removed = 0
+AND otherVersion.id IS NULL";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
             return dataTable.Rows.Count == 0 ? 0 : Convert.ToInt32(dataTable.Rows[0]["ordering"]);
         }
 
@@ -963,29 +985,29 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                 if (dropPosition != TreeViewDropPositions.Over)
                 {
                     query = $@"UPDATE {WiserTableNames.WiserTemplate}
-                            SET ordering = ordering + 1
-                            WHERE parent_id = ?destinationParentId
-                            AND ordering >= ?newOrderNumber
-                            AND template_id <> ?sourceId
-                            AND removed = 0";
+SET ordering = ordering + 1
+WHERE parent_id = ?destinationParentId
+AND ordering >= ?newOrderNumber
+AND template_id <> ?sourceId
+AND removed = 0";
 
                     await clientDatabaseConnection.ExecuteAsync(query);
                 }
 
                 // Move the template to it's new position.
                 query = $@"UPDATE {WiserTableNames.WiserTemplate} 
-                        SET parent_id = ?destinationParentId, ordering = ?newOrderNumber, changed_on = ?now, changed_by = ?username
-                        WHERE template_id = ?sourceId
-                        AND parent_id = ?sourceParentId
-                        AND removed = 0";
+SET parent_id = ?destinationParentId, ordering = ?newOrderNumber, changed_on = ?now, changed_by = ?username
+WHERE template_id = ?sourceId
+AND parent_id = ?sourceParentId
+AND removed = 0";
                 await clientDatabaseConnection.ExecuteAsync(query);
 
                 // Fill gap in old parent directory (move items one place higher).
                 query = $@"UPDATE {WiserTableNames.WiserTemplate}
-                        SET ordering = ordering - 1
-                        WHERE parent_id = ?sourceParentId
-                        AND ordering > ?oldOrderNumber
-                        AND removed = 0";
+SET ordering = ordering - 1
+WHERE parent_id = ?sourceParentId
+AND ordering > ?oldOrderNumber
+AND removed = 0";
                 await clientDatabaseConnection.ExecuteAsync(query);
 
                 await clientDatabaseConnection.CommitTransactionAsync();
@@ -1021,24 +1043,26 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             var result = new StringBuilder();
 
             clientDatabaseConnection.AddParameter("rootId", scssRootId);
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT template.template_data
-                                                                        FROM {WiserTableNames.WiserTemplate} AS template
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent2 ON parent2.template_id = parent1.parent_id AND parent2.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent1.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent3 ON parent3.template_id = parent2.parent_id AND parent3.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent2.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent4 ON parent4.template_id = parent3.parent_id AND parent4.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent3.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent5 ON parent5.template_id = parent4.parent_id AND parent5.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent4.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent6 ON parent6.template_id = parent5.parent_id AND parent6.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent5.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent7 ON parent7.template_id = parent6.parent_id AND parent7.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent6.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = parent7.parent_id AND parent8.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent7.parent_id)
-                                                                        WHERE template.template_type = {(int)TemplateTypes.Scss}
-                                                                        AND template.is_scss_include_template = 1
-                                                                        AND template.removed = 0
-                                                                        AND otherVersion.id IS NULL
-                                                                        AND template.template_data IS NOT NULL
-                                                                        AND (?rootId = 0 OR ?rootId IN (parent8.template_id, parent7.template_id, parent6.template_id, parent5.template_id, parent4.template_id, parent3.template_id, parent2.template_id, parent1.template_id))
-                                                                        ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering, parent4.ordering, parent3.ordering, parent2.ordering, parent1.ordering, template.ordering");
+
+            var query = $@"SELECT template.template_data
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent2 ON parent2.template_id = parent1.parent_id AND parent2.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent1.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent3 ON parent3.template_id = parent2.parent_id AND parent3.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent2.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent4 ON parent4.template_id = parent3.parent_id AND parent4.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent3.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent5 ON parent5.template_id = parent4.parent_id AND parent5.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent4.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent6 ON parent6.template_id = parent5.parent_id AND parent6.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent5.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent7 ON parent7.template_id = parent6.parent_id AND parent7.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent6.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = parent7.parent_id AND parent8.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent7.parent_id)
+WHERE template.template_type = {(int) TemplateTypes.Scss}
+AND template.is_scss_include_template = 1
+AND template.removed = 0
+AND otherVersion.id IS NULL
+AND template.template_data IS NOT NULL
+AND (?rootId = 0 OR ?rootId IN (parent8.template_id, parent7.template_id, parent6.template_id, parent5.template_id, parent4.template_id, parent3.template_id, parent2.template_id, parent1.template_id))
+ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering, parent4.ordering, parent3.ordering, parent2.ordering, parent1.ordering, template.ordering";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             foreach (DataRow dataRow in dataTable.Rows)
             {
@@ -1072,63 +1096,65 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             var result = new List<TemplateSettingsModel>();
 
             clientDatabaseConnection.AddParameter("rootId", scssRootId);
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT
-                                                                            template.template_id, 
-                                                                            template.parent_id, 
-                                                                            template.template_type, 
-                                                                            template.template_name, 
-                                                                            template.template_data, 
-                                                                            template.version, 
-                                                                            template.changed_on, 
-                                                                            template.changed_by, 
-                                                                            template.use_cache,   
-                                                                            template.cache_minutes, 
-                                                                            template.cache_location, 
-                                                                            template.cache_regex, 
-                                                                            template.handle_request, 
-                                                                            template.handle_session, 
-                                                                            template.handle_objects, 
-                                                                            template.handle_standards, 
-                                                                            template.handle_translations, 
-                                                                            template.handle_dynamic_content, 
-                                                                            template.handle_logic_blocks, 
-                                                                            template.handle_mutators, 
-                                                                            template.login_required, 
-                                                                            template.login_role, 
-                                                                            template.login_redirect_url, 
-                                                                            template.linked_templates, 
-                                                                            template.ordering,
-                                                                            template.insert_mode,
-                                                                            template.load_always,
-                                                                            template.disable_minifier,
-                                                                            template.url_regex,
-                                                                            template.external_files,
-                                                                            template.grouping_create_object_instead_of_array,
-                                                                            template.grouping_prefix,
-                                                                            template.grouping_key,
-                                                                            template.grouping_key_column_name,
-                                                                            template.grouping_value_column_name,
-                                                                            template.is_scss_include_template,
-                                                                            template.use_in_wiser_html_editors,
-                                                                            template.pre_load_query,
-                                                                            template.return_not_found_when_pre_load_query_has_no_data
-                                                                        FROM {WiserTableNames.WiserTemplate} AS template
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent2 ON parent2.template_id = parent1.parent_id AND parent2.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent1.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent3 ON parent3.template_id = parent2.parent_id AND parent3.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent2.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent4 ON parent4.template_id = parent3.parent_id AND parent4.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent3.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent5 ON parent5.template_id = parent4.parent_id AND parent5.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent4.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent6 ON parent6.template_id = parent5.parent_id AND parent6.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent5.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent7 ON parent7.template_id = parent6.parent_id AND parent7.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent6.parent_id)
-                                                                        LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = parent7.parent_id AND parent8.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent7.parent_id)
-                                                                        WHERE template.template_type = {(int)TemplateTypes.Scss}
-                                                                        AND template.is_scss_include_template = 0
-                                                                        AND template.removed = 0
-                                                                        AND otherVersion.id IS NULL
-                                                                        AND template.template_data IS NOT NULL
-                                                                        AND (?rootId = 0 OR ?rootId IN (parent8.template_id, parent7.template_id, parent6.template_id, parent5.template_id, parent4.template_id, parent3.template_id, parent2.template_id, parent1.template_id))
-                                                                        ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering, parent4.ordering, parent3.ordering, parent2.ordering, parent1.ordering, template.ordering");
+
+            var query = $@"SELECT
+    template.template_id, 
+    template.parent_id, 
+    template.template_type, 
+    template.template_name, 
+    template.template_data, 
+    template.version, 
+    template.changed_on, 
+    template.changed_by, 
+    template.use_cache,   
+    template.cache_minutes, 
+    template.cache_location, 
+    template.cache_regex, 
+    template.handle_request, 
+    template.handle_session, 
+    template.handle_objects, 
+    template.handle_standards, 
+    template.handle_translations, 
+    template.handle_dynamic_content, 
+    template.handle_logic_blocks, 
+    template.handle_mutators, 
+    template.login_required, 
+    template.login_role, 
+    template.login_redirect_url, 
+    template.linked_templates, 
+    template.ordering,
+    template.insert_mode,
+    template.load_always,
+    template.disable_minifier,
+    template.url_regex,
+    template.external_files,
+    template.grouping_create_object_instead_of_array,
+    template.grouping_prefix,
+    template.grouping_key,
+    template.grouping_key_column_name,
+    template.grouping_value_column_name,
+    template.is_scss_include_template,
+    template.use_in_wiser_html_editors,
+    template.pre_load_query,
+    template.return_not_found_when_pre_load_query_has_no_data
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent2 ON parent2.template_id = parent1.parent_id AND parent2.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent1.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent3 ON parent3.template_id = parent2.parent_id AND parent3.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent2.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent4 ON parent4.template_id = parent3.parent_id AND parent4.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent3.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent5 ON parent5.template_id = parent4.parent_id AND parent5.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent4.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent6 ON parent6.template_id = parent5.parent_id AND parent6.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent5.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent7 ON parent7.template_id = parent6.parent_id AND parent7.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent6.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = parent7.parent_id AND parent8.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent7.parent_id)
+WHERE template.template_type = {(int) TemplateTypes.Scss}
+AND template.is_scss_include_template = 0
+AND template.removed = 0
+AND otherVersion.id IS NULL
+AND template.template_data IS NOT NULL
+AND (?rootId = 0 OR ?rootId IN (parent8.template_id, parent7.template_id, parent6.template_id, parent5.template_id, parent4.template_id, parent3.template_id, parent2.template_id, parent1.template_id))
+ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering, parent4.ordering, parent3.ordering, parent2.ordering, parent1.ordering, template.ordering";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             foreach (DataRow dataRow in dataTable.Rows)
             {
@@ -1198,16 +1224,16 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
 
             // First get some information that we need.
             var query = $@"SELECT
-                            parent_id,
-                            template_name,
-                            template_type,
-                            ordering,
-                            version,
-                            removed
-                        FROM {WiserTableNames.WiserTemplate}
-                        WHERE template_id = ?templateId
-                        ORDER BY version DESC
-                        LIMIT 1";
+    parent_id,
+    template_name,
+    template_type,
+    ordering,
+    version,
+    removed
+FROM {WiserTableNames.WiserTemplate}
+WHERE template_id = ?templateId
+ORDER BY version DESC
+LIMIT 1";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             if (dataTable.Rows.Count == 0 || Convert.ToBoolean(dataTable.Rows[0]["removed"]))
             {
@@ -1226,28 +1252,28 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             clientDatabaseConnection.AddParameter("version", dataTable.Rows[0].Field<int>("version") + 1);
 
             query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, changed_on, changed_by)
-                    VALUES (?templateId, ?parentId, ?name, ?type, ?ordering, ?version, 1, ?now, ?username)";
+VALUES (?templateId, ?parentId, ?name, ?type, ?ordering, ?version, 1, ?now, ?username)";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             if (alsoDeleteChildren)
             {
                 // Delete all children of the template by also adding new versions with removed = 1 for them.
                 query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, changed_on, changed_by)
-                        SELECT 
-                            template.template_id,
-                            template.parent_id,
-                            template.template_name,
-                            template.template_type,
-                            template.ordering,
-                            template.version + 1,
-                            1,
-                            ?now,
-                            ?username
-                        FROM {WiserTableNames.WiserTemplate} AS template
-                        LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-                        WHERE template.parent_id = ?templateId
-                        AND template.removed = 0
-                        AND otherVersion.id IS NULL";
+SELECT 
+    template.template_id,
+    template.parent_id,
+    template.template_name,
+    template.template_type,
+    template.ordering,
+    template.version + 1,
+    1,
+    ?now,
+    ?username
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+WHERE template.parent_id = ?templateId
+AND template.removed = 0
+AND otherVersion.id IS NULL";
                 await clientDatabaseConnection.ExecuteAsync(query);
             }
 
@@ -1277,6 +1303,19 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             }
         }
 
+        /// <inheritdoc />
+        public async Task DeployToBranchAsync(List<int> templateIds, string branchDatabaseName)
+        {
+            // Branches always exist within the same database cluster, so we don't need to make a new connection for it.
+            var query = $@"INSERT INTO `{branchDatabaseName}`.{WiserTableNames.WiserTemplate}
+SELECT template.*
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+WHERE template.template_id IN ({String.Join(", ", templateIds)})
+AND otherVersion.id IS NULL";
+            await clientDatabaseConnection.ExecuteAsync(query);
+        }
+
         /// <summary>
         /// Retrieves database views that are not managed via the templates module yet, and returns them as <see cref="TemplateTreeViewDao"/> items.
         /// </summary>
@@ -1299,8 +1338,8 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             }
 
             var query = $@"SELECT TABLE_NAME
-                FROM information_schema.VIEWS
-                WHERE TABLE_SCHEMA = DATABASE() {excludeStatement}";
+FROM information_schema.VIEWS
+WHERE TABLE_SCHEMA = DATABASE() {excludeStatement}";
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             return dataTable.Rows.Cast<DataRow>()
@@ -1336,8 +1375,8 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             }
 
             var query = $@"SELECT ROUTINE_NAME
-                FROM information_schema.ROUTINES
-                WHERE ROUTINE_SCHEMA = DATABASE() {excludeStatement}";
+FROM information_schema.ROUTINES
+WHERE ROUTINE_SCHEMA = DATABASE() {excludeStatement}";
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             return dataTable.Rows.Cast<DataRow>()
@@ -1373,8 +1412,8 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             }
 
             var query = $@"SELECT TRIGGER_NAME
-                FROM information_schema.TRIGGERS
-                WHERE TRIGGER_SCHEMA = DATABASE() {excludeStatement}";
+FROM information_schema.TRIGGERS
+WHERE TRIGGER_SCHEMA = DATABASE() {excludeStatement}";
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             return dataTable.Rows.Cast<DataRow>()

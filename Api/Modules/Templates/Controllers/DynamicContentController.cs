@@ -192,5 +192,18 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await dynamicContentService.GetLinkableDynamicContentAsync(templateId)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Deploy one or more dynamic contents to a branch.
+        /// </summary>
+        /// <param name="contentId">The ID of the dynamic component to deploy.</param>
+        /// <param name="branchId">The ID of the branch to deploy the template to.</param>
+        [HttpPost]
+        [Route("{contentId:int}/deploy-to-branch/{branchId:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeployToBranchAsync(int contentId, int branchId)
+        {
+            return (await dynamicContentService.DeployToBranchAsync((ClaimsIdentity) User.Identity, new List<int> { contentId }, branchId)).GetHttpResponseMessage();
+        }
     }
 }
