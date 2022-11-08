@@ -63,6 +63,12 @@ public class DashboardController : ControllerBase
     {
         return (await dashboardService.SetAisServicePauseStateAsync((ClaimsIdentity) User.Identity, id, state)).GetHttpResponseMessage();
     }
+    
+    [HttpPut, Route("services/{id:int}/extra-run/{state:bool}")]
+    public async Task<IActionResult> ExtraRunServiceAsync(int id, bool state)
+    {
+        return (await dashboardService.SetAisServiceExtraRunStateAsync((ClaimsIdentity) User.Identity, id, state)).GetHttpResponseMessage();
+    }
 
     /// <summary>
     /// Get the logs from a specific service.
