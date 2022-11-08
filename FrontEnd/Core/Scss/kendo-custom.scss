@@ -195,6 +195,8 @@
             display: block;
             line-height: 42px;
             padding-left: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     }
     
@@ -202,6 +204,7 @@
         height: 40px;
         line-height: normal;
         vertical-align: top;
+        margin: 0;
         padding: 8px;
         cursor: pointer;
         background-color: $ultra-lt-color;
