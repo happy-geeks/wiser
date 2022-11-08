@@ -4,9 +4,6 @@
 //// MIXINS
 @import '../../../Core/Scss/mixin/mixin';
 
-//// BASE
-@import "../../Base/scss/base.scss";
-
 /**
  *  Common styles
  **/
@@ -69,21 +66,6 @@ ins, a {
     display: block;
 }
 
-.k-list {
-    overflow-y: auto;
-    
-    ul {
-        li {
-            cursor: pointer;
-            padding: 0 8px;
-            
-            &:hover {
-                background-color: var(--light-color);
-            }
-        }
-    }
-}
-
 /**
  *  Header bar
  **/
@@ -100,24 +82,9 @@ ins, a {
         .formview {
             display: flex;
             flex-direction: row;
-            flex-wrap: nowrap;
-            
-            &.full {
-                .item {
-                    width: auto;
-                    min-width: auto;
-                    max-width: none;
-                    
-                    &.drop-down {
-                        min-width: 25%;
-                    }
-                }
-            }
         }
 
         .item {
-            background-color: $white-color;
-            padding: 0;
             padding-right: 10px;
 
             .flex-container {
@@ -129,26 +96,7 @@ ins, a {
                     font-weight: 500;
                     white-space: nowrap;
                     margin-right: 12px;
-                    position: relative;
-                    left: auto;
-                    transform: none;
-                    text-overflow: unset;
-                    top: auto;
-                    overflow: unset;
                 }
-
-                > .k-dropdownlist {
-                    display: flex;
-
-                    .k-input-inner {
-                        padding: 4px 8px;
-                        flex-grow: 1;
-                    }
-                }
-                
-                .k-button {
-                    padding: 0;
-                } 
             }
 
             &.actions {
@@ -171,13 +119,6 @@ ins, a {
                         font-size: 24px;
                     }
                 }
-            }
-            
-            .k-floating-label-container {
-                flex-direction: row-reverse;
-                flex-wrap: nowrap;
-                align-items: center;
-                padding: 0;
             }
         }
 
@@ -330,31 +271,18 @@ ins, a {
         box-sizing: border-box;
     }
 
-    .k-close-button,
-    .k-refresh-button {
+    .k-close-button {
         background-color: $white-color;
         box-shadow: none;
         font-size: 14px;
         line-height: 1.42857143;
         position: absolute;
+        right: 0;
         top: auto;
         bottom: 100%;
         margin: 5px;
         padding: 4px;
         z-index: 10;
-    }
-    
-    .k-close-button {
-        right: 0;
-    }
-    
-    .k-refresh-button {
-        right: 47px;
-
-        .k-i-refresh:before {
-            font-size: 14px;
-            content: "\e103";
-        }
     }
 
     .k-button-icon {
@@ -662,11 +590,10 @@ progress {
                 height: 24px;
                 width: 24px;
                 opacity: 1;
-            }
 
-            .wiser-icon {
-                height: 20px;
-                font-size: 20px;
+                .inactive-action {
+                    opacity: 0.5;
+                }
             }
         }
     }
