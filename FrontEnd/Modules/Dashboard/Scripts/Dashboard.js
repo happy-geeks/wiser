@@ -14,6 +14,49 @@ const moduleSettings = {
 };
 
 ((jQuery, moduleSettings) => {
+    const defaultLayoutSettings = Object.freeze([
+        {
+            tileId: "dataChart",
+            colSpan: 7,
+            rowSpan: 4
+        },
+        {
+            tileId: "usersChart",
+            colSpan: 5,
+            rowSpan: 4
+        },
+        {
+            tileId: "subscription",
+            colSpan: 7,
+            rowSpan: 2
+        },
+        {
+            tileId: "updateLog",
+            colSpan: 5,
+            rowSpan: 2
+        },
+        {
+            tileId: "services",
+            colSpan: 12,
+            rowSpan: 2
+        },
+        {
+            tileId: "entityData",
+            colSpan: 4,
+            rowSpan: 2
+        },
+        {
+            tileId: "taskAlerts",
+            colSpan: 4,
+            rowSpan: 2
+        },
+        {
+            tileId: "dataSelector",
+            colSpan: 4,
+            rowSpan: 2
+        }
+    ]);
+
     class Dashboard {
         constructor(settings) {
             kendo.culture("nl-NL");
@@ -112,35 +155,54 @@ const moduleSettings = {
         }
 
         setBindings() {
-            const itemsTypeFilterButtons = Array.from(document.getElementById("itemsTypeFilterButtons").querySelectorAll("button"));
-            itemsTypeFilterButtons.forEach((button) => {
-                button.addEventListener("click", (event) => {
-                    itemsTypeFilterButtons.filter((btn) => btn !== event.currentTarget).forEach((btn) => btn.classList.remove("selected"));
-                    event.currentTarget.classList.add("selected");
-
-                    this.updateItemsDataChart();
+            document.getElementById("editSub").querySelectorAll("input[type='checkbox'][data-toggle-tile]").forEach((checkbox) => {
+                checkbox.addEventListener("change", (event) => {
+                    if (event.currentTarget.checked) {
+                        this.addTile(checkbox.dataset.toggleTile);
+                    } else {
+                        this.removeTile(checkbox.dataset.toggleTile);
+                    }
                 });
             });
 
-            const userDataTypeFilterButtons = Array.from(document.getElementById("userDataTypeFilterButtons").querySelectorAll("button"));
-            userDataTypeFilterButtons.forEach((button) => {
-                button.addEventListener("click", (event) => {
-                    userDataTypeFilterButtons.filter((btn) => btn !== event.currentTarget).forEach((btn) => btn.classList.remove("selected"));
-                    event.currentTarget.classList.add("selected");
+            const dataChartElement = document.getElementById("data-chart");
+            if (dataChartElement) {
+                const itemsTypeFilterButtons = Array.from(document.getElementById("itemsTypeFilterButtons").querySelectorAll("button"));
+                itemsTypeFilterButtons.forEach((button) => {
+                    button.addEventListener("click", (event) => {
+                        itemsTypeFilterButtons.filter((btn) => btn !== event.currentTarget).forEach((btn) => btn.classList.remove("selected"));
+                        event.currentTarget.classList.add("selected");
 
-                    this.updateUserDataChart();
+                        this.updateItemsDataChart();
+                    });
                 });
-            });
+            }
 
-            const entityDataTypeFilterButtons = Array.from(document.getElementById("entityDataTypeFilterButtons").querySelectorAll("button"));
-            entityDataTypeFilterButtons.forEach((button) => {
-                button.addEventListener("click", (event) => {
-                    entityDataTypeFilterButtons.filter((btn) => btn !== event.currentTarget).forEach((btn) => btn.classList.remove("selected"));
-                    event.currentTarget.classList.add("selected");
+            const usersChartElement = document.getElementById("users-chart");
+            if (usersChartElement) {
+                const userDataTypeFilterButtons = Array.from(document.getElementById("userDataTypeFilterButtons").querySelectorAll("button"));
+                userDataTypeFilterButtons.forEach((button) => {
+                    button.addEventListener("click", (event) => {
+                        userDataTypeFilterButtons.filter((btn) => btn !== event.currentTarget).forEach((btn) => btn.classList.remove("selected"));
+                        event.currentTarget.classList.add("selected");
 
-                    this.updateEntityUsageData();
+                        this.updateUserDataChart();
+                    });
                 });
-            });
+            }
+
+            const entityDataElement = document.getElementById("entityData");
+            if (entityDataElement) {
+                const entityDataTypeFilterButtons = Array.from(document.getElementById("entityDataTypeFilterButtons").querySelectorAll("button"));
+                entityDataTypeFilterButtons.forEach((button) => {
+                    button.addEventListener("click", (event) => {
+                        entityDataTypeFilterButtons.filter((btn) => btn !== event.currentTarget).forEach((btn) => btn.classList.remove("selected"));
+                        event.currentTarget.classList.add("selected");
+
+                        this.updateEntityUsageData();
+                    });
+                });
+            }
 
             $("#periodFilter").getKendoDropDownList().bind("change", this.onPeriodFilterChange.bind(this));
 
@@ -172,7 +234,7 @@ const moduleSettings = {
             });
         }
 
-        initializeKendoElements() {
+        async initializeKendoElements() {
             // create ComboBox from select HTML element
             $(".combo-select").kendoComboBox();
 
@@ -189,74 +251,42 @@ const moduleSettings = {
                 format: "dd/MM/yyyy"
             });
 
+            // Retrieve layout settings.
+            const layoutJson = await Wiser.api({
+                url: `${this.settings.wiserApiRoot}users/dashboard-settings`,
+                method: "GET"
+            });
+
+            let layoutSettings;
+            try {
+                layoutSettings = JSON.parse(layoutJson);
+
+                if (!Array.isArray(layoutSettings) || layoutSettings.length === 0) {
+                    layoutSettings = [...defaultLayoutSettings];
+                }
+            } catch (e) {
+                layoutSettings = [...defaultLayoutSettings];
+            }
+
+            // Build the containers for the Kendo TileLayout widget.
+            const containers = [];
+            layoutSettings.forEach((tileSettings) => {
+                document.getElementById(`${tileSettings.tileId}Checkbox`).checked = true;
+
+                const tileTemplateSettings = Dashboard.GetTileTemplateSettingsByTileId(tileSettings.tileId);
+                containers.push({
+                    colSpan: tileSettings.colSpan,
+                    rowSpan: tileSettings.rowSpan,
+                    header: {
+                        text: tileTemplateSettings.headerText
+                    },
+                    bodyTemplate: kendo.template($(`#${tileTemplateSettings.bodyTemplateId}`).html())
+                });
+            });
+
             // create Tiles
             this.tileLayout = $("#tiles").kendoTileLayout({
-                containers: [
-                    {
-                        colSpan: 7,
-                        rowSpan: 4,
-                        header: {
-                            text: "Data"
-                        },
-                        bodyTemplate: kendo.template($("#data-chart-template").html())
-                    },
-                    {
-                        colSpan: 5,
-                        rowSpan: 4,
-                        header: {
-                            text: "Gebruikers"
-                        },
-                        bodyTemplate: kendo.template($("#users-chart-template").html())
-                    },
-                    {
-                        colSpan: 7,
-                        rowSpan: 2,
-                        header: {
-                            text: "Abonnement"
-                        },
-                        bodyTemplate: kendo.template($("#subscriptions-chart-template").html())
-                    },
-                    {
-                        colSpan: 5,
-                        rowSpan: 2,
-                        header: {
-                            text: "Update log"
-                        },
-                        bodyTemplate: kendo.template($("#update-log").html())
-                    },
-                    {
-                        colSpan: 12,
-                        rowSpan: 2,
-                        header: {
-                            text: "Services"
-                        },
-                        bodyTemplate: kendo.template($("#services-grid-template").html())
-                    },
-                    {
-                        colSpan: 4,
-                        rowSpan: 2,
-                        header: {
-                            text: ""
-                        },
-                        bodyTemplate: kendo.template($("#numbers").html())
-                    },
-                    {
-                        colSpan: 4,
-                        rowSpan: 2,
-                        header: {
-                            text: ""
-                        },
-                        bodyTemplate: kendo.template($("#status-chart-template").html())
-                    },
-                    {
-                        colSpan: 4,
-                        rowSpan: 2,
-                        header: {
-                            text: ""
-                        },
-                        bodyTemplate: kendo.template($("#dataselector-rate").html())
-                    }
-                ],
+                containers: containers,
                 columns: 12,
                 columnsWidth: 300,
                 gap: {
@@ -269,6 +299,8 @@ const moduleSettings = {
                 resize: this.onTileLayoutResize.bind(this),
                 reorder: this.onTileLayoutReorder.bind(this)
             }).data("kendoTileLayout");
+
+            this.tileLayout.element.on("click", ".k-close-button", this.onTileClose.bind(this));
 
             // create Column Chart
             $("#data-chart").kendoChart({
@@ -383,104 +415,107 @@ const moduleSettings = {
                 }
             });
 
-            this.servicesGrid = $("#services-grid").kendoGrid({
-                columns: [
-                    {
-                        field: "id",
-                        hidden: true
-                    },
-                    {
-                        title: "Configuratie",
-                        field: "configuration"
-                    },
-                    {
-                        title: "Actie",
-                        field: "action",
-                        template: "#if(data.action != null) {# #: data.action # #} else {# #: data.timeId # #}#"
-                    },
-                    {
-                        title: "Schema",
-                        field: "scheme",
-                        values: [
-                            { text: "Doorlopend", value: "continuous" },
-                            { text: "Dagelijks", value: "daily" },
-                            { text: "Wekelijks", value: "weekly" },
-                            { text: "Maandelijks", value: "monthly" }
-                        ]
-                    },
-                    {
-                        title: "Laatste run",
-                        field: "lastRun",
-                        format: "{0:dd-MM-yyyy HH:mm}"
-                    },
-                    {
-                        title: "Laatste tijd",
-                        field: "runTime",
-                        template: "#=kendo.toString(runTime, '0.000')# minuten"
-                    },
-                    {
-                        title: "Status",
-                        field: "state",
-                        values: [
-                            { text: "Actief", value: "active" },
-                            { text: "Succesvol", value: "success" },
-                            { text: "Waarschuwing", value: "warning" },
-                            { text: "Mislukt", value: "failed" },
-                            { text: "Gepauzeerd", value: "paused" },
-                            { text: "Gestopt", value: "stopped" },
-                            { text: "Gecrasht", value: "crashed" },
-                            { text: "Bezig", value: "running" }
-                        ]
-                    },
-                    {
-                        title: "Volgende run",
-                        field: "nextRun",
-                        format: "{0:dd-MM-yyyy HH:mm}"
-                    },
-                    {
-                        title: "Beheer",
-                        command: [
-                            {
-                                name: "start",
-                                text: "",
-                                iconClass: "extra-run-button-icon k-icon k-i-play",
-                                click: this.toggleExtraRunService.bind(this)
-                            },
-                            {
-                                name: "pause",
-                                text: "",
-                                iconClass: "pause-button-icon wiser-icon icon-stopwatch-pauze",
-                                click: this.togglePauseService.bind(this)
-                            },
-                            {
-                                name: "logs",
-                                text: "",
-                                iconClass: "k-icon k-i-file-txt",
-                                click: this.openServiceLogs.bind(this)
+            const servicesGridElement = document.getElementById("services-grid");
+            if (servicesGridElement) {
+                this.servicesGrid = $(servicesGridElement).kendoGrid({
+                    columns: [
+                        {
+                            field: "id",
+                            hidden: true
+                        },
+                        {
+                            title: "Configuratie",
+                            field: "configuration"
+                        },
+                        {
+                            title: "Actie",
+                            field: "action",
+                            template: "#if(data.action != null) {# #: data.action # #} else {# #: data.timeId # #}#"
+                        },
+                        {
+                            title: "Schema",
+                            field: "scheme",
+                            values: [
+                                { text: "Doorlopend", value: "continuous" },
+                                { text: "Dagelijks", value: "daily" },
+                                { text: "Wekelijks", value: "weekly" },
+                                { text: "Maandelijks", value: "monthly" }
+                            ]
+                        },
+                        {
+                            title: "Laatste run",
+                            field: "lastRun",
+                            format: "{0:dd-MM-yyyy HH:mm}"
+                        },
+                        {
+                            title: "Laatste tijd",
+                            field: "runTime",
+                            template: "#=kendo.toString(runTime, '0.000')# minuten"
+                        },
+                        {
+                            title: "Status",
+                            field: "state",
+                            values: [
+                                { text: "Actief", value: "active" },
+                                { text: "Succesvol", value: "success" },
+                                { text: "Waarschuwing", value: "warning" },
+                                { text: "Mislukt", value: "failed" },
+                                { text: "Gepauzeerd", value: "paused" },
+                                { text: "Gestopt", value: "stopped" },
+                                { text: "Gecrasht", value: "crashed" },
+                                { text: "Bezig", value: "running" }
+                            ]
+                        },
+                        {
+                            title: "Volgende run",
+                            field: "nextRun",
+                            format: "{0:dd-MM-yyyy HH:mm}"
+                        },
+                        {
+                            title: "Beheer",
+                            command: [
+                                {
+                                    name: "start",
+                                    text: "",
+                                    iconClass: "extra-run-button-icon k-icon k-i-play",
+                                    click: this.toggleExtraRunService.bind(this)
+                                },
+                                {
+                                    name: "pause",
+                                    text: "",
+                                    iconClass: "pause-button-icon wiser-icon icon-stopwatch-pauze",
+                                    click: this.togglePauseService.bind(this)
+                                },
+                                {
+                                    name: "logs",
+                                    text: "",
+                                    iconClass: "k-icon k-i-file-txt",
+                                    click: this.openServiceLogs.bind(this)
+                                }
+                            ],
+                            attributes: {
+                                "class": "admin"
                             }
-                        ],
-                        attributes: {
-                            "class": "admin"
+                        },
+                        {
+                            field: "paused",
+                            hidden: true,
+                            attributes: {
+                                "class": "paused-state"
+                            }
+                        },
+                        {
+                            field: "extraRun",
+                            hidden: true,
+                            attributes: {
+                                "class": "extra-run-state"
+                            }
                         }
-                    },
-                    {
-                        field: "paused",
-                        hidden: true,
-                        attributes: {
-                            "class": "paused-state"
-                        }
-                    },
-                    {
-                        field: "extraRun",
-                        hidden: true,
-                        attributes: {
-                            "class": "extra-run-state"
-                        }
-                    }
-                ],
-                dataBound: this.setServiceState
-            }).data("kendoGrid");
-            this.servicesGrid.scrollables[1].classList.add("fixed-table");
+                    ],
+                    dataBound: this.setServiceState
+                }).data("kendoGrid");
+                this.servicesGrid.scrollables[1].classList.add("fixed-table");
+            }
 
             const serviceWindowOptions = {
                 actions: ["Close"],
@@ -617,10 +652,13 @@ const moduleSettings = {
         }
 
         updateItemsDataChart() {
+            const dataChartElement = document.getElementById("data-chart");
+            if (!dataChartElement) return;
+
             const filter = document.getElementById("itemsTypeFilterButtons").querySelector("button.selected").dataset.filter;
             const categories = this.itemsData[filter].map((e) => e.entityName);
 
-            const dataChart = $("#data-chart").getKendoChart();
+            const dataChart = $(dataChartElement).getKendoChart();
             dataChart.setOptions({
                 categoryAxis: {
                     categories: categories
@@ -630,14 +668,20 @@ const moduleSettings = {
         }
 
         updateUserDataChart() {
+            const usersChartElement = document.getElementById("users-chart");
+            if (!usersChartElement) return;
+
             const filter = document.getElementById("userDataTypeFilterButtons").querySelector("button.selected").dataset.filter;
-            const usersChart = $("#users-chart").getKendoChart();
+            const usersChart = $(usersChartElement).getKendoChart();
             usersChart.findSeriesByIndex(0).data(this.userData[filter]);
         }
 
         updateEntityUsageData() {
+            const entityDataElement = document.getElementById("entityData");
+            if (!entityDataElement) return;
+
             const filter = document.getElementById("entityDataTypeFilterButtons").querySelector("button.selected").dataset.filter;
-            $("#entityData .number-item").remove();
+            $(entityDataElement).find(".number-item").remove();
 
             this.entityData[filter].forEach((entity) => {
                 const numberItem = $($("#entity-data").html());
@@ -654,7 +698,7 @@ const moduleSettings = {
                     });
                 });
 
-                $("#entityData div.btn-row").before(numberItem);
+                $(entityDataElement).find("div.btn-row").before(numberItem);
             });
         }
 
@@ -663,7 +707,10 @@ const moduleSettings = {
          * @param {Array} data Array with the chart data. Will contain objects with a category property and a value property.
          */
         updateOpenTaskAlertsChart(data) {
-            const taskAlertsChart = $("#status-chart").getKendoChart();
+            const statusChartElement = document.getElementById("status-chart");
+            if (!statusChartElement) return;
+
+            const taskAlertsChart = $(statusChartElement).getKendoChart();
             taskAlertsChart.findSeriesByIndex(0).data(data);
 
             let totalOpenTaskAlerts = 0;
@@ -672,6 +719,8 @@ const moduleSettings = {
         }
 
         async updateServices() {
+            if (!this.servicesGrid) return;
+
             const dataSource = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dashboard/services`
             });
@@ -923,7 +972,10 @@ const moduleSettings = {
             }
         }
 
-        onTileLayoutReorder(event) {
+        /**
+         * When a tile gets placed in a new location.
+         */
+        async onTileLayoutReorder(event) {
             const rowSpan = event.container.css("grid-column-end");
             const chart = event.container.find(".k-chart").data("kendoChart");
             // hide chart labels when the space is limited
@@ -940,10 +992,23 @@ const moduleSettings = {
             // for widgets that do not auto resize
             // https://docs.telerik.com/kendo-ui/styles-and-layout/using-kendo-in-responsive-web-pages
             kendo.resize(event.container, true);
+
+            await this.saveUserSettings();
         }
 
-        onTileLayoutResize(event) {
-            //
+        /**
+         * When a tile gets resized.
+         */
+        async onTileLayoutResize() {
+            await this.saveUserSettings();
+        }
+
+        /**
+         * When a tile gets closed (the close button click).
+         */
+        async onTileClose(event) {
+            console.log("event.currentTarget", event.currentTarget);
+            await this.removeTile(event.currentTarget.closest(".k-tilelayout-item").querySelector("[data-tile]").dataset.tile);
         }
 
         /**
@@ -969,7 +1034,110 @@ const moduleSettings = {
                 };
             });
 
-            console.log("data to save")
+            const saveResult = await Wiser.api({
+                url: `${this.settings.wiserApiRoot}users/dashboard-settings`,
+                method: "POST",
+                contentType: "application/json",
+                dataType: "json",
+                data: JSON.stringify(data)
+            });
+
+            if (!saveResult) {
+                Wiser.alert({
+                    title: "Opslaan mislukt",
+                    content: "Het opslaan van het dashboard layout is mislukt."
+                });
+            }
+        }
+
+        async addTile(tileId) {
+            const defaultTileSettings = defaultLayoutSettings.find((tile) => tile.tileId === tileId);
+            if (!defaultTileSettings) return;
+
+            const tileTemplateSettings = Dashboard.GetTileTemplateSettingsByTileId(tileId);
+            const item = {
+                colSpan: defaultTileSettings.colSpan,
+                rowSpan: defaultTileSettings.rowSpan,
+                header: {
+                    text: tileTemplateSettings.headerText
+                },
+                bodyTemplate: kendo.template($(`#${tileTemplateSettings.bodyTemplateId}`).html())
+            };
+
+            const items = this.tileLayout.items;
+            items.push(item);
+            this.tileLayout.setOptions({ containers: items });
+
+            await this.saveUserSettings();
+        }
+
+        async removeTile(tileId) {
+            const itemId = this.tileLayout.element.find(`[data-tile='${tileId}']`).closest(".k-tilelayout-item").attr("id");
+            const mainItems = this.tileLayout.items;
+            const item = this.tileLayout.itemsMap[itemId];
+
+            mainItems.splice(mainItems.indexOf(item), 1);
+
+            for (let i = 0; i < mainItems.length; i++) {
+                if (mainItems[i]) {
+                    mainItems[i].order = i;
+                }
+            }
+
+            this.tileLayout.setOptions({ containers: mainItems });
+
+            await this.saveUserSettings();
+        }
+
+        /**
+         * Retrieves the header text and template ID for the body template for a specific tile.
+         */
+        static GetTileTemplateSettingsByTileId(tileId) {
+            if (!tileId) return null;
+
+            let headerText, bodyTemplateId;
+
+            switch (tileId) {
+                case "dataChart":
+                    headerText = "Data";
+                    bodyTemplateId = "data-chart-template";
+                    break;
+                case "usersChart":
+                    headerText = "Gebruikers";
+                    bodyTemplateId = "users-chart-template";
+                    break;
+                case "subscription":
+                    headerText = "Abonnement";
+                    bodyTemplateId = "subscriptions-chart-template";
+                    break;
+                case "updateLog":
+                    headerText = "Update log";
+                    bodyTemplateId = "update-log";
+                    break;
+                case "services":
+                    headerText = "Services";
+                    bodyTemplateId = "services-grid-template";
+                    break;
+                case "entityData":
+                    headerText = "Entiteiten";
+                    bodyTemplateId = "numbers";
+                    break;
+                case "taskAlerts":
+                    headerText = "Agenderingen";
+                    bodyTemplateId = "status-chart-template";
+                    break;
+                case "dataSelector":
+                    headerText = "Dataselector";
+                    bodyTemplateId = "dataselector-rate";
+                    break;
+                default:
+                    throw new RangeError(`Tile iD "${tileId}" is not recognized as a valid tile ID!`);
+            }
+
+            return {
+                headerText: headerText,
+                bodyTemplateId: bodyTemplateId
+            };
         }
     }
 

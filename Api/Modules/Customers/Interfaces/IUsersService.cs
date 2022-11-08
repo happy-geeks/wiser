@@ -188,5 +188,20 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="includePermissions">Optional: Whether to include all permissions that each role has. Default is <see langword="false"/>.</param>
         /// <returns>A list of <see cref="RoleModel"/> with all available roles that users can have.</returns>
         Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false);
+
+        /// <summary>
+        /// Gets the layout data of the dashboard of the currently logged in user.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <returns>A JSON string representing the layout data.</returns>
+        Task<ServiceResult<string>> GetDashboardSettingsAsync(ClaimsIdentity identity);
+
+        /// <summary>
+        /// Saves the layout data of the dashboard to the currently logged in user.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="settings">The JSON that represents the dashboard layout data.</param>
+        /// <returns>A boolean whether the saving of the data was successful.</returns>
+        Task<ServiceResult<bool>> SaveDashboardSettingsAsync(ClaimsIdentity identity, JToken settings);
     }
 }

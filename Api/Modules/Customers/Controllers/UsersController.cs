@@ -183,5 +183,26 @@ namespace Api.Modules.Customers.Controllers
         {
             return (await usersService.GetRolesAsync(includePermissions)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Will attempt to retrieve the saved layout data for the authenticated user.
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet, Route("dashboard-settings")]
+        public async Task<IActionResult> GetDashboardSettingsAsync()
+        {
+            return (await usersService.GetDashboardSettingsAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Will attempt to save the given layout data to the authenticated user.
+        /// </summary>
+        /// <param name="layoutData">A JSON object containing the layout data to save.</param>
+        /// <returns></returns>
+        [HttpPost, Route("dashboard-settings")]
+        public async Task<IActionResult> SaveDashboardSettingsAsync([FromBody] JToken layoutData)
+        {
+            return (await usersService.SaveDashboardSettingsAsync((ClaimsIdentity) User.Identity, layoutData)).GetHttpResponseMessage();
+        }
     }
 }
