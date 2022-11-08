@@ -1595,7 +1595,20 @@ const moduleSettings = {
                                         this.notification.show({message: "Vertalen is gelukt"}, "success");
                                     }).catch((error) => {
                                         console.error("An error occurred while translating an item", error);
-                                        kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                                        let errorMessage = "";
+                                        if (error.responseJSON && error.responseJSON.error) {
+                                            errorMessage = error.responseJSON.error;
+                                        } else if (error.responseText) {
+                                            errorMessage = error.responseText;
+                                        } else if (error.statusText) {
+                                            errorMessage = error.statusText;
+                                        }
+                                        
+                                        if (errorMessage) {
+                                            kendo.alert(`Er is iets fout gegaan met vertalen. De fout was:<br><pre>${errorMessage}</pre>`);
+                                        } else {
+                                            kendo.alert(`Er is iets fout gegaan met vertalen. Probeer het a.u.b. nogmaals of neem contact op.`);
+                                        }
                                     }).finally(() => {
                                         window.processing.removeProcess(process);
                                     });
