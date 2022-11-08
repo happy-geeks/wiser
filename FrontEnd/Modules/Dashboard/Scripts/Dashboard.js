@@ -24,7 +24,6 @@ const moduleSettings = {
 
             // Other.
             this.mainLoader = null;
-            this.tileLayout = null;
 
             this.itemsData = null;
             this.userData = null;
@@ -181,82 +180,73 @@ const moduleSettings = {
 
             // create DateRangePicker
             $(".daterangepicker").kendoDateRangePicker({
-                messages: {
-                    startLabel: "van",
-                    endLabel: "tot"
+                "messages": {
+                    "startLabel": "van",
+                    "endLabel": "tot"
                 },
                 culture: "nl-NL",
                 format: "dd/MM/yyyy"
             });
 
             // create Tiles
-            this.tileLayout = $("#tiles").kendoTileLayout({
-                containers: [
-                    {
-                        colSpan: 7,
-                        rowSpan: 4,
-                        header: {
-                            text: "Data"
-                        },
-                        bodyTemplate: kendo.template($("#data-chart-template").html())
+            $("#tiles").kendoTileLayout({
+                containers: [{
+                    colSpan: 7,
+                    rowSpan: 4,
+                    header: {
+                        text: "Data"
                     },
-                    {
-                        colSpan: 5,
-                        rowSpan: 4,
-                        header: {
-                            text: "Gebruikers"
-                        },
-                        bodyTemplate: kendo.template($("#users-chart-template").html())
+                    bodyTemplate: kendo.template($("#data-chart-template").html())
+                }, {
+                    colSpan: 5,
+                    rowSpan: 4,
+                    header: {
+                        text: "Gebruikers"
                     },
-                    {
-                        colSpan: 7,
-                        rowSpan: 2,
-                        header: {
-                            text: "Abonnement"
-                        },
-                        bodyTemplate: kendo.template($("#subscriptions-chart-template").html())
+                    bodyTemplate: kendo.template($("#users-chart-template").html())
+                }, {
+                    colSpan: 7,
+                    rowSpan: 2,
+                    header: {
+                        text: "Abonnement"
                     },
-                    {
-                        colSpan: 5,
-                        rowSpan: 2,
-                        header: {
-                            text: "Update log"
-                        },
-                        bodyTemplate: kendo.template($("#update-log").html())
+                    bodyTemplate: kendo.template($("#subscriptions-chart-template").html())
+                }, {
+                    colSpan: 5,
+                    rowSpan: 2,
+                    header: {
+                        text: "Update log"
                     },
-                    {
-                        colSpan: 12,
-                        rowSpan: 2,
-                        header: {
-                            text: "Services"
-                        },
-                        bodyTemplate: kendo.template($("#services-grid-template").html())
+                    bodyTemplate: kendo.template($("#update-log").html())
+                }, {
+                    colSpan: 12,
+                    rowSpan: 2,
+                    header: {
+                        text: "Services"
                     },
-                    {
-                        colSpan: 4,
-                        rowSpan: 2,
-                        header: {
-                            text: ""
-                        },
-                        bodyTemplate: kendo.template($("#numbers").html())
+                    bodyTemplate: kendo.template($("#services-grid-template").html())
+                }, {
+                    colSpan: 4,
+                    rowSpan: 2,
+                    header: {
+                        text: ""
                     },
-                    {
-                        colSpan: 4,
-                        rowSpan: 2,
-                        header: {
-                            text: ""
-                        },
-                        bodyTemplate: kendo.template($("#status-chart-template").html())
+                    bodyTemplate: kendo.template($("#numbers").html())
+                }, {
+                    colSpan: 4,
+                    rowSpan: 2,
+                    header: {
+                        text: ""
                     },
-                    {
-                        colSpan: 4,
-                        rowSpan: 2,
-                        header: {
-                            text: ""
-                        },
-                        bodyTemplate: kendo.template($("#dataselector-rate").html())
-                    }
-                ],
+                    bodyTemplate: kendo.template($("#status-chart-template").html())
+                }, {
+                    colSpan: 4,
+                    rowSpan: 2,
+                    header: {
+                        text: ""
+                    },
+                    bodyTemplate: kendo.template($("#dataselector-rate").html())
+                }],
                 columns: 12,
                 columnsWidth: 300,
                 gap: {
@@ -266,8 +256,24 @@ const moduleSettings = {
                 rowsHeight: 125,
                 reorderable: true,
                 resizable: true,
-                resize: this.onTileLayoutResize.bind(this),
-                reorder: this.onTileLayoutReorder.bind(this)
+                resize: function (e) {
+                    var rowSpan = e.container.css("grid-column-end");
+                    var chart = e.container.find(".k-chart").data("kendoChart");
+                    // hide chart labels when the space is limited
+                    if (rowSpan === "span 1" && chart) {
+                        chart.options.categoryAxis.labels.visible = false;
+                        chart.redraw();
+                    }
+                    // show chart labels when the space is enough
+                    if (rowSpan !== "span 1" && chart) {
+                        chart.options.categoryAxis.labels.visible = true;
+                        chart.redraw();
+                    }
+
+                    // for widgets that do not auto resize
+                    // https://docs.telerik.com/kendo-ui/styles-and-layout/using-kendo-in-responsive-web-pages
+                    kendo.resize(e.container, true);
+                }
             }).data("kendoTileLayout");
 
             // create Column Chart
@@ -443,13 +449,12 @@ const moduleSettings = {
                             {
                                 name: "start",
                                 text: "",
-                                iconClass: "extra-run-button-icon k-icon k-i-play",
-                                click: this.toggleExtraRunService.bind(this)
+                                iconClass: "k-icon k-i-play"
                             },
                             {
                                 name: "pause",
                                 text: "",
-                                iconClass: "pause-button-icon wiser-icon icon-stopwatch-pauze",
+                                iconClass: "k-icon k-i-pause",
                                 click: this.togglePauseService.bind(this)
                             },
                             {
@@ -465,28 +470,18 @@ const moduleSettings = {
                     },
                     {
                         field: "paused",
-                        hidden: true,
-                        attributes: {
-                            "class": "paused-state"
-                        }
+                        hidden: true
                     },
-                    {
-                        field: "extraRun",
-                        hidden: true,
-                        attributes: {
-                            "class": "extra-run-state"
-                        }
-                    }
                 ],
-                dataBound: this.setServiceState
+                dataBound: this.setServiceStateColor
             }).data("kendoGrid");
             this.servicesGrid.scrollables[1].classList.add("fixed-table");
-
+            
             const serviceWindowOptions = {
                 actions: ["Close"],
                 visible: false
             }
-
+            
             this.serviceWindow = $("#serviceLogWindow").kendoWindow(serviceWindowOptions).data("kendoWindow");
         }
 
@@ -690,31 +685,23 @@ const moduleSettings = {
             }));
         }
         
-        setServiceState(e) {
+        setServiceStateColor(e) {
             const columnIndex = this.wrapper.find("[data-field=state]").index();
 
             const rows = e.sender.tbody.children();
-            for (let i = 0; i < rows.length; i++) {
+            for(let i = 0; i < rows.length; i++) {
                 const row = $(rows[i]);
                 const dataItem = e.sender.dataItem(row);
                 const state = dataItem.get("state");
                 const cell = row.children().eq(columnIndex);
                 
                 const paused = dataItem.get("paused");
-                if (paused) {
-                    const pauseButton = rows[i].querySelector(".pause-button-icon");
-                    pauseButton.classList.remove("icon-stopwatch-pauze");
-                    pauseButton.classList.add("icon-stopwatch-start");
+                if(!paused) {
+                    rows[i].querySelector(".k-i-pause").classList.add("inactive-action")
                 }
+                console.log(paused, row, );
                 
-                const extraRun = dataItem.get("extraRun");
-                if (extraRun) {
-                    const extraRunButton = rows[i].querySelector(".extra-run-button-icon");
-                    extraRunButton.classList.remove("k-i-play");
-                    extraRunButton.classList.add("k-i-stop");
-                }
-                
-                switch (state) {
+                switch(state) {
                     case "active":
                     case "success":
                     case "running":
@@ -736,47 +723,15 @@ const moduleSettings = {
         }
         
         async togglePauseService(e) {
-            const serviceId = e.currentTarget.closest("tr").querySelector("td").innerText;
-            const currentState = e.currentTarget.closest("tr").querySelector(".paused-state").innerText === 'true';
+            const columns = e.currentTarget.closest("tr").querySelectorAll("td");
+            const serviceId = columns[0].innerText;
             
             const result = await Wiser.api({
-                url: `${this.settings.wiserApiRoot}dashboard/services/${serviceId}/pause/${!currentState}`,
+                url: `${this.settings.wiserApiRoot}dashboard/services/${serviceId}/pause/true`,
                 method: "PUT"
             });
             
-            if(result === 'WillPauseAfterRunFinished') {
-                kendo.alert("De service is momenteel nog bezig. Zodra deze klaar is zal deze automatisch gepauzeerd worden.");
-            }
-            
-            await this.updateServices();
-        }
-
-        async toggleExtraRunService(e) {
-            const serviceId = e.currentTarget.closest("tr").querySelector("td").innerText;
-            const currentState = e.currentTarget.closest("tr").querySelector(".extra-run-state").innerText === 'true';
-
-            const result = await Wiser.api({
-                url: `${this.settings.wiserApiRoot}dashboard/services/${serviceId}/extra-run/${!currentState}`,
-                method: "PUT"
-            });
-            
-            switch (result)
-            {
-                case "Marked":
-                    kendo.alert("De service zal een extra keer worden uitgevoerd. De tijd waarop dit gebeurd is afhankelijk van de instellingen van de AIS waar deze service op wordt uitgevoerd.")
-                    break;
-                case "Unmarked":
-                    kendo.alert("De service zal niet meer een extra keer worden uitgevoerd.");
-                    break;
-                case "ServiceRunning":
-                    kendo.alert("De service wordt momenteel al uitgevoerd, de huidige status kan niet worden aangepast.")
-                    return;
-                case "AisOffline":
-                    kendo.alert("De service is momenteel niet beschikbaar op een instantie van de AIS en kan daardoor niet worden uitgevoerd.")
-                    return;
-            }
-
-            await this.updateServices();
+            console.log(result);
         }
         
         async openServiceLogs(e) {
@@ -921,55 +876,6 @@ const moduleSettings = {
                 await this.updateData();
                 window.processing.removeProcess("dataUpdate");
             }
-        }
-
-        onTileLayoutReorder(event) {
-            const rowSpan = event.container.css("grid-column-end");
-            const chart = event.container.find(".k-chart").data("kendoChart");
-            // hide chart labels when the space is limited
-            if (rowSpan === "span 1" && chart) {
-                chart.options.categoryAxis.labels.visible = false;
-                chart.redraw();
-            }
-            // show chart labels when the space is enough
-            if (rowSpan !== "span 1" && chart) {
-                chart.options.categoryAxis.labels.visible = true;
-                chart.redraw();
-            }
-
-            // for widgets that do not auto resize
-            // https://docs.telerik.com/kendo-ui/styles-and-layout/using-kendo-in-responsive-web-pages
-            kendo.resize(event.container, true);
-        }
-
-        onTileLayoutResize(event) {
-            //
-        }
-
-        /**
-         * Saves the tile layout settings in the user's data.
-         */
-        async saveUserSettings() {
-            // Saves the tile layout data.
-            if (!this.tileLayout) return;
-
-            const tilesInOrder = [...this.tileLayout.items].sort((a, b) => {
-                if (a.order < b.order) return -1;
-                if (a.order > b.order) return 1;
-                return 0;
-            });
-
-            // Create a JSON object out of the data that needs to be saved.
-            const data = tilesInOrder.map((tile) => {
-                return {
-                    tileId: this.tileLayout.element.find(`#${tile.id} [data-tile]`).data("tile"),
-                    order: tile.order,
-                    colSpan: tile.colSpan,
-                    rowSpan: tile.rowSpan
-                };
-            });
-
-            console.log("data to save")
         }
     }
 
