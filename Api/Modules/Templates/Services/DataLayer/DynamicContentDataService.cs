@@ -171,13 +171,14 @@ ORDER BY templatePath ASC, component.title ASC";
         }
 
         /// <inheritdoc />
-        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int contentId)
+        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int contentId, string branchDatabaseName = null)
         {
             connection.ClearParameters();
             connection.AddParameter("contentId", contentId);
             var versionList = new Dictionary<int, int>();
 
-            var dataTable = await connection.GetAsync($"SELECT version, published_environment FROM {WiserTableNames.WiserDynamicContent} WHERE content_id = ?contentId AND removed = 0");
+            var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
+            var dataTable = await connection.GetAsync($"SELECT version, published_environment FROM {databaseNamePrefix}{WiserTableNames.WiserDynamicContent} WHERE content_id = ?contentId AND removed = 0");
 
             foreach (DataRow row in dataTable.Rows)
             {
@@ -188,12 +189,13 @@ ORDER BY templatePath ASC, component.title ASC";
         }
 
         /// <inheritdoc />
-        public async Task<int> UpdatePublishedEnvironmentAsync(int contentId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username)
+        public async Task<int> UpdatePublishedEnvironmentAsync(int contentId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username, string branchDatabaseName = null)
         {
             connection.ClearParameters();
             connection.AddParameter("contentId", contentId);
 
-            var baseQueryPart = $@"UPDATE {WiserTableNames.WiserDynamicContent} SET published_environment = CASE version";
+            var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
+            var baseQueryPart = $@"UPDATE {databaseNamePrefix}{WiserTableNames.WiserDynamicContent} SET published_environment = CASE version";
 
             var dynamicQueryPart = "";
             var dynamicWherePart = " AND version IN (";
@@ -204,7 +206,7 @@ ORDER BY templatePath ASC, component.title ASC";
             }
             dynamicWherePart = $"{dynamicWherePart[..^1]})";
             var endQueryPart = @" END
-                WHERE content_id = ?contentId";
+WHERE content_id = ?contentId";
 
             var query = baseQueryPart + dynamicQueryPart + endQueryPart + dynamicWherePart;
 
@@ -217,7 +219,7 @@ ORDER BY templatePath ASC, component.title ASC";
             connection.AddParameter("now", DateTime.Now);
             connection.AddParameter("username", username);
 
-            var logQuery = $@"INSERT INTO {WiserTableNames.WiserDynamicContentPublishLog} (content_id, old_live, old_accept, old_test, new_live, new_accept, new_test, changed_on, changed_by) 
+            var logQuery = $@"INSERT INTO {databaseNamePrefix}{WiserTableNames.WiserDynamicContentPublishLog} (content_id, old_live, old_accept, old_test, new_live, new_accept, new_test, changed_on, changed_by) 
             VALUES(
                 ?contentId,
                 ?oldlive,
@@ -278,6 +280,35 @@ VALUES (?newContentId, ?templateId, ?now, ?username);";
             await connection.ExecuteAsync(query);
         }
 
+        /// <inheritdoc />
+        public async Task DeleteAsync(int contentId)
+        {
+            connection.ClearParameters();
+            connection.AddParameter("contentId", contentId);
+            var query = $@"UPDATE {WiserTableNames.WiserDynamicContent} SET removed = 1 WHERE content_id = ?contentID";
+            await connection.ExecuteAsync(query);
+        }
+
+        /// <inheritdoc />
+        public async Task DeployToBranchAsync(List<int> dynamicContentIds, string branchDatabaseName)
+        {
+            // Branches always exist within the same database cluster, so we don't need to make a new connection for it.
+            var query = $@"INSERT INTO `{branchDatabaseName}`.{WiserTableNames.WiserDynamicContent}
+SELECT content.*
+FROM {WiserTableNames.WiserDynamicContent} AS content
+LEFT JOIN {WiserTableNames.WiserDynamicContent} AS otherVersion ON otherVersion.content_id = content.content_id AND otherVersion.version > content.version
+WHERE content.content_id IN ({String.Join(", ", dynamicContentIds)})
+AND otherVersion.id IS NULL";
+            await connection.ExecuteAsync(query);
+            
+            // Also copy all links of dynamic content to template to the branch.
+            query = $@"INSERT IGNORE INTO `{branchDatabaseName}`.{WiserTableNames.WiserTemplateDynamicContent}
+SELECT *
+FROM {WiserTableNames.WiserTemplateDynamicContent}
+WHERE content_id IN ({String.Join(", ", dynamicContentIds)});";
+            await connection.ExecuteAsync(query);
+        }
+
         private async Task<KeyValuePair<string, string>> GetDatabaseData(int contentId)
         {
             connection.ClearParameters();
@@ -292,15 +323,6 @@ VALUES (?newContentId, ?templateId, ?now, ?username);";
             var title = dataTable.Rows[0].Field<string>("title");
 
             return new KeyValuePair<string, string>(title, settings);
-        }
-
-        /// <inheritdoc />
-        public async Task DeleteAsync(int contentId)
-        {
-            connection.ClearParameters();
-            connection.AddParameter("contentId", contentId);
-            var query = $@"UPDATE {WiserTableNames.WiserDynamicContent} SET removed = 1 WHERE content_id = ?contentID";
-            await connection.ExecuteAsync(query);
         }
     }
 }

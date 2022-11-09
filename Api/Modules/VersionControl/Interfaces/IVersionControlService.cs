@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.VersionControl.Models;
@@ -37,5 +38,14 @@ namespace Api.Modules.VersionControl.Interfaces
         /// <param name="commitId">The id of the commit.</param>
         /// <returns>Returns a list of dynamic contnet items.</returns>
         Task<ServiceResult<List<DynamicContentCommitModel>>> GetDynamicContentFromCommitAsync(int commitId);
+
+        /// <summary>
+        /// Deploy one or more commits to a branch.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated user.</param>
+        /// <param name="commitIds">The IDs of the commits to deploy.</param>
+        /// <param name="branchId">The ID of the branch to deploy to.</param>
+        /// <param name="useTransaction">Optional: Whether to use a database transaction. Set to <see langword="false"/> when you call this via a method that already started it's own transaction. Default value is <see langword="true"/>.</param>
+        Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, List<int> commitIds, int branchId, bool useTransaction = true);
     }
 }

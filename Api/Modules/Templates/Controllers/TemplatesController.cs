@@ -438,5 +438,18 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.GetTableNamesForTriggerTemplatesAsync()).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Deploy one or more templates to a branch.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to deploy.</param>
+        /// <param name="branchId">The ID of the branch to deploy the template to.</param>
+        [HttpPost]
+        [Route("{templateId:int}/deploy-to-branch/{branchId:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeployToBranchAsync(int templateId, int branchId)
+        {
+            return (await templatesService.DeployToBranchAsync((ClaimsIdentity) User.Identity, new List<int> { templateId }, branchId)).GetHttpResponseMessage();
+        }
     }
 }

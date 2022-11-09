@@ -18,13 +18,15 @@ namespace Api.Modules.VersionControl.Controllers;
 public class VersionControlController : Controller
 {
     private readonly ICommitService commitService;
-    
+    private readonly IVersionControlService versionControlService;
+
     /// <summary>
     /// Creates a new instance of <see cref="VersionControlController"/>.
     /// </summary>
-    public VersionControlController(ICommitService commitService)
+    public VersionControlController(ICommitService commitService, IVersionControlService versionControlService)
     {
         this.commitService = commitService;
+        this.versionControlService = versionControlService;
     }
     
     /// <summary>
@@ -72,5 +74,18 @@ public class VersionControlController : Controller
     public async Task<IActionResult> GetNotCompletedCommitsAsync()
     {
         return (await commitService.GetNotCompletedCommitsAsync()).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Deploy one or more commits to a branch.
+    /// </summary>
+    /// <param name="branchId">The ID of the branch to deploy to.</param>
+    /// <param name="commitIds">The IDs of the commits to deploy.</param>
+    [HttpPost]
+    [Route("deploy-to-branch/{branchId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeployToBranchAsync(int branchId, List<int> commitIds)
+    {
+        return (await versionControlService.DeployToBranchAsync((ClaimsIdentity) User.Identity, commitIds, branchId)).GetHttpResponseMessage();
     }
 }

@@ -55,9 +55,8 @@ public class CommitDataService : ICommitDataService, IScopedService
 	IFNULL(content.version, 0) <= IFNULL(acceptanceContent.version, 0) AS accept,
 	IFNULL(content.version, 0) <= IFNULL(liveContent.version, 0) AS live
 FROM {WiserTableNames.WiserCommit} AS `commit`
-JOIN {WiserTableNames.WiserCommitDynamicContent} AS linkToContent ON `commit`.id = linkToContent.commit_id
-JOIN {WiserTableNames.WiserDynamicContent} AS content ON content.content_id = linkToContent.dynamic_content_id AND content.version = linkToContent.version
-#JOIN {WiserTableNames.WiserDynamicContent} AS contentMaxVersion ON contentMaxVersion.content_id = linkToContent.dynamic_content_id AND content.version = (SELECT (MAX(x.version) FROM {WiserTableNames.WiserDynamicContent} AS x WHERE x.content_id = linkToContent.dynamic_content_id)
+LEFT JOIN {WiserTableNames.WiserCommitDynamicContent} AS linkToContent ON `commit`.id = linkToContent.commit_id
+LEFT JOIN {WiserTableNames.WiserDynamicContent} AS content ON content.content_id = linkToContent.dynamic_content_id AND content.version = linkToContent.version
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS testContent ON testContent.content_id = content.content_id AND (testContent.published_environment & {(int)Environments.Test}) = {(int)Environments.Test}
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS acceptanceContent ON acceptanceContent.content_id = content.content_id AND (acceptanceContent.published_environment & {(int)Environments.Acceptance}) = {(int)Environments.Acceptance}
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS liveContent ON liveContent.content_id = content.content_id AND (liveContent.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
@@ -84,6 +83,11 @@ GROUP BY content.content_id";
 	    
 	    foreach (DataRow dataRow in dataTable.Rows)
 	    {
+		    if (dataRow.IsNull("content_id"))
+		    {
+			    continue;
+		    }
+
 		    commitModel.DynamicContents.Add(new DynamicContentCommitModel
 		    {
 			    DynamicContentId = dataRow.Field<int>("content_id"),
@@ -317,6 +321,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS template ON template.template_id = 
 LEFT JOIN {WiserTableNames.WiserCommitDynamicContent} AS dynamicContentCommit ON dynamicContentCommit.dynamic_content_id = content.content_id AND dynamicContentCommit.version = content.version
 WHERE content.removed = 0
 AND otherVersion.id IS NULL
+AND dynamicContentCommit.id IS NULL
 GROUP BY content.content_id
 ORDER BY content.changed_on ASC";
 

@@ -472,7 +472,7 @@ namespace Api.Modules.Modules.Services
                                 Icon = "git",
                                 ModuleId = moduleId,
                                 Name = "Version control",
-                                Type = "Systeem",
+                                Type = "VersionControl",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });

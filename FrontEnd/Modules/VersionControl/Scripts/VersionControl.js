@@ -40,6 +40,13 @@ const moduleSettings = {
             this.deployTestButton = null;
             this.deployAcceptanceButton = null;
             this.deployLiveButton = null;
+            this.deployToBranchButton = null;
+            this.branchesDropDown = null;
+            
+            this.deployToBranchContainer = null;
+            
+            // Other data.
+            this.branches = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -101,6 +108,26 @@ const moduleSettings = {
                 this.settings.wiserApiRoot += "/";
             }
 
+            // Don't allow users to use this module in a branch, only in the main/production environment of a tenant.
+            if (!userData.currentBranchIsMainBranch) {
+                $("#NotMainBranchNotification").removeClass("hidden");
+                $("#wiser").addClass("hidden");
+                this.toggleMainLoader(false);
+                return;
+            }
+
+            try {
+                this.branches = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}branches`,
+                    dataType: "json",
+                    method: "GET"
+                });
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het ophalen van de beschikbare branches. Mogelijk kan de templatemodule nog wel gebruikt worden, maar mist alleen de functionaliteit om templates over te zetten naar een branch.")
+                this.branches = [];
+            }
+
             // Initialize sub classes.
             await this.initializeComponents();
             
@@ -112,6 +139,7 @@ const moduleSettings = {
          */
         async initializeComponents() {
             this.commitDescriptionField = document.getElementById("commitDescription");
+            this.deployToBranchContainer = document.getElementById("deployToBranchContainer");
             
             // Tab strip.
             this.mainTabStrip = $("#tabstrip").kendoTabStrip({
@@ -154,6 +182,18 @@ const moduleSettings = {
                 icon: "data",
                 enable: false
             }).data("kendoButton");
+
+            this.deployToBranchButton = $("#deployCommitToBranch").kendoButton({
+                click: this.onDeployToBranch.bind(this),
+                icon: "data"
+            }).data("kendoButton");
+            
+            this.branchesDropDown = $("#branchesDropDown").kendoDropDownList({
+                dataSource: this.branches,
+                dataValueField: "id",
+                dataTextField: "name",
+                optionLabel: "Kies een branch..."
+            }).data("kendoDropDownList");
             
             // noinspection ES6MissingAwait
             this.setupTemplateChangesGrid();
@@ -177,7 +217,7 @@ const moduleSettings = {
         async onMainTabStripActivate(event) {
             switch (event.sender.select().attr("id")) {
                 case "deployTab":
-                    await this.setupDeployGrid();
+                    await this.setupDeployTab();
                     break;
             }
         }
@@ -237,6 +277,7 @@ const moduleSettings = {
                 this.deployTestButton.enable(false);
                 this.deployAcceptanceButton.enable(false);
                 this.deployLiveButton.enable(false);
+                this.deployToBranchContainer.classList.add("hidden");
                 return;
             }
 
@@ -261,6 +302,7 @@ const moduleSettings = {
             this.deployTestButton.enable(!everythingIsOnTest);
             this.deployAcceptanceButton.enable(!everythingIsOnAcceptance);
             this.deployLiveButton.enable(!everythingIsOnLive);
+            this.deployToBranchContainer.classList.remove("hidden");
         }
 
         /**
@@ -272,6 +314,7 @@ const moduleSettings = {
             this.deployTestButton.enable(false);
             this.deployAcceptanceButton.enable(false);
             this.deployLiveButton.enable(false);
+            this.deployToBranchContainer.classList.add("hidden");
         }
 
         /**
@@ -315,10 +358,52 @@ const moduleSettings = {
             }
             catch (exception) {
                 console.error(exception);
-                kendo.alert("Er is iets fout gegaan met het maken van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+                kendo.alert("Er is iets fout gegaan met het deployen van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+            }
+            finally {
+                window.processing.removeProcess(initialProcess);
+            }
+        }
+
+        /**
+         * Event for when the user clicks the button to deploy a commit to a branch.
+         * @param event The click event of the Kendo button.
+         */
+        async onDeployToBranch(event) {
+            const selectedCommits = this.deployGrid.getSelectedData();
+            if (!selectedCommits || !selectedCommits.length) {
+                kendo.alert("Kies a.u.b. eerst een of meer commits om te deployen.");
+                return;
+            }
+            
+            const selectedBranch = this.branchesDropDown.value();
+            if (!selectedBranch) {
+                kendo.alert("Kies a.u.b. eerst een branch om naar te deployen.");
+                return;
             }
 
-            window.processing.removeProcess(initialProcess);
+            const initialProcess = `DeployCommitToBranch_${Date.now()}`;
+            window.processing.addProcess(initialProcess);
+
+            try {
+                event.preventDefault();
+
+                await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control/deploy-to-branch/${selectedBranch}`,
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(selectedCommits.map(commit => commit.id))
+                });
+
+                kendo.alert(selectedCommits.length === 1 ? "De geselecteerde commit is succesvol naar de geselecteerde branch gezet" : "De geselecteerde commits zijn succesvol naar de geselecteerde branch gezet.");
+            }
+            catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het deployen van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+            }
+            finally {
+                window.processing.removeProcess(initialProcess);
+            }
         }
         
         /**
@@ -539,7 +624,7 @@ const moduleSettings = {
         /**
          * Setup/initialize the grid with all unfinished commits (commits that haven't been deployed to live yet).
          */
-        async setupDeployGrid() {
+        async setupDeployTab() {
             try {
                 if (this.deployGrid) {
                     return;

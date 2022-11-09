@@ -723,6 +723,46 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
+-- Table structure for wiser_commit
+-- ----------------------------
+CREATE TABLE `wiser_commit`  (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `description` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+    `external_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+    `added_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    `completed` tinyint NOT NULL DEFAULT 0,
+    PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_commit_dynamic_content
+-- ----------------------------
+CREATE TABLE `wiser_commit_dynamic_content`  (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `dynamic_content_id` int NOT NULL,
+    `version` int NOT NULL,
+    `commit_id` int NOT NULL,
+    `added_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_commit_template
+-- ----------------------------
+CREATE TABLE `wiser_commit_template`  (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `template_id` int NOT NULL,
+    `version` int NOT NULL,
+    `commit_id` int NOT NULL,
+    `added_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+
+-- ----------------------------
 -- Table structure for wiser_dynamic_content
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_dynamic_content`  (

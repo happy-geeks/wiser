@@ -406,7 +406,7 @@ const communicationModuleSettings = {
          * @param event The change event of the Kendo dropdown list.
          */
         onRecurringPeriodTypeDropDownChange(event) {
-            switch (event.sender.value()) {
+            switch (event.sender.value().toLowerCase()) {
                 case "week":
                     this.recurringWeeklyContainer.removeClass("hidden");
                     this.recurringMonthlyContainer.addClass("hidden");
@@ -525,7 +525,7 @@ const communicationModuleSettings = {
                 return;
             }
             
-            if (this.mailBodyEditor.value()) {
+            if (this.mailBodyEditor.value() || this.mailSubjectField.val()) {
                 try {
                     await Wiser.showConfirmDialog("U heeft al een waarde ingevuld in de inhoud van de mail. Wilt u die overschrijven met de nieuw gekozen mailtemplate/taal?", "Overschrijven inhoud", "Annuleren", "Overschrijven");
                 }
@@ -538,12 +538,16 @@ const communicationModuleSettings = {
             }
             
             let templatePropertyName = "Template";
+            let subjectPropertyName = "Onderwerp"
             if (selectedLanguage && selectedLanguage.code) {
                 templatePropertyName += ` (${selectedLanguage.code})`;
+                subjectPropertyName += ` (${selectedLanguage.code})`;
             }
             
             const html = selectedMailTemplate[templatePropertyName] || selectedMailTemplate.Template || selectedMailTemplate.template || "";
+            const subject = selectedMailTemplate[subjectPropertyName] || selectedMailTemplate.Onderwerp || selectedMailTemplate.onderwerp || "";
             this.mailBodyEditor.value(html);
+            this.mailSubjectField.val(subject);
         }
 
         /**
