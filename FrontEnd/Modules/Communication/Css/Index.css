@@ -11,6 +11,9 @@
 #OpenCommunicationSettingsContainer {
     width: 400px;
     text-align: center;
+    height: 180px;
+    display: flex;
+    flex-direction: column;
 }
 
 h2, 
@@ -20,4 +23,10 @@ p {
 
 button {
     width: 100%;
+}
+
+
+#CreateNewCommunicationSettingsContainer > p,
+#OpenCommunicationSettingsContainer > p  {
+    margin-bottom: auto;
 }

@@ -199,6 +199,7 @@ ins {
 }
 .k-window-content > .pane-content .k-widget.k-tabstrip {
 	height: 100%;
+	width: 100%;
 }
 .k-window-content > .pane-content .k-tabstrip .k-content.k-state-active {
 	height: calc(100% - 50px);
