@@ -25,11 +25,11 @@ const moduleSettings = {
             colSpan: 5,
             rowSpan: 4
         },
-        {
+        /*{
             tileId: "subscription",
             colSpan: 7,
             rowSpan: 2
-        },
+        },*/
         {
             tileId: "updateLog",
             colSpan: 5,
@@ -49,12 +49,12 @@ const moduleSettings = {
             tileId: "taskAlerts",
             colSpan: 4,
             rowSpan: 2
-        },
+        }/*,
         {
             tileId: "dataSelector",
             colSpan: 4,
             rowSpan: 2
-        }
+        }*/
     ]);
 
     class Dashboard {
@@ -72,6 +72,7 @@ const moduleSettings = {
             this.itemsData = null;
             this.userData = null;
             this.entityData = null;
+            this.openTaskAlertsData = null;
             
             this.servicesGrid = null;
             this.serviceWindow = null;
@@ -271,7 +272,13 @@ const moduleSettings = {
             // Build the containers for the Kendo TileLayout widget.
             const containers = [];
             layoutSettings.forEach((tileSettings) => {
-                document.getElementById(`${tileSettings.tileId}Checkbox`).checked = true;
+                const menuItem = document.getElementById(`${tileSettings.tileId}Checkbox`);
+                if (!menuItem) {
+                    // If the menu item doesn't exist, then the current tile is invalid and shouldn't be handled.
+                    return;
+                }
+
+                menuItem.checked = true;
 
                 const tileTemplateSettings = Dashboard.GetTileTemplateSettingsByTileId(tileSettings.tileId);
                 containers.push({
@@ -302,8 +309,27 @@ const moduleSettings = {
 
             this.tileLayout.element.on("click", ".k-close-button", this.onTileClose.bind(this));
 
-            // create Column Chart
-            $("#data-chart").kendoChart({
+            this.initializeItemsDataChart();
+            this.initializeUsersDataChart();
+            this.initializeTaskAlertsDataChart();
+            this.initializeServicesGrid();
+
+            const serviceWindowOptions = {
+                actions: ["Close"],
+                visible: false
+            }
+
+            this.serviceWindow = $("#serviceLogWindow").kendoWindow(serviceWindowOptions).data("kendoWindow");
+        }
+
+        /**
+         * Initializes the Wiser items usage data chart.
+         */
+        initializeItemsDataChart() {
+            const dataChartElement = document.getElementById("data-chart");
+            if (!dataChartElement) return;
+
+            $(dataChartElement).kendoChart({
                 title: {
                     text: "Aantal items in Wiser"
                 },
@@ -346,9 +372,16 @@ const moduleSettings = {
                     template: "#= series.name #: #= value #"
                 }
             });
+        }
 
-            // create Pie Chart
-            $("#users-chart").kendoChart({
+        /**
+         * Initializes the user login data chart.
+         */
+        initializeUsersDataChart() {
+            const usersChartElement = document.getElementById("users-chart");
+            if (!usersChartElement) return;
+
+            $(usersChartElement).kendoChart({
                 title: {
                     position: "top",
                     text: "Top 10 gebruikers met meeste tijd / aantal x ingelogd"
@@ -384,9 +417,16 @@ const moduleSettings = {
                     format: "{0}%"
                 }
             });
+        }
 
-            // create Pie Chart
-            $("#status-chart").kendoChart({
+        /**
+         * Initializes the open task alerts data chart.
+         */
+        initializeTaskAlertsDataChart() {
+            const statusChartElement = document.getElementById("status-chart");
+            if (!statusChartElement) return;
+
+            $(statusChartElement).kendoChart({
                 title: {
                     text: "Openstaande agenderingen per gebruiker",
                     visible: false
@@ -414,115 +454,113 @@ const moduleSettings = {
                     template: "#= category #: #= value#"
                 }
             });
+        }
 
+        /**
+         * Initializes the services grid.
+         */
+        initializeServicesGrid() {
             const servicesGridElement = document.getElementById("services-grid");
-            if (servicesGridElement) {
-                this.servicesGrid = $(servicesGridElement).kendoGrid({
-                    columns: [
-                        {
-                            field: "id",
-                            hidden: true
-                        },
-                        {
-                            title: "Configuratie",
-                            field: "configuration"
-                        },
-                        {
-                            title: "Actie",
-                            field: "action",
-                            template: "#if(data.action != null) {# #: data.action # #} else {# #: data.timeId # #}#"
-                        },
-                        {
-                            title: "Schema",
-                            field: "scheme",
-                            values: [
-                                { text: "Doorlopend", value: "continuous" },
-                                { text: "Dagelijks", value: "daily" },
-                                { text: "Wekelijks", value: "weekly" },
-                                { text: "Maandelijks", value: "monthly" }
-                            ]
-                        },
-                        {
-                            title: "Laatste run",
-                            field: "lastRun",
-                            format: "{0:dd-MM-yyyy HH:mm}"
-                        },
-                        {
-                            title: "Laatste tijd",
-                            field: "runTime",
-                            template: "#=kendo.toString(runTime, '0.000')# minuten"
-                        },
-                        {
-                            title: "Status",
-                            field: "state",
-                            values: [
-                                { text: "Actief", value: "active" },
-                                { text: "Succesvol", value: "success" },
-                                { text: "Waarschuwing", value: "warning" },
-                                { text: "Mislukt", value: "failed" },
-                                { text: "Gepauzeerd", value: "paused" },
-                                { text: "Gestopt", value: "stopped" },
-                                { text: "Gecrasht", value: "crashed" },
-                                { text: "Bezig", value: "running" }
-                            ]
-                        },
-                        {
-                            title: "Volgende run",
-                            field: "nextRun",
-                            format: "{0:dd-MM-yyyy HH:mm}"
-                        },
-                        {
-                            title: "Beheer",
-                            command: [
-                                {
-                                    name: "start",
-                                    text: "",
-                                    iconClass: "extra-run-button-icon k-icon k-i-play",
-                                    click: this.toggleExtraRunService.bind(this)
-                                },
-                                {
-                                    name: "pause",
-                                    text: "",
-                                    iconClass: "pause-button-icon wiser-icon icon-stopwatch-pauze",
-                                    click: this.togglePauseService.bind(this)
-                                },
-                                {
-                                    name: "logs",
-                                    text: "",
-                                    iconClass: "k-icon k-i-file-txt",
-                                    click: this.openServiceLogs.bind(this)
-                                }
-                            ],
-                            attributes: {
-                                "class": "admin"
+            if (!servicesGridElement) return;
+
+            this.servicesGrid = $(servicesGridElement).kendoGrid({
+                columns: [
+                    {
+                        field: "id",
+                        hidden: true
+                    },
+                    {
+                        title: "Configuratie",
+                        field: "configuration"
+                    },
+                    {
+                        title: "Actie",
+                        field: "action",
+                        template: "#if(data.action != null) {# #: data.action # #} else {# #: data.timeId # #}#"
+                    },
+                    {
+                        title: "Schema",
+                        field: "scheme",
+                        values: [
+                            { text: "Doorlopend", value: "continuous" },
+                            { text: "Dagelijks", value: "daily" },
+                            { text: "Wekelijks", value: "weekly" },
+                            { text: "Maandelijks", value: "monthly" }
+                        ]
+                    },
+                    {
+                        title: "Laatste run",
+                        field: "lastRun",
+                        format: "{0:dd-MM-yyyy HH:mm}"
+                    },
+                    {
+                        title: "Laatste tijd",
+                        field: "runTime",
+                        template: "#=kendo.toString(runTime, '0.000')# minuten"
+                    },
+                    {
+                        title: "Status",
+                        field: "state",
+                        values: [
+                            { text: "Actief", value: "active" },
+                            { text: "Succesvol", value: "success" },
+                            { text: "Waarschuwing", value: "warning" },
+                            { text: "Mislukt", value: "failed" },
+                            { text: "Gepauzeerd", value: "paused" },
+                            { text: "Gestopt", value: "stopped" },
+                            { text: "Gecrasht", value: "crashed" },
+                            { text: "Bezig", value: "running" }
+                        ]
+                    },
+                    {
+                        title: "Volgende run",
+                        field: "nextRun",
+                        format: "{0:dd-MM-yyyy HH:mm}"
+                    },
+                    {
+                        title: "Beheer",
+                        command: [
+                            {
+                                name: "start",
+                                text: "",
+                                iconClass: "extra-run-button-icon k-icon k-i-play",
+                                click: this.toggleExtraRunService.bind(this)
+                            },
+                            {
+                                name: "pause",
+                                text: "",
+                                iconClass: "pause-button-icon wiser-icon icon-stopwatch-pauze",
+                                click: this.togglePauseService.bind(this)
+                            },
+                            {
+                                name: "logs",
+                                text: "",
+                                iconClass: "k-icon k-i-file-txt",
+                                click: this.openServiceLogs.bind(this)
                             }
-                        },
-                        {
-                            field: "paused",
-                            hidden: true,
-                            attributes: {
-                                "class": "paused-state"
-                            }
-                        },
-                        {
-                            field: "extraRun",
-                            hidden: true,
-                            attributes: {
-                                "class": "extra-run-state"
-                            }
+                        ],
+                        attributes: {
+                            "class": "admin"
                         }
-                    ],
-                    dataBound: this.setServiceState
-                }).data("kendoGrid");
-                this.servicesGrid.scrollables[1].classList.add("fixed-table");
-            }
-
-            const serviceWindowOptions = {
-                actions: ["Close"],
-                visible: false
-            }
-
-            this.serviceWindow = $("#serviceLogWindow").kendoWindow(serviceWindowOptions).data("kendoWindow");
+                    },
+                    {
+                        field: "paused",
+                        hidden: true,
+                        attributes: {
+                            "class": "paused-state"
+                        }
+                    },
+                    {
+                        field: "extraRun",
+                        hidden: true,
+                        attributes: {
+                            "class": "extra-run-state"
+                        }
+                    }
+                ],
+                dataBound: this.setServiceState
+            }).data("kendoGrid");
+            this.servicesGrid.scrollables[1].classList.add("fixed-table");
         }
 
         async updateBranches() {
@@ -573,7 +611,7 @@ const moduleSettings = {
             if (forceRefresh) {
                 getParameters.forceRefresh = forceRefresh;
             }
-            
+
             await this.updateServices();
 
             const data = await Wiser.api({
@@ -648,7 +686,8 @@ const moduleSettings = {
                     value: data.openTaskAlerts[prop]
                 });
             }
-            this.updateOpenTaskAlertsChart(openTaskAlertsData);
+            this.openTaskAlertsData = openTaskAlertsData;
+            this.updateOpenTaskAlertsChart();
         }
 
         updateItemsDataChart() {
@@ -704,17 +743,16 @@ const moduleSettings = {
 
         /**
          * Updates the open task alerts chart and total.
-         * @param {Array} data Array with the chart data. Will contain objects with a category property and a value property.
          */
-        updateOpenTaskAlertsChart(data) {
+        updateOpenTaskAlertsChart() {
             const statusChartElement = document.getElementById("status-chart");
             if (!statusChartElement) return;
 
             const taskAlertsChart = $(statusChartElement).getKendoChart();
-            taskAlertsChart.findSeriesByIndex(0).data(data);
+            taskAlertsChart.findSeriesByIndex(0).data(this.openTaskAlertsData);
 
             let totalOpenTaskAlerts = 0;
-            data.forEach((i) => totalOpenTaskAlerts += i.value);
+            this.openTaskAlertsData.forEach((i) => totalOpenTaskAlerts += i.value);
             document.getElementById("totalOpenTaskAlerts").innerText = totalOpenTaskAlerts.toString();
         }
 
@@ -738,7 +776,7 @@ const moduleSettings = {
                 }
             }));
         }
-        
+
         setServiceState(e) {
             const columnIndex = this.wrapper.find("[data-field=state]").index();
 
@@ -748,21 +786,21 @@ const moduleSettings = {
                 const dataItem = e.sender.dataItem(row);
                 const state = dataItem.get("state");
                 const cell = row.children().eq(columnIndex);
-                
+
                 const paused = dataItem.get("paused");
                 if (paused) {
                     const pauseButton = rows[i].querySelector(".pause-button-icon");
                     pauseButton.classList.remove("icon-stopwatch-pauze");
                     pauseButton.classList.add("icon-stopwatch-start");
                 }
-                
+
                 const extraRun = dataItem.get("extraRun");
                 if (extraRun) {
                     const extraRunButton = rows[i].querySelector(".extra-run-button-icon");
                     extraRunButton.classList.remove("k-i-play");
                     extraRunButton.classList.add("k-i-stop");
                 }
-                
+
                 switch (state) {
                     case "active":
                     case "success":
@@ -783,20 +821,20 @@ const moduleSettings = {
                 }
             }
         }
-        
+
         async togglePauseService(e) {
             const serviceId = e.currentTarget.closest("tr").querySelector("td").innerText;
             const currentState = e.currentTarget.closest("tr").querySelector(".paused-state").innerText === 'true';
-            
+
             const result = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dashboard/services/${serviceId}/pause/${!currentState}`,
                 method: "PUT"
             });
-            
+
             if(result === 'WillPauseAfterRunFinished') {
                 kendo.alert("De service is momenteel nog bezig. Zodra deze klaar is zal deze automatisch gepauzeerd worden.");
             }
-            
+
             await this.updateServices();
         }
 
@@ -808,7 +846,7 @@ const moduleSettings = {
                 url: `${this.settings.wiserApiRoot}dashboard/services/${serviceId}/extra-run/${!currentState}`,
                 method: "PUT"
             });
-            
+
             switch (result)
             {
                 case "Marked":
@@ -827,11 +865,11 @@ const moduleSettings = {
 
             await this.updateServices();
         }
-        
+
         async openServiceLogs(e) {
             const columns = e.currentTarget.closest("tr").querySelectorAll("td");
             const serviceId = columns[0].innerText;
-            
+
             this.serviceWindow.title(`${columns[1].innerText} - ${columns[2].innerText}`).open().maximize();
             this.serviceWindow.element.data("serviceId", serviceId);
 
@@ -839,7 +877,7 @@ const moduleSettings = {
                 this.serviceLogsGrid.dataSource.read();
                 return;
             }
-            
+
             this.serviceLogsGrid = $("#serviceLogGrid").kendoGrid({
                 filterable: true,
                 pageable: {
@@ -858,7 +896,6 @@ const moduleSettings = {
                             } catch(exception) {
                                 transportOptions.error(exception);
                             }
-
                         }
                     },
                     pageSize: 100,
@@ -917,7 +954,7 @@ const moduleSettings = {
                 }
             });
         }
-        
+
         async onPeriodFilterChange(event) {
             const currentDate = new Date();
             const value = event.sender.value();
@@ -1007,8 +1044,9 @@ const moduleSettings = {
          * When a tile gets closed (the close button click).
          */
         async onTileClose(event) {
-            console.log("event.currentTarget", event.currentTarget);
-            await this.removeTile(event.currentTarget.closest(".k-tilelayout-item").querySelector("[data-tile]").dataset.tile);
+            const tileId = event.currentTarget.closest(".k-tilelayout-item").querySelector("[data-tile]").dataset.tile;
+            document.getElementById("editSub").querySelector(`input[type='checkbox'][data-toggle-tile='${tileId}']`).checked = false;
+            await this.removeTile(tileId);
         }
 
         /**
@@ -1068,6 +1106,18 @@ const moduleSettings = {
             items.push(item);
             this.tileLayout.setOptions({ containers: items });
 
+            // Re-initialize Kendo widgets.
+            this.initializeItemsDataChart();
+            this.initializeUsersDataChart();
+            this.initializeTaskAlertsDataChart();
+            this.initializeServicesGrid();
+
+            // Update Kendo widget data.
+            this.updateItemsDataChart();
+            this.updateUserDataChart();
+            this.updateEntityUsageData();
+            this.updateOpenTaskAlertsChart();
+
             await this.saveUserSettings();
         }
 
@@ -1085,6 +1135,18 @@ const moduleSettings = {
             }
 
             this.tileLayout.setOptions({ containers: mainItems });
+
+            // Re-initialize Kendo widgets.
+            this.initializeItemsDataChart();
+            this.initializeUsersDataChart();
+            this.initializeTaskAlertsDataChart();
+            this.initializeServicesGrid();
+
+            // Update Kendo widget data.
+            this.updateItemsDataChart();
+            this.updateUserDataChart();
+            this.updateEntityUsageData();
+            this.updateOpenTaskAlertsChart();
 
             await this.saveUserSettings();
         }

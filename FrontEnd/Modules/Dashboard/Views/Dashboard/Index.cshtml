@@ -83,13 +83,13 @@
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
-                                        <li>
+                                        @*<li>
                                             <label>
                                                 <input type="checkbox" id="subscriptionCheckbox" class="hidden" data-toggle-tile="subscription" />
                                                 <span>Abonnement</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
-                                        </li>
+                                        </li>*@
                                         <li>
                                             <label>
                                                 <input type="checkbox" id="updateLogCheckbox" class="hidden" data-toggle-tile="updateLog" />
@@ -118,13 +118,13 @@
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
-                                        <li>
+                                        @*<li>
                                             <label>
                                                 <input type="checkbox" id="dataSelectorCheckbox" class="hidden" data-toggle-tile="dataSelector" />
                                                 <span>Dataselector</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
-                                        </li>
+                                        </li>*@
                                     </ul>
                                 </li>
                             </ul>
@@ -139,30 +139,16 @@
                     <script id="update-log" type="text/x-kendo-template">
                         <a class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button"><span class="k-button-icon k-icon k-i-close"></span></a>
                         <div class="tile-content" data-tile="updateLog">
-                            <!--<div class="log-item">
-                                <h4>12 juni 2022</h4>
-                                <ul>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...<br>en nog meer tekst</span></li>
-                                </ul>
-                            </div>
-                            <div class="log-item">
-                                <h4>11 juni 2022</h4>
-                                <ul>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                </ul>
-                            </div>
-                            <div class="log-item">
-                                <h4>10 juni 2022</h4>
-                                <ul>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                    <li><ins class="icon-check"></ins><span>Verbetering aan dit en dat...</span></li>
-                                </ul>
-                            </div>-->
+                            @if (File.Exists("./UpdateLog.html"))
+                            {
+                                @Html.Raw(await File.ReadAllTextAsync("./UpdateLog.html"))
+                            }
+                            else
+                            {
+                                <div class="log-item">
+                                    <h4>Geen update log beschikbaar</h4>
+                                </div>
+                            }
                         </div>
                     </script>
                     <script id="numbers" type="text/x-kendo-template">
