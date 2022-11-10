@@ -94,8 +94,6 @@ const moduleSettings = {
             // Setup any settings from the body element data. These settings are added via the Wiser backend and they take preference.
             Object.assign(this.settings, $(document.body).data());
 
-            // this.useExportMode = document.getElementById("useExportMode").checked;
-
             if (this.settings.trackJsToken) {
                 TrackJS.install({
                     token: this.settings.trackJsToken
@@ -131,7 +129,7 @@ const moduleSettings = {
             this.settings.wiserUserId = userData.id;
 
             // Initialize the rest.
-            this.initializeKendoElements();
+            await this.initializeKendoElements();
 
             // Start the period picker as read-only.
             $("#periodPicker").getKendoDateRangePicker().readonly(true);
