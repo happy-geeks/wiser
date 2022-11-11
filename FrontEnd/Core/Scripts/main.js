@@ -344,6 +344,44 @@ import CacheService from "./shared/cache.service";
                     },
                     clearCacheError() {
                         return this.$store.state.cache.clearCacheError;
+                    },
+                    openBranchUrl() {
+                        if (!this.openBranchSettings || !this.openBranchSettings.selectedBranchType || !this.openBranchSettings.selectedBranchType.id) {
+                            return "";
+                        }
+
+                        if (this.openBranchSettings.selectedBranchType.id === 'website' && !this.openBranchSettings.websiteUrl) {
+                            return "";
+                        }
+
+                        if (!this.openBranchSettings || !this.openBranchSettings.selectedBranch|| !this.openBranchSettings.selectedBranch.id) {
+                            return "";
+                        }
+
+                        let url;
+                        switch (this.openBranchSettings.selectedBranchType.id) {
+                            case "website":
+                                url = this.openBranchSettings.websiteUrl;
+                                if (!url.startsWith("http")) {
+                                    url = `https://${url}`
+                                }
+
+                                if (!url.endsWith("/")) {
+                                    url += "/";
+                                }
+
+                                url = `${url.substring(0, url.indexOf("/", 8))}/branches/${encodeURIComponent(this.openBranchSettings.selectedBranch.database.databaseName)}`;
+
+                                break;
+                            case "wiser":
+                                url = `https://${this.openBranchSettings.selectedBranch.subDomain}.${this.appSettings.currentDomain}`;
+
+                                break;
+                            default:
+                                return "";
+                        }
+
+                        return url;
                     }
                 },
                 components: {
@@ -647,7 +685,7 @@ import CacheService from "./shared/cache.service";
                         return false;
                     },
 
-                    openBranch(event) {
+                    async openOrCopyBranch(event, copy = false) {
                         event.preventDefault();
 
                         if (!this.openBranchSettings || !this.openBranchSettings.selectedBranchType || !this.openBranchSettings.selectedBranchType.id) {
@@ -665,32 +703,13 @@ import CacheService from "./shared/cache.service";
                             return false;
                         }
                         
-                        let url;
-                        switch (this.openBranchSettings.selectedBranchType.id) {
-                            case "website":
-                                url = this.openBranchSettings.websiteUrl;
-                                if (!url.startsWith("http")) {
-                                    url = `https://${url}`
-                                }
-                                
-                                if (!url.endsWith("/")) {
-                                    url += "/";
-                                }
-                                
-                                url = `${url.substring(0, url.indexOf("/", 8))}/branches/${encodeURIComponent(this.openBranchSettings.selectedBranch.database.databaseName)}`;
-                                
-                                break;
-                            case "wiser":
-                                url = `https://${this.openBranchSettings.selectedBranch.subDomain}.${this.appSettings.currentDomain}`;
-                                
-                                break;
-                            default:
-                                console.error("Invalid branch type selected:", this.openBranchSettings.selectedBranchType);
-                                this.showGeneralMessagePrompt("Kies a.u.b. of u de branch in Wiser wilt openen of op uw website.");
-                                return false;
+                        if (copy) {
+                            await navigator.clipboard.writeText(this.openBranchUrl);
+                            this.showGeneralMessagePrompt("De URL is gekopieerd naar uw klembord.");
+                            return;
                         }
                         
-                        window.open(url, "_blank");
+                        window.open(this.openBranchUrl, "_blank");
                         this.$refs.wiserBranchesPrompt.close();
                     },
                     

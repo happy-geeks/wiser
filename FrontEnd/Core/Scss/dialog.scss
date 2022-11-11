@@ -11,6 +11,10 @@
     right: 0;
     bottom: 0;
     z-index: 1100;
+    
+    &.general-message-dialog {
+        z-index: 1101;
+    }
 }
 
 .w-overlay {

@@ -182,6 +182,10 @@
 
                 .btn {
                     margin-top: 50px;
+                    
+                    &.open-branch {
+                        margin-top: 5px;
+                    }
                 }
             }
         }
