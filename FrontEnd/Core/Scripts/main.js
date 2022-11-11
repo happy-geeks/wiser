@@ -151,7 +151,7 @@ import CacheService from "./shared/cache.service";
                             startOn: null,
                             entities: {
                                 all: {
-                                    mode: -1
+                                    mode: 0
                                 }
                             }
                         },
@@ -802,6 +802,17 @@ import CacheService from "./shared/cache.service";
                     
                     async onWiserCreateBranchPromptOpen() {
                         await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
+                        this.createBranchSettings = {
+                            name: null,
+                            startMode: "direct",
+                            startOn: null,
+                            entities: {
+                                all: {
+                                    mode: 0
+                                }
+                            }
+                        };
+                        
                         for (let entity of this.entitiesForBranches) {
                             this.createBranchSettings.entities[entity.id] = {
                                 mode: 0

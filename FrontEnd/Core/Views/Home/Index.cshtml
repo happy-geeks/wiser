@@ -213,8 +213,8 @@
                                         <td>{{ totalAmountOfItemsForCreatingBranch }}</td>
                                         <td>
                                             <select v-model="createBranchSettings.entities.all.mode" @@change="onCreateBranchAllSettingsChange">
-                                                <option value="-1"></option>
                                                 <option value="0">Alles</option>
+                                                <option value="1">Niets</option>
                                                 <option value="2">Willekeurig X items</option>
                                                 <option value="3">Laatste X items</option>
                                                 <option value="4">Alles wat toegevoegd is voor X</option>
