@@ -76,6 +76,8 @@ server=;port=;uid=;pwd=;database=;pooling=true;Convert Zero Datetime=true;CharSe
 ```
 Note the options that are added at the end of the connection string, Wiser will not work properly without these options.
 
+Keep in mind that if the password has special characters it needs to be escaped in the connection string.
+
 ## Installation script
 The installation script creates a new database schema and then creates several tables in that database. For it to work, you'll need a database user that has enough permissions to do all this.
 To setup this database, you can open a PowerShell or CMD window in the directory that contains the `Api.csproj` file and run the following command:
@@ -98,7 +100,8 @@ You can also install Wiser manually:
 We have several SQL scripts to create these tables and add the minimum amount of data required to be able to login. These scripts can be found in `API\Core\Queries\WiserInstallation`. You should execute these script in the following order:
 1. `CreateTables.sql`
 2. `CreateTriggers.sql`
-3. `InsertInitialData.sql`
+3. `StoredProcedures.sql`
+4. `InsertInitialData.sql`
 
 The scripts `InsertInitialDataConfigurator.sql` and `InsertInitialDataEcommerce.sql` can be used if you want to run a website that uses the GeeksCoreLibrary that can be managed in Wiser. If you have a website with a webshop, run `InsertInitialDataEcommerce.sql` and if you have a website with a product configurator, run `InsertInitialDataConfigurator.sql` to setup Wiser to work with those kinds of websites.
 
