@@ -1,0 +1,50 @@
+﻿@using System.Web
+@model FrontEnd.Modules.ContentBox.Models.ContentBoxViewModel
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Content Box</title>
+
+    <link href="/ContentBox/assets/minimalist-blocks/content.css" rel="stylesheet" type="text/css" />
+    <link href="/ContentBox/box/box-flex.css" rel="stylesheet" type="text/css">
+    <link href="/ContentBox/assets/scripts/glide/css/glide.core.css" rel="stylesheet" type="text/css">
+    <link href="/ContentBox/assets/scripts/glide/css/glide.theme.css" rel="stylesheet" type="text/css">
+    <link href="/ContentBox/assets/scripts/navbar/navbar.css" rel="stylesheet" type="text/css">
+    <link href="/ContentBox/contentbox/contentbox.css" rel="stylesheet" type="text/css">
+    <link href="/ContentBox/contentbuilder/contentbuilder.css" rel="stylesheet" type="text/css">
+    @* <link href="@(Model.ApiRoot)templates/css-for-html-editors?encryptedUserId=@HttpUtility.UrlEncode(Model.UserId)&subDomain=@HttpUtility.UrlEncode(Model.SubDomain)" rel="stylesheet" type="text/css"> *@
+</head>
+<body>
+    <div id="app" v-cloak>
+        @* <div class="is-tool main-tools-container"> *@
+        @*     <button @@click="viewSnippets()" class="classic view-snippets-button">+ Toevoegen</button> *@
+        @*     <button @@click="viewHtml()" class="classic view-html-button">HTML</button> *@
+        @* </div> *@
+
+        <div id="ContentBoxWrapper" class="wrapper is-wrapper">
+        </div>
+    </div>
+
+<script id="vue-config" type="application/json">
+    {
+        "apiBase": "@Model.Settings.ApiBaseUrl",
+        "subDomain": "@Model.SubDomain" ,
+        "isTestEnvironment": @Model.IsTestEnvironment.ToString().ToLowerInvariant(),
+        "wiser1BaseUrl": "@Model.Wiser1BaseUrl",
+        "loadPartnerStyle": @Model.LoadPartnerStyle.ToString().ToLowerInvariant(),
+        "apiClientId": "@Model.Settings.ApiClientId",
+        "apiClientSecret": "@Model.Settings.ApiClientSecret",
+        "trackJsToken": "@Model.Settings.TrackJsToken",
+        "markerIoToken": "@Model.Settings.MarkerIoToken",
+        "wiserItemId": @Model.WiserItemId,
+        "propertyName": "@Model.PropertyName",
+        "languageCode": "@Model.LanguageCode"
+    }
+    </script>
+    <script type="module" src="/ContentBox/contentbox/lang/en.js"></script>
+    <script type="module" src="/scripts/ContentBox.min.js"></script>
+</body>
+</html>
