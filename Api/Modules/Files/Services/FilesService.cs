@@ -583,6 +583,53 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<bool>> UpdateExtraDataAsync(string encryptedItemId, int fileId, FileExtraDataModel extraData, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+        {
+            if (String.IsNullOrWhiteSpace(encryptedItemId))
+            {
+                throw new ArgumentNullException(nameof(encryptedItemId));
+            }
+
+            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedItemId, identity);
+            if (itemId <= 0 && itemLinkId <= 0)
+            {
+                throw new ArgumentException("Id or itemLinkId must be greater than zero.");
+            }
+
+            if (fileId <= 0)
+            {
+                throw new ArgumentException("File ID must be greater than zero.");
+            }
+
+            var tablePrefix = itemLinkId > 0
+                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+
+            var query = $@"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} SET extra_data = ?extraData WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
+
+            await databaseConnection.EnsureOpenConnectionForReadingAsync();
+
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
+            if (!success)
+            {
+                return new ServiceResult<bool>
+                {
+                    ErrorMessage = errorMessage,
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+
+            databaseConnection.ClearParameters();
+            databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
+            databaseConnection.AddParameter("fileId", fileId);
+            databaseConnection.AddParameter("extraData", extraData == null ? null : Newtonsoft.Json.JsonConvert.SerializeObject(extraData));
+            await databaseConnection.ExecuteAsync(query);
+
+            return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<FileModel>> AddUrlAsync(string encryptedItemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0)
         {
             if (String.IsNullOrWhiteSpace(encryptedItemId))

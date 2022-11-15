@@ -1072,7 +1072,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                                 LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail}{{0}} d ON d.item_id = ?itemId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
                                 # TODO: Find a more efficient way to load images and files?
                                 LEFT JOIN (
-                                    SELECT item_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'addedOn', added_on, 'contentUrl', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
+                                    SELECT item_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'addedOn', added_on, 'contentUrl', IFNULL(content_url, ''), 'extraData', extra_data) ORDER BY ordering ASC), ']') AS json
                                     FROM {wiserItemFileTable}{{0}}
                                     WHERE item_id = ?itemId
                                     GROUP BY property_name
@@ -1106,7 +1106,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                                 LEFT JOIN {linkTablePrefix}{WiserTableNames.WiserItemLinkDetail}{{0}} d ON d.itemlink_id = ?itemLinkId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
                                 # TODO: Find a more efficient way to load images and files?
                                 LEFT JOIN (
-                                    SELECT itemlink_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'addedOn', added_on, 'contentUrl', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
+                                    SELECT itemlink_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'addedOn', added_on, 'contentUrl', IFNULL(content_url, ''), 'extraData', extra_data) ORDER BY ordering ASC), ']') AS json
                                     FROM {wiserItemFileTableForLink}{{0}}
                                     WHERE itemlink_id = ?itemLinkId
                                     GROUP BY property_name
