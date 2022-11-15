@@ -944,8 +944,8 @@ const importModuleSettings = {
         selectProperty(dataItem, property) {
             dataItem.set("propertyName", property.value);
             dataItem.set("languageCode", property.languageCode);
-            dataItem.set("isImageField", parseInt(property.isImageField) === 1);
-            dataItem.set("allowMultipleImages", parseInt(property.allowMultipleImages) === 1);
+            dataItem.set("isImageField", property.isImageField);
+            dataItem.set("allowMultipleImages", property.allowMultipleImages);
         }
     }
 
