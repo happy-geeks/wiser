@@ -33,14 +33,14 @@ namespace Api.Modules.DigitalOcean.Services
         public string AuthorizationRedirect()
         {
             var callBackUrl = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host.Value}/api/v3/digital-ocean/callback";
-            return $"https://cloud.digitalocean.com/v1/oauth/authorize?client_id={Uri.EscapeDataString(digitalOceanSettings.ClientId)}&redirect_uri={Uri.EscapeUriString(callBackUrl)}&response_type=code";
+            return $"https://cloud.digitalocean.com/v1/oauth/authorize?client_id={Uri.EscapeDataString(digitalOceanSettings.ClientId)}&redirect_uri={Uri.EscapeDataString(callBackUrl)}&response_type=code";
         }
 
         /// <inheritdoc />
         public async Task<string> ProcessCallbackAsync(string code)
         {
             var callBackUrl = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host.Value}/api/v3/digital-ocean/callback";
-            var tokenUri = $"https://cloud.digitalocean.com/v1/oauth/token?client_id={Uri.EscapeDataString(digitalOceanSettings.ClientId)}&grant_type=authorization_code&code={Uri.EscapeDataString(code)}&client_secret={Uri.EscapeDataString(digitalOceanSettings.ClientSecret)}&redirect_uri={Uri.EscapeUriString(callBackUrl)}";
+            var tokenUri = $"https://cloud.digitalocean.com/v1/oauth/token?client_id={Uri.EscapeDataString(digitalOceanSettings.ClientId)}&grant_type=authorization_code&code={Uri.EscapeDataString(code)}&client_secret={Uri.EscapeDataString(digitalOceanSettings.ClientSecret)}&redirect_uri={Uri.EscapeDataString(callBackUrl)}";
             
             var restClient = new RestClient(tokenUri);
             var restRequest = new RestRequest("", Method.Post);

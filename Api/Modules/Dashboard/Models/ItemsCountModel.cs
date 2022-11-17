@@ -1,5 +1,8 @@
 ﻿namespace Api.Modules.Dashboard.Models;
 
+/// <summary>
+/// This class describes an object that keeps count of the amount of items that an Entity has
+/// </summary>
 public class ItemsCountModel
 {
     /// <summary>
