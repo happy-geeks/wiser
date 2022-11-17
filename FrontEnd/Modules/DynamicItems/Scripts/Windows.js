@@ -146,15 +146,18 @@ export class Windows {
                     kendo.alert("Er is geen HTML editor gevonden waar deze afbeelding toegevoegd kan worden. Sluit aub dit scherm en probeer het opnieuw, of neem contact op met ons.");
                     return;
                 }
+                
+                const selectedItem = this.imagesUploaderWindowTreeView.dataItem(this.imagesUploaderWindowTreeView.select());
+                const extension = selectedItem.name.split(selectedItem.name.lastIndexOf(".") + 1);
 
-                const imagePreviewUrl = this.generateImagePreviewUrl('jpg');
-                const html = `<figure>` +
-                    `<picture>` +
-                    `<source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('jpg').url}" type="image/jpeg" />` +
-                    `<source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('webp').url}" type="image/webp" />` +
-                    `<img width="100%" height="auto" loading="lazy" src="${imagePreviewUrl.url}" alt="${imagePreviewUrl.altText}" />` +
-                    `</picture>` +
-                    `</figure>`;
+                const imagePreviewUrl = this.generateImagePreviewUrl(extension);
+                const html = `<figure>
+    <picture>
+        <source media="(min-width: 0px)" srcset="${imagePreviewUrl.url}" type="image/${extension}" />
+        <source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('webp').url}" type="image/webp" />
+        <img width="100%" height="auto" loading="lazy" src="${imagePreviewUrl.url}" alt="${imagePreviewUrl.altText}" />
+    </picture>
+</figure>`;
                 if (this.imagesUploaderSender.kendoEditor) {
                     this.imagesUploaderSender.kendoEditor.exec("inserthtml", { value: html });
                 }
