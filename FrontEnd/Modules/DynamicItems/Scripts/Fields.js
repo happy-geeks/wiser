@@ -2952,7 +2952,7 @@ export class Fields {
         const htmlWindow = $("#contentBuilderWindow").clone(true);
 
         const iframe = htmlWindow.find("iframe");
-        iframe.attr("src", `/Modules/ContentBuilder?wiserItemId=${encodeURIComponent(itemId)}&propertyName=${encodeURIComponent(propertyName)}&languageCode=${encodeURIComponent(languageCode || "")}&userId=${encodeURIComponent(this.base.settings.userId)}`);
+        iframe.attr("src", `/Modules/ContentBox?wiserItemId=${encodeURIComponent(itemId)}&propertyName=${encodeURIComponent(propertyName)}&languageCode=${encodeURIComponent(languageCode || "")}&userId=${encodeURIComponent(this.base.settings.userId)}`);
 
         htmlWindow.kendoWindow({
             width: "100%",
@@ -2968,7 +2968,7 @@ export class Fields {
 
         htmlWindow.find(".k-primary, .k-button-solid-primary").kendoButton({
             click: () => {
-                const html = iframe[0].contentWindow.main.vueApp.contentBuilder.html();
+                const html = iframe[0].contentWindow.main.vueApp.contentBox.html();
                 editor.value(html);
 
                 const container = editor.element.closest(".entity-container");
