@@ -19,7 +19,6 @@
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
-    <None Include="wwwroot\ContentBuilder\plugins\WiserDataSelector\plugin.js" />
     <Compile Remove="temp\**" />
     <None Remove="temp\**" />
     <Content Remove="temp\**" />

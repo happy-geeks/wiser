@@ -2,9 +2,6 @@
 
 import { TrackJS } from "trackjs";
 import ContentBox from "@innovastudio/contentbox"
-/*import "./lang/en.js";
-import "../Css/contentbuilder.css"
-import "../Css/contentbuilder-wiser.scss"*/
 import { createApp, ref, isProxy, toRaw } from "vue";
 import * as axios from "axios";
 
@@ -81,10 +78,9 @@ import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.ser
                         html: ""
                     }
                 },
-                async mounted() {
-                    const html = await main.contentBuildersService.getHtml(this.appSettings.wiserItemId, this.appSettings.languageCode, this.appSettings.propertyName);
-                    
-                    this.contentBox = new ContentBox({
+                async mounted() {             
+                    // Create object with settings for content box.
+                    const settings = {
                         wrapper: "#ContentBoxWrapper",
 
                         imageSelect: "/ContentBox/assets.html",
@@ -93,8 +89,57 @@ import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.ser
 
                         slider: "glide",
                         navbar: true,
+
+                        scriptPath: "/ContentBox/scripts/",
+                        pluginPath: "/ContentBox/contentbuilder/",
+                        assetPath: "/ContentBox/assets/",
+                        modulePath: "/ContentBox/assets/modules/",
+                        fontAssetPath: "/ContentBox/assets/fonts/",
+                        contentStylePath: "/ContentBox/assets/styles/",
+                        zoom: 0.97
+                    };
+
+                    // Get data we need from database.
+                    const promises = [];
+                    promises.push(main.contentBuildersService.getHtml(this.appSettings.wiserItemId, this.appSettings.languageCode, this.appSettings.propertyName));
+                    promises.push(main.contentBuildersService.getCustomerSnippets());
+                    promises.push(main.contentBuildersService.getTemplateCategories());
+                    const data = await Promise.all(promises);
+                    this.html = data[0].data || "";
+                    const snippetJson = data[1].data.customerSnippets;
+                    const snippetCategories = data[1].data.snippetCategories;
+                    const templateCategories = data[2].data;
+                    
+                    if (!snippetJson || !snippetJson.length || !snippetCategories || !snippetCategories.length) {
+                        // No snippets found in tenant database, use default snippets that are supplied by ContentBox.
+                        settings.snippetUrl ="/ContentBox/assets/minimalist-blocks/content.js";
+                        settings.snippetPath = "/ContentBox/assets/minimalist-blocks/";
+                        settings.snippetData = "/ContentBox/assets/minimalist-blocks/snippetlist.html";
+                        settings.snippetPathReplace = ["assets/", "/ContentBox/assets/"];
+
+                        // Default content builder categories.
+                        settings.snippetCategories = [[120, "Basic"], [118, "Article"], [101, "Headline"], [119, "Buttons"], [102, "Photos"], [103, "Profile"], [116, "Contact"], [104, "Products"], [105, "Features"], [106, "Process"], [107, "Pricing"], [108, "Skills"], [109, "Achievements"], [110, "Quotes"], [111, "Partners"], [112, "As Featured On"], [113, "Page Not Found"], [114, "Coming Soon"], [115, "Help, FAQ"]];
+                        settings.defaultSnippetCategory = settings.snippetCategories[0][0];
+                    } else {
+                        // If we have snippets from database, only use those and not the default ones of the ContentBox.
+                        let defaultSnippetCategory;
+                        if (snippetCategories.length > 0 && snippetCategories[0].length > 0) {
+                            defaultSnippetCategory = snippetCategories[0][0];
+                        }
+
+                        settings.snippetPath = "";
+                        settings.snippetUrl = "";
+                        settings.snippetData = "";
+                        settings.snippetCategories = snippetCategories;
+                        settings.defaultSnippetCategory = defaultSnippetCategory;
                         
-                        templates: [
+                        // This is required to make the snippets work in ContentBox, their code checks for this property.
+                        window.data_basic = {snippets: snippetJson};
+                        window._snippets_path = "";
+                    } 
+                    
+                    if (!templateCategories || !templateCategories.length) {
+                        settings.templates = [
                             {
                                 url: "/ContentBox/assets/simplestart/templates.js",
                                 path: "/ContentBox/assets/simplestart/",
@@ -104,23 +149,22 @@ import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.ser
                                 url: "/ContentBox/assets/quickstart/templates.js",
                                 path: "/ContentBox/assets/quickstart/",
                                 pathReplace: []
-                            },
-                        ],
-
-                        scriptPath: "/ContentBox/scripts/",
-                        pluginPath: "/ContentBox/contentbuilder/",
-                        assetPath: "/ContentBox/assets/",
-                        modulePath: "/ContentBox/assets/modules/",
-                        fontAssetPath: "/ContentBox/assets/fonts/",
-                        contentStylePath: "/ContentBox/assets/styles/",
-                        snippetUrl: "/ContentBox/assets/minimalist-blocks/content.js",
-                        snippetPath: "/ContentBox/assets/minimalist-blocks/",
-                        snippetData: "/ContentBox/assets/minimalist-blocks/snippetlist.html",
-                        snippetPathReplace: ["assets/", "/ContentBox/assets/"],
-                        zoom: 0.97
-                    });
+                            }
+                        ];
+                    } else {
+                        settings.templates = [
+                            {
+                                url: `${this.appSettings.apiRoot}content-builder/template.js?encryptedUserId=${encodeURIComponent(this.appSettings.encryptedUserId)}&subDomain=${encodeURIComponent(this.appSettings.subDomain)}`,
+                                path: "",
+                                pathReplace: []
+                            }
+                        ];
+                        settings.featuredCategories = templateCategories;
+                        settings.defaultCategory = templateCategories[0];
+                    }
                     
-                    this.contentBox.loadHtml(html.data || "");
+                    this.contentBox = new ContentBox(settings);
+                    this.contentBox.loadHtml(this.html);
                 },
                 computed: {
                 },
