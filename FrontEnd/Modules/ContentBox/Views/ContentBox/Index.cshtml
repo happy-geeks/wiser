@@ -38,7 +38,7 @@
         "wiserItemId": @Model.WiserItemId,
         "propertyName": "@Model.PropertyName",
         "languageCode": "@Model.LanguageCode",
-        "encryptedUserId": "@Model.UserId"
+        "encryptedUserId": "@Html.Raw(Model.UserId)"
     }
     </script>
     <script type="module" src="/ContentBox/contentbox/lang/en.js"></script>
