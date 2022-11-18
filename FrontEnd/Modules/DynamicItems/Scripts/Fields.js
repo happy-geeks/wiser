@@ -1108,10 +1108,10 @@ export class Fields {
                         text: "Opslaan",
                         primary: true,
                         action: (event) => {
+                            const process = `updateFile_${Date.now()}`;
+                            window.processing.addProcess(process);
+
                             try {
-                                const process = `updateFile_${Date.now()}`;
-                                window.processing.addProcess(process);
-                                
                                 const newFileName = dialogElement.find("input[name=fileName]").val();
                                 const newTitle = dialogElement.find("input[name=title]").val();
                                 const extraData = $.extend(true, {}, data.extraData);
