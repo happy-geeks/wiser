@@ -157,7 +157,7 @@ namespace Api.Modules.Templates.Helpers
 
             foreach (var publishAction in publishModel)
             {
-                //Negative value means the value is the old environment. These have already been set and need no further action.
+                // Negative value means the value is the old environment. These have already been set and need no further action.
                 if (publishAction.Value <= 0)
                 {
                     continue;

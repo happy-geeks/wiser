@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Template;
+using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.Templates.Interfaces.DataLayer
 {
@@ -76,12 +77,14 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <summary>
         /// Publish the dynamic component to an environment. This method will execute the publishmodel instructions it recieves, logic for publishing linked environments should be handled in the servicelayer.
         /// </summary>
-        /// <param name="contentId">The id of the component of which the enviroment should be published.</param>
-        /// <param name="publishModel">A publish model containing the versions that should be altered and their respective values to be altered with.</param>
-        /// <param name="publishLog"></param>
+        /// <param name="contentId">The id of the component of which the environment should be published.</param>
+        /// <param name="version">The version that should be deployed/published.</param>
+        /// <param name="environment">The environment to publish the version of the template to.</param>
+        /// <param name="publishLog">Information for the history of the template, to log the version change there.</param>
         /// <param name="username">The name of the authenticated user.</param>
+        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
         /// <returns>An int confirming the rows altered by the query.</returns>
-        Task<int> UpdatePublishedEnvironmentAsync(int contentId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username, string branchDatabaseName = null);
+        Task<int> UpdatePublishedEnvironmentAsync(int contentId, int version, Environments environment, PublishLogModel publishLog, string username, string branchDatabaseName = null);
 
         /// <summary>
         /// Duplicates a dynamic component (only the latest version).
