@@ -104,11 +104,16 @@ import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.ser
                     promises.push(main.contentBuildersService.getHtml(this.appSettings.wiserItemId, this.appSettings.languageCode, this.appSettings.propertyName));
                     promises.push(main.contentBuildersService.getCustomerSnippets());
                     promises.push(main.contentBuildersService.getTemplateCategories());
+                    promises.push(main.contentBuildersService.getFramework());
                     const data = await Promise.all(promises);
                     this.html = data[0].data || "";
                     const snippetJson = data[1].data.customerSnippets;
                     const snippetCategories = data[1].data.snippetCategories;
                     const templateCategories = data[2].data;
+                    settings.framework = (data[3].data || "").toLowerCase();
+                    if (settings.framework === "contentbuilder") {
+                        settings.framework = "";
+                    }
                     
                     if (!snippetJson || !snippetJson.length || !snippetCategories || !snippetCategories.length) {
                         // No snippets found in tenant database, use default snippets that are supplied by ContentBox.
