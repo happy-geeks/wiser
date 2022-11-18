@@ -2210,11 +2210,55 @@ LIMIT 1";
                 throw new ArgumentException("The version is invalid");
             }
 
+            // When deploying a template to live environment that is a view, routine or trigger, then also update the actual view/routine/trigger in the database.
+            if (environment == Environments.Live)
+            {
+                var databaseName = branchDatabaseName ?? clientDatabaseConnection.ConnectedDatabase;
+                var template = await templateDataService.GetDataAsync(templateId, version: version);
+
+                switch (template.Type)
+                {
+                    case TemplateTypes.View:
+                    {
+                        // Create or replace view.
+                        var (successful, errorMessage) = await CreateOrReplaceDatabaseViewAsync(template.Name, template.EditorValue, databaseName);
+                        if (!successful)
+                        {
+                            throw new Exception($"The template saved successfully, but the view could not be created due to a syntax error. Error:\n{errorMessage}");
+                        }
+
+                        break;
+                    }
+                    case TemplateTypes.Routine:
+                    {
+                        // Also (re-)create the actual routine.
+                        var (successful, errorMessage) = await CreateOrReplaceDatabaseRoutineAsync(template.Name, template.RoutineType, template.RoutineParameters, template.RoutineReturnType, template.EditorValue, databaseName);
+                        if (!successful)
+                        {
+                            throw new Exception($"The template saved successfully, but the routine could not be created due to a syntax error. Error:\n{errorMessage}");
+                        }
+
+                        break;
+                    }
+                    case TemplateTypes.Trigger:
+                    {
+                        // Also (re-)create the actual trigger.
+                        var (successful, errorMessage) = await CreateOrReplaceDatabaseTriggerAsync(template.Name, template.TriggerTiming, template.TriggerEvent, template.TriggerTableName, template.EditorValue, databaseName);
+                        if (!successful)
+                        {
+                            throw new Exception($"The template saved successfully, but the trigger could not be created due to a syntax error. Error:\n{errorMessage}");
+                        }
+
+                        break;
+                    }
+                }
+            }
+
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
-            return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, newPublished, publishLog, IdentityHelpers.GetUserName(identity, true), branchDatabaseName));
+            return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, version, environment, publishLog, IdentityHelpers.GetUserName(identity, true), branchDatabaseName));
         }
 
         /// <inheritdoc />
@@ -2328,44 +2372,6 @@ LIMIT 1";
             }
 
             await templateDataService.SaveAsync(template, templateLinks, IdentityHelpers.GetUserName(identity, true));
-
-            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            switch (template.Type)
-            {
-                case TemplateTypes.View:
-                {
-                    // Create or replace view.
-                    var (successful, errorMessage) = await CreateOrReplaceDatabaseViewAsync(template.Name, template.EditorValue, clientDatabaseConnection.ConnectedDatabase);
-                    if (!successful)
-                    {
-                        throw new Exception($"The template saved successfully, but the view could not be created due to a syntax error. Error:\n{errorMessage}");
-                    }
-
-                    break;
-                }
-                case TemplateTypes.Routine:
-                {
-                    // Also (re-)create the actual routine.
-                    var (successful, errorMessage) = await CreateOrReplaceDatabaseRoutineAsync(template.Name, template.RoutineType, template.RoutineParameters, template.RoutineReturnType, template.EditorValue, clientDatabaseConnection.ConnectedDatabase);
-                    if (!successful)
-                    {
-                        throw new Exception($"The template saved successfully, but the routine could not be created due to a syntax error. Error:\n{errorMessage}");
-                    }
-
-                    break;
-                }
-                case TemplateTypes.Trigger:
-                {
-                    // Also (re-)create the actual trigger.
-                    var (successful, errorMessage) = await CreateOrReplaceDatabaseTriggerAsync(template.Name, template.TriggerTiming, template.TriggerEvent, template.TriggerTableName, template.EditorValue, clientDatabaseConnection.ConnectedDatabase);
-                    if (!successful)
-                    {
-                        throw new Exception($"The template saved successfully, but the trigger could not be created due to a syntax error. Error:\n{errorMessage}");
-                    }
-
-                    break;
-                }
-            }
 
             if (template.Type != TemplateTypes.Scss || !template.IsScssIncludeTemplate || skipCompilation)
             {
@@ -3269,49 +3275,6 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 var currentPublished = (await GetTemplateEnvironmentsAsync(templateId, branchToDeploy.Database.DatabaseName)).ModelObject;
 
                 await PublishToEnvironmentAsync(identity, templateId, templateMetaData.Version, Environments.Live, currentPublished, branchToDeploy.Database.DatabaseName);
-
-                switch (templateMetaData.Type)
-                {
-                    case TemplateTypes.View:
-                    {
-                        var template = await templateDataService.GetDataAsync(templateId);
-                        
-                        // Create or replace view.
-                        var (successful, errorMessage) = await CreateOrReplaceDatabaseViewAsync(template.Name, template.EditorValue, branchToDeploy.Database.DatabaseName);
-                        if (!successful)
-                        {
-                            throw new Exception($"The template saved successfully, but the view could not be created due to a syntax error. Error:\n{errorMessage}");
-                        }
-
-                        break;
-                    }
-                    case TemplateTypes.Routine:
-                    {
-                        var template = await templateDataService.GetDataAsync(templateId);
-
-                        // Also (re-)create the actual routine.
-                        var (successful, errorMessage) = await CreateOrReplaceDatabaseRoutineAsync(template.Name, template.RoutineType, template.RoutineParameters, template.RoutineReturnType, template.EditorValue, branchToDeploy.Database.DatabaseName);
-                        if (!successful)
-                        {
-                            throw new Exception($"The template saved successfully, but the routine could not be created due to a syntax error. Error:\n{errorMessage}");
-                        }
-
-                        break;
-                    }
-                    case TemplateTypes.Trigger:
-                    {
-                        var template = await templateDataService.GetDataAsync(templateId);
-
-                        // Also (re-)create the actual trigger.
-                        var (successful, errorMessage) = await CreateOrReplaceDatabaseTriggerAsync(template.Name, template.TriggerTiming, template.TriggerEvent, template.TriggerTableName, template.EditorValue, branchToDeploy.Database.DatabaseName);
-                        if (!successful)
-                        {
-                            throw new Exception($"The template saved successfully, but the trigger could not be created due to a syntax error. Error:\n{errorMessage}");
-                        }
-
-                        break;
-                    }
-                }
             }
 
             return new ServiceResult<bool>(true)

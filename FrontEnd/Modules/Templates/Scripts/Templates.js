@@ -1020,7 +1020,7 @@ const moduleSettings = {
             $(saveAndDeployToTestButton).getKendoButton().enable(false);
             saveAndDeployToTestButton.classList.add("hidden");
             const publishedEnvironments = document.getElementById("published-environments");
-            publishedEnvironments.querySelectorAll(".version-live, .version-accept, .version-test").forEach((element) => {
+            publishedEnvironments.querySelectorAll(".version-accept, .version-test").forEach((element) => {
                 element.classList.add("hidden");
             });
         }
