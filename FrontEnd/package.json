@@ -8,7 +8,7 @@
   },
   "main": "main.js",
   "dependencies": {
-    "@innovastudio/contentbox": "^1.4.35",
+    "@innovastudio/contentbox": "^1.4.29",
     "@innovastudio/contentbuilder": "^1.3.31",
     "@progress/kendo-licensing": "^1.2.1",
     "@progress/kendo-theme-material": "^5.5.0",
