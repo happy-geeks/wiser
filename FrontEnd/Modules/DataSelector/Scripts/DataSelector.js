@@ -1087,7 +1087,8 @@ const moduleSettings = {
                 savedJson: JSON.stringify(this.createJsonRequest(true)),
                 showInExportModule: document.getElementById("showInExportModule").checked ? 1 : 0,
                 showInCommunicationModule: document.getElementById("showInCommunicationModule").checked ? 1 : 0,
-                availableForRendering: document.getElementById("availableForRendering").checked ? 1 : 0
+                availableForRendering: document.getElementById("availableForRendering").checked ? 1 : 0,
+                allowedRoles: this.allowedRoles.value().join()
             };
 
             const saveResult = await Wiser.api({
@@ -1952,6 +1953,19 @@ const moduleSettings = {
                     this.extendMultiSelectWithSortable(widget);
                 }
             });
+
+            this.allowedRoles = $("#allowedRoles").kendoMultiSelect({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: `${this.settings.serviceRoot}/GET_ROLES`
+                        }
+                    }
+                },
+                dataTextField: "roleName",
+                dataValueField: "id",
+                multiple: "multiple"
+            }).data("kendoMultiSelect");
 
             //TREEVIEW
             context.querySelectorAll(".checkTree").forEach((e) => {

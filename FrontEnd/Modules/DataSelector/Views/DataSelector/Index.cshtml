@@ -113,6 +113,13 @@
                         </label>
                         <div class="form-hint"><span>Zorgt ervoor dat de dataselector gebruikt kan worden in HTML-editors in Wiser om zo dynamische blokken van content toe te voegen op een pagina</span></div>
                     </div>
+                    
+                    <div class="item">
+                        <h4>
+                            <Label>Rollen die deze data selector mogen uitvoeren via de API</Label>
+                        </h4>
+                        <select id="allowedRoles"></select>
+                    </div>
                 </div>
 
                 @if (!Model.EmbedOptions.Contains("no-toolbar", StringComparer.OrdinalIgnoreCase))

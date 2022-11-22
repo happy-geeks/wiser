@@ -346,6 +346,10 @@
                 if (typeof savedData.availableForRendering === "boolean") {
                     document.getElementById("availableForRendering").checked = savedData.availableForRendering;
                 }
+                
+                if (savedData.allowedRoles) {
+                    $("#allowedRoles").getKendoMultiSelect().value(savedData.allowedRoles.split(","));
+                }
 
                 // This is where the data selector will complete loading.
                 window.processing.removeProcess("dataSelectorLoad");

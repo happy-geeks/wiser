@@ -1448,15 +1448,17 @@ ON DUPLICATE KEY UPDATE permissions = {permissionCode};");
                 TemplateQueryStrings.Add("GET_DATA_SELECTOR_BY_ID", @"SET @_id = {id};
 
 SELECT
-    id, `name`,
-    module_selection AS modules,
-    request_json AS requestJson,
-    saved_json AS savedJson,
-    show_in_export_module AS showInExportModule,
-    show_in_communication_module AS showInCommunicationModule,
-    available_for_rendering AS availableForRendering
-FROM wiser_data_selector
-WHERE id = @_id");
+    dataSelector.id, `name`,
+    dataSelector.module_selection AS modules,
+    dataSelector.request_json AS requestJson,
+    dataSelector.saved_json AS savedJson,
+    dataSelector.show_in_export_module AS showInExportModule,
+    dataSelector.show_in_communication_module AS showInCommunicationModule,
+    dataSelector.available_for_rendering AS availableForRendering,
+    IFNULL(GROUP_CONCAT(permission.role_id), '') AS allowedRoles
+FROM wiser_data_selector AS dataSelector
+LEFT JOIN wiser_permission AS permission ON permission.data_selector_id = dataSelector.id
+WHERE dataSelector.id = @_id");
 
                 TemplateQueryStrings.Add("GET_ITEM_ENVIRONMENTS", @"SELECT
 	item.id AS id_encrypt_withdate,
