@@ -1408,6 +1408,8 @@ WHERE role_id = {role_id} AND module_id={module_id}");
 	properties.id AS `propertyId`,
 	properties.entity_name AS `entityName`,
 	properties.display_name as `displayName`,
+    properties.tab_name AS `tabName`,
+    properties.group_name AS `groupName`,
 	IFNULL(permissions.permissions, 15) AS `permission`,
     {roleId} AS `roleId`
 FROM `wiser_entityproperty` AS properties
@@ -1415,7 +1417,7 @@ LEFT JOIN `wiser_permission` AS permissions ON permissions.entity_property_id = 
 WHERE NULLIF(properties.display_name, '') IS NOT NULL
 	AND NULLIF(properties.entity_name, '') IS NOT NULL
 GROUP BY properties.id
-ORDER BY properties.entity_name, properties.display_name");
+ORDER BY properties.entity_name, properties.tab_name, properties.group_name, properties.display_name");
                 TemplateQueryStrings.Add("GET_MODULE_PERMISSIONS", @"SELECT
 	role.id AS `roleId`,
 	role.role_name AS `roleName`,

@@ -138,6 +138,14 @@ export class RoleTab {
                         title: "Entiteit"
                     },
                     {
+                        field: "tabName",
+                        title: "Tab"
+                    },
+                    {
+                        field: "groupName",
+                        title: "Groep"
+                    },
+                    {
                         field: "displayName",
                         title: "Veld"
                     },
