@@ -99,7 +99,6 @@ namespace FrontEnd
                 // Set localization to use resource files with suffices instead of directories.
                 // E.G. "Modules/Translations/Resources/Modules/Translations/Views/Index.nl.resx"
                 // Instead of "Modules/Translations/Resources/Modules.Translations.Views.Index.nl.resx"
-                //.AddViewLocalization(LanguageViewLocationExpanderFormat.SubFolder)
                 .AddViewLocalization()
                 .AddDataAnnotationsLocalization();
             
@@ -113,9 +112,7 @@ namespace FrontEnd
                 options.FallBackToParentUICultures = true;
             });
             // Setup localization.
-            //services.AddLocalization(options => options.ResourcesPath = "Modules//Translations//Resources");
             services.AddLocalization(options => options.ResourcesPath = "Modules/Translations/Resources");
-            //services.AddLocalization();
 
             // Setup dependency injection.
             services.AddHttpContextAccessor();
