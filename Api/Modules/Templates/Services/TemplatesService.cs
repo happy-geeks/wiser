@@ -1408,6 +1408,8 @@ WHERE role_id = {role_id} AND module_id={module_id}");
 	properties.id AS `propertyId`,
 	properties.entity_name AS `entityName`,
 	properties.display_name as `displayName`,
+    properties.tab_name AS `tabName`,
+    properties.group_name AS `groupName`,
 	IFNULL(permissions.permissions, 15) AS `permission`,
     {roleId} AS `roleId`
 FROM `wiser_entityproperty` AS properties
@@ -1415,7 +1417,7 @@ LEFT JOIN `wiser_permission` AS permissions ON permissions.entity_property_id = 
 WHERE NULLIF(properties.display_name, '') IS NOT NULL
 	AND NULLIF(properties.entity_name, '') IS NOT NULL
 GROUP BY properties.id
-ORDER BY properties.entity_name, properties.display_name");
+ORDER BY properties.entity_name, properties.tab_name, properties.group_name, properties.display_name");
                 TemplateQueryStrings.Add("GET_MODULE_PERMISSIONS", @"SELECT
 	role.id AS `roleId`,
 	role.role_name AS `roleName`,
@@ -1448,15 +1450,17 @@ ON DUPLICATE KEY UPDATE permissions = {permissionCode};");
                 TemplateQueryStrings.Add("GET_DATA_SELECTOR_BY_ID", @"SET @_id = {id};
 
 SELECT
-    id, `name`,
-    module_selection AS modules,
-    request_json AS requestJson,
-    saved_json AS savedJson,
-    show_in_export_module AS showInExportModule,
-    show_in_communication_module AS showInCommunicationModule,
-    available_for_rendering AS availableForRendering
-FROM wiser_data_selector
-WHERE id = @_id");
+    dataSelector.id, `name`,
+    dataSelector.module_selection AS modules,
+    dataSelector.request_json AS requestJson,
+    dataSelector.saved_json AS savedJson,
+    dataSelector.show_in_export_module AS showInExportModule,
+    dataSelector.show_in_communication_module AS showInCommunicationModule,
+    dataSelector.available_for_rendering AS availableForRendering,
+    IFNULL(GROUP_CONCAT(permission.role_id), '') AS allowedRoles
+FROM wiser_data_selector AS dataSelector
+LEFT JOIN wiser_permission AS permission ON permission.data_selector_id = dataSelector.id
+WHERE dataSelector.id = @_id");
 
                 TemplateQueryStrings.Add("GET_ITEM_ENVIRONMENTS", @"SELECT
 	item.id AS id_encrypt_withdate,

@@ -54,5 +54,10 @@
         /// Gets or sets the ID of the default HTML template for rendering. Only applicable if <see cref="AvailableForRendering"/> is set to <see langword="true"/>.
         /// </summary>
         public ulong DefaultTemplate { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the roles that are allowed to execute the data selector from the API.
+        /// </summary>
+        public string AllowedRoles { get; set; }
     }
 }

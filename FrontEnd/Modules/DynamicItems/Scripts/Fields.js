@@ -2947,12 +2947,19 @@ export class Fields {
      * @param {any} event The event from the execute action.
      * @param {any} editor The HTML editor where the action is executed in.
      * @param {any} itemId The ID of the current item.
+     * @param {string} propertyName The property name that contains the HTML of the item.
+     * @param {string} languageCode The language code of the property to use for the HTML.
+     * @param {string} contentBuilderMode The mode in which to put the ContentBuilder.
      */
-    async onHtmlEditorContentBuilderExec(event, editor, itemId, propertyName, languageCode) {
+    async onHtmlEditorContentBuilderExec(event, editor, itemId, propertyName, languageCode, contentBuilderMode) {
         const htmlWindow = $("#contentBuilderWindow").clone(true);
 
         const iframe = htmlWindow.find("iframe");
-        iframe.attr("src", `/Modules/ContentBuilder?wiserItemId=${encodeURIComponent(itemId)}&propertyName=${encodeURIComponent(propertyName)}&languageCode=${encodeURIComponent(languageCode || "")}&userId=${encodeURIComponent(this.base.settings.userId)}`);
+        let moduleName = "ContentBuilder";
+        if (contentBuilderMode === "ContentBox") {
+            moduleName = "ContentBox";
+        }
+        iframe.attr("src", `/Modules/${moduleName}?wiserItemId=${encodeURIComponent(itemId)}&propertyName=${encodeURIComponent(propertyName)}&languageCode=${encodeURIComponent(languageCode || "")}&userId=${encodeURIComponent(this.base.settings.userId)}`);
 
         htmlWindow.kendoWindow({
             width: "100%",
@@ -2968,7 +2975,9 @@ export class Fields {
 
         htmlWindow.find(".k-primary, .k-button-solid-primary").kendoButton({
             click: () => {
-                const html = iframe[0].contentWindow.main.vueApp.contentBuilder.html();
+                const html = typeof(iframe[0].contentWindow.main.vueApp.contentBox) === "undefined" 
+                    ? iframe[0].contentWindow.main.vueApp.contentBuilder.html()
+                    : iframe[0].contentWindow.main.vueApp.contentBox.html();
                 editor.value(html);
 
                 const container = editor.element.closest(".entity-container");

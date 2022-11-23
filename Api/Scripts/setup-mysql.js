@@ -75,6 +75,11 @@
         const createTriggersQuery = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/CreateTriggers.sql"), "utf8");
         await connection.query(createTriggersQuery);
         console.log(notice("Triggers created."));
+		
+		console.log(notice("Creating stored procedures..."));
+		const createStoredProceduresQuery = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/StoredProcedures.sql"), "utf8");
+		await connection.query(createStoredProceduresQuery);
+		console.log(notice("Stored procedures created."));
 
         console.log(notice("Inserting data..."));
         await connection.query(`INSERT INTO easy_customers (id, customerid, name, subdomain, wiser_title) VALUES (1, 1, 'Main', 'main', 'Wiser')`);
