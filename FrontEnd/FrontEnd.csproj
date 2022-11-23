@@ -22,6 +22,21 @@
     <Compile Remove="temp\**" />
     <None Remove="temp\**" />
     <Content Remove="temp\**" />
+    <Compile Update="Modules\Translations\Resources\Modules\Translations\Views\Translations\Index.en.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Index.en.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Modules\Translations\Resources\Core\Views\Home\Index.nl.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Index.nl.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Modules\Translations\Resources\Core.Views.Home.Index.nl.backup.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Index.nl.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
@@ -36,9 +51,26 @@
 
   <ItemGroup>
     <Folder Include="Modules\Base\Scripts\codemirror\" />
+    <Folder Include="Modules\Translations\Css" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Remove="temp\**" />
+    <EmbeddedResource Update="Modules\Translations\Resources\Modules\Translations\Views\Translations\Index.en.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Index.en.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Modules\Translations\Resources\Core\Views\Views\Index.en.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Index.en.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Modules\Translations\Resources\Core\Views\Home\Index.nl.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Index.nl.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Modules\Translations\Resources\Core.Views.Home.Index.nl.backup.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Core.Views.Home.Index.nl.backup.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

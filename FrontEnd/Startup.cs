@@ -1,3 +1,4 @@
+using System.Globalization;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Core.Models;
 using FrontEnd.Core.Services;
@@ -9,10 +10,12 @@ using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -64,7 +67,7 @@ namespace FrontEnd
 
             // Use Serilog as our main logger.
             services.AddLogging(builder => { builder.AddSerilog(); });
-
+            
             // MVC looks in the directory "Areas" by default, but we use the directory "Modules", so we have to tell MC that.
             services.Configure<RazorViewEngineOptions>(options =>
             {
@@ -92,7 +95,27 @@ namespace FrontEnd
                 options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
                 options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Local;
                 options.SerializerSettings.Converters.Add(new StringEnumConverter());
+            })
+                // Set localization to use resource files with suffices instead of directories.
+                // E.G. "Modules/Translations/Resources/Modules/Translations/Views/Index.nl.resx"
+                // Instead of "Modules/Translations/Resources/Modules.Translations.Views.Index.nl.resx"
+                //.AddViewLocalization(LanguageViewLocationExpanderFormat.SubFolder)
+                .AddViewLocalization()
+                .AddDataAnnotationsLocalization();
+            
+            
+            services.Configure<RequestLocalizationOptions>(options =>
+            {
+                string[] supportedCultures = { "en-US", "nl-NL" };
+                options.AddSupportedCultures(supportedCultures);
+                options.AddSupportedUICultures(supportedCultures);
+                options.SetDefaultCulture(supportedCultures[0]);
+                options.FallBackToParentUICultures = true;
             });
+            // Setup localization.
+            //services.AddLocalization(options => options.ResourcesPath = "Modules//Translations//Resources");
+            services.AddLocalization(options => options.ResourcesPath = "Modules/Translations/Resources");
+            //services.AddLocalization();
 
             // Setup dependency injection.
             services.AddHttpContextAccessor();
@@ -113,7 +136,11 @@ namespace FrontEnd
                 // Force https on non-dev environments.
                 app.UseHttpsRedirection();
             }
-
+            
+            // Use the localization options set in ConfigureService()
+            app.UseRequestLocalization(app.ApplicationServices
+                .GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
+            
             app.UseStaticFiles();
             app.UseRouting();
 

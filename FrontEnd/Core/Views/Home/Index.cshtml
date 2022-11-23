@@ -1,8 +1,12 @@
 ﻿@using FrontEnd.Core.Models
 @using GeeksCoreLibrary.Core.Enums
+@using Microsoft.AspNetCore.Mvc.Localization
 
 @model BaseViewModel
-<style>
+
+@inject IViewLocalizer Localizer
+
+<style> 
     [v-cloak] {
         display: none;
     }
@@ -52,7 +56,7 @@
 
                 <li class="login">
                     <span>
-                        <strong class="title">Welkom</strong>
+                        <strong class="title">@Localizer["Welcome"]</strong>
                         <span class="sub-title">{{ user.name }}</span>
                         <ins class="icon-chevron-down"></ins>
                     </span>
