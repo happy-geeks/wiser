@@ -32,11 +32,6 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Index.nl.resx</DependentUpon>
     </Compile>
-    <Compile Update="Modules\Translations\Resources\Core.Views.Home.Index.nl.backup.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Index.nl.resx</DependentUpon>
-    </Compile>
   </ItemGroup>
 
   <ItemGroup>
@@ -67,10 +62,6 @@
     <EmbeddedResource Update="Modules\Translations\Resources\Core\Views\Home\Index.nl.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Index.nl.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Modules\Translations\Resources\Core.Views.Home.Index.nl.backup.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Core.Views.Home.Index.nl.backup.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 </Project>

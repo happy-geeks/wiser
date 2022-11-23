@@ -76,14 +76,5 @@ namespace FrontEnd.Modules.Translations.Resources.Modules.Translations.Views.Tra
                 return ResourceManager.GetString("Welcome", resourceCulture);
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Wiser 3 - Translations.
-        /// </summary>
-        internal static string Wiser_3___Translations {
-            get {
-                return ResourceManager.GetString("Wiser 3 - Translations", resourceCulture);
-            }
-        }
     }
 }
