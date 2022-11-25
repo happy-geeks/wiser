@@ -1,4 +1,5 @@
 ﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 @{
     Layout = "";
 }
@@ -155,8 +156,8 @@
         </div>
     </div>
 
-    <script src="/scripts/Utils.min.js"></script>
-    <script src="/scripts/Base.min.js"></script>
-    <script src="/scripts/Templates.min.js"></script>
+    <script src="@WebPackService.GetManifestFile("Utils.js")"></script>
+    <script src="@WebPackService.GetManifestFile("Base.js")"></script>
+    <script src="@WebPackService.GetManifestFile("Templates.js")"></script>
 </body>
 </html>

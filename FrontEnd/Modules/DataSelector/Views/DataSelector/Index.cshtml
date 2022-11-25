@@ -1,4 +1,5 @@
 ﻿@model FrontEnd.Modules.DataSelector.Models.DataSelectorViewModel
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html>
@@ -439,10 +440,10 @@
         </div>
     </script>
 
-    <script src="/scripts/Utils.min.js"></script>
-    <script src="/scripts/Base.min.js"></script>
-    <script src="/scripts/DataSelectorConnection.min.js"></script>
-    <script src="/scripts/DataSelectorDataLoad.min.js"></script>
-    <script src="/scripts/DataSelector.min.js"></script>
+    <script src="@WebPackService.GetManifestFile("Utils.js")"></script>
+    <script src="@WebPackService.GetManifestFile("Base.js")"></script>
+    <script src="@WebPackService.GetManifestFile("DataSelectorConnection.js")"></script>
+    <script src="@WebPackService.GetManifestFile("DataSelectorDataLoad.js")"></script>
+    <script src="@WebPackService.GetManifestFile("DataSelector.js")"></script>
 </body>
 </html>

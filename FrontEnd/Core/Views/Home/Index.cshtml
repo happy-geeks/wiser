@@ -1,5 +1,6 @@
 ﻿@using FrontEnd.Core.Models
 @using GeeksCoreLibrary.Core.Enums
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 @model BaseViewModel
 <style>
@@ -938,4 +939,4 @@
 }
 </script>
 
-<script type="module" src="/scripts/main.min.js"></script>
+<script src="@WebPackService.GetManifestFile("main.js")"></script>

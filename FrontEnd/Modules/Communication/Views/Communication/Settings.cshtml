@@ -1,4 +1,5 @@
 ﻿@model FrontEnd.Modules.Communication.Models.CommunicationSettingsViewModel
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -271,8 +272,8 @@
     </div>
 </div>
 
-<script src="/scripts/Utils.min.js"></script>
-<script src="/scripts/Base.min.js"></script>
-<script src="/scripts/CommunicationSettings.min.js"></script>
+<script src="@WebPackService.GetManifestFile("Utils.js")"></script>
+<script src="@WebPackService.GetManifestFile("Base.js")"></script>
+<script src="@WebPackService.GetManifestFile("CommunicationSettings.js")"></script>
 </body>
 </html>

@@ -28,7 +28,8 @@
     "pusher-js": "^7.3.0",
     "trackjs": "^3.10.1",
     "vue": "^3.0.11",
-    "vuex": "^4.0.1"
+    "vuex": "^4.0.1",
+    "webpack-manifest-plugin": "^5.0.0"
   },
   "devDependencies": {
     "@marker.io/browser": "^0.12.0",
