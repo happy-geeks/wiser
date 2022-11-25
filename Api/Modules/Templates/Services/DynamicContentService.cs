@@ -245,7 +245,7 @@ namespace Api.Modules.Templates.Services
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(contentId, currentPublished, newPublished);
-            await dataService.UpdatePublishedEnvironmentAsync(contentId, newPublished, publishLog, IdentityHelpers.GetUserName(identity, true), branchDatabaseName);
+            await dataService.UpdatePublishedEnvironmentAsync(contentId, version, environment, publishLog, IdentityHelpers.GetUserName(identity, true), branchDatabaseName);
             return new ServiceResult<int>
             {
                 StatusCode = HttpStatusCode.NoContent
