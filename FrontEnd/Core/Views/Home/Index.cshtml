@@ -1,5 +1,6 @@
 ﻿@using FrontEnd.Core.Models
 @using GeeksCoreLibrary.Core.Enums
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 @model BaseViewModel
 <style>
@@ -93,7 +94,7 @@
 
         </main>
 
-        <wiser-dialog :modal="true" :width="'400px'" :title="generalMessagePromptTitle" ref="generalMessagePrompt" :visible="false" :actions="[{ text: 'OK', primary: true }]">
+        <wiser-dialog class="general-message-dialog" :modal="true" :width="'400px'" :title="generalMessagePromptTitle" ref="generalMessagePrompt" :visible="false" :actions="[{ text: 'OK', primary: true }]">
             <div class="form-row">
                 {{ generalMessagePromptText }}
             </div>
@@ -156,7 +157,8 @@
                             <dropdownlist id="available-branches-to-open" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranch"></dropdownlist>
                         </div>
 
-                        <a href="#" class="btn btn-primary" @@click="openBranch">Branch openen</a>
+                        <a href="#" class="btn btn-primary copy-branch-url" @@click="openOrCopyBranch($event, true)">Branch URL kopiëren</a>
+                        <a href="#" class="btn btn-primary open-branch" @@click="openOrCopyBranch($event, false)">Branch openen</a>
                     </div>
                     <div :class="{ 'col': true, 'col-6': isMainBranch || branches.length > 0, 'col-9': !isMainBranch || !branches.length }">
                         <h2>Branch terugzetten</h2>
@@ -213,8 +215,8 @@
                                         <td>{{ totalAmountOfItemsForCreatingBranch }}</td>
                                         <td>
                                             <select v-model="createBranchSettings.entities.all.mode" @@change="onCreateBranchAllSettingsChange">
-                                                <option value="-1"></option>
                                                 <option value="0">Alles</option>
+                                                <option value="1">Niets</option>
                                                 <option value="2">Willekeurig X items</option>
                                                 <option value="3">Laatste X items</option>
                                                 <option value="4">Alles wat toegevoegd is voor X</option>
@@ -937,4 +939,4 @@
 }
 </script>
 
-<script type="module" src="/scripts/main.min.js"></script>
+<script src="@WebPackService.GetManifestFile("main.js")"></script>

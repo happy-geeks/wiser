@@ -65,37 +65,80 @@ export default class ContentBuildersService extends BaseService {
                 }
             }
 
-            // Default content builder categories.
-            snippetCategories.push(...[[120, "Basic"], [118, "Article"], [101, "Headline"], [119, "Buttons"], [102, "Photos"], [103, "Profile"], [116, "Contact"], [104, "Products"], [105, "Features"], [106, "Process"], [107, "Pricing"], [108, "Skills"], [109, "Achievements"], [110, "Quotes"], [111, "Partners"], [112, "As Featured On"], [113, "Page Not Found"], [114, "Coming Soon"], [115, "Help, FAQ"]]);
-
             result.data = {
                 customerSnippets: customerSnippets,
                 snippetCategories: snippetCategories
             };
         } catch (error) {
             result.success = false;
-            console.error("Error while getting HTML for content builder", error);
+            console.error("Error while getting snippets for content builder", error);
 
             if (error.response) {
                 console.warn(error.response);
                 // The request was made and the server responded with a status code
                 // that falls out of the range of 2xx
-                result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de HTML. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+                result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de snippets. Probeer het a.u.b. nogmaals of neem contact op met ons.";
             } else if (error.request) {
                 // The request was made but no response was received
                 // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
                 // http.ClientRequest in node.js
                 console.warn(error.request);
-                result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de HTML. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+                result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de snippets. Probeer het a.u.b. nogmaals of neem contact op met ons.";
             } else {
                 // Something happened in setting up the request that triggered an Error
                 console.warn(error.message);
-                result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de HTML. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+                result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de snippets. Probeer het a.u.b. nogmaals of neem contact op met ons.";
             }
         }
 
         return result;
     }
+
+    /**
+     * Gets the custom content builder snippets.
+     * @returns {any} An array with all custom snippets.
+     */
+    async getTemplateCategories() {
+        const result = {};
+
+        try {
+            const response = await this.base.api.get(`/api/v3/content-builder/template-categories`);
+            result.success = true;
+            result.data = response.data;
+            if (result.data && result.data.length > 0) {
+                result.data = result.data.map(x => {
+                    return {
+                        id: x.categoryId,
+                        designId: 1,
+                        name: x.category
+                    };
+                });
+            }
+        } catch (error) {
+            result.success = false;
+            console.error("Error while getting template categories for content box", error);
+
+            if (error.response) {
+                console.warn(error.response);
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de categorieën voor templates. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+            } else if (error.request) {
+                // The request was made but no response was received
+                // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                // http.ClientRequest in node.js
+                console.warn(error.request);
+                result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de categorieën voor templates. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                console.warn(error.message);
+                result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de categorieën voor templates. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+            }
+        }
+
+        return result;
+    }
+    
     /**
      * Gets the framework to use in the content builder.
      * @returns {string} The name of the framework.

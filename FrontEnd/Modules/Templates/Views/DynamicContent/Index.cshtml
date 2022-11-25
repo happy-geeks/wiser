@@ -1,4 +1,5 @@
 ﻿@model FrontEnd.Modules.Templates.Models.DynamicContentViewModel
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 @{
     Layout = "";
 }
@@ -136,8 +137,8 @@
         </div>
     </div>
 
-    <script src="/scripts/Utils.min.js"></script>
-    <script src="/scripts/Base.min.js"></script>
-    <script src="/scripts/DynamicContent.min.js"></script>
+    <script src="@WebPackService.GetManifestFile("Utils.js")"></script>
+    <script src="@WebPackService.GetManifestFile("Base.js")"></script>
+    <script src="@WebPackService.GetManifestFile("DynamicContent.js")"></script>
 </body>
 </html>

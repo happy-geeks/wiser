@@ -7,6 +7,7 @@ using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Newtonsoft.Json;
@@ -171,13 +172,14 @@ ORDER BY templatePath ASC, component.title ASC";
         }
 
         /// <inheritdoc />
-        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int contentId)
+        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int contentId, string branchDatabaseName = null)
         {
             connection.ClearParameters();
             connection.AddParameter("contentId", contentId);
             var versionList = new Dictionary<int, int>();
 
-            var dataTable = await connection.GetAsync($"SELECT version, published_environment FROM {WiserTableNames.WiserDynamicContent} WHERE content_id = ?contentId AND removed = 0");
+            var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
+            var dataTable = await connection.GetAsync($"SELECT version, published_environment FROM {databaseNamePrefix}{WiserTableNames.WiserDynamicContent} WHERE content_id = ?contentId AND removed = 0");
 
             foreach (DataRow row in dataTable.Rows)
             {
@@ -188,26 +190,48 @@ ORDER BY templatePath ASC, component.title ASC";
         }
 
         /// <inheritdoc />
-        public async Task<int> UpdatePublishedEnvironmentAsync(int contentId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username)
+        public async Task<int> UpdatePublishedEnvironmentAsync(int contentId, int version, Environments environment, PublishLogModel publishLog, string username, string branchDatabaseName = null)
         {
-            connection.ClearParameters();
-            connection.AddParameter("contentId", contentId);
-
-            var baseQueryPart = $@"UPDATE {WiserTableNames.WiserDynamicContent} SET published_environment = CASE version";
-
-            var dynamicQueryPart = "";
-            var dynamicWherePart = " AND version IN (";
-            foreach (var versionChange in publishModel)
+            switch (environment)
             {
-                dynamicQueryPart += $" WHEN {versionChange.Key} THEN published_environment + {versionChange.Value}";
-                dynamicWherePart += $"{versionChange.Key},";
+                case Environments.Test:
+                    environment |= Environments.Development;
+                    break;
+                case Environments.Acceptance:
+                    environment |= Environments.Test | Environments.Development;
+                    break;
+                case Environments.Live:
+                    environment |= Environments.Acceptance | Environments.Test | Environments.Development;
+                    break;
             }
-            dynamicWherePart = $"{dynamicWherePart[..^1]})";
-            var endQueryPart = @" END
-                WHERE content_id = ?contentId";
 
-            var query = baseQueryPart + dynamicQueryPart + endQueryPart + dynamicWherePart;
+            connection.AddParameter("contentId", contentId);
+            connection.AddParameter("version", version);
+            connection.AddParameter("environment", (int)environment);
 
+            var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
+            
+            // Add the bit of the selected environment to the selected version.
+            var query = $@"UPDATE {databaseNamePrefix}{WiserTableNames.WiserDynamicContent}
+SET published_environment = published_environment | ?environment
+WHERE content_id = ?contentId
+AND version = ?version";
+            var affectedRows = await connection.ExecuteAsync(query);
+            
+            // Query to remove the selected environment from all other versions, the ~ operator flips all the bits (1s become 0s and 0s become 1s).
+            // This way we can safely turn off just the specific bits without having to check to see if the bit is set.
+            query = $@"UPDATE {databaseNamePrefix}{WiserTableNames.WiserDynamicContent}
+SET published_environment = published_environment & ~?environment
+WHERE content_id = ?contentId
+AND version != ?version";
+
+            affectedRows += await connection.ExecuteAsync(query);
+
+            if (affectedRows == 0)
+            {
+                return affectedRows;
+            }
+            
             connection.AddParameter("oldlive", publishLog.OldLive);
             connection.AddParameter("oldaccept", publishLog.OldAccept);
             connection.AddParameter("oldtest", publishLog.OldTest);
@@ -217,20 +241,32 @@ ORDER BY templatePath ASC, component.title ASC";
             connection.AddParameter("now", DateTime.Now);
             connection.AddParameter("username", username);
 
-            var logQuery = $@"INSERT INTO {WiserTableNames.WiserDynamicContentPublishLog} (content_id, old_live, old_accept, old_test, new_live, new_accept, new_test, changed_on, changed_by) 
-            VALUES(
-                ?contentId,
-                ?oldlive,
-                ?oldaccept,
-                ?oldtest,
-                ?newlive,
-                ?newaccept,
-                ?newtest,
-                ?now,
-                ?username
-            )";
+            query = $@"INSERT INTO {databaseNamePrefix}{WiserTableNames.WiserDynamicContentPublishLog}
+(
+    content_id,
+    old_live,
+    old_accept,
+    old_test,
+    new_live,
+    new_accept,
+    new_test,
+    changed_on,
+    changed_by
+) 
+VALUES
+(
+    ?contentId,
+    ?oldlive,
+    ?oldaccept,
+    ?oldtest,
+    ?newlive,
+    ?newaccept,
+    ?newtest,
+    ?now,
+    ?username
+)";
 
-            return await connection.ExecuteAsync(query + ";" + logQuery);
+            return await connection.ExecuteAsync(query);
         }
 
         /// <inheritdoc />
@@ -278,6 +314,35 @@ VALUES (?newContentId, ?templateId, ?now, ?username);";
             await connection.ExecuteAsync(query);
         }
 
+        /// <inheritdoc />
+        public async Task DeleteAsync(int contentId)
+        {
+            connection.ClearParameters();
+            connection.AddParameter("contentId", contentId);
+            var query = $@"UPDATE {WiserTableNames.WiserDynamicContent} SET removed = 1 WHERE content_id = ?contentID";
+            await connection.ExecuteAsync(query);
+        }
+
+        /// <inheritdoc />
+        public async Task DeployToBranchAsync(List<int> dynamicContentIds, string branchDatabaseName)
+        {
+            // Branches always exist within the same database cluster, so we don't need to make a new connection for it.
+            var query = $@"INSERT INTO `{branchDatabaseName}`.{WiserTableNames.WiserDynamicContent}
+SELECT content.*
+FROM {WiserTableNames.WiserDynamicContent} AS content
+LEFT JOIN {WiserTableNames.WiserDynamicContent} AS otherVersion ON otherVersion.content_id = content.content_id AND otherVersion.version > content.version
+WHERE content.content_id IN ({String.Join(", ", dynamicContentIds)})
+AND otherVersion.id IS NULL";
+            await connection.ExecuteAsync(query);
+            
+            // Also copy all links of dynamic content to template to the branch.
+            query = $@"INSERT IGNORE INTO `{branchDatabaseName}`.{WiserTableNames.WiserTemplateDynamicContent}
+SELECT *
+FROM {WiserTableNames.WiserTemplateDynamicContent}
+WHERE content_id IN ({String.Join(", ", dynamicContentIds)});";
+            await connection.ExecuteAsync(query);
+        }
+
         private async Task<KeyValuePair<string, string>> GetDatabaseData(int contentId)
         {
             connection.ClearParameters();
@@ -292,15 +357,6 @@ VALUES (?newContentId, ?templateId, ?now, ?username);";
             var title = dataTable.Rows[0].Field<string>("title");
 
             return new KeyValuePair<string, string>(title, settings);
-        }
-
-        /// <inheritdoc />
-        public async Task DeleteAsync(int contentId)
-        {
-            connection.ClearParameters();
-            connection.AddParameter("contentId", contentId);
-            var query = $@"UPDATE {WiserTableNames.WiserDynamicContent} SET removed = 1 WHERE content_id = ?contentID";
-            await connection.ExecuteAsync(query);
         }
     }
 }

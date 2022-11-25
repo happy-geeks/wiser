@@ -1,4 +1,5 @@
 ﻿@model FrontEnd.Modules.DataSelector.Models.DataSelectorViewModel
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html>
@@ -112,6 +113,13 @@
                             <span>Beschikbaar maken voor rendering</span>
                         </label>
                         <div class="form-hint"><span>Zorgt ervoor dat de dataselector gebruikt kan worden in HTML-editors in Wiser om zo dynamische blokken van content toe te voegen op een pagina</span></div>
+                    </div>
+                    
+                    <div class="item">
+                        <h4>
+                            <Label>Rollen die deze data selector mogen uitvoeren via de API</Label>
+                        </h4>
+                        <select id="allowedRoles"></select>
                     </div>
                 </div>
 
@@ -432,10 +440,10 @@
         </div>
     </script>
 
-    <script src="/scripts/Utils.min.js"></script>
-    <script src="/scripts/Base.min.js"></script>
-    <script src="/scripts/DataSelectorConnection.min.js"></script>
-    <script src="/scripts/DataSelectorDataLoad.min.js"></script>
-    <script src="/scripts/DataSelector.min.js"></script>
+    <script src="@WebPackService.GetManifestFile("Utils.js")"></script>
+    <script src="@WebPackService.GetManifestFile("Base.js")"></script>
+    <script src="@WebPackService.GetManifestFile("DataSelectorConnection.js")"></script>
+    <script src="@WebPackService.GetManifestFile("DataSelectorDataLoad.js")"></script>
+    <script src="@WebPackService.GetManifestFile("DataSelector.js")"></script>
 </body>
 </html>

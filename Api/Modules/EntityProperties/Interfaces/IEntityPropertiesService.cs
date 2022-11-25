@@ -76,5 +76,13 @@ namespace Api.Modules.EntityProperties.Interfaces
         /// <param name="id">The ID of the entity property to copy.</param>
         /// <param name="tabOption">The tab to add the new fields too.</param>
         Task<ServiceResult<bool>> CopyToAllAvailableLanguagesAsync(ClaimsIdentity identity, int id, CopyToOtherLanguagesTabOptions tabOption);
+
+        /// <summary>
+        /// Fixes the ordering of all fields for a specific entity type or link type, so that all fields have consecutive order numbers.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="entityType">Optional: The entity type to fix the ordering for. Leave empty if you want to do it for link fields instead of entity fields.</param>
+        /// <param name="linkType">Optional: The link type to fix the ordering for. Leave empty if you want to do it for entity fields instead of link fields.</param>
+        Task<ServiceResult<bool>> FixOrderingAsync(ClaimsIdentity identity, string entityType = null, int linkType = 0);
     }
 }

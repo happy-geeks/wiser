@@ -30,12 +30,12 @@ var contentBuilderToolNotable = {
     name: "wiserContentBuilder",
     tooltip: "Content builder",
     template: "<button id='contentBuilder_{propertyIdWithSuffix}' tabindex='0' role='button' class='k-button k-tool k-group-start k-group-end content-builder-button' title='Content builder' aria-label='Content builder'><span class='k-icon k-i-wiser-content-builder'></span></button><label class='content-builder-label'>Content builder</label>",
-    exec: function(e) { window.dynamicItems.fields.onHtmlEditorContentBuilderExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"), "{itemId}", "{propertyName}", "{languageCode}"); }
+    exec: function(e) { window.dynamicItems.fields.onHtmlEditorContentBuilderExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"), "{itemId}", "{propertyName}", "{languageCode}", "{contentBuilderMode}"); }
 };
 var contentBuilderToolBasic = {
     name: "wiserContentBuilder",
     tooltip: "Content builder",
-    exec: function(e) { window.dynamicItems.fields.onHtmlEditorContentBuilderExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"), "{itemId}", "{propertyName}", "{languageCode}"); }
+    exec: function(e) { window.dynamicItems.fields.onHtmlEditorContentBuilderExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"), "{itemId}", "{propertyName}", "{languageCode}", "{contentBuilderMode}"); }
 };
 var entityBlockTool = {
     name: "wiserEntityBlock",

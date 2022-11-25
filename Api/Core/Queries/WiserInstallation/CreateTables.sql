@@ -480,38 +480,30 @@ CREATE TABLE IF NOT EXISTS `wiser_api_connection`  (
 -- ----------------------------
 -- Table structure for wiser_communication
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS `wiser_communication`  (
+CREATE TABLE `wiser_communication`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `receiver_selectionid` int NOT NULL DEFAULT 0,
+  `receivers_data_selector_id` int NOT NULL DEFAULT 0,
+  `receivers_query_id` int NOT NULL DEFAULT 0,
   `receiver_list` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `send_email` tinyint NOT NULL DEFAULT 0,
-  `email_templateid` int NOT NULL DEFAULT 0,
-  `wiser_itemid` int NOT NULL DEFAULT 0,
-  `send_sms` tinyint NOT NULL DEFAULT 0,
-  `send_whatsapp` tinyint NOT NULL DEFAULT 0,
-  `create_pdf` tinyint NOT NULL DEFAULT 0,
-  `email-subject` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `email-content` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `email_address_selector` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `sms-content` varchar(160) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `phone_number_selector` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `pdf_templateid` bigint NOT NULL DEFAULT 0,
-  `send_trigger` enum('direct','fixed_datetime','recurring','variable_date') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'direct',
-  `senddate` datetime(0) NULL DEFAULT NULL,
+  `settings` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+  `send_trigger_type` enum('direct','fixed','recurring') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `trigger_start` date NULL DEFAULT NULL,
   `trigger_end` date NULL DEFAULT NULL,
-  `trigger_time` time(0) NULL DEFAULT NULL,
-  `trigger_periodvalue` smallint NOT NULL DEFAULT 1,
-  `trigger_period` enum('minute','hour','day','week','month','year') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'minute',
-  `trigger_periodbeforeafter` enum('before','after') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'before',
-  `trigger_days` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT 'contains 1 for monday and 7 for sunday 123 means monday through wednesday',
-  `trigger_type` int NOT NULL DEFAULT 0,
-  `last_processed` datetime(0) NULL DEFAULT NULL COMMENT 'This is for send_trigger=recurring. This value determines the last time an AIS instance checked for new items to create.',
-  `uploaded_file` longblob NULL,
-  `uploaded_filename` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `trigger_time` time NULL DEFAULT NULL,
+  `trigger_period_value` tinyint NOT NULL DEFAULT 1,
+  `trigger_period_type` enum('minute','hour','day','week','month','year') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `trigger_week_days` int NOT NULL DEFAULT 0,
+  `last_processed` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+  `added_by` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `added_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `trigger_day_of_month` int NOT NULL DEFAULT 0,
+  `changed_by` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `changed_on` datetime NULL DEFAULT NULL,
+  `content_data_selector_id` int NOT NULL DEFAULT 0,
+  `content_query_id` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `idx_name`(`name`) USING BTREE
+  UNIQUE INDEX `idx_name`(`name`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -721,6 +713,46 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    INDEX `idx_environment`(`published_environment` ASC, `removed` ASC) USING BTREE,
    FULLTEXT INDEX `idx_fulltext`(`template_name`, `template_data`)
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_commit
+-- ----------------------------
+CREATE TABLE `wiser_commit`  (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `description` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+    `external_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+    `added_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    `completed` tinyint NOT NULL DEFAULT 0,
+    PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_commit_dynamic_content
+-- ----------------------------
+CREATE TABLE `wiser_commit_dynamic_content`  (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `dynamic_content_id` int NOT NULL,
+    `version` int NOT NULL,
+    `commit_id` int NOT NULL,
+    `added_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_commit_template
+-- ----------------------------
+CREATE TABLE `wiser_commit_template`  (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `template_id` int NOT NULL,
+    `version` int NOT NULL,
+    `commit_id` int NOT NULL,
+    `added_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
 
 -- ----------------------------
 -- Table structure for wiser_dynamic_content

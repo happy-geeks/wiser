@@ -2119,6 +2119,11 @@ a:focus, button:focus, input:focus, select:focus, summary:focus, textarea:focus,
 /********************** 
 * CodeMirror
 **********************/
+.dynamicTabContent .CodeMirror-fullscreen {
+	position: fixed;
+	z-index: 1000;
+}
+
 .CodeMirror-fullscreen {
 	z-index: 1000;
 }

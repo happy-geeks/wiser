@@ -404,10 +404,18 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 
-# Content builder
+# Content Builder
 /FrontEnd/wwwroot/ContentBuilder/*
 !/FrontEnd/wwwroot/ContentBuilder/plugins/
 /FrontEnd/wwwroot/ContentBuilder/plugins/*
 !/FrontEnd/wwwroot/ContentBuilder/plugins/WiserDataSelector
+
+# Content Box
+/FrontEnd/wwwroot/ContentBox/*
+!/FrontEnd/wwwroot/ContentBox/plugins/
+/FrontEnd/wwwroot/ContentBox/plugins/*
+!/FrontEnd/wwwroot/ContentBox/plugins/WiserDataSelector
+
+# Partner CSS
 /FrontEnd/Core/Css/partner/*.css
 

@@ -1,4 +1,5 @@
 ﻿@model FrontEnd.Core.Models.BaseViewModel
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -33,7 +34,7 @@
         <button class="btn btn-primary" id="CreateNewCommunicationSettingsButton">Nieuwe aanmaken</button>
     </div>
     <div id="OpenCommunicationSettingsContainer">
-        <h2>Bestaande communiatie-uiting openen</h2>
+        <h2>Bestaande communicatie-uiting openen</h2>
         <p>Kies een van de bestaande communicatie-uitingen om te openen en te bewerken.</p>
         <select id="CommunicationSettingsDropDown"></select>
         <button class="btn btn-primary" id="OpenCommunicationSettingsButton">Openen</button>
@@ -49,8 +50,8 @@
     </div>
 </div>
 
-<script src="/scripts/Utils.min.js"></script>
-<script src="/scripts/Base.min.js"></script>
-<script src="/scripts/CommunicationIndex.min.js"></script>
+<script src="@WebPackService.GetManifestFile("Utils.js")"></script>
+<script src="@WebPackService.GetManifestFile("Base.js")"></script>
+<script src="@WebPackService.GetManifestFile("CommunicationIndex.js")"></script>
 </body>
 </html>

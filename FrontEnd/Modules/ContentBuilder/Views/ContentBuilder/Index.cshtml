@@ -1,5 +1,6 @@
 ﻿@using System.Web
 @model FrontEnd.Modules.ContentBuilder.Models.ContentBuilderViewModel
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html lang="nl">
@@ -36,6 +37,6 @@
         "markerIoToken": "@Model.Settings.MarkerIoToken"
     }
     </script>
-    <script type="module" src="/scripts/ContentBuilder.min.js"></script>
+    <script src="@WebPackService.GetManifestFile("ContentBuilder.js")"></script>
 </body>
 </html>
