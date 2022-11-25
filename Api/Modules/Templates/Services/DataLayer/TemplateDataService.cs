@@ -65,16 +65,26 @@ LIMIT 1");
         }
 
         /// <inheritdoc />
-        public async Task<TemplateSettingsModel> GetDataAsync(int templateId, Environments? environment = null)
+        public async Task<TemplateSettingsModel> GetDataAsync(int templateId, Environments? environment = null, int? version = null)
         {
-            var publishedVersionWhere = environment switch
-            {
-                null => "",
-                Environments.Hidden => "AND template.published_environment = 0",
-                _ => $"AND (template.published_environment & {(int)environment}) = {(int)environment}"
-            };
-
             clientDatabaseConnection.ClearParameters();
+            
+            string publishedVersionWhere;
+            if (version.HasValue)
+            {
+                clientDatabaseConnection.AddParameter("version", version.Value);
+                publishedVersionWhere = "AND template.version = ?version";
+            }
+            else
+            {
+                publishedVersionWhere = environment switch
+                {
+                    null => "",
+                    Environments.Hidden => "AND template.published_environment = 0",
+                    _ => $"AND (template.published_environment & {(int) environment}) = {(int) environment}"
+                };
+            }
+
             clientDatabaseConnection.AddParameter("templateId", templateId);
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
     template.template_id, 
@@ -222,29 +232,51 @@ LIMIT 1");
         }
 
         /// <inheritdoc />
-        public async Task<int> UpdatePublishedEnvironmentAsync(int templateId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username, string branchDatabaseName = null)
+        public async Task<int> UpdatePublishedEnvironmentAsync(int templateId, int version, Environments environment, PublishLogModel publishLog, string username, string branchDatabaseName = null)
         {
-            clientDatabaseConnection.ClearParameters();
+            switch (environment)
+            {
+                case Environments.Test:
+                    environment |= Environments.Development;
+                    break;
+                case Environments.Acceptance:
+                    environment |= Environments.Test | Environments.Development;
+                    break;
+                case Environments.Live:
+                    environment |= Environments.Acceptance | Environments.Test | Environments.Development;
+                    break;
+            }
+
             clientDatabaseConnection.AddParameter("templateId", templateId);
+            clientDatabaseConnection.AddParameter("version", version);
+            clientDatabaseConnection.AddParameter("environment", (int)environment);
 
             var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
+            
+            // Add the bit of the selected environment to the selected version.
+            var query = $@"UPDATE {databaseNamePrefix}{WiserTableNames.WiserTemplate}
+SET published_environment = published_environment | ?environment
+WHERE template_id = ?templateId
+AND version = ?version
+AND (published_environment & ?environment) != ?environment";
+            var affectedRows = await clientDatabaseConnection.ExecuteAsync(query);
+            
+            // Query to remove the selected environment from all other versions, the ~ operator flips all the bits (1s become 0s and 0s become 1s).
+            // This way we can safely turn off just the specific bits without having to check to see if the bit is set.
+            query = $@"UPDATE {databaseNamePrefix}{WiserTableNames.WiserTemplate}
+SET published_environment = published_environment & ~?environment
+WHERE template_id = ?templateId
+AND version != ?version
+AND (published_environment & ?environment) > 0";
 
-            var baseQueryPart = $@"UPDATE {databaseNamePrefix}{WiserTableNames.WiserTemplate} wtt 
-SET wtt.published_environment = CASE wtt.version";
+            affectedRows += await clientDatabaseConnection.ExecuteAsync(query);
 
-            var dynamicQueryPart = "";
-            var dynamicWherePart = " AND wtt.version IN (";
-            foreach (var versionChange in publishModel)
+            if (affectedRows == 0)
             {
-                dynamicQueryPart += $" WHEN {versionChange.Key} THEN wtt.published_environment + {versionChange.Value}";
-                dynamicWherePart += $"{versionChange.Key},";
+                return affectedRows;
             }
-            dynamicWherePart = $"{dynamicWherePart[..^1]})";
-            var endQueryPart = @" END
-WHERE wtt.template_id = ?templateId";
 
-            var query = baseQueryPart + dynamicQueryPart + endQueryPart + dynamicWherePart;
-
+            // If any rows have been updated, it means this version wasn't deployed to the selected environment yet and we should add it to the history.
             clientDatabaseConnection.AddParameter("oldlive", publishLog.OldLive);
             clientDatabaseConnection.AddParameter("oldaccept", publishLog.OldAccept);
             clientDatabaseConnection.AddParameter("oldtest", publishLog.OldTest);
@@ -254,7 +286,7 @@ WHERE wtt.template_id = ?templateId";
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
             clientDatabaseConnection.AddParameter("username", username);
 
-            var logQuery = $@"INSERT INTO {databaseNamePrefix}{WiserTableNames.WiserTemplatePublishLog}
+            query = $@"INSERT INTO {databaseNamePrefix}{WiserTableNames.WiserTemplatePublishLog}
 (
     template_id,
     old_live,
@@ -278,9 +310,9 @@ VALUES
     ?now,
     ?username
 )";
+            await clientDatabaseConnection.ExecuteAsync(query);
 
-            return await clientDatabaseConnection.ExecuteAsync($@"{query};
-{logQuery}");
+            return affectedRows;
         }
 
         /// <inheritdoc />
