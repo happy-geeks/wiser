@@ -44,6 +44,6 @@
     }
     </script>
     <script type="module" src="/ContentBox/contentbox/lang/en.js"></script>
-    <script src="@WebPackService.GetManifestFile("ContentBox.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("ContentBox.js")"></script>
 </body>
 </html>

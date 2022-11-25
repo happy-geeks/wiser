@@ -114,8 +114,8 @@
         </li>
     </script>
 
-    <script src="@WebPackService.GetManifestFile("Utils.js")"></script>
-    <script src="@WebPackService.GetManifestFile("Base.js")"></script>
-    <script src="@WebPackService.GetManifestFile("TaskAlerts.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("TaskAlerts.js")"></script>
 </body>
 </html>

@@ -898,9 +898,9 @@
         </div>
     </script>
 
-    <script src="@WebPackService.GetManifestFile("Utils.js")"></script>
-    <script src="@WebPackService.GetManifestFile("Base.js")"></script>
-    <script src="@WebPackService.GetManifestFile("DynamicItems.js")"></script>
+    @* <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script> *@
+    @* <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script> *@
+    <script src="@await WebPackService.GetManifestFileAsync("DynamicItems.js")"></script>
 
     <!-- CONTEXT MENU FOR TREEVIEW -->
     <ul id="menu"></ul>

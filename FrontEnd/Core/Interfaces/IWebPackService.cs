@@ -14,5 +14,5 @@ public interface IWebPackService
     /// </summary>
     /// <param name="fileName">The name of the file to get the location for.</param>
     /// <returns>The full location to the file, including path and file name.</returns>
-    string GetManifestFile(string fileName);
+    Task<string> GetManifestFileAsync(string fileName);
 }

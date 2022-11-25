@@ -440,10 +440,10 @@
         </div>
     </script>
 
-    <script src="@WebPackService.GetManifestFile("Utils.js")"></script>
-    <script src="@WebPackService.GetManifestFile("Base.js")"></script>
-    <script src="@WebPackService.GetManifestFile("DataSelectorConnection.js")"></script>
-    <script src="@WebPackService.GetManifestFile("DataSelectorDataLoad.js")"></script>
-    <script src="@WebPackService.GetManifestFile("DataSelector.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("DataSelectorConnection.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("DataSelectorDataLoad.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("DataSelector.js")"></script>
 </body>
 </html>
