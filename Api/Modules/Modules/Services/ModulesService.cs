@@ -29,7 +29,7 @@ using Newtonsoft.Json.Linq;
 namespace Api.Modules.Modules.Services
 {
     /// <summary>
-    /// Service for getting information / settings for Wiser 2.0+ modules.
+    /// Service for getting information / settings for Wiser modules.
     /// </summary>
     public class ModulesService : IModulesService, IScopedService
     {
@@ -81,8 +81,8 @@ namespace Api.Modules.Modules.Services
                 737, // Admin
                 738, // Import / export
                 806, // Wiser users
-                5505 // Webpagina's
-                // TODO: Add the new settings and templates modules here once they are finished.
+                5505, // Webpagina's
+                6000 // Version control
             };
 
             var isAdminAccount = IdentityHelpers.IsAdminAccount(identity);
@@ -111,12 +111,15 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,
                 WiserTableNames.WiserPreviewProfiles,
-                WiserTableNames.WiserDynamicContentPublishLog
+                WiserTableNames.WiserDynamicContentPublishLog,
+                WiserTableNames.WiserQuery,
+                WiserTableNames.WiserPermission,
+                WiserTableNames.WiserCommunication
             });
             var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
             
             // Make sure that all triggers for Wiser tables are up-to-date.
-            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2022, 6, 24))
+            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2022, 10, 28))
             {
                 var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
                 await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
@@ -453,6 +456,27 @@ namespace Api.Modules.Modules.Services
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
+                        case 6000: // Version control
+                            groupName = isPinned ? PinnedModulesGroupName : "Systeem";
+                            if (!results.ContainsKey(groupName))
+                            {
+                                results.Add(groupName, new List<ModuleAccessRightsModel>());
+                            }
+                            results[groupName].Add(new ModuleAccessRightsModel
+                            {
+                                Group = "Systeem",
+                                CanCreate = true,
+                                CanDelete = true,
+                                CanRead = true,
+                                CanWrite = true,
+                                Icon = "git",
+                                ModuleId = moduleId,
+                                Name = "Version control",
+                                Type = "VersionControl",
+                                Pinned = isPinned,
+                                PinnedGroup = PinnedModulesGroupName
+                            });
+                            break;
                         default:
                             throw new NotImplementedException($"Trying to hard-code add module '{moduleId}' to list for admin account, but no case has been added for this module in the switch statement.");
                     }
@@ -544,7 +568,7 @@ namespace Api.Modules.Modules.Services
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
 
-            var query = $@"SELECT id, custom_query, count_query, `options`, `name`, icon, color, type, `group` FROM {WiserTableNames.WiserModule} WHERE id = ?id";
+            var query = $@"SELECT id, custom_query, count_query, `options`, `name`, icon, type, `group` FROM {WiserTableNames.WiserModule} WHERE id = ?id";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count == 0)
@@ -559,7 +583,6 @@ namespace Api.Modules.Modules.Services
             result.CountQuery = dataTable.Rows[0].Field<string>("count_query");
             result.Name = dataTable.Rows[0].Field<string>("name");
             result.Icon = dataTable.Rows[0].Field<string>("icon");
-            result.Color = dataTable.Rows[0].Field<string>("color");
             result.Type = dataTable.Rows[0].Field<string>("type");
             result.Group = dataTable.Rows[0].Field<string>("group");
 
@@ -636,6 +659,18 @@ namespace Api.Modules.Modules.Services
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<List<string>>> GetModuleGroupsAsync(ClaimsIdentity identity)
+        {
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT DISTINCT `group`
+FROM {WiserTableNames.WiserModule}
+WHERE `group` IS NOT NULL
+AND `group` <> ''
+ORDER BY `group` ASC");
+            var results = dataTable.Rows.Cast<DataRow>().Select(dataRow => dataRow.Field<string>("group"));
+            return new ServiceResult<List<string>>(results.ToList());
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<bool>> UpdateSettingsAsync(int id, ClaimsIdentity identity, ModuleSettingsModel moduleSettingsModel)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -647,7 +682,6 @@ namespace Api.Modules.Modules.Services
             clientDatabaseConnection.AddParameter("options", moduleSettingsModel.Options.ToString());
             clientDatabaseConnection.AddParameter("name", moduleSettingsModel.Name);
             clientDatabaseConnection.AddParameter("icon", moduleSettingsModel.Icon);
-            clientDatabaseConnection.AddParameter("color", moduleSettingsModel.Color);
             clientDatabaseConnection.AddParameter("type", moduleSettingsModel.Type);
             clientDatabaseConnection.AddParameter("group", moduleSettingsModel.Group);
 
@@ -658,7 +692,6 @@ namespace Api.Modules.Modules.Services
                                 `options` = IF(?options != '' AND ?options IS NOT NULL AND JSON_VALID(?options), ?options, ''),
                                 `name` = ?name,
                                 `icon` = ?icon,
-                                `color` = ?color,
                                 `type` = ?type,
                                 `group` = ?group
                         WHERE id = ?id";

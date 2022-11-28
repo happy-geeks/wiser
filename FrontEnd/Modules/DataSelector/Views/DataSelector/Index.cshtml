@@ -1,4 +1,5 @@
 ﻿@model FrontEnd.Modules.DataSelector.Models.DataSelectorViewModel
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html>
@@ -7,8 +8,8 @@
     <title>Wiser 3 - Data selector</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.material.min.css" rel="stylesheet" />
 
     <script>
         window.wiserVersion = "@Model.WiserVersion";
@@ -22,7 +23,6 @@
 <body class="@Model.BodyCssClass"
       data-module-id="706"
       data-wiser-api-root="@Model.ApiRoot"
-      data-wiser-api-v21-root="@Model.ApiRoot"
       data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
       data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
       data-api-client-id="@Model.Settings.ApiClientId"
@@ -88,15 +88,23 @@
                             <input type="checkbox" id="insecureData" />
                             <span>Data onbeveiligd inladen</span>
                         </label>
-                        <div class="form-hint"><span>Dit werkt alleen als de data selector op basis van ID geladen wordt</span></div>
+                        <div class="form-hint"><span>Dit werkt alleen als de dataselector op basis van ID geladen wordt</span></div>
                     </div>
 
                     <div class="item">
                         <label class="checkbox">
                             <input type="checkbox" id="showInExportModule" />
-                            <span>Beschikbaar maken in export module</span>
+                            <span>Beschikbaar maken in exportmodule</span>
                         </label>
-                        <div class="form-hint"><span>Zorgt ervoor dat de data selector gebruikt kan worden in de export module</span></div>
+                        <div class="form-hint"><span>Zorgt ervoor dat de dataselector gebruikt kan worden in de exportmodule</span></div>
+                    </div>
+
+                    <div class="item">
+                        <label class="checkbox">
+                            <input type="checkbox" id="showInCommunicationModule" />
+                            <span>Beschikbaar maken in communicatiemodule</span>
+                        </label>
+                        <div class="form-hint"><span>Zorgt ervoor dat de dataselector gebruikt kan worden in de communicatiemodule</span></div>
                     </div>
 
                     <div class="item">
@@ -104,7 +112,14 @@
                             <input type="checkbox" id="availableForRendering" />
                             <span>Beschikbaar maken voor rendering</span>
                         </label>
-                        <div class="form-hint"><span>Zorgt ervoor dat de data selector gebruikt kan worden in HTML-editors in Wiser om zo dynamische blokken van content toe te voegen op een pagina</span></div>
+                        <div class="form-hint"><span>Zorgt ervoor dat de dataselector gebruikt kan worden in HTML-editors in Wiser om zo dynamische blokken van content toe te voegen op een pagina</span></div>
+                    </div>
+                    
+                    <div class="item">
+                        <h4>
+                            <Label>Rollen die deze data selector mogen uitvoeren via de API</Label>
+                        </h4>
+                        <select id="allowedRoles"></select>
                     </div>
                 </div>
 
@@ -381,25 +396,29 @@
 
             <div class="languageCodeWrapper">
                 <label>Gewenste language-code</label>
-                <select class="combo-select languageCode" data-placeholder="Kies een taalcode..." data-data-text-field="text" data-data-value-field="value" data-open-on-focus="true"></select>
+                <select class="multi-select languageCode" data-placeholder="Kies een taalcode..." data-data-text-field="text" data-data-value-field="value" data-accept-custom-input="true"></select>
             </div>
 
-            <label>Aggregatie</label>
-            <select class="drop-down-list aggregation" data-placeholder="Kies een aggregatie...">
-                <option value="">Geen aggregatie</option>
-                <option value="count">Telling resultaten (COUNT)</option>
-                <option value="countdistinct">Telling unieke resultaten (COUNT DISTINCT)</option>
-                <option value="sum">Som van waardes (SUM)</option>
-                <option value="min">Laagste waarde (MIN)</option>
-                <option value="max">Hoogste waarde (MAX)</option>
-                <option value="avg">Gemiddelde waarde (AVG)</option>
-            </select>
+            <div class="aggregationWrapper">
+                <label>Aggregatie</label>
+                <select class="drop-down-list aggregation" data-placeholder="Kies een aggregatie...">
+                    <option value="">Geen aggregatie</option>
+                    <option value="count">Telling resultaten (COUNT)</option>
+                    <option value="countdistinct">Telling unieke resultaten (COUNT DISTINCT)</option>
+                    <option value="sum">Som van waardes (SUM)</option>
+                    <option value="min">Laagste waarde (MIN)</option>
+                    <option value="max">Hoogste waarde (MAX)</option>
+                    <option value="avg">Gemiddelde waarde (AVG)</option>
+                </select>
+            </div>
 
-            <label>Formatting</label>
-            <select class="combo-select formatting" data-placeholder="Kies een formatting..." data-open-on-focus="true">
-                <option value="">Geen formatting</option>
-                <%= PropertyFormattingOptionsHtml %>
-            </select>
+            <div class="formattingWrapper">
+                <label>Formatting</label>
+                <select class="combo-select formatting" data-placeholder="Kies een formatting..." data-open-on-focus="true">
+                    <option value="">Geen formatting</option>
+                    <%= PropertyFormattingOptionsHtml %>
+                </select>
+            </div>
 
             <div class="fieldAliasWrapper">
                 <label>Alias</label>
@@ -421,10 +440,10 @@
         </div>
     </script>
 
-    <script src="/scripts/Utils.min.js"></script>
-    <script src="/scripts/Base.min.js"></script>
-    <script src="/scripts/DataSelectorConnection.min.js"></script>
-    <script src="/scripts/DataSelectorDataLoad.min.js"></script>
-    <script src="/scripts/DataSelector.min.js"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("DataSelectorConnection.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("DataSelectorDataLoad.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("DataSelector.js")"></script>
 </body>
 </html>

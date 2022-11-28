@@ -1,19 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
+using Api.Core.Models;
 using Api.Core.Services;
+using Api.Modules.Branches.Interfaces;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Kendo.Enums;
-using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -35,6 +39,7 @@ using GeeksCoreLibrary.Modules.Templates.Enums;
 using GeeksCoreLibrary.Modules.Templates.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Models;
 using LibSassHost;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -45,6 +50,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
 using NUglify;
@@ -75,11 +81,15 @@ namespace Api.Modules.Templates.Services
         private readonly IObjectsService objectsService;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<TemplatesService> logger;
+        private readonly GclSettings gclSettings;
+        private readonly ApiSettings apiSettings;
+        private readonly IWebHostEnvironment webHostEnvironment;
+        private readonly IBranchesService branchesService;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IOptions<GclSettings> gclSettings, IOptions<ApiSettings> apiSettings, IWebHostEnvironment webHostEnvironment, IBranchesService branchesService)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -96,6 +106,10 @@ namespace Api.Modules.Templates.Services
             this.objectsService = objectsService;
             this.databaseHelpersService = databaseHelpersService;
             this.logger = logger;
+            this.gclSettings = gclSettings.Value;
+            this.apiSettings = apiSettings.Value;
+            this.webHostEnvironment = webHostEnvironment;
+            this.branchesService = branchesService;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -516,68 +530,6 @@ WHERE wi.entity_type = '{entityName}' AND wid.`key` = '{propertyName}' AND wid.`
 GROUP BY wid.`value`
 ORDER BY wid.`value`
 LIMIT 25");
-                TemplateQueryStrings.Add("SAVE_COMMUNICATION_ITEM", @"SET @_item_id = '{id}';
-SET @_name = '{name}';
-SET @_receiver_list = '{receiverList}';
-SET @_send_email = {sendEmail};
-SET @_email_templateid = {emailTemplateId};
-SET @_send_sms = {sendSms};
-SET @_send_whatsapp = {sendWhatsApp};
-SET @_create_pdf = {createPdf};
-SET @_email_subject = '{emailSubject}';
-SET @_email_content = '{emailContent_urldataunescape}';
-SET @_email_address_selector = '{emailAddressSelector}';
-SET @_sms_content = '{smsContent}';
-SET @_phone_number_selector = '{phoneNumberSelector}';
-SET @_pdf_templateid = {pdfTemplateId};
-SET @_send_trigger = '{sendTrigger}';
-
-SET @_senddate = IF('{sendDate}' LIKE '{%}', NULL, '{sendDate}');
-SET @_trigger_start = IF('{triggerStart}' LIKE '{%}', NULL, '{triggerStart}');
-SET @_trigger_end = IF('{triggerEnd}' LIKE '{%}', NULL, '{triggerEnd}');
-SET @_trigger_time = IF('{triggerTime}' LIKE '{%}', NULL, '{triggerTime}');
-SET @_trigger_periodvalue = IF('{triggerPeriodValue}' LIKE '{%}', 0, CAST('{triggerPeriodValue}' AS SIGNED));
-SET @_trigger_period = IF('{triggerPeriodValue}' LIKE '{%}', 'day', '{triggerPeriod}');
-SET @_trigger_periodbeforeafter = IF('{triggerPeriodBeforeAfter}' LIKE '{%}', 'before', '{triggerPeriodBeforeAfter}');
-SET @_trigger_days = IF('{triggerDays}' LIKE '{%}', '', '{triggerDays}');
-SET @_trigger_type = IF('{triggerType}' LIKE '{%}', 0, CAST('{triggerType}' AS SIGNED));
-
-# If it's a new item, then item_id should be NULL.
-SET @_item_id = IF(@_item_id LIKE '{%}' OR @_item_id = '0', NULL, CAST(@_item_id AS SIGNED));
-
-INSERT INTO wiser_communication (id, `name`, receiver_list, send_email, email_templateid, send_sms, send_whatsapp, create_pdf, `email-subject`, `email-content`, email_address_selector, `sms-content`, phone_number_selector, pdf_templateid, send_trigger, senddate, trigger_start, trigger_end, trigger_time, trigger_periodvalue, trigger_period, trigger_periodbeforeafter, trigger_days, trigger_type)
-VALUES(@_item_id, @_name, @_receiver_list, @_send_email, @_email_templateid, @_send_sms, @_send_whatsapp, @_create_pdf, @_email_subject, @_email_content, @_email_address_selector, @_sms_content, @_phone_number_selector, @_pdf_templateid, @_send_trigger, @_senddate, @_trigger_start, @_trigger_end, @_trigger_time, @_trigger_periodvalue, @_trigger_period, @_trigger_periodbeforeafter, @_trigger_days, @_trigger_type)
-ON DUPLICATE KEY UPDATE
-    receiver_list = VALUES(receiver_list),
-    send_email = VALUES(send_email),
-    email_templateid = VALUES(email_templateid),
-    send_sms = VALUES(send_sms),
-    send_whatsapp = VALUES(send_whatsapp),
-    create_pdf = VALUES(create_pdf),
-    `email-subject` = VALUES(`email-subject`),
-    `email-content` = VALUES(`email-content`),
-    email_address_selector = VALUES(email_address_selector),
-    `sms-content` = VALUES(`sms-content`),
-    phone_number_selector = VALUES(phone_number_selector),
-    pdf_templateid = VALUES(pdf_templateid),
-    send_trigger = VALUES(send_trigger),
-    senddate = VALUES(senddate),
-    trigger_start = VALUES(trigger_start),
-    trigger_end = VALUES(trigger_end),
-    trigger_time = VALUES(trigger_time),
-    trigger_periodvalue = VALUES(trigger_periodvalue),
-    trigger_period = VALUES(trigger_period),
-    trigger_periodbeforeafter = VALUES(trigger_periodbeforeafter),
-    trigger_days = VALUES(trigger_days),
-    trigger_type = VALUES(trigger_type);
-
-SELECT IF(@_item_id IS NULL, LAST_INSERT_ID(), @_item_id) AS newId;");
-                TemplateQueryStrings.Add("CHECK_COMMUNICATION_NAME_EXISTS", @"SET @_name = '{name}';
-
-# Will automatically be NULL if it doesn't exist, which is good.
-SET @_item_id = (SELECT id FROM wiser_communication WHERE `name` = @_name LIMIT 1);
-
-SELECT IFNULL(@_item_id, 0) AS existingItemId;");
                 TemplateQueryStrings.Add("SCHEDULER_FAVORITE_CLEAR", @"SET @user_id = {userId};
 SET @favorite_id = {favId};
 
@@ -664,7 +616,8 @@ ORDER BY ordering ASC");
                 TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
 	entity.id,
 	IF(entity.name = '', 'ROOT', entity.name) AS name,
-	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(NULLIF(entity.friendly_name, ''), IF(entity.name = '', 'ROOT', entity.name))) AS displayName 
+	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(NULLIF(entity.friendly_name, ''), IF(entity.name = '', 'ROOT', entity.name))) AS displayName,
+    entity.module_id AS moduleId 
 FROM wiser_entity AS entity
 LEFT JOIN wiser_module AS module ON module.id = entity.module_id
 ORDER BY module.name ASC, entity.module_id ASC, entity.name ASC");
@@ -679,23 +632,20 @@ WHERE
 GROUP BY language_code
 ORDER BY language_code");
                 TemplateQueryStrings.Add("UPDATE_ORDERING_ENTITY_PROPERTY", @"SET @old_index = {oldIndex} + 1;
-SET @new_index = {newIndex} +1;
+SET @new_index = {newIndex};
 SET @id = {currentId}; 
 SET @entity_name = '{entityName}';
-SET @tab_name = '{tabName}';
 
 # move property to given index
 UPDATE wiser_entityproperty SET ordering = @new_index WHERE id=@id;
 
 # set other items to given index
-UPDATE wiser_entityproperty
-	SET ordering = IF(@old_index > @new_index, ordering+1, ordering-1) 
-WHERE 
-	ordering > IF(@old_index > @new_index, @new_index, @old_index) AND
-	ordering < IF(@old_index > @new_index, @old_index, @new_index) AND
-	entity_name = @entity_name AND 
-	tab_name =  @tab_name AND
-	id <> @id;
+UPDATE wiser_entityproperty 
+SET ordering = IF(@old_index > @new_index, ordering, ordering) 
+WHERE ordering > IF(@old_index > @new_index, @new_index, @old_index)
+AND ordering < IF(@old_index > @new_index, @old_index, @new_index)
+AND entity_name = @entity_name
+AND id <> @id;
 
 # update record where index equals the new index value
 UPDATE wiser_entityproperty
@@ -1017,7 +967,6 @@ SET @_display_name = '{displayName}';
 SET @_property_name = IF('{propertyName}' = '', @_display_name, '{propertyName}');
 SET @_overviewvisibility = '{visibleInOverview}';
 SET @_overviewvisibility = IF(@_overviewvisibility = TRUE OR @_overviewvisibility = 'true', 1, 0);
-SET @_overviewType = '{overviewFieldtype}';
 SET @_overviewWidth = '{overviewWidth}';
 SET @_groupName = '{groupName}';
 SET @_input_type = '{inputtype}';
@@ -1053,7 +1002,6 @@ inputtype = @_input_type,
 display_name = @_display_name,
 property_name = @_property_name,
 visible_in_overview= @_overviewvisibility,
-overview_fieldtype= @_overviewType,
 overview_width= @_overviewWidth,
 group_name= @_groupName,
 explanation= @_explanation,
@@ -1080,40 +1028,6 @@ grid_update_query = @_grid_update_query
 WHERE entity_name = @_entity_name AND id = @_id
 LIMIT 1; ");
 
-                TemplateQueryStrings.Add("GET_ENTITY_FIELD_PROPERTIES_FOR_SELECTED", @"SELECT
-id,
-display_name AS displayName,
-inputtype, 
-visible_in_overview AS visibleInOverview, 
-overview_width AS overviewWidth, 
-overview_fieldtype AS overviewFieldtype, 
-mandatory, 
-readonly, 
-also_save_seo_value AS alsoSaveSeoValue,
-width,
-height,
-IF(tab_name = '', 'Gegevens', tab_name) AS tabName,
-group_name AS groupName,
-property_name AS propertyName,
-explanation,
-default_value AS defaultValue,
-automation,
-options,
-depends_on_field AS dependsOnField,
-depends_on_operator AS dependsOnOperator,
-depends_on_value AS dependsOnValue,
-IFNULL(data_query,"""") AS dataQuery,
-IFNULL(grid_delete_query,"""") AS gridDeleteQuery,
-IFNULL(grid_update_query,"""") AS gridUpdateQuery,
-IFNULL(grid_insert_query,"""") AS gridInsertQuery,
-regex_validation AS regexValidation,
-IFNULL(css, '') AS css,
-language_code AS languageCode,
-IFNULL(custom_script, '') AS customScript,
-(SELECT COUNT(1) FROM wiser_itemdetail INNER JOIN wiser_item ON wiser_itemdetail.item_id = wiser_item.id WHERE wiser_itemdetail.key = wiser_entityproperty.property_name AND wiser_item.entity_type = wiser_entityproperty.entity_name) > 0 as field_in_use
-FROM wiser_entityproperty
-WHERE id = {id} AND entity_name = '{entityName}'
-");
                 TemplateQueryStrings.Add("MOVE_ITEM", @"#Item verplaatsen naar ander item
 SET @src_id = '{source:decrypt(true)}';
 SET @dest_id = '{destination:decrypt(true)}';
@@ -1180,8 +1094,8 @@ SET @itemname = (SELECT title FROM wiser_item WHERE id=@_itemId);
 SET @userId = {encryptedUserId:decrypt(true)};
 
 SELECT 
-	CONCAT('\'', @itemname, '\' hernoemen') AS text, 
-    'icon-album-rename' AS spriteCssClass,
+	CONCAT('\'', @itemname, '\' hernoemen (F2)') AS text, 
+    'icon-rename' AS spriteCssClass,
     'RENAME_ITEM' AS attraction,
     i.entity_type AS attrentity_type
     #the JSON must consist of a subnode with attributes, so attr is the name of the json object containing 'action' as a value, herefore the name here is attr...action
@@ -1203,8 +1117,9 @@ SELECT
 		)
     
 UNION
-    SELECT CONCAT('Nieuw(e) \'', i.name, '\' aanmaken'), 
-	i.icon_add,'CREATE_ITEM', 
+    SELECT CONCAT('Nieuw(e) \'', i.name, '\' aanmaken (SHIFT+N)'), 
+	i.icon_add,
+    'CREATE_ITEM', 
 	i.name
     FROM wiser_entity i
     JOIN wiser_entity we ON we.module_id=@_moduleId AND we.name=@entity_type
@@ -1225,7 +1140,7 @@ UNION
 		)
 
 UNION
-	SELECT CONCAT('\'', @itemname, '\' dupliceren') AS text, 
+	SELECT CONCAT('\'', @itemname, '\' dupliceren (SHIFT+D)') AS text, 
 	'icon-document-duplicate',
 	'DUPLICATE_ITEM',
     i.entity_type AS attrentity_type
@@ -1316,7 +1231,7 @@ UNION
 		)
     
 UNION
-	SELECT CONCAT('\'', @itemname, '\' verwijderen') AS text, 
+	SELECT CONCAT('\'', @itemname, '\' verwijderen (DEL)') AS text, 
 	'icon-delete',
 	'REMOVE_ITEM',
     i.entity_type AS attrentity_type
@@ -1345,27 +1260,12 @@ UNION ALL
 SELECT 'Media' AS type_text, 4 AS type_value 
 UNION ALL
 SELECT DISTINCT type AS type_text, type AS type_value FROM `wiser_itemlink` WHERE type > 100");
-                TemplateQueryStrings.Add("GET_COLUMNS_FOR_FIELD_TABLE", @"#Verkrijg de kolommen die getoond moeten worden bij een specifiek soort entiteit
-SET @entitytype = '{entity_type}';
-SET @_linkType = '{linkType}';
-
-SELECT  
-	CONCAT('property_.', CreateJsonSafeProperty(LOWER(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)))) AS field,
-    p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
-    p.overview_width AS width
-FROM wiser_entityproperty p 
-WHERE (p.entity_name = @entitytype OR (p.link_type > 0 AND p.link_type = @_linkType))
-AND p.visible_in_overview = 1
-GROUP BY IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)
-ORDER BY p.ordering;");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_LINK_TABLE", @"SET @destinationId = {id:decrypt(true)};
 SET @_linkTypeNumber = IF('{linkTypeNumber}' LIKE '{%}' OR '{linkTypeNumber}' = '', '2', '{linkTypeNumber}');
 
 SELECT 
 	CONCAT('property_.', CreateJsonSafeProperty(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name))) AS field,
     p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
     p.overview_width AS width
 FROM wiser_entityproperty p 
 JOIN wiser_item i ON i.entity_type = p.entity_name
@@ -1508,6 +1408,8 @@ WHERE role_id = {role_id} AND module_id={module_id}");
 	properties.id AS `propertyId`,
 	properties.entity_name AS `entityName`,
 	properties.display_name as `displayName`,
+    properties.tab_name AS `tabName`,
+    properties.group_name AS `groupName`,
 	IFNULL(permissions.permissions, 15) AS `permission`,
     {roleId} AS `roleId`
 FROM `wiser_entityproperty` AS properties
@@ -1515,7 +1417,7 @@ LEFT JOIN `wiser_permission` AS permissions ON permissions.entity_property_id = 
 WHERE NULLIF(properties.display_name, '') IS NOT NULL
 	AND NULLIF(properties.entity_name, '') IS NOT NULL
 GROUP BY properties.id
-ORDER BY properties.entity_name, properties.display_name");
+ORDER BY properties.entity_name, properties.tab_name, properties.group_name, properties.display_name");
                 TemplateQueryStrings.Add("GET_MODULE_PERMISSIONS", @"SELECT
 	role.id AS `roleId`,
 	role.role_name AS `roleName`,
@@ -1547,25 +1449,19 @@ ON DUPLICATE KEY UPDATE permissions = {permissionCode};");
 
                 TemplateQueryStrings.Add("GET_DATA_SELECTOR_BY_ID", @"SET @_id = {id};
 
-SELECT id, `name`, module_selection AS modules, request_json AS requestJson, saved_json AS savedJson, show_in_export_module AS showInExportModule, available_for_rendering AS availableForRendering
-FROM wiser_data_selector
-WHERE id = @_id");
+SELECT
+    dataSelector.id, `name`,
+    dataSelector.module_selection AS modules,
+    dataSelector.request_json AS requestJson,
+    dataSelector.saved_json AS savedJson,
+    dataSelector.show_in_export_module AS showInExportModule,
+    dataSelector.show_in_communication_module AS showInCommunicationModule,
+    dataSelector.available_for_rendering AS availableForRendering,
+    IFNULL(GROUP_CONCAT(permission.role_id), '') AS allowedRoles
+FROM wiser_data_selector AS dataSelector
+LEFT JOIN wiser_permission AS permission ON permission.data_selector_id = dataSelector.id
+WHERE dataSelector.id = @_id");
 
-                TemplateQueryStrings.Add("GET_ALL_ENTITY_TYPES", @"SET @userId = {encryptedUserId:decrypt(true)};
-
-SELECT DISTINCT 
-	IF(entity.friendly_name IS NULL OR entity.friendly_name = '', entity.name, entity.friendly_name) AS name,
-    entity.name AS value
-FROM wiser_entity AS entity
-
-# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-LEFT JOIN wiser_user_roles user_role ON user_role.user_id = @userId
-LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.entity_name = entity.name
-
-WHERE entity.show_in_search = 1
-AND entity.name <> ''
-AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-ORDER BY IF(entity.friendly_name IS NULL OR entity.friendly_name = '', entity.name, entity.friendly_name)");
                 TemplateQueryStrings.Add("GET_ITEM_ENVIRONMENTS", @"SELECT
 	item.id AS id_encrypt_withdate,
 	item.id AS plainItemId,
@@ -1596,7 +1492,7 @@ JOIN wiser_entity we ON we.name = i.entity_type AND we.show_in_tree_view = 1
 LEFT JOIN wiser_itemlink ilp ON ilp.item_id = i.id
 LEFT JOIN wiser_itemlink checked ON checked.item_id = i.id AND checked.destination_item_id = @_checkId AND @_checkId <> '0'
 WHERE i.moduleid = @mid
-AND (@_entityType = '' OR i.entity_type = @entityType)
+AND (@_entityType = '' OR i.entity_type = @_entityType)
 GROUP BY i.id
 ORDER BY 
     CASE WHEN @_ordering = 'title' THEN i.title END ASC,
@@ -1635,7 +1531,7 @@ AND (
 GROUP BY i.id
 ORDER BY ilp.ordering, i.title");
                 TemplateQueryStrings.Add("GET_DESTINATION_ITEMS", @"SET @_itemId = {itemId};
-SET @_entityType = IF('{entity_type}' LIKE '{%}', 'item', '{entity_type}');
+SET @_entityType = IF('{entityType}' LIKE '{%}', 'item', '{entityType}');
 SET @_linkType = IF('{linkTypeNumber}' LIKE '{%}', '1', '{linkTypeNumber}');
 SET @userId = {encryptedUserId:decrypt(true)};
 
@@ -1670,7 +1566,7 @@ AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
 GROUP BY il.item_id, id.id
 ORDER BY il.ordering, i.title, i.id");
                 TemplateQueryStrings.Add("GET_DESTINATION_ITEMS_REVERSED", @"SET @_itemId = {itemId};
-SET @_entityType = IF('{entity_type}' LIKE '{%}', 'item', '{entity_type}');
+SET @_entityType = IF('{entityType}' LIKE '{%}', 'item', '{entityType}');
 SET @_linkType = IF('{linkTypeNumber}' LIKE '{%}', '1', '{linkTypeNumber}');
 SET @userId = {encryptedUserId:decrypt(true)};
 
@@ -1704,25 +1600,11 @@ AND il.type = @_linkType
 AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
 GROUP BY il.destination_item_id, id.id
 ORDER BY il.ordering, i.title, i.id");
-                TemplateQueryStrings.Add("ADD_LINK", @"SET @sourceId = {source:decrypt(true)};
-SET @destinationId = {destination:decrypt(true)};
-SET @_linkTypeNumber = IF('{linkTypeNumber}' LIKE '{%}' OR '{linkTypeNumber}' = '', '2', '{linkTypeNumber}');
-SET @newOrderNumber = IFNULL((SELECT MAX(link.ordering) + 1 FROM wiser_itemlink AS link JOIN wiser_item AS item ON item.id = link.item_id WHERE link.destination_item_id = @destinationId AND link.type = @_linkTypeNumber), 1);
-SET @_username = '{username}';
-SET @_userId = '{encryptedUserId:decrypt(true)}';
-
-INSERT IGNORE INTO wiser_itemlink (item_id, destination_item_id, ordering, type)
-SELECT @sourceId, @destinationId, @newOrderNumber, @_linkTypeNumber
-FROM DUAL
-WHERE @sourceId <> @destinationId;
-
-SELECT LAST_INSERT_ID() AS newId;");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_TABLE", @"SET @selected_id = {itemId:decrypt(true)}; # 3077
 
 SELECT 
 	CONCAT('property_.', CreateJsonSafeProperty(LOWER(IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)))) AS field,
     p.display_name AS title,
-    p.overview_fieldtype AS fieldType,
     p.overview_width AS width
 FROM wiser_itemlink il
 JOIN wiser_item i ON i.id=il.item_id
@@ -2111,7 +1993,7 @@ SELECT
 	content_type AS contentType,
 	0 AS isDirectory,
 	0 AS childrenCount,
-    property_name,
+    property_name AS propertyName,
     item_id AS itemId_encrypt_withdate,
     item_id AS itemIdPlain,
     CASE
@@ -2206,14 +2088,14 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId)
+        public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId, string branchDatabaseName = null)
         {
             if (templateId <= 0)
             {
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var versionsAndPublished = await templateDataService.GetPublishedEnvironmentsAsync(templateId);
+            var versionsAndPublished = await templateDataService.GetPublishedEnvironmentsAsync(templateId, branchDatabaseName);
 
             return new ServiceResult<PublishedEnvironmentModel>(PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
         }
@@ -2320,7 +2202,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
+        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName = null)
         {
             if (templateId <= 0)
             {
@@ -2332,11 +2214,55 @@ LIMIT 1";
                 throw new ArgumentException("The version is invalid");
             }
 
+            // When deploying a template to live environment that is a view, routine or trigger, then also update the actual view/routine/trigger in the database.
+            if (environment == Environments.Live)
+            {
+                var databaseName = branchDatabaseName ?? clientDatabaseConnection.ConnectedDatabase;
+                var template = await templateDataService.GetDataAsync(templateId, version: version);
+
+                switch (template.Type)
+                {
+                    case TemplateTypes.View:
+                    {
+                        // Create or replace view.
+                        var (successful, errorMessage) = await CreateOrReplaceDatabaseViewAsync(template.Name, template.EditorValue, databaseName);
+                        if (!successful)
+                        {
+                            throw new Exception($"The template saved successfully, but the view could not be created due to a syntax error. Error:\n{errorMessage}");
+                        }
+
+                        break;
+                    }
+                    case TemplateTypes.Routine:
+                    {
+                        // Also (re-)create the actual routine.
+                        var (successful, errorMessage) = await CreateOrReplaceDatabaseRoutineAsync(template.Name, template.RoutineType, template.RoutineParameters, template.RoutineReturnType, template.EditorValue, databaseName);
+                        if (!successful)
+                        {
+                            throw new Exception($"The template saved successfully, but the routine could not be created due to a syntax error. Error:\n{errorMessage}");
+                        }
+
+                        break;
+                    }
+                    case TemplateTypes.Trigger:
+                    {
+                        // Also (re-)create the actual trigger.
+                        var (successful, errorMessage) = await CreateOrReplaceDatabaseTriggerAsync(template.Name, template.TriggerTiming, template.TriggerEvent, template.TriggerTableName, template.EditorValue, databaseName);
+                        if (!successful)
+                        {
+                            throw new Exception($"The template saved successfully, but the trigger could not be created due to a syntax error. Error:\n{errorMessage}");
+                        }
+
+                        break;
+                    }
+                }
+            }
+
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
-            return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, newPublished, publishLog, IdentityHelpers.GetUserName(identity, true)));
+            return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, version, environment, publishLog, IdentityHelpers.GetUserName(identity, true), branchDatabaseName));
         }
 
         /// <inheritdoc />
@@ -2388,16 +2314,35 @@ LIMIT 1";
                         EvalTreatment = EvalTreatment.Ignore
                     };
 
-                    // Try to minify. Uglify is known to have various issues with minifying newer JavaScript features.
-                    try
+                    // Try to the minify the script.
+                    var terserSuccessful = false;
+                    string terserMinifiedScript = null;
+                    if (apiSettings.UseTerserForTemplateScriptMinification)
                     {
-                        template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
+                        // Minification through terser is enabled, attempt to minify it using that.
+                        (terserSuccessful, terserMinifiedScript) = await MinifyJavaScriptWithTerserAsync(template.EditorValue);
                     }
-                    catch (Exception exception)
+
+                    if (terserSuccessful)
                     {
-                        // Use non-minified editor value as the minified value so the changes don't go lost.
-                        template.MinifiedValue = template.EditorValue;
-                        logger.LogWarning(exception, $"An error occurred while trying to minify the JavaScript of template ID {template.TemplateId}");
+                        template.MinifiedValue = terserMinifiedScript;
+                    }
+                    else
+                    {
+                        // If minification through terser failed somehow (like a missing/outdated/corrupt installation), then
+                        // use NUglify as a fallback.
+                        try
+                        {
+                            // Wrapped in a try-catch statement, because NUglify is known to have various
+                            // issues with minifying newer JavaScript features.
+                            template.MinifiedValue = Uglify.Js(template.EditorValue, codeSettings).Code + ";";
+                        }
+                        catch (Exception exception)
+                        {
+                            // Use non-minified editor value as the minified value so the changes don't go lost.
+                            template.MinifiedValue = template.EditorValue;
+                            logger.LogWarning(exception, $"An error occurred while trying to minify the JavaScript using NUglify of template ID {template.TemplateId}");
+                        }
                     }
 
                     break;
@@ -2432,16 +2377,6 @@ LIMIT 1";
 
             await templateDataService.SaveAsync(template, templateLinks, IdentityHelpers.GetUserName(identity, true));
 
-            if (template.Type == TemplateTypes.Routine)
-            {
-                // Also (re-)create the actual routine.
-                var (successful, errorMessage) = await CreateDatabaseRoutine(template.Name, template.RoutineType, template.RoutineParameters, template.RoutineReturnType, template.EditorValue);
-                if (!successful)
-                {
-                    throw new Exception($"The template saved successfully, but the routine could not be created due to a syntax error. Error:\n{errorMessage}");
-                }
-            }
-
             if (template.Type != TemplateTypes.Scss || !template.IsScssIncludeTemplate || skipCompilation)
             {
                 return new ServiceResult<bool>(true);
@@ -2458,7 +2393,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(int parentId)
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(ClaimsIdentity identity, int parentId)
         {
             // Make sure the tables are up-to-date.
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
@@ -2476,6 +2411,38 @@ LIMIT 1";
 
             // Get templates in correct order.
             var rawSection = await templateDataService.GetTreeViewSectionAsync(parentId);
+
+            if (rawSection.Count > 0 && rawSection[0].TemplateType == TemplateTypes.Routine)
+            {
+                // Routine template names should be updated to the routine's actual name if the template's name doesn't contain
+                // the "WISER_" prefix, but the routine does. This is meant for tenants that upgrade from Wiser 1/2 to Wiser 3.
+                foreach (var treeViewItem in rawSection.Where(treeViewItem => !treeViewItem.IsVirtualItem))
+                {
+                    clientDatabaseConnection.AddParameter("routineName", treeViewItem.TemplateName);
+                    var routineData = await clientDatabaseConnection.GetAsync(@"
+                        SELECT ROUTINE_NAME
+                        FROM information_schema.ROUTINES
+                        WHERE ROUTINE_NAME = ?routineName");
+
+                    if (routineData.Rows.Count == 0) continue;
+
+                    clientDatabaseConnection.AddParameter("routineName", $"WISER_{treeViewItem.TemplateName}");
+                    routineData = await clientDatabaseConnection.GetAsync(@"
+                        SELECT ROUTINE_NAME
+                        FROM information_schema.ROUTINES
+                        WHERE ROUTINE_NAME = ?routineName");
+
+                    if (routineData.Rows.Count == 0) continue;
+
+                    // Routine doesn't exist with the template's name, but DOES exist with the "WISER_" prefix.
+                    // Update the template's name to stay consistent.
+                    var newTemplateName = routineData.Rows[0].Field<string>("ROUTINE_NAME");
+                    await RenameAsync(identity, treeViewItem.TemplateId, newTemplateName);
+
+                    treeViewItem.TemplateName = newTemplateName;
+                }
+            }
+
             var helper = new TreeViewHelper();
             var convertedList = rawSection.Select(treeViewDao => helper.ConvertTemplateTreeViewDAOToTemplateTreeViewModel(treeViewDao)).ToList();
 
@@ -2485,7 +2452,7 @@ LIMIT 1";
         /// <inheritdoc />
         public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(ClaimsIdentity identity, string searchValue)
         {
-	        var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+            var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
             return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchValue, encryptionKey));
         }
 
@@ -2569,8 +2536,29 @@ LIMIT 1";
                 };
             }
 
+            var oldName = templateDataResponse.ModelObject.Name;
             templateDataResponse.ModelObject.LinkedTemplates = linkedTemplatesResponse.ModelObject;
             templateDataResponse.ModelObject.Name = newName;
+
+            if (templateDataResponse.ModelObject.Type is not (TemplateTypes.View or TemplateTypes.Routine or TemplateTypes.Trigger))
+            {
+                return await SaveTemplateVersionAsync(identity, templateDataResponse.ModelObject);
+            }
+
+            // Also rename the view, routine, or trigger that this template is managing.
+            switch (templateDataResponse.ModelObject.Type)
+            {
+                case TemplateTypes.View:
+                    await CreateOrReplaceDatabaseViewAsync(newName, templateDataResponse.ModelObject.EditorValue, oldName, clientDatabaseConnection.ConnectedDatabase);
+                    break;
+                case TemplateTypes.Routine:
+                    await CreateOrReplaceDatabaseRoutineAsync(newName, templateDataResponse.ModelObject.RoutineType, templateDataResponse.ModelObject.RoutineParameters, templateDataResponse.ModelObject.RoutineReturnType, templateDataResponse.ModelObject.EditorValue, oldName, clientDatabaseConnection.ConnectedDatabase);
+                    break;
+                case TemplateTypes.Trigger:
+                    await CreateOrReplaceDatabaseTriggerAsync(newName, templateDataResponse.ModelObject.TriggerTiming, templateDataResponse.ModelObject.TriggerEvent, templateDataResponse.ModelObject.TriggerTableName, templateDataResponse.ModelObject.EditorValue, oldName, clientDatabaseConnection.ConnectedDatabase);
+                    break;
+            }
+
             return await SaveTemplateVersionAsync(identity, templateDataResponse.ModelObject);
         }
 
@@ -2600,7 +2588,7 @@ LIMIT 1";
             var path = startFrom.Split(',');
             var remainingStartFrom = startFrom[(path[0].Length + (path.Length > 1 ? 1 : 0))..];
 
-            var templateTrees = (await GetTreeViewSectionAsync(parentId)).ModelObject;
+            var templateTrees = (await GetTreeViewSectionAsync(identity, parentId)).ModelObject;
             foreach (var templateTree in templateTrees)
             {
                 if (!String.IsNullOrWhiteSpace(startFrom) && !path[0].Equals(templateTree.TemplateName, StringComparison.InvariantCultureIgnoreCase)) continue;
@@ -2677,6 +2665,8 @@ LIMIT 1";
             var queryString = QueryHelpers.ParseQuery(requestModel.Url.Query);
             var ombouw = (!queryString.ContainsKey("ombouw") || !String.Equals(queryString["ombouw"].ToString(), "false", StringComparison.OrdinalIgnoreCase)) && !String.Equals(requestModel.PreviewVariables.FirstOrDefault(v => String.Equals(v.Key, "ombouw", StringComparison.OrdinalIgnoreCase))?.Value, "false", StringComparison.OrdinalIgnoreCase);
 
+            await SetupGclForPreviewAsync(identity, requestModel);
+            
             var contentToWrite = new StringBuilder();
 
             // Execute the pre load query before any replacements are being done and before any dynamic components are handled.
@@ -2697,25 +2687,12 @@ LIMIT 1";
                 contentToWrite.Append(await pagesService.GetGlobalFooter(requestModel.Url.ToString(), javascriptTemplates, cssTemplates));
             }
 
-            await SetupGclForPreviewAsync(identity, requestModel);
-
             outputHtml = contentToWrite.ToString();
-            if (requestModel.TemplateSettings.HandleStandards)
-            {
-                outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, requestModel.TemplateSettings.HandleRequests, false, true, false);
-                outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
-                outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
-            }
-
-            if (requestModel.TemplateSettings.HandleDynamicContent)
-            {
-                outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
-            }
-
-            if (requestModel.TemplateSettings.HandleLogicBlocks)
-            {
-                outputHtml = stringReplacementsService.EvaluateTemplate(outputHtml);
-            }
+            outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, requestModel.TemplateSettings.HandleRequests, false, true, false);
+            outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
+            outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
+            outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
+            outputHtml = stringReplacementsService.EvaluateTemplate(outputHtml);
 
             if (!ombouw)
             {
@@ -2738,31 +2715,93 @@ LIMIT 1";
 
             if (viewModel.Css != null)
             {
-                viewModel.Css.GeneralCssFileName = AddMainDomainToUrl(viewModel.Css.GeneralCssFileName, mainDomain);
-                viewModel.Css.PageAsyncFooterCssFileName = AddMainDomainToUrl(viewModel.Css.PageAsyncFooterCssFileName, mainDomain);
-                viewModel.Css.PageInlineHeadCss = AddMainDomainToUrl(viewModel.Css.PageInlineHeadCss, mainDomain);
-                viewModel.Css.PageStandardCssFileName = AddMainDomainToUrl(viewModel.Css.PageStandardCssFileName, mainDomain);
-                viewModel.Css.PageSyncFooterCssFileName = AddMainDomainToUrl(viewModel.Css.PageSyncFooterCssFileName, mainDomain);
+                var cssBuilder = new StringBuilder();
+                cssBuilder.AppendLine((await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Css)).Content);
+                cssBuilder.AppendLine(viewModel.Css.PageInlineHeadCss);
+                
+                var regex = new Regex("/css/gclcss_(.*).css");
+                var match = regex.Match(viewModel.Css.PageStandardCssFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Css.PageStandardCssFileName = null;
+                
+                match = regex.Match(viewModel.Css.PageAsyncFooterCssFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Css.PageAsyncFooterCssFileName = null;
+                
+                match = regex.Match(viewModel.Css.PageSyncFooterCssFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Css.PageSyncFooterCssFileName = null;
+
+                viewModel.Css.PageInlineHeadCss = cssBuilder.ToString();
             }
 
             if (viewModel.Javascript != null)
             {
-                viewModel.Javascript.GeneralJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.GeneralJavascriptFileName, mainDomain);
-                viewModel.Javascript.GeneralFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.GeneralFooterJavascriptFileName, mainDomain);
-                viewModel.Javascript.PageAsyncFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageAsyncFooterJavascriptFileName, mainDomain);
-                viewModel.Javascript.PageStandardJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageStandardJavascriptFileName, mainDomain);
-                viewModel.Javascript.PageSyncFooterJavascriptFileName = AddMainDomainToUrl(viewModel.Javascript.PageSyncFooterJavascriptFileName, mainDomain);
+                viewModel.Javascript.PageInlineHeadJavascript ??= new List<string>();
+                viewModel.Javascript.PageInlineHeadJavascript.Insert(0, (await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Js)).Content);
+
+                var regex = new Regex("/css/gcljs_(.*).css");
+                var match = regex.Match(viewModel.Javascript.PageStandardJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.PageStandardJavascriptFileName = null;
+                
+                match = regex.Match(viewModel.Javascript.GeneralFooterJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.GeneralFooterJavascriptFileName = null;
+                
+                match = regex.Match(viewModel.Javascript.PageAsyncFooterJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.PageAsyncFooterJavascriptFileName = null;
+                
+                match = regex.Match(viewModel.Javascript.PageSyncFooterJavascriptFileName ?? "");
+                if (match.Success)
+                {
+                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                }
+
+                viewModel.Javascript.PageSyncFooterJavascriptFileName = null;
             }
 
             // Generate HTML from view.
             await using var writer = new StringWriter();
             var executingAssemblyDirectoryAbsolutePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
-            var executingFilePath = executingAssemblyDirectoryAbsolutePath.Replace('\\', '/');
+            var executingFilePath = executingAssemblyDirectoryAbsolutePath!.Replace('\\', '/');
             const string viewPath = "~/Modules/Templates/Views/Shared/Template.cshtml";
             var viewResult = razorViewEngine.GetView(executingFilePath, viewPath, true);
 
-            var actionContext = new ActionContext(httpContextAccessor.HttpContext, new RouteData(), new ActionDescriptor());
+            var actionContext = new ActionContext(httpContextAccessor.HttpContext!, new RouteData(), new ActionDescriptor());
 
             if (viewResult.Success == false)
             {
@@ -2800,6 +2839,55 @@ LIMIT 1";
         public async Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString)
         {
             return await InternalCheckDefaultHeaderOrFooterConflict("footer", templateId, regexString);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateSettingsModel>> GetVirtualTemplateAsync(string objectName, TemplateTypes templateType)
+        {
+            if (String.IsNullOrWhiteSpace(objectName))
+            {
+                throw new ArgumentException("The name cannot be null or empty.");
+            }
+
+            if (!templateType.InList(TemplateTypes.View, TemplateTypes.Routine, TemplateTypes.Trigger))
+            {
+                throw new ArgumentException("Template type has to be either View, Routine, or Trigger.");
+            }
+
+            TemplateSettingsModel virtualTemplateData;
+            switch (templateType)
+            {
+                case TemplateTypes.View:
+                    virtualTemplateData = await GetDatabaseViewDataAsync(objectName);
+                    break;
+                case TemplateTypes.Routine:
+                    virtualTemplateData = await GetDatabaseRoutineDataAsync(objectName);
+                    break;
+                case TemplateTypes.Trigger:
+                    virtualTemplateData = await GetDatabaseTriggerDataAsync(objectName);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            // Set the rest of the data.
+            virtualTemplateData.Type = templateType;
+            virtualTemplateData.ChangedBy = "Database";
+            virtualTemplateData.PublishedEnvironments = new PublishedEnvironmentModel
+            {
+                LiveVersion = 0,
+                AcceptVersion = 0,
+                TestVersion = 0,
+                VersionList = new List<int>(0)
+            };
+
+            return new ServiceResult<TemplateSettingsModel>(virtualTemplateData);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<IList<string>>> GetTableNamesForTriggerTemplatesAsync()
+        {
+            return new ServiceResult<IList<string>>(await databaseHelpersService.GetAllTableNamesAsync());
         }
 
         /// <summary>
@@ -3121,6 +3209,84 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             return new ServiceResult<bool>(true);
         }
 
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, List<int> templateIds, int branchId)
+        {
+            // The user must be logged in the main branch, otherwise they can't use this functionality.
+            if (!(await branchesService.IsMainBranchAsync(identity)).ModelObject)
+            {
+                return new ServiceResult<bool>
+                {
+                    ModelObject = false,
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "The current branch is not the main branch. This functionality can only be used from the main branch." 
+                };
+            }
+            
+            // Check if the branch exists.
+            var branchToDeploy = (await wiserCustomersService.GetSingleAsync(branchId, true)).ModelObject;
+            if (branchToDeploy == null)
+            {
+                return new ServiceResult<bool>
+                {
+                    ModelObject = false,
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"Branch with ID {branchId} does not exist" 
+                };
+            }
+
+            // Make sure the user did not try to enter an ID for a branch that they don't own.
+            if (!(await branchesService.CanAccessBranchAsync(identity, branchToDeploy)).ModelObject)
+            {
+                return new ServiceResult<bool>
+                {
+                    ModelObject = false,
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = $"You don't have permissions to access a branch with ID {branchId}" 
+                };
+            }
+
+            // Now we can deploy the template to the branch.
+            try
+            {
+                await templateDataService.DeployToBranchAsync(templateIds, branchToDeploy.Database.DatabaseName);
+            }
+            catch (MySqlException mySqlException)
+            {
+                switch (mySqlException.Number)
+                {
+                    case (int)MySqlErrorCode.DuplicateKeyEntry:
+                        // We ignore duplicate key errors, because it's possible that a template already exists in a branch, but it wasn't deployed to the correct environment.
+                        // So we ignore this error, so we can still deploy that template to production in the branch, see the next bit of code after this try/catch.
+                        break;
+                    case (int)MySqlErrorCode.WrongValueCountOnRow:
+                        return new ServiceResult<bool>
+                        {
+                            StatusCode = HttpStatusCode.Conflict,
+                            ErrorMessage = "The tables for the template module are not up-to-date in the selected branch. Please open the template module in that branch once, so that the tables will be automatically updated."
+                        };
+                    default:
+                        throw;
+                }
+            }
+
+            // Publish all templates to live environment in the branch, because a branch will never actually be used on a live environment
+            // and then we can make sure that the deployed templates will be up to date on whichever website environment uses that branch.
+            // Also copy stored procedures, views and triggers to the branch.
+            foreach (var templateId in templateIds)
+            {
+                var templateMetaData = await templateDataService.GetMetaDataAsync(templateId);
+                var currentPublished = (await GetTemplateEnvironmentsAsync(templateId, branchToDeploy.Database.DatabaseName)).ModelObject;
+
+                await PublishToEnvironmentAsync(identity, templateId, templateMetaData.Version, Environments.Live, currentPublished, branchToDeploy.Database.DatabaseName);
+            }
+
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
+        }
+
         private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html)
         {
             var regex = new Regex(@"<img[^>]*?(?:data=['""](?<data>.*?)['""][^>]*?)?contentid=['""](?<contentid>\d+)['""][^>]*?\/?>");
@@ -3299,37 +3465,258 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             {
                 httpContextAccessor.HttpContext.Items.Add(Constants.WiserUriOverrideForReplacements, requestModel.Url);
             }
+
+            // Force the GCL environment to development, so that it will always use the latest versions of templates and dynamic components.
+            gclSettings.Environment = Environments.Development;
+        }
+
+        /// <summary>
+        /// Retrieves data about a view from the database.
+        /// </summary>
+        /// <param name="viewName">The name of the view.</param>
+        /// <returns>A <see cref="TemplateSettingsModel"/> object containing the data of the view.</returns>
+        private async Task<TemplateSettingsModel> GetDatabaseViewDataAsync(string viewName)
+        {
+            var result = new TemplateSettingsModel();
+
+            if (String.IsNullOrWhiteSpace(viewName))
+            {
+                return result;
+            }
+
+            clientDatabaseConnection.AddParameter("viewName", viewName);
+            var dataTable = await clientDatabaseConnection.GetAsync("SELECT TABLE_NAME, VIEW_DEFINITION FROM information_schema.VIEWS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?viewName");
+
+            if (dataTable.Rows.Count == 0)
+            {
+                return result;
+            }
+
+            result.Name = dataTable.Rows[0].Field<string>("TABLE_NAME") ?? String.Empty;
+            result.EditorValue = dataTable.Rows[0].Field<string>("VIEW_DEFINITION")?.Trim() ?? String.Empty;;
+
+            return result;
+        }
+
+        /// <summary>
+        /// Retrieves data about a routine from the database (function or stored procedure).
+        /// </summary>
+        /// <param name="routineName">The name of the routine.</param>
+        /// <returns>A <see cref="TemplateSettingsModel"/> object containing the data of the routine.</returns>
+        private async Task<TemplateSettingsModel> GetDatabaseRoutineDataAsync(string routineName)
+        {
+            var result = new TemplateSettingsModel();
+
+            if (String.IsNullOrWhiteSpace(routineName))
+            {
+                return result;
+            }
+
+            // First retrieve the body.
+            clientDatabaseConnection.AddParameter("routineName", routineName);
+            var dataTable = await clientDatabaseConnection.GetAsync(@"
+                SELECT ROUTINE_NAME, ROUTINE_TYPE, DTD_IDENTIFIER, ROUTINE_DEFINITION
+                FROM information_schema.ROUTINES
+                WHERE ROUTINE_SCHEMA = DATABASE() AND ROUTINE_NAME = ?routineName;");
+
+            if (dataTable.Rows.Count == 0)
+            {
+                return result;
+            }
+
+            // Parse the routine type to the enum value, which should the same (except it's not fully uppercase).
+            if (!Enum.TryParse(dataTable.Rows[0].Field<string>("ROUTINE_TYPE"), true, out RoutineTypes routineType))
+            {
+                return result;
+            }
+
+            var routineDefinition = dataTable.Rows[0].Field<string>("ROUTINE_DEFINITION")?.Trim() ?? String.Empty;
+            if (!String.IsNullOrWhiteSpace(routineDefinition))
+            {
+                // Strip the "BEGIN" and "END" parts of the definition (Wiser doesn't need them).
+                if (routineDefinition.StartsWith("BEGIN", StringComparison.OrdinalIgnoreCase))
+                {
+                    routineDefinition = routineDefinition[5..].Trim();
+                }
+
+                if (routineDefinition.EndsWith("END", StringComparison.OrdinalIgnoreCase))
+                {
+                    routineDefinition = routineDefinition[..^3].Trim();
+                }
+            }
+
+            result.Name = dataTable.Rows[0].Field<string>("ROUTINE_NAME") ?? String.Empty;
+            result.EditorValue = routineDefinition;
+            result.RoutineType = routineType;
+            result.RoutineReturnType = routineType == RoutineTypes.Function ? dataTable.Rows[0].Field<string>("DTD_IDENTIFIER") ?? String.Empty : String.Empty;
+
+            // Now retrieve the parameters. The parameter at position 0 is the return type of a function, which is already known.
+            dataTable = await clientDatabaseConnection.GetAsync($@"
+                SELECT PARAMETER_MODE, PARAMETER_NAME, DTD_IDENTIFIER
+                FROM information_schema.PARAMETERS
+                WHERE SPECIFIC_SCHEMA = DATABASE() AND SPECIFIC_NAME = ?routineName AND ORDINAL_POSITION > 0
+                ORDER BY ORDINAL_POSITION;");
+
+            if (dataTable.Rows.Count == 0)
+            {
+                // Routine has no parameters; return the result.
+                return result;
+            }
+
+            var routineParameters = new List<string>(dataTable.Rows.Count);
+            foreach (var dataRow in dataTable.Rows.Cast<DataRow>())
+            {
+                // Parameters of a procedure have a mode (IN, OUT, and INOUT).
+                var parameterModePart = String.Empty;
+                if (routineType == RoutineTypes.Procedure)
+                {
+                    parameterModePart = $"{dataRow.Field<string>("PARAMETER_MODE")} ";
+                }
+
+                routineParameters.Add($"{parameterModePart}`{dataRow.Field<string>("PARAMETER_NAME")}` {dataRow.Field<string>("DTD_IDENTIFIER")}");
+            }
+
+            result.RoutineParameters = String.Join(", ", routineParameters);
+
+            return result;
+        }
+
+        private async Task<TemplateSettingsModel> GetDatabaseTriggerDataAsync(string triggerName)
+        {
+            var result = new TemplateSettingsModel();
+
+            if (String.IsNullOrWhiteSpace(triggerName))
+            {
+                return result;
+            }
+
+            // First retrieve the body.
+            clientDatabaseConnection.AddParameter("triggerName", triggerName);
+            var dataTable = await clientDatabaseConnection.GetAsync(@"
+                SELECT TRIGGER_NAME, EVENT_MANIPULATION, EVENT_OBJECT_TABLE, ACTION_STATEMENT, ACTION_TIMING
+                FROM information_schema.TRIGGERS
+                WHERE TRIGGER_SCHEMA = DATABASE() AND TRIGGER_NAME = ?triggerName;");
+
+            if (dataTable.Rows.Count == 0)
+            {
+                return result;
+            }
+
+            // Parse the trigger timing to the enum value, which should the same (except it's not fully uppercase).
+            if (!Enum.TryParse(dataTable.Rows[0].Field<string>("ACTION_TIMING"), true, out TriggerTimings triggerTiming))
+            {
+                return result;
+            }
+
+            // Parse the trigger event to the enum value, which should the same (except it's not fully uppercase).
+            if (!Enum.TryParse(dataTable.Rows[0].Field<string>("EVENT_MANIPULATION"), true, out TriggerEvents triggerEvent))
+            {
+                return result;
+            }
+
+            var triggerDefinition = dataTable.Rows[0].Field<string>("ACTION_STATEMENT")?.Trim() ?? String.Empty;
+            if (!String.IsNullOrWhiteSpace(triggerDefinition))
+            {
+                // Strip the "BEGIN" and "END" parts of the definition (Wiser doesn't need them).
+                if (triggerDefinition.StartsWith("BEGIN", StringComparison.OrdinalIgnoreCase))
+                {
+                    triggerDefinition = triggerDefinition[5..].Trim();
+                }
+
+                if (triggerDefinition.EndsWith("END", StringComparison.OrdinalIgnoreCase))
+                {
+                    triggerDefinition = triggerDefinition[..^3].Trim();
+                }
+            }
+
+            result.Name = dataTable.Rows[0].Field<string>("TRIGGER_NAME") ?? String.Empty;
+            result.EditorValue = triggerDefinition;
+            result.TriggerTableName = dataTable.Rows[0].Field<string>("EVENT_OBJECT_TABLE") ?? String.Empty;
+            result.TriggerTiming = triggerTiming;
+            result.TriggerEvent = triggerEvent;
+
+            return result;
+        }
+
+        /// <summary>
+        /// Will attempt to create a VIEW in the client's database.
+        /// </summary>
+        /// <param name="viewName">The name of the template, which will server as the name of the view.</param>
+        /// <param name="viewDefinition">The select statement of the view.</param>
+        /// <param name="databaseSchema">The database schema in which to create/replace the view.</param>
+        /// <param name="oldViewName">Optional: The old name of the view when the view is being renamed.</param>
+        /// <returns><see langword="true"/> if the view was successfully created; otherwise, <see langword="false"/>.</returns>
+        private async Task<(bool successful, string ErrorMessage)> CreateOrReplaceDatabaseViewAsync(string viewName, string viewDefinition, string databaseSchema, string oldViewName = null)
+        {
+            // If the view is being renamed, the oldViewName parameter will contain the current name of the view.
+            // It should be dropped, otherwise the view will exist with both the new and the old name.
+            if (!String.IsNullOrWhiteSpace(oldViewName))
+            {
+                await clientDatabaseConnection.ExecuteAsync($"DROP VIEW IF EXISTS `{databaseSchema}`.`{oldViewName}`;");
+            }
+
+            // Build the query that will created the view.
+            var viewQueryBuilder = new StringBuilder();
+            viewQueryBuilder.AppendLine($"CREATE OR REPLACE SQL SECURITY INVOKER VIEW `{databaseSchema}`.`{viewName}` AS");
+            viewQueryBuilder.AppendLine(viewDefinition);
+
+            var viewQuery = viewQueryBuilder.ToString();
+
+            try
+            {
+                // Execute the query. No need to drop old view first, the "CREATE OR REPLACE" part takes care of that.
+                await clientDatabaseConnection.ExecuteAsync(viewQuery);
+                return (true, String.Empty);
+            }
+            catch (MySqlException mySqlException)
+            {
+                // Only the message of the MySQL exception should be enough to determine what went wrong.
+                return (false, mySqlException.Message);
+            }
+            catch (Exception exception)
+            {
+                // Other exceptions; return entire exception.
+                return (false, exception.ToString());
+            }
         }
 
         /// <summary>
         /// Will attempt to create a FUNCTION or PROCEDURE in the client's database.
         /// </summary>
-        /// <param name="templateName">The name of the template, which will server as the name of the routine.</param>
+        /// <param name="routineName">The name of the template, which will serve as the name of the routine.</param>
         /// <param name="routineType">The type of the routine, which should be either <see cref="RoutineTypes.Function"/> or <see cref="RoutineTypes.Procedure"/>.</param>
         /// <param name="parameters">A string that represent the input parameters. For procedures, OUT and INOUT parameters can also be defined.</param>
         /// <param name="returnType">The data type that is expected. This is only if <paramref name="routineType"/> is set to <see cref="RoutineTypes.Function"/>.</param>
         /// <param name="routineDefinition">The body of the routine.</param>
+        /// <param name="databaseSchema">The database schema in which to create/replace the routine.</param>
+        /// <param name="oldRoutineName">Optional: The old name of the routine when the routing is being renamed.</param>
         /// <returns><see langword="true"/> if the routine was successfully created; otherwise, <see langword="false"/>.</returns>
-        private async Task<(bool Successful, string ErrorMessage)> CreateDatabaseRoutine(string templateName, RoutineTypes routineType, string parameters, string returnType, string routineDefinition)
+        private async Task<(bool Successful, string ErrorMessage)> CreateOrReplaceDatabaseRoutineAsync(string routineName, RoutineTypes routineType, string parameters, string returnType, string routineDefinition, string databaseSchema, string oldRoutineName = null)
         {
             if (routineType == RoutineTypes.Unknown)
             {
                 return (false, "Routine type 'Unknown' is not a valid routine type.");
             }
 
-            var routineName = $"WISER_{templateName}";
+            // If the routine is being renamed, the oldRoutineName parameter will contain the current name of the routine.
+            // It should be dropped, otherwise the routine will exist with both the new and the old name.
+            if (!String.IsNullOrWhiteSpace(oldRoutineName))
+            {
+                // Drop the old routine if it exists.
+                await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{databaseSchema}`.`{oldRoutineName}`; DROP PROCEDURE IF EXISTS `{databaseSchema}`.`{oldRoutineName}`;");
+            }
 
             // Check if routine exists.
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("routineName", routineName);
+            clientDatabaseConnection.AddParameter("databaseSchema", databaseSchema);
             var getRoutineData = await clientDatabaseConnection.GetAsync(@"
-                SELECT COUNT(*) > 0 AS routine_exists
-                FROM information_schema.ROUTINES
-                WHERE ROUTINE_SCHEMA = DATABASE() AND ROUTINE_NAME = ?routineName");
+SELECT COUNT(*) > 0 AS routine_exists
+FROM information_schema.ROUTINES
+WHERE ROUTINE_SCHEMA = ?databaseSchema
+AND ROUTINE_NAME = ?routineName");
 
             var routineExists = getRoutineData.Rows.Count > 0 && Convert.ToBoolean(getRoutineData.Rows[0]["routine_exists"]);
-
-            var routineQueryBuilder = new StringBuilder();
 
             // Only FUNCTION routines directly return data.
             var returnsPart = routineType == RoutineTypes.Function ? $" RETURNS {returnType}" : String.Empty;
@@ -3339,16 +3726,22 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 routineDefinition = $"{routineDefinition.Trim()};";
             }
 
-            routineQueryBuilder.AppendLine($"CREATE DEFINER=CURRENT_USER {routineType.ToString("G").ToUpper()} `{routineName}` ({parameters}){returnsPart}");
-            routineQueryBuilder.AppendLine("    SQL SECURITY INVOKER");
-            routineQueryBuilder.AppendLine("BEGIN");
-            routineQueryBuilder.AppendLine("##############################################################################");
-            routineQueryBuilder.AppendLine("# NOTE: This routine was created in Wiser! Do not edit directly in database! #");
-            routineQueryBuilder.AppendLine("##############################################################################");
-            routineQueryBuilder.AppendLine(routineDefinition);
-            routineQueryBuilder.AppendLine("END");
+            // Create local function for creating the query to avoid having to create separate query builders.
+            string CreateQuery(string routineNameInQuery)
+            {
+                var routineQueryBuilder = new StringBuilder();
+                routineQueryBuilder.AppendLine($"CREATE DEFINER=CURRENT_USER {routineType.ToString("G").ToUpper()} `{databaseSchema}`.`{routineNameInQuery}` ({parameters}){returnsPart}");
+                routineQueryBuilder.AppendLine("    SQL SECURITY INVOKER");
+                routineQueryBuilder.AppendLine("BEGIN");
+                routineQueryBuilder.AppendLine("##############################################################################");
+                routineQueryBuilder.AppendLine("# NOTE: This routine was created in Wiser! Do not edit directly in database! #");
+                routineQueryBuilder.AppendLine("##############################################################################");
+                routineQueryBuilder.AppendLine(routineDefinition);
+                routineQueryBuilder.AppendLine("END");
+                return routineQueryBuilder.ToString();
+            }
 
-            var routineQuery = routineQueryBuilder.ToString();
+            var routineQuery = CreateQuery(routineName);
 
             try
             {
@@ -3356,12 +3749,15 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 // That way, the old routine will remain intact.
                 if (routineExists)
                 {
-                    await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{routineName}_temp`; DROP PROCEDURE IF EXISTS `{routineName}_temp`;");
-                    await clientDatabaseConnection.ExecuteAsync(routineQuery.Replace($"`{routineName}`", $"`{routineName}_temp`"));
+                    var tempRoutineName = $"{routineName}_temp";
+                    var tempRoutineQuery = CreateQuery(tempRoutineName);
+
+                    await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{databaseSchema}`.`{tempRoutineName}`; DROP PROCEDURE IF EXISTS `{databaseSchema}`.`{tempRoutineName}`;");
+                    await clientDatabaseConnection.ExecuteAsync(tempRoutineQuery);
                 }
 
                 // Temp routine creation succeeded. Drop temp routine and current routine, and create the new routine.
-                await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{routineName}_temp`; DROP PROCEDURE IF EXISTS `{routineName}_temp`; DROP FUNCTION IF EXISTS `{routineName}`; DROP PROCEDURE IF EXISTS `{routineName}`;");
+                await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{databaseSchema}`.`{routineName}_temp`; DROP PROCEDURE IF EXISTS `{databaseSchema}`.`{routineName}_temp`; DROP FUNCTION IF EXISTS `{databaseSchema}`.`{routineName}`; DROP PROCEDURE IF EXISTS `{databaseSchema}`.`{routineName}`;");
                 await clientDatabaseConnection.ExecuteAsync(routineQuery);
 
                 return (true, String.Empty);
@@ -3369,7 +3765,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             catch (MySqlException mySqlException)
             {
                 // Remove temporary routine if it was created (it has no use anymore).
-                await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{routineName}_temp`; DROP PROCEDURE IF EXISTS `{routineName}_temp`;");
+                await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{databaseSchema}`.`{routineName}_temp`; DROP PROCEDURE IF EXISTS `{databaseSchema}`.`{routineName}_temp`;");
                 // Only the message of the MySQL exception should be enough to determine what went wrong.
                 return (false, mySqlException.Message);
             }
@@ -3378,6 +3774,182 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 // Other exceptions; return entire exception.
                 return (false, exception.ToString());
             }
+        }
+
+        /// <summary>
+        /// Will attempt to create a TRIGGER in the client's database.
+        /// </summary>
+        /// <param name="triggerName">The name of the template, which will serve as the name of the trigger.</param>
+        /// <param name="triggerTiming">The timing of the trigger, which should be either <see cref="TriggerTimings.After"/> or <see cref="TriggerTimings.Before"/>.</param>
+        /// <param name="triggerEvent">The event of the trigger, which should be either <see cref="TriggerEvents.Insert"/>, <see cref="TriggerEvents.Update"/>, or  <see cref="TriggerEvents.Delete"/>.</param>
+        /// <param name="tableName">The name of the table that the trigger is for.</param>
+        /// <param name="triggerDefinition">The body of the trigger.</param>
+        /// <param name="databaseSchema">The database schema in which to create/replace the trigger.</param>
+        /// <param name="oldTriggerName">Optional: The old name of the trigger when the trigger is being renamed.</param>
+        /// <returns><see langword="true"/> if the trigger was successfully created; otherwise, <see langword="false"/>.</returns>
+        private async Task<(bool Successful, string ErrorMessage)> CreateOrReplaceDatabaseTriggerAsync(string triggerName, TriggerTimings triggerTiming, TriggerEvents triggerEvent, string tableName, string triggerDefinition, string databaseSchema, string oldTriggerName = null)
+        {
+            if (triggerTiming == TriggerTimings.Unknown)
+            {
+                return (false, "Trigger timing 'Unknown' is not a valid trigger timing.");
+            }
+            if (triggerEvent == TriggerEvents.Unknown)
+            {
+                return (false, "Trigger event 'Unknown' is not a valid trigger event.");
+            }
+            if (String.IsNullOrWhiteSpace(tableName))
+            {
+                return (false, "The table name cannot be null or empty.");
+            }
+
+            // If the trigger is being renamed, the oldTriggerName parameter will contain the current name of the trigger.
+            // It should be dropped, otherwise the trigger will exist with both the new and the old name.
+            if (!String.IsNullOrWhiteSpace(oldTriggerName))
+            {
+                // Drop the old trigger if it exists.
+                await clientDatabaseConnection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{databaseSchema}`.`{oldTriggerName}`;");
+            }
+
+            // Check if trigger exists.
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("triggerName", triggerName);
+            clientDatabaseConnection.AddParameter("databaseSchema", databaseSchema);
+            var getTriggerData = await clientDatabaseConnection.GetAsync(@"SELECT COUNT(*) > 0 AS trigger_exists
+FROM information_schema.TRIGGERS
+WHERE TRIGGER_SCHEMA = ?databaseSchema
+AND TRIGGER_NAME = ?triggerName");
+
+            var triggerExists = getTriggerData.Rows.Count > 0 && Convert.ToBoolean(getTriggerData.Rows[0]["trigger_exists"]);
+
+            if (!triggerDefinition.Trim().EndsWith(";"))
+            {
+                triggerDefinition = $"{triggerDefinition.Trim()};";
+            }
+
+            // Create local function for creating the query to avoid having to create separate query builders.
+            string CreateQuery(string triggerNameInQuery)
+            {
+                var timingAndEvent = $"{triggerTiming.ToString("G").ToUpperInvariant()} {triggerEvent.ToString("G").ToUpperInvariant()}";
+
+                var routineQueryBuilder = new StringBuilder();
+                routineQueryBuilder.AppendLine($"CREATE DEFINER=CURRENT_USER TRIGGER `{databaseSchema}`.`{triggerNameInQuery}` {timingAndEvent} ON `{databaseSchema}`.`{tableName}` FOR EACH ROW BEGIN");
+                routineQueryBuilder.AppendLine("##############################################################################");
+                routineQueryBuilder.AppendLine("# NOTE: This trigger was created in Wiser! Do not edit directly in database! #");
+                routineQueryBuilder.AppendLine("##############################################################################");
+                routineQueryBuilder.AppendLine(triggerDefinition);
+                routineQueryBuilder.AppendLine("END");
+                return routineQueryBuilder.ToString();
+            }
+
+            var routineQuery = CreateQuery(triggerName);
+
+            try
+            {
+                // If the trigger already exists, try to create a new one with a temporary name to check if creating the trigger will not fail.
+                // That way, the old trigger will remain intact.
+                if (triggerExists)
+                {
+                    var tempTriggerName = $"{triggerName}_temp";
+                    var tempRoutineQuery = CreateQuery(tempTriggerName);
+
+                    await clientDatabaseConnection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{databaseSchema}`.`{tempTriggerName}`;");
+                    await clientDatabaseConnection.ExecuteAsync(tempRoutineQuery);
+                }
+
+                // Temp trigger creation succeeded. Drop temp trigger and current trigger, and create the new trigger.
+                await clientDatabaseConnection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{databaseSchema}`.`{triggerName}_temp`; DROP TRIGGER IF EXISTS `{databaseSchema}`.`{triggerName}`;");
+                await clientDatabaseConnection.ExecuteAsync(routineQuery);
+
+                return (true, String.Empty);
+            }
+            catch (MySqlException mySqlException)
+            {
+                // Remove temporary trigger if it was created (it has no use anymore).
+                await clientDatabaseConnection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{databaseSchema}.`{triggerName}_temp`;");
+                // Only the message of the MySQL exception should be enough to determine what went wrong.
+                return (false, mySqlException.Message);
+            }
+            catch (Exception exception)
+            {
+                // Other exceptions; return entire exception.
+                return (false, exception.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Will attempt to minify JavaScript with a NodeJS package called terser.
+        /// </summary>
+        /// <param name="script">The raw JavaScript that will be minified.</param>
+        /// <returns>A <see cref="ValueTuple"/> with the first value being whether the minification was successful, and the minified script.</returns>
+        private async Task<(bool Successful, string MinifiedScript)> MinifyJavaScriptWithTerserAsync(string script)
+        {
+            if (String.IsNullOrWhiteSpace(script))
+            {
+                return (false, script);
+            }
+
+            // Create a temporary file that will contain the script. This is required because terser can only work with input files.
+            var uploadsDirectory = Path.Combine(webHostEnvironment.ContentRootPath, "temp/minify");
+            if (!Directory.Exists(uploadsDirectory))
+            {
+                Directory.CreateDirectory(uploadsDirectory);
+            }
+
+            var filePath = Path.Combine(uploadsDirectory, $"{Guid.NewGuid().ToString()}.js");
+            await File.WriteAllTextAsync(filePath, script, Encoding.UTF8);
+
+            string output = null;
+            var successful = true;
+
+            // Windows requires the ".cmd" file to run, while UNIX-based systems can just use the "terser" file (without an extension).
+            var terserCommand = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "terser.cmd" : "terser";
+
+            try
+            {
+                using var process = new Process();
+                process.StartInfo.FileName = Path.Combine(webHostEnvironment.ContentRootPath, $"node_modules/.bin/{terserCommand}");
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.StartInfo.Arguments = $"{filePath} --compress --mangle";
+
+                process.OutputDataReceived += (_, eventArgs) =>
+                {
+                    // eventArgs.Data holds the response from terser.
+                    if (!String.IsNullOrWhiteSpace(eventArgs.Data))
+                    {
+                        output = eventArgs.Data;
+                    }
+                };
+
+                process.ErrorDataReceived += (_, eventArgs) =>
+                {
+                    successful = false;
+
+                    var message = !String.IsNullOrWhiteSpace(eventArgs.Data)
+                        ? $"Error trying to minify script with terser: {eventArgs.Data}"
+                        : "Unknown error trying to minify script with terser";
+
+                    logger.LogWarning(message);
+                };
+
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+
+                using var cancellationTokenSource = new CancellationTokenSource(5000);
+                await process.WaitForExitAsync(cancellationTokenSource.Token);
+            }
+            catch (Exception exception)
+            {
+                successful = false;
+                logger.LogWarning(exception, "Error trying to minify script with terser");
+            }
+
+            // Remove temporary file afterwards, regardless if it succeeded or not.
+            File.Delete(filePath);
+
+            return (successful, !String.IsNullOrWhiteSpace(output) ? output : script);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
@@ -10,7 +11,7 @@ using Newtonsoft.Json.Linq;
 namespace Api.Modules.Customers.Interfaces
 {
     /// <summary>
-    /// Interface for operations related to Wiser 2 users (users that can log in to Wiser 2.0).
+    /// Interface for operations related to Wiser users (users that can log in to Wiser).
     /// </summary>
     public interface IUsersService
     {
@@ -30,13 +31,13 @@ namespace Api.Modules.Customers.Interfaces
         Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null);
         
         /// <summary>
-        /// Login a customer to Wiser 2.0. Normal users login with their username and password.
+        /// Login a customer to Wiser. Normal users login with their username and password.
         /// Admin accounts login via their own credentials and can then login as any other user.
         /// </summary>
         /// <param name="username">The username of the user to login as.</param>
         /// <param name="password">The password of the user. Can be empty if logging in with an admin account.</param>
         /// <param name="encryptedAdminAccountId">Optional: The encrypted admin account ID.</param>
-        /// <param name="subDomain">The Wiser 2 sub domain used to access the site.</param>
+        /// <param name="subDomain">The Wiser sub domain used to access the site.</param>
         /// <param name="generateAuthenticationTokenForCookie">Optional: Indicate whether to generate a token for a login cookie so that the user stays login for a certain amount of time.</param>
         /// <param name="ipAddress">The IP address of the user.</param>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user to check for rights.</param>
@@ -55,7 +56,7 @@ namespace Api.Modules.Customers.Interfaces
         /// Method for validating a "Remember me" cookie.
         /// </summary>
         /// <param name="cookieValue">The exact contents of the cookie.</param>
-        /// <param name="subDomain">The Wiser 2 sub domain used to access the site.</param>
+        /// <param name="subDomain">The Wiser sub domain used to access the site.</param>
         /// <param name="ipAddress">Optional: The IP address of the user that is trying to login.</param>
         /// <param name="sessionId">Optional: The ID of the current session of the user.</param>
         /// <param name="encryptedAdminAccountId">Optional: The encrypted admin account ID.</param>
@@ -74,7 +75,7 @@ namespace Api.Modules.Customers.Interfaces
         /// Changes the e-mail address of a user.
         /// </summary>
         /// <param name="userId">The ID of the user.</param>
-        /// <param name="subDomain">The Wiser 2 sub domain used to access the site.</param>
+        /// <param name="subDomain">The Wiser sub domain used to access the site.</param>
         /// <param name="newEmailAddress">The new e-mail address.</param>
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         Task<ServiceResult<UserModel>> ChangeEmailAddressAsync(ulong userId, string subDomain, string newEmailAddress, ClaimsIdentity identity);
@@ -152,7 +153,7 @@ namespace Api.Modules.Customers.Interfaces
         /// Generates a new refresh token and saves it in the database. The refresh token can be used to re-authenticate without having to enter credentials again.
         /// </summary>
         /// <param name="cookieSelector"></param>
-        /// <param name="subDomain">The Wiser 2 sub domain used to access the site.</param>
+        /// <param name="subDomain">The Wiser sub domain used to access the site.</param>
         /// <param name="ticket">The serialized ticket from the OWIN context.</param>
         /// <returns>The newly generated refresh token.</returns>
         Task<string> GenerateAndSaveNewRefreshTokenAsync(string cookieSelector, string subDomain, string ticket);
@@ -160,10 +161,33 @@ namespace Api.Modules.Customers.Interfaces
         /// <summary>
         /// Gets the ticket corresponding to a refresh token from the database and then deleted that refresh token, so that it can only be used once.
         /// </summary>
-        /// <param name="subDomain">The Wiser 2 sub domain used to access the site.</param>
+        /// <param name="subDomain">The Wiser sub domain used to access the site.</param>
         /// <param name="refreshToken">The refresh token.</param>
         /// <returns>The serialized ticket for OWIN context.</returns>
         Task<string> UseRefreshTokenAsync(string subDomain, string refreshToken);
+
+        /// <summary>
+        /// Updates the time the logged in user has been active.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <param name="encryptedLoginLogId">The encrypted ID of the log table.</param>
+        /// <returns>A <see cref="TimeSpan"/> indicating how long the user has been active.</returns>
+        Task<ServiceResult<TimeSpan>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId);
+
+        /// <summary>
+        /// Resets the last time the "time active" field was updated to the current time.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <param name="encryptedLoginLogId">The encrypted ID of the log table.</param>
+        /// <returns>A <see cref="bool"/> indicating if the request was successful.</returns>
+        Task<ServiceResult<bool>> ResetTimeActiveChangedAsync(ClaimsIdentity identity, string encryptedLoginLogId);
+
+        /// <summary>
+        /// Gets all available roles for users.
+        /// </summary>
+        /// <param name="includePermissions">Optional: Whether to include all permissions that each role has. Default is <see langword="false"/>.</param>
+        /// <returns>A list of <see cref="RoleModel"/> with all available roles that users can have.</returns>
+        Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false);
 
         /// <summary>
         /// Authenticates the two factor code with the unique key of an user

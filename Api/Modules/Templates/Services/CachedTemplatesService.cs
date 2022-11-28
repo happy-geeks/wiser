@@ -92,9 +92,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId)
+        public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId, string branchDatabaseName)
         {
-            return await templatesService.GetTemplateEnvironmentsAsync(templateId);
+            return await templatesService.GetTemplateEnvironmentsAsync(templateId, branchDatabaseName);
         }
 
         /// <inheritdoc />
@@ -110,9 +110,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, string environment, PublishedEnvironmentModel currentPublished)
+        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName)
         {
-            return await templatesService.PublishToEnvironmentAsync(identity, templateId, version, environment, currentPublished);
+            return await templatesService.PublishToEnvironmentAsync(identity, templateId, version, environment, currentPublished, branchDatabaseName);
         }
 
         /// <inheritdoc />
@@ -122,9 +122,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(int parentId)
+        public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(ClaimsIdentity identity, int parentId)
         {
-            return await templatesService.GetTreeViewSectionAsync(parentId);
+            return await templatesService.GetTreeViewSectionAsync(identity, parentId);
         }
 
         /// <inheritdoc />
@@ -191,6 +191,25 @@ namespace Api.Modules.Templates.Services
         public async Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString)
         {
             return await templatesService.CheckDefaultFooterConflict(templateId, regexString);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateSettingsModel>> GetVirtualTemplateAsync(string objectName, TemplateTypes templateType)
+        {
+            return await templatesService.GetVirtualTemplateAsync(objectName, templateType);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<IList<string>>> GetTableNamesForTriggerTemplatesAsync()
+        {
+            // No need to cache this, because the GCL already caches the result.
+            return await templatesService.GetTableNamesForTriggerTemplatesAsync();
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, List<int> templateIds, int branchId)
+        {
+            return await templatesService.DeployToBranchAsync(identity, templateIds, branchId);
         }
     }
 }

@@ -7,6 +7,7 @@ using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Template;
+using GeeksCoreLibrary.Core.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -145,12 +146,64 @@ namespace Api.Modules.Templates.Controllers
         [HttpPost]
         [Route("{contentId:int}/publish/{environment}/{version:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> PublishToEnvironmentAsync(int contentId, string environment, int version)
+        public async Task<IActionResult> PublishToEnvironmentAsync(int contentId, Environments environment, int version)
         {
             var currentPublished = await dynamicContentService.GetEnvironmentsAsync(contentId);
             return currentPublished.StatusCode != HttpStatusCode.OK 
                 ? currentPublished.GetHttpResponseMessage() 
                 : (await dynamicContentService.PublishToEnvironmentAsync((ClaimsIdentity)User.Identity, contentId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Duplicate a dynamic component (only the latest version).
+        /// </summary>
+        /// <param name="id">The id of the component.</param>
+        /// <param name="templateId">The id of the template to link the new component to.</param>
+        [HttpPost]
+        [Route("{id:int}/duplicate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> DuplicateAsync(int id, [FromQuery]int templateId)
+        {
+            return (await dynamicContentService.DuplicateAsync((ClaimsIdentity)User.Identity, id, templateId)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Deletes a dynamic content component
+        /// </summary>
+        /// <param name="contentId">The id of the dynamic content</param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Route("{contentId:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteAsync(int contentId)
+        {
+            return (await dynamicContentService.DeleteAsync(contentId)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Gets all dynamic content that can be linked to the given template.
+        /// </summary>
+        /// <param name="templateId">The ID of the template.</param>
+        /// <returns>A list of dynamic components from other templates.</returns>
+        [HttpGet]
+        [Route("linkable")]
+        [ProducesResponseType(typeof(List<DynamicContentOverviewModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetLinkableDynamicContentAsync([FromQuery]int templateId)
+        {
+            return (await dynamicContentService.GetLinkableDynamicContentAsync(templateId)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Deploy one or more dynamic contents to a branch.
+        /// </summary>
+        /// <param name="contentId">The ID of the dynamic component to deploy.</param>
+        /// <param name="branchId">The ID of the branch to deploy the template to.</param>
+        [HttpPost]
+        [Route("{contentId:int}/deploy-to-branch/{branchId:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeployToBranchAsync(int contentId, int branchId)
+        {
+            return (await dynamicContentService.DeployToBranchAsync((ClaimsIdentity) User.Identity, new List<int> { contentId }, branchId)).GetHttpResponseMessage();
         }
     }
 }

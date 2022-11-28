@@ -1,0 +1,32 @@
+@import "../../Base/scss/base.scss";
+
+#fullForm {
+    height: 100%;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+#CreateNewCommunicationSettingsContainer,
+#OpenCommunicationSettingsContainer {
+    width: 400px;
+    text-align: center;
+    height: 180px;
+    display: flex;
+    flex-direction: column;
+}
+
+h2, 
+p {
+    margin-bottom: 10px;
+}
+
+button {
+    width: 100%;
+}
+
+
+#CreateNewCommunicationSettingsContainer > p,
+#OpenCommunicationSettingsContainer > p  {
+    margin-bottom: auto;
+}

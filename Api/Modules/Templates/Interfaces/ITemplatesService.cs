@@ -41,7 +41,7 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Gets a query from the wiser database and executes it in the customer database.
         /// </summary>
-        /// <param name="identity"></param>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="templateName">The encrypted name of the wiser template.</param>
         /// <param name="requestPostData">Optional: The post data from the request, if the content type was application/x-www-form-urlencoded. This is for backwards compatibility.</param>
         Task<ServiceResult<JToken>> GetAndExecuteQueryAsync(ClaimsIdentity identity, string templateName, IFormCollection requestPostData = null);
@@ -49,6 +49,7 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Gets the CSS that should be used for HTML editors, so that their content will look more like how it would look on the customer's website.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns>A string that contains the CSS that should be loaded in the HTML editor.</returns>
         Task<ServiceResult<string>> GetCssForHtmlEditorsAsync(ClaimsIdentity identity);
 
@@ -81,8 +82,9 @@ namespace Api.Modules.Templates.Interfaces
         /// containing the Live, accept and test versions and the list of other versions that are present in the data.
         /// </summary>
         /// <param name="templateId">The id of the template to retrieve the environments of.</param>
+        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
         /// <returns>A model containing the versions that are currently set for the live, accept and test environment.</returns>
-        Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId);
+        Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId, string branchDatabaseName = null);
         
         /// <summary>
         /// Get the templates linked to the current template. The templates that are retrieved will be converted into a LinkedTemplatesModel using the LinkedTemplatesEnum to determine its link type.
@@ -107,8 +109,9 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="version">The version of the template to publish.</param>
         /// <param name="environment">The environment to publish the template to.</param>
         /// <param name="currentPublished">A PublishedEnvironmentModel containing the current published templates.</param>
+        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
         /// <returns>A int of the rows affected.</returns>
-        Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, string environment, PublishedEnvironmentModel currentPublished);
+        Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName = null);
 
         /// <summary>
         /// Save the template as a new version and save the linked templates if necessary. This method will calculate if links are to be added or removed from the current situation.
@@ -121,9 +124,10 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Retrieve the tree view section underlying the parentId. Transforms the tree view section into a list of TemplateTreeViewModels.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="parentId">The id of the template whose child nodes are to be retrieved.</param>
         /// <returns>A List of TemplateTreeViewModels containing the id, names and types of the templates included in the requested section.</returns>
-        Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(int parentId);
+        Task<ServiceResult<List<TemplateTreeViewModel>>> GetTreeViewSectionAsync(ClaimsIdentity identity, int parentId);
 
         /// <summary>
         /// Search for a template.
@@ -218,5 +222,27 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="regexString">The regular expression that can filter whether the default footer should be used.</param>
         /// <returns>A string with the name of the template that this template conflicts with, or an empty string if there's no conflict.</returns>
         Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString);
+
+        /// <summary>
+        /// Attempt to retrieve a virtual template, which is either a database routine, view, or trigger.
+        /// </summary>
+        /// <param name="objectName">The name of the routine, view, or trigger.</param>
+        /// <param name="templateType">The type of virtual template.</param>
+        /// <returns>A <see cref="TemplateSettingsModel"/> with data about the virtual template.</returns>
+        Task<ServiceResult<TemplateSettingsModel>> GetVirtualTemplateAsync(string objectName, TemplateTypes templateType);
+
+        /// <summary>
+        /// Retrieves a list of table names for the trigger templates.
+        /// </summary>
+        /// <returns>A list of strings.</returns>
+        Task<ServiceResult<IList<string>>> GetTableNamesForTriggerTemplatesAsync();
+
+        /// <summary>
+        /// Deploy one or more templates to a branch.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="templateIds">The IDs of the templates to deploy.</param>
+        /// <param name="branchId">The ID of the branch to deploy the templates to.</param>
+        Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, List<int> templateIds, int branchId);
     }
 }

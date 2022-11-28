@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -80,6 +81,7 @@ namespace Api.Modules.Customers.Controllers
         [ProducesResponseType(typeof(UserModel), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdatePassword(ChangePasswordModel passwords)
         {
             return (await usersService.ChangePasswordAsync((ClaimsIdentity)User.Identity, passwords)).GetHttpResponseMessage();
@@ -143,6 +145,43 @@ namespace Api.Modules.Customers.Controllers
         public async Task<IActionResult> SaveAutoLoadModulesAsync(List<int> moduleIds)
         {
             return (await usersService.SaveAutoLoadModulesAsync((ClaimsIdentity)User.Identity, moduleIds)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Updates the time the current user has been active in Wiser.
+        /// </summary>
+        /// <param name="encryptedLoginLogId">The encrypted ID of the log table.</param>
+        [HttpPut]
+        [Route("update-active-time")]
+        [ProducesResponseType(typeof(TimeSpan), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateUserActiveTimeAsync([FromQuery]string encryptedLoginLogId)
+        {
+            return (await usersService.UpdateUserTimeActiveAsync((ClaimsIdentity)User.Identity, encryptedLoginLogId)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Updates the time the current user has been active in Wiser.
+        /// </summary>
+        /// <param name="encryptedLoginLogId">The encrypted ID of the log table.</param>
+        [HttpPut]
+        [Route("reset-time-active-changed")]
+        [ProducesResponseType(typeof(TimeSpan), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ResetTimeActiveChangedAsync([FromQuery]string encryptedLoginLogId)
+        {
+            return (await usersService.UpdateUserTimeActiveAsync((ClaimsIdentity)User.Identity, encryptedLoginLogId)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Gets all available roles for users.
+        /// </summary>
+        /// <param name="includePermissions">Optional: Whether to include all permissions that each role has. Default is <see langword="false"/>.</param>
+        /// <returns>A list of <see cref="RoleModel"/> with all available roles that users can have.</returns>
+        [HttpGet]
+        [Route("roles")]
+        [ProducesResponseType(typeof(List<RoleModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetRolesAsync(bool includePermissions = false)
+        {
+            return (await usersService.GetRolesAsync(includePermissions)).GetHttpResponseMessage();
         }
     }
 }

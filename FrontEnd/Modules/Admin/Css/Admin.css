@@ -29,6 +29,15 @@
 .module-admin .pane-content > .k-tabstrip-wrapper > .k-tabstrip > .k-tabstrip-items {
     z-index: 200;
 }
+
+.iconpreview-icon {
+    padding: 10px 0;
+}
+
+.iconpreview-name {
+    padding: 10px;
+}
+
 /* TABS SPLIT */
 .tabSplit.k-state-active,
 .tabSplit.staticSplit {
@@ -156,6 +165,10 @@ li.hint {
     margin: 7px 0;
 }
 
+.item h4 + .k-input[type=text] {
+    margin: 5px 0;
+}
+
 .flex-container {
     display: flex;
     flex-wrap: wrap;
@@ -174,6 +187,8 @@ li.hint {
 
 .inputFlex {
     padding: 0;
+    display: flex;
+    gap: 5px;
 }
 
 .inputFlex > .k-widget:last-child {
@@ -208,7 +223,8 @@ li.hint {
         max-width: calc(50% - 5px);
     }
 
-.item > .k-primary.deleteModule {
+.item > .k-primary.deleteModule,
+.item > .k-button-solid-primary.deleteModule {
     background-color: var(--error-bg-color);
 }
 
@@ -397,6 +413,10 @@ li.hint {
 #EntityTabStrip .k-content .right-pane {
     height: calc(100vh - 258px);
     overflow: auto;
+}
+#EntityTabStrip .k-content .right-pane {
+    overflow: hidden;
+    overflow-y: auto;
 }
 
 @keyframes lds-ellipsis1 {

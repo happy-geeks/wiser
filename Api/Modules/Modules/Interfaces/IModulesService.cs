@@ -7,7 +7,7 @@ using Api.Modules.Modules.Models;
 namespace Api.Modules.Modules.Interfaces
 {
     /// <summary>
-    /// Service for getting information / settings for Wiser 2.0+ modules.
+    /// Service for getting information / settings for Wiser modules.
     /// </summary>
     public interface IModulesService
     {
@@ -58,5 +58,11 @@ namespace Api.Modules.Modules.Interfaces
         /// <returns></returns>
         Task<ServiceResult<byte[]>> ExportAsync(int id, ClaimsIdentity identity);
 
+        /// <summary>
+        /// Gets a list of all currently used module groups.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <returns>A list with all group names.</returns>
+        Task<ServiceResult<List<string>>> GetModuleGroupsAsync(ClaimsIdentity identity);
     }
 }

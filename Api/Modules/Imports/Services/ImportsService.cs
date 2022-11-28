@@ -26,6 +26,7 @@ using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Imports.Models;
 using Microsoft.VisualBasic.FileIO;
 
 namespace Api.Modules.Imports.Services
@@ -52,7 +53,6 @@ namespace Api.Modules.Imports.Services
         /// <inheritdoc />
         public async Task<ServiceResult<ImportResultModel>> PrepareImportAsync(ClaimsIdentity identity, ImportRequestModel importRequest)
         {
-            // !!! NOTE: Any and all changes done here, should also be done in the Wiser 2.0 in Wiser2/Modules/ImportExport/Import.aspx.vb/PerformImport !!!
             if (String.IsNullOrWhiteSpace(importRequest.FilePath) || !File.Exists(importRequest.FilePath))
             {
                 return new ServiceResult<ImportResultModel>
@@ -567,7 +567,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("data", json);
                 clientDatabaseConnection.AddParameter("server_name", Environment.MachineName);
                 clientDatabaseConnection.AddParameter("sub_domain", subDomain);
-                wiserImportId = await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>("wiser_import");
+                wiserImportId = await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>(WiserTableNames.WiserImport);
             }
             catch (Exception ex)
             {
@@ -585,7 +585,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("errors", String.Join(Environment.NewLine, importResult.Errors));
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
                 clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity));
-                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>("wiser_import_log");
+                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>(WiserTableNames.WiserImportLog);
             }
             catch (Exception exception)
             {

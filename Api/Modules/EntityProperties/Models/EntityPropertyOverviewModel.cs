@@ -12,11 +12,6 @@
         public bool Visible { get; set; }
 
         /// <summary>
-        /// Gets or sets the field type.
-        /// </summary>
-        public string FieldType { get; set; }
-
-        /// <summary>
         /// Gets or sets the width.
         /// </summary>
         public int Width { get; set; }

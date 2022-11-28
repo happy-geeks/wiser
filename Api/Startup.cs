@@ -14,6 +14,9 @@ using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Services;
 using Api.Modules.DigitalOcean.Models;
+using Api.Modules.Google.Models;
+using Api.Modules.Languages.Interfaces;
+using Api.Modules.Languages.Services;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Services;
 using GeeksCoreLibrary.Core.Extensions;
@@ -85,6 +88,7 @@ namespace Api
             services.AddOptions();
             services.Configure<ApiSettings>(Configuration.GetSection("Api"));
             services.Configure<DigitalOceanSettings>(Configuration.GetSection("DigitalOcean"));
+            services.Configure<GoogleSettings>(Configuration.GetSection("Google"));
 
             // Use Serilog as our main logger.
             services.AddLogging(builder => { builder.AddSerilog(); });
@@ -238,6 +242,7 @@ namespace Api
             services.Decorate<IDatabaseConnection, ClientDatabaseConnection>();
             services.Decorate<ITemplatesService, CachedTemplatesService>();
             services.Decorate<IUsersService, CachedUsersService>();
+            services.Decorate<ILanguagesService, CachedLanguagesService>();
 
             // Add JavaScriptEngineSwitcher services to the services container.
             services.AddJsEngineSwitcher(options => options.DefaultEngineName = ChakraCoreJsEngine.EngineName).AddChakraCore();

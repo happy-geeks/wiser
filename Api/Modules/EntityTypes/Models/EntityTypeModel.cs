@@ -27,6 +27,11 @@
         public string ModuleName { get; set; }
 
         /// <summary>
+        /// Gets or sets the icon name of the module this entity type belongs to.
+        /// </summary>
+        public string ModuleIcon { get; set; }
+
+        /// <summary>
         /// Gets or sets the prefix for the table that items of this type are stored in.
         /// If empty, they will be stored in wiser_item, otherwise in [DedicatedTablePrefix_wiser_item].
         /// </summary>

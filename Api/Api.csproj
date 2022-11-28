@@ -3,12 +3,12 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <PackageId>HappyGeeks.Wiser.Api</PackageId>
-    <Version>3.2.0</Version>
+    <Version>3.2.18</Version>
     <Authors>Happy Geeks B.V.</Authors>
     <Company>Happy Geeks B.V.</Company>
     <Product>Wiser API</Product>
 	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
-	<AssemblyVersion>3.2.0.0</AssemblyVersion>
+	<AssemblyVersion>3.2.18.0</AssemblyVersion>
 	<LangVersion>default</LangVersion>
 	<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
   </PropertyGroup>
@@ -150,10 +150,13 @@
     <EmbeddedResource Include="Core\Queries\WiserInstallation\StoredProcedures.sql" />
     <None Remove="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
+    <None Remove="Core\Queries\WiserInstallation\InsertInitialDataMultiLanguage.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataMultiLanguage.sql" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="2.1.4" />
+    <PackageReference Include="GeeksCoreLibrary" Version="2.2.5" />
+    <PackageReference Include="Google.Cloud.Translation.V2" Version="3.1.0" />
     <PackageReference Include="GoogleAuthenticator" Version="3.0.0" />
     <PackageReference Include="IdentityServer4" Version="4.1.2" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.18.2" />
@@ -161,8 +164,8 @@
     <PackageReference Include="JavaScriptEngineSwitcher.Extensions.MsDependencyInjection" Version="3.3.0" />
     <PackageReference Include="LibSassHost" Version="1.3.3" />
     <PackageReference Include="LibSassHost.Native.win-x64" Version="1.3.3" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.5" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.10" />
     <PackageReference Include="Microsoft.ChakraCore" Version="1.11.24">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -173,9 +176,10 @@
     <PackageReference Include="React.AspNet" Version="5.2.12" />
     <PackageReference Include="React.Core" Version="5.2.12" />
     <PackageReference Include="Serilog.AspNetCore" Version="5.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.1" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.3.1" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.3.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.3.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.3.2" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>

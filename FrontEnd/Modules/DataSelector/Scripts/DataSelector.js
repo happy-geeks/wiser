@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import { Wiser } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
@@ -45,6 +45,7 @@ const moduleSettings = {
 
             // Other.
             this.mainLoader = null;
+            this.dialogZindex = 20000;
 
             // Fire event on page ready for direct actions
             document.addEventListener("DOMContentLoaded", () => {
@@ -78,7 +79,7 @@ const moduleSettings = {
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
-                Wiser2.alert({
+                Wiser.alert({
                     title: "Niet ingelogd",
                     content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
@@ -91,12 +92,12 @@ const moduleSettings = {
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
-          
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
-            this.settings.wiser2UserId = userData.id;
+            this.settings.wiserUserId = userData.id;
 
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
@@ -129,7 +130,7 @@ const moduleSettings = {
                     await this.dataLoad.loadById(Number.parseInt(loadId, 10));
                 } catch (e) {
                     window.processing.removeProcess("dataSelectorLoad");
-                    Wiser2.alert({
+                    Wiser.alert({
                         title: "Laden mislukt",
                         content: "Er is een fout opgetreden tijdens het laden van de data selector. Probeer het a.u.b. nogmaals."
                     });
@@ -165,7 +166,7 @@ const moduleSettings = {
 
             if (exportModeCheckbox) {
                 exportModeCheckbox.addEventListener("change", () => {
-                    Wiser2.confirm({
+                    Wiser.confirm({
                         title: "Data Selector",
                         content: "Let op! Dit zorgt ervoor dat een nieuwe data selector geopend wordt. Gegevens die niet zijn opgeslagen zullen verloren gaan. Wilt u doorgaan?",
                         messages: {
@@ -184,7 +185,7 @@ const moduleSettings = {
 
             if (newButton) {
                 $(newButton).getKendoButton().bind("click", () => {
-                    Wiser2.confirm({
+                    Wiser.confirm({
                         title: "Data Selector",
                         content: "Weet u zeker dat u een nieuwe data selector wilt beginnen? Gegevens die niet zijn opgeslagen zullen verloren gaan.",
                         messages: {
@@ -235,7 +236,7 @@ const moduleSettings = {
                             const resultJson = await this.getJsonResult();
                             this.jsonCodeMirrorEditor.getDoc().setValue(JSON.stringify(resultJson, null, 2));
                         } catch (e) {
-                            Wiser2.alert({
+                            Wiser.alert({
                                 title: "Ophalen resultaat mislukt",
                                 content: "Er is iets fout gegaan bij het ophalen van het JSON resultaat. Probeer het a.u.b. nogmaals."
                             });
@@ -264,7 +265,7 @@ const moduleSettings = {
                             const resultQuery = await this.getQuery();
                             this.queryCodeMirrorEditor.getDoc().setValue(resultQuery);
                         } catch (e) {
-                            Wiser2.alert({
+                            Wiser.alert({
                                 title: "Ophalen query mislukt",
                                 content: "Er is iets fout gegaan bij het ophalen van de query. Probeer het a.u.b. nogmaals."
                             });
@@ -374,19 +375,19 @@ const moduleSettings = {
                 this.handleWindowMessage(e.data);
             });
 
-            $(document).on("moduleClosing", (e) => {
+            document.addEventListener("moduleClosing", (event) => {
                 // You can do anything here that needs to happen before closing the module.
-                e.success();
+                event.detail();
             });
         }
 
         async getAllEntityTypes() {
-            const response = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=` });
+            const response = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=` });
             this.allEntityTypes = response.map(ce => ce.entityType);
         }
 
         async updateAvailableEntityTypes() {
-            const response = await Wiser2.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=${this.selectedModules.join(",")}` });
+            const response = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=${this.selectedModules.join(",")}` });
             this.availableEntityTypes = response.map(ce => ce.entityType);
 
             $("#selectEntity").getKendoDropDownList().setDataSource({
@@ -412,7 +413,7 @@ const moduleSettings = {
                         value: "treeview",
                         entityName: "",
                         displayName: "Treeview",
-                        languageCode: "",
+                        languageCode: [],
                         aggregation: "",
                         formatting: "",
                         fieldAlias: "",
@@ -535,7 +536,7 @@ const moduleSettings = {
             scopeRow.find("select.scope-value-select").getKendoMultiSelect().setDataSource({
                 transport: {
                     read: (options) => {
-                        Wiser2.api({
+                        Wiser.api({
                             url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entityName=${dataItem.entityName}&propertyName=${dataItem.propertyName}&languageCode=${dataItem.languageCode}&useExportMode=${this.useExportMode ? "1" : "0"}`,
                             dataType: "json"
                         }).then((result) => {
@@ -674,12 +675,19 @@ const moduleSettings = {
                     tempArray = [];
                     const selectDetails = $(item.querySelector("select.select-details")).getKendoMultiSelect();
                     selectDetails.dataItems().forEach((dataItem) => {
+                        const languageCodes = [];
+                        if (typeof dataItem.languageCode === "string") {
+                            languageCodes.push(dataItem.languageCode);
+                        } else {
+                            languageCodes.push(...Array.from(dataItem.languageCode));
+                        }
+
                         const newItem = {
                             fieldname: dataItem.propertyName,
                             fieldalias: dataItem.fieldAlias,
                             dataType: dataItem.dataType || "string",
                             havingDataType: dataItem.havingDataType || "string",
-                            languagecode: dataItem.languageCode,
+                            languageCodes: languageCodes,
                             aggregationfunction: dataItem.aggregation,
                             formatting: dataItem.formatting
                         };
@@ -688,12 +696,19 @@ const moduleSettings = {
                             const subTempArray = [];
 
                             dataItem.subSelection.fields.forEach((subDataItem) => {
+                                const languageCodes = [];
+                                if (typeof subDataItem.languageCode === "string") {
+                                    languageCodes.push(subDataItem.languageCode);
+                                } else {
+                                    languageCodes.push(...Array.from(subDataItem.languageCode));
+                                }
+
                                 subTempArray.push({
                                     fieldname: subDataItem.propertyName,
                                     fieldalias: subDataItem.fieldAlias,
                                     dataType: subDataItem.dataType || "string",
                                     havingDataType: subDataItem.havingDataType || "string",
-                                    languagecode: subDataItem.languageCode,
+                                    languageCodes: languageCodes,
                                     aggregationfunction: subDataItem.aggregation,
                                     formatting: subDataItem.formatting
                                 });
@@ -780,7 +795,7 @@ const moduleSettings = {
             let exportLimit = exportLimitInput.value.trim();
             if (!/^\d+(?:,\d+)?$/.test(exportLimit)) {
                 if (limit !== "") {
-                    Wiser2.alert({
+                    Wiser.alert({
                         title: "Limiet ongeldig",
                         content: "Waarde bij limiet is ongeldig. Dit moet een getal zijn, of twee getallen gescheiden door een komma."
                     });
@@ -815,7 +830,7 @@ const moduleSettings = {
                     }
 
                     let value;
-                    if (getComputedStyle(scope.querySelector("div.scope-value-select")).display !== "none") {
+                    if (getComputedStyle(scope.querySelector("span.scope-value-select")).display !== "none") {
                         value = $(scope).find("select.scope-value-select").getKendoMultiSelect().value();
                     } else if (getComputedStyle(scope.querySelector("div.free-input")).display !== "none") {
                         value = scope.querySelector("div.free-input > input").value;
@@ -832,10 +847,17 @@ const moduleSettings = {
                     }
 
                     if (!forSaving) {
+                        const languageCodes = [];
+                        if (typeof dataItem.languageCode === "string") {
+                            languageCodes.push(dataItem.languageCode);
+                        } else {
+                            languageCodes.push(...Array.from(dataItem.languageCode));
+                        }
+
                         scopeSection[rowsArrayName].push({
                             key: {
                                 fieldname: fieldName,
-                                languagecode: dataItem.languageCode,
+                                languageCodes: languageCodes,
                                 dataType: dataItem.dataType || "string",
                                 havingDataType: dataItem.havingDataType || "string",
                                 aggregationfunction: forHaving ? dataItem.havingAggregation : dataItem.aggregation,
@@ -845,6 +867,13 @@ const moduleSettings = {
                             value: value
                         });
                     } else {
+                        const languageCodes = [];
+                        if (typeof dataItem.languageCode === "string") {
+                            languageCodes.push(dataItem.languageCode);
+                        } else {
+                            languageCodes.push(...Array.from(dataItem.languageCode));
+                        }
+
                         scopeSection[rowsArrayName].push({
                             key: {
                                 entityName: dataItem.entityName,
@@ -852,7 +881,7 @@ const moduleSettings = {
                                 fieldAlias: dataItem.fieldAlias,
                                 dataType: dataItem.dataType || "string",
                                 havingDataType: dataItem.havingDataType || "string",
-                                languageCode: dataItem.languageCode,
+                                languageCodes: languageCodes,
                                 aggregation: forHaving ? dataItem.havingAggregation : dataItem.aggregation,
                                 formatting: forHaving ? dataItem.havingFormatting : dataItem.formatting
                             },
@@ -933,12 +962,19 @@ const moduleSettings = {
                                 tempArray = [];
                                 const selectDetails = $(item.querySelector("select.select-details")).getKendoMultiSelect();
                                 Array.from(selectDetails.dataItems()).forEach((dataItem) => {
+                                    const languageCodes = [];
+                                    if (typeof dataItem.languageCode === "string") {
+                                        languageCodes.push(dataItem.languageCode);
+                                    } else {
+                                        languageCodes.push(...Array.from(dataItem.languageCode));
+                                    }
+
                                     const newItem = {
                                         fieldname: dataItem.propertyName,
                                         fieldalias: dataItem.fieldAlias,
                                         dataType: dataItem.dataType || "string",
                                         havingDataType: dataItem.havingDataType || "string",
-                                        languagecode: dataItem.languageCode,
+                                        languageCodes: languageCodes,
                                         aggregationfunction: dataItem.aggregation,
                                         formatting: dataItem.formatting
                                     };
@@ -947,12 +983,19 @@ const moduleSettings = {
                                         const subTempArray = [];
 
                                         dataItem.subSelection.fields.forEach((subDataItem) => {
+                                            const languageCodes = [];
+                                            if (typeof dataItem.languageCode === "string") {
+                                                languageCodes.push(subDataItem.languageCode);
+                                            } else {
+                                                languageCodes.push(...Array.from(subDataItem.languageCode));
+                                            }
+
                                             subTempArray.push({
                                                 fieldname: subDataItem.propertyName,
                                                 fieldalias: subDataItem.fieldAlias,
                                                 dataType: subDataItem.dataType || "string",
                                                 havingDataType: subDataItem.havingDataType || "string",
-                                                languagecode: subDataItem.languageCode,
+                                                languageCodes: languageCodes,
                                                 aggregationfunction: subDataItem.aggregation,
                                                 formatting: subDataItem.formatting
                                             });
@@ -1012,7 +1055,7 @@ const moduleSettings = {
                 parameters = Object.assign({}, requestVariables, parameters);
             }
 
-            return Wiser2.api({
+            return Wiser.api({
                 method: "POST",
                 contentType: "application/json",
                 url: rootUrl,
@@ -1028,7 +1071,7 @@ const moduleSettings = {
             let rootUrl = `${this.settings.getItemsUrl}/query`;
             let parameters = { settings: this.createJsonRequest() };
 
-            return Wiser2.api({
+            return Wiser.api({
                 method: "POST",
                 contentType: "application/json",
                 url: rootUrl,
@@ -1043,10 +1086,12 @@ const moduleSettings = {
                 requestJson: JSON.stringify(this.createJsonRequest()),
                 savedJson: JSON.stringify(this.createJsonRequest(true)),
                 showInExportModule: document.getElementById("showInExportModule").checked ? 1 : 0,
-                availableForRendering: document.getElementById("availableForRendering").checked ? 1 : 0
+                showInCommunicationModule: document.getElementById("showInCommunicationModule").checked ? 1 : 0,
+                availableForRendering: document.getElementById("availableForRendering").checked ? 1 : 0,
+                allowedRoles: this.allowedRoles.value().join()
             };
 
-            const saveResult = await Wiser2.api({
+            const saveResult = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}data-selectors/save`,
                 method: "POST",
                 contentType: "application/json",
@@ -1088,17 +1133,17 @@ const moduleSettings = {
 
             kendoPrompt.open().result.done((input) => {
                 window.processing.addProcess("checkSavedNameExists");
-                Wiser2.api({ url: `${this.settings.serviceRoot}/CHECK_DATA_SELECTOR_NAME_EXISTS?name=${encodeURIComponent(input)}` }).then((existsResult) => {
+                Wiser.api({ url: `${this.settings.serviceRoot}/CHECK_DATA_SELECTOR_NAME_EXISTS?name=${encodeURIComponent(input)}` }).then((existsResult) => {
                     window.processing.removeProcess("checkSavedNameExists");
 
-                    if (!Wiser2.validateArray(existsResult) || existsResult[0].nameExists !== 1) {
+                    if (!Wiser.validateArray(existsResult) || existsResult[0].nameExists !== 1) {
                         this.currentName = input;
 
                         window.processing.addProcess("dataSelectorSave");
                         this.save(input).then(
                             () => {
                                 window.processing.removeProcess("dataSelectorSave");
-                                Wiser2.showMessage({
+                                Wiser.showMessage({
                                     title: "Opslaan succesvol",
                                     content: "De data selector is succesvol opgeslagen."
                                 });
@@ -1106,7 +1151,7 @@ const moduleSettings = {
                             (error) => {
                                 console.error(error);
                                 window.processing.removeProcess("dataSelectorSave");
-                                Wiser2.alert({
+                                Wiser.alert({
                                     title: "Opslaan mislukt",
                                     content: "Er is een fout opgetreden tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals."
                                 });
@@ -1116,7 +1161,7 @@ const moduleSettings = {
                     }
 
                     // Data selector with the given name already exists; ask for overwrite confirmation.
-                    Wiser2.confirm({
+                    Wiser.confirm({
                         title: "Data Selector",
                         content: "Een data selector met deze naam bestaat al. Wilt u deze overschrijven?",
                         messages: {
@@ -1130,14 +1175,14 @@ const moduleSettings = {
                         this.save(input).then(
                             () => {
                                 window.processing.removeProcess("dataSelectorSave");
-                                Wiser2.showMessage({
+                                Wiser.showMessage({
                                     title: "Opslaan succesvol",
                                     content: "De data selector is succesvol opgeslagen."
                                 });
                             },
                             () => {
                                 window.processing.removeProcess("dataSelectorSave");
-                                Wiser2.alert({
+                                Wiser.alert({
                                     title: "Opslaan mislukt",
                                     content: "Er is een fout opgetreden tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals."
                                 });
@@ -1219,7 +1264,7 @@ const moduleSettings = {
                     try {
                         actionResult = await this.save(data.name);
                     } catch (e) {
-                        Wiser2.alert({
+                        Wiser.alert({
                             title: "Opslaan mislukt",
                             content: "Er is een fout opgetreden tijdens het opslaan van de data selector. Probeer het a.u.b. nogmaals."
                         });
@@ -1231,7 +1276,7 @@ const moduleSettings = {
                     try {
                         actionResult = await this.getJsonResult();
                     } catch (e) {
-                        Wiser2.alert({
+                        Wiser.alert({
                             title: "Ophalen data mislukt",
                             content: "Er is een fout opgetreden tijdens het ophalen van het data selector resultaat. Probeer het a.u.b. nogmaals."
                         });
@@ -1319,7 +1364,7 @@ const moduleSettings = {
                     dbInput.find("select.scope-value-select").data("kendoMultiSelect").setDataSource({
                         transport: {
                             read: (options) => {
-                                Wiser2.api({
+                                Wiser.api({
                                     url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entityName=${dataItem.entityName}&propertyName=${dataItem.propertyName}&languageCode=${dataItem.languageCode}`,
                                     dataType: "json"
                                 }).then((result) => {
@@ -1353,16 +1398,16 @@ const moduleSettings = {
                     switch (value) {
                         case "is equal to":
                         case "is not equal to":
-                            dbInput.find("div.scope-value-select").show();
+                            dbInput.find("span.scope-value-select").show();
                             dbInput.find("div.free-input").hide();
                             break;
                         case "is empty":
                         case "is not empty":
-                            dbInput.find("div.scope-value-select").hide();
+                            dbInput.find("span.scope-value-select").hide();
                             dbInput.find("div.free-input").hide();
                             break;
                         default:
-                            dbInput.find("div.scope-value-select").hide();
+                            dbInput.find("span.scope-value-select").hide();
                             dbInput.find("div.free-input").show();
                             break;
                     }
@@ -1490,6 +1535,7 @@ const moduleSettings = {
                 closeEditor();
                 return;
             }
+
             // Save current value.
             itemProperties.data("currentValue", dataItem.value);
 
@@ -1512,17 +1558,47 @@ const moduleSettings = {
             }
 
             if (languageCodeField.length > 0) {
-                const languageCode = languageCodeField.getKendoComboBox();
+                const languageCode = languageCodeField.getKendoMultiSelect();
+                languageCode.bind("change", (event) => {
+                    itemProperties.find("div.havingDataTypeWrapper, div.aggregationWrapper, div.formattingWrapper, div.fieldAliasWrapper, div.isItemIdWrapper, div.subSelectionWrapper").toggleClass("hidden", event.sender.value().length > 1);
+                });
 
                 // Update language codes.
-                Wiser2.api({ url: `${this.settings.serviceRoot}/GET_LANGUAGE_CODES?entityName=${dataItem.entityName || ""}&linkType=${dataItem.linkType || "0"}&propertyName=${dataItem.propertyName}` }).then((response) => {
+                try {
+                    const languageCodesData = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_LANGUAGE_CODES?entityName=${dataItem.entityName || ""}&linkType=${dataItem.linkType || "0"}&propertyName=${dataItem.propertyName}` });
+                    console.log("languageCodesData", languageCodesData);
                     languageCode.setDataSource({
-                        data: [...response]
-                    });
+                        data: [...languageCodesData]
+                    })
+
+                    if (dataItem.languageCode) {
+                        if (typeof dataItem.languageCode === "string") {
+                            // Old method; single string value.
+                            languageCode.value(dataItem.languageCode || "");
+                        } else {
+                            // New method; array with language codes.
+                            const selectedLanguageCodes = Array.from(dataItem.languageCode);
+
+                            // Check if there are custom language codes in the array which should be added first.
+                            selectedLanguageCodes.forEach((lc) => {
+                                if (languageCodesData.findIndex((item) => item.value === lc) === -1) {
+                                    // Custom language code; add it first.
+                                    languageCode.dataSource.add({ text: lc, value: lc });
+                                }
+                            });
+
+                            languageCode.value(selectedLanguageCodes);
+                        }
+                    }
 
                     // Set current language code.
                     languageCode.value(dataItem.languageCode || "");
-                });
+                    if (languageCode.value().length > 1) {
+                        itemProperties.find("div.havingDataTypeWrapper, div.aggregationWrapper, div.formattingWrapper, div.fieldAliasWrapper, div.isItemIdWrapper, div.subSelectionWrapper").addClass("hidden");
+                    }
+                } catch (e) {
+                    console.error("Error while trying to update language codes", e);
+                }
             }
 
             // Update values.
@@ -1567,7 +1643,7 @@ const moduleSettings = {
 
                     // Check if alias is already in use. The check only needs to be performed if one has been set, and if it's not the same as the previous value.
                     if (newFieldAlias.length > 0 && dataItem.fieldAlias.toLowerCase() !== newFieldAlias.toLowerCase() && this.checkIfAliasInUse(newFieldAlias)) {
-                        Wiser2.alert({
+                        Wiser.alert({
                             title: "Alias in gebruik",
                             content: "Deze alias is al in gebruik. Kies een andere alias."
                         });
@@ -1590,7 +1666,7 @@ const moduleSettings = {
                 }
 
                 if (languageCodeField.length > 0) {
-                    const languageCode = languageCodeField.getKendoComboBox();
+                    const languageCode = languageCodeField.getKendoMultiSelect();
                     dataItem.set("languageCode", languageCode.value());
                 }
 
@@ -1633,6 +1709,10 @@ const moduleSettings = {
                 dialog.title(`Eigenschappen van '${dataItem.displayName}'`);
             }
             dialog.open();
+
+            // Increase z-index, because otherwise the k-animation-container of the multiselect will be painted on top of this dialog, causing you to not be able to click everything in the dialog.
+            this.dialogZindex++;
+            dialog.wrapper.css("z-index", this.dialogZindex);
         }
 
         /**
@@ -1660,7 +1740,7 @@ const moduleSettings = {
                 })
             });
             subEntitySelectWidget.bind("cascade", async (e) => {
-                const response = await Wiser2.api({
+                const response = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}data-selectors/entity-properties/${e.sender.value()}/?forExportMode=${this.useExportMode}`
                 });
 
@@ -1713,9 +1793,9 @@ const moduleSettings = {
             }
 
             // Clicking on the tags.
-            subPropertySelectWidget.wrapper.on("click", "li.k-button", (e) => {
+            subPropertySelectWidget.wrapper.find("div.k-chip-list").on("click", "span.k-chip", (e) => {
                 const clickedElement = $(e.target);
-                if (clickedElement.has(".k-i-close").length > 0 || clickedElement.closest(".k-i-close").length > 0) {
+                if (clickedElement.closest("span.k-chip-remove-action").length > 0) {
                     return;
                 }
 
@@ -1799,7 +1879,7 @@ const moduleSettings = {
                 }
 
                 const widget = element.kendoDropDownList(options).getKendoDropDownList();
-                Wiser2.fixKendoDropDownScrolling(widget);
+                Wiser.fixKendoDropDownScrolling(widget);
             });
 
             //COMBOBOX
@@ -1816,7 +1896,7 @@ const moduleSettings = {
                     height: 400
                 }, element.data());
                 const widget = element.kendoComboBox(options).getKendoComboBox();
-                Wiser2.fixKendoDropDownScrolling(widget);
+                Wiser.fixKendoDropDownScrolling(widget);
 
                 if (openOnFocus) {
                     widget.input.on("click", () => {
@@ -1867,12 +1947,25 @@ const moduleSettings = {
                 }
 
                 const widget = element.kendoMultiSelect(options).getKendoMultiSelect();
-                Wiser2.fixKendoDropDownScrolling(widget);
+                Wiser.fixKendoDropDownScrolling(widget);
 
                 if (sortable) {
                     this.extendMultiSelectWithSortable(widget);
                 }
             });
+
+            this.allowedRoles = $("#allowedRoles").kendoMultiSelect({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: `${this.settings.serviceRoot}/GET_ROLES`
+                        }
+                    }
+                },
+                dataTextField: "roleName",
+                dataValueField: "id",
+                multiple: "multiple"
+            }).data("kendoMultiSelect");
 
             //TREEVIEW
             context.querySelectorAll(".checkTree").forEach((e) => {
@@ -1912,8 +2005,8 @@ const moduleSettings = {
 
             const onDataBound = (e) => {
                 const element = e.sender.element.closest(".k-multiselect");
-                element.find(".k-input").off("keyup");
-                element.find(".k-input").on("keyup", { widget: e.sender }, onClickEnter);
+                element.find(".k-input-inner").off("keyup");
+                element.find(".k-input-inner").on("keyup", { widget: e.sender }, onClickEnter);
             };
 
             return Object.assign(options, {
@@ -1957,7 +2050,7 @@ const moduleSettings = {
                 widgetElement.data("canOpen", false);
             });
             widget.wrapper.on("click", (e) => {
-                if (e.target.closest("li.k-button, span.tagListItem") !== null) {
+                if (e.target.closest("span.k-chip") !== null) {
                     widget.close();
                     return;
                 }

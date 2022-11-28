@@ -15,7 +15,7 @@ namespace Api.Modules.Customers.Models
         public ulong Id { get; set; }
         
         /// <summary>
-        /// Gets or sets the encrypted ID for Wiser 2.0.
+        /// Gets or sets the encrypted ID for Wiser.
         /// </summary>
         public string EncryptedId { get; set; }
 
@@ -25,7 +25,7 @@ namespace Api.Modules.Customers.Models
         public string Name { get; set; }
 
         /// <summary>
-        ///  Gets or sets the encrypted customer if for Wiser 2.0.
+        ///  Gets or sets the encrypted customer if for Wiser.
         /// </summary>
         public string EncryptedCustomerId { get; set; }
         
@@ -88,7 +88,7 @@ namespace Api.Modules.Customers.Models
         /// <summary>
         /// Gets or sets whether the user has to change their password the next time they login.
         /// </summary>
-        public bool RequirePasswordChange { get; set; }
+        public bool? RequirePasswordChange { get; set; }
 
         /// <summary>
         /// Gets or sets the role of the user.
@@ -120,5 +120,11 @@ namespace Api.Modules.Customers.Models
         /// Gets or sets the main domain. This is used for generating URLs for images, files etc in HTML editors.
         /// </summary>
         public string MainDomain { get; set; }
+
+        /// <summary>
+        /// Gets or sets the encrypted ID of the entry in the login log table.
+        /// This will be used to update the time the user is active.
+        /// </summary>
+        public string EncryptedLoginLogId { get; set; }
     }
 }

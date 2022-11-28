@@ -22,8 +22,8 @@ namespace FrontEnd.Modules.DataSelector.Controllers
             {
                 viewModel.BodyCssClass = "embedded";
                 viewModel.EmbedOptions.AddRange((embedoptions ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
-                viewModel.ExportMode = exportMode;
             }
+            viewModel.ExportMode = exportMode;
 
             return View(viewModel);
         }

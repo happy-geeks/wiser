@@ -41,6 +41,10 @@ export default class UsersService extends BaseService {
                 return user;
             });
             result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true;
+
+            if (loginResult.data.hasOwnProperty("encryptedLoginLogId")) {
+                await this.startUpdateTimeActiveTimer();
+            }
         } catch (error) {
             result.success = false;
             console.error("Error during login", error);
@@ -51,6 +55,8 @@ export default class UsersService extends BaseService {
                 // that falls out of the range of 2xx
                 if (error.response.status !== 400 || error.response.data.error === "server_error") {
                     result.message = "Er is een onbekende fout opgetreden tijdens het inloggen. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+                } else if(error.response.data && error.response.data.error_description && error.response.data.error_description.toLowerCase().includes("blocked")) {
+                    result.message = "Gebruikersnaam is geblokkeerd vanwege te veel mislukte inlogpogingen.";
                 } else {
                     result.message = "U heeft ongeldige gegevens ingevuld. Probeer het a.u.b. opnieuw.";
                 }
@@ -91,6 +97,10 @@ export default class UsersService extends BaseService {
             result.data = loginResult.data;
             result.data.expiresOn = new Date(new Date().getTime() + (loginResult.data.expires_in * 1000));
             result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true;
+
+            if (loginResult.data.hasOwnProperty("encryptedLoginLogId")) {
+                await this.startUpdateTimeActiveTimer();
+            }
         } catch (error) {
             result.success = false;
             console.error("Error during login", error);
@@ -101,6 +111,8 @@ export default class UsersService extends BaseService {
                 // that falls out of the range of 2xx
                 if (error.response.status !== 400 || error.response.data.error === "server_error") {
                     result.message = "Er is een onbekende fout opgetreden tijdens het inloggen. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+                } else if(error.response.data && error.response.data.error_description && error.response.data.error_description.toLowerCase().includes("blocked")) {
+                    result.message = "Gebruikersnaam is geblokkeerd vanwege te veel mislukte inlogpogingen.";
                 } else {
                     result.message = "U heeft ongeldige gegevens ingevuld. Probeer het a.u.b. opnieuw.";
                 }
@@ -219,6 +231,53 @@ export default class UsersService extends BaseService {
         } catch (error) {
             console.error(error);
             return false;
+        }
+    }
+
+    getEncryptedLoginLogId() {
+        // Retrieve the user data from the local storage.
+        const savedUserData = localStorage.getItem("userData");
+        if (!savedUserData) {
+            return null;
+        }
+
+        // Try to parse the data, and see if a key "encryptedLoginLogId" exists and if it has a value. 
+        const userData = JSON.parse(savedUserData);
+        if (!userData.hasOwnProperty("encryptedLoginLogId") || !userData.encryptedLoginLogId) {
+            return null;
+        }
+
+        return userData.encryptedLoginLogId;
+    }
+
+    async updateActiveTime(encryptedLoginLogId) {
+        encryptedLoginLogId = encryptedLoginLogId || this.getEncryptedLoginLogId();
+        if (!encryptedLoginLogId) {
+            console.warn("Couldn't update the active time. There's no login log ID.");
+            return;
+        }
+
+        await this.base.api.put(`/api/v3/users/update-active-time?encryptedLoginLogId=${encodeURIComponent(encryptedLoginLogId)}`);
+    }
+
+    async startUpdateTimeActiveTimer() {
+        try {
+            // Retrieve the encrypted login log ID.
+            const encryptedLoginLogId = this.getEncryptedLoginLogId();
+            if (!encryptedLoginLogId) {
+                console.warn("Couldn't start the 'time active' timer. There's no login log ID.");
+                return;
+            }
+
+            await this.base.api.put(`/api/v3/users/reset-time-active-changed?encryptedLoginLogId=${encodeURIComponent(encryptedLoginLogId)}`);
+
+            // Timer runs every 5 minutes. (300000ms).
+            return setInterval(async () => {
+                await this.updateActiveTime(encryptedLoginLogId);
+            }, 300000);
+        } catch (exception) {
+            console.error("Error in startUpdateTimeActiveTimer", exception);
+            return null;
         }
     }
 }

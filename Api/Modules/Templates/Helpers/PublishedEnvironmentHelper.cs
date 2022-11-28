@@ -55,26 +55,6 @@ namespace Api.Modules.Templates.Helpers
         }
 
         /// <summary>
-        /// This function will match a string to the PublishedEnvironmentsEnum. In case this doesn't match any environment a ArgumentOutOfRangeException is thrown
-        /// </summary>
-        /// <param name="environment">The string that will be matched against the environments.</param>
-        /// <returns></returns>
-        public static Environments EnvironmentStringToEnum(string environment)
-        {
-            switch (environment)
-            {
-                case "test":
-                    return Environments.Test;
-                case "accept":
-                    return Environments.Acceptance;
-                case "live":
-                    return Environments.Live;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(environment), environment);
-            }
-        }
-
-        /// <summary>
         /// This function generates a changelog containing the alterations that should be made towards the different versions and their publishenvironment value to achieve the publishing to the given environment. 
         /// This method will also calculate the publishing of underlaying environments if an environment is pushed forward. 
         /// After invoking this method the changelog can be used to update the values in the dataservice
@@ -83,18 +63,23 @@ namespace Api.Modules.Templates.Helpers
         /// <param name="version">The version that is to be published to an environment.</param>
         /// <param name="environment">The string of the environment that needs to be published.</param>
         /// <returns>A changelog in the form of a Dictionary containing the versions and their respective value changes to achieve the publishing of the environment given in the params.</returns>
-        public static Dictionary<int, int> CalculateEnvironmentsToPublish(PublishedEnvironmentModel publishModel, int version, string environment)
+        public static Dictionary<int, int> CalculateEnvironmentsToPublish(PublishedEnvironmentModel publishModel, int version, Environments environment)
         {
-            var environmentEnum = EnvironmentStringToEnum(environment);
-
             var versionsToUpdate = new Dictionary<int, int>();
-            var versionsToPublish = (int)environmentEnum;
+            var versionsToPublish = (int)environment;
 
-            switch (environmentEnum)
+            switch (environment)
             {
+                case Environments.Development:
+                    // Add this publish.
+                    TryAddToIntDictionary(versionsToUpdate, version, (int)environment);
+                    // Remove the old publish of this environment.
+                    TryAddToIntDictionary(versionsToUpdate, publishModel.TestVersion, -(int)Environments.Development);
+
+                    break;
                 case Environments.Test:
                     // Add this publish.
-                    TryAddToIntDictionary(versionsToUpdate, version, ((int)environmentEnum));
+                    TryAddToIntDictionary(versionsToUpdate, version, (int)environment);
                     // Remove the old publish of this environment.
                     TryAddToIntDictionary(versionsToUpdate, publishModel.TestVersion, -(int)Environments.Test);
 
@@ -135,7 +120,7 @@ namespace Api.Modules.Templates.Helpers
 
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(environmentEnum), environmentEnum.ToString());
+                    throw new ArgumentOutOfRangeException(nameof(environment), environment.ToString());
             }
 
             return versionsToUpdate;
@@ -172,7 +157,7 @@ namespace Api.Modules.Templates.Helpers
 
             foreach (var publishAction in publishModel)
             {
-                //Negative value means the value is the old environment. These have already been set and need no further action.
+                // Negative value means the value is the old environment. These have already been set and need no further action.
                 if (publishAction.Value <= 0)
                 {
                     continue;

@@ -5,7 +5,7 @@ import { EntityTab } from "../Scripts/EntityTab.js";
 import { EntityFieldTab } from "../Scripts/EntityFieldTab.js";
 import { EntityPropertyTab } from "../Scripts/EntityPropertyTab.js";
 import { WiserQueryTab } from "../Scripts/WiserQueryTab.js";
-import { Wiser2 } from "../../Base/Scripts/Utils.js";
+import { Wiser } from "../../Base/Scripts/Utils.js";
 
 
 require("@progress/kendo-ui/js/kendo.all.js");
@@ -33,7 +33,7 @@ const moduleSettings = {
             // Kendo components.
             this.mainWindow = null;
 
-            this.activeMainTab = "entiteiten"; 
+            this.activeMainTab = "Modules"; 
             
             //classes
             this.entityTab = null;
@@ -66,36 +66,32 @@ const moduleSettings = {
 
             // enum of available inputtypes
             this.inputTypes = Object.freeze({
-                ACTIONBUTTON: "action-button",
-                AUTOINCREMENT: "auto-increment",
-                // BUTTON:"button",
-                CHART: "chart",
-                CHECKBOX: "checkbox",
-                COMBOBOX: "combobox",
-                COLORPICKER: "color-picker",
-                DATASELECTOR: "data-selector",
-                DATETIMEPICKER: "date-time picker",
-                //DATERANGE: "daterange",
-                EMPTY: "empty",
-                FILEUPLOAD: "file-upload",
-                GPSLOCATION: "gpslocation",
-                // GRID: "grid",
-                HTMLEDITOR: "HTMLeditor",
-                // IMAGECOORDS:"imagecoords",
-                IMAGEUPLOAD: "image-upload",
-                INPUT: "input",
-                ITEMLINKER: "item-linker",
-                LINKEDITEM: "linked-item",
-                MULTISELECT: "multiselect",
-                NUMERIC: "numeric-input",
-                RADIOBUTTON: "radiobutton",
-                SECUREINPUT: "secure-input",
-                SUBENTITIESGRID: "sub-entities-grid",
-                TEXTBOX: "textbox",
-                TIMELINE: "timeline",
-                QR : "qr",
-                SCHEDULER : "scheduler"
-                //QUERYBUILDER: "querybuilder"
+                ACTIONBUTTON: "ActionButton",
+                AUTOINCREMENT: "AutoIncrement",
+                CHART: "Chart",
+                CHECKBOX: "CheckBox",
+                COMBOBOX: "ComboBox",
+                COLORPICKER: "ColorPicker",
+                DATASELECTOR: "DataSelector",
+                DATETIMEPICKER: "DateTimePicker",
+                EMPTY: "Empty",
+                FILEUPLOAD: "FileUpload",
+                GPSLOCATION: "GpsLocation",
+                HTMLEDITOR: "HtmlEditor",
+                IFRAME: "Iframe",
+                IMAGEUPLOAD: "ImageUpload",
+                INPUT: "Input",
+                ITEMLINKER: "ItemLinker",
+                LINKEDITEM: "LinkedItem",
+                MULTISELECT: "MultiSelect",
+                NUMERIC: "NumericInput",
+                RADIOBUTTON: "RadioButton",
+                SECUREINPUT: "SecureInput",
+                SUBENTITIESGRID: "SubEntitiesGrid",
+                TEXTBOX: "TextBox",
+                TIMELINE: "TimeLine",
+                QR : "Qr",
+                SCHEDULER : "Scheduler"
             });
 
             this.dataSourceType = Object.freeze({
@@ -150,7 +146,7 @@ const moduleSettings = {
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
-                Wiser2.alert({
+                Wiser.alert({
                     title: "Niet ingelogd",
                     content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
@@ -164,11 +160,11 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.happyEmployeeLoggedIn = user.juiceEmployeeName;
 
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
-            this.settings.wiser2UserId = userData.wiser2Id;
+            this.settings.wiserUserId = userData.id;
 
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
@@ -233,9 +229,9 @@ const moduleSettings = {
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
          */
         setupBindings() {
-            $(document).on("moduleClosing", (event) => {
+            document.addEventListener("moduleClosing", (event) => {
                 // You can do anything here that needs to happen before closing the module.
-                event.success();
+                event.detail();
             });
 
             //BUTTONS
@@ -261,7 +257,10 @@ const moduleSettings = {
                                 return;
                             }
                             try {
-                                const qResult = await $.get(`${this.settings.serviceRoot}/${templateName}?isTest=${encodeURIComponent(this.settings.isTestEnvironment)}`);
+                                const qResult = await Wiser.api({ 
+                                    url: `${this.settings.serviceRoot}/${templateName}?isTest=${encodeURIComponent(this.settings.isTestEnvironment)}`,
+                                    method: "GET"
+                                });
                                 if (qResult.success) {
                                     this.showNotification(null, "Entiteiten zijn succesvol aangemaakt of bijgewerkt!", "success", 2000);
                                 }
@@ -289,13 +288,13 @@ const moduleSettings = {
                     await this.entityTab.beforeSave();
                     break;
                 case "query's":
-                    this.wiserQueryTab.beforeSave();
+                    await this.wiserQueryTab.beforeSave();
                     break;
                 case "modules":
-                    this.moduleTab.beforeSave();
+                    await this.moduleTab.beforeSave();
                     break;
                 default:
-                    this.entityTab.beforeSave();
+                    await this.entityTab.beforeSave();
                     break;
             }
         }
@@ -391,7 +390,6 @@ const moduleSettings = {
                 },
                 select: (event) => {
                     const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
-                    console.log("mainTabStrip select", tabName);
 
                     if (tabName === "query's" || tabName === "entiteiten" || tabName === "modules") {
                         $("footer").show();
@@ -401,8 +399,7 @@ const moduleSettings = {
                 },
                 activate: (event) => {
                     const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
-                    admin.activeMainTab = tabName;
-                    console.log("mainTabStrip activate", tabName);
+                    this.activeMainTab = tabName;
 
                     // Refresh code mirrors in the currently activated tab.
                     if (event.contentElement) {
@@ -432,7 +429,7 @@ const moduleSettings = {
                         if (!event.key || event.key.toLowerCase() !== "enter") {
                             return;
                         }
-                        $(event.currentTarget).closest(".k-prompt-container").next().find(".k-primary").trigger("click");
+                        $(event.currentTarget).closest(".k-prompt-container").next().find(".k-primary, .k-button-solid-primary").trigger("click");
                     });
                     return prompt.open().result;
                 case this.kendoPromptType.CONFIRM:

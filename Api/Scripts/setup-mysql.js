@@ -75,12 +75,24 @@
         const createTriggersQuery = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/CreateTriggers.sql"), "utf8");
         await connection.query(createTriggersQuery);
         console.log(notice("Triggers created."));
+		
+		console.log(notice("Creating stored procedures..."));
+		const createStoredProceduresQuery = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/StoredProcedures.sql"), "utf8");
+		await connection.query(createStoredProceduresQuery);
+		console.log(notice("Stored procedures created."));
 
         console.log(notice("Inserting data..."));
         await connection.query(`INSERT INTO easy_customers (id, customerid, name, subdomain, wiser_title) VALUES (1, 1, 'Main', 'main', 'Wiser')`);
         const insertInitialDataQuery = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/InsertInitialData.sql"), "utf8");
         await connection.query(insertInitialDataQuery.replace("?newCustomerId", "1"));
         console.log(notice("Data inserted."));
+
+        if (arguments.isMultiLanguage) {
+            console.log(notice("Setting up multi language support..."));
+            const insertInitialDataMultiLanguage = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/InsertInitialDataMultiLanguage.sql"), "utf8");
+            connection.query(insertInitialDataMultiLanguage);
+            console.log(notice("Multi language support installed."));
+        }
 
         if (arguments.isConfigurator) {
             console.log(notice("Creating configurator tables..."));

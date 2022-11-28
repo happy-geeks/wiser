@@ -25,7 +25,6 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* LOADERS */
 .icon-add:before {
     content: "\e900";
 }
@@ -506,7 +505,8 @@
     content: "\e977";
 }
 
-.icon-label:before {
+.icon-label:before,
+.icon-pricelabel:before {
     content: "\e978";
 }
 

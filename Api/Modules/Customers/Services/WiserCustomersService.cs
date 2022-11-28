@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Models;
@@ -244,7 +240,7 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> CreateCustomerAsync(CustomerModel customer, bool isWebShop = false, bool isConfigurator = false)
+        public async Task<ServiceResult<CustomerModel>> CreateCustomerAsync(CustomerModel customer, bool isWebShop = false, bool isConfigurator = false, bool isMultiLanguage = false)
         {
             // Create a new connection to the newly created database.
             await using (var mysqlConnection = new MySqlConnection(GenerateConnectionStringFromCustomer(customer, false)))
@@ -283,6 +279,7 @@ namespace Api.Modules.Customers.Services
                     var insertInitialDataEcommerceQuery = !isWebShop ? "" : await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.InsertInitialDataEcommerce.sql");
                     var createTablesConfiguratorQuery = !isConfigurator ? "" :await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTablesConfigurator.sql");
                     var insertInitialDataConfiguratorQuery = !isConfigurator ? "" : await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.InsertInitialDataConfigurator.sql");
+                    var insertInitialDataMultiLanguageQuery = !isMultiLanguage ? "" : await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.InsertInitialDataMultiLanguage.sql");
 
                     if (customer.WiserSettings != null)
                     {
@@ -292,6 +289,12 @@ namespace Api.Modules.Customers.Services
                             createTriggersQuery = createTriggersQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
                             createdStoredProceduresQuery = createdStoredProceduresQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
                             insertInitialDataQuery = insertInitialDataQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
+
+                            if (isMultiLanguage)
+                            {
+                                insertInitialDataMultiLanguageQuery = insertInitialDataMultiLanguageQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
+                            }
+                            
                             if (isWebShop)
                             {
                                 insertInitialDataEcommerceQuery = insertInitialDataEcommerceQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
@@ -318,6 +321,13 @@ namespace Api.Modules.Customers.Services
                         await command.ExecuteNonQueryAsync();
                         command.CommandText = insertInitialDataQuery;
                         await command.ExecuteNonQueryAsync();
+                        
+                        if (isMultiLanguage)
+                        {
+                            command.CommandText = insertInitialDataMultiLanguageQuery;
+                            await command.ExecuteNonQueryAsync();
+                        }
+                        
                         if (isWebShop)
                         {
                             command.CommandText = insertInitialDataEcommerceQuery;

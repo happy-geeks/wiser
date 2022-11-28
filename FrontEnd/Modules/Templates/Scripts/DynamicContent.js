@@ -1,5 +1,5 @@
 ﻿import { TrackJS } from "trackjs";
-import { Wiser2, Misc } from "../../Base/Scripts/Utils.js";
+import { Wiser, Misc } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import { Preview } from "./Preview.js";
 
@@ -106,7 +106,7 @@ const moduleSettings = {
             this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
-            const userData = await Wiser2.getLoggedInUserData(this.settings.wiserApiRoot);
+            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
@@ -118,6 +118,8 @@ const moduleSettings = {
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
+            
+            this.stickyHeader();
 
             this.initializeKendoComponents();
 
@@ -131,7 +133,7 @@ const moduleSettings = {
 
         async initCurrentComponentData() {
             try {
-                this.selectedComponentData = await Wiser2.api({
+                this.selectedComponentData = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
                     dataType: "json",
                     method: "GET"
@@ -146,6 +148,23 @@ const moduleSettings = {
             }
         }
 
+        /**
+         * Sticky header within Dynamic Content.
+         */
+        stickyHeader() {
+            const elem = document.getElementById('DynamicContentPane');
+            let lastScrollTop = 0;
+
+            elem.onscroll = (e) => {
+                if (elem.scrollTop < lastScrollTop){
+                    elem.classList.add('sticky');
+                } else {
+                    elem.classList.remove('sticky');
+                }
+                lastScrollTop = elem.scrollTop <= 0 ? 0 : elem.scrollTop;
+            }
+        }
+        
         /**
          * Initializes all kendo components for the base class.
          */
@@ -190,9 +209,14 @@ const moduleSettings = {
             }
 
             //NUMERIC FIELD
-            container.find(".numeric").kendoNumericTextBox({
-                change: () => this.onInputChange(true),
-                spin: () => this.onInputChange(false)
+            container.find(".numeric").each((index, element) => {
+                const isDecimal = $(element).data("decimal") === true;
+                $(element).kendoNumericTextBox({
+                    decimals: isDecimal ? 2 : 0,
+                    format: isDecimal ? "n2" : "n0",
+                    change: () => this.onInputChange(true),
+                    spin: () => this.onInputChange(false)
+                });
             });
             
             //MULTISELECT
@@ -232,7 +256,7 @@ const moduleSettings = {
                 await this.reloadComponentModes(newComponent, newComponentMode);
                 this.selectedComponentData.componentMode = this.componentModeComboBox.text();
 
-                const response = await Wiser2.api({
+                const response = await Wiser.api({
                     url: `/Modules/DynamicContent/${encodeURIComponent(newComponent)}/DynamicContentTabPane`,
                     method: "POST",
                     contentType: "application/json",
@@ -263,7 +287,7 @@ const moduleSettings = {
         }
 
         async reloadComponentModes(newComponent, newComponentMode) {
-            const componentModes = await Wiser2.api({
+            const componentModes = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dynamic-content/${encodeURIComponent(newComponent)}/component-modes`,
                 dataType: "json",
                 method: "GET"
@@ -340,7 +364,6 @@ const moduleSettings = {
         initializeButtons() {
             document.body.addEventListener("keydown", (event) => {
                 if ((event.ctrlKey || event.metaKey) && event.keyCode === 83) {
-                    console.log("ctrl+s dynamic content", event);
                     event.preventDefault();
                     this.save();
                 }
@@ -385,31 +408,39 @@ const moduleSettings = {
             try {
                 this.saving = true;
                 const title = document.querySelector('input[name="visibleDescription"]').value;
-                const contentId = await Wiser2.api({
-                    url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
-                    dataType: "json",
-                    method: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify({
-                        component: document.getElementById("componentTypeDropDown").value,
-                        componentModeId: document.getElementById("componentMode").value,
-                        title: title,
-                        data: this.getNewSettings()
-                    })
-                });
-
-                if (!this.settings.selectedId) {
-                    this.settings.selectedId = contentId;
-                    this.settings.selectedTitle = title;
-                    await this.addLinkToTemplate(this.settings.templateId);
+                if (!title) {
+                    kendo.alert("Naam is verplicht! Vul een naam in om verder te gaan");
+                    this.saving = false;
+                    window.processing.removeProcess(process);
+                    return;
                 }
+                    const contentId = await Wiser.api({
+                        url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
+                        dataType: "json",
+                        method: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            component: document.getElementById("componentTypeDropDown").value,
+                            componentModeId: document.getElementById("componentMode").value,
+                            title: title,
+                            data: this.getNewSettings()
+                        })
+                    });
 
-                window.popupNotification.show(`Dynamisch component '${document.querySelector('input[name="visibleDescription"]').value}' is succesvol opgeslagen.`, "info");
+                    if (!this.settings.selectedId) {
+                        this.settings.selectedId = contentId;
+                        this.settings.selectedTitle = title;
+                        await this.addLinkToTemplate(this.settings.templateId);
+                    }
 
+
+                    window.popupNotification.show(`Dynamisch component '${document.querySelector('input[name="visibleDescription"]').value}' is succesvol opgeslagen.`, "info");
+
+                
                 if (alsoDeployToTest) {
                     const version = (parseInt($(".historyContainer .historyLine:first").data("historyVersion")) || 0) + 1;
     
-                    await Wiser2.api({
+                    await Wiser.api({
                         url: `${this.settings.wiserApiRoot}dynamic-content/${contentId}/publish/test/${version}`,
                         dataType: "json",
                         type: "POST",
@@ -430,7 +461,7 @@ const moduleSettings = {
         }
 
         async addLinkToTemplate(templateId) {
-            await Wiser2.api({
+            await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}/link/${templateId}`,
                 dataType: "json",
                 method: "PUT",
@@ -525,13 +556,13 @@ const moduleSettings = {
          * Loads the History HTML and updates the right panel.
          * */
         async loadComponentHistory() {
-            const history = await Wiser2.api({
+            const history = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}/history`,
                 dataType: "json",
                 method: "GET"
             });
 
-            const historyHtml = await Wiser2.api({
+            const historyHtml = await Wiser.api({
                 url: `/Modules/DynamicContent/History`,
                 method: "POST",
                 contentType: "application/json",
@@ -545,7 +576,7 @@ const moduleSettings = {
         async loadPreviewTab() {
             // Preview
             await this.preview.loadProfiles();
-            const response = await Wiser2.api({
+            const response = await Wiser.api({
                 method: "GET",
                 url: "/Modules/Templates/PreviewTab"
             });
@@ -554,7 +585,7 @@ const moduleSettings = {
 
             this.preview.initPreviewProfileInputs(true, true);
             this.preview.bindPreviewButtons();
-            this.preview.generatePreview();
+            this.preview.generatePreview(false);
         }
 
         async transformCodeMirrorViews(container = null) {
@@ -649,7 +680,7 @@ const moduleSettings = {
                         });
                     });
 
-                    await Wiser2.api({
+                    await Wiser.api({
                         url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}/undo-changes`,
                         dataType: "json",
                         method: "POST",
@@ -718,7 +749,7 @@ const moduleSettings = {
                 return;
             }
 
-            await Wiser2.showConfirmDialog(`Are you sure you want to delete layer ${container.find(".index").text()}?`);
+            await Wiser.showConfirmDialog(`Are you sure you want to delete layer ${container.find(".index").text()}?`);
             container.remove();
         }
     }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Api.Modules.Templates.Models.Template
 {
@@ -29,18 +30,15 @@ namespace Api.Modules.Templates.Models.Template
         public TemplateSettingsModel TemplateSettings { get; set; }
 
         public List<TemplateTreeViewModel> ChildNodes { get; set; }
+        public int TemplateType { get; set; }
 
-        public TemplateTreeViewModel()
-        {
-
-        }
-
-        public TemplateTreeViewModel(int templateId, string templateName, bool isFolder, bool hasChildren)
-        {
-            this.TemplateId = templateId;
-            this.TemplateName = templateName;
-            this.IsFolder = isFolder;
-            this.HasChildren = hasChildren;
-        }
+        /// <summary>
+        /// Whether the tree view item was not retrieved from the templates data.
+        /// The <see cref="TemplateType"/> property should identify where this item was retrieved from instead.
+        /// </summary>
+        /// <remarks>
+        /// This is typically meant for views, routines, and triggers that were retrieved from the database.
+        /// </remarks>
+        public bool IsVirtualItem { get; set; }
     }
 }

@@ -1,4 +1,5 @@
 ﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html>
@@ -6,15 +7,14 @@
     <title>Wiser 3 - Export</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.material.min.css" rel="stylesheet" />
 
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
 </head>
 <body data-wiser-api-root="@Model.ApiRoot"
-      data-wiser-api-v21-root="@Model.ApiRoot"
       data-wiser-api-authentication-url="@Model.ApiAuthenticationUrl"
       data-is-test-environment="@Model.IsTestEnvironment.ToString().ToLowerInvariant()"
       data-api-client-id="@Model.Settings.ApiClientId"
@@ -38,8 +38,8 @@
         </div>
     </div>
 
-    <script src="/scripts/Utils.min.js"></script>
-    <script src="/scripts/Base.min.js"></script>
-    <script src="/scripts/Export.min.js"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Export.js")"></script>
 </body>
 </html>

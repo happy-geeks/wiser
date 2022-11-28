@@ -30,12 +30,12 @@ var contentBuilderToolNotable = {
     name: "wiserContentBuilder",
     tooltip: "Content builder",
     template: "<button id='contentBuilder_{propertyIdWithSuffix}' tabindex='0' role='button' class='k-button k-tool k-group-start k-group-end content-builder-button' title='Content builder' aria-label='Content builder'><span class='k-icon k-i-wiser-content-builder'></span></button><label class='content-builder-label'>Content builder</label>",
-    exec: function(e) { window.dynamicItems.fields.onHtmlEditorContentBuilderExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"), "{itemId}", "{propertyName}", "{languageCode}"); }
+    exec: function(e) { window.dynamicItems.fields.onHtmlEditorContentBuilderExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"), "{itemId}", "{propertyName}", "{languageCode}", "{contentBuilderMode}"); }
 };
 var contentBuilderToolBasic = {
     name: "wiserContentBuilder",
     tooltip: "Content builder",
-    exec: function(e) { window.dynamicItems.fields.onHtmlEditorContentBuilderExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"), "{itemId}", "{propertyName}", "{languageCode}"); }
+    exec: function(e) { window.dynamicItems.fields.onHtmlEditorContentBuilderExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"), "{itemId}", "{propertyName}", "{languageCode}", "{contentBuilderMode}"); }
 };
 var entityBlockTool = {
     name: "wiserEntityBlock",
@@ -46,6 +46,16 @@ var dataSelectorTool = {
     name: "wiserDataSelector",
     tooltip: "Data selector met template",
     exec: function(e) { window.dynamicItems.fields.onHtmlEditorDataSelectorExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor")); }
+};
+var youTubeTool = {
+    name: "wiserYouTube",
+    tooltip: "YouTube video invoegen",
+    exec: function(e) { window.dynamicItems.fields.onHtmlEditorYouTubeExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor")); }
+};
+var translationsTool = {
+    name: "wiserTranslation",
+    tooltip: "Vertaling invoegen",
+    exec: function(e) { window.dynamicItems.fields.onHtmlEditorTranslationExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor")); }
 };
 
 var options = $.extend(true, {
@@ -78,10 +88,10 @@ options.mode = parseInt(options.mode, 10) || 99;
 options.contentBuilderMode = options.contentBuilderMode || "basic";
 
 var allTools = {
-    "contentBuilderToolNotable": [99],
-    "bold": [1,2,3,99],
-    "italic": [1,2,3,99],
-    "underline": [1,2,3,99],
+    "contentBuilderToolNotable": [3,4,99],
+    "bold": [1,2,3,4,99],
+    "italic": [1,2,3,4,99],
+    "underline": [1,2,3,4,99],
     "strikethrough": [1,2,3,99],
     "justifyLeft": [2,3,99],
     "justifyCenter": [2,3,99],
@@ -98,6 +108,8 @@ var allTools = {
     templateTool: [3,99],
     entityBlockTool: [99],
     dataSelectorTool: [99],
+    youTubeTool: [2,3,99],
+    translationsTool: [2,3,99],
     "subscript": [99],
     "superscript": [99],
     "tableWizard": [3,99],
@@ -108,15 +120,15 @@ var allTools = {
     "addColumnRight": [3,99],
     "deleteRow": [3,99],
     "deleteColumn": [3,99],
-    "htmlSourceTool": [99],
-    "contentBuilderToolBasic": [99],
+    "htmlSourceTool": [4,99],
+    "contentBuilderToolBasic": [3,4,99],
     "formatting": [99],
     "cleanFormatting": [99],
     "fontName": [99],
     "fontSize": [99],
     "foreColor": [99],
     "backColor": [99],
-    "maximizeTool": [1,2,3,99]
+    "maximizeTool": [1,2,3,4,99]
 };
 
 for (var toolName in allTools) {
@@ -165,6 +177,12 @@ for (var toolName in allTools) {
             break;
         case "dataSelectorTool":
             tool = dataSelectorTool;
+            break;
+        case "youTubeTool":
+            tool = youTubeTool;
+            break;
+        case "translationsTool":
+            tool = translationsTool;
             break;
         default:
             tool = toolName;

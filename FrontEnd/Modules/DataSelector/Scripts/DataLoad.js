@@ -38,7 +38,7 @@
                                 return false;
                             }
 
-                            Wiser2.confirm({
+                            Wiser.confirm({
                                 title: "Data Selector",
                                 content: `Weet je zeker dat je de data selector met de naam '${chosenDataSelector.name}' wilt verwijderen? Deze actie is onomkeerbaar.`,
                                 messages: {
@@ -52,14 +52,14 @@
                                         dataSelectorPicker.select("");
                                         dataSelectorPicker.dataSource.read();
                                         window.processing.removeProcess("removeDataSelector");
-                                        Wiser2.showMessage({
+                                        Wiser.showMessage({
                                             title: "Data Selector verwijderd",
                                             content: "De data selector is succesvol verwijderd."
                                         });
                                     });
                                 } catch (e) {
                                     window.processing.removeProcess("removeDataSelector");
-                                    Wiser2.alert({
+                                    Wiser.alert({
                                         title: "Data Selector verwijderen mislukt",
                                         content: "Er is een fout opgetreden tijdens het verwijderen van de data selector. Probeer het a.u.b. nogmaals."
                                     });
@@ -89,7 +89,7 @@
                     transport: {
                         read: async (options) => {
                             try {
-                                const results = await Wiser2.api({ url: `${this.dataSelector.settings.wiserApiRoot}data-selectors` });
+                                const results = await Wiser.api({ url: `${this.dataSelector.settings.wiserApiRoot}data-selectors` });
                                 options.success(results);
                             } catch (exception) {
                                 console.error(exception);
@@ -100,7 +100,7 @@
                 }
             });
 
-            Wiser2.fixKendoDropDownScrolling(dropdown.getKendoDropDownList());
+            Wiser.fixKendoDropDownScrolling(dropdown.getKendoDropDownList());
         }
 
         showLoadDialog() {
@@ -116,12 +116,13 @@
             const firstConnectionBlock = connectionBlocksContainer.querySelector(".connectionBlock");
 
             window.processing.addProcess("dataSelectorLoad");
-            const response = await Wiser2.api({ 
+            const response = await Wiser.api({ 
                 url: `${this.dataSelector.settings.serviceRoot}/GET_DATA_SELECTOR_BY_ID`,
                 method: "GET",
                 data: { id: id }
             });
-            if (!Wiser2.validateArray(response)) {
+
+            if (!Wiser.validateArray(response)) {
                 window.processing.removeProcess("dataSelectorLoad");
                 return;
             }
@@ -161,12 +162,12 @@
             let mainEntityName;
             if (json.main.hasOwnProperty("entityName")) {
                 mainEntityName = json.main.entityName;
-            } else if (Wiser2.validateArray(json.main.entities)) {
+            } else if (Wiser.validateArray(json.main.entities)) {
                 mainEntityName = json.main.entities[0];
 
                 // Show a warning when multiple main entities were saved in this data selector.
                 if (json.main.entities.length > 1) {
-                    Wiser2.alert({
+                    Wiser.alert({
                         title: "Data Selector",
                         content: "Let op! Deze data selector was opgeslagen met meerdere hoofdentiteiten, maar dit wordt niet meer ondersteund. Alleen de eerste entiteit wordt geladen."
                     });
@@ -192,11 +193,11 @@
             await connection.updateAvailableProperties();
             connection.setAvailablePropertiesDataSources([mainFieldSelect]);
 
-            if (Wiser2.validateArray(json.main.fields)) {
+            if (Wiser.validateArray(json.main.fields)) {
                 const selectDetails = $(mainFieldSelect).getKendoMultiSelect();
                 this.setFieldsSelectValue(selectDetails, json.main.fields);
             }
-            if (Wiser2.validateArray(json.main.linkfields)) {
+            if (Wiser.validateArray(json.main.linkfields)) {
                 const widget = $(firstConnectionBlock.querySelector("select.select-details-links")).getKendoMultiSelect();
                 const dataSource = widget.dataSource;
                 json.main.linkfields.forEach((field) => {
@@ -212,7 +213,7 @@
             document.getElementById("exportLimit").value = json.limit || "0";
 
             // Set main scopes.
-            if (Wiser2.validateArray(json.main.scope)) {
+            if (Wiser.validateArray(json.main.scope)) {
                 this.createScopes(json.main.scope, { main: true }).then((scopeCreationResult) => {
                     const elementsToUpdate = scopeCreationResult.createdScopes.map(scope => scope.inputRow.querySelector("select.scope-property-select"));
                     connection.setAvailablePropertiesDataSources(elementsToUpdate);
@@ -225,7 +226,7 @@
                 this.dataSelector.setSelectedFieldsDataSources();
 
                 // Group by.
-                if (Wiser2.validateArray(json.groupBy)) {
+                if (Wiser.validateArray(json.groupBy)) {
                     const groupByFields = [];
                     const widget = $("#groupBy").getKendoMultiSelect();
                     const dataItems = widget.dataSource.view();
@@ -282,7 +283,7 @@
                 }
 
                 // Having.
-                if (Wiser2.validateArray(json.having)) {
+                if (Wiser.validateArray(json.having)) {
                     this.createScopes(json.having, {
                         context: this.dataSelector.container.querySelector("div.item.havingList"),
                         forHaving: true
@@ -290,7 +291,7 @@
                 }
 
                 // Order by.
-                if (Wiser2.validateArray(json.orderBy)) {
+                if (Wiser.validateArray(json.orderBy)) {
                     const orderByFields = [];
                     const widget = $("#sorting").getKendoMultiSelect();
                     const dataItems = widget.dataSource.view();
@@ -338,8 +339,16 @@
                     document.getElementById("showInExportModule").checked = savedData.showInExportModule;
                 }
 
+                if (typeof savedData.showInCommunicationModule === "boolean") {
+                    document.getElementById("showInCommunicationModule").checked = savedData.showInCommunicationModule;
+                }
+
                 if (typeof savedData.availableForRendering === "boolean") {
                     document.getElementById("availableForRendering").checked = savedData.availableForRendering;
+                }
+                
+                if (savedData.allowedRoles) {
+                    $("#allowedRoles").getKendoMultiSelect().value(savedData.allowedRoles.split(","));
                 }
 
                 // This is where the data selector will complete loading.
@@ -347,7 +356,7 @@
             };
 
             // Do connections now.
-            if (Wiser2.validateArray(json.connections)) {
+            if (Wiser.validateArray(json.connections)) {
                 // Connections first, rest later.
                 this.createConnections(json.connections).then(() => {
                     onConnectionsCreated();
@@ -359,7 +368,7 @@
         }
 
         async removeById(id) {
-            return await Wiser2.api({ 
+            return await Wiser.api({ 
                 url: `${this.dataSelector.settings.serviceRoot}/SET_DATA_SELECTOR_REMOVED`, 
                 method: "GET",
                 data: { itemId: id }
@@ -438,11 +447,11 @@
                             switch (scopeRow.operator) {
                                 case "is equal to":
                                 case "is not equal to":
-                                    inputRow.querySelector("div.scope-value-select").style.display = "";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "";
                                     inputRow.querySelector("div.free-input").style.display = "none";
                                     valueSelect.one("dataBound", (e) => {
                                         // Scopes might also have custom values that are not part of the data source.
-                                        if (Wiser2.validateArray(scopeRow.value, true)) {
+                                        if (Wiser.validateArray(scopeRow.value, true)) {
                                             scopeRow.value.forEach((item) => {
                                                 this.dataSelector.addOrSelectItem(e.sender, item);
                                             });
@@ -451,11 +460,11 @@
                                     break;
                                 case "is empty":
                                 case "is not empty":
-                                    inputRow.querySelector("div.scope-value-select").style.display = "none";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "none";
                                     inputRow.querySelector("div.free-input").style.display = "none";
                                     break;
                                 default:
-                                    inputRow.querySelector("div.scope-value-select").style.display = "none";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "none";
                                     inputRow.querySelector("div.free-input").style.display = "";
                                     freeInput.value = scopeRow.value;
                                     break;
@@ -502,11 +511,11 @@
                             switch (havingRow.operator) {
                                 case "is equal to":
                                 case "is not equal to":
-                                    inputRow.querySelector("div.scope-value-select").style.display = "";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "";
                                     inputRow.querySelector("div.free-input").style.display = "none";
                                     valueSelect.one("dataBound", (e) => {
                                         // Scopes might also have custom values that are not part of the data source.
-                                        if (Wiser2.validateArray(havingRow.value, true)) {
+                                        if (Wiser.validateArray(havingRow.value, true)) {
                                             havingRow.value.forEach((item) => {
                                                 this.dataSelector.addOrSelectItem(e.sender, item);
                                             });
@@ -515,11 +524,11 @@
                                     break;
                                 case "is empty":
                                 case "is not empty":
-                                    inputRow.querySelector("div.scope-value-select").style.display = "none";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "none";
                                     inputRow.querySelector("div.free-input").style.display = "none";
                                     break;
                                 default:
-                                    inputRow.querySelector("div.scope-value-select").style.display = "none";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "none";
                                     inputRow.querySelector("div.free-input").style.display = "";
                                     freeInput.value = havingRow.value;
                                     break;
@@ -569,7 +578,7 @@
                 };
 
                 connections.forEach((connection) => {
-                    if (!Wiser2.validateArray(connection.connectionrows)) {
+                    if (!Wiser.validateArray(connection.connectionrows)) {
                         // Skip row.
                         onConnectionDone();
                         return;
@@ -590,7 +599,7 @@
 
                     connection.connectionrows.forEach((connectionRow) => {
                         let direction = "down";
-                        if (Wiser2.validateArray(connectionRow.modes, true) && connectionRow.modes.includes("up")) {
+                        if (Wiser.validateArray(connectionRow.modes, true) && connectionRow.modes.includes("up")) {
                             direction = "up";
                         }
 
@@ -603,7 +612,7 @@
                             inputRow = connectionObject.addOrLinkedTo(section, direction);
                         }
 
-                        if (Wiser2.validateArray(connectionRow.modes, true) && connectionRow.modes.indexOf("optional") !== -1) {
+                        if (Wiser.validateArray(connectionRow.modes, true) && connectionRow.modes.indexOf("optional") !== -1) {
                             inputRow.querySelector(".optional-checkbox input[type='checkbox']").checked = true;
                         }
 
@@ -627,18 +636,18 @@
                                 const newConnectionObject = $(newConnectionBlock).data("connection");
 
                                 newConnectionObject.updateAvailableProperties($(newConnectionObject.container)).then(() => {
-                                    if (Wiser2.validateArray(connectionRow.scope)) {
+                                    if (Wiser.validateArray(connectionRow.scope)) {
                                         this.createScopes(connectionRow.scope, {
                                             context: inputRow.querySelector("div.connectionBlock")
                                         });
                                     }
 
-                                    if (Wiser2.validateArray(connectionRow.fields)) {
+                                    if (Wiser.validateArray(connectionRow.fields)) {
                                         newConnectionObject.setAvailablePropertiesDataSources([fieldsSelectElement]);
                                         this.setFieldsSelectValue(fieldsSelect, connectionRow.fields);
                                         fieldsSelect.trigger("change");
                                     }
-                                    if (Wiser2.validateArray(connectionRow.linkfields)) {
+                                    if (Wiser.validateArray(connectionRow.linkfields)) {
                                         const widget = $(inputRow.querySelector("select.select-details-links")).getKendoMultiSelect();
                                         const dataSource = widget.dataSource;
                                         connectionRow.linkfields.forEach((field) => {
@@ -652,7 +661,7 @@
 
                                     $(connectionObject.container).data("loading", false);
 
-                                    if (Wiser2.validateArray(connectionRow.connections)) {
+                                    if (Wiser.validateArray(connectionRow.connections)) {
                                         this.createConnections(connectionRow.connections, inputRow.querySelector("div.connectionBlock")).then(() => {
                                             onConnectionRowDone();
                                         });
@@ -683,7 +692,7 @@
                                     entityFound = true;
                                 }
 
-                                if (Wiser2.validateArray(connectionRow.itemids) && json.inputType === "item-linker") {
+                                if (Wiser.validateArray(connectionRow.itemids) && json.inputType === "item-linker") {
                                     treeView.one("dataBound", (tve) => {
                                         tve.sender.setCheckedItems(connectionRow.itemids, "id");
                                     });
@@ -703,7 +712,7 @@
                                     parentEntityType = this.dataSelector.selectedEntityType;
                                 }
 
-                                Wiser2.alert({
+                                Wiser.alert({
                                     title: "Data Selector koppeling fout",
                                     content: `Het laden van een koppeling is mislukt omdat de entiteit '<strong>${connectionRow.entity}</strong>' niet gevonden kon worden, of deze is niet meer gekoppeld aan de entiteit '<strong>${parentEntityType}</strong>'.`
                                 });
@@ -745,9 +754,16 @@
                         existingItem.set("dataType", field.dataType || "string");
                         existingItem.set("havingDataType", field.havingDataType || "string");
 
+                        // Support for older "languagecode" property, which is a single value.
+                        const languagesCodes = [];
                         if (field.hasOwnProperty("languagecode") && field.languagecode !== "") {
-                            existingItem.set("languageCode", field.languagecode);
+                            languagesCodes.push(field.languagecode);
                         }
+                        // Add the language codes in the "languageCodes" property, which should be an array.
+                        if (field.hasOwnProperty("languageCodes") && Array.isArray(field.languageCodes)) {
+                            languagesCodes.push(...field.languageCodes);
+                        }
+                        existingItem.set("languageCode", languagesCodes);
 
                         existingItem.set("aggregation", field.aggregationfunction);
                         existingItem.set("formatting", field.formatting);

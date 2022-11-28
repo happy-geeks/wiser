@@ -34,6 +34,11 @@ export const VALID_SUB_DOMAIN = "validSubDomain";
 
 // Users module.
 export const CHANGE_PASSWORD = "changePassword";
+export const START_UPDATE_TIME_ACTIVE_TIMER = "startUpdateTimeActiveTimer";
+export const STOP_UPDATE_TIME_ACTIVE_TIMER = "stopUpdateTimeActiveTimer";
+export const SET_ACTIVE_TIMER_INTERVAL = "setActiveTimerInterval";
+export const CLEAR_ACTIVE_TIMER_INTERVAL = "clearActiveTimerInterval";
+export const UPDATE_ACTIVE_TIME = "updateActiveTime";
 
 // Branches module.
 export const CREATE_BRANCH = "createBranch";
@@ -46,3 +51,10 @@ export const MERGE_BRANCH_ERROR = "mergeBranchError";
 export const GET_ENTITIES_FOR_BRANCHES = "getEntitiesForBranches";
 export const IS_MAIN_BRANCH = "isMainBranch";
 export const GET_BRANCH_CHANGES = "getBranchChanges"
+export const HANDLE_CONFLICT = "handleConflict";
+export const HANDLE_MULTIPLE_CONFLICTS = "handleMultipleConflicts";
+
+// Cache module.
+export const CLEAR_CACHE = "clearCache";
+export const CLEAR_CACHE_SUCCESS = "clearCacheSuccess";
+export const CLEAR_CACHE_ERROR = "clearCacheError";

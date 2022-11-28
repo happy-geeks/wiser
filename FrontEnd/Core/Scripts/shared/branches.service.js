@@ -36,7 +36,7 @@ export default class BranchesService extends BaseService {
             result.data = response.data;
         } catch (error) {
             result.success = false;
-            console.error("Error create customer", typeof(error.toJSON) === "function" ? error.toJSON() : error);
+            console.error("Error create branch", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             
             let errorMessage = error.message;
             if (error.response && error.response.data && error.response.data.error) {
@@ -114,7 +114,14 @@ export default class BranchesService extends BaseService {
                 startOn: data.startOn,
                 deleteAfterSuccessfulMerge: data.deleteAfterSuccessfulMerge,
                 entities: [],
-                settings: []
+                settings: [],
+                conflictSettings: data.conflicts.map(conflict => { 
+                    return { 
+                        id: conflict.id,
+                        objectId: conflict.objectId,
+                        acceptChange: conflict.acceptChange
+                    }; 
+                })
             };
             
             for (let key in data.entities) {

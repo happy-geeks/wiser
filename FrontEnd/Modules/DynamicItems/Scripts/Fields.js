@@ -1,4 +1,4 @@
-﻿import { Dates, Wiser2, Misc } from "../../Base/Scripts/Utils.js";
+﻿import {Dates, Wiser, Misc, Utils} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import { DateTime } from "luxon";
 
@@ -386,7 +386,7 @@ export class Fields {
 
             switch (dependency.dependsOnAction || this.base.dependencyActionsEnum.toggleVisibility) {
                 case this.base.dependencyActionsEnum.refresh: {
-                    const fields = container.closest(".k-tabstrip-wrapper").find(`[data-property-id='${dependency.propertyId}'].item`).find(this.fieldSelector);
+                    const fields = container.closest(".k-tabstrip").find(`[data-property-id='${dependency.propertyId}'].item`).find(this.fieldSelector);
 
                     for (let field of fields) {
                         field = $(field);
@@ -652,9 +652,11 @@ export class Fields {
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileId`).html(event.response[0].fileId);
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .title`).html(kendo.htmlEncode(event.response[0].title || "(leeg)"));
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileContainer`).data("fileId", event.response[0].fileId).data("itemId", event.response[0].itemId);
-        event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .name`).attr("href", `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(event.response[0].itemId)}/files/${encodeURIComponent(event.response[0].fileId)}/${encodeURIComponent(event.response[0].name)}?itemLinkId=${event.response[0].itemLinkId || 0}&entityType=${encodeURIComponent(event.response[0].entityType || "")}&linkType=${event.response[0].linkType || 0}`);
+        event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .name`).attr("href", `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(event.response[0].itemId)}/files/${encodeURIComponent(event.response[0].fileId)}/${encodeURIComponent(event.response[0].name)}?itemLinkId=${event.response[0].itemLinkId || 0}&entityType=${encodeURIComponent(event.response[0].entityType || "")}&linkType=${event.response[0].linkType || 0}&encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&isTest=${this.base.settings.isTestEnvironment}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`);
         let addedOn = (event.response[0].addedOn ? DateTime.fromISO(event.response[0].addedOn, { locale: "nl-NL" }) : DateTime.now()).toLocaleString(Dates.LongDateTimeFormat);
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileDate`).html(kendo.htmlEncode(addedOn));
+        event.sender.wrapper.find(".editTitle").click(this.onUploaderEditTitleClick.bind(this));
+        event.sender.wrapper.find(".editName").click(this.onUploaderEditNameClick.bind(this));
     }
 
     /**
@@ -724,7 +726,7 @@ export class Fields {
             searchModuleId = moduleId;
         }
 
-        const result = await Wiser2.api({
+        const result = await Wiser.api({
             url: `${this.base.settings.serviceRoot}/SEARCH_ITEMS?id=${encodeURIComponent(itemId)}&moduleid=${encodeURIComponent(searchModuleId)}&entityType=${encodeURIComponent(options.entityType)}&search=${encodeURIComponent(event.filter.value)}&searchInTitle=${encodeURIComponent(searchInTitle)}&searchFields=${encodeURIComponent(searchFields.join())}&searchEverywhere=${encodeURIComponent(searchEverywhere)}`,
             method: "GET",
             contentType: "application/json",
@@ -745,7 +747,7 @@ export class Fields {
         const containerData = container.data();
         const value = await kendo.prompt("", containerData.name);
         
-        await Wiser2.api({
+        await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/rename/${encodeURIComponent(value)}?itemLinkId=${encodeURIComponent(containerData.itemLinkId || 0)}&entityType=${encodeURIComponent(containerData.entityType || "")}&linkType=${containerData.linkType || 0}`,
             method: "PUT",
             contentType: "application/json",
@@ -765,7 +767,7 @@ export class Fields {
         const containerData = container.data();
         const value = await kendo.prompt("", containerData.title);
 
-        await Wiser2.api({
+        await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(containerData.itemId)}/files/${encodeURIComponent(containerData.fileId)}/title/${encodeURIComponent(value)}?itemLinkId=${containerData.itemLinkId || 0}&entityType=${encodeURIComponent(containerData.entityType || "")}&linkType=${containerData.linkType || 0}`,
             method: "PUT",
             contentType: "application/json",
@@ -1025,7 +1027,7 @@ export class Fields {
                 const itemId = fileData.itemId || fileContainer.data("itemId");
                 const itemLinkId = fileData.itemLinkId || fileContainer.data("itemLinkId") || 0;
 
-                await Wiser2.api({
+                await Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/files/${encodeURIComponent(fileId)}?itemLinkId=${encodeURIComponent(itemLinkId || 0)}&entityType=${encodeURIComponent(containerData.entityType || "")}&linkType=${containerData.linkType || 0}`,
                     method: "DELETE",
                     contentType: "application/json",
@@ -1075,13 +1077,13 @@ export class Fields {
                                 const newTitle = dialogElement.find("input[name=title]").val();
 
                                 const promises = [
-                                    Wiser2.api({
+                                    Wiser.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/rename/${encodeURIComponent(newFileName)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                                         method: "PUT",
                                         contentType: "application/json",
                                         dataType: "JSON"
                                     }),
-                                    Wiser2.api({
+                                    Wiser.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/title/${encodeURIComponent(newTitle)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                                         method: "PUT",
                                         contentType: "application/json",
@@ -1122,13 +1124,13 @@ export class Fields {
         event.preventDefault();
         // If event.currentTarget is not undefined, it means the user clicked the delete button manually.
         if (event.currentTarget) {
-            await Wiser2.showConfirmDialog(`Weet u zeker dat u deze afbeelding wilt verwijderen?`);
+            await Wiser.showConfirmDialog(`Weet u zeker dat u deze afbeelding wilt verwijderen?`);
 
             const imageContainer = $(event.currentTarget).closest(".product");
             const data = imageContainer.data();
 
             try {
-                await Wiser2.api({
+                await Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.encryptedItemId || data.itemId)}/files/${encodeURIComponent(data.imageId || data.fileId)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                     method: "DELETE",
                     contentType: "application/json",
@@ -1155,7 +1157,7 @@ export class Fields {
             const itemLinkId = imageContainer.data("itemLinkId") || 0;
             const data = imageContainer.data();
 
-            await Wiser2.api({
+            await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/files/${encodeURIComponent(fileId)}?itemLinkId=${encodeURIComponent(itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                 method: "DELETE",
                 contentType: "application/json",
@@ -1360,7 +1362,7 @@ export class Fields {
                                     return;
                                 }
 
-                                $(event.currentTarget).next().find(".k-primary").trigger("click");
+                                $(event.currentTarget).next().find(".k-primary, .k-button-solid-primary").trigger("click");
                             });
 
                             // Build the options object for the kendo component.
@@ -1385,7 +1387,7 @@ export class Fields {
                                             }
                                         }
                                     }
-                                    const queryResult = await Wiser2.api({
+                                    const queryResult = await Wiser.api({
                                         method: "POST",
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(options.defaultValueQueryId)}`,
                                         data: JSON.stringify(extraData),
@@ -1409,7 +1411,7 @@ export class Fields {
                                     transport: {
                                         read: async (kendoOptions) => {
                                             try {
-                                                const queryResult = await Wiser2.api({
+                                                const queryResult = await Wiser.api({
                                                     method: "POST",
                                                     url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(queryId)}`,
                                                     contentType: "application/json"
@@ -1438,7 +1440,7 @@ export class Fields {
                                         options.dataSource = {
                                             transport: {
                                                 read: (options) => {
-                                                    Wiser2.api({
+                                                    Wiser.api({
                                                         url: `${this.base.settings.wiserApiRoot}users`,
                                                         dataType: "json",
                                                         method: "GET",
@@ -1622,7 +1624,7 @@ export class Fields {
             // Then execute the actions, using the entered user parameters if there are any.
             try {
                 const executeQuery = () => {
-                    return Wiser2.api({
+                    return Wiser.api({
                         method: "POST",
                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(mainItemDetails.encryptedId || mainItemDetails.encrypted_id || mainItemDetails.encryptedid)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.queryId || this.base.settings.zeroEncrypted)}&itemLinkId=${encodeURIComponent(mainItemDetails.linkId || mainItemDetails.link_id || 0)}`,
                         data: JSON.stringify(userParametersWithValues),
@@ -1732,7 +1734,7 @@ export class Fields {
                             }
                         }
 
-                        let finalUrl = Wiser2.doWiserItemReplacements(action.url, mainItemDetails, true);
+                        let finalUrl = Wiser.doWiserItemReplacements(action.url, mainItemDetails, true);
                         if (!selectedItems || !selectedItems.length) {
                             await openUrl(finalUrl);
                             break;
@@ -1801,7 +1803,7 @@ export class Fields {
                             }
                         }
 
-                        let finalUrl = Wiser2.doWiserItemReplacements(action.url, mainItemDetails, true);
+                        let finalUrl = Wiser.doWiserItemReplacements(action.url, mainItemDetails, true);
                         await openUrl(finalUrl);
 
                         break;
@@ -1894,9 +1896,9 @@ export class Fields {
                         if (queryActionResult) {
                             windowItemId = windowItemId.replace(/{itemId}/gi, queryActionResult.itemId || 0);
                             windowLinkId = windowLinkId.replace(/{linkId}/gi, queryActionResult.linkId || 0);
-                            windowLinkId = windowLinkId.replace(/{linkType}/gi, queryActionResult.linkType || queryActionResult.linkTypeNumber || 0);
+                            windowLinkType = windowLinkType.replace(/{linkType}/gi, queryActionResult.linkType || queryActionResult.linkTypeNumber || 0);
                         }
-                        windowItemId = Wiser2.doWiserItemReplacements(windowItemId, mainItemDetails);
+                        windowItemId = Wiser.doWiserItemReplacements(windowItemId, mainItemDetails);
 
                         if (!windowItemId) {
                             // We can't open a window with an item if we have no item ID, so show an error.
@@ -1980,7 +1982,7 @@ export class Fields {
                             if (queryActionResult) {
                                 itemIdForUrl = itemIdForUrl.replace(/{itemId}/gi, queryActionResult.itemId || 0);
                             }
-                            itemIdForUrl = Wiser2.doWiserItemReplacements(itemIdForUrl, mainItemDetails);
+                            itemIdForUrl = Wiser.doWiserItemReplacements(itemIdForUrl, mainItemDetails);
                             url += `&itemId=${itemIdForUrl}`;
                         } else {
                             url += `&itemId=${encodeURIComponent(mainItemDetails.encryptedId)}`;
@@ -2040,7 +2042,7 @@ export class Fields {
                             }
                         }
                         if (action.emailDataQueryId) {
-                            emailData = await Wiser2.api({
+                            emailData = await Wiser.api({
                                 method: "POST",
                                 url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.emailDataQueryId)}&itemLinkId=${encodeURIComponent(linkId)}`,
                                 data: JSON.stringify($.extend(extraParameters, userParametersWithValues)),
@@ -2131,7 +2133,7 @@ export class Fields {
                         if (kendoWindow.length === 0) {
                             // The opened item is in the main window.
                             const previouslySelectedTab = this.base.mainTabStrip.select().index();
-                            await this.base.loadItem(this.base.settings.iframeMode ? this.base.settings.initialItemId : this.base.selectedItem.id, previouslySelectedTab);
+                            await this.base.loadItem(this.base.settings.initialItemId ? this.base.settings.initialItemId : this.base.selectedItem.id, previouslySelectedTab);
                         } else {
                             // The opened item is in a window.
                             const previouslySelectedTab = kendoWindow.find(".tabStripPopup").data("kendoTabStrip").select().index();
@@ -2180,7 +2182,7 @@ export class Fields {
                                 await combineValuesFromAllSelectedItemsAndAddToUserParameters();
                             }
 
-                            const apiCallResult = await Wiser2.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, userParametersWithValues);
+                            const apiCallResult = await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, userParametersWithValues);
                         } catch (apiCallException) {
                             if (typeof apiCallException === "string") {
                                 kendo.alert(apiCallException);
@@ -2205,7 +2207,7 @@ export class Fields {
                         }
 
                         // Send a pusher to notify the receiving user.
-                        await Wiser2.api({
+                        await Wiser.api({
                             method: "POST",
                             url: `${this.base.settings.wiserApiRoot}pusher/message`,
                             contentType: "application/json",
@@ -2306,6 +2308,7 @@ export class Fields {
                 previewWindow.one("close", (event) => resolve());
 
                 const container = previewWindow.element.find("div.k-content-frame");
+                console.log("container", container);
 
                 // Save the email data in the container, otherwise the email popup will show out dated data after opening it for a second time.
                 container.data("emailData", emailData);
@@ -2332,7 +2335,7 @@ export class Fields {
                     const url = urls[i];
 
                     // Execute the data selector and get the HTML result.
-                    const dataSelectorResult = await Wiser2.api({
+                    const dataSelectorResult = await Wiser.api({
                         method: "POST",
                         contentType: "application/json",
                         url: url
@@ -2454,14 +2457,19 @@ export class Fields {
                             pdfToHtmlData.header = "";
                             pdfToHtmlData.footer = "";
 
-                            if (currentAction.pdfDocumentOptionsPropertyName) {
-                                pdfToHtmlData.documentOptions = currentTemplateDetails.property_[currentAction.pdfDocumentOptionsPropertyName] || "";
-                            }
-                            if (currentAction.pdfHeaderPropertyName) {
-                                pdfToHtmlData.header = currentTemplateDetails.property_[currentAction.pdfHeaderPropertyName] || "";
-                            }
-                            if (currentAction.pdfFooterPropertyName) {
-                                pdfToHtmlData.footer = currentTemplateDetails.property_[currentAction.pdfFooterPropertyName] || "";
+                            if (currentTemplateDetails.details && currentTemplateDetails.details.length > 0) {
+                                if (currentAction.pdfDocumentOptionsPropertyName) {
+                                    const documentOptions = currentTemplateDetails.details.find(detail => detail.key === currentAction.pdfDocumentOptionsPropertyName);
+                                    pdfToHtmlData.documentOptions = documentOptions ? (documentOptions.value || "") : "";
+                                }
+                                if (currentAction.pdfHeaderPropertyName) {
+                                    const header = currentTemplateDetails.details.find(detail => detail.key === currentAction.pdfHeaderPropertyName);
+                                    pdfToHtmlData.header = header ? (header.value || "") : "";
+                                }
+                                if (currentAction.pdfFooterPropertyName) {
+                                    const footer = currentTemplateDetails.details.find(detail => detail.key === currentAction.pdfFooterPropertyName);
+                                    pdfToHtmlData.footer = footer ? (footer.value || "") : "";
+                                }
                             }
 
                             const process = `convertHtmlToPdf_${Date.now()}`;
@@ -2558,7 +2566,7 @@ export class Fields {
                                                             saveInDatabase: true
                                                         })
                                                     };
-                                                    promises.push(Wiser2.api(ajaxOptions));
+                                                    promises.push(Wiser.api(ajaxOptions));
                                                 }
 
                                                 Promise.all(promises).catch((error) => {
@@ -2567,10 +2575,10 @@ export class Fields {
                                                     kendo.alert("Er is iets fout gegaan met het genereren van de PDF. Probeer het a.u.b. nogmaals of neem contact op met ons");
                                                 }).then((results) => {
                                                     const allFiles = dialogElement.find("input[name=files]").data("kendoUpload").getFiles();
-                                                    const wiser2FileAttachments = allFiles.filter(file => file.fileId > 0).map(file => file.fileId) || [];
+                                                    const wiserFileAttachments = allFiles.filter(file => file.fileId > 0).map(file => file.fileId) || [];
                                                 
                                                     for (let fileId of results) {
-                                                        wiser2FileAttachments.push(parseInt(fileId.replace(/\"/g, "")));
+                                                        wiserFileAttachments.push(parseInt(fileId.replace(/\"/g, "")));
                                                     }
 
                                                     const success = () => {
@@ -2596,7 +2604,7 @@ export class Fields {
 
                                                         const queryPromises = [];
                                                         for (let selectedItem of selectedItems) {
-                                                            queryPromises.push(Wiser2.api({
+                                                            queryPromises.push(Wiser.api({
                                                                 method: "POST",
                                                                 url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.dataItem.encryptedId)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.executeQueryAfterEmail)}&itemLinkId=${encodeURIComponent(selectedItem.dataItem.linkId)}`,
                                                                 data: JSON.stringify(userParametersWithValues),
@@ -2612,8 +2620,8 @@ export class Fields {
                                                             loader.removeClass("loading");
                                                         });
                                                     };
-                                                
-                                                    Wiser2.api({
+
+                                                    Wiser.api({
                                                         url: `${this.base.settings.wiserApiRoot}communications/email`,
                                                         method: "POST",
                                                         contentType: "application/json",
@@ -2627,7 +2635,7 @@ export class Fields {
                                                             cc: [mailDialog.element.find("input[name=cc]").val()],
                                                             bcc: [mailDialog.element.find("input[name=bcc]").val()],
                                                             subject: mailDialog.element.find("input[name=subject]").val(),
-                                                            wiserItemFiles: wiser2FileAttachments,
+                                                            wiserItemFiles: wiserFileAttachments,
                                                             content: emailBodyEditor.value()
                                                         })
                                                     }).catch((jqXHR, textStatus, errorThrown) => {
@@ -2802,7 +2810,7 @@ export class Fields {
 
     /**
      * Event that gets called when the user executes the custom action for adding an image from Wiser to the HTML editor.
-     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser 2.0 is being loaded in an iframe.
+     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
      * @param {any} event The event from the execute action.
      * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
      * @param {any} codeMirror The CodeMirror editor where the action is executed in.
@@ -2819,7 +2827,7 @@ export class Fields {
 
     /**
      * Event that gets called when the user executes the custom action for adding a link to a file from Wiser to the HTML editor.
-     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser 2.0 is being loaded in an iframe.
+     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
      * @param {any} event The event from the execute action.
      * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
      * @param {any} codeMirror The CodeMirror editor where the action is executed in.
@@ -2836,7 +2844,7 @@ export class Fields {
 
     /**
      * Event that gets called when the user executes the custom action for adding a template from Wiser to the HTML editor.
-     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser 2.0 is being loaded in an iframe.
+     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
      * @param {any} event The event from the execute action.
      * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
      * @param {any} codeMirror The CodeMirror editor where the action is executed in.
@@ -2862,7 +2870,12 @@ export class Fields {
         const textArea = htmlWindow.find("textarea").val(editor.value());
         // Prettify code from minified text.
         const pretty = await require('pretty');
-        textArea[0].value = pretty(textArea[0].value, { ocd: false });
+        textArea[0].value = pretty(textArea[0].value, { 
+            ocd: false,
+            indent_size: 4,
+            unformatted: [],
+            inline: []
+        });
         let codeMirrorInstance;
 
         htmlWindow.kendoWindow({
@@ -2914,7 +2927,7 @@ export class Fields {
             icon: "template-manager"
         });
 
-        htmlWindow.find(".k-primary").kendoButton({
+        htmlWindow.find(".k-primary, .k-button-solid-primary").kendoButton({
             click: () => {
                 editor.value(codeMirrorInstance.getValue());
                 kendoWindow.close();
@@ -2934,12 +2947,19 @@ export class Fields {
      * @param {any} event The event from the execute action.
      * @param {any} editor The HTML editor where the action is executed in.
      * @param {any} itemId The ID of the current item.
+     * @param {string} propertyName The property name that contains the HTML of the item.
+     * @param {string} languageCode The language code of the property to use for the HTML.
+     * @param {string} contentBuilderMode The mode in which to put the ContentBuilder.
      */
-    async onHtmlEditorContentBuilderExec(event, editor, itemId, propertyName, languageCode) {
+    async onHtmlEditorContentBuilderExec(event, editor, itemId, propertyName, languageCode, contentBuilderMode) {
         const htmlWindow = $("#contentBuilderWindow").clone(true);
 
         const iframe = htmlWindow.find("iframe");
-        iframe.attr("src", `/Modules/ContentBuilder?wiserItemId=${encodeURIComponent(itemId)}&propertyName=${encodeURIComponent(propertyName)}&languageCode=${encodeURIComponent(languageCode || "")}`);
+        let moduleName = "ContentBuilder";
+        if (contentBuilderMode === "ContentBox") {
+            moduleName = "ContentBox";
+        }
+        iframe.attr("src", `/Modules/${moduleName}?wiserItemId=${encodeURIComponent(itemId)}&propertyName=${encodeURIComponent(propertyName)}&languageCode=${encodeURIComponent(languageCode || "")}&userId=${encodeURIComponent(this.base.settings.userId)}`);
 
         htmlWindow.kendoWindow({
             width: "100%",
@@ -2953,9 +2973,11 @@ export class Fields {
 
         const kendoWindow = htmlWindow.data("kendoWindow").maximize().open();
 
-        htmlWindow.find(".k-primary").kendoButton({
+        htmlWindow.find(".k-primary, .k-button-solid-primary").kendoButton({
             click: () => {
-                const html = iframe[0].contentWindow.main.vueApp.contentBuilder.html();
+                const html = typeof(iframe[0].contentWindow.main.vueApp.contentBox) === "undefined" 
+                    ? iframe[0].contentWindow.main.vueApp.contentBuilder.html()
+                    : iframe[0].contentWindow.main.vueApp.contentBox.html();
                 editor.value(html);
 
                 const container = editor.element.closest(".entity-container");
@@ -3071,7 +3093,7 @@ export class Fields {
                     transport: {
                         read: async (options) => {
                             try {
-                                const results = await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}data-selectors?forRendering=true` });
+                                const results = await Wiser.api({ url: `${this.base.settings.wiserApiRoot}data-selectors?forRendering=true` });
                                 options.success(results);
                             } catch (exception) {
                                 console.error(exception);
@@ -3090,7 +3112,7 @@ export class Fields {
                     transport: {
                         read: async (options) => {
                             try {
-                                const results = await Wiser2.api({ url: `${this.base.settings.wiserApiRoot}data-selectors/templates` });
+                                const results = await Wiser.api({ url: `${this.base.settings.wiserApiRoot}data-selectors/templates` });
                                 options.success(results);
                             } catch (exception) {
                                 console.error(exception);
@@ -3122,7 +3144,7 @@ export class Fields {
                             }
 
                             let html = `<div class="dynamic-content" data-selector-id="${selectedDataSelector}" template-id="${selectedTemplate}"><h2>Data selector '${dataSelectorDropDown.text()}' met template '${dataSelectorTemplateDropDown.text()}'</h2></div>`;
-                            Wiser2.api({
+                            Wiser.api({
                                 url: `${this.base.settings.wiserApiRoot}data-selectors/preview-for-html-editor`,
                                 method: "POST",
                                 contentType: "application/json",
@@ -3152,8 +3174,143 @@ export class Fields {
     }
 
     /**
+     * Event that gets called when the user executes the custom action for embedding a youtube video.
+     * @param {any} event The event from the execute action.
+     * @param {any} editor The HTML editor where the action is executed in.
+     */
+    async onHtmlEditorYouTubeExec(event, editor) {
+        try {
+            const dialogElement = $("#youTubeDialog");
+            let youtubeDialog = dialogElement.data("kendoDialog");
+
+            if (youtubeDialog) {
+                youtubeDialog.destroy();
+            }
+
+            youtubeDialog = dialogElement.kendoDialog({
+                width: "900px",
+                title: "YouTube video invoegen",
+                closable: false,
+                modal: true,
+                actions: [
+                    {
+                        text: "Annuleren"
+                    },
+                    {
+                        text: "Invoegen",
+                        primary: true,
+                        action: (event) => {
+                            const videoId = dialogElement.find("#youTubeVideoId").val();
+                            const width = dialogElement.find("#youTubeVideoWidth").val();
+                            const height = dialogElement.find("#youTubeVideoHeight").val();
+                            if (!videoId || !width || !height) {
+                                kendo.alert("Vul a.u.b. een video-ID, hoogte en breedte in.")
+                                return false;
+                            }
+                            
+                            const queryString = {
+                                rel: dialogElement.find("#youTubeShowRelatedVideos").prop("checked"),
+                                autoplay: dialogElement.find("#youTubeAutoPlay").prop("checked")
+                            };
+                            
+                            let fullScreenAttribute = "";
+                            if (dialogElement.find("#youTubeAllowFullScreen").prop("checked")) {
+                                fullScreenAttribute = 'allowfullscreen="allowfullscreen"';
+                            }
+
+                            let html = `<iframe width="${width}" height="${height}" src="//www.youtube.com/embed/${videoId}${Utils.toQueryString(queryString, true)}" frameborder="0" ${fullScreenAttribute}></iframe>`;
+
+                            const originalOptions = editor.options.pasteCleanup;
+                            editor.options.pasteCleanup.none = true;
+                            editor.options.pasteCleanup.span = false;
+                            editor.exec("inserthtml", { value: html });
+                            editor.options.pasteCleanup.none = originalOptions.none;
+                            editor.options.pasteCleanup.span = originalOptions.span;
+                        }
+                    }
+                ]
+            }).data("kendoDialog");
+
+            youtubeDialog.open();
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+        }
+    }
+
+    /**
+     * Event that gets called when the user executes the custom action for entering a translation variable.
+     * @param {any} event The event from the execute action.
+     * @param {any} editor The HTML editor where the action is executed in.
+     */
+    async onHtmlEditorTranslationExec(event, editor) {
+        try {
+            const dialogElement = $("#translationsDialog");
+            let translationsDialog = dialogElement.data("kendoDialog");
+
+            if (translationsDialog) {
+                translationsDialog.destroy();
+            }
+
+            const translationsDropDown = dialogElement.find("#translationsDropDown").kendoDropDownList({
+                optionLabel: "Selecteer een vertaalwoord",
+                dataTextField: "value",
+                dataValueField: "key",
+                dataSource: {
+                    transport: {
+                        read: async (options) => {
+                            try {
+                                const results = await Wiser.api({ url: `${this.base.settings.wiserApiRoot}languages/translations` });
+                                options.success(results);
+                            } catch (exception) {
+                                console.error(exception);
+                                options.error(exception);
+                            }
+                        }
+                    }
+                }
+            }).data("kendoDropDownList");
+
+            translationsDialog = dialogElement.kendoDialog({
+                width: "900px",
+                title: "Vertaalwoord invoegen",
+                closable: false,
+                modal: true,
+                actions: [
+                    {
+                        text: "Annuleren"
+                    },
+                    {
+                        text: "Invoegen",
+                        primary: true,
+                        action: (event) => {
+                            const selectedTranslation = translationsDropDown.value();
+                            if (!selectedTranslation) {
+                                kendo.alert("Kies a.u.b. een vertaalwoord.")
+                                return false;
+                            }
+
+                            const originalOptions = editor.options.pasteCleanup;
+                            editor.options.pasteCleanup.none = true;
+                            editor.options.pasteCleanup.span = false;
+                            editor.exec("inserthtml", { value: `[T{${selectedTranslation}}]` });
+                            editor.options.pasteCleanup.none = originalOptions.none;
+                            editor.options.pasteCleanup.span = originalOptions.span;
+                        }
+                    }
+                ]
+            }).data("kendoDialog");
+
+            translationsDialog.open();
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+        }
+    }
+
+    /**
      * Event that gets called when the user double clicks a dynamic content block in a HTML editor.
-     * This will open the dynamicHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser 2.0 is being loaded in an iframe.
+     * This will open the dynamicHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
      * @param {any} event The event from the execute action.
      * @param {any} editor The HTML editor where the action is executed in.
      * @param {any} itemId The ID of the current item.
@@ -3241,7 +3398,7 @@ export class Fields {
      * @returns {*} The HTML contents of the editor.
      */
     onHtmlEditorSerialization(html) {
-        return html.replace(/\[(>|&gt;)\]([\w]+)\[(<|&lt;)\]/g, "{$2}");
+        return html.replace(/\[(>|&gt;)\]([\w:?]+)\[(<|&lt;)\]/g, "{$2}");
     }
 
     /**
@@ -3250,7 +3407,7 @@ export class Fields {
      * @returns {*} The HTML contents of the editor.
      */
     onHtmlEditorDeserialization(html) {
-        return html.replace(/{([\w]+)}/g, "[>]$1[<]");
+        return html.replace(/{([\w:?]+)}/g, "[>]$1[<]");
     }
 
     /**
@@ -3353,7 +3510,7 @@ export class Fields {
      * @returns {any} A promise.
      */
     updateWidth(propertyId, width) {
-        return Wiser2.api({
+        return Wiser.api({
             url: `${this.base.settings.wiserApiRoot}properties/${encodeURIComponent(propertyId)}/width/${encodeURIComponent(width)}`,
             method: "PUT",
             contentType: "application/json"

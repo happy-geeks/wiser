@@ -1,7 +1,7 @@
 ﻿"use strict";
 
-import { TrackJS } from "trackjs";
-import { createApp, defineAsyncComponent } from "vue";
+import {TrackJS} from "trackjs";
+import {createApp, defineAsyncComponent} from "vue";
 import * as axios from "axios";
 
 import UsersService from "./shared/users.service";
@@ -14,31 +14,39 @@ import store from "./store/index";
 import login from "./components/login";
 import taskAlerts from "./components/task-alerts";
 
-import { DropDownList } from "@progress/kendo-vue-dropdowns";
+import {DropDownList} from "@progress/kendo-vue-dropdowns";
 import WiserDialog from "./components/wiser-dialog";
 
 import "../scss/main.scss";
 import "../scss/task-alerts.scss";
 
 import {
+    ACTIVATE_MODULE,
     AUTH_LOGOUT,
     AUTH_REQUEST,
-    OPEN_MODULE,
-    CLOSE_MODULE,
-    CLOSE_ALL_MODULES,
-    ACTIVATE_MODULE,
-    LOAD_ENTITY_TYPES_OF_ITEM_ID,
-    GET_CUSTOMER_TITLE,
-    TOGGLE_PIN_MODULE,
     CHANGE_PASSWORD,
+    CLOSE_ALL_MODULES,
+    CLOSE_MODULE,
     CREATE_BRANCH,
     CREATE_BRANCH_ERROR,
-    GET_BRANCHES, 
-    MERGE_BRANCH,
+    GET_BRANCH_CHANGES,
+    GET_BRANCHES,
+    GET_CUSTOMER_TITLE,
     GET_ENTITIES_FOR_BRANCHES,
+    HANDLE_CONFLICT,
+    HANDLE_MULTIPLE_CONFLICTS,
     IS_MAIN_BRANCH,
-    GET_BRANCH_CHANGES
+    LOAD_ENTITY_TYPES_OF_ITEM_ID,
+    MERGE_BRANCH,
+    OPEN_MODULE,
+    TOGGLE_PIN_MODULE,
+    CLEAR_CACHE,
+    CLEAR_CACHE_ERROR,
+    START_UPDATE_TIME_ACTIVE_TIMER,
+    STOP_UPDATE_TIME_ACTIVE_TIMER,
+    UPDATE_ACTIVE_TIME
 } from "./store/mutation-types";
+import CacheService from "./shared/cache.service";
 
 (() => {
     class Main {
@@ -51,11 +59,13 @@ import {
             this.customersService = new CustomersService(this);
             this.itemsService = new ItemsService(this);
             this.branchesService = new BranchesService(this);
+            this.cacheService = new CacheService(this);
 
             // Fire event on page ready for direct actions
             document.addEventListener("DOMContentLoaded", () => {
                 this.onPageReady();
             });
+            window.addEventListener("message", this.handlePostMessage.bind(this));
         }
 
         /**
@@ -110,6 +120,18 @@ import {
             this.initVue();
         }
 
+        handlePostMessage(event) {
+            if (!event.data || !event.data.action) {
+                return;
+            }
+
+            switch (event.data.action) {
+                case "OpenModule":
+                    this.vueApp.openModule(event.data.actionData.moduleId);
+                    break;
+            }
+        }
+
         initVue() {
             this.vueApp = createApp({
                 data: () => {
@@ -129,7 +151,7 @@ import {
                             startOn: null,
                             entities: {
                                 all: {
-                                    mode: -1
+                                    mode: 0
                                 }
                             }
                         },
@@ -155,7 +177,8 @@ import {
                                     update: false,
                                     delete: false
                                 }
-                            }
+                            },
+                            conflicts: []
                         },
                         openBranchTypes: [
                             { id: "wiser", name:  "Wiser" },
@@ -169,6 +192,11 @@ import {
                             selectedBranchType: {
                                 id: ""
                             }
+                        },
+                        batchHandleConflictSettings: { },
+                        clearCacheSettings: {
+                            areas: [],
+                            url: null
                         }
                     };
                 },
@@ -243,6 +271,9 @@ import {
                     branches() {
                         return this.$store.state.branches.branches;
                     },
+                    mergeBranchResult() {
+                        return this.$store.state.branches.mergeBranchResult;
+                    },
                     mergeBranchError() {
                         return this.$store.state.branches.mergeBranchError;
                     },
@@ -289,6 +320,68 @@ import {
                         return this.$store.state.branches.branchChanges.settings.reduce((accumulator, entity) => {
                             return accumulator + entity.deleted;
                         }, 0);
+                    },
+                    totalAmountOfMergeConflicts() {
+                        if (!this.$store.state.branches.mergeBranchResult || !this.$store.state.branches.mergeBranchResult.conflicts) {
+                            return 0;
+                        }
+                        
+                        return this.$store.state.branches.mergeBranchResult.conflicts.length;
+                    },
+                    totalAmountOfApprovedMergeConflicts() {
+                        if (!this.$store.state.branches.mergeBranchResult || !this.$store.state.branches.mergeBranchResult.conflicts) {
+                            return 0;
+                        }
+
+                        return this.$store.state.branches.mergeBranchResult.conflicts.filter(r => r.acceptChange === true).length;
+                    },
+                    areAllConflictsHandled() {
+                        if (!this.$store.state.branches.mergeBranchResult || !this.$store.state.branches.mergeBranchResult.conflicts) {
+                            return true;
+                        }
+
+                        return this.$store.state.branches.mergeBranchResult.conflicts.filter(r => r.acceptChange !== true && r.acceptChange !== false).length === 0;
+                    },
+                    clearCacheError() {
+                        return this.$store.state.cache.clearCacheError;
+                    },
+                    openBranchUrl() {
+                        if (!this.openBranchSettings || !this.openBranchSettings.selectedBranchType || !this.openBranchSettings.selectedBranchType.id) {
+                            return "";
+                        }
+
+                        if (this.openBranchSettings.selectedBranchType.id === 'website' && !this.openBranchSettings.websiteUrl) {
+                            return "";
+                        }
+
+                        if (!this.openBranchSettings || !this.openBranchSettings.selectedBranch|| !this.openBranchSettings.selectedBranch.id) {
+                            return "";
+                        }
+
+                        let url;
+                        switch (this.openBranchSettings.selectedBranchType.id) {
+                            case "website":
+                                url = this.openBranchSettings.websiteUrl;
+                                if (!url.startsWith("http")) {
+                                    url = `https://${url}`
+                                }
+
+                                if (!url.endsWith("/")) {
+                                    url += "/";
+                                }
+
+                                url = `${url.substring(0, url.indexOf("/", 8))}/branches/${encodeURIComponent(this.openBranchSettings.selectedBranch.database.databaseName)}`;
+
+                                break;
+                            case "wiser":
+                                url = `https://${this.openBranchSettings.selectedBranch.subDomain}.${this.appSettings.currentDomain}`;
+
+                                break;
+                            default:
+                                return "";
+                        }
+
+                        return url;
                     }
                 },
                 components: {
@@ -365,6 +458,9 @@ import {
                     },
 
                     logout() {
+                        this.$store.dispatch(STOP_UPDATE_TIME_ACTIVE_TIMER);
+                        // Update the user's active time one last time.
+                        this.$store.dispatch(UPDATE_ACTIVE_TIME);
                         this.$store.dispatch(CLOSE_ALL_MODULES);
                         this.$store.dispatch(AUTH_LOGOUT);
                     },
@@ -380,7 +476,31 @@ import {
                     },
 
                     closeModule(module) {
-                        this.$store.dispatch(CLOSE_MODULE, module);
+                        let timeout = null;
+                        
+                        const callback = () => {
+                            if (timeout) {
+                                clearTimeout(timeout);
+                            }
+                            
+                            this.$store.dispatch(CLOSE_MODULE, module);
+                        };
+                        
+                        // In case the module does not handle the moduleClosing event.
+                        timeout = setTimeout(callback, 800);
+                        
+                        if (!module || !module.id) {
+                            callback();
+                            return;
+                        }
+                        
+                        const moduleIframe = document.getElementById(module.id);
+                        if (!moduleIframe || !moduleIframe.contentWindow || !moduleIframe.contentWindow.document) {
+                            callback();
+                            return;
+                        }
+                        
+                        moduleIframe.contentWindow.document.dispatchEvent(new CustomEvent("moduleClosing", { detail: callback }));
                     },
 
                     setActiveModule(event, moduleId) {
@@ -401,8 +521,7 @@ import {
                         });
                     },
 
-                    openWiserIdPrompt(event) {
-                        event.preventDefault();
+                    openWiserIdPrompt() {
                         this.$refs.wiserIdPrompt.open();
                     },
 
@@ -433,9 +552,15 @@ import {
                         this.$refs.wiserBranchesPrompt.close();
                     },
 
-                    openMergeConflictsPrompt(event) {
-                        //event.preventDefault();
+                    openMergeConflictsPrompt() {
                         this.$refs.wiserMergeConflictsPrompt.open();
+                    },
+
+                    openClearCachePrompt() {
+                        if (localStorage.getItem("clear_cache_url")) {
+                            this.clearCacheSettings.url = localStorage.getItem("clear_cache_url");
+                        }
+                        this.$refs.clearCachePrompt.open();
                     },
 
                     async openWiserItem() {
@@ -529,11 +654,30 @@ import {
                         if (this.isMainBranch && (!this.branchMergeSettings.selectedBranch || !this.branchMergeSettings.selectedBranch.id)) {
                             return false;
                         }
+                        
+                        if (this.mergeBranchResult && this.mergeBranchResult.conflicts && this.mergeBranchResult.conflicts.length > 0 && !this.areAllConflictsHandled) {
+                            return false;
+                        }
+
+                        // Copy the conflicts to the merge settings, so that the AIS will know what to do with the conflicts.
+                        if (this.mergeBranchResult && this.mergeBranchResult.conflicts) {
+                            this.branchMergeSettings.conflicts = this.mergeBranchResult.conflicts;
+                        }
 
                         await this.$store.dispatch(MERGE_BRANCH, this.branchMergeSettings);
 
+                        if (this.mergeBranchError) {
+                            return false;
+                        }
+                        
+                        if (this.mergeBranchResult.conflicts && this.mergeBranchResult.conflicts.length > 0) {
+                            this.openMergeConflictsPrompt();
+                            return true;
+                        }
+
                         if (!this.mergeBranchError) {
                             this.$refs.wiserMergeBranchPrompt.close();
+                            this.$refs.wiserMergeConflictsPrompt.close();
                             this.showGeneralMessagePrompt("De branch staat klaar om samengevoegd te worden. U krijgt een bericht wanneer dit voltooid is.");
                             return true;
                         }
@@ -541,11 +685,9 @@ import {
                         return false;
                     },
 
-                    handleMergeConflicts() {
-                        this.showGeneralMessagePrompt("Conflicten verwerken");
-                    },
+                    async openOrCopyBranch(event, copy = false) {
+                        event.preventDefault();
 
-                    openBranch() {
                         if (!this.openBranchSettings || !this.openBranchSettings.selectedBranchType || !this.openBranchSettings.selectedBranchType.id) {
                             this.showGeneralMessagePrompt("Kies a.u.b. of u de branch in Wiser wilt openen of op uw website.");
                             return false;
@@ -561,29 +703,64 @@ import {
                             return false;
                         }
                         
-                        let url;
-                        switch (this.openBranchSettings.selectedBranchType.id) {
-                            case "website":
-                                url = this.openBranchSettings.websiteUrl;
-                                if (!url.startsWith("http")) {
-                                    url = `https://${url}`
-                                }
-                                
-                                url = `${url.substring(0, url.indexOf("/", 8))}/branches/${encodeURIComponent(this.openBranchSettings.selectedBranch.database.databaseName)}`;
-                                
-                                break;
-                            case "wiser":
-                                url = `https://${this.openBranchSettings.selectedBranch.subDomain}.${this.appSettings.currentDomain}`;
-                                
-                                break;
-                            default:
-                                console.error("Invalid branch type selected:", this.openBranchSettings.selectedBranchType);
-                                this.showGeneralMessagePrompt("Kies a.u.b. of u de branch in Wiser wilt openen of op uw website.");
-                                return false;
+                        if (copy) {
+                            await navigator.clipboard.writeText(this.openBranchUrl);
+                            this.showGeneralMessagePrompt("De URL is gekopieerd naar uw klembord.");
+                            return;
                         }
                         
-                        window.open(url, "_blank");
+                        window.open(this.openBranchUrl, "_blank");
                         this.$refs.wiserBranchesPrompt.close();
+                    },
+                    
+                    updateBranchChangeList(isChecked, setting, type, operation) {
+                        if (type === "all") {
+                            for (let entityOrSettingType of this.branchChanges[setting]) {
+                                const key = entityOrSettingType.entityType || entityOrSettingType.type;
+                                this.branchMergeSettings[setting][key] = this.branchMergeSettings[setting][key] || {};
+                                switch (operation) {
+                                    case "everything":
+                                        this.branchMergeSettings[setting][key].everything = isChecked;
+                                        this.branchMergeSettings[setting][key].create = isChecked;
+                                        this.branchMergeSettings[setting][key].update = isChecked;
+                                        this.branchMergeSettings[setting][key].delete = isChecked;
+                                        break;
+                                    default:
+                                        this.branchMergeSettings[setting][key][operation] = isChecked;
+                                        break;
+                                }
+                            }
+
+                            if (operation === "everything") {
+                                this.branchMergeSettings[setting].all.create = isChecked;
+                                this.branchMergeSettings[setting].all.update = isChecked;
+                                this.branchMergeSettings[setting].all.delete = isChecked;
+                            }
+                        } else if (operation === "everything") {
+                            this.branchMergeSettings[setting][type].create = isChecked;
+                            this.branchMergeSettings[setting][type].update = isChecked;
+                            this.branchMergeSettings[setting][type].delete = isChecked;
+                        }  
+                    },
+
+                    async clearWebsiteCache() {
+                        if (!this.clearCacheSettings.url || this.clearCacheSettings.url.length < 5) {
+                            await this.$store.dispatch(CLEAR_CACHE_ERROR, "Vul a.u.b. een geldige URL in.");
+                            return false;
+                        }
+                        
+                        if (!this.clearCacheSettings.areas || this.clearCacheSettings.areas.length === 0) {
+                            await this.$store.dispatch(CLEAR_CACHE_ERROR, "Kies a.u.b. minimaal 1 cache optie om te legen.");
+                            return false;
+                        }
+
+                        await this.$store.dispatch(CLEAR_CACHE, this.clearCacheSettings);
+                        if (this.clearCacheError) {
+                            return false;
+                        }
+                        window.localStorage.setItem("clear_cache_url", this.clearCacheSettings.url);
+                        this.showGeneralMessagePrompt("De cache is succesvol geleegd.");
+                        return true;
                     },
 
                     onOpenModuleClick(event, module) {
@@ -626,11 +803,8 @@ import {
                                 name: "Website"
                             };
 
-
                             const extraUserData = await main.usersService.getLoggedInUserData();
-                            console.log("extraUserData", extraUserData);
                             this.openBranchSettings.selectedBranch = this.branches.find(branch => branch.id === extraUserData.currentBranchId);
-                            console.log("this.openBranchSettings.selectedBranch", this.openBranchSettings.selectedBranch);
                         }
                     },
                     
@@ -647,6 +821,17 @@ import {
                     
                     async onWiserCreateBranchPromptOpen() {
                         await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
+                        this.createBranchSettings = {
+                            name: null,
+                            startMode: "direct",
+                            startOn: null,
+                            entities: {
+                                all: {
+                                    mode: 0
+                                }
+                            }
+                        };
+                        
                         for (let entity of this.entitiesForBranches) {
                             this.createBranchSettings.entities[entity.id] = {
                                 mode: 0
@@ -664,22 +849,12 @@ import {
                         }
                         
                         await this.$store.dispatch(GET_BRANCH_CHANGES, selectedBranchId);
-                        for (let entity of this.branchChanges.entities) {
-                            this.branchMergeSettings.entities[entity.entityType] = {
-                                everything: false,
-                                create: false,
-                                update: false,
-                                delete: false
-                            };
-                        }
-                        for (let entity of this.branchChanges.settings) {
-                            this.branchMergeSettings.settings[entity.type] = {
-                                everything: false,
-                                create: false,
-                                update: false,
-                                delete: false
-                            };
-                        }
+                        
+                        // Clear all checkboxes.
+                        this.branchMergeSettings.entities.all.everything = false;
+                        this.branchMergeSettings.settings.all.everything = false;
+                        this.updateBranchChangeList(false, "entities", "all", "everything");
+                        this.updateBranchChangeList(false, "settings", "all", "everything");
                     },
 
                     onCreateBranchAllSettingsChange(event) {
@@ -690,32 +865,41 @@ import {
 
                     onBranchMergeSettingChange(event, setting, type, operation) {
                         const isChecked = event.currentTarget.checked;
-                        if (type === "all") {
-                            for (let entityOrSettingType of this.branchChanges[setting]) {
-                                const key = entityOrSettingType.entityType || entityOrSettingType.type;
-                                this.branchMergeSettings[setting][key] = this.branchMergeSettings[setting][key] || {};
-                                switch (operation) {
-                                    case "everything":
-                                        this.branchMergeSettings[setting][key].everything = isChecked;
-                                        this.branchMergeSettings[setting][key].create = isChecked;
-                                        this.branchMergeSettings[setting][key].update = isChecked;
-                                        this.branchMergeSettings[setting][key].delete = isChecked;
-                                        break;
-                                    default:
-                                        this.branchMergeSettings[setting][key][operation] = isChecked;
-                                        break;
-                                }
-                            }
+                        this.updateBranchChangeList(isChecked, setting, type, operation);
+                    },
 
-                            if (operation === "everything") {
-                                this.branchMergeSettings[setting].all.create = isChecked;
-                                this.branchMergeSettings[setting].all.update = isChecked;
-                                this.branchMergeSettings[setting].all.delete = isChecked;
+                    onApproveConflictClick(conflict) {
+                        this.$store.dispatch(HANDLE_CONFLICT, { acceptChange: true, id: conflict.id });
+                    },
+
+                    onDenyConflictClick(conflict) {
+                        this.$store.dispatch(HANDLE_CONFLICT, { acceptChange: false, id: conflict.id });
+                    },
+
+                    onAcceptMultipleConflictsClick() {
+                        this.$store.dispatch(HANDLE_MULTIPLE_CONFLICTS, { acceptChange: true, settings: this.batchHandleConflictSettings });
+                    },
+
+                    onDenyMultipleConflictsClick() {
+                        this.$store.dispatch(HANDLE_MULTIPLE_CONFLICTS, { acceptChange: false, settings: this.batchHandleConflictSettings });
+                    },
+
+                    onCacheTypeChecked(event, cacheType) {
+                        const isChecked = event.currentTarget.checked;
+                        const allTypes = [...document.querySelectorAll(".cache-type")].map(input => input.value);
+                        
+                        if (cacheType === "all") {
+                            if (!isChecked) {
+                                this.clearCacheSettings.areas = [];
+                            } else {
+                                this.clearCacheSettings.areas = ["all", ...allTypes];
                             }
-                        } else if (operation === "everything") {
-                            this.branchMergeSettings[setting][type].create = isChecked;
-                            this.branchMergeSettings[setting][type].update = isChecked;
-                            this.branchMergeSettings[setting][type].delete = isChecked;
+                        } else {
+                            if (!isChecked) {
+                                this.clearCacheSettings.areas = this.clearCacheSettings.areas.filter(type => type !== "all");
+                            } else if (this.clearCacheSettings.areas.filter(type => type !== "all").length === allTypes.length && this.clearCacheSettings.areas.indexOf("all") === -1) {
+                                this.clearCacheSettings.areas.push("all");
+                            }
                         }
                     }
                 }

@@ -8,17 +8,17 @@ body.embedded {
     overflow: hidden;
 }
 
-    body.embedded .data-builder .fixed {
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-    }
+body.embedded .data-builder .fixed {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
 
 .fullscreen-loader {
     position: fixed;
 }
 
-.k-multiselect-wrap .k-reset {
+.k-selection-multiple .k-reset {
     float: left;
     overflow: hidden;
 }
@@ -38,18 +38,18 @@ body.embedded {
     overflow-y: auto;
 }
 
-    .itemProperties .toolBar {
-        overflow: hidden;
-        position: absolute;
-        bottom: 16px;
-        left: 16px;
-        right: 16px;
-    }
+.itemProperties .toolBar {
+    overflow: hidden;
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+}
 
-        .itemProperties .toolBar button {
-            float: right;
-            margin: 0 0 0 10px;
-        }
+.itemProperties .toolBar button {
+    float: right;
+    margin: 0 0 0 10px;
+}
 
 #viewResult {
     background: var(--item-bg-color);
@@ -66,25 +66,25 @@ body.embedded {
     width: 100%;
 }
 
-    #viewResult.active {
-        border: 1px solid var(--handle-bg-color);
-        padding: 15px;
-        margin-top: 10px;
-        max-height: 50vh;
-    }
+#viewResult.active {
+    border: 1px solid var(--handle-bg-color);
+    padding: 15px;
+    margin-top: 10px;
+    max-height: 50vh;
+}
 
-        #viewResult.active:before {
-            content: attr(data-header-text);
-            display: block;
-            font-size: 14px;
-            font-weight: 700;
-            padding-bottom: 10px;
-        }
+#viewResult.active:before {
+    content: attr(data-header-text);
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    padding-bottom: 10px;
+}
 
-    #viewResult .CodeMirror {
-        height: calc(50vh - 65px);
-        margin-top: 10px;
-    }
+#viewResult .CodeMirror {
+    height: calc(50vh - 65px);
+    margin-top: 10px;
+}
 
 #resultClose {
     cursor: pointer;
@@ -108,6 +108,10 @@ body.embedded {
     max-width: 100%;
 }
 
+.data-builder .k-selection-multiple {
+    max-height: none;
+}
+
 .data-builder .fixed button {
     margin: 0 0 0 10px;
 }
@@ -120,9 +124,10 @@ body.embedded {
     width: calc(100% - 8px);
 }
 
-    .dbInput > .itemProperties .k-dropdown {
-        width: 100%;
-    }
+.dbInput > .itemProperties .k-dropdown,
+.dbInput > .itemProperties .k-dropdownlist {
+    width: 100%;
+}
 
 .dbInput {
     display: flex;
@@ -132,93 +137,94 @@ body.embedded {
     position: relative;
 }
 
-    .dbInput:after {
-        clear: both;
-        content: "";
-        display: table;
-    }
+.dbInput:after {
+    clear: both;
+    content: "";
+    display: table;
+}
 
-    .dbInput > .k-widget {
-        float: left;
-        margin-right: 8px;
-        width: calc(40% - 8px);
-    }
+.dbInput > .k-widget {
+    float: left;
+    margin-right: 8px;
+    width: calc(40% - 8px);
+}
 
-        .dbInput > .k-widget.scope-value-select,
-        .dbInput > .k-widget.free-input {
-            width: calc(40% - 56px);
-        }
+.dbInput > .k-widget.scope-value-select,
+.dbInput > .k-widget.free-input {
+    width: calc(40% - 56px);
+}
 
-    .dbInput > .k-combobox,
-    .dbInput .k-dropdown {
-        width: calc(30% - 8px);
-    }
+.dbInput > .k-combobox,
+.dbInput .k-dropdown,
+.dbInput .k-dropdownlist {
+    width: calc(30% - 8px);
+}
 
-    .dbInput > .checkTree {
-        width: calc(70% - 126px);
-        margin: 5px 0;
-        margin-right: 8px;
-        max-height: 200px;
-    }
+.dbInput > .checkTree {
+    width: calc(70% - 126px);
+    margin: 5px 0;
+    margin-right: 8px;
+    max-height: 200px;
+}
 
-        .dbInput > .checkTree > ul {
-            background: var(--white-color);
-            min-height: 34px;
-            padding: 4px;
-        }
+.dbInput > .checkTree > ul {
+    background: var(--white-color);
+    min-height: 34px;
+    padding: 4px;
+}
 
-    .dbInput .delete-button,
-    .dbInput .edit-field-button,
-    .dbInput .or-button {
-        background-color: var(--handle-bg-color);
-        border-color: var(--handle-bg-color);
-        color: var(--black-color);
-        box-shadow: none;
-        margin: 0;
-        padding: 0;
-        position: absolute;
-        left: 0;
-        top: 5px;
-        height: 42px;
-        width: 40px;
-    }
+.dbInput .delete-button,
+.dbInput .edit-field-button,
+.dbInput .or-button {
+    background-color: var(--handle-bg-color);
+    border-color: var(--handle-bg-color);
+    color: var(--black-color);
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    left: 0;
+    top: 5px;
+    height: 42px;
+    width: 40px;
+}
 
-    .dbInput .edit-field-button {
-        position: relative;
-        float: left;
-        margin-right: 8px;
-    }
+.dbInput .edit-field-button {
+    position: relative;
+    float: left;
+    margin-right: 8px;
+}
 
-    .dbInput .optional-checkbox {
-        height: 42px;
-        margin: 5px 0;
-        margin-right: 8px;
-        width: 110px;
-        flex-grow: 1;
-    }
+.dbInput .optional-checkbox {
+    height: 42px;
+    margin: 5px 0;
+    margin-right: 8px;
+    width: 110px;
+    flex-grow: 1;
+}
 
-        .dbInput .optional-checkbox label {
-            background-color: var(--handle-bg-color);
-            padding: 2px 8px;
-            float: right;
-        }
+.dbInput .optional-checkbox label {
+    background-color: var(--handle-bg-color);
+    padding: 2px 8px;
+    float: right;
+}
 
-    .dbInput .or-button {
-        left: auto;
-        right: 0;
-        pointer-events: none;
-    }
+.dbInput .or-button {
+    left: auto;
+    right: 0;
+    pointer-events: none;
+}
 
-    .dbInput:last-child .or-button {
-        background-color: var(--secundary-color);
-        border-color: var(--secundary-color);
-        color: var(--white-color);
-        pointer-events: all;
-    }
+.dbInput:last-child .or-button {
+    background-color: var(--secundary-color);
+    border-color: var(--secundary-color);
+    color: var(--white-color);
+    pointer-events: all;
+}
 
-    .dbInput .k-button .k-icon {
-        margin: 0;
-    }
+.dbInput .k-button .k-icon {
+    margin: 0;
+}
 
 /* TEMP */
 footer #dataBuilderButton {

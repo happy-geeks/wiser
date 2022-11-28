@@ -33,8 +33,19 @@ import {
     MERGE_BRANCH_SUCCESS,
     GET_ENTITIES_FOR_BRANCHES,
     IS_MAIN_BRANCH,
-    GET_BRANCH_CHANGES
+    GET_BRANCH_CHANGES,
+    HANDLE_CONFLICT,
+    HANDLE_MULTIPLE_CONFLICTS,
+    CLEAR_CACHE,
+    CLEAR_CACHE_SUCCESS,
+    CLEAR_CACHE_ERROR,
+    START_UPDATE_TIME_ACTIVE_TIMER,
+    STOP_UPDATE_TIME_ACTIVE_TIMER,
+    SET_ACTIVE_TIMER_INTERVAL,
+    CLEAR_ACTIVE_TIMER_INTERVAL,
+    UPDATE_ACTIVE_TIME
 } from "./mutation-types";
+import {val} from "jshint/src/options";
 
 const baseModule = {
     state: () => ({
@@ -181,6 +192,12 @@ const loginModule = {
                 commit(AUTH_SUCCESS, user);
 
                 await this.dispatch(MODULES_REQUEST);
+
+                // If a login log ID is also set in the user data, use it to start the "time active" timer.
+                if (user.hasOwnProperty("encryptedLoginLogId")) {
+                    await main.usersService.startUpdateTimeActiveTimer();
+                }
+
                 return;
             }
 
@@ -510,7 +527,9 @@ const modulesModule = {
 
 const usersModule = {
     state: () => ({
-        changePasswordError: null
+        changePasswordError: null,
+        updateTimeActiveTimer: null,
+        updateTimeActiveTimerStopped: true
     }),
 
     mutations: {
@@ -519,6 +538,21 @@ const usersModule = {
         },
         [CHANGE_PASSWORD_ERROR]: (state, message) => {
             state.changePasswordError = message;
+        },
+        [START_UPDATE_TIME_ACTIVE_TIMER]: (state) => {
+            state.updateTimeActiveTimerStopped = false;
+        },
+        [STOP_UPDATE_TIME_ACTIVE_TIMER]: (state) => {
+            state.updateTimeActiveTimerStopped = true;
+        },
+        [SET_ACTIVE_TIMER_INTERVAL]: (state, interval) => {
+            state.updateTimeActiveTimer = interval;
+        },
+        [CLEAR_ACTIVE_TIMER_INTERVAL]: (state) => {
+            if (state.updateTimeActiveTimer) {
+                clearInterval(state.updateTimeActiveTimer);
+            }
+            state.updateTimeActiveTimer = null;
         }
     },
 
@@ -533,6 +567,29 @@ const usersModule = {
             } else {
                 commit(CHANGE_PASSWORD_ERROR, result.error);
             }
+        },
+        
+        async [START_UPDATE_TIME_ACTIVE_TIMER]({ commit }) {
+            commit(START_REQUEST);
+            
+            // Clear old interval first.
+            commit(CLEAR_ACTIVE_TIMER_INTERVAL);
+
+            commit(START_UPDATE_TIME_ACTIVE_TIMER);
+            const interval = await main.usersService.startUpdateTimeActiveTimer();
+            commit(SET_ACTIVE_TIMER_INTERVAL, interval);
+            
+            commit(END_REQUEST);
+        },
+
+        [STOP_UPDATE_TIME_ACTIVE_TIMER]({ commit }) {
+            commit(STOP_UPDATE_TIME_ACTIVE_TIMER);
+        },
+        
+        async [UPDATE_ACTIVE_TIME]({ commit }) {
+            commit(START_REQUEST);
+            const result = await main.usersService.updateActiveTime();
+            commit(END_REQUEST);
         }
     },
 
@@ -644,6 +701,118 @@ const branchesModule = {
 
         [GET_BRANCH_CHANGES](state, branchChanges) {
             state.branchChanges = branchChanges;
+        },
+        
+        [HANDLE_CONFLICT](state, { acceptChange, id }) {
+            if (!state.mergeBranchResult || !state.mergeBranchResult.conflicts || !state.mergeBranchResult.conflicts.length) {
+                console.warn("Tried to handle conflict, but there are no conflicts.");
+                return;
+            }
+            
+            const conflict = state.mergeBranchResult.conflicts.find(c => c.id === id);
+            if (!conflict) {
+                console.warn("Tried to handle a conflict that doesn't exist.");
+                return;
+            }
+
+            conflict.acceptChange = acceptChange;
+        },
+
+        [HANDLE_MULTIPLE_CONFLICTS](state, { acceptChange, settings }) {
+            if (!settings || !settings.property || !settings.operator || !settings.start) {
+                return;
+            }
+            
+            if (!state.mergeBranchResult || !state.mergeBranchResult.conflicts || !state.mergeBranchResult.conflicts.length) {
+                console.warn("Tried to handle conflicts, but there are no conflicts.");
+                return;
+            }
+
+            for (let conflict of state.mergeBranchResult.conflicts) {
+                let isDate = false;
+                let valueToCheck;
+                let startValue = settings.start;
+                let endValue = settings.end;
+                
+                // Get the value of the property we want to check for the conflict to accept or deny.
+                switch (settings.property) {
+                    case "type":
+                        valueToCheck = conflict.typeDisplayName; 
+                        break;
+                    case "field":
+                        valueToCheck = conflict.fieldDisplayName;
+                        break
+                    case "changeDateOriginal":
+                        isDate = true;
+                        valueToCheck = conflict.changeDateInMain;
+                        break;
+                    case "changeDateBranch":
+                        isDate = true;
+                        valueToCheck = conflict.changeDateInBranch;
+                        break;
+                    case "originalValue":
+                        valueToCheck = conflict.valueInMain;
+                        break;
+                    case "branchValue":
+                        valueToCheck = conflict.valueInBranch;
+                        break;
+                    default:
+                        console.warn(`${HANDLE_MULTIPLE_CONFLICTS} - Unsupported property '${settings.property}'`)
+                        continue;
+                }
+                
+                if (!valueToCheck) {
+                    continue;
+                }
+                
+                // Format dates so that they're all the same format.
+                if (isDate) {
+                    valueToCheck = new Date(valueToCheck);
+                    valueToCheck = new Date(valueToCheck.getFullYear(), valueToCheck.getMonth(), valueToCheck.getDate());
+                    
+                    startValue = new Date(startValue);
+                    startValue = new Date(startValue.getFullYear(), startValue.getMonth(), startValue.getDate());
+                    if (endValue) {
+                        endValue = new Date(endValue);
+                        endValue = new Date(endValue.getFullYear(), endValue.getMonth(), endValue.getDate());
+                    }
+                }
+                
+                // Make sure string checks are case insensitive.
+                if (!isDate) {
+                    valueToCheck = valueToCheck.toLowerCase();
+                    startValue = startValue.toLowerCase();
+                }
+                
+                let found = false;
+                switch (settings.operator) {
+                    case "contains":
+                        found = valueToCheck.indexOf(startValue) > -1;
+                        break;
+                    case "equals":
+                        if (isDate) {
+                            found = valueToCheck.getTime() === startValue.getTime();
+                        } else {
+                            found = valueToCheck.toString().toUpperCase() === startValue.toString().toUpperCase();
+                        }
+                        break;
+                    case "greaterThan":
+                        found = valueToCheck > startValue;
+                        break;
+                    case "lessThan":
+                        found = valueToCheck < startValue;
+                        break;
+                    case "between":
+                        found = valueToCheck >= startValue && valueToCheck <= endValue;
+                        break;
+                }
+                
+                if (!found) {
+                    continue;
+                }
+                
+                conflict.acceptChange = acceptChange;
+            }
         }
     },
 
@@ -675,9 +844,9 @@ const branchesModule = {
             commit(END_REQUEST);
         },
 
-        async [MERGE_BRANCH]({ commit }, id) {
+        async [MERGE_BRANCH]({ commit }, data) {
             commit(START_REQUEST);
-            const result = await main.branchesService.merge(id);
+            const result = await main.branchesService.merge(data);
 
             if (result.success) {
                 if (result.data) {
@@ -723,8 +892,52 @@ const branchesModule = {
             commit(START_REQUEST);
             const changesResponse = await main.branchesService.getChanges(branchId);
             commit(GET_BRANCH_CHANGES, changesResponse.data);
+            commit(MERGE_BRANCH_SUCCESS, null);
             commit(END_REQUEST);
+        },
+
+        [HANDLE_CONFLICT]({ commit }, payload) {
+            commit(HANDLE_CONFLICT, payload);
+        },
+
+        [HANDLE_MULTIPLE_CONFLICTS]({ commit }, payload) {
+            commit(HANDLE_MULTIPLE_CONFLICTS, payload);
         }
+    },
+
+    getters: {}
+};
+
+const cacheModule = {
+    state: () => ({
+        clearCacheError: null
+    }),
+
+    mutations: {
+        [CLEAR_CACHE_SUCCESS]: (state) => {
+            state.clearCacheError = null;
+        },
+        [CLEAR_CACHE_ERROR]: (state, message) => {
+            state.clearCacheError = message;
+        }
+    },
+
+    actions: {
+        async [CLEAR_CACHE]({ commit }, data = {}) {
+            commit(START_REQUEST);
+            const result = await main.cacheService.clear(data);
+            commit(END_REQUEST);
+
+            if (result.success) {
+                commit(CLEAR_CACHE_SUCCESS);
+            } else {
+                commit(CLEAR_CACHE_ERROR, result.message);
+            }
+        },
+
+        [CLEAR_CACHE_ERROR]({ commit }, error) {
+            commit(CLEAR_CACHE_ERROR, error);
+        },
     },
 
     getters: {}
@@ -743,6 +956,7 @@ export default createStore({
         customers: customersModule,
         users: usersModule,
         items: itemsModule,
-        branches: branchesModule
+        branches: branchesModule,
+        cache: cacheModule
     }
 });

@@ -69,7 +69,7 @@ ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', en
                                 DisplayName = dataRow.Field<string>("displayName"),
                                 Id = dataRow.Field<string>("name"),
                                 ModuleId = dataRow.Field<int>("module_id"),
-                                ModuleName = dataRow.Field<string>("moduleName"),
+                                ModuleName = dataRow.Field<string>("moduleName") ?? "",
                                 DedicatedTablePrefix = wiserItemsService.GetTablePrefixForEntity(new EntitySettingsModel {DedicatedTablePrefix = dataRow.Field<string>("dedicated_table_prefix")})
                             }));
 
@@ -79,9 +79,15 @@ ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', en
                 // Group all entities by table prefix, so that we can build one query per wiser_item table.
                 foreach (var group in result.GroupBy(entity => entity.DedicatedTablePrefix))
                 {
+                    var tableName = $"{group.Key}{WiserTableNames.WiserItem}";
+                    if (!await databaseHelpersService.TableExistsAsync(tableName))
+                    {
+                        continue;
+                    }
+
                     //  Count the amount of entity types per type per table.
                     query = $@"SELECT entity_type, COUNT(*) AS totalItems 
-FROM {group.Key}{WiserTableNames.WiserItem} 
+FROM {tableName}
 WHERE entity_type IN ({String.Join(", ", group.Select(entity => entity.Id.ToMySqlSafeValue(true)))})
 GROUP BY entity_type";
                     
@@ -307,6 +313,43 @@ CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItemFile}{WiserTableNames.Archi
                 _ => throw new ArgumentOutOfRangeException(nameof(settings.DeleteAction), settings.DeleteAction.ToString())
             };
             
+            // Check if the name has been changed.
+            clientDatabaseConnection.AddParameter("id", id);
+            var query = $"SELECT name FROM {WiserTableNames.WiserEntity} WHERE id = ?id";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count == 0)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"Entity with ID '{id}' does not exist"
+                };
+            }
+
+            var previousName = dataTable.Rows[0].Field<string>("name");
+            if (!String.Equals(previousName, settings.EntityType, StringComparison.OrdinalIgnoreCase))
+            {
+                // Update the name in wiser_entityproperty and wiser_entity.
+                clientDatabaseConnection.AddParameter("previousName", previousName);
+                clientDatabaseConnection.AddParameter("newName", settings.EntityType);
+                query = $@"UPDATE {WiserTableNames.WiserEntityProperty} 
+SET options = JSON_PRETTY(JSON_REPLACE(options, '$.entityType', ?newName))
+WHERE JSON_VALID(options) AND JSON_EXTRACT(options, '$.entityType') = ?previousName;
+
+UPDATE {WiserTableNames.WiserEntityProperty}
+SET entity_name = ?newName
+WHERE entity_name = ?previousName;";
+                await clientDatabaseConnection.ExecuteAsync(query);
+
+                // This query might seem a bit strange, but it's to make sure we only replace the complete entity name, in case there exists entity names that contain the given name.
+                // For example, if we were to replace 'basket' with something else, we don't want to also replace 'basketline'.
+                // This is done by first adding a comma at the start and the end, so that we can then simply replace ",x," with ",y," and then trim the commas again.
+                query = $@"UPDATE {WiserTableNames.WiserEntity}
+SET accepted_childtypes = TRIM(BOTH ',' FROM REPLACE(CONCAT(',', accepted_childtypes, ','), CONCAT(',', ?previousName, ','), CONCAT(',', ?newName, ',')))
+WHERE FIND_IN_SET(?previousName, accepted_childtypes)";
+                await clientDatabaseConnection.ExecuteAsync(query);
+            }
+
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("name", settings.EntityType);
             clientDatabaseConnection.AddParameter("module_id", settings.ModuleId);

@@ -40,9 +40,7 @@ namespace Api.Modules.Templates.Models.Template
         public bool HandleLogicBlocks { get; set; }
         public bool HandleMutators { get; set; }
         public bool LoginRequired { get; set; }
-        public string LoginUserType { get; set; }
-        public string LoginSessionPrefix { get; set; }
-        public string LoginRole { get; set; }
+        public List<int> LoginRoles { get; set; }
         public string LoginRedirectUrl { get; set; }
         public string PreLoadQuery { get; set; }
         public bool IsDefaultHeader { get; set; }
@@ -71,6 +69,11 @@ namespace Api.Modules.Templates.Models.Template
         public RoutineTypes RoutineType { get; set; }
         public string RoutineParameters { get; set; }
         public string RoutineReturnType { get; set; }
+
+        // Trigger settings.
+        public string TriggerTableName { get; set; }
+        public TriggerTimings TriggerTiming { get; set; }
+        public TriggerEvents TriggerEvent { get; set; }
 
         public Dictionary<string, object> Changes { get; set; }
         

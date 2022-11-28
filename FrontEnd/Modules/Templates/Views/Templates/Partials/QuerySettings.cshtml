@@ -1,5 +1,12 @@
 ﻿@using GeeksCoreLibrary.Modules.Templates.Enums
 @model Api.Modules.Templates.Models.Template.TemplateSettingsModel
+<div class="item full-width" data-label-style="float" data-label-width="0">
+    <h4><label for="cacheMinutes">URL Regex</label></h4>
+    <span class="k-widget k-input k-state-default">
+        <input type="text" id="urlRegex" class="textField k-input" name="urlRegex" value="@Model.UrlRegex" autocomplete="off" pattern=".*">
+    </span>
+    <div class="form-hint"><span>Vanaf welke URL moet deze template bereikbaar zijn? Hier kan een regular expression opgegeven worden voor dynamische waardes en parameters. Indien je de regular expression opdeelt in groepen en die groepen namen geeft, dan kunnen die namen gebruikt worden als variabelen in deze template. Voorbeeld: \/product\/(?&lt;productId&gt;[0-9]+)\/</span></div>
+</div>
 <div class="item item-left" style="width: 60%">
     <div class="item full-width" data-label-style="float" data-label-width="0">
         <h4><label for="combo-cache">Cache</label></h4>
@@ -85,37 +92,9 @@
 
     <div class="user-check-panel">
         <div class="item" data-label-style="float" data-label-width="0">
-            <h4><label for="loginUserType">Type gebruiker</label></h4>
+            <h4><label for="loginRoles">Rollen</label></h4>
             <div class="flex-container">
-                <select id="loginUserType" class="combo-select" placeholder="Maak uw keuze..." data-kendo-control="kendoDropDownList">
-                    <option value="1">Type gebruiker 1</option>
-                    <option value="2">Type gebruiker 2</option>
-                    <option value="3">Type gebruiker 3</option>
-                    <option value="4">Type gebruiker 4</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="item" data-label-style="float" data-label-width="0">
-            <h4><label for="loginSessionPrefix">Login session prefix</label></h4>
-            <div class="flex-container">
-                <select id="loginSessionPrefix" class="combo-select" placeholder="Maak uw keuze..." data-kendo-control="kendoDropDownList">
-                    <option value="1">Login session prefix 1</option>
-                    <option value="2">Login session prefix 2</option>
-                    <option value="3">Login session prefix 3</option>
-                    <option value="4">Login session prefix 4</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="item" data-label-style="float" data-label-width="0">
-            <h4><label for="loginRole">Rol</label></h4>
-            <div class="flex-container">
-                <select id="loginRole" class="combo-select" placeholder="Maak uw keuze..." data-kendo-control="kendoDropDownList">
-                    <option value="1">Rol 1</option>
-                    <option value="2">Rol 2</option>
-                    <option value="3">Rol 3</option>
-                    <option value="4">Rol 4</option>
+                <select id="loginRoles" name="loginRoles" multiple="multiple" data-kendo-control="kendoMultiSelect">
                 </select>
             </div>
         </div>

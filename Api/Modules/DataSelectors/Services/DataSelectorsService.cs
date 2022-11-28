@@ -7,11 +7,13 @@ using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.DataSelectors.Interfaces;
 using Api.Modules.DataSelectors.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
@@ -228,7 +230,7 @@ namespace Api.Modules.DataSelectors.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity, bool forExportModule = false, bool forRendering = false)
+        public async Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity, bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserDataSelector });
@@ -238,15 +240,19 @@ namespace Api.Modules.DataSelectors.Services
             {
                 whereClauses.Add("show_in_export_module = 1");
             }
+            if (forCommunicationModule)
+            {
+                whereClauses.Add("show_in_communication_module = 1");
+            }
             if (forRendering)
             {
                 whereClauses.Add("available_for_rendering = 1");
             }
 
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id, name
-                                                                            FROM {WiserTableNames.WiserDataSelector}
-                                                                            WHERE {String.Join(" AND ", whereClauses)}
-                                                                            ORDER BY name ASC");
+FROM {WiserTableNames.WiserDataSelector}
+WHERE {String.Join(" AND ", whereClauses)}
+ORDER BY name ASC");
 
             var results = new List<DataSelectorModel>();
             if (dataTable.Rows.Count == 0)
@@ -279,19 +285,37 @@ namespace Api.Modules.DataSelectors.Services
             clientDatabaseConnection.AddParameter("requestJson", data.RequestJson);
             clientDatabaseConnection.AddParameter("savedJson", data.SavedJson);
             clientDatabaseConnection.AddParameter("showInExportModule", data.ShowInExportModule);
+            clientDatabaseConnection.AddParameter("showInCommunicationModule", data.ShowInCommunicationModule);
 
             int result;
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id FROM {WiserTableNames.WiserDataSelector} WHERE name = ?name");
             if (dataTable.Rows.Count == 0)
             {
-                result = (int)await clientDatabaseConnection.InsertRecordAsync($@"INSERT INTO {WiserTableNames.WiserDataSelector} (name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template)
-                                                                                    VALUES (?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate)");
+                result = (int)await clientDatabaseConnection.InsertRecordAsync($@"INSERT INTO {WiserTableNames.WiserDataSelector} (name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template, show_in_communication_module)
+                                                                                    VALUES (?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate, ?showInCommunicationModule)");
             }
             else
             {
                 result = dataTable.Rows[0].Field<int>("id");
-                await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.WiserDataSelector} SET request_json = ?requestJson, saved_json = ?savedJson, show_in_export_module = ?showInExportModule, available_for_rendering = ?availableForRendering, default_template = ?defaultTemplate WHERE name = ?name");
+                await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.WiserDataSelector} SET request_json = ?requestJson, saved_json = ?savedJson, show_in_export_module = ?showInExportModule, available_for_rendering = ?availableForRendering, default_template = ?defaultTemplate, show_in_communication_module = ?showInCommunicationModule WHERE name = ?name");
             }
+            
+            // Add the permissions for the roles that have been marked. Will only add new ones to preserve limited permissions.
+            clientDatabaseConnection.AddParameter("id", result);
+            
+            var query = $@"INSERT IGNORE INTO {WiserTableNames.WiserPermission} (role_id, data_selector_id, permissions)
+VALUES(?roleId, ?id, 15)";
+
+            foreach (var role in data.AllowedRoles.Split(","))
+            {
+                clientDatabaseConnection.AddParameter("roleId", role);
+                await clientDatabaseConnection.ExecuteAsync(query);
+            }
+            
+            // Delete permissions for the roles that are missing in the allowed roles.
+            clientDatabaseConnection.AddParameter("roles_with_permissions", data.AllowedRoles);
+            query = $"DELETE FROM {WiserTableNames.WiserPermission} WHERE data_selector_id = ?id AND data_selector_id != 0 AND NOT FIND_IN_SET(role_id, ?roles_with_permissions)";
+            await clientDatabaseConnection.ExecuteAsync(query);
 
             return new ServiceResult<int>(result);
         }
@@ -582,6 +606,67 @@ namespace Api.Modules.DataSelectors.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
             return await gclDataSelectorsService.GetJsonResponseAsync(data, true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<JToken>> GetDataSelectorResultAsJsonAsync(ClaimsIdentity identity, int id, bool asKeyValuePair, List<KeyValuePair<string, object>> parameters)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("id", id);
+            var query = $"SELECT id FROM {WiserTableNames.WiserDataSelector} WHERE id = ?id";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count == 0)
+            {
+                return new ServiceResult<JToken>
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"Data selector with ID '{id}' does not exist."
+                };
+            }
+            
+            if ((await wiserItemsService.GetUserDataSelectorPermissionsAsync(id, IdentityHelpers.GetWiserUserId(identity)) & AccessRights.Read) == AccessRights.Nothing)
+            {
+                return new ServiceResult<JToken>
+                {
+                    StatusCode = HttpStatusCode.Unauthorized,
+                    ErrorMessage = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute this data selector."
+                };
+            }
+
+            var dataSelectorSettings = new WiserDataSelectorRequestModel
+            {
+                EncryptedDataSelectorId = await wiserCustomersService.EncryptValue(id, identity),
+                ExtraData = parameters
+            };
+
+            var response = await GetJsonResponseAsync(dataSelectorSettings, identity);
+
+            // If the data selector was not successful return the status it had given.
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<JToken>
+                {
+                    StatusCode = response.StatusCode,
+                    ErrorMessage = response.Error
+                };
+            }
+
+            // If object does not need to be packed as key value pair return as is.
+            if (!asKeyValuePair)
+            {
+                return new ServiceResult<JToken>(response.Result);
+            }
+            
+            // Combine object to key value pair.
+            var combinedResult = new JObject();
+
+            foreach (var item in response.Result)
+            {
+                combinedResult.Add(item["key"].ToString(), item["value"]);
+            }
+            
+            return new ServiceResult<JToken>(combinedResult);
         }
     }
 }
