@@ -1210,19 +1210,18 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public bool AuthenticateTwoFactor(string key, string code)
+        public bool ValidateTwoFactorPin(string key, string code)
         {
-            var tfa = new TwoFactorAuthenticator();
-            return tfa.ValidateTwoFactorPIN(key, code); 
+            var twoFactorAuthenticator = new TwoFactorAuthenticator();
+            return twoFactorAuthenticator.ValidateTwoFactorPIN(key, code); 
         }
         
         /// <inheritdoc />
-        public string SetUpTwoFactor(string account, string key)
+        public string SetUpTwoFactorAuthentication(string account, string key)
         {
-            var tfa = new TwoFactorAuthenticator();
-            var setupInfo = tfa.GenerateSetupCode("WISER", account, key, false, 3);
+            var twoFactorAuthenticator = new TwoFactorAuthenticator();
+            var setupInfo = twoFactorAuthenticator.GenerateSetupCode("WISER", account, key, false, 3);
             return setupInfo.QrCodeSetupImageUrl;
         }
-
     }
 }

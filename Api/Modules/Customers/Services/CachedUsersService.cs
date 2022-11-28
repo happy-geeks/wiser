@@ -195,15 +195,15 @@ namespace Api.Modules.Customers.Services
         }
         
         /// <inheritdoc />
-        public bool AuthenticateTwoFactor(string key, string code)
+        public bool ValidateTwoFactorPin(string key, string code)
         {
-            return usersService.AuthenticateTwoFactor(key, code); 
+            return usersService.ValidateTwoFactorPin(key, code); 
         }
         
         /// <inheritdoc />
-        public string SetUpTwoFactor(string account, string key)
+        public string SetUpTwoFactorAuthentication(string account, string key)
         {
-            return usersService.SetUpTwoFactor(account, key);
+            return usersService.SetUpTwoFactorAuthentication(account, key);
         }
 
     }

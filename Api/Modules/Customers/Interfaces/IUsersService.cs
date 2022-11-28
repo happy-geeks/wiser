@@ -190,12 +190,12 @@ namespace Api.Modules.Customers.Interfaces
         Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false);
 
         /// <summary>
-        /// Authenticates the two factor code with the unique key of an user
+        /// Authenticates the two factor code with the unique key of an user.
         /// </summary>
         /// <param name="key">Secret stored key</param>
         /// <param name="code">Code from authenticator app</param>
         /// <returns></returns>
-        bool AuthenticateTwoFactor(string key, string code);
+        bool ValidateTwoFactorPin(string key, string code);
 
         /// <summary>
         /// SetUps TwoFactor Authentication
@@ -203,6 +203,6 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="account">Account-name (equal to e-mail address)</param>
         /// <param name="key">Secret stored key</param>
         /// <returns>QR Image URL</returns>
-        string SetUpTwoFactor(string account, string key);
+        string SetUpTwoFactorAuthentication(string account, string key);
     }
 }
