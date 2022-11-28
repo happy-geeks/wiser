@@ -56,9 +56,9 @@ namespace Api.Modules.Customers.Models
         public string LastLoginIpAddress { get; set; }
 
         /// <summary>
-        /// Gets or sets the Google Authenticator settings (2FA)
+        /// Gets or sets the TOTP settings (2FA).
         /// </summary>
-        public GoogleAuthenticationModel GoogleAuthentication { get; set; }
+        public TotpAuthenticationModel TotpAuthentication { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the current branch / customer.

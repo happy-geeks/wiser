@@ -7,9 +7,10 @@ export default class UsersService extends BaseService {
      * @param {string} username The username.
      * @param {string} password The password.
      * @param {string} selectedUser If an admin account is logging in, add the username they selected here.
+     * @param {string} totpPin If 2FA is enabled, the PIN should be entered here.
      * @returns {any} An object that looks like this: { success: true, message: "", data: {}}
      */
-    async loginUser(username, password, selectedUser) {
+    async loginUser(username, password, selectedUser, totpPin = "") {
         const result = {};
 
         try {
@@ -21,6 +22,7 @@ export default class UsersService extends BaseService {
             loginData.append("client_id", this.base.appSettings.apiClientId);
             loginData.append("client_secret", this.base.appSettings.apiClientSecret);
             loginData.append("isTestEnvironment", this.base.appSettings.isTestEnvironment);
+            loginData.append("totpPin", totpPin);
             if (selectedUser) {
                 loginData.append("selectedUser", selectedUser);
             }
@@ -251,13 +253,17 @@ export default class UsersService extends BaseService {
     }
 
     async updateActiveTime(encryptedLoginLogId) {
-        encryptedLoginLogId = encryptedLoginLogId || this.getEncryptedLoginLogId();
-        if (!encryptedLoginLogId) {
-            console.warn("Couldn't update the active time. There's no login log ID.");
-            return;
+        try {
+            encryptedLoginLogId = encryptedLoginLogId || this.getEncryptedLoginLogId();
+            if (!encryptedLoginLogId) {
+                console.warn("Couldn't update the active time. There's no login log ID.");
+                return;
+            }
+    
+            await this.base.api.put(`/api/v3/users/update-active-time?encryptedLoginLogId=${encodeURIComponent(encryptedLoginLogId)}`);
+        } catch (exception) {
+            console.warn("Error in updateActiveTime", exception);
         }
-
-        await this.base.api.put(`/api/v3/users/update-active-time?encryptedLoginLogId=${encodeURIComponent(encryptedLoginLogId)}`);
     }
 
     async startUpdateTimeActiveTimer() {

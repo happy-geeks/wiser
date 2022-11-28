@@ -7,6 +7,8 @@ import {
     AUTH_SUCCESS,
     AUTH_ERROR,
     AUTH_LOGOUT,
+    AUTH_TOTP_SETUP,
+    AUTH_TOTP_PIN,
     MODULES_LOADED,
     OPEN_MODULE,
     ACTIVATE_MODULE,
@@ -80,7 +82,8 @@ const loginModule = {
             role: "",
             lastLoginIpAddress: "",
             lastLoginDate: null,
-            loggedIn: false
+            loggedIn: false,
+            totpQrImageUrl: ""
         },
         listOfUsers: [],
         resetPassword: false,
@@ -89,7 +92,16 @@ const loginModule = {
 
     mutations: {
         [AUTH_REQUEST]: (state, user) => {
-            state.loginStatus = user && user.selectedUser ? "list_loading" : "loading";
+            if (user && user.selectedUser) {
+                state.loginStatus = "list_loading";
+            }
+            else if (user && user.totpPin) {
+                state.loginStatus = "totp_loading";
+            }
+            else {
+                state.loginStatus = "loading";
+            }
+            
             state.loginMessage = "";
             state.listOfUsers = [];
         },
@@ -105,16 +117,34 @@ const loginModule = {
             state.listOfUsers = [];
             state.requirePasswordChange = user.requirePasswordChange;
         },
-        [AUTH_ERROR]: (state, message) => {
-            state.loginStatus = "error";
-            state.loginMessage = message;
+        [AUTH_TOTP_SETUP]: (state, user) => {
+            console.log("huh2", user);
+            state.loginStatus = "totp";
+            state.user = user;
+            state.loginMessage = "";
+            state.listOfUsers = [];
+            state.totpQrImageUrl = user.totpQrImageUrl;
+            state.requirePasswordChange = user.requirePasswordChange;
+        },
+        [AUTH_TOTP_PIN]: (state, user) => {
+            state.loginStatus = "totp";
+            state.user = user;
+            state.loginMessage = "";
+            state.listOfUsers = [];
+            state.totpQrImageUrl = "";
+            state.requirePasswordChange = user.requirePasswordChange;
+        },
+        [AUTH_ERROR]: (state, data) => {
+            state.loginStatus = data.isTotpError ? "totp_error" : "error";
+            state.loginMessage = data.message;
             state.listOfUsers = [];
             state.user = {
                 name: "",
                 role: "",
                 lastLoginIpAddress: "",
                 lastLoginDate: null,
-                loggedIn: false
+                loggedIn: false,
+                totpQrImageUrl: ""
             };
         },
         [AUTH_LOGOUT]: (state) => {
@@ -126,7 +156,8 @@ const loginModule = {
                 role: "",
                 lastLoginIpAddress: "",
                 lastLoginDate: null,
-                loggedIn: false
+                loggedIn: false,
+                totpQrImageUrl: ""
             };
             state.requirePasswordChange = false;
         },
@@ -201,9 +232,15 @@ const loginModule = {
                 return;
             }
 
-            const loginResult = await main.usersService.loginUser(user.username, user.password, (user.selectedUser || {}).username);
+            const loginResult = await main.usersService.loginUser(user.username, user.password, (user.selectedUser || {}).username, user.totpPin);
             if (!loginResult.success) {
-                commit(AUTH_ERROR, loginResult.message);
+                commit(AUTH_ERROR, { message: loginResult.message, isTotpError: data.loginStatus === "totp" });
+                return;
+            }
+            
+            // If TOTP is enabled and not succeeded yet, show the 2FA step.
+            if (loginResult.data.totpEnabled && !loginResult.data.totpSuccess) {
+                commit(loginResult.data.totpQrImageUrl ? AUTH_TOTP_SETUP : AUTH_TOTP_PIN, loginResult.data);
                 return;
             }
             

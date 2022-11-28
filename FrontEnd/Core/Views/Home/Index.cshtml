@@ -679,7 +679,7 @@
                 <span>U heeft een ongeldig subdomein gebruikt. Controleer a.u.b. het subdomein of neem contact op met ons.</span>
             </section>
 
-            <div v-if="validSubDomain && loginStatus !== 'list' && loginStatus !== 'list_loading' && !showForgotPasswordScreen && !requirePasswordChange">
+            <div v-if="validSubDomain && loginStatus !== 'list' && loginStatus !== 'list_loading' && loginStatus !== 'totp' && loginStatus !== 'totp_loading' && loginStatus !== 'totp_error' && !showForgotPasswordScreen && !requirePasswordChange">
                 <div class="form-row">
                     <input type="text" id="username" placeholder="Gebruikersnaam" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="loginForm.username" required>
                 </div>
@@ -703,7 +703,23 @@
                     <a href="#" v-on:click="togglePasswordForgottenScreen(true)" id="forgotten-password">Wachtwoord vergeten?</a>
                 </div>
             </div>
-            <div v-if="loginStatus === 'list' || loginStatus === 'list_loading' && !showForgotPasswordScreen">
+            <div v-if="(loginStatus === 'totp' || loginStatus === 'totp_loading' || loginStatus === 'totp_error') && !showForgotPasswordScreen" class="totp">
+                <p v-if="totpQrImageUrl">Scan de QR-code in uw authenticator-app en vul daarna de code in.</p>
+                <p v-else>Vul de code in van uw authenticator app.</p>
+
+                <div class="form-row" v-if="totpQrImageUrl"> 
+                    <img :src="totpQrImageUrl" alt="2FA Setup QR" />
+                </div>
+                <div class="form-row"> 
+                    <input type="text" name="totpPin" v-model="loginForm.totpPin" />
+                </div>
+
+                <div class="btn-row">
+                    <a href="#" class="btn btn-secundary" @@click="logout()">Annuleren</a>
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'totp_loading' }">Verder</button>
+                </div>
+            </div>
+            <div v-if="(loginStatus === 'list' || loginStatus === 'list_loading') && !showForgotPasswordScreen">
                 <p>Kies de gebruiker waarmee u wilt inloggen</p>
 
                 <div class="form-row"> 

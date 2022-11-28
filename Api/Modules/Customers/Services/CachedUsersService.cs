@@ -10,7 +10,6 @@ using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using Google.Authenticator;
 using LazyCache;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
@@ -51,15 +50,15 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null)
+        public Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null, string totpPin = null)
         {
-            return usersService.LoginAdminAccountAsync(username, password, ipAddress);
+            return usersService.LoginAdminAccountAsync(username, password, ipAddress, totpPin);
         }
 
         /// <inheritdoc />
-        public Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null)
+        public Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null)
         {
-            return usersService.LoginCustomerAsync(username, password, encryptedAdminAccountId, subDomain, generateAuthenticationTokenForCookie, ipAddress, identity);
+            return usersService.LoginCustomerAsync(username, password, encryptedAdminAccountId, subDomain, generateAuthenticationTokenForCookie, ipAddress, identity, totpPin);
         }
 
         /// <inheritdoc />

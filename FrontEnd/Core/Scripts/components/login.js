@@ -12,7 +12,8 @@ export default {
                 password: "",
                 rememberMe: true,
                 selectedUser: "",
-                capslock: false
+                capslock: false,
+                totpPin: ""
             },
             users: null,
             showForgotPasswordScreen: false,
@@ -64,6 +65,11 @@ export default {
 
         validSubDomain() {
             return this.$store.state.customers.validSubDomain;
+        },
+
+        totpQrImageUrl() {
+            console.log("huh", this.$store.state.login.totpQrImageUrl, this.$store.state.login);
+            return this.$store.state.login.totpQrImageUrl;
         }
     },
     components: {
@@ -100,7 +106,10 @@ export default {
                 return;
             }
 
-            await this.$store.dispatch(AUTH_REQUEST, { user: Object.assign({}, this.loginForm) });
+            await this.$store.dispatch(AUTH_REQUEST, { 
+                user: Object.assign({}, this.loginForm),
+                loginStatus: this.loginStatus
+            });
             if (this.loginStatus === "error") {
                 this.loginForm.selectedUser = "";
                 this.loginForm.password = "";

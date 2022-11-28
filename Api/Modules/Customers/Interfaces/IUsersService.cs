@@ -27,9 +27,10 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="username">The e-mail address of the admin account.</param>
         /// <param name="password">The password of the admin account.</param>
         /// <param name="ipAddress">The IP address of the user that is trying to login.</param>
+        /// <param name="totpPin">When the user is logging in with TOTP, then the PIN of the user should be entered here. </param>
         /// <returns>A populated <see cref="AdminAccountModel"/> if successful, a 401 error if not.</returns>
-        Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null);
-        
+        Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null, string totpPin = null);
+
         /// <summary>
         /// Login a customer to Wiser. Normal users login with their username and password.
         /// Admin accounts login via their own credentials and can then login as any other user.
@@ -41,8 +42,9 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="generateAuthenticationTokenForCookie">Optional: Indicate whether to generate a token for a login cookie so that the user stays login for a certain amount of time.</param>
         /// <param name="ipAddress">The IP address of the user.</param>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user to check for rights.</param>
+        /// <param name="totpPin">When the user is logging in with TOTP, then the PIN of the user should be entered here. </param>
         /// <returns>Either an unauthorized error, or the <see cref="UserModel"/> of the user that is trying to login.</returns>
-        Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null);
+        Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null);
 
         /// <summary>
         /// Sends a new password to a user.
