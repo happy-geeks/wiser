@@ -1,4 +1,4 @@
-﻿import { AUTH_REQUEST, AUTH_LOGOUT, FORGOT_PASSWORD, CHANGE_PASSWORD_LOGIN } from "../store/mutation-types";
+﻿import { AUTH_REQUEST, AUTH_LOGOUT, FORGOT_PASSWORD, CHANGE_PASSWORD_LOGIN, USE_TOTP_BACKUP_CODE } from "../store/mutation-types";
 import { ComboBox } from "@progress/kendo-vue-dropdowns";
 
 export default {
@@ -13,7 +13,8 @@ export default {
                 rememberMe: true,
                 selectedUser: "",
                 capslock: false,
-                totpPin: ""
+                totpPin: "",
+                totpBackupCode: ""
             },
             users: null,
             showForgotPasswordScreen: false,
@@ -24,15 +25,15 @@ export default {
             changePasswordForm: {
                 newPassword: "",
                 newPasswordRepeat: ""
-            }
+            },
+            showTotpBackupCodeScreen: false/*,
+            totpBackupCodeForm: {
+                code: ""
+            }*/
         };
     },
     async created() {
         await this.$store.dispatch(AUTH_REQUEST);
-
-        if (this.$store.state.login.requirePasswordChange && this.loginForm.password === "") {
-            //this.$store.dispatch(AUTH_LOGOUT);
-        }
     },
     computed: {
         loginStatus() {
@@ -68,8 +69,11 @@ export default {
         },
 
         totpQrImageUrl() {
-            console.log("huh", this.$store.state.login.totpQrImageUrl, this.$store.state.login);
             return this.$store.state.login.totpQrImageUrl;
+        },
+
+        user() {
+            return this.$store.state.login.user;
         }
     },
     components: {
@@ -84,7 +88,7 @@ export default {
                     return;
                 }
 
-                await this.$store.dispatch(FORGOT_PASSWORD, { user: Object.assign({}, this.forgotPasswordForm) });
+                await this.$store.dispatch(FORGOT_PASSWORD, {user: Object.assign({}, this.forgotPasswordForm)});
                 return;
             } else if (this.requirePasswordChange) {
                 if (event.submitter.id === "submitPasswordChange") {
@@ -116,6 +120,8 @@ export default {
             }
             else if(this.users && this.users.length > 0) {
                 this.loginForm.selectedUser = this.users[0];
+            } else {
+                this.$emit("loginSuccess");
             }
         },
 
@@ -142,6 +148,10 @@ export default {
 
         togglePasswordForgottenScreen(show) {
             this.showForgotPasswordScreen = show;
+        },
+
+        toggleTotpBackupCodeScreen(show) {
+            this.showTotpBackupCodeScreen = show;
         },
 
         async forgotPassword() {

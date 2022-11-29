@@ -51,9 +51,12 @@ namespace Api.Modules.Customers.Services
         private const string UserModuleSettingsGroupName = "module_settings";
         private const string UserPinnedModulesKey = "pinnedModules";
         private const string UserAutoLoadModulesKey = "autoLoadModules";
+        
         private const string TotpEnabledKey = "totp_enabled";
         private const string TotpSecretKey = "totp_secret";
         private const string TotpRequiresSetupKey = "totp_requires_setup";
+        private const string TotpBackupCodesGroupName = "totp_backup_codes";
+        private const int AmountOfBackupCodesToGenerate = 10;
         
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IDatabaseConnection wiserDatabaseConnection;
@@ -189,7 +192,7 @@ namespace Api.Modules.Customers.Services
             }
 
             // Handle TOTP authentication.
-            var (success, _) = await HandleTotpAuthenticationAsync(totpPin, result.TotpAuthentication, result.Id, result.Name, clientDatabaseConnection);
+            var (success, _) = await HandleTotpAuthenticationAsync(totpPin, null, result.TotpAuthentication, result.Id, result.Name, clientDatabaseConnection);
             if (!success)
             {
                 // If TOTP authentication failed, return invalid credentials error.
@@ -205,7 +208,7 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null)
+        public async Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null, string totpBackupCode = null)
         {
             if (await UsernameIsBlockedAsync(username, clientDatabaseConnection, apiSettings.MaximumLoginAttemptsForUsers))
             {
@@ -321,7 +324,7 @@ namespace Api.Modules.Customers.Services
             }
 
             // If TOTP is enabled and setup, but we don't have a PIN yet, then return the user without logging in, so that they get the screen for entering the PIN.
-            if (!validAdminAccount && user.TotpAuthentication.Enabled && !user.TotpAuthentication.RequiresSetup && String.IsNullOrWhiteSpace(totpPin))
+            if (!validAdminAccount && user.TotpAuthentication.Enabled && !user.TotpAuthentication.RequiresSetup && String.IsNullOrWhiteSpace(totpPin) && String.IsNullOrWhiteSpace(totpBackupCode))
             {
                 return new ServiceResult<UserModel>(user);
             }
@@ -330,7 +333,7 @@ namespace Api.Modules.Customers.Services
             var otpStillRequiresSetup = false;
             if (!validAdminAccount)
             {
-                (var otpSuccess, otpStillRequiresSetup) = await HandleTotpAuthenticationAsync(totpPin, user.TotpAuthentication, user.Id, user.Name, clientDatabaseConnection);
+                (var otpSuccess, otpStillRequiresSetup) = await HandleTotpAuthenticationAsync(totpPin, totpBackupCode, user.TotpAuthentication, user.Id, user.Name, clientDatabaseConnection);
                 if (!otpSuccess)
                 {
                     // If TOTP authentication failed, return invalid credentials error.
@@ -619,6 +622,11 @@ namespace Api.Modules.Customers.Services
 
             var encryptionKey = customer.ModelObject.EncryptionKey;
             var userId = IdentityHelpers.GetWiserUserId(identity);
+            
+            clientDatabaseConnection.AddParameter("userId", userId);
+            var query = $@"SELECT IF(value = '1', TRUE, FALSE) AS totpEnabled FROM {WiserTableNames.WiserItemDetail} WHERE item_id = ?userId AND `key` = '{TotpEnabledKey}'";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            var totpEnabled = dataTable.Rows.Count > 0 && Convert.ToBoolean(dataTable.Rows[0]["totpEnabled"]);
 
             var result = new UserModel
             {
@@ -629,7 +637,11 @@ namespace Api.Modules.Customers.Services
                 EmailAddress = await usersService.GetUserEmailAddressAsync(userId),
                 CurrentBranchName = customer.ModelObject.Name,
                 CurrentBranchId = customer.ModelObject.Id,
-                CurrentBranchIsMainBranch = customer.ModelObject.Id == customer.ModelObject.CustomerId
+                CurrentBranchIsMainBranch = customer.ModelObject.Id == customer.ModelObject.CustomerId,
+                TotpAuthentication = new TotpAuthenticationModel
+                {
+                    Enabled = totpEnabled
+                }
             };
 
             if (result.CurrentBranchIsMainBranch)
@@ -1261,30 +1273,65 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public bool ValidateTwoFactorPin(string key, string code)
+        public bool ValidateTotpPin(string key, string code)
         {
             var twoFactorAuthenticator = new TwoFactorAuthenticator();
             return twoFactorAuthenticator.ValidateTwoFactorPIN(key, code);
         }
         
         /// <inheritdoc />
-        public string SetUpTwoFactorAuthentication(string account, string key)
+        public string SetUpTotpAuthentication(string account, string key)
         {
             var twoFactorAuthenticator = new TwoFactorAuthenticator();
             var setupInfo = twoFactorAuthenticator.GenerateSetupCode("Wiser", account, key, false, 3);
             return setupInfo.QrCodeSetupImageUrl;
         }
 
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<string>>> GenerateTotpBackupCodesAsync(ClaimsIdentity identity)
+        {
+            // First generate new codes.
+            var results = new List<string>();
+            for (var index = 0; index < AmountOfBackupCodesToGenerate; index++)
+            {
+                results.Add(SecurityHelpers.GenerateRandomPassword(8));
+            }
+
+            // Delete any remaining backup codes from the user.
+            clientDatabaseConnection.AddParameter("groupName", TotpBackupCodesGroupName);
+            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+            var query = $@"DELETE FROM {WiserTableNames.WiserItemDetail} WHERE item_id = ?userId AND groupname = ?groupName";
+            await clientDatabaseConnection.ExecuteAsync(query);
+            
+            // Hash the new backup codes and then save them in the database.
+            var queryBuilder = new List<string>();
+            for (var index = 0; index < results.Count; index++)
+            {
+                var backupCode = results[index];
+                clientDatabaseConnection.AddParameter($"key{index}", index);
+                clientDatabaseConnection.AddParameter($"code{index}", backupCode.ToSha512ForPasswords());
+                queryBuilder.Add($"(?userId, ?groupName, ?key{index}, ?code{index})");
+            }
+            
+            query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (`item_id`, `groupname`, `key`, `value`)
+VALUES {String.Join(", ", queryBuilder)}";
+            await clientDatabaseConnection.ExecuteAsync(query);
+
+            // Return the new backup codes to the user, this is the only time that the user can see them!
+            return new ServiceResult<List<string>>(results);
+        }
+
         /// <summary>
         /// Handle TOTP authentication for users and admins.
         /// </summary>
-        /// <param name="totpPin">The TOTP PIN that the user entered.</param>
+        /// <param name="totpPin">The TOTP PIN that the user entered, if any.</param>
+        /// <param name="totpBackupCode">The TOTP backup code that the user entered, if any.</param>
         /// <param name="totpAuthentication">The <see cref="TotpAuthenticationModel"/> with the TOTP settings.</param>
         /// <param name="userId">The ID of the user.</param>
         /// <param name="userName">The full name of the user</param>
         /// <param name="connectionToUse">The database connection to use (wiserDatabaseConnection for admins and clientDatabaseConnection for normal users).</param>
         /// <returns></returns>
-        private async Task<(bool Success, bool userIsStillSettingUp)> HandleTotpAuthenticationAsync(string totpPin, TotpAuthenticationModel totpAuthentication, ulong userId, string userName, IDatabaseConnection connectionToUse)
+        private async Task<(bool Success, bool userIsStillSettingUp)> HandleTotpAuthenticationAsync(string totpPin, string totpBackupCode, TotpAuthenticationModel totpAuthentication, ulong userId, string userName, IDatabaseConnection connectionToUse)
         {
             if (!totpAuthentication.Enabled)
             {
@@ -1296,7 +1343,7 @@ namespace Api.Modules.Customers.Services
             {
                 // If no PIN has been entered, it means the user still needs to scan the QR code for the setup, so generate that here.
                 totpAuthentication.SecretKey = SecurityHelpers.GenerateRandomPassword(30);
-                totpAuthentication.QrImageUrl = SetUpTwoFactorAuthentication(userName, totpAuthentication.SecretKey);
+                totpAuthentication.QrImageUrl = SetUpTotpAuthentication(userName, totpAuthentication.SecretKey);
 
                 // Save the secret key in the user's account.
                 connectionToUse.AddParameter("totpSecretKey", totpAuthentication.SecretKey.EncryptWithAes(gclSettings.DefaultEncryptionKey, useSlowerButMoreSecureMethod: true));
@@ -1307,9 +1354,50 @@ ON DUPLICATE KEY UPDATE `value` = VALUES(value);";
 
                 return (true, true);
             }
+            
+            // If the user entered a backup code, check if it's valid and if so, allow the user to login once with this code and then delete the code.
+            if (!String.IsNullOrWhiteSpace(totpBackupCode))
+            {
+                connectionToUse.AddParameter("userId", userId);
+                connectionToUse.AddParameter("groupName", TotpBackupCodesGroupName);
+                query = $@"SELECT id, value FROM {WiserTableNames.WiserItemDetail} WHERE item_id = ?userId AND groupname = ?groupName";
+                var dataTable = await connectionToUse.GetAsync(query);
+                if (dataTable.Rows.Count == 0)
+                {
+                    // User has no more backup codes, so deny the login attempt.
+                    return (false, false);
+                }
+
+                var validCodeId = 0UL;
+                // ReSharper disable once LoopCanBeConvertedToQuery
+                foreach (DataRow dataRow in dataTable.Rows)
+                {
+                    var rowId = dataRow.Field<ulong>("id");
+                    var databaseBackupCode = dataRow.Field<string>("value");
+                    // ReSharper disable once InvertIf
+                    if (totpBackupCode.VerifySha512(databaseBackupCode))
+                    {
+                        validCodeId = rowId;
+                        break;
+                    }
+                }
+
+                // The backup code that the user entered was not found, so deny the login attempt.
+                if (validCodeId == 0)
+                {
+                    return (false, false);
+                }
+
+                // Backup code found, delete the code and allow the login attempt.
+                connectionToUse.AddParameter("detailId", validCodeId);
+                query = $"DELETE FROM {WiserTableNames.WiserItemDetail} WHERE id = ?detailId";
+                await connectionToUse.ExecuteAsync(query);
+                
+                return (true, false);
+            }
 
             // If we do have a PIN, validate it.
-            var success = ValidateTwoFactorPin(totpAuthentication.SecretKey.DecryptWithAes(gclSettings.DefaultEncryptionKey, useSlowerButMoreSecureMethod: true), totpPin);
+            var success = ValidateTotpPin(totpAuthentication.SecretKey.DecryptWithAes(gclSettings.DefaultEncryptionKey, useSlowerButMoreSecureMethod: true), totpPin);
             if (!success)
             {
                 // Invalid PIN, return unauthorized error.

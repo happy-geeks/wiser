@@ -21,5 +21,10 @@
         /// The key for the TOTP PIN that the user needs to enter when 2FA is enabled.
         /// </summary>
         public const string TotpPinKey = "totpPin";
+
+        /// <summary>
+        /// The key for the TOTP backup code that the user needs to enter when 2FA is enabled and they lost access to their authenticator app.
+        /// </summary>
+        public const string TotpBackupCodeKey = "totpBackupCode";
     }
 }

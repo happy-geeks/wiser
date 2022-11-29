@@ -59,9 +59,10 @@
                     </span>
 
                 <ul class="sub-menu">
-                    <li><a href="#" v-if="user.adminAccountId" @@click="openCustomerManagement()"><ins class="icon-line-user-plus"></ins><span>Klant toevoegen</span></a></li>
+                    <li><a href="#" v-if="user.adminLogin" @@click="openCustomerManagement()"><ins class="icon-line-user-plus"></ins><span>Klant toevoegen</span></a></li>
                     <li><a href="#" @@click="openMarkerIoScreen()"><ins class="icon-line-bug"></ins><span>Bug melden! (CTRL+B)</span></a></li>
                     <li><a href="#" @@click="openWiserIdPrompt"><ins class="icon-line-database-search"></ins><span>Wiser item openen (CTRL+O)</span></a></li>
+                    <li><a href="#" @@click="openGenerateTotpBackupCodesPrompt" v-if="userData && userData.totpAuthentication && userData.totpAuthentication.enabled"><ins class="icon-line-lock"></ins><span>Nieuwe 2FA-backup-codes genereren</span></a></li>
                     <li><a href="#" @@click="openChangePasswordPrompt"><ins class="icon-line-lock"></ins><span>Wachtwoord wijzigen</span></a></li>
                     <li><a href="#" @@click="openWiserBranchesPrompt"><ins class="icon-table-backup"></ins><span>Wiser branches</span></a></li>
                     <li><a href="#" @@click="openClearCachePrompt"><ins class="icon-line-refresh"></ins><span>Cache van website legen</span></a></li>
@@ -81,17 +82,15 @@
 
         <main :class="{ login: !user.loggedIn || requirePasswordChange, 'scrollable': customerManagementIsOpened }">
             <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
-            <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
+            <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login" @@loginSuccess="onLoginSuccess"></login>
             <section class="iframe-container">
                 <iframe v-for="module in openedModulesWithBackend" :key="module.id" :src="module.iframeUrl || `/Modules/${module.type}${module.fileName}${module.queryString}`" :id="module.id" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
                 <iframe v-for="module in openedWiser1Modules" :key="module.id" :src="`${appSettings.wiser1BaseUrl}?singleModuleId=${module.moduleId}&autoLoginCookie=${encodeURIComponent(user.cookieValue)}&autoLoginUserId=${encodeURIComponent(user.encryptedId)}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
             </section>
 
             <keep-alive>
-                <customer-management v-if="user.adminAccountId && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
+                <customer-management v-if="user.adminLogin && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
             </keep-alive>
-
-
         </main>
 
         <wiser-dialog class="general-message-dialog" :modal="true" :width="'400px'" :title="generalMessagePromptTitle" ref="generalMessagePrompt" :visible="false" :actions="[{ text: 'OK', primary: true }]">
@@ -663,6 +662,21 @@
                 <span v-html="clearCacheError"></span>
             </section>
         </wiser-dialog>
+        
+        <wiser-dialog :modal="true" :width="'400px'" :title="'2FA-backup-codes'" ref="generateTotpBackupCodesPrompt" :visible="false" :actions="totpBackupCodes.length > 0 ? [{ text: 'OK', primary: true }] : [{ text: 'Nee' }, { text: 'Ja', primary: true, action: generateNewTotpBackupCodes }]" @@close="onGenerateTotpBackupCodesPromptClose">
+            <p v-if="totpBackupCodes.length === 0">Weet u zeker dat u nieuwe backup-codes wilt genereren? Uw oude backup-codes zullen dan verloren gaan.</p>
+            <p v-else>
+                Hieronder vindt u uw backup-codes. Zorg dat u deze op ergens op een veilige plaats bewaart. Dit is de enige keer dat u deze codes kunt zien!<br/>
+                Let op: Elke backup-code kan maar 1 keer gebruikt worden.
+            </p>
+            <ul v-if="totpBackupCodes.length > 0" class="totp-backup-codes">
+                <li v-for="code in totpBackupCodes" :key="code">
+                    {{ code }}
+                </li>
+            </ul>
+            
+            <div class="error" v-if="generateTotpBackupCodesError">{{ generateTotpBackupCodesError }}</div>
+        </wiser-dialog>
     </div>
 </div>
 
@@ -700,19 +714,25 @@
                 <div class="btn-row">
                     <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'loading' }">Inloggen</button>
 
-                    <a href="#" v-on:click="togglePasswordForgottenScreen(true)" id="forgotten-password">Wachtwoord vergeten?</a>
+                    <a href="#" @@click="togglePasswordForgottenScreen(true)" id="forgotten-password">Wachtwoord vergeten?</a>
                 </div>
             </div>
             <div v-if="(loginStatus === 'totp' || loginStatus === 'totp_loading' || loginStatus === 'totp_error') && !showForgotPasswordScreen" class="totp">
                 <p v-if="totpQrImageUrl">Scan de QR-code in uw authenticator-app en vul daarna de code in.</p>
+                <p v-else-if="showTotpBackupCodeScreen">Vul hier een van uw backup-codes in.</p>
                 <p v-else>Vul de code in van uw authenticator app.</p>
 
                 <div class="form-row" v-if="totpQrImageUrl"> 
                     <img :src="totpQrImageUrl" alt="2FA Setup QR" />
                 </div>
-                <div class="form-row"> 
+                <div v-if="showTotpBackupCodeScreen" class="form-row"> 
+                    <input type="text" name="totpBackupCode" v-model="loginForm.totpBackupCode" />
+                </div>
+                <div v-else class="form-row"> 
                     <input type="text" name="totpPin" v-model="loginForm.totpPin" />
                 </div>
+                
+                <a v-if="!totpQrImageUrl && !showTotpBackupCodeScreen && !user.adminLogin" href="#" @@click="toggleTotpBackupCodeScreen(true)" id="totpBackupCode">Inloggen via backup-code?</a>
 
                 <div class="btn-row">
                     <a href="#" class="btn btn-secundary" @@click="logout()">Annuleren</a>
@@ -755,8 +775,6 @@
                 <div class="form-row">
                     <input type="password" id="newPasswordRepeat" name="newPasswordRepeat" class="loginField passwordField" placeholder="Nogmaals uw nieuwe wachtwoord" v-model="changePasswordForm.newPasswordRepeat" />
                 </div>
-
-                <div class="error"></div>
 
                 <div class="btn-row">
                     <button id="submitPasswordChange" type="submit" :class="{ btn: true, 'btn-primary': true }">Wijzigen</button>

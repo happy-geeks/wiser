@@ -183,5 +183,20 @@ namespace Api.Modules.Customers.Controllers
         {
             return (await usersService.GetRolesAsync(includePermissions)).GetHttpResponseMessage();
         }
+
+
+        /// <summary>
+        /// (Re)generate backup codes for TOTP (2FA) authentication.
+        /// This will delete any remaining backup codes from the user and generate new ones.
+        /// They will be hashed before they're saved in the database and can therefor only be shown to the user once!
+        /// </summary>
+        /// <returns>A list with the new backup codes.</returns>
+        [HttpPost]
+        [Route("totp-backup-codes")]
+        [ProducesResponseType(typeof(List<string>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GenerateTotpBackupCodesAsync()
+        {
+            return (await usersService.GenerateTotpBackupCodesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
     }
 }

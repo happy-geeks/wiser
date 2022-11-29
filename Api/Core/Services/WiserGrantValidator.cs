@@ -59,13 +59,14 @@ namespace Api.Core.Services
             var selectedUser = context.Request.Raw[HttpContextConstants.SelectedUserKey];
             var isTestEnvironment = context.Request.Raw[HttpContextConstants.IsTestEnvironmentKey];
             var totpPin = context.Request.Raw[HttpContextConstants.TotpPinKey];
+            var totpBackupCode = context.Request.Raw[HttpContextConstants.TotpBackupCodeKey];
             if (String.IsNullOrWhiteSpace(isTestEnvironment))
             {
                 isTestEnvironment = "false";
             }
             
             // First try to login as a regular user.
-            var loginResult = await usersService.LoginCustomerAsync(context.UserName, context.Password, subDomain: subDomain, generateAuthenticationTokenForCookie: true, totpPin: totpPin);
+            var loginResult = await usersService.LoginCustomerAsync(context.UserName, context.Password, subDomain: subDomain, generateAuthenticationTokenForCookie: true, totpPin: totpPin, totpBackupCode: totpBackupCode);
 
             // If the regular user login failed, try to login as an admin account.
             var totpSuccessAdmin = false;
@@ -80,7 +81,7 @@ namespace Api.Core.Services
 
                 adminAccountId = adminAccountLoginResult.ModelObject.Id;
                 adminAccountName = adminAccountLoginResult.ModelObject.Name;
-                if (adminAccountLoginResult.ModelObject.TotpAuthentication.Enabled && String.IsNullOrWhiteSpace(totpPin))
+                if (adminAccountLoginResult.ModelObject.TotpAuthentication.Enabled && String.IsNullOrWhiteSpace(totpPin) && String.IsNullOrWhiteSpace(totpBackupCode))
                 {
                     // 2FA is enabled for admin account, but admin hasn't entered a PIN yet, so don't load the users list yet.
                     customResponse = new Dictionary<string, object>
@@ -141,7 +142,7 @@ namespace Api.Core.Services
             }
 
             // Everything is ok, create identity.
-            var totpSuccess = totpSuccessAdmin || loginResult.ModelObject.TotpAuthentication.Enabled && !String.IsNullOrWhiteSpace(totpPin);
+            var totpSuccess = totpSuccessAdmin || loginResult.ModelObject.TotpAuthentication.Enabled && (!String.IsNullOrWhiteSpace(totpPin) || !String.IsNullOrWhiteSpace(totpBackupCode));
             customResponse = new Dictionary<string, object>
             {
                 { "name", loginResult.ModelObject.Name },

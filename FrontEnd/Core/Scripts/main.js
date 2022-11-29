@@ -44,7 +44,9 @@ import {
     CLEAR_CACHE_ERROR,
     START_UPDATE_TIME_ACTIVE_TIMER,
     STOP_UPDATE_TIME_ACTIVE_TIMER,
-    UPDATE_ACTIVE_TIME
+    UPDATE_ACTIVE_TIME,
+    GENERATE_TOTP_BACKUP_CODES, 
+    CLEAR_LOCAL_TOTP_BACKUP_CODES
 } from "./store/mutation-types";
 import CacheService from "./shared/cache.service";
 
@@ -137,6 +139,7 @@ import CacheService from "./shared/cache.service";
                 data: () => {
                     return {
                         appSettings: this.appSettings,
+                        userData: null,
                         wiserIdPromptValue: null,
                         wiserEntityTypePromptValue: null,
                         markerWidget: this.markerWidget,
@@ -200,9 +203,10 @@ import CacheService from "./shared/cache.service";
                         }
                     };
                 },
-                created() {
+                async created() {
                     this.$store.dispatch(GET_CUSTOMER_TITLE, this.appSettings.subDomain);
                     document.addEventListener("keydown", this.onAppKeyDown.bind(this));
+                    this.userData = await main.usersService.getLoggedInUserData();
                 },
                 computed: {
                     loginStatus() {
@@ -382,6 +386,12 @@ import CacheService from "./shared/cache.service";
                         }
 
                         return url;
+                    },
+                    generateTotpBackupCodesError() {
+                        return this.$store.state.users.generateTotpBackupCodesError;
+                    },
+                    totpBackupCodes() {
+                        return this.$store.state.users.totpBackupCodes;
                     }
                 },
                 components: {
@@ -521,7 +531,8 @@ import CacheService from "./shared/cache.service";
                         });
                     },
 
-                    openWiserIdPrompt() {
+                    openWiserIdPrompt(event) {
+                        event.preventDefault();
                         this.$refs.wiserIdPrompt.open();
                     },
 
@@ -763,6 +774,20 @@ import CacheService from "./shared/cache.service";
                         return true;
                     },
 
+                    openGenerateTotpBackupCodesPrompt(event) {
+                        event.preventDefault();
+                        this.$refs.generateTotpBackupCodesPrompt.open();
+                    },
+
+                    async generateNewTotpBackupCodes() {
+                        await this.$store.dispatch(GENERATE_TOTP_BACKUP_CODES);
+                        return false;
+                    },
+
+                    onGenerateTotpBackupCodesPromptClose(event) {
+                        this.$store.dispatch(CLEAR_LOCAL_TOTP_BACKUP_CODES);
+                    },
+
                     onOpenModuleClick(event, module) {
                         event.preventDefault();
                         this.openModule(module);
@@ -901,6 +926,10 @@ import CacheService from "./shared/cache.service";
                                 this.clearCacheSettings.areas.push("all");
                             }
                         }
+                    },
+
+                    async onLoginSuccess() {
+                        this.userData = await main.usersService.getLoggedInUserData();
                     }
                 }
             });

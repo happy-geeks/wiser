@@ -43,8 +43,9 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="ipAddress">The IP address of the user.</param>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user to check for rights.</param>
         /// <param name="totpPin">When the user is logging in with TOTP, then the PIN of the user should be entered here. </param>
+        /// <param name="totpBackupCode">When the user entered a backup code to access their account, instead of a PIN.</param>
         /// <returns>Either an unauthorized error, or the <see cref="UserModel"/> of the user that is trying to login.</returns>
-        Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null);
+        Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null, string totpBackupCode = null);
 
         /// <summary>
         /// Sends a new password to a user.
@@ -192,19 +193,28 @@ namespace Api.Modules.Customers.Interfaces
         Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false);
 
         /// <summary>
-        /// Authenticates the two factor code with the unique key of an user.
+        /// Authenticates the TOTP code with the unique key of an user (2FA).
         /// </summary>
         /// <param name="key">Secret stored key</param>
         /// <param name="code">Code from authenticator app</param>
         /// <returns></returns>
-        bool ValidateTwoFactorPin(string key, string code);
+        bool ValidateTotpPin(string key, string code);
 
         /// <summary>
-        /// SetUps TwoFactor Authentication
+        /// Setup TOTP authentication (2FA).
         /// </summary>
         /// <param name="account">Account-name (equal to e-mail address)</param>
         /// <param name="key">Secret stored key</param>
         /// <returns>QR Image URL</returns>
-        string SetUpTwoFactorAuthentication(string account, string key);
+        string SetUpTotpAuthentication(string account, string key);
+
+        /// <summary>
+        /// (Re)generate backup codes for TOTP (2FA) authentication.
+        /// This will delete any remaining backup codes from the user and generate new ones.
+        /// They will be hashed before they're saved in the database and can therefor only be shown to the user once!
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <returns>A list with the new backup codes.</returns>
+        Task<ServiceResult<List<string>>> GenerateTotpBackupCodesAsync(ClaimsIdentity identity);
     }
 }
