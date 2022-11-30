@@ -1342,7 +1342,6 @@ export class Grids {
                                 text: "Alleen koppeling",
                                 primary: true,
                                 action: (e) => {
-                                    console.log("huh", dataItem, senderGrid.element.closest(".item").data());
                                     const destinationItemId = dataItem.encryptedDestinationItemId || senderGrid.element.closest(".item").data("itemIdEncrypted");
                                     this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.linkTypeNumber || dataItem.link_type_number).then(() => {
                                         senderGrid.dataSource.read();

@@ -16,6 +16,7 @@ export const RESET_PASSWORD_SUCCESS = "resetPasswordSuccess";
 export const RESET_PASSWORD_ERROR = "resetPasswordError";
 export const USE_TOTP_BACKUP_CODE = "useTotpBackupCode";
 export const USE_TOTP_BACKUP_CODE_ERROR = "useTotpBackupCodeError";
+export const USER_BACKUP_CODES_GENERATED = "userBackupCodesGenerated";
 
 // Modules module.
 export const MODULES_REQUEST = "modulesRequest";

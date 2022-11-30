@@ -145,6 +145,7 @@ namespace Api.Core.Services
             var totpSuccess = totpSuccessAdmin || loginResult.ModelObject.TotpAuthentication.Enabled && (!String.IsNullOrWhiteSpace(totpPin) || !String.IsNullOrWhiteSpace(totpBackupCode));
             customResponse = new Dictionary<string, object>
             {
+                { "adminLogin", adminAccountId > 0 },
                 { "name", loginResult.ModelObject.Name },
                 { "role", loginResult.ModelObject.Role },
                 { "lastLoginIpAddress", loginResult.ModelObject.LastLoginIpAddress ?? "" },
@@ -154,7 +155,8 @@ namespace Api.Core.Services
                 { "encryptedLoginLogId", loginResult.ModelObject.EncryptedLoginLogId },
                 { "totpEnabled", loginResult.ModelObject.TotpAuthentication.Enabled },
                 { "totpQrImageUrl", loginResult.ModelObject.TotpAuthentication.QrImageUrl },
-                { "totpSuccess", totpSuccess }
+                { "totpSuccess", totpSuccess },
+                { "totpFirstTime", adminAccountId == 0 && loginResult.ModelObject.TotpAuthentication.RequiresSetup }
             };
 
             // Set access token and refresh token to null to make sure people can't somehow login anyway, when they haven't entered their 2FA PIN yet.
@@ -171,7 +173,7 @@ namespace Api.Core.Services
 
             if (adminAccountId > 0)
             {
-                customResponse.Add("adminAccountId", adminAccountId.ToString());
+                customResponse.Add("adminAccountId", adminAccountId);
                 customResponse.Add("adminAccountName", adminAccountName);
             }
             

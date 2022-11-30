@@ -45,8 +45,9 @@ import {
     START_UPDATE_TIME_ACTIVE_TIMER,
     STOP_UPDATE_TIME_ACTIVE_TIMER,
     UPDATE_ACTIVE_TIME,
-    GENERATE_TOTP_BACKUP_CODES, 
-    CLEAR_LOCAL_TOTP_BACKUP_CODES
+    GENERATE_TOTP_BACKUP_CODES,
+    CLEAR_LOCAL_TOTP_BACKUP_CODES,
+    USER_BACKUP_CODES_GENERATED
 } from "./store/mutation-types";
 import CacheService from "./shared/cache.service";
 
@@ -139,7 +140,6 @@ import CacheService from "./shared/cache.service";
                 data: () => {
                     return {
                         appSettings: this.appSettings,
-                        userData: null,
                         wiserIdPromptValue: null,
                         wiserEntityTypePromptValue: null,
                         markerWidget: this.markerWidget,
@@ -206,7 +206,6 @@ import CacheService from "./shared/cache.service";
                 async created() {
                     this.$store.dispatch(GET_CUSTOMER_TITLE, this.appSettings.subDomain);
                     document.addEventListener("keydown", this.onAppKeyDown.bind(this));
-                    this.userData = await main.usersService.getLoggedInUserData();
                 },
                 computed: {
                     loginStatus() {
@@ -401,6 +400,15 @@ import CacheService from "./shared/cache.service";
                     "login": login,
                     "taskAlerts": taskAlerts
                 },
+                watch: {
+                    async loginStatus(newValue, oldValue) {
+                        if (oldValue !== newValue && newValue === "success" && this.user.totpFirstTime && this.user.totpEnabled && !this.user.adminLogin) {
+                            // If the user just finished setting up TOTP (2FA) authentication, then immediately generate backup codes for them.
+                            this.openGenerateTotpBackupCodesPrompt();
+                            await this.generateNewTotpBackupCodes();
+                        }
+                    }
+                },
                 methods: {
                     onAppKeyDown(event) {
                         // Open Wiser ID prompt when the user presses CTRL+O.
@@ -467,7 +475,11 @@ import CacheService from "./shared/cache.service";
                         this.$refs.generalMessagePrompt.open();
                     },
 
-                    logout() {
+                    logout(event) {
+                        if (event) {
+                            event.preventDefault();
+                        }
+                        
                         this.$store.dispatch(STOP_UPDATE_TIME_ACTIVE_TIMER);
                         // Update the user's active time one last time.
                         this.$store.dispatch(UPDATE_ACTIVE_TIME);
@@ -775,12 +787,15 @@ import CacheService from "./shared/cache.service";
                     },
 
                     openGenerateTotpBackupCodesPrompt(event) {
-                        event.preventDefault();
+                        if (event) {
+                            event.preventDefault();
+                        }
                         this.$refs.generateTotpBackupCodesPrompt.open();
                     },
 
                     async generateNewTotpBackupCodes() {
                         await this.$store.dispatch(GENERATE_TOTP_BACKUP_CODES);
+                        this.$store.dispatch(USER_BACKUP_CODES_GENERATED);
                         return false;
                     },
 
@@ -828,8 +843,7 @@ import CacheService from "./shared/cache.service";
                                 name: "Website"
                             };
 
-                            const extraUserData = await main.usersService.getLoggedInUserData();
-                            this.openBranchSettings.selectedBranch = this.branches.find(branch => branch.id === extraUserData.currentBranchId);
+                            this.openBranchSettings.selectedBranch = this.branches.find(branch => branch.id === this.user.currentBranchId);
                         }
                     },
                     
@@ -926,10 +940,6 @@ import CacheService from "./shared/cache.service";
                                 this.clearCacheSettings.areas.push("all");
                             }
                         }
-                    },
-
-                    async onLoginSuccess() {
-                        this.userData = await main.usersService.getLoggedInUserData();
                     }
                 }
             });

@@ -51,7 +51,8 @@ import {
     GENERATE_TOTP_BACKUP_CODES_ERROR,
     CLEAR_LOCAL_TOTP_BACKUP_CODES,
     USE_TOTP_BACKUP_CODE,
-    USE_TOTP_BACKUP_CODE_ERROR
+    USE_TOTP_BACKUP_CODE_ERROR,
+    USER_BACKUP_CODES_GENERATED
 } from "./mutation-types";
 
 const baseModule = {
@@ -123,7 +124,6 @@ const loginModule = {
             state.requirePasswordChange = user.requirePasswordChange;
         },
         [AUTH_TOTP_SETUP]: (state, user) => {
-            console.log("huh2", user);
             state.loginStatus = "totp";
             state.user = user;
             state.loginMessage = "";
@@ -190,6 +190,9 @@ const loginModule = {
         },
         [USE_TOTP_BACKUP_CODE_ERROR]: (state, message) => {
             state.loginMessage = message;
+        },
+        [USER_BACKUP_CODES_GENERATED]: (state) => {
+            state.user.totpFirstTime = false;
         }
     },
 
@@ -259,7 +262,7 @@ const loginModule = {
             }
             
             // If the user that is logging in is an admin account, show a list of users for the customer.
-            if (loginResult.data.adminLogin) {
+            if (loginResult.data.adminLogin && !loginResult.data.adminAccountId) {
                 commit(AUTH_LIST, loginResult.data.usersList);
                 return;
             }
@@ -326,6 +329,17 @@ const loginModule = {
             } else {
                 commit(CHANGE_PASSWORD_ERROR, result.message);
             }
+        },
+        
+        [USER_BACKUP_CODES_GENERATED]({ commit }) {
+            commit(USER_BACKUP_CODES_GENERATED);
+            const localUser = JSON.parse(localStorage.getItem("userData"));
+            if (!localUser) {
+                return;
+            }
+
+            localUser.totpFirstTime = false;
+            localStorage.setItem("userData", JSON.stringify(localUser));
         }
     },
 

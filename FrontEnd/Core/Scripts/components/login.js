@@ -26,10 +26,7 @@ export default {
                 newPassword: "",
                 newPasswordRepeat: ""
             },
-            showTotpBackupCodeScreen: false/*,
-            totpBackupCodeForm: {
-                code: ""
-            }*/
+            showTotpBackupCodeScreen: false
         };
     },
     async created() {
@@ -114,14 +111,13 @@ export default {
                 user: Object.assign({}, this.loginForm),
                 loginStatus: this.loginStatus
             });
+            
             if (this.loginStatus === "error") {
                 this.loginForm.selectedUser = "";
                 this.loginForm.password = "";
             }
-            else if(this.users && this.users.length > 0) {
+            else if (this.users && this.users.length > 0) {
                 this.loginForm.selectedUser = this.users[0];
-            } else {
-                this.$emit("loginSuccess");
             }
         },
 

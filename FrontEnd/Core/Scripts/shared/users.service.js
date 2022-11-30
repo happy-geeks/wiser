@@ -157,15 +157,13 @@ export default class UsersService extends BaseService {
 
             if (!result) {
                 const response = await this.base.api.get(`/api/v3/users/self`);
-                result = response.data;
-                if (result) {
-                    sessionStorage.setItem("userSettings", JSON.stringify({ dateTime: new Date(), data: result }));
-                }
+                result = response.data || {};
             }
 
             result.success = true;
             result.data = result;
         } catch (error) {
+            result = result || {};
             result.success = false;
             console.error("Error getLoggedInUserData", error);
             result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van informatie over de ingelogde gebruiker. Probeer het a.u.b. nogmaals of neem contact op met ons.";

@@ -7,8 +7,7 @@ export default {
         visible: { type: Boolean, default: false }, 
         modal: { type: Boolean, default: false }, 
         width: { type: String, default: "500px" },
-        actions: { type: Array, default: () => [{ text: "Ok", primary: true }] },
-        onClose: { type: Function },
+        actions: { type: Array, default: () => [{ text: "Ok", primary: true }] }
     },
     data() {
         return {
