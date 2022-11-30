@@ -152,6 +152,22 @@
     <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
     <None Remove="Core\Queries\WiserInstallation\InsertInitialDataMultiLanguage.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataMultiLanguage.sql" />
+    <EmbeddedResource Update="Modules\Translations\Resources\Core\Views\Home\Resources\Index.en.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Index.en.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Modules\Translations\Resources\Core\Views\Home\Resources\Index.nl.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Index.nl.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Modules\Translations\Resources\Core\Views\Home\Index.en.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Index.en.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Modules\Translations\Resources\Core\Views\Home\Index.nl.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Index.nl.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
@@ -182,7 +198,45 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Modules\Translations\Enums" />
+    <Folder Include="Modules\Translations\Exceptions" />
+    <Folder Include="Modules\Translations\Helpers" />
+    <Folder Include="Modules\Translations\Models" />
     <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Modules\Translations\Resources\Core\Views\Home\Index.nl.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Index.nl.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Modules\Translations\Resources\Core\Views\Home\Resources\Index.en.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>index.en.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Modules\Translations\Resources\Core\Views\Home\Resources\Index.nl.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>index.nl.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Modules\Translations\Resources\Core\Views\Home\Resources\Index.en.Designer.cs">
+      <DependentUpon>Index.en.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Modules\Translations\Resources\Core\Views\Home\Resources\Index.nl.Designer.cs">
+      <DependentUpon>Index.nl.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Modules\Translations\Resources\Core\Views\Home\Index.en.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Index.en.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Modules\Translations\Resources\Core\Views\Home\Index.nl.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Index.nl.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
 
 </Project>

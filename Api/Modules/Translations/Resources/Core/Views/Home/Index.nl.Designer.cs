@@ -21,14 +21,14 @@ namespace Api.Modules.Translations.Resources.Core.Views.Home {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Index_en {
+    internal class Index_nl {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal Index_en() {
+        internal Index_nl() {
         }
         
         /// <summary>
@@ -38,7 +38,7 @@ namespace Api.Modules.Translations.Resources.Core.Views.Home {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Api.Modules.Translations.Resources.Core.Views.Home.Resources.Index.en", typeof(Index_en).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Api.Modules.Translations.Resources.Core.Views.Home.Index.nl", typeof(Index_nl).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -60,7 +60,7 @@ namespace Api.Modules.Translations.Resources.Core.Views.Home {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Hello.
+        ///   Looks up a localized string similar to Hallo.
         /// </summary>
         internal static string Hello {
             get {

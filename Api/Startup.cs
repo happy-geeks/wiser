@@ -19,6 +19,8 @@ using Api.Modules.Languages.Interfaces;
 using Api.Modules.Languages.Services;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Services;
+using Api.Modules.Translations.Interfaces;
+using Api.Modules.Translations.Services;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using IdentityServer4.Services;
@@ -92,6 +94,17 @@ namespace Api
 
             // Use Serilog as our main logger.
             services.AddLogging(builder => { builder.AddSerilog(); });
+            
+            services.Configure<RequestLocalizationOptions>(options =>
+            {
+                string[] supportedCultures = { "en-US", "nl-NL", "es" };
+                options.AddSupportedCultures(supportedCultures);
+                options.AddSupportedUICultures(supportedCultures);
+                options.SetDefaultCulture(supportedCultures[0]);
+                options.FallBackToParentUICultures = true;
+            });
+            // Setup localization.
+            services.AddLocalization(options => options.ResourcesPath = "Modules/Translations/Resources");
 
             // Configure Swagger for documentation.
             services.AddSwaggerGenNewtonsoftSupport();
