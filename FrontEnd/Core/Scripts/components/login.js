@@ -123,6 +123,7 @@ export default {
 
         logout() {
             this.$store.dispatch(AUTH_LOGOUT);
+            this.toggleTotpBackupCodeScreen(false);
         },
 
         userFilterChange(event) {
