@@ -477,7 +477,7 @@ export class Fields {
                             break;
                     }
 
-                    const fieldContainer = container.closest(".k-tabstrip-wrapper").find(`[data-property-id='${dependency.propertyId}'].item`).toggle(showElement);
+                    const fieldContainer = container.closest(".k-tabstrip").find(`[data-property-id='${dependency.propertyId}'].item`).toggle(showElement);
                     const tabContainer = fieldContainer.closest(".k-content");
                     const allFields = tabContainer.find(".item");
                     const visibleFields = allFields.filter(index => allFields[index].style.display !== "none");
