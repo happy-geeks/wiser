@@ -1,5 +1,6 @@
 using System.Globalization;
 using Api.Modules.Translations.Services;
+using System.Threading.Tasks;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Core.Models;
 using FrontEnd.Core.Services;
@@ -120,10 +121,11 @@ namespace FrontEnd
             services.AddTransient<IBaseService, BaseService>();
             services.AddTransient<IImportsService, ImportsService>();
             services.AddTransient<IFrontEndDynamicContentService, FrontEndDynamicContentService>();
+            services.AddSingleton<IWebPackService, WebPackService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IWebPackService webPackService)
         {
             if (env.IsDevelopment())
             {
@@ -153,6 +155,8 @@ namespace FrontEnd
                     Predicate = _ => true
                 });
             });
+
+            webPackService.InitializeAsync();
         }
     }
 }

@@ -139,5 +139,21 @@ namespace Api.Modules.EntityProperties.Controllers
         {
             return (await entityPropertiesService.CopyToAllAvailableLanguagesAsync((ClaimsIdentity)User.Identity, id, tabOption)).GetHttpResponseMessage();
         }
+        
+        [HttpPut]
+        [Route("{entityName}/fix-ordering")]
+        [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> FixOrderingAsync(string entityName)
+        {
+            return (await entityPropertiesService.FixOrderingAsync((ClaimsIdentity)User.Identity, entityName)).GetHttpResponseMessage();
+        }
+        
+        [HttpPut]
+        [Route("{linkType:int}/fix-ordering")]
+        [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> FixOrderingAsync(int linkType)
+        {
+            return (await entityPropertiesService.FixOrderingAsync((ClaimsIdentity)User.Identity, linkType: linkType)).GetHttpResponseMessage();
+        }
     }
 }

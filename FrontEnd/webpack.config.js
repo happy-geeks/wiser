@@ -1,6 +1,7 @@
 ﻿var path = require("path");
 
 const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
+const {WebpackManifestPlugin} = require("webpack-manifest-plugin");
 
 module.exports = {
     context: path.join(__dirname, "Core/Scripts"),
@@ -39,12 +40,15 @@ module.exports = {
     },
     output: {
         path: path.join(__dirname, "wwwroot/scripts"),
-        filename: "[name].min.js",
-        chunkFilename: "[name].min.js",
-        publicPath: "/scripts/"
+        filename: "[name].[contenthash].min.js",
+        chunkFilename: "[name].[contenthash].min.js",
+        publicPath: "/scripts/",
+        clean: true
     },
     plugins: [
-        new NodePolyfillPlugin()
+        new NodePolyfillPlugin(),
+        // Add JSON manifest for loading files in .NET with a dynamic hash in the name, so that users don't need to clear their browser cache after every Wiser update.
+        new WebpackManifestPlugin({}),
     ],
     resolve: {
         alias: {

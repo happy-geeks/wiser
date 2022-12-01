@@ -810,21 +810,9 @@ const moduleSettings = {
 
                 // Only load dynamic content and previews for HTML templates.
                 const isHtmlTemplate = this.templateSettings.type.toUpperCase() === "HTML";
+
                 // Database elements (views, routines and templates) disable some functionality that do not apply to these functions.
-                const isDatabaseElementTemplate = ["VIEW", "ROUTINE", "TRIGGER"].includes(this.templateSettings.type.toUpperCase());
-
-                if (isDatabaseElementTemplate) {
-                    // Disable and hide the "save and deploy to test" button.
-                    const saveAndDeployToTestButton = document.getElementById("saveAndDeployToTestButton");
-                    $(saveAndDeployToTestButton).getKendoButton().enable(false);
-                    saveAndDeployToTestButton.classList.add("hidden");
-
-                    // Published environments are not available for database elements.
-                    const publishedEnvironments = document.getElementById("published-environments");
-                    publishedEnvironments.querySelectorAll(".version-live, .version-accept, .version-test").forEach((element) => {
-                        element.classList.add("hidden");
-                    });
-                }
+                this.toggleElementsForDatabaseTemplates(this.templateSettings.type);
 
                 if (isVirtualTemplate) {
                     // History tab is not available for virtual items.
@@ -1015,6 +1003,26 @@ const moduleSettings = {
                 kendo.alert(`Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.<br>${exception.responseText || exception}`);
                 window.processing.removeProcess(process);
             }
+        }
+
+        /**
+         * Database elements (views, routines and templates) disable some functionality that do not apply to these functions.
+         * @param {string} templateType The type of template that is opened.
+         */
+        toggleElementsForDatabaseTemplates(templateType = "") {
+            const isDatabaseElementTemplate = ["VIEW", "ROUTINE", "TRIGGER"].includes(templateType.toUpperCase());
+
+            if (!isDatabaseElementTemplate) {
+                return;
+            }
+            
+            const saveAndDeployToTestButton = document.getElementById("saveAndDeployToTestButton");
+            $(saveAndDeployToTestButton).getKendoButton().enable(false);
+            saveAndDeployToTestButton.classList.add("hidden");
+            const publishedEnvironments = document.getElementById("published-environments");
+            publishedEnvironments.querySelectorAll(".version-accept, .version-test").forEach((element) => {
+                element.classList.add("hidden");
+            });
         }
 
         /**
@@ -2279,6 +2287,9 @@ const moduleSettings = {
             }
 
             this.bindDeploymentTabEvents();
+            
+            // Database elements (views, routines and templates) disable some functionality that do not apply to these functions.
+            this.toggleElementsForDatabaseTemplates(this.templateSettings.type);
         }
 
         /**

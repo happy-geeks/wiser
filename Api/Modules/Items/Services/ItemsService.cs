@@ -33,6 +33,7 @@ using GeeksCoreLibrary.Core.Services;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using GeeksCoreLibrary.Modules.Languages.Interfaces;
+using GeeksCoreLibrary.Modules.Objects.Interfaces;
 using Google.Cloud.Translation.V2;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -61,6 +62,7 @@ namespace Api.Modules.Items.Services
         private readonly ILanguagesService languagesService;
         private readonly IEntityPropertiesService entityPropertiesService;
         private readonly IGoogleTranslateService googleTranslateService;
+        private readonly IObjectsService objectsService;
 
         /// <summary>
         /// Creates a new instance of <see cref="ItemsService"/>.
@@ -78,7 +80,8 @@ namespace Api.Modules.Items.Services
                             IDatabaseHelpersService databaseHelpersService,
                             ILanguagesService languagesService,
                             IEntityPropertiesService entityPropertiesService,
-                            IGoogleTranslateService googleTranslateService)
+                            IGoogleTranslateService googleTranslateService,
+                            IObjectsService objectsService)
         {
             this.templatesService = templatesService;
             this.wiserCustomersService = wiserCustomersService;
@@ -94,6 +97,7 @@ namespace Api.Modules.Items.Services
             this.languagesService = languagesService;
             this.entityPropertiesService = entityPropertiesService;
             this.googleTranslateService = googleTranslateService;
+            this.objectsService = objectsService;
         }
 
         /// <inheritdoc />
@@ -1509,6 +1513,8 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
                 defaultValue = defaultValue.Replace("{itemId}", itemId.ToString()).Replace("{userId}", userId.ToString());
 
+                var contentBuilderMode = await objectsService.GetSystemObjectValueAsync("ContentBuilder_Mode") ?? "";
+
                 // Replace values in html template.
                 if (!String.IsNullOrWhiteSpace(htmlTemplate))
                 {
@@ -1564,6 +1570,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         .Replace("{containerCssClass}", String.Join(" ", containerCssClasses))
                         .Replace("{linkType}", linkType.ToString())
                         .Replace("{entityType}", entityType)
+                        .Replace("{contentBuilderMode}", contentBuilderMode)
                         .Replace("{default_value}", valueToReplace);
                 }
 
@@ -1595,6 +1602,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         .Replace("{fieldMode}", fieldMode)
                         .Replace("{linkType}", linkType.ToString())
                         .Replace("{entityType}", entityType)
+                        .Replace("{contentBuilderMode}", contentBuilderMode)
                         .Replace("{default_value}", $"'{HttpUtility.JavaScriptStringEncode(defaultValue)}'");
                 }
 

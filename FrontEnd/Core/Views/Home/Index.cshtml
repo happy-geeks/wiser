@@ -1,6 +1,7 @@
 ﻿@using FrontEnd.Core.Models
 @using GeeksCoreLibrary.Core.Enums
 @using Microsoft.AspNetCore.Mvc.Localization
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 @model BaseViewModel
 
@@ -56,7 +57,7 @@
 
                 <li class="login">
                     <span>
-                        <strong class="title">@Localizer["Welcome"]</strong>
+                        <strong class="title">Welkom</strong>
                         <span class="sub-title">{{ user.name }}</span>
                         <ins class="icon-chevron-down"></ins>
                     </span>
@@ -942,4 +943,4 @@
 }
 </script>
 
-<script type="module" src="/scripts/main.min.js"></script>
+<script src="@await WebPackService.GetManifestFileAsync("main.js")"></script>

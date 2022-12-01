@@ -1,5 +1,6 @@
 ﻿@using System.Web
 @model FrontEnd.Modules.ContentBox.Models.ContentBoxViewModel
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html lang="nl">
@@ -43,6 +44,6 @@
     }
     </script>
     <script type="module" src="/ContentBox/contentbox/lang/en.js"></script>
-    <script type="module" src="/scripts/ContentBox.min.js"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("ContentBox.js")"></script>
 </body>
 </html>

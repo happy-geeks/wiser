@@ -24,6 +24,7 @@ INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'robotstxt
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2ImagesRootId','3');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2FilesRootId','4');
 INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2TemplatesRootId','5');
+INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'ContentBuilder_Mode','ContentBox');
     
 -- ----------------------------
 -- Records of wiser_table_changes

@@ -105,5 +105,15 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// </summary>
         /// <returns>A list of WiserItemModel.</returns>
         Task<ServiceResult<List<WiserItemModel>>> GetTemplatesAsync(ClaimsIdentity identity);
+        
+        /// /// <summary>
+        /// Execute a data selector by ID and return the results as JSON.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="id">The ID of the data selector.</param>
+        /// <param name="asKeyValuePair">If set to true the result of the query will be converted to a single object. Only columns with the names "key" and "value" are used.</param>
+        /// <param name="parameters">The parameters to set before executing the data selector.</param>
+        /// <returns>The results of the data selector as JSON.</returns>
+        Task<ServiceResult<JToken>> GetDataSelectorResultAsJsonAsync(ClaimsIdentity identity, int id, bool asKeyValuePair, List<KeyValuePair<string, object>> parameters);
     }
 }
