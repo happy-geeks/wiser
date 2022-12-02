@@ -2267,7 +2267,7 @@ export class EntityTab {
         
         let tabName = "";
         tabName = eventOrDataItem.sender && eventOrDataItem.sender.dataItem() ? eventOrDataItem.sender.dataItem().tabName : eventOrDataItem.tabName;
-        tabName = tabName === "Gegevens" || !tabName ? "" : tabName;
+        tabName = tabName === "Gegevens" || !tabName ? "Gegevens" : tabName;
         
         if (this.previouslySelectedTab === tabName && this.previouslySelectedEntity === entityType) {
             return;
