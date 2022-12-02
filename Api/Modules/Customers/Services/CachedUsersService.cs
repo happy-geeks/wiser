@@ -50,15 +50,15 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null)
+        public Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null, string totpPin = null)
         {
-            return usersService.LoginAdminAccountAsync(username, password, ipAddress);
+            return usersService.LoginAdminAccountAsync(username, password, ipAddress, totpPin);
         }
 
         /// <inheritdoc />
-        public Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null)
+        public Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null, string totpBackupCode = null)
         {
-            return usersService.LoginCustomerAsync(username, password, encryptedAdminAccountId, subDomain, generateAuthenticationTokenForCookie, ipAddress, identity);
+            return usersService.LoginCustomerAsync(username, password, encryptedAdminAccountId, subDomain, generateAuthenticationTokenForCookie, ipAddress, identity, totpPin, totpBackupCode);
         }
 
         /// <inheritdoc />
@@ -191,6 +191,24 @@ namespace Api.Modules.Customers.Services
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
                     return await usersService.GetRolesAsync(includePermissions);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.Objects));
+        }
+        
+        /// <inheritdoc />
+        public bool ValidateTotpPin(string key, string code)
+        {
+            return usersService.ValidateTotpPin(key, code); 
+        }
+        
+        /// <inheritdoc />
+        public string SetUpTotpAuthentication(string account, string key)
+        {
+            return usersService.SetUpTotpAuthentication(account, key);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<string>>> GenerateTotpBackupCodesAsync(ClaimsIdentity identity)
+        {
+            return await usersService.GenerateTotpBackupCodesAsync(identity);
         }
     }
 }
