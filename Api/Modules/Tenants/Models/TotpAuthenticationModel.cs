@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 
-namespace Api.Modules.Customers.Models
+namespace Api.Modules.Tenants.Models
 {
     /// <summary>
     /// A mode for using time-based one-time password authentication in Wiser.

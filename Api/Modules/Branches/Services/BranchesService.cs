@@ -11,9 +11,9 @@ using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
 using Api.Modules.Branches.Models;
-using Api.Modules.Customers.Enums;
-using Api.Modules.Customers.Interfaces;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Enums;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
@@ -32,7 +32,7 @@ namespace Api.Modules.Branches.Services
     /// <inheritdoc cref="IBranchesService" />
     public class BranchesService : IBranchesService, IScopedService
     {
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<BranchesService> logger;
@@ -42,9 +42,9 @@ namespace Api.Modules.Branches.Services
         /// <summary>
         /// Creates a new instance of <see cref="BranchesService"/>.
         /// </summary>
-        public BranchesService(IWiserCustomersService wiserCustomersService, IDatabaseConnection connection, IDatabaseHelpersService databaseHelpersService, ILogger<BranchesService> logger, IWiserItemsService wiserItemsService)
+        public BranchesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection connection, IDatabaseHelpersService databaseHelpersService, ILogger<BranchesService> logger, IWiserItemsService wiserItemsService)
         {
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = connection;
             this.databaseHelpersService = databaseHelpersService;
             this.logger = logger;
@@ -57,11 +57,11 @@ namespace Api.Modules.Branches.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> CreateAsync(ClaimsIdentity identity, CreateBranchSettingsModel settings)
+        public async Task<ServiceResult<TenantModel>> CreateAsync(ClaimsIdentity identity, CreateBranchSettingsModel settings)
         {
             if (String.IsNullOrWhiteSpace(settings?.Name))
             {
-                return new ServiceResult<CustomerModel>
+                return new ServiceResult<TenantModel>
                 {
                     ErrorMessage = "Name is empty",
                     StatusCode = HttpStatusCode.BadRequest
@@ -71,17 +71,17 @@ namespace Api.Modules.Branches.Services
             // Make sure the queue table exists and is up-to-date.
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserBranchesQueue});
             
-            var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
+            var currentCustomer = (await wiserTenantsService.GetSingleAsync(identity, true)).ModelObject;
             var subDomain = currentCustomer.SubDomain;
             var newCustomerName = $"{currentCustomer.Name} - {settings.Name}";
             var newCustomerTitle = $"{currentCustomer.WiserTitle} - {settings.Name}";
 
             // If the ID is not the same as the customer ID, it means this is not the main/production environment of this customer.
             // Then we want to get the sub domain of the main/production environment of the customer, to use as base for the new sub domain for the new environment.
-            if (currentCustomer.Id != currentCustomer.CustomerId)
+            if (currentCustomer.Id != currentCustomer.TenantId)
             {
-                wiserDatabaseConnection.AddParameter("customerId", currentCustomer.CustomerId);
-                var dataTable = await wiserDatabaseConnection.GetAsync($"SELECT subdomain, name, wiser_title FROM {ApiTableNames.WiserCustomers} WHERE id = ?customerId");
+                wiserDatabaseConnection.AddParameter("customerId", currentCustomer.TenantId);
+                var dataTable = await wiserDatabaseConnection.GetAsync($"SELECT subdomain, name, wiser_title FROM {ApiTableNames.WiserTenants} WHERE id = ?customerId");
                 if (dataTable.Rows.Count == 0)
                 {
                     // This should never happen, hence the exception.
@@ -107,19 +107,19 @@ namespace Api.Modules.Branches.Services
             subDomain += $"_{databaseNameBuilder}";
 
             // Make sure no customer exists yet with this name and/or sub domain.
-            var customerExists = await wiserCustomersService.CustomerExistsAsync(newCustomerName, subDomain);
+            var customerExists = await wiserTenantsService.TenantExistsAsync(newCustomerName, subDomain);
             if (customerExists.StatusCode != HttpStatusCode.OK)
             {
-                return new ServiceResult<CustomerModel>
+                return new ServiceResult<TenantModel>
                 {
                     ErrorMessage = customerExists.ErrorMessage,
                     StatusCode = customerExists.StatusCode
                 };
             }
 
-            if (customerExists.ModelObject != CustomerExistsResults.Available)
+            if (customerExists.ModelObject != TenantExistsResults.Available)
             {
-                return new ServiceResult<CustomerModel>
+                return new ServiceResult<TenantModel>
                 {
                     StatusCode = HttpStatusCode.Conflict,
                     ErrorMessage = $"Een branch met de naam '{settings.Name}' bestaat al."
@@ -129,7 +129,7 @@ namespace Api.Modules.Branches.Services
             // Make sure the database doesn't exist yet.
             if (await databaseHelpersService.DatabaseExistsAsync(databaseName))
             {
-                return new ServiceResult<CustomerModel>
+                return new ServiceResult<TenantModel>
                 {
                     StatusCode = HttpStatusCode.Conflict,
                     ErrorMessage = $"We hebben geprobeerd een database aan te maken met de naam '{databaseName}', echter bestaat deze al. Kies a.u.b. een andere naam, of neem contact op met ons."
@@ -142,9 +142,9 @@ namespace Api.Modules.Branches.Services
             settings.DatabaseName = databaseName;
 
             // Add the new customer environment to easy_customers. We do this here already so that the AIS doesn't need access to the main wiser database.
-            var newCustomer = new CustomerModel
+            var newCustomer = new TenantModel
             {
-                CustomerId = currentCustomer.CustomerId,
+                TenantId = currentCustomer.TenantId,
                 Name = newCustomerName,
                 EncryptionKey = SecurityHelpers.GenerateRandomPassword(20),
                 SubDomain = subDomain,
@@ -159,7 +159,7 @@ namespace Api.Modules.Branches.Services
                 }
             };
             
-            await wiserCustomersService.CreateOrUpdateCustomerAsync(newCustomer);
+            await wiserTenantsService.CreateOrUpdateTenantAsync(newCustomer);
             
             // Clear some data that we don't want to return to client.
             newCustomer.Database.Host = null;
@@ -179,32 +179,32 @@ namespace Api.Modules.Branches.Services
             clientDatabaseConnection.AddParameter("user_id", IdentityHelpers.GetWiserUserId(identity));
             await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserBranchesQueue, 0);
             
-            return new ServiceResult<CustomerModel>(newCustomer);
+            return new ServiceResult<TenantModel>(newCustomer);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<CustomerModel>>> GetAsync(ClaimsIdentity identity)
+        public async Task<ServiceResult<List<TenantModel>>> GetAsync(ClaimsIdentity identity)
         {
             // Make sure the queue table exists and is up-to-date.
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserBranchesQueue});
             
-            var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
+            var currentCustomer = (await wiserTenantsService.GetSingleAsync(identity, true)).ModelObject;
 
             var query = $@"SELECT id, name, subdomain, db_dbname
-FROM {ApiTableNames.WiserCustomers}
+FROM {ApiTableNames.WiserTenants}
 WHERE customerid = ?id
 AND id <> ?id
 ORDER BY id DESC";
             
-            wiserDatabaseConnection.AddParameter("id", currentCustomer.CustomerId);
+            wiserDatabaseConnection.AddParameter("id", currentCustomer.TenantId);
             var dataTable = await wiserDatabaseConnection.GetAsync(query);
-            var results = new List<CustomerModel>();
+            var results = new List<TenantModel>();
             foreach (DataRow dataRow in dataTable.Rows)
             {
-                results.Add(new CustomerModel
+                results.Add(new TenantModel
                 {
                     Id = dataRow.Field<int>("id"),
-                    CustomerId = currentCustomer.CustomerId,
+                    TenantId = currentCustomer.TenantId,
                     Name = dataRow.Field<string>("name"),
                     SubDomain = dataRow.Field<string>("subdomain"),
                     Database = new ConnectionInformationModel
@@ -258,36 +258,36 @@ WHERE action = 'create'";
                 customerModel.Name += $" (Status: {statusMessage})";
             }
 
-            return new ServiceResult<List<CustomerModel>>(results);
+            return new ServiceResult<List<TenantModel>>(results);
         }
 
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> IsMainBranchAsync(ClaimsIdentity identity)
         {
-            var currentBranch = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
+            var currentBranch = (await wiserTenantsService.GetSingleAsync(identity, true)).ModelObject;
 
             return IsMainBranch(currentBranch);
         }
 
         /// <inheritdoc />
-        public ServiceResult<bool> IsMainBranch(CustomerModel branch)
+        public ServiceResult<bool> IsMainBranch(TenantModel branch)
         {
-            return new ServiceResult<bool>(branch.Id == branch.CustomerId);
+            return new ServiceResult<bool>(branch.Id == branch.TenantId);
         }
 
         /// <inheritdoc />
         public async Task<ServiceResult<ChangesAvailableForMergingModel>> GetChangesAsync(ClaimsIdentity identity, int id)
         {
-            var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
+            var currentCustomer = (await wiserTenantsService.GetSingleAsync(identity, true)).ModelObject;
             
             var result = new ChangesAvailableForMergingModel();
             // If the id is 0, then get the current branch where the user is authenticated, otherwise get the branch of the given ID.
             var selectedEnvironmentCustomer = id <= 0
                 ? currentCustomer
-                : (await wiserCustomersService.GetSingleAsync(id, true)).ModelObject;
+                : (await wiserTenantsService.GetSingleAsync(id, true)).ModelObject;
 
             // Only allow users to get the changes of their own branches.
-            if (currentCustomer.CustomerId != selectedEnvironmentCustomer.CustomerId)
+            if (currentCustomer.TenantId != selectedEnvironmentCustomer.TenantId)
             {
                 return new ServiceResult<ChangesAvailableForMergingModel>
                 {
@@ -295,7 +295,7 @@ WHERE action = 'create'";
                 };
             }
 
-            await using var branchConnection = new MySqlConnection(wiserCustomersService.GenerateConnectionStringFromCustomer(selectedEnvironmentCustomer));
+            await using var branchConnection = new MySqlConnection(wiserTenantsService.GenerateConnectionStringFromTenant(selectedEnvironmentCustomer));
             await branchConnection.OpenAsync();
             
             // Get all history since last synchronisation.
@@ -834,8 +834,8 @@ LIMIT 1";
         public async Task<ServiceResult<MergeBranchResultModel>> MergeAsync(ClaimsIdentity identity, MergeBranchSettingsModel settings)
         {
             var result = new MergeBranchResultModel();
-            var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
-            var productionCustomer = (await wiserCustomersService.GetSingleAsync(currentCustomer.CustomerId, true)).ModelObject;
+            var currentCustomer = (await wiserTenantsService.GetSingleAsync(identity, true)).ModelObject;
+            var productionCustomer = (await wiserTenantsService.GetSingleAsync(currentCustomer.TenantId, true)).ModelObject;
 
             // If the settings.Id is 0, it means the user wants to merge the current branch.
             if (settings.Id <= 0)
@@ -845,7 +845,7 @@ LIMIT 1";
             }
 
             // Make sure the user is not trying to copy changes from main to main, that would be weird and also cause a lot of problems.
-            if (currentCustomer.CustomerId == settings.Id)
+            if (currentCustomer.TenantId == settings.Id)
             {
                 return new ServiceResult<MergeBranchResultModel>
                 {
@@ -856,10 +856,10 @@ LIMIT 1";
 
             var selectedBranchCustomer = settings.Id == currentCustomer.Id
                 ? currentCustomer
-                : (await wiserCustomersService.GetSingleAsync(settings.Id, true)).ModelObject;
+                : (await wiserTenantsService.GetSingleAsync(settings.Id, true)).ModelObject;
 
             // Check to make sure someone is not trying to copy changes from an environment that does not belong to them.
-            if (selectedBranchCustomer == null || currentCustomer.CustomerId != selectedBranchCustomer.CustomerId)
+            if (selectedBranchCustomer == null || currentCustomer.TenantId != selectedBranchCustomer.TenantId)
             {
                 return new ServiceResult<MergeBranchResultModel>
                 {
@@ -872,7 +872,7 @@ LIMIT 1";
             DateTime? lastMergeDate = null;
 
             // Get the date and time of the last merge of this branch, so we can find all changes made in production after this date, to check for merge conflicts.
-            await using var mainConnection = new MySqlConnection(wiserCustomersService.GenerateConnectionStringFromCustomer(productionCustomer));
+            await using var mainConnection = new MySqlConnection(wiserTenantsService.GenerateConnectionStringFromTenant(productionCustomer));
             await mainConnection.OpenAsync();
             await using (var productionCommand = mainConnection.CreateCommand())
             {
@@ -888,7 +888,7 @@ LIMIT 1";
                 }
             }
 
-            await using var branchConnection = new MySqlConnection(wiserCustomersService.GenerateConnectionStringFromCustomer(selectedBranchCustomer));
+            await using var branchConnection = new MySqlConnection(wiserTenantsService.GenerateConnectionStringFromTenant(selectedBranchCustomer));
             await branchConnection.OpenAsync();
 
             // If we have no last merge date, it probably means someone removed a record from wiser_branch_queue, in that case get the date of the first change in wiser_history in the branch. 
@@ -944,18 +944,18 @@ VALUES (?branch_id, ?action, ?data, ?added_on, ?start_on, ?added_by, ?user_id)";
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> CanAccessBranchAsync(ClaimsIdentity identity, int branchId)
         {
-            var currentBranch = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
-            var otherBranch = (await wiserCustomersService.GetSingleAsync(branchId, true)).ModelObject;
+            var currentBranch = (await wiserTenantsService.GetSingleAsync(identity, true)).ModelObject;
+            var otherBranch = (await wiserTenantsService.GetSingleAsync(branchId, true)).ModelObject;
 
-            return new ServiceResult<bool>(currentBranch.CustomerId == otherBranch.CustomerId);
+            return new ServiceResult<bool>(currentBranch.TenantId == otherBranch.TenantId);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> CanAccessBranchAsync(ClaimsIdentity identity, CustomerModel branch)
+        public async Task<ServiceResult<bool>> CanAccessBranchAsync(ClaimsIdentity identity, TenantModel branch)
         {
-            var currentBranch = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
+            var currentBranch = (await wiserTenantsService.GetSingleAsync(identity, true)).ModelObject;
 
-            return new ServiceResult<bool>(currentBranch.CustomerId == branch.CustomerId);
+            return new ServiceResult<bool>(currentBranch.TenantId == branch.TenantId);
         }
 
         /// <summary>

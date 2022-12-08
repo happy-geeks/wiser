@@ -4,11 +4,11 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
 using Api.Core.Services;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Models;
 using Newtonsoft.Json.Linq;
 
-namespace Api.Modules.Customers.Interfaces
+namespace Api.Modules.Tenants.Interfaces
 {
     /// <summary>
     /// Interface for operations related to Wiser users (users that can log in to Wiser).
@@ -16,7 +16,7 @@ namespace Api.Modules.Customers.Interfaces
     public interface IUsersService
     {
         /// <summary>
-        /// Gets a list of all users for a customer.
+        /// Gets a list of all users for a tenant.
         /// </summary>
         /// <returns>A list of <see cref="WiserItemModel">ItemModel</see>.</returns>
         Task<ServiceResult<List<WiserItemModel>>> GetAsync();
@@ -32,7 +32,7 @@ namespace Api.Modules.Customers.Interfaces
         Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null, string totpPin = null);
 
         /// <summary>
-        /// Login a customer to Wiser. Normal users login with their username and password.
+        /// Login a tenant to Wiser. Normal users login with their username and password.
         /// Admin accounts login via their own credentials and can then login as any other user.
         /// </summary>
         /// <param name="username">The username of the user to login as.</param>
@@ -45,7 +45,7 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="totpPin">When the user is logging in with TOTP, then the PIN of the user should be entered here. </param>
         /// <param name="totpBackupCode">When the user entered a backup code to access their account, instead of a PIN.</param>
         /// <returns>Either an unauthorized error, or the <see cref="UserModel"/> of the user that is trying to login.</returns>
-        Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null, string totpBackupCode = null);
+        Task<ServiceResult<UserModel>> LoginTenantAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null, string totpBackupCode = null);
 
         /// <summary>
         /// Sends a new password to a user.
@@ -148,7 +148,7 @@ namespace Api.Modules.Customers.Interfaces
         /// <summary>
         /// Get some settings for Wiser.
         /// </summary>
-        /// <param name="encryptionKey">The encryption key of the customer.</param>
+        /// <param name="encryptionKey">The encryption key of the tenant.</param>
         /// <returns></returns>
         Task<UserModel> GetWiserSettingsForUserAsync(string encryptionKey);
 

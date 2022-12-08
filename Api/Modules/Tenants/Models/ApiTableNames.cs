@@ -1,4 +1,4 @@
-﻿namespace Api.Modules.Customers.Models
+﻿namespace Api.Modules.Tenants.Models
 {
     /// <summary>
     /// Names of tables that are only used in the Wiser API.
@@ -8,6 +8,6 @@
         /// <summary>
         /// The table that contains all tenants/customers of Wiser.
         /// </summary>
-        public const string WiserCustomers = "easy_customers";
+        public const string WiserTenants = "easy_customers";
     }
 }

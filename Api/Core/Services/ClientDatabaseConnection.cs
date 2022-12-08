@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Models;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
@@ -93,7 +93,7 @@ namespace Api.Core.Services
 
             WiserDatabaseConnection.ClearParameters();
             WiserDatabaseConnection.AddParameter("subDomain", subDomain);
-            var query = $"SELECT db_host, db_login, db_passencrypted, db_port, db_dbname, encryption_key FROM {ApiTableNames.WiserCustomers} WHERE subdomain = ?subDomain";
+            var query = $"SELECT db_host, db_login, db_passencrypted, db_port, db_dbname, encryption_key FROM {ApiTableNames.WiserTenants} WHERE subdomain = ?subDomain";
 
             var dataTable = await WiserDatabaseConnection.GetAsync(query);
 

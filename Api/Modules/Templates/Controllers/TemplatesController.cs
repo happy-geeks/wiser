@@ -5,7 +5,7 @@ using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Models;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.History;
@@ -59,18 +59,18 @@ namespace Api.Modules.Templates.Controllers
         [Route("css-for-html-editors")]
         [ProducesResponseType(typeof(Dictionary<string, string>), StatusCodes.Status200OK)]
         [AllowAnonymous]
-        public async Task<IActionResult> GetCssForHtmlEditorsAsync([FromQuery] CustomerInformationModel customerInformation)
+        public async Task<IActionResult> GetCssForHtmlEditorsAsync([FromQuery] TenantInformationModel tenantInformation)
         {
             // Create a ClaimsIdentity based on query parameters instead the Identity from the bearer token due to being called from an image source where no headers can be set.
-            var userId = String.IsNullOrWhiteSpace(customerInformation.encryptedUserId) ? 0 : Int32.Parse(customerInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
+            var userId = String.IsNullOrWhiteSpace(tenantInformation.encryptedUserId) ? 0 : Int32.Parse(tenantInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim(ClaimTypes.GroupSid, customerInformation.subDomain ?? "")
+                new Claim(ClaimTypes.GroupSid, tenantInformation.subDomain ?? "")
             };
             var dummyClaimsIdentity = new ClaimsIdentity(claims);
             //Set the sub domain for the database connection.
-            HttpContext.Items[HttpContextConstants.SubDomainKey] = customerInformation.subDomain;
+            HttpContext.Items[HttpContextConstants.SubDomainKey] = tenantInformation.subDomain;
 
             return (await templatesService.GetCssForHtmlEditorsAsync(dummyClaimsIdentity)).GetHttpResponseMessage("text/css");
         }

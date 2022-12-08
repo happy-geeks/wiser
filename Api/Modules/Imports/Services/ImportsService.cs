@@ -1,6 +1,6 @@
 ﻿using Api.Core.Helpers;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Imports.Interfaces;
 using Api.Modules.Imports.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -19,7 +19,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Enums;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Models;
 using Api.Modules.EntityProperties.Helpers;
 using Api.Modules.EntityProperties.Models;
 using GeeksCoreLibrary.Core.Extensions;
@@ -35,17 +35,17 @@ namespace Api.Modules.Imports.Services
     {
         private readonly IWiserItemsService wiserItemsService;
         private readonly IUsersService usersService;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly ILogger<ImportsService> logger;
 
         private const uint ImportLimit = 1000000;
 
-        public ImportsService(IWiserItemsService wiserItemsService, IUsersService usersService, IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, ILogger<ImportsService> logger)
+        public ImportsService(IWiserItemsService wiserItemsService, IUsersService usersService, IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, ILogger<ImportsService> logger)
         {
             this.wiserItemsService = wiserItemsService;
             this.usersService = usersService;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.logger = logger;
         }
@@ -71,7 +71,7 @@ namespace Api.Modules.Imports.Services
             }
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
+            var customer = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
             var entityType = importRequest.ImportSettings.Count > 0 ? Convert.ToString(importRequest.ImportSettings.First()["entityType"]) : "";
             var moduleId = importRequest.ImportSettings.Count > 0 ? Convert.ToInt32(importRequest.ImportSettings.First()["moduleId"]) : 0;
             var importResult = new ImportResultModel();
@@ -563,7 +563,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity));
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
                 clientDatabaseConnection.AddParameter("user_id", userId);
-                clientDatabaseConnection.AddParameter("customer_id", customer.CustomerId);
+                clientDatabaseConnection.AddParameter("customer_id", customer.TenantId);
                 clientDatabaseConnection.AddParameter("data", json);
                 clientDatabaseConnection.AddParameter("server_name", Environment.MachineName);
                 clientDatabaseConnection.AddParameter("sub_domain", subDomain);
@@ -604,7 +604,7 @@ namespace Api.Modules.Imports.Services
                 return new ServiceResult<ImportResultModel>(importResult);
             }
 
-            var basePath = $@"C:\temp\AIS Import\{customer.CustomerId}\{wiserImportId}\";
+            var basePath = $@"C:\temp\AIS Import\{customer.TenantId}\{wiserImportId}\";
 
             var imagesDirectory = new DirectoryInfo(basePath);
             imagesDirectory.Create();
@@ -735,7 +735,7 @@ namespace Api.Modules.Imports.Services
                                                             ImportResultModel importResult,
                                                             string subDomain,
                                                             ClaimsIdentity identity,
-                                                            CustomerModel customer,
+                                                            TenantModel tenant,
                                                             bool isLinkProperty)
         {
             // If this is a property with input type combobox or multi select, then allow the users to import the text value. We will lookup the corresponding ID and import that ID.
@@ -745,7 +745,7 @@ namespace Api.Modules.Imports.Services
                 return value;
             }
 
-            await AddComboBoxValuesAsync(comboBoxField, subDomain, identity, customer);
+            await AddComboBoxValuesAsync(comboBoxField, subDomain, identity, tenant);
             var allValues = value.Split(',');
             var ids = new List<string>();
             var names = new List<string>();
@@ -803,7 +803,7 @@ namespace Api.Modules.Imports.Services
             return value;
         }
 
-        private async Task AddComboBoxValuesAsync(ComboBoxDataModel comboBox, string subDomain, ClaimsIdentity identity, CustomerModel customer)
+        private async Task AddComboBoxValuesAsync(ComboBoxDataModel comboBox, string subDomain, ClaimsIdentity identity, TenantModel tenant)
         {
             if (comboBox.Values != null && comboBox.Values.Any())
             {
@@ -880,10 +880,10 @@ namespace Api.Modules.Imports.Services
             else if (!String.IsNullOrWhiteSpace(dataSelectorId))
             {
                 throw new NotImplementedException("TODO: Use data selector via GCL once it's implemented. Don't call get_items.jcl, that creates unneeded extra overhead.");
-                /*var wiser2DataUrl = customer.Wiser2DataUrl;
+                /*var wiser2DataUrl = tenant.Wiser2DataUrl;
                 var restClient = new RestClient(wiser2DataUrl);
 
-                var restRequest = new RestRequest($"get_items.jcl?dataselectorid={dataSelectorId.EncryptWithAesWithSalt(customer.EncryptionKey, true)}&trace=false", Method.GET);
+                var restRequest = new RestRequest($"get_items.jcl?dataselectorid={dataSelectorId.EncryptWithAesWithSalt(tenant.EncryptionKey, true)}&trace=false", Method.GET);
 
                 var restResponse = await restClient.ExecuteAsync(restRequest);
                 if (restResponse.StatusCode != HttpStatusCode.OK)

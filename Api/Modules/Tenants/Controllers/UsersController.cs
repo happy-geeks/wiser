@@ -4,15 +4,15 @@ using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
-using Api.Modules.Customers.Interfaces;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 
-namespace Api.Modules.Customers.Controllers
+namespace Api.Modules.Tenants.Controllers
 {
     /// <summary>
     /// A controller for getting data about users that can authenticate with Wiser.
@@ -35,7 +35,7 @@ namespace Api.Modules.Customers.Controllers
         }
 
         /// <summary>
-        /// Method for getting a list of all users for the authenticated customer.
+        /// Method for getting a list of all users for the authenticated tenant.
         /// </summary>
         /// <returns>A <see cref="List{T}"/> of <see cref="WiserItemModel"/>, but only with names and IDs.</returns>
         [HttpGet]

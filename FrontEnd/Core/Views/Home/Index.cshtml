@@ -80,7 +80,7 @@
         </ul>
         </header>
 
-        <main :class="{ login: !user.loggedIn || requirePasswordChange, 'scrollable': customerManagementIsOpened }">
+        <main :class="{ login: !user.loggedIn || requirePasswordChange, 'scrollable': tenantManagementIsOpened }">
             <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
             <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
             <section class="iframe-container">
@@ -89,7 +89,7 @@
             </section>
 
             <keep-alive>
-                <customer-management v-if="user.adminLogin && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
+                <tenant-management v-if="user.adminLogin && activeModule === 'tenantManagement'" v-bind:sub-domain="appSettings.subDomain" ref="tenantManagement"></tenant-management>
             </keep-alive>
         </main>
 
@@ -785,8 +785,8 @@
     </section>
 </script>
 
-<script type="text/html" id="customer-management-template">
-    <div :class="{ loading: loading, 'form-inline': true, 'new-customer-form': true }">
+<script type="text/html" id="tenant-management-template">
+    <div :class="{ loading: loading, 'form-inline': true, 'new-tenant-form': true }">
         <h1>Nieuwe Wiser account toevoegen...</h1>
         <p class="success" v-if="currentStep === 'end'">
             De klant is successvol aangemaakt en heeft als ID '<em>{{ createCustomerResult.data.id }}</em>' gekregen.<br />

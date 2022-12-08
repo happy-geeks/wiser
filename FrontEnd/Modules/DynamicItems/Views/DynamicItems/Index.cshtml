@@ -832,7 +832,7 @@
 
     <script id="uploaderTemplate" type="text/x-kendo-template">
         <div class="product" data-item-id="#= itemId #" data-image-id="#= fileId #" data-item-link-id="#= itemLinkId #" data-file-name="#= name #" data-title="#= title #" data-entity-type="#= entityType || '' #" data-link-type="#= linkType || 0 #">
-            <img src="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(itemId) #/files/#= fileId #/#= encodeURIComponent(name) #?encryptedCustomerId=#= encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#= encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#= window.dynamicItems.settings.isTestEnvironment #&subDomain=#= encodeURIComponent(window.dynamicItems.settings.subDomain) #&itemLinkId=#= encodeURIComponent(itemLinkId) #&entityType=#= encodeURIComponent(entityType || '') #&linkType=#= linkType || 0 #" alt="#: name # image" />
+            <img src="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(itemId) #/files/#= fileId #/#= encodeURIComponent(name) #?encryptedTenantId=#= encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#= encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#= window.dynamicItems.settings.isTestEnvironment #&subDomain=#= encodeURIComponent(window.dynamicItems.settings.subDomain) #&itemLinkId=#= encodeURIComponent(itemLinkId) #&entityType=#= encodeURIComponent(entityType || '') #&linkType=#= linkType || 0 #" alt="#: name # image" />
             <div class="imgTools">
                 <button type="button" class="imgZoom" title="Preview"></button>
                 # if(!readonly) { #

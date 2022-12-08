@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Grids.Interfaces;
 using Api.Modules.Kendo.Models;
 using Api.Modules.Modules.Interfaces;
@@ -33,7 +33,7 @@ namespace Api.Modules.Modules.Services
     /// </summary>
     public class ModulesService : IModulesService, IScopedService
     {
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
         private readonly IJsonService jsonService;
@@ -51,13 +51,13 @@ namespace Api.Modules.Modules.Services
         /// <summary>
         /// Creates a new instance of <see cref="ModulesService"/>.
         /// </summary>
-        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService,
+        public ModulesService(IWiserTenantsService wiserTenantsService, IGridsService gridsService,
             IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService,
             IJsonService jsonService, IExcelService excelService, IObjectsService objectsService,
             IUsersService usersService, IStringReplacementsService stringReplacementsService,
             ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService)
         {
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.gridsService = gridsService;
             this.wiserItemsService = wiserItemsService;
             this.jsonService = jsonService;
@@ -550,7 +550,7 @@ namespace Api.Modules.Modules.Services
         /// <inheritdoc />
         public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity)
         {
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
+            var customer = await wiserTenantsService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
 
             var result = new ModuleSettingsModel {Id = id};

@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using Api.Modules.TaskAlerts.Interfaces;
 using Api.Modules.TaskAlerts.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -22,24 +22,24 @@ namespace Api.Modules.TaskAlerts.Services
     /// </summary>
     public class TaskAlertsService : ITaskAlertsService, IScopedService
     {
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
 
         /// <summary>
         /// Creates a new instance of <see cref="TaskAlertsService"/>.
         /// </summary>
-        /// <param name="wiserCustomersService"></param>
+        /// <param name="wiserTenantsService"></param>
         /// <param name="clientDatabaseConnection"></param>
-        public TaskAlertsService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection)
+        public TaskAlertsService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection)
         {
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
         }
 
         /// <inheritdoc />
         public async Task<ServiceResult<List<TaskAlertModel>>> GetAsync(ClaimsIdentity identity, bool getAllUsers = false, string branchDatabaseName = null)
         {
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
+            var customer = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
             var userId = IdentityHelpers.GetWiserUserId(identity);
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();

@@ -6,7 +6,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -27,17 +27,17 @@ namespace Api.Modules.Templates.Services
     {
         private readonly IDynamicContentDataService dataService;
         private readonly IHistoryDataService historyDataService;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly ITemplateDataService templateDataService;
 
         /// <summary>
         /// Creates a new instance of <see cref="HistoryService"/>.
         /// </summary>
-        public HistoryService(IDynamicContentDataService dataService, IHistoryDataService historyDataService, IWiserCustomersService wiserCustomersService, ITemplateDataService templateDataService)
+        public HistoryService(IDynamicContentDataService dataService, IHistoryDataService historyDataService, IWiserTenantsService wiserTenantsService, ITemplateDataService templateDataService)
         {
             this.dataService = dataService;
             this.historyDataService = historyDataService;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.templateDataService = templateDataService;
         }
 
@@ -107,7 +107,7 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public async Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(ClaimsIdentity identity, int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent)
         {
-            var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+            var encryptionKey = (await wiserTenantsService.GetEncryptionKey(identity, true)).ModelObject;
             var rawTemplateModels = await historyDataService.GetTemplateHistoryAsync(templateId);
 
             templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, rawTemplateModels[0]);

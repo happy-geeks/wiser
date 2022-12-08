@@ -12,8 +12,8 @@ using Api.Core.Extensions;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
 using Api.Modules.Grids.Enums;
 using Api.Modules.Grids.Interfaces;
 using Api.Modules.Grids.Models;
@@ -40,7 +40,7 @@ namespace Api.Modules.Grids.Services
     public class GridsService : IGridsService, IScopedService
     {
         private readonly IItemsService itemsService;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
         private readonly ILogger<GridsService> logger;
@@ -72,10 +72,10 @@ namespace Api.Modules.Grids.Services
         /// <summary>
         /// Creates a new instance of GridsService.
         /// </summary>
-        public GridsService(IItemsService itemsService, IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, ILogger<GridsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService)
+        public GridsService(IItemsService itemsService, IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, ILogger<GridsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService)
         {
             this.itemsService = itemsService;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.wiserItemsService = wiserItemsService;
             this.logger = logger;
@@ -98,9 +98,9 @@ namespace Api.Modules.Grids.Services
             ClaimsIdentity identity)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
+            var customer = await wiserTenantsService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
-            var itemId = wiserCustomersService.DecryptValue<ulong>(encryptedId, customer.ModelObject);
+            var itemId = wiserTenantsService.DecryptValue<ulong>(encryptedId, customer.ModelObject);
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var fieldsInformation = new List<(string Field, string InputType, Dictionary<string, object> Options)>();
 
@@ -1483,7 +1483,7 @@ namespace Api.Modules.Grids.Services
                             || dataColumn.ColumnName.Contains("_encrypt_withdate_hide", StringComparison.OrdinalIgnoreCase))
                         {
                             var value = dataRow.IsNull(dataColumn.ColumnName) ? "" : dataRow[dataColumn.ColumnName].ToString();
-                            rowData[columnName] = wiserCustomersService.EncryptValue(value, customer.ModelObject);
+                            rowData[columnName] = wiserTenantsService.EncryptValue(value, customer.ModelObject);
                         }
                         else if (dataColumn.ColumnName.Contains("_decrypt", StringComparison.OrdinalIgnoreCase)
                                  || dataColumn.ColumnName.Contains("_decrypt_hide", StringComparison.OrdinalIgnoreCase)
@@ -1491,7 +1491,7 @@ namespace Api.Modules.Grids.Services
                                  || dataColumn.ColumnName.Contains("_decrypt_withdate_hide", StringComparison.OrdinalIgnoreCase))
                         {
                             var value = dataRow.IsNull(dataColumn.ColumnName) ? "" : dataRow[dataColumn.ColumnName].ToString();
-                            rowData[columnName] = wiserCustomersService.DecryptValue<string>(value, customer.ModelObject);
+                            rowData[columnName] = wiserTenantsService.DecryptValue<string>(value, customer.ModelObject);
                         }
                         else if (dataColumn.ColumnName.Contains("_normalencrypt", StringComparison.OrdinalIgnoreCase)
                                  || dataColumn.ColumnName.Contains("_normalencrypt_hide", StringComparison.OrdinalIgnoreCase))
@@ -1593,7 +1593,7 @@ namespace Api.Modules.Grids.Services
                                  || dataColumn.ColumnName.Contains("_encrypt_withdate_hide", StringComparison.OrdinalIgnoreCase))
                         {
                             var value = dataRow.IsNull(dataColumn.ColumnName) ? "" : dataRow[dataColumn.ColumnName].ToString();
-                            rowData[columnName] = wiserCustomersService.EncryptValue(value, customer.ModelObject);
+                            rowData[columnName] = wiserTenantsService.EncryptValue(value, customer.ModelObject);
                         }
                         else if (dataColumn.ColumnName.Contains("_decrypt", StringComparison.OrdinalIgnoreCase)
                                  || dataColumn.ColumnName.Contains("_decrypt_hide", StringComparison.OrdinalIgnoreCase)
@@ -1601,7 +1601,7 @@ namespace Api.Modules.Grids.Services
                                  || dataColumn.ColumnName.Contains("_decrypt_withdate_hide", StringComparison.OrdinalIgnoreCase))
                         {
                             var value = dataRow.IsNull(dataColumn.ColumnName) ? "" : dataRow[dataColumn.ColumnName].ToString();
-                            rowData[columnName] = wiserCustomersService.DecryptValue<string>(value, customer.ModelObject);
+                            rowData[columnName] = wiserTenantsService.DecryptValue<string>(value, customer.ModelObject);
                         }
                         else if (dataColumn.ColumnName.Contains("_normalencrypt", StringComparison.OrdinalIgnoreCase)
                                  || dataColumn.ColumnName.Contains("_normalencrypt_hide", StringComparison.OrdinalIgnoreCase))
@@ -1648,7 +1648,7 @@ namespace Api.Modules.Grids.Services
             }
             
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
+            var customer = await wiserTenantsService.GetSingleAsync(identity);
 
             // Get module settings.
             clientDatabaseConnection.ClearParameters();
@@ -2081,10 +2081,10 @@ namespace Api.Modules.Grids.Services
             ClaimsIdentity identity)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
-            var queryId = String.IsNullOrWhiteSpace(encryptedQueryId) ? 0 : wiserCustomersService.DecryptValue<int>(encryptedQueryId, customer.ModelObject);
-            var countQueryId = String.IsNullOrWhiteSpace(encryptedCountQueryId) ? 0 : wiserCustomersService.DecryptValue<int>(encryptedCountQueryId, customer.ModelObject);
-            var itemId = String.IsNullOrWhiteSpace(encryptedId) ? 0 : wiserCustomersService.DecryptValue<ulong>(encryptedId, customer.ModelObject);
+            var customer = await wiserTenantsService.GetSingleAsync(identity);
+            var queryId = String.IsNullOrWhiteSpace(encryptedQueryId) ? 0 : wiserTenantsService.DecryptValue<int>(encryptedQueryId, customer.ModelObject);
+            var countQueryId = String.IsNullOrWhiteSpace(encryptedCountQueryId) ? 0 : wiserTenantsService.DecryptValue<int>(encryptedCountQueryId, customer.ModelObject);
+            var itemId = String.IsNullOrWhiteSpace(encryptedId) ? 0 : wiserTenantsService.DecryptValue<ulong>(encryptedId, customer.ModelObject);
             var hasPredefinedColumns = false;
             var results = new GridSettingsAndDataModel();
             var extraJavascript = new StringBuilder();
@@ -2220,9 +2220,9 @@ namespace Api.Modules.Grids.Services
             return results;
         }
 
-        private void FillGridData(DataTable dataTable, GridSettingsAndDataModel results, ClaimsIdentity identity, bool isTest, CustomerModel customer)
+        private void FillGridData(DataTable dataTable, GridSettingsAndDataModel results, ClaimsIdentity identity, bool isTest, TenantModel tenant)
         {
-            var encryptionKey = customer.EncryptionKey;
+            var encryptionKey = tenant.EncryptionKey;
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var rowData = new Dictionary<string, object>();
@@ -2236,7 +2236,7 @@ namespace Api.Modules.Grids.Services
                     {
                         if (dataColumn.ColumnName.Contains("_encrypt", StringComparison.OrdinalIgnoreCase))
                         {
-                            rowData[columnName] = wiserCustomersService.EncryptValue(value, customer);
+                            rowData[columnName] = wiserTenantsService.EncryptValue(value, tenant);
                         }
                         else if (dataColumn.ColumnName.Contains("_normalencrypt", StringComparison.OrdinalIgnoreCase))
                         {
@@ -2331,7 +2331,7 @@ namespace Api.Modules.Grids.Services
             try
             {
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-                var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+                var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
                 var (insertQuery, errorResult, _) = await itemsService.GetPropertyQueryAsync<Dictionary<string, object>>(propertyId, "grid_insert_query", false, itemId);
                 if (errorResult != null)
                 {
@@ -2366,7 +2366,7 @@ namespace Api.Modules.Grids.Services
             try
             {
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-                var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+                var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
                 var (modifyQuery, errorResult, _) = await itemsService.GetPropertyQueryAsync<bool>(propertyId, "grid_update_query", false, itemId);
                 if (errorResult != null)
                 {
@@ -2401,7 +2401,7 @@ namespace Api.Modules.Grids.Services
         public async Task<ServiceResult<bool>> DeleteDataAsync(int propertyId, string encryptedId, Dictionary<string, object> data, ClaimsIdentity identity)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
             var (deleteQuery, errorResult, _) = await itemsService.GetPropertyQueryAsync<bool>(propertyId, "grid_delete_query", false, itemId);
             if (errorResult != null)
             {

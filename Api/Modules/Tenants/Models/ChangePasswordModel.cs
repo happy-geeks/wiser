@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Api.Modules.Customers.Models
+namespace Api.Modules.Tenants.Models
 {
     /// <summary>
     /// A model with properties to change a password.
