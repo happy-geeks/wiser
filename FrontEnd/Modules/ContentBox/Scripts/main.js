@@ -96,7 +96,10 @@ import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.ser
                         modulePath: "/ContentBox/assets/modules/",
                         fontAssetPath: "/ContentBox/assets/fonts/",
                         contentStylePath: "/ContentBox/assets/styles/",
-                        zoom: 0.97
+                        zoom: 0.97,
+                        plugins: [
+                            { name: 'WiserDataSelector', showInMainToolbar: true, showInElementToolbar: true }
+                        ],
                     };
 
                     // Get data we need from database.
