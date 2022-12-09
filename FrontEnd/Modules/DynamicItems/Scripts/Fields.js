@@ -2545,8 +2545,11 @@ export class Fields {
 
                                                 const loader = mailDialog.element.find(".popup-loader").addClass("loading");
                                                 let documentOptions = "";
-                                                if (currentAction.pdfDocumentOptionsPropertyName) {
-                                                    documentOptions = currentTemplateDetails.property_[currentAction.pdfDocumentOptionsPropertyName] || "";
+                                                if (currentTemplateDetails.details && currentTemplateDetails.details.length > 0) {
+                                                    if (currentAction.pdfDocumentOptionsPropertyName) {
+                                                        const documentOptionsDetail = currentTemplateDetails.details.find(detail => detail.key === currentAction.pdfDocumentOptionsPropertyName);
+                                                        documentOptions = documentOptionsDetail ? (documentOptionsDetail.value || "") : "";
+                                                    }
                                                 }
 
                                                 // We cant use await here, because for some reason the event does not get fired anymore if we make this method async.
