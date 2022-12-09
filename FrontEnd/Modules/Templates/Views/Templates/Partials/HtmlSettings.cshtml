@@ -82,6 +82,16 @@
     <label class="checkbox" for="loginRequired">
         <span>Gebruiker moet ingelogd zijn om deze template te zien</span>
     </label>
+    
+    <input id="isPartial" name="isPartial" type="checkbox" @(Model.IsPartial ? "checked" : "") class="hidden" />
+    <label class="checkbox" for="isPartial">
+        <span>Is een partial template</span>
+    </label>
+    <div class="form-hint">
+        <span>
+            Wanneer aangevinkt wordt de ombouw nooit om de template gedaan wanneer deze wordt opgevraagd via een XHR call.
+        </span>
+    </div>
 
     <div class="user-check-panel">
         <div class="item" data-label-style="float" data-label-width="0">
