@@ -738,7 +738,7 @@ JOIN (
 		FROM {tablePrefix}{WiserTableNames.WiserItemFile}
 		WHERE {whereClause}
 		AND property_name = ?propertyName
-		ORDER BY ordering ASC
+		ORDER BY ordering ASC, id ASC
 	) AS x
 ) AS ordering ON ordering.id = file.id
 SET file.ordering = ordering.ordering
@@ -752,7 +752,6 @@ AND property_name = ?propertyName";
             var ftpSettings = new List<FtpSettingsModel>();
             string query;
 
-            var isTest = IdentityHelpers.IsTestEnvironment(identity);
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
             databaseConnection.AddParameter("propertyName", propertyName);
 
