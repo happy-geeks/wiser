@@ -2,7 +2,7 @@
 
 import {TrackJS} from "trackjs";
 import {createApp, defineAsyncComponent} from "vue";
-import * as axios from "axios";
+import axios from "axios";
 
 import UsersService from "./shared/users.service";
 import ModulesService from "./shared/modules.service";
