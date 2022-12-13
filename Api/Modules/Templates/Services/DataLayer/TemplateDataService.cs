@@ -134,7 +134,8 @@ LIMIT 1");
     template.trigger_table_name,
     template.is_default_header,
     template.is_default_footer,
-    template.default_header_footer_regex
+    template.default_header_footer_regex,
+    is_partial
 FROM {WiserTableNames.WiserTemplate} AS template 
 WHERE template.template_id = ?templateId
 {publishedVersionWhere}
@@ -201,7 +202,8 @@ LIMIT 1");
                 TriggerTableName = dataTable.Rows[0].Field<string>("trigger_table_name"),
                 IsDefaultHeader = Convert.ToBoolean(dataTable.Rows[0]["is_default_header"]),
                 IsDefaultFooter = Convert.ToBoolean(dataTable.Rows[0]["is_default_footer"]),
-                DefaultHeaderFooterRegex = dataTable.Rows[0].Field<string>("default_header_footer_regex")
+                DefaultHeaderFooterRegex = dataTable.Rows[0].Field<string>("default_header_footer_regex"),
+                IsPartial = Convert.ToBoolean(dataTable.Rows[0]["is_partial"])
             };
 
             var loginRolesString = dataTable.Rows[0].Field<string>("login_role");
@@ -499,6 +501,7 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.AddParameter("isDefaultHeader", templateSettings.IsDefaultHeader);
             clientDatabaseConnection.AddParameter("isDefaultFooter", templateSettings.IsDefaultFooter);
             clientDatabaseConnection.AddParameter("defaultHeaderFooterRegex", templateSettings.DefaultHeaderFooterRegex);
+            clientDatabaseConnection.AddParameter("isPartial", templateSettings.IsPartial);
 
             var query = $@"SET @VersionNumber = (SELECT MAX(version)+1 FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId GROUP BY template_id);
 INSERT INTO {WiserTableNames.WiserTemplate} (
@@ -549,7 +552,8 @@ INSERT INTO {WiserTableNames.WiserTemplate} (
     trigger_event,
     trigger_table_name,
     is_default_header,
-    is_default_footer
+    is_default_footer,
+    is_partial
 ) 
 VALUES (
     ?name,
@@ -599,7 +603,8 @@ VALUES (
     ?triggerEvent,
     ?triggerTableName,
     ?isDefaultHeader,
-    ?isDefaultFooter
+    ?isDefaultFooter,
+    ?isPartial
 )";
             return await clientDatabaseConnection.ExecuteAsync(query);
         }

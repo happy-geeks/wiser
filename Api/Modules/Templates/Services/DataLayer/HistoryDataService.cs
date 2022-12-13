@@ -118,7 +118,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                                                                 template.trigger_table_name,
                                                                 template.is_default_header,
                                                                 template.is_default_footer,
-                                                                template.default_header_footer_regex
+                                                                template.default_header_footer_regex,
+                                                                template.is_partial
                                                             FROM {WiserTableNames.WiserTemplate} AS template 
                                                             LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate WHERE linkedTemplate.removed = 0 GROUP BY template_id) AS linkedTemplates ON FIND_IN_SET(linkedTemplates.template_id, template.linked_templates)
                                                             WHERE template.template_id = ?templateId
@@ -179,7 +180,8 @@ namespace Api.Modules.Templates.Services.DataLayer
                     TriggerTableName = row.Field<string>("trigger_table_name"),
                     IsDefaultHeader = Convert.ToBoolean(row["is_default_header"]),
                     IsDefaultFooter = Convert.ToBoolean(row["is_default_footer"]),
-                    DefaultHeaderFooterRegex = row.Field<string>("default_header_footer_regex")
+                    DefaultHeaderFooterRegex = row.Field<string>("default_header_footer_regex"),
+                    IsPartial = Convert.ToBoolean(row["is_partial"])
                 };
                 
                 var loginRolesString = row.Field<string>("login_role");
