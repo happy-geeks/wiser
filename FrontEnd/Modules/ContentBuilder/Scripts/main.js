@@ -6,7 +6,7 @@ import "./lang/en.js";
 import "../Css/contentbuilder.css"
 import "../Css/contentbuilder-wiser.scss"
 import { createApp, ref, isProxy, toRaw } from "vue";
-import * as axios from "axios";
+import axios from "axios";
 
 import ContentBuildersService from "../../../Core/Scripts/shared/contentBuilders.service";
 import {AUTH_LOGOUT, AUTH_REQUEST} from "../../../Core/Scripts/store/mutation-types";

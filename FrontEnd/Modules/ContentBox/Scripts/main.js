@@ -3,7 +3,7 @@
 import { TrackJS } from "trackjs";
 import ContentBox from "@innovastudio/contentbox"
 import { createApp, ref, isProxy, toRaw } from "vue";
-import * as axios from "axios";
+import axios from "axios";
 
 import ContentBuildersService from "../../../Core/Scripts/shared/contentBuilders.service";
 import {AUTH_LOGOUT, AUTH_REQUEST} from "../../../Core/Scripts/store/mutation-types";
@@ -96,7 +96,10 @@ import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.ser
                         modulePath: "/ContentBox/assets/modules/",
                         fontAssetPath: "/ContentBox/assets/fonts/",
                         contentStylePath: "/ContentBox/assets/styles/",
-                        zoom: 0.97
+                        zoom: 0.97,
+                        plugins: [
+                            { name: 'WiserDataSelector', showInMainToolbar: true, showInElementToolbar: true }
+                        ],
                     };
 
                     // Get data we need from database.

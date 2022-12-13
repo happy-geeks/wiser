@@ -256,6 +256,7 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile`  (
   `itemlink_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   `protected` tinyint NOT NULL DEFAULT 0 COMMENT 'Stel in op 1 om alleen toe te staan dat het bestand wordt opgehaald via een versleutelde id',
   `ordering` int NOT NULL DEFAULT 0,
+  `extra_data` mediumtext,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `item_id`(`item_id`, `content_type`) USING BTREE,
   INDEX `idx_itemlinkid`(`itemlink_id`) USING BTREE

@@ -188,6 +188,24 @@ namespace Api.Modules.Files.Controllers
         }
 
         /// <summary>
+        /// Update the extra data of a file. This is data such as alt texts for different languages.
+        /// </summary>
+        /// <param name="encryptedItemId">The encrypted ID of the item the file is linked to.</param>
+        /// <param name="fileId">The ID of the file.</param>
+        /// <param name="extraData">The new information of the file.</param>
+        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
+        /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
+        /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
+        [HttpPut]
+        [Route("~/api/v3/items/{encryptedItemId}/files/{fileId:int}/extra-data")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> UpdateExtraDataAsync(string encryptedItemId, int fileId, [FromBody]FileExtraDataModel extraData, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
+        {
+            return (await filesService.UpdateExtraDataAsync(encryptedItemId, fileId, extraData, (ClaimsIdentity)User.Identity, itemLinkId, entityType, linkType)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
         /// Updates the ordering of a file.
         /// </summary>
         /// <param name="itemId">The ID of the item the file is linked to.</param>

@@ -147,9 +147,9 @@
                                     <div>
                                         <div class="formview full static-fields itemNameFieldContainer">
                                             <div class="item _existingItemName" data-item-id="0" data-depends-on-field="" data-depends-on-operator="" data-depends-on-value="" data-property-name="title">
-                                                <h4><label>Naam voor item</label></h4>
+                                                <h4><label for="mainNameForExistingItem">Naam voor item</label></h4>
                                                 <span class="k-widget k-input k-state-default">
-                                                    <input type="text" class="textField k-input _nameForExistingItem itemNameField" name="_nameForExistingItem" autocomplete="off" value="">
+                                                    <input type="text" class="textField k-input _nameForExistingItem itemNameField" id="mainNameForExistingItem" name="_nameForExistingItem" autocomplete="off">
                                                 </span>
                                                 <div class="form-hint"></div>
                                             </div>
@@ -393,7 +393,7 @@
                             <h3>Opties</h3>
 
                             <div class="item preferredWidth">
-                                <h4><label>Gewenste breedte (in pixels)</label></h4>
+                                <h4><label for="preferredWidth">Gewenste breedte (in pixels)</label></h4>
                                 <span class="k-widget k-input k-state-default">
                                     <input type="number" id="preferredWidth" class="textField k-input" name="preferredWidth" value="0" />
                                 </span>
@@ -403,7 +403,7 @@
                             </div>
 
                             <div class="item preferredHeight">
-                                <h4><label>Gewenste hoogte (in pixels)</label></h4>
+                                <h4><label for="preferredHeight">Gewenste hoogte (in pixels)</label></h4>
                                 <span class="k-widget k-input k-state-default">
                                     <input type="number" id="preferredHeight" class="textField k-input" name="preferredHeight" value="0" />
                                 </span>
@@ -413,7 +413,7 @@
                             </div>
 
                             <div class="item altText">
-                                <h4><label>Alt tekst</label></h4>
+                                <h4><label for="altText">Alt tekst</label></h4>
                                 <span class="k-widget k-input k-state-default">
                                     <input type="text" id="altText" class="textField k-input" name="altText" value="" />
                                 </span>
@@ -423,7 +423,7 @@
                             </div>
 
                             <div class="item resizeMode">
-                                <h4><label>Methode</label></h4>
+                                <h4><label for="resizeMode">Methode</label></h4>
                                 <span class="k-widget k-input k-state-default">
                                     <select id="resizeMode" name="resizeMode" class="select">
                                         <option value="normal">Normaal</option>
@@ -448,7 +448,7 @@
                             </div>
 
                             <div class="item anchorPosition hidden">
-                                <h4><label>Ankerpositie</label></h4>
+                                <h4><label for="anchorPosition">Ankerpositie</label></h4>
                                 <span class="k-widget k-input k-state-default">
                                     <select id="anchorPosition" name="anchorPosition" class="select">
                                         <option value="center">Midden</option>
@@ -545,7 +545,7 @@
                             <h3>Opties</h3>
 
                             <div class="item">
-                                <h4><label>Tekst</label></h4>
+                                <h4><label for="fileLinkText">Tekst</label></h4>
                                 <span class="k-widget k-input k-state-default">
                                     <input type="text" id="fileLinkText" class="textField k-input" name="fileLinkText" />
                                 </span>
@@ -636,60 +636,60 @@
     <div id="sendMailDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label>Naam verzender</label></h4>
+                <h4><label for="sendMailDialogSenderName">Naam verzender</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="text" class="textField k-input" name="senderName" autocomplete="off" value="">
+                    <input type="text" class="textField k-input" id="sendMailDialogSenderName" name="senderName" autocomplete="off" value="">
                 </span>
             </div>
             <div class="item">
-                <h4><label>E-mailadres verzender</label></h4>
+                <h4><label for="sendMailDialogSenderEmail">E-mailadres verzender</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="email" class="textField k-input" name="senderEmail" autocomplete="off" value="" required>
+                    <input type="email" class="textField k-input" id="sendMailDialogSenderEmail" name="senderEmail" autocomplete="off" value="" required>
                 </span>
             </div>
             <div class="item">
-                <h4><label>Naam ontvanger</label></h4>
+                <h4><label for="sendMailDialogReceiverName">Naam ontvanger</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="text" class="textField k-input" name="receiverName" autocomplete="off" value="">
+                    <input type="text" class="textField k-input" id="sendMailDialogReceiverName" name="receiverName" autocomplete="off" value="">
                 </span>
             </div>
             <div class="item">
-                <h4><label>E-mailadres ontvanger</label></h4>
+                <h4><label for="sendMailDialogReceiverEmail">E-mailadres ontvanger</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="email" class="textField k-input" name="receiverEmail" autocomplete="off" value="" required>
+                    <input type="email" class="textField k-input" id="sendMailDialogReceiverEmail" name="receiverEmail" autocomplete="off" value="" required>
                 </span>
             </div>
             <div class="item">
-                <h4><label>CC</label></h4>
+                <h4><label for="sendMailDialogCc">CC</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="email" class="textField k-input" name="cc" autocomplete="off" value="">
+                    <input type="email" class="textField k-input" id="sendMailDialogCc" name="cc" autocomplete="off" value="">
                 </span>
             </div>
             <div class="item">
-                <h4><label>BCC</label></h4>
+                <h4><label for="sendMailDialogBcc">BCC</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="email" class="textField k-input" name="bcc" autocomplete="off" value="">
+                    <input type="email" class="textField k-input" id="sendMailDialogBcc" name="bcc" autocomplete="off" value="">
                 </span>
             </div>
             <div class="item">
-                <h4><label>Onderwerp</label></h4>
+                <h4><label for="sendMailDialogSubject">Onderwerp</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="text" class="textField k-input" name="subject" autocomplete="off" value="" required>
+                    <input type="text" class="textField k-input" id="sendMailDialogSubject" name="subject" autocomplete="off" value="" required>
                 </span>
             </div>
         </div>
 
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label>Extra bijlagen</label></h4>
+                <h4><label for="sendMailDialogFiles">Extra bijlagen</label></h4>
                 <span class="k-widget k-input k-state-default" id="attachmentFilesContainer">
-                    <input name="files" type="file" aria-label="files" />
+                    <input id="sendMailDialogFiles" name="files" type="file" aria-label="files" />
                 </span>
             </div>
             <div class="item">
-                <h4><label>Inhoud</label></h4>
+                <h4><label for="sendMailDialogContent">Inhoud</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <textarea class="editor" name="subject"></textarea>
+                    <textarea id="sendMailDialogContent" class="editor" name="subject"></textarea>
                 </span>
             </div>
         </div>
@@ -707,15 +707,21 @@
     <div id="changeImageDataDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label>Bestandsnaam</label></h4>
+                <h4><label for="changeImageDialogFileNameField">Bestandsnaam</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="text" class="textField k-input" name="fileName" autocomplete="off">
+                    <input type="text" class="textField k-input" id="changeImageDialogFileNameField" name="fileName" autocomplete="off">
                 </span>
             </div>
             <div class="item">
-                <h4><label>Omschrijving</label></h4>
+                <h4><label for="changeImageDialogTitleField">Algemene titel voor Wiser</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="text" class="textField k-input" name="title" autocomplete="off" required>
+                    <input type="text" class="textField k-input" id="changeImageDialogTitleField" name="title" autocomplete="off">
+                </span>
+            </div>
+            <div class="item hidden alt-text-template">
+                <h4><label for="changeImageDialogAltText">Omschrijving <span class="language"></span></label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="text" class="textField k-input" id="changeImageDialogAltText" name="title" autocomplete="off">
                 </span>
             </div>
         </div>
@@ -724,11 +730,11 @@
     <div id="dataSelectorTemplateDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label>Data selector</label></h4>
+                <h4><label for="dataSelectorDropDown">Data selector</label></h4>
                 <select id="dataSelectorDropDown" class="select"></select>
             </div>
             <div class="item">
-                <h4><label>Template</label></h4>
+                <h4><label for="dataSelectorTemplateDropDown">Template</label></h4>
                 <select id="dataSelectorTemplateDropDown" class="select"></select>
             </div>
         </div>
@@ -737,19 +743,19 @@
     <div id="youTubeDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label>Video-ID</label></h4>
+                <h4><label for="youTubeVideoId">Video-ID</label></h4>
                 <span class="k-widget k-input k-state-default">
                     <input type="text" class="textField k-input" name="youTubeVideoId" id="youTubeVideoId" autocomplete="off" required>
                 </span>
             </div>
             <div class="item">
-                <h4><label>Breedte</label></h4>
+                <h4><label for="youTubeVideoWidth">Breedte</label></h4>
                 <span class="k-widget k-input k-state-default">
                     <input type="number" class="textField k-input" name="youTubeVideoWidth" id="youTubeVideoWidth" autocomplete="off" required value="640">
                 </span>
             </div>
             <div class="item">
-                <h4><label>Hoogte</label></h4>
+                <h4><label for="youTubeVideoHeight">Hoogte</label></h4>
                 <span class="k-widget k-input k-state-default">
                     <input type="number" class="textField k-input" name="youTubeVideoHeight" id="youTubeVideoHeight" autocomplete="off" required value="390">
                 </span>
@@ -775,7 +781,7 @@
     <div id="translationsDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label>Hiermee kan een vertaalwoord ingevoegd worden. Dit woord wordt dan automatisch op de website vertaald naar de taal die de gebruiker heeft gekozen. Deze vertaalwoorden kunnen in de module "Vertalingen" ingevuld worden.</label></h4>
+                <h4><label for="translationsDropDown">Hiermee kan een vertaalwoord ingevoegd worden. Dit woord wordt dan automatisch op de website vertaald naar de taal die de gebruiker heeft gekozen. Deze vertaalwoorden kunnen in de module "Vertalingen" ingevuld worden.</label></h4>
                 <select id="translationsDropDown" class="select"></select>
             </div>
         </div>
@@ -786,14 +792,14 @@
     <div id="translateItemDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label>Brontaal</label></h4>
+                <h4><label for="sourceLanguageDropDown">Brontaal</label></h4>
                 <select id="sourceLanguageDropDown" class="select"></select>
                 <div class="form-hint">
                     <p>Kies hier de taal die als bron dient. Alle velden op dit item met deze taal zullen dan vertaald worden in andere talen.</p>
                 </div>
             </div>
             <div class="item">
-                <h4><label>Doeltalen</label></h4>
+                <h4><label for="targetLanguagesMultiSelect">Doeltalen</label></h4>
                 <select id="targetLanguagesMultiSelect" class="multi-select"></select>
                 <div class="form-hint">
                     <p>Kies hier de talen waarin alle velden vertaald moeten worden. U kunt dit veld leeglaten indien u alle talen (die ingesteld staan in de Stamgegevensmodule) wilt gebruiken.</p>
@@ -831,8 +837,8 @@
     </script>
 
     <script id="uploaderTemplate" type="text/x-kendo-template">
-        <div class="product" data-item-id="#= itemId #" data-image-id="#= fileId #" data-item-link-id="#= itemLinkId #" data-file-name="#= name #" data-title="#= title #" data-entity-type="#= entityType || '' #" data-link-type="#= linkType || 0 #">
-            <img src="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(itemId) #/files/#= fileId #/#= encodeURIComponent(name) #?encryptedTenantId=#= encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#= encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#= window.dynamicItems.settings.isTestEnvironment #&subDomain=#= encodeURIComponent(window.dynamicItems.settings.subDomain) #&itemLinkId=#= encodeURIComponent(itemLinkId) #&entityType=#= encodeURIComponent(entityType || '') #&linkType=#= linkType || 0 #" alt="#: name # image" />
+        <div class="product" data-item-id="#: itemId #" data-image-id="#: fileId #" data-item-link-id="#: itemLinkId #" data-file-name="#: name #" data-title="#: title #" data-entity-type="#: entityType || '' #" data-link-type="#: linkType || 0 #" data-extra-data="#: extraData || '' #">
+            <img src="#: window.dynamicItems.settings.wiserApiRoot #items/#: encodeURIComponent(itemId) #/files/#: fileId #/#: encodeURIComponent(name) #?encryptedTenantId=#: encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#: encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#: window.dynamicItems.settings.isTestEnvironment #&subDomain=#: encodeURIComponent(window.dynamicItems.settings.subDomain) #&itemLinkId=#: encodeURIComponent(itemLinkId) #&entityType=#: encodeURIComponent(entityType || '') #&linkType=#: linkType || 0 #" alt="#: name # image" />
             <div class="imgTools">
                 <button type="button" class="imgZoom" title="Preview"></button>
                 # if(!readonly) { #
