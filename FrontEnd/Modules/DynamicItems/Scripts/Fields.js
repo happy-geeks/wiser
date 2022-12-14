@@ -784,8 +784,9 @@ export class Fields {
      * @param {number} propertyId The ID of the property / field.
      * @param {any} actionDetails The details of the clicked action.
      * @param {any} event The click event.
+     * @param {string} entityType The entity type of the item that contains the grid.
      */
-    async onSubEntitiesGridToolbarActionClick(gridSelector, itemId, propertyId, actionDetails, event) {
+    async onSubEntitiesGridToolbarActionClick(gridSelector, itemId, propertyId, actionDetails, event, entityType) {
         event.preventDefault();
 
         // Get the grid and the selected data items.
@@ -828,7 +829,7 @@ export class Fields {
         }
 
         // Get the item details so that those values can be used as variables in a string.
-        const itemDetails = !itemId ? { encryptedId: this.base.settings.zeroEncrypted } : (await this.base.getItemDetails(itemId));
+        const itemDetails = !itemId ? { encryptedId: this.base.settings.zeroEncrypted } : (await this.base.getItemDetails(itemId, entityType));
 
         const userParametersWithValues = {};
         const success = await this.executeActionButtonActions(actionDetails.actions, userParametersWithValues, itemDetails, propertyId, selectedItems, senderGrid.element);
