@@ -15,11 +15,8 @@ using Api.Modules.EntityTypes.Models;
 using Api.Modules.TaskAlerts.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
-using GeeksCoreLibrary.Modules.Databases.Enums;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.Databases.Models;
 using GeeksCoreLibrary.Modules.WiserDashboard.Models;
-using MySql.Data.MySqlClient;
 
 namespace Api.Modules.Dashboard.Services;
 
