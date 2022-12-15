@@ -2289,6 +2289,7 @@ html .km-pane-wrapper .km-widget,
     overflow: auto;
     max-height: 130px;
     margin-top: 8px;
+    position: relative;
 }
 
 .checkboxlist .checkbox {
