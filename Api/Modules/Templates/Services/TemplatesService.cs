@@ -2742,15 +2742,30 @@ LIMIT 1";
 
                 viewModel.Javascript.PageStandardJavascriptFileName = null;
                 
-                match = regex.Match(viewModel.Javascript.GeneralFooterJavascriptFileName ?? "");
+                match = regex.Match(viewModel.Javascript.GeneralAsyncFooterJavaScriptFileName ?? "");
                 if (match.Success)
                 {
                     var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
                     viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
                 }
 
-                viewModel.Javascript.GeneralFooterJavascriptFileName = null;
-                
+                viewModel.Javascript.GeneralAsyncFooterJavaScriptFileName = null;
+
+                if (viewModel.Javascript.GeneralSyncFooterJavaScriptFileName != null)
+                {
+                    foreach (var generalSyncFooterJavaScriptFileName in viewModel.Javascript.GeneralSyncFooterJavaScriptFileName)
+                    {
+                        match = regex.Match(generalSyncFooterJavaScriptFileName ?? "");
+                        if (match.Success)
+                        {
+                            var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                            viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                        }
+                    }
+
+                    viewModel.Javascript.GeneralSyncFooterJavaScriptFileName = null;
+                }
+
                 match = regex.Match(viewModel.Javascript.PageAsyncFooterJavascriptFileName ?? "");
                 if (match.Success)
                 {
