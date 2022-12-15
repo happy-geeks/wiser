@@ -848,7 +848,7 @@ const moduleSettings = {
             switch (result)
             {
                 case "Marked":
-                    kendo.alert("De service zal een extra keer worden uitgevoerd. De tijd waarop dit gebeurd is afhankelijk van de instellingen van de AIS waar deze service op wordt uitgevoerd.")
+                    kendo.alert("De service zal een extra keer worden uitgevoerd. De tijd waarop dit gebeurd is afhankelijk van de instellingen van de WTS waar deze service op wordt uitgevoerd.")
                     break;
                 case "Unmarked":
                     kendo.alert("De service zal niet meer een extra keer worden uitgevoerd.");
@@ -856,8 +856,8 @@ const moduleSettings = {
                 case "ServiceRunning":
                     kendo.alert("De service wordt momenteel al uitgevoerd, de huidige status kan niet worden aangepast.")
                     return;
-                case "AisOffline":
-                    kendo.alert("De service is momenteel niet beschikbaar op een instantie van de AIS en kan daardoor niet worden uitgevoerd.")
+                case "WtsOffline":
+                    kendo.alert("De service is momenteel niet beschikbaar op een instantie van de WTS en kan daardoor niet worden uitgevoerd.")
                     return;
             }
 

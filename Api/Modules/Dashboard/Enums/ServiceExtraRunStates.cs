@@ -18,7 +18,7 @@ public enum ServiceExtraRunStates
     ServiceRunning,
     
     /// <summary>
-    /// Service is not being run by an AIS and can't be started.
+    /// Service is not being run by an WTS and can't be started.
     /// </summary>
-    AisOffline
+    WtsOffline
 }

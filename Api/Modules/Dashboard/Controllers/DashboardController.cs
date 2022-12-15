@@ -75,7 +75,7 @@ public class DashboardController : ControllerBase
     [HttpPut, Route("services/{id:int}/extra-run/{state:bool}")]
     public async Task<IActionResult> ExtraRunServiceAsync(int id, bool state)
     {
-        return (await dashboardService.SetAisServiceExtraRunStateAsync((ClaimsIdentity) User.Identity, id, state)).GetHttpResponseMessage();
+        return (await dashboardService.SetWtsServiceExtraRunStateAsync((ClaimsIdentity) User.Identity, id, state)).GetHttpResponseMessage();
     }
 
     /// <summary>

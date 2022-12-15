@@ -773,12 +773,12 @@ WHERE id = ?serviceId");
     }
     
     /// <inheritdoc />
-    public async Task<ServiceResult<ServiceExtraRunStates>> SetAisServiceExtraRunStateAsync(ClaimsIdentity identity, int id, bool state)
+    public async Task<ServiceResult<ServiceExtraRunStates>> SetWtsServiceExtraRunStateAsync(ClaimsIdentity identity, int id, bool state)
     {
         clientDatabaseConnection.AddParameter("serviceId", id);
         clientDatabaseConnection.AddParameter("extraRunState", state);
 
-        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT state FROM {WiserTableNames.AisServices} WHERE id = ?serviceId");
+        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT state FROM {WiserTableNames.WtsServices} WHERE id = ?serviceId");
 
         if (dataTable.Rows.Count == 0)
         {
@@ -807,11 +807,11 @@ WHERE id = ?serviceId");
             return new ServiceResult<ServiceExtraRunStates>()
             {
                 StatusCode = HttpStatusCode.OK,
-                ModelObject = ServiceExtraRunStates.AisOffline
+                ModelObject = ServiceExtraRunStates.WtsOffline
             };
         }
 
-        await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.AisServices}
+        await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.WtsServices}
 SET extra_run = ?extraRunState
 WHERE id = ?serviceId");
 
