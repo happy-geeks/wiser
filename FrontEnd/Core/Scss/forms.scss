@@ -222,4 +222,11 @@ input[type="date"] {
         font: 16px/24px $font-medium;
         padding: 10px;
     }
+    
+    .totp {
+        img {
+            width: 300px;
+            margin: 0 auto;
+        }
+    }
 }

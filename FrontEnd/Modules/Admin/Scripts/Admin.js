@@ -25,7 +25,7 @@ const moduleSettings = {
     class Admin {
 
         /**
-         * Initializes a new instance of AisDashboard.
+         * Initializes a new instance of Admin.
          * @param {any} settings An object containing the settings for this class.
          */
         constructor(settings) {

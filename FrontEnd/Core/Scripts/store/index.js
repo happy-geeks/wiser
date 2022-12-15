@@ -7,6 +7,8 @@ import {
     AUTH_SUCCESS,
     AUTH_ERROR,
     AUTH_LOGOUT,
+    AUTH_TOTP_SETUP,
+    AUTH_TOTP_PIN,
     MODULES_LOADED,
     OPEN_MODULE,
     ACTIVATE_MODULE,
@@ -43,9 +45,15 @@ import {
     STOP_UPDATE_TIME_ACTIVE_TIMER,
     SET_ACTIVE_TIMER_INTERVAL,
     CLEAR_ACTIVE_TIMER_INTERVAL,
-    UPDATE_ACTIVE_TIME
+    UPDATE_ACTIVE_TIME,
+    GENERATE_TOTP_BACKUP_CODES,
+    GENERATE_TOTP_BACKUP_CODES_SUCCESS,
+    GENERATE_TOTP_BACKUP_CODES_ERROR,
+    CLEAR_LOCAL_TOTP_BACKUP_CODES,
+    USE_TOTP_BACKUP_CODE,
+    USE_TOTP_BACKUP_CODE_ERROR,
+    USER_BACKUP_CODES_GENERATED
 } from "./mutation-types";
-import {val} from "jshint/src/options";
 
 const baseModule = {
     state: () => ({
@@ -80,7 +88,8 @@ const loginModule = {
             role: "",
             lastLoginIpAddress: "",
             lastLoginDate: null,
-            loggedIn: false
+            loggedIn: false,
+            totpQrImageUrl: ""
         },
         listOfUsers: [],
         resetPassword: false,
@@ -89,7 +98,16 @@ const loginModule = {
 
     mutations: {
         [AUTH_REQUEST]: (state, user) => {
-            state.loginStatus = user && user.selectedUser ? "list_loading" : "loading";
+            if (user && user.selectedUser) {
+                state.loginStatus = "list_loading";
+            }
+            else if (user && (user.totpPin || user.totpBackupCode)) {
+                state.loginStatus = "totp_loading";
+            }
+            else {
+                state.loginStatus = "loading";
+            }
+            
             state.loginMessage = "";
             state.listOfUsers = [];
         },
@@ -105,16 +123,33 @@ const loginModule = {
             state.listOfUsers = [];
             state.requirePasswordChange = user.requirePasswordChange;
         },
-        [AUTH_ERROR]: (state, message) => {
-            state.loginStatus = "error";
-            state.loginMessage = message;
+        [AUTH_TOTP_SETUP]: (state, user) => {
+            state.loginStatus = "totp";
+            state.user = user;
+            state.loginMessage = "";
+            state.listOfUsers = [];
+            state.totpQrImageUrl = user.totpQrImageUrl;
+            state.requirePasswordChange = user.requirePasswordChange;
+        },
+        [AUTH_TOTP_PIN]: (state, user) => {
+            state.loginStatus = "totp";
+            state.user = user;
+            state.loginMessage = "";
+            state.listOfUsers = [];
+            state.totpQrImageUrl = "";
+            state.requirePasswordChange = user.requirePasswordChange;
+        },
+        [AUTH_ERROR]: (state, data) => {
+            state.loginStatus = data.isTotpError ? "totp_error" : "error";
+            state.loginMessage = data.message;
             state.listOfUsers = [];
             state.user = {
                 name: "",
                 role: "",
                 lastLoginIpAddress: "",
                 lastLoginDate: null,
-                loggedIn: false
+                loggedIn: false,
+                totpQrImageUrl: ""
             };
         },
         [AUTH_LOGOUT]: (state) => {
@@ -126,7 +161,8 @@ const loginModule = {
                 role: "",
                 lastLoginIpAddress: "",
                 lastLoginDate: null,
-                loggedIn: false
+                loggedIn: false,
+                totpQrImageUrl: ""
             };
             state.requirePasswordChange = false;
         },
@@ -148,6 +184,15 @@ const loginModule = {
         },
         [CHANGE_PASSWORD_ERROR]: (state, message) => {
             state.loginMessage = message;
+        },
+        [USE_TOTP_BACKUP_CODE]: (state) => {
+            state.loginMessage = "";
+        },
+        [USE_TOTP_BACKUP_CODE_ERROR]: (state, message) => {
+            state.loginMessage = message;
+        },
+        [USER_BACKUP_CODES_GENERATED]: (state) => {
+            state.user.totpFirstTime = false;
         }
     },
 
@@ -201,14 +246,23 @@ const loginModule = {
                 return;
             }
 
-            const loginResult = await main.usersService.loginUser(user.username, user.password, (user.selectedUser || {}).username);
+            const loginResult = await main.usersService.loginUser(user.username, user.password, (user.selectedUser || {}).username, user.totpPin, user.totpBackupCode);
             if (!loginResult.success) {
-                commit(AUTH_ERROR, loginResult.message);
+                commit(AUTH_ERROR, { 
+                    message: loginResult.message, 
+                    isTotpError: data.loginStatus === "totp"
+                });
+                return;
+            }
+            
+            // If TOTP is enabled and not succeeded yet, show the 2FA step.
+            if (loginResult.data.totpEnabled && !loginResult.data.totpSuccess) {
+                commit(loginResult.data.totpQrImageUrl ? AUTH_TOTP_SETUP : AUTH_TOTP_PIN, loginResult.data);
                 return;
             }
             
             // If the user that is logging in is an admin account, show a list of users for the customer.
-            if (loginResult.data.adminLogin) {
+            if (loginResult.data.adminLogin && !loginResult.data.adminAccountId) {
                 commit(AUTH_LIST, loginResult.data.usersList);
                 return;
             }
@@ -263,6 +317,29 @@ const loginModule = {
             } else {
                 commit(CHANGE_PASSWORD_ERROR, result.error);
             }
+        },
+        
+        async [USE_TOTP_BACKUP_CODE]({ commit }, data = {}) {
+            commit(USE_TOTP_BACKUP_CODE);
+
+            const result = await main.usersService.useTotpBackupCode(data);
+
+            if (result.success) {
+                commit(CHANGE_PASSWORD_SUCCESS);
+            } else {
+                commit(CHANGE_PASSWORD_ERROR, result.message);
+            }
+        },
+        
+        [USER_BACKUP_CODES_GENERATED]({ commit }) {
+            commit(USER_BACKUP_CODES_GENERATED);
+            const localUser = JSON.parse(localStorage.getItem("userData"));
+            if (!localUser) {
+                return;
+            }
+
+            localUser.totpFirstTime = false;
+            localStorage.setItem("userData", JSON.stringify(localUser));
         }
     },
 
@@ -529,11 +606,13 @@ const usersModule = {
     state: () => ({
         changePasswordError: null,
         updateTimeActiveTimer: null,
-        updateTimeActiveTimerStopped: true
+        updateTimeActiveTimerStopped: true,
+        totpBackupCodes: [],
+        generateTotpBackupCodesError: null
     }),
 
     mutations: {
-        [RESET_PASSWORD_SUCCESS]: (state, message) => {
+        [RESET_PASSWORD_SUCCESS]: (state) => {
             state.changePasswordError = null;
         },
         [CHANGE_PASSWORD_ERROR]: (state, message) => {
@@ -553,6 +632,18 @@ const usersModule = {
                 clearInterval(state.updateTimeActiveTimer);
             }
             state.updateTimeActiveTimer = null;
+        },
+        [GENERATE_TOTP_BACKUP_CODES_SUCCESS]: (state, backupCodes) => {
+            state.totpBackupCodes = backupCodes || [];
+            state.generateTotpBackupCodesError = null;
+        },
+        [GENERATE_TOTP_BACKUP_CODES_ERROR]: (state, message) => {
+            state.generateTotpBackupCodesError = message;
+            state.totpBackupCodes = [];
+        },
+        [CLEAR_LOCAL_TOTP_BACKUP_CODES]: (state) => {
+            state.generateTotpBackupCodesError = null;
+            state.totpBackupCodes = [];
         }
     },
 
@@ -590,6 +681,22 @@ const usersModule = {
             commit(START_REQUEST);
             const result = await main.usersService.updateActiveTime();
             commit(END_REQUEST);
+        },
+        
+        async [GENERATE_TOTP_BACKUP_CODES]({ commit }) {
+            commit(START_REQUEST);
+            const result = await main.usersService.generateTotpBackupCodes();
+            commit(END_REQUEST);
+
+            if (result.success) {
+                commit(GENERATE_TOTP_BACKUP_CODES_SUCCESS, result.data);
+            } else {
+                commit(GENERATE_TOTP_BACKUP_CODES_ERROR, result.message);
+            }
+        },
+
+        [CLEAR_LOCAL_TOTP_BACKUP_CODES]({ commit }) {
+            commit(CLEAR_LOCAL_TOTP_BACKUP_CODES);
         }
     },
 

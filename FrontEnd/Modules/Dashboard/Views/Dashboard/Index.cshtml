@@ -1,5 +1,6 @@
 ﻿@using System.IO
 @model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html>
@@ -286,8 +287,8 @@
         </div>
     </div>
 
-    <script src="/scripts/Utils.min.js"></script>
-    <script src="/scripts/Base.min.js"></script>
-    <script src="/scripts/Dashboard.min.js"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Dashboard.js")"></script>
 </body>
 </html>

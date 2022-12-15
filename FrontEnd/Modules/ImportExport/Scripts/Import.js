@@ -16,7 +16,7 @@ const importModuleSettings = {
      */
     class Import {
         /**
-         * Initializes a new instance of AisDashboard.
+         * Initializes a new instance of Import.
          * @param {any} settings An object containing the settings for this class.
          */
         constructor(settings) {
@@ -944,8 +944,8 @@ const importModuleSettings = {
         selectProperty(dataItem, property) {
             dataItem.set("propertyName", property.value);
             dataItem.set("languageCode", property.languageCode);
-            dataItem.set("isImageField", parseInt(property.isImageField) === 1);
-            dataItem.set("allowMultipleImages", parseInt(property.allowMultipleImages) === 1);
+            dataItem.set("isImageField", property.isImageField);
+            dataItem.set("allowMultipleImages", property.allowMultipleImages);
         }
     }
 

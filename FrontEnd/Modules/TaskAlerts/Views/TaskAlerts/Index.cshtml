@@ -1,5 +1,6 @@
 ﻿@using System.Globalization
 @model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -113,8 +114,8 @@
         </li>
     </script>
 
-    <script src="/scripts/Utils.min.js"></script>
-    <script src="/scripts/Base.min.js"></script>
-    <script src="/scripts/TaskAlerts.min.js"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("TaskAlerts.js")"></script>
 </body>
 </html>

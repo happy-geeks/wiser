@@ -212,6 +212,23 @@ namespace Api.Modules.DataSelectors.Controllers
         }
 
         /// <summary>
+        /// Execute a data selector by ID and return the results as JSON.
+        /// </summary>
+        /// <param name="id">The ID from the data selector.</param>
+        /// <param name="asKeyValuePair">If set to true the result of the date selector will be converted to a single object. Only columns with the names "key" and "value" are used.</param>
+        /// <param name="parameters">The parameters to set before executing the query.</param>
+        /// <returns>The results of the data selector as JSON.</returns>
+        [HttpPost]
+        [Route("{id:int}/json-result")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetDataSelectorResultsAsJson(int id, [FromQuery] bool asKeyValuePair = false, [FromBody] List<KeyValuePair<string, object>> parameters = null)
+        {
+            return (await dataSelectorsService.GetDataSelectorResultAsJsonAsync((ClaimsIdentity) User.Identity, id, asKeyValuePair, parameters)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
         /// Combine two <see cref="WiserDataSelectorRequestModel"/>s. Used to combine information from the body with the information from the query.
         /// </summary>
         /// <param name="model1">The first <see cref="WiserDataSelectorRequestModel"/>.</param>

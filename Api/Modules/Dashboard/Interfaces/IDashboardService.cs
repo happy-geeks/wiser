@@ -48,7 +48,7 @@ public interface IDashboardService
     /// <param name="id">The ID of the service to set the pause state of.</param>
     /// <param name="state">The pause state.</param>
     /// <returns>Returns the pause state based on the given action.</returns>
-    Task<ServiceResult<ServicePauseStates>> SetAisServicePauseStateAsync(ClaimsIdentity identity, int id, bool state);
+    Task<ServiceResult<ServicePauseStates>> SetWtsServicePauseStateAsync(ClaimsIdentity identity, int id, bool state);
     
     /// <summary>
     /// Set the extra run state of a service.

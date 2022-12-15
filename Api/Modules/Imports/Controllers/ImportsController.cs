@@ -32,7 +32,7 @@ namespace Api.Modules.Imports.Controllers
         }
 
         /// <summary>
-        /// Prepare an import to be imported by the AIS.
+        /// Prepare an import to be imported by the WTS.
         /// </summary>
         /// <param name="importRequest">The information needed for the import.</param>
         /// <returns>A ImportResultModel containing the result of the import.</returns>

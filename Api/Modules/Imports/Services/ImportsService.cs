@@ -598,13 +598,13 @@ namespace Api.Modules.Imports.Services
                 return new ServiceResult<ImportResultModel>(importResult);
             }
 
-            // Extract the images zip to a place where the AIS can find them.
+            // Extract the images zip to a place where the WTS can find them.
             if (String.IsNullOrWhiteSpace(importRequest.ImagesFileName) && String.IsNullOrWhiteSpace(importRequest.ImagesFilePath))
             {
                 return new ServiceResult<ImportResultModel>(importResult);
             }
 
-            var basePath = $@"C:\temp\AIS Import\{customer.CustomerId}\{wiserImportId}\";
+            var basePath = $@"C:\temp\WTS Import\{customer.CustomerId}\{wiserImportId}\";
 
             var imagesDirectory = new DirectoryInfo(basePath);
             imagesDirectory.Create();

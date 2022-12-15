@@ -69,7 +69,7 @@ namespace Api.Modules.DigitalOcean.Services
                 Users = new List<UserApiModel>
                 {
                     new() { Name = $"{user.ToMySqlSafeValue(false)}_web", Password = SecurityHelpers.GenerateRandomPassword(), Role = "normal" },
-                    new() { Name = $"{user.ToMySqlSafeValue(false)}_ais", Password = SecurityHelpers.GenerateRandomPassword(), Role = "normal" },
+                    new() { Name = $"{user.ToMySqlSafeValue(false)}_wts", Password = SecurityHelpers.GenerateRandomPassword(), Role = "normal" },
                     new() { Name = $"{user.ToMySqlSafeValue(false)}_wiser", Password = SecurityHelpers.GenerateRandomPassword(), Role = "normal" }
                 },
                 Database = database

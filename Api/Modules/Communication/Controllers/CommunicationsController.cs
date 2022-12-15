@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Modules.Communication.Interfaces;
 using GeeksCoreLibrary.Modules.Communication.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,6 +14,7 @@ namespace Api.Modules.Communication.Controllers;
 /// </summary>
 [Route("api/v3/[controller]")]
 [ApiController]
+[Authorize]
 [Consumes(MediaTypeNames.Application.Json)]
 [Produces(MediaTypeNames.Application.Json)]
 public class CommunicationsController : Controller

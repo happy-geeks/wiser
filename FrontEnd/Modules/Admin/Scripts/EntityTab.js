@@ -12,6 +12,8 @@ export class EntityTab {
         // init hide/show elements
         this.hideShowElementsBasedOnValue();
         this.fieldOptions = {};
+        this.previouslySelectedEntity = null;
+        this.previouslySelectedTab = null;
     }
 
     checkIfEntityIsSet() {
@@ -26,13 +28,6 @@ export class EntityTab {
             return false;
         }
         
-        return true;
-    }
-
-    checkIfTabNameIsSet() {
-        if (this.tabNameDropDownList.value() === "") {
-            return false;
-        }
         return true;
     }
 
@@ -319,7 +314,7 @@ export class EntityTab {
                 await this.onEntitiesComboBoxSelect(this);
             } else {
                 // select the right tab
-                this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem());
+                await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem());
             }
         }
         catch (exception) {
@@ -351,7 +346,7 @@ export class EntityTab {
             });
             
             this.base.showNotification("notification", `Veld succesvol verwijderd`, "success");
-            this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem());
+            await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem());
 
             // Select first item in list
             const firstElement = this.listOfTabProperties.element.find("[data-item]").first();
@@ -437,7 +432,7 @@ export class EntityTab {
                 await this.onEntitiesComboBoxSelect(this);
             } else {
                 // select the right tab
-                this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem());
+                await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem());
             }
         }
         catch (exception) {
@@ -2260,7 +2255,11 @@ export class EntityTab {
     }
 
     // get entity properties of tab when tabname is selected
-    tabNameDropDownListSelect(eventOrDataItem) {
+    async tabNameDropDownListSelect(eventOrDataItem) {
+        if (this.tabNameDropDownListSelectBusy) {
+            return;
+        }
+        
         const entityType = this.entitiesCombobox.dataItem().name;
         if (!eventOrDataItem || !entityType) {
             return;
@@ -2268,15 +2267,39 @@ export class EntityTab {
         
         let tabName = "";
         tabName = eventOrDataItem.sender && eventOrDataItem.sender.dataItem() ? eventOrDataItem.sender.dataItem().tabName : eventOrDataItem.tabName;
-        tabName = tabName === "Gegevens" || !tabName ? "" : tabName;
-        this.listOfTabProperties.setDataSource(new kendo.data.DataSource({
-            serverFiltering: true,
-            transport: {
-                read: {
-                    url: `${this.base.settings.serviceRoot}/GET_ENTITY_PROPERTIES_ADMIN?entityName=${encodeURIComponent(entityType)}&tabName=${encodeURIComponent(tabName)}`
-                }
+        tabName = tabName === "Gegevens" || !tabName ? "Gegevens" : tabName;
+        
+        if (this.previouslySelectedTab === tabName && this.previouslySelectedEntity === entityType) {
+            return;
+        }
+
+        this.tabNameDropDownListSelectBusy = true;
+        try {
+            if (this.previouslySelectedEntity !== entityType) {
+                await Wiser.api({
+                    type: "PUT",
+                    url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(entityType)}/fix-ordering`,
+                    contentType: "application/json"
+                });
             }
-        }));
+
+            this.previouslySelectedTab = tabName;
+            this.previouslySelectedEntity = entityType;
+
+            this.listOfTabProperties.setDataSource(new kendo.data.DataSource({
+                serverFiltering: true,
+                transport: {
+                    read: {
+                        url: `${this.base.settings.serviceRoot}/GET_ENTITY_PROPERTIES_ADMIN?entityName=${encodeURIComponent(entityType)}&tabName=${encodeURIComponent(tabName)}`
+                    }
+                }
+            }));
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+        } finally {
+            this.tabNameDropDownListSelectBusy = false;
+        }
     }
 
     // get properties of entity fields and fill fields

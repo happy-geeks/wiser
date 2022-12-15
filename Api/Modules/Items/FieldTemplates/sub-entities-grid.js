@@ -256,7 +256,7 @@ async function generateGrid(data, model, columns) {
     }
 
     if (options.toolbar && options.toolbar.customActions && options.toolbar.customActions.length > 0) {
-        dynamicItems.grids.addCustomActionsToToolbar("#overviewGrid{propertyIdWithSuffix}", "{itemIdEncrypted}", "{propertyId}", toolbar, options.toolbar.customActions);
+        dynamicItems.grids.addCustomActionsToToolbar("#overviewGrid{propertyIdWithSuffix}", "{itemIdEncrypted}", "{propertyId}", toolbar, options.toolbar.customActions, "{entityType}");
     }
 
     if (columns && columns.length) {

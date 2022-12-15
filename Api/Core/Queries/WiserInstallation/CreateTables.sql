@@ -257,6 +257,7 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile`  (
   `itemlink_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   `protected` tinyint NOT NULL DEFAULT 0 COMMENT 'Stel in op 1 om alleen toe te staan dat het bestand wordt opgehaald via een versleutelde id',
   `ordering` int NOT NULL DEFAULT 0,
+  `extra_data` mediumtext,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `item_id`(`item_id`, `content_type`) USING BTREE,
   INDEX `idx_itemlinkid`(`itemlink_id`) USING BTREE
@@ -481,38 +482,30 @@ CREATE TABLE IF NOT EXISTS `wiser_api_connection`  (
 -- ----------------------------
 -- Table structure for wiser_communication
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS `wiser_communication`  (
+CREATE TABLE `wiser_communication`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `receiver_selectionid` int NOT NULL DEFAULT 0,
+  `receivers_data_selector_id` int NOT NULL DEFAULT 0,
+  `receivers_query_id` int NOT NULL DEFAULT 0,
   `receiver_list` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `send_email` tinyint NOT NULL DEFAULT 0,
-  `email_templateid` int NOT NULL DEFAULT 0,
-  `wiser_itemid` int NOT NULL DEFAULT 0,
-  `send_sms` tinyint NOT NULL DEFAULT 0,
-  `send_whatsapp` tinyint NOT NULL DEFAULT 0,
-  `create_pdf` tinyint NOT NULL DEFAULT 0,
-  `email-subject` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `email-content` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `email_address_selector` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `sms-content` varchar(160) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `phone_number_selector` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `pdf_templateid` bigint NOT NULL DEFAULT 0,
-  `send_trigger` enum('direct','fixed_datetime','recurring','variable_date') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'direct',
-  `senddate` datetime(0) NULL DEFAULT NULL,
+  `settings` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+  `send_trigger_type` enum('direct','fixed','recurring') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `trigger_start` date NULL DEFAULT NULL,
   `trigger_end` date NULL DEFAULT NULL,
-  `trigger_time` time(0) NULL DEFAULT NULL,
-  `trigger_periodvalue` smallint NOT NULL DEFAULT 1,
-  `trigger_period` enum('minute','hour','day','week','month','year') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'minute',
-  `trigger_periodbeforeafter` enum('before','after') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'before',
-  `trigger_days` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT 'contains 1 for monday and 7 for sunday 123 means monday through wednesday',
-  `trigger_type` int NOT NULL DEFAULT 0,
-  `last_processed` datetime(0) NULL DEFAULT NULL COMMENT 'This is for send_trigger=recurring. This value determines the last time an AIS instance checked for new items to create.',
-  `uploaded_file` longblob NULL,
-  `uploaded_filename` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `trigger_time` time NULL DEFAULT NULL,
+  `trigger_period_value` tinyint NOT NULL DEFAULT 1,
+  `trigger_period_type` enum('minute','hour','day','week','month','year') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `trigger_week_days` int NOT NULL DEFAULT 0,
+  `last_processed` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+  `added_by` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `added_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `trigger_day_of_month` int NOT NULL DEFAULT 0,
+  `changed_by` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `changed_on` datetime NULL DEFAULT NULL,
+  `content_data_selector_id` int NOT NULL DEFAULT 0,
+  `content_query_id` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `idx_name`(`name`) USING BTREE
+  UNIQUE INDEX `idx_name`(`name`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -544,7 +537,7 @@ CREATE TABLE IF NOT EXISTS `wiser_communication_generated`  (
   `wiser_item_files` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT 'One or more IDs from wiser_itemfile that should be sent with the communication as attachments. Only works for e-mail communications.',
   `attempt_count` int NOT NULL DEFAULT 0,
   `last_attempt` datetime NULL,
-  `is_internal_error_mail` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'If the AIS was not able to send a communication after X tries, it will send an e-mail to notify us about the problem. For these e-mails, this column will be set to 1, so that we can use that to make sure we don\'t send too many errors.',
+  `is_internal_error_mail` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'If the WTS was not able to send a communication after X tries, it will send an e-mail to notify us about the problem. For these e-mails, this column will be set to 1, so that we can use that to make sure we don\'t send too many errors.',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_communication_id`(`communication_id`) USING BTREE,
   INDEX `idx_send_processed_date`(`send_date`, `processed_date`) USING BTREE,

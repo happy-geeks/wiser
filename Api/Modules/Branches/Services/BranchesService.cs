@@ -141,7 +141,7 @@ namespace Api.Modules.Branches.Services
             settings.WiserTitle = newCustomerTitle;
             settings.DatabaseName = databaseName;
 
-            // Add the new customer environment to easy_customers. We do this here already so that the AIS doesn't need access to the main wiser database.
+            // Add the new customer environment to easy_customers. We do this here already so that the WTS doesn't need access to the main wiser database.
             var newCustomer = new CustomerModel
             {
                 CustomerId = currentCustomer.CustomerId,
@@ -167,7 +167,7 @@ namespace Api.Modules.Branches.Services
             newCustomer.Database.Username = null;
             newCustomer.Database.PortNumber = 0;
             
-            // Add the creation of the branch to the queue, so that the AIS can process it.
+            // Add the creation of the branch to the queue, so that the WTS can process it.
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("name", settings.Name);
             clientDatabaseConnection.AddParameter("action", "create");
@@ -919,7 +919,7 @@ LIMIT 1";
                 }
             }
 
-            // Add the merge to the queue so that the AIS will process it.
+            // Add the merge to the queue so that the WTS will process it.
             await using (var productionCommand = mainConnection.CreateCommand())
             {
                 productionCommand.Parameters.AddWithValue("branch_id", settings.Id);
