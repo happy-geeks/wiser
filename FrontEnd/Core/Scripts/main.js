@@ -682,7 +682,7 @@ import CacheService from "./shared/cache.service";
                             return false;
                         }
 
-                        // Copy the conflicts to the merge settings, so that the AIS will know what to do with the conflicts.
+                        // Copy the conflicts to the merge settings, so that the WTS will know what to do with the conflicts.
                         if (this.mergeBranchResult && this.mergeBranchResult.conflicts) {
                             this.branchMergeSettings.conflicts = this.mergeBranchResult.conflicts;
                         }

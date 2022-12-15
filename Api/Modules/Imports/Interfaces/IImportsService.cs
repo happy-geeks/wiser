@@ -14,7 +14,7 @@ namespace Api.Modules.Imports.Interfaces
     public interface IImportsService
     {
         /// <summary>
-        /// Prepare an import to be imported by the AIS.
+        /// Prepare an import to be imported by the WTS.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="importRequest">The information needed for the import.</param>
