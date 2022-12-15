@@ -16,7 +16,7 @@ const importModuleSettings = {
      */
     class Import {
         /**
-         * Initializes a new instance of AisDashboard.
+         * Initializes a new instance of Import.
          * @param {any} settings An object containing the settings for this class.
          */
         constructor(settings) {

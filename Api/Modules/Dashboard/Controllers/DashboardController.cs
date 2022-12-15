@@ -48,20 +48,28 @@ public class DashboardController : ControllerBase
     }
 
     /// <summary>
-    /// Get the services from the AIS.
+    /// Get the services from the WTS.
     /// </summary>
     /// <returns>A <see cref="Service"/> object containing various information about the usage of Wiser.</returns>
-    [HttpGet, Route("services")]
+    [HttpGet]
+    [Route("services")]
     [ProducesResponseType(typeof(List<Service>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAisServicesAsync()
+    public async Task<IActionResult> GetWtsServicesAsync()
     {
-        return (await dashboardService.GetAisServicesAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
+        return (await dashboardService.GetWtsServicesAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
     }
 
-    [HttpPut, Route("services/{id:int}/pause/{state:bool}")]
+    /// <summary>
+    /// Pause or unpause a service from the WTS.
+    /// </summary>
+    /// <param name="id">The ID of the service to change the state of.</param>
+    /// <param name="state">The state to set. True to pause, false to unpause.</param>
+    /// <returns></returns>
+    [HttpPut]
+    [Route("services/{id:int}/pause/{state:bool}")]
     public async Task<IActionResult> PauseServiceAsync(int id, bool state)
     {
-        return (await dashboardService.SetAisServicePauseStateAsync((ClaimsIdentity) User.Identity, id, state)).GetHttpResponseMessage();
+        return (await dashboardService.SetWtsServicePauseStateAsync((ClaimsIdentity) User.Identity, id, state)).GetHttpResponseMessage();
     }
 
     /// <summary>
@@ -70,8 +78,8 @@ public class DashboardController : ControllerBase
     /// <param name="id">The ID of the service.</param>
     /// <returns></returns>
     [HttpGet, Route("services/{id:int}/logs")]
-    public async Task<IActionResult> GetAisServiceLogsAsync(int id)
+    public async Task<IActionResult> GetWtsServiceLogsAsync(int id)
     {
-        return (await dashboardService.GetAisServiceLogsAsync((ClaimsIdentity) User.Identity, id)).GetHttpResponseMessage();
+        return (await dashboardService.GetWtsServiceLogsAsync((ClaimsIdentity) User.Identity, id)).GetHttpResponseMessage();
     }
 }

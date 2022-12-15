@@ -690,17 +690,17 @@ public class DashboardService : IDashboardService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<List<Service>>> GetAisServicesAsync(ClaimsIdentity identity)
+    public async Task<ServiceResult<List<Service>>> GetWtsServicesAsync(ClaimsIdentity identity)
     {
         await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>()
         {
-            WiserTableNames.AisLogs,
-            WiserTableNames.AisServices
+            WiserTableNames.WtsLogs,
+            WiserTableNames.WtsServices
         });
         
         var services = new List<Service>();
 
-        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT * FROM {WiserTableNames.AisServices}");
+        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT * FROM {WiserTableNames.WtsServices}");
 
         if (dataTable.Rows.Count == 0)
         {
@@ -738,14 +738,14 @@ public class DashboardService : IDashboardService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<List<ServiceLog>>> GetAisServiceLogsAsync(ClaimsIdentity identity, int id)
+    public async Task<ServiceResult<List<ServiceLog>>> GetWtsServiceLogsAsync(ClaimsIdentity identity, int id)
     {
         var logs = new List<ServiceLog>();
         
         clientDatabaseConnection.AddParameter("serviceId", id);
         var datatable = await clientDatabaseConnection.GetAsync($@"SELECT log.*
-                                                                        FROM {WiserTableNames.AisServices} AS service
-                                                                        JOIN {WiserTableNames.AisLogs} AS log ON log.configuration = service.configuration AND log.time_id = service.time_id
+                                                                        FROM {WiserTableNames.WtsServices} AS service
+                                                                        JOIN {WiserTableNames.WtsLogs} AS log ON log.configuration = service.configuration AND log.time_id = service.time_id
                                                                         WHERE service.id = ?serviceId
                                                                         ORDER BY log.added_on DESC");
 
@@ -776,12 +776,12 @@ public class DashboardService : IDashboardService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<ServicePauseStates>> SetAisServicePauseStateAsync(ClaimsIdentity identity, int id, bool state)
+    public async Task<ServiceResult<ServicePauseStates>> SetWtsServicePauseStateAsync(ClaimsIdentity identity, int id, bool state)
     {
         clientDatabaseConnection.AddParameter("serviceId", id);
         clientDatabaseConnection.AddParameter("pauseState", state);
 
-        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT state FROM {WiserTableNames.AisServices} WHERE id = ?serviceId");
+        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT state FROM {WiserTableNames.WtsServices} WHERE id = ?serviceId");
 
         if (dataTable.Rows.Count == 0)
         {
@@ -796,7 +796,7 @@ public class DashboardService : IDashboardService, IScopedService
         var currentState = dataTable.Rows[0].Field<string>("state");
         var serviceIsCurrentlyRunning = currentState.Equals("running", StringComparison.InvariantCultureIgnoreCase);
 
-        await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.AisServices}
+        await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.WtsServices}
 SET paused = ?pauseState
 {(state && !serviceIsCurrentlyRunning ? ", state = 'paused'" : "")}
 WHERE id = ?serviceId");

@@ -536,7 +536,7 @@ CREATE TABLE IF NOT EXISTS `wiser_communication_generated`  (
   `wiser_item_files` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT 'One or more IDs from wiser_itemfile that should be sent with the communication as attachments. Only works for e-mail communications.',
   `attempt_count` int NOT NULL DEFAULT 0,
   `last_attempt` datetime NULL,
-  `is_internal_error_mail` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'If the AIS was not able to send a communication after X tries, it will send an e-mail to notify us about the problem. For these e-mails, this column will be set to 1, so that we can use that to make sure we don\'t send too many errors.',
+  `is_internal_error_mail` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'If the WTS was not able to send a communication after X tries, it will send an e-mail to notify us about the problem. For these e-mails, this column will be set to 1, so that we can use that to make sure we don\'t send too many errors.',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_communication_id`(`communication_id`) USING BTREE,
   INDEX `idx_send_processed_date`(`send_date`, `processed_date`) USING BTREE,

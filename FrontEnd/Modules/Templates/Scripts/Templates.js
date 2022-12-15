@@ -75,8 +75,8 @@ const moduleSettings = {
                 "NORMAL": 6,
                 "DIRECTORY": 7,
                 "XML": 8,
-                "AIS": 8,
-                "SERVICES": 8,
+                "AIS": 8, // Legacy AIS
+                "SERVICES": 8, // WTS
                 "ROUTINES": 9,
                 "VIEWS": 10,
                 "TRIGGERS": 11
