@@ -197,7 +197,7 @@ if (customQueryGrid) {
         }).then(done);
     } else {
         Wiser.api({
-            url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType)}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
+            url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType || "{entityType}")}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
             method: "POST",
             contentType: "application/json"
         }).then(done);
@@ -348,7 +348,7 @@ async function generateGrid(data, model, columns) {
                             });
                         } else {
                             Wiser.api({
-                                url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType)}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
+                                url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType || "{entityType}")}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
                                 method: "POST",
                                 contentType: "application/json",
                                 data: JSON.stringify(transportOptions.data)
@@ -400,7 +400,8 @@ async function generateGrid(data, model, columns) {
 
                         let itemModel = {
                             title: transportOptions.data.name,
-                            details: []
+                            details: [],
+                            entityType: "{entityType}"
                         };
 
                         var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id;
@@ -543,9 +544,11 @@ async function generateGrid(data, model, columns) {
 
                         if (options.fieldGroupName) {
                             let itemModel = {
-                                details: []
+                                details: [],
+                                entityType: "{entityType}" 
                             };
-                            var encryptedId = "{itemIdEncrypted}";
+                            
+                            const encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
                             // If we have a predefined language code, then always force that language code, so that the user doesn't have to enter it manually.
                             if (options.languageCode) {
@@ -616,7 +619,8 @@ async function generateGrid(data, model, columns) {
 
                         if (options.fieldGroupName) {
                             let itemModel = {
-                                details: []
+                                details: [],
+                                entityType: "{entityType}"
                             };
                             var encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
