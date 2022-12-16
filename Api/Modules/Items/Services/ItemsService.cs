@@ -2447,9 +2447,15 @@ ORDER BY {orderByClause}";
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             var destinationIds = encryptedDestinationIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
             var sourceIds = encryptedSourceIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
-            var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
             var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType);
             var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
+
+            if (String.IsNullOrWhiteSpace(sourceEntityType))
+            {
+                sourceEntityType = linkTypeSettings.SourceEntityType;
+            }
+
+            var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("linkType", linkType);
@@ -2493,9 +2499,15 @@ ORDER BY {orderByClause}";
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             var destinationIds = encryptedDestinationIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
             var sourceIds = encryptedSourceIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
-            var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
             var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType);
             var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
+
+            if (String.IsNullOrWhiteSpace(sourceEntityType))
+            {
+                sourceEntityType = linkTypeSettings.SourceEntityType;
+            }
+            
+            var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("linkType", linkType);
