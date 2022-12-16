@@ -25,11 +25,6 @@ const moduleSettings = {
             colSpan: 5,
             rowSpan: 4
         },
-        /*{
-            tileId: "subscription",
-            colSpan: 7,
-            rowSpan: 2
-        },*/
         {
             tileId: "updateLog",
             colSpan: 5,
@@ -49,12 +44,7 @@ const moduleSettings = {
             tileId: "taskAlerts",
             colSpan: 4,
             rowSpan: 2
-        }/*,
-        {
-            tileId: "dataSelector",
-            colSpan: 4,
-            rowSpan: 2
-        }*/
+        }
     ]);
 
     class Dashboard {
@@ -556,7 +546,7 @@ const moduleSettings = {
                         }
                     }
                 ],
-                dataBound: this.setServiceState
+                dataBound: this.setServiceState.bind(this)
             }).data("kendoGrid");
             this.servicesGrid.scrollables[1].classList.add("fixed-table");
         }
@@ -953,6 +943,10 @@ const moduleSettings = {
             });
         }
 
+        /**
+         * Actions to perform when the period filter changes. The start and end date inputs will
+         * be updated and, if possible, the data will be updated to reflect the change on the dates.
+         */
         async onPeriodFilterChange(event) {
             const currentDate = new Date();
             const value = event.sender.value();
@@ -1070,22 +1064,31 @@ const moduleSettings = {
                 };
             });
 
-            const saveResult = await Wiser.api({
-                url: `${this.settings.wiserApiRoot}users/dashboard-settings`,
-                method: "POST",
-                contentType: "application/json",
-                dataType: "json",
-                data: JSON.stringify(data)
-            });
+            let saveSuccessful;
+            try {
+                saveSuccessful = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}users/dashboard-settings`,
+                    method: "POST",
+                    contentType: "application/json",
+                    dataType: "json",
+                    data: JSON.stringify(data)
+                });
+            } catch (exception) {
+                console.error(exception);
+                saveSuccessful = false;
+            }
 
-            if (!saveResult) {
+            if (!saveSuccessful) {
                 Wiser.alert({
                     title: "Opslaan mislukt",
-                    content: "Het opslaan van het dashboard layout is mislukt."
+                    content: "Het opslaan van het dashboard layout is mislukt. Probeer het a.u.b. nogmaals door de layout nogmaals aan te passen, of neem contact op met ons."
                 });
             }
         }
 
+        /**
+         * Adds a tile to the tile layout and save the new layout to the user settings.
+         */
         async addTile(tileId) {
             const defaultTileSettings = defaultLayoutSettings.find((tile) => tile.tileId === tileId);
             if (!defaultTileSettings) return;
@@ -1119,6 +1122,9 @@ const moduleSettings = {
             await this.saveUserSettings();
         }
 
+        /**
+         * Removes a tile from the tile layout and save the new layout to the user settings.
+         */
         async removeTile(tileId) {
             const itemId = this.tileLayout.element.find(`[data-tile='${tileId}']`).closest(".k-tilelayout-item").attr("id");
             const mainItems = this.tileLayout.items;
