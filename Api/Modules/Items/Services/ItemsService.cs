@@ -2456,6 +2456,7 @@ ORDER BY {orderByClause}";
             }
 
             var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
+            var destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkTypeSettings.DestinationEntityType);
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("linkType", linkType);
@@ -2480,7 +2481,7 @@ ORDER BY {orderByClause}";
                 query = $@"INSERT IGNORE INTO {linkTablePrefix}{WiserTableNames.WiserItemLink} (item_id, destination_item_id, type)
                         SELECT source.id, destination.id, ?linkType
                         FROM {tablePrefix}{WiserTableNames.WiserItem} AS source
-                        JOIN {tablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id IN ({String.Join(",", destinationIds)})
+                        JOIN {destinationTablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id IN ({String.Join(",", destinationIds)})
                         WHERE source.id IN ({String.Join(",", sourceIds)})";
             }
 
