@@ -181,6 +181,12 @@ const moduleSettings = {
             
             // Start the Pusher connection.
             await this.connectedUsers.init();
+            
+            // If we have a template ID in the query string, load that template immediately.
+            if (this.settings.templateId) {
+                await this.loadTemplate(this.settings.templateId);
+                this.selectedId = this.settings.templateId;
+            }
 
             window.processing.removeProcess(process);
         }
@@ -235,6 +241,10 @@ const moduleSettings = {
                     }
                 }
             }).data("kendoTabStrip");
+
+            if (!this.treeViewTabStrip) {
+                return;
+            }
 
             // Load the tabs via the API.
             this.treeViewTabs = await Wiser.api({
@@ -1860,7 +1870,10 @@ const moduleSettings = {
                 }
             });
 
-            document.getElementById("searchForm").addEventListener("submit", this.onSearchFormSubmit.bind(this));
+            const searchForm = document.getElementById("searchForm");
+            if (searchForm) {
+                searchForm.addEventListener("submit", this.onSearchFormSubmit.bind(this));
+            }
 
             $(".window-content #left-pane div.k-content").on("dragover", (event) => {
                 event.preventDefault();

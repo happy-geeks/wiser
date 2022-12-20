@@ -216,5 +216,20 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         /// <returns>A list with the new backup codes.</returns>
         Task<ServiceResult<List<string>>> GenerateTotpBackupCodesAsync(ClaimsIdentity identity);
+
+        /// <summary>
+        /// Gets the layout data of the dashboard of the currently logged in user.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <returns>A JSON string representing the layout data.</returns>
+        Task<ServiceResult<string>> GetDashboardSettingsAsync(ClaimsIdentity identity);
+
+        /// <summary>
+        /// Saves the layout data of the dashboard to the currently logged in user.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="settings">The JSON that represents the dashboard layout data.</param>
+        /// <returns>A boolean whether the saving of the data was successful.</returns>
+        Task<ServiceResult<bool>> SaveDashboardSettingsAsync(ClaimsIdentity identity, JToken settings);
     }
 }

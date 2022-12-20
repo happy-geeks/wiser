@@ -184,7 +184,6 @@ namespace Api.Modules.Customers.Controllers
             return (await usersService.GetRolesAsync(includePermissions)).GetHttpResponseMessage();
         }
 
-
         /// <summary>
         /// (Re)generate backup codes for TOTP (2FA) authentication.
         /// This will delete any remaining backup codes from the user and generate new ones.
@@ -197,6 +196,31 @@ namespace Api.Modules.Customers.Controllers
         public async Task<IActionResult> GenerateTotpBackupCodesAsync()
         {
             return (await usersService.GenerateTotpBackupCodesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Will attempt to retrieve the saved layout data for the authenticated user.
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("dashboard-settings")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetDashboardSettingsAsync()
+        {
+            return (await usersService.GetDashboardSettingsAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Will attempt to save the given layout data to the authenticated user.
+        /// </summary>
+        /// <param name="layoutData">A JSON object containing the layout data to save.</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("dashboard-settings")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SaveDashboardSettingsAsync([FromBody] JToken layoutData)
+        {
+            return (await usersService.SaveDashboardSettingsAsync((ClaimsIdentity) User.Identity, layoutData)).GetHttpResponseMessage();
         }
     }
 }

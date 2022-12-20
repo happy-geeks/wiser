@@ -49,4 +49,13 @@ public interface IDashboardService
     /// <param name="state">The pause state.</param>
     /// <returns>Returns the pause state based on the given action.</returns>
     Task<ServiceResult<ServicePauseStates>> SetWtsServicePauseStateAsync(ClaimsIdentity identity, int id, bool state);
+    
+    /// <summary>
+    /// Set the extra run state of a service.
+    /// </summary>
+    /// <param name="identity">The identity of the authenticated user.</param>
+    /// <param name="id">The ID of the service to set the extra run state of.</param>
+    /// <param name="state">The extra run state.</param>
+    /// <returns>Returns the extra run state based on the given action.</returns>
+    Task<ServiceResult<ServiceExtraRunStates>> SetWtsServiceExtraRunStateAsync(ClaimsIdentity identity, int id, bool state);
 }

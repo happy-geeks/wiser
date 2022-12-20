@@ -47,6 +47,7 @@ namespace Api.Modules.Customers.Services
         private const string UserLoginAttemptsKey = "attempts";
         private const string UserBlockedKey = "blocked";
         private const string UserRequirePasswordChangeKey = "require_password_change";
+        private const string UserDashboardSettingsKey = "dashboard_settings";
         private const string UserGridSettingsGroupName = "grid_settings";
         private const string UserModuleSettingsGroupName = "module_settings";
         private const string UserPinnedModulesKey = "pinnedModules";
@@ -1047,6 +1048,35 @@ namespace Api.Modules.Customers.Services
         {
             var results = await rolesService.GetRolesAsync(includePermissions);
             return new ServiceResult<List<RoleModel>>(results);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> GetDashboardSettingsAsync(ClaimsIdentity identity)
+        {
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+
+            var query = $@"SELECT settings.long_value
+                        FROM `{WiserTableNames.WiserItem}` AS user
+                        JOIN `{WiserTableNames.WiserItemDetail}` AS settings ON settings.item_id = user.id AND settings.`key` = '{UserDashboardSettingsKey}'
+                        WHERE user.id = ?userId AND user.entity_type = '{WiserUserEntityType}'";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            return new ServiceResult<string>(dataTable.Rows.Count == 0 ? "[]" : dataTable.Rows[0].Field<string>("long_value"));
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveDashboardSettingsAsync(ClaimsIdentity identity, JToken settings)
+        {
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+            clientDatabaseConnection.AddParameter("settings", settings?.ToString(Formatting.None));
+
+            var query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, long_value)
+                        VALUES (?userId, '{UserDashboardSettingsKey}', ?settings)
+                        ON DUPLICATE KEY UPDATE long_value = VALUES(long_value)";
+            await clientDatabaseConnection.ExecuteAsync(query);
+
+            return new ServiceResult<bool>(true);
         }
 
         /// <summary>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Modules.Dashboard.Enums;
 using Api.Modules.Dashboard.Interfaces;
 using Api.Modules.Dashboard.Models;
 using GeeksCoreLibrary.Modules.WiserDashboard.Models;
@@ -67,9 +68,26 @@ public class DashboardController : ControllerBase
     /// <returns></returns>
     [HttpPut]
     [Route("services/{id:int}/pause/{state:bool}")]
+    [ProducesResponseType(typeof(ServicePauseStates), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ServicePauseStates), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> PauseServiceAsync(int id, bool state)
     {
         return (await dashboardService.SetWtsServicePauseStateAsync((ClaimsIdentity) User.Identity, id, state)).GetHttpResponseMessage();
+    }
+    
+    /// <summary>
+    /// Mark or unmark a service from the WTS to perform an extra run.
+    /// </summary>
+    /// <param name="id">The ID of the service to change the state of.</param>
+    /// <param name="state">The state to set. True to mark, false to unmark.</param>
+    /// <returns></returns>
+    [HttpPut]
+    [Route("services/{id:int}/extra-run/{state:bool}")]
+    [ProducesResponseType(typeof(ServiceExtraRunStates), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ServiceExtraRunStates), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ExtraRunServiceAsync(int id, bool state)
+    {
+        return (await dashboardService.SetWtsServiceExtraRunStateAsync((ClaimsIdentity) User.Identity, id, state)).GetHttpResponseMessage();
     }
 
     /// <summary>
@@ -77,7 +95,9 @@ public class DashboardController : ControllerBase
     /// </summary>
     /// <param name="id">The ID of the service.</param>
     /// <returns></returns>
-    [HttpGet, Route("services/{id:int}/logs")]
+    [HttpGet]
+    [Route("services/{id:int}/logs")]
+    [ProducesResponseType(typeof(List<ServiceLog>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetWtsServiceLogsAsync(int id)
     {
         return (await dashboardService.GetWtsServiceLogsAsync((ClaimsIdentity) User.Identity, id)).GetHttpResponseMessage();

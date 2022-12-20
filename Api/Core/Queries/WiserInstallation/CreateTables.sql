@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS `wiser_entity`  (
   `dedicated_table_prefix` varchar(25) NOT NULL DEFAULT '',
   `delete_action` enum('archive','permanent','hide','disallow') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'archive',
   `show_in_dashboard` tinyint(1) NOT NULL DEFAULT 0,
+  `store_type` enum('normal','document_store','hybrid') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'normal',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `name_module_id`(`name`, `module_id`) USING BTREE,
   INDEX `name`(`name`(100), `show_in_tree_view`) USING BTREE,
@@ -452,7 +453,7 @@ CREATE TABLE IF NOT EXISTS `wiser_user_auth_token`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_selector`(`selector`) USING BTREE,
   UNIQUE INDEX `idx_token`(`refresh_token`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 674 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for wiser_user_roles
@@ -611,7 +612,7 @@ CREATE TABLE IF NOT EXISTS `wiser_import` (
   `rollback_errors` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `server_name`(`server_name`, `started_on`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for wiser_import_log
@@ -627,7 +628,7 @@ CREATE TABLE IF NOT EXISTS `wiser_import_log`  (
   `added_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `added_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for wiser_grant_store
@@ -645,7 +646,7 @@ CREATE TABLE IF NOT EXISTS `wiser_grant_store`  (
   `session_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_key`(`key`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 
 -- ----------------------------
@@ -713,12 +714,12 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    INDEX `idx_type`(`template_type` ASC, `removed` ASC) USING BTREE,
    INDEX `idx_environment`(`published_environment` ASC, `removed` ASC) USING BTREE,
    FULLTEXT INDEX `idx_fulltext`(`template_name`, `template_data`)
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for wiser_commit
 -- ----------------------------
-CREATE TABLE `wiser_commit`  (
+CREATE TABLE IF NOT EXISTS `wiser_commit`  (
     `id` int NOT NULL AUTO_INCREMENT,
     `description` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
     `external_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
@@ -726,12 +727,12 @@ CREATE TABLE `wiser_commit`  (
     `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
     `completed` tinyint NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for wiser_commit_dynamic_content
 -- ----------------------------
-CREATE TABLE `wiser_commit_dynamic_content`  (
+CREATE TABLE IF NOT EXISTS `wiser_commit_dynamic_content`  (
     `id` int NOT NULL AUTO_INCREMENT,
     `dynamic_content_id` int NOT NULL,
     `version` int NOT NULL,
@@ -739,12 +740,12 @@ CREATE TABLE `wiser_commit_dynamic_content`  (
     `added_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
     PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for wiser_commit_template
 -- ----------------------------
-CREATE TABLE `wiser_commit_template`  (
+CREATE TABLE IF NOT EXISTS `wiser_commit_template`  (
     `id` int NOT NULL AUTO_INCREMENT,
     `template_id` int NOT NULL,
     `version` int NOT NULL,
@@ -752,7 +753,7 @@ CREATE TABLE `wiser_commit_template`  (
     `added_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
     PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 
 -- ----------------------------
@@ -774,7 +775,7 @@ CREATE TABLE IF NOT EXISTS `wiser_dynamic_content`  (
     UNIQUE INDEX `idx_unique`(`content_id` ASC, `version` ASC) USING BTREE,
     INDEX `content_id`(`content_id` ASC) USING BTREE,
     FULLTEXT INDEX `idx_fulltext`(`title`, `settings`, `component_mode`)
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for wiser_dynamic_content_publish_log
@@ -792,7 +793,7 @@ CREATE TABLE IF NOT EXISTS `wiser_dynamic_content_publish_log`  (
     `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
     PRIMARY KEY (`id`) USING BTREE,
     INDEX `idx_content_id`(`content_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for wiser_preview_profiles
@@ -805,7 +806,7 @@ CREATE TABLE IF NOT EXISTS `wiser_preview_profiles`  (
     `variables` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
     PRIMARY KEY (`id`) USING BTREE,
     INDEX `idx_template_id`(`template_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for wiser_template_dynamic_content
@@ -819,7 +820,7 @@ CREATE TABLE IF NOT EXISTS `wiser_template_dynamic_content`  (
    PRIMARY KEY (`id`) USING BTREE,
    UNIQUE INDEX `idx_unique`(`content_id` ASC, `destination_template_id` ASC) USING BTREE,
    INDEX `idx_destination`(`destination_template_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for wiser_template_publish_log
@@ -837,7 +838,22 @@ CREATE TABLE IF NOT EXISTS `wiser_template_publish_log`  (
     `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
     PRIMARY KEY (`id`) USING BTREE,
     INDEX `idx_template_id`(`template_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_dashboard
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_dashboard`  (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `last_update` datetime NOT NULL,
+  `items_data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+  `entities_data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+  `user_login_count_top10` int NOT NULL DEFAULT 0,
+  `user_login_count_other` int NOT NULL DEFAULT 0,
+  `user_login_time_top10` time NOT NULL DEFAULT '00:00:00',
+  `user_login_time_other` time NOT NULL DEFAULT '00:00:00',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for wiser_table_changes

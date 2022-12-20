@@ -210,5 +210,17 @@ namespace Api.Modules.Customers.Services
         {
             return await usersService.GenerateTotpBackupCodesAsync(identity);
         }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<string>> GetDashboardSettingsAsync(ClaimsIdentity identity)
+        {
+            return usersService.GetDashboardSettingsAsync(identity);
+        }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<bool>> SaveDashboardSettingsAsync(ClaimsIdentity identity, JToken settings)
+        {
+            return usersService.SaveDashboardSettingsAsync(identity, settings);
+        }
     }
 }
