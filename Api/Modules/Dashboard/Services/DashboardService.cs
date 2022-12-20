@@ -684,7 +684,8 @@ public class DashboardService : IDashboardService, IScopedService
                 RunTime = row.Field<double>("run_time"),
                 State = row.Field<string>("state"),
                 Paused = row.Field<bool>("paused"),
-                ExtraRun = row.Field<bool>("extra_run")
+                ExtraRun = row.Field<bool>("extra_run"),
+                TemplateId = row["template_id"] == DBNull.Value ? -1 : row.Field<int>("template_id")
             };
             
             services.Add(service);

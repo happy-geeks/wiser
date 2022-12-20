@@ -34,7 +34,12 @@ namespace FrontEnd.Modules.Templates.Controllers
             viewModel.ApiAuthenticationUrl = defaultModel.ApiAuthenticationUrl;
             viewModel.ApiRoot = defaultModel.ApiRoot;
             viewModel.LoadPartnerStyle = defaultModel.LoadPartnerStyle;
-            
+
+            if (viewModel.TemplateId > 0)
+            {
+                viewModel.BodyCssClass = "for-iframe";
+            }
+
             return View(viewModel);
         }
 

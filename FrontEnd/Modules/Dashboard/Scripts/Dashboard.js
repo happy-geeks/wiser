@@ -302,12 +302,16 @@ const moduleSettings = {
             this.initializeTaskAlertsDataChart();
             this.initializeServicesGrid();
 
-            const serviceWindowOptions = {
+            this.serviceWindow = $("#serviceLogWindow").kendoWindow({
                 actions: ["Close"],
                 visible: false
-            }
+            }).data("kendoWindow");
 
-            this.serviceWindow = $("#serviceLogWindow").kendoWindow(serviceWindowOptions).data("kendoWindow");
+            this.serviceTemplateWindow = $("#serviceTemplateWindow").kendoWindow({
+                iframe: true,
+                actions: ["Close"],
+                visible: false
+            }).data("kendoWindow")
         }
 
         /**
@@ -525,6 +529,12 @@ const moduleSettings = {
                                 text: "",
                                 iconClass: "k-icon k-i-file-txt",
                                 click: this.openServiceLogs.bind(this)
+                            },
+                            {
+                                name: "edit",
+                                text: "",
+                                iconClass: "edit-template-button k-icon k-i-edit",
+                                click: this.editServiceTemplate.bind(this)
                             }
                         ],
                         attributes: {
@@ -543,6 +553,13 @@ const moduleSettings = {
                         hidden: true,
                         attributes: {
                             "class": "extra-run-state"
+                        }
+                    },
+                    {
+                        field: "templateId",
+                        hidden: true,
+                        attributes: {
+                            "class": "service-template-id"
                         }
                     }
                 ],
@@ -793,6 +810,13 @@ const moduleSettings = {
                     extraRunButton.classList.remove("k-i-play");
                     extraRunButton.classList.add("k-i-stop");
                 }
+                
+                const templateId = dataItem.get("templateId");
+                // If template ID is -1 there is no template and ID 0 is a local file. In both cases hide the edit action.
+                if (templateId <= 0) {
+                    const editTemplateButton = rows[i].querySelector(".edit-template-button");
+                    editTemplateButton.parentElement.classList.add("hidden");
+                }
 
                 switch (state) {
                     case "active":
@@ -869,6 +893,29 @@ const moduleSettings = {
             await this.updateServices();
         }
 
+        /**
+         * Open the templates module with the template of the service.
+         * @param e The click event.
+         * @returns {Promise<void>}
+         */
+        async editServiceTemplate(e) {
+            const templateId = this.servicesGrid.dataItem(e.currentTarget.closest("tr")).templateId;
+            const newUrl = `/Modules/Templates?templateId=${templateId}`;
+            
+            if (!this.serviceTemplateWindow.options || !this.serviceTemplateWindow.options.content || this.serviceTemplateWindow.options.content.url !== newUrl) {
+                this.serviceTemplateWindow.setOptions({
+                    content: {
+                        url: newUrl,
+                        iframe: true
+                    }
+                });
+
+                this.serviceTemplateWindow.refresh();
+            }
+            
+            this.serviceTemplateWindow.title(`Template: ${templateId}`).open().maximize();
+        }
+        
         /**
          * Open a window with the logs written by the WTS for a service.
          * @param e The click event.

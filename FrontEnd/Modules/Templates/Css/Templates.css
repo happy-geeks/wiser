@@ -642,3 +642,12 @@
 .CodeMirror-lint-tooltip {
     z-index: 20000 !important;
 }
+
+/* IFRAME */
+.for-iframe .window-content {
+    top: 0;
+}
+
+.for-iframe .k-window-titlebar {
+    display: none;
+}
