@@ -148,7 +148,7 @@
                         
                         <div class="col col-12 form-row" v-if="openBranchSettings.selectedBranchType.id === 'website'">
                             <label for="website-url">Geef de URL op van uw website</label>
-                            <input type="url" id="website-url" placeholder="https://happyhorizon.com/" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="openBranchSettings.websiteUrl" required>
+                            <input type="url" id="website-url" placeholder="https://mywebsite.com/" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="openBranchSettings.websiteUrl" required>
                         </div>
                         
                         <div class="col col-12 form-row" v-if="isMainBranch">
@@ -160,7 +160,7 @@
                         <a href="#" class="btn btn-primary open-branch" @@click="openOrCopyBranch($event, false)">Branch openen</a>
                     </div>
                     <div :class="{ 'col': true, 'col-6': isMainBranch || branches.length > 0, 'col-9': !isMainBranch || !branches.length }">
-                        <h2>Branch terugzetten</h2>
+                        <h2>Branch terugzetten (mergen)</h2>
                         <p>
                             Hiermee kunnen wijzigingen die in een branch gedaan zijn, overgezet worden naar de productie-omgeving. U kunt dan kiezen welke wijzigingen doorgezet moeten worden, dat hoeft niet per se alles te zijn.
                             Het is niet mogelijk om verschillende branches samen te voegen. Het samenvoegen gaat altijd van een branch naar de productie-omgeving.
@@ -185,7 +185,7 @@
                             <ins class="icon-line-alert"></ins>
                             <span v-html="createBranchError"></span>
                         </section>
-                        <input type="text" id="newBranchName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="createBranchSettings.name" required>
+                        <input type="text" id="newBranchName" maxlength="25" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="createBranchSettings.name" required>
                     </div>
                     <div class="col col-12 form-row no-bottom-margin">
                         <label for="branche-data">Welke data wil je naar de branche overzetten?

@@ -91,10 +91,10 @@ export class EntityTab {
                 }
 
                 $("<div id='copyEntityPropertyToOtherLanguagesDialog'></div>").kendoDialog({
-                    width: "505px",
+                    width: "550px",
                     title: "Kopieren naar andere talen",
-                    closable: false,
-                    modal: false,
+                    closable: true,
+                    modal: true,
                     content: "<p>Wilt u de nieuwe velden toevoegen aan de 'Gegevens' tab, of een tab per taal maken?<p>",
                     actions: [
                         { text: "Gegevens tab", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 0) } },

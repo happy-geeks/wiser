@@ -2447,9 +2447,16 @@ ORDER BY {orderByClause}";
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             var destinationIds = encryptedDestinationIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
             var sourceIds = encryptedSourceIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
-            var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
             var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType);
             var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
+
+            if (String.IsNullOrWhiteSpace(sourceEntityType))
+            {
+                sourceEntityType = linkTypeSettings.SourceEntityType;
+            }
+
+            var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
+            var destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkTypeSettings.DestinationEntityType);
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("linkType", linkType);
@@ -2474,7 +2481,7 @@ ORDER BY {orderByClause}";
                 query = $@"INSERT IGNORE INTO {linkTablePrefix}{WiserTableNames.WiserItemLink} (item_id, destination_item_id, type)
                         SELECT source.id, destination.id, ?linkType
                         FROM {tablePrefix}{WiserTableNames.WiserItem} AS source
-                        JOIN {tablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id IN ({String.Join(",", destinationIds)})
+                        JOIN {destinationTablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id IN ({String.Join(",", destinationIds)})
                         WHERE source.id IN ({String.Join(",", sourceIds)})";
             }
 
@@ -2493,9 +2500,15 @@ ORDER BY {orderByClause}";
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             var destinationIds = encryptedDestinationIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
             var sourceIds = encryptedSourceIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
-            var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
             var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType);
             var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
+
+            if (String.IsNullOrWhiteSpace(sourceEntityType))
+            {
+                sourceEntityType = linkTypeSettings.SourceEntityType;
+            }
+            
+            var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("linkType", linkType);
