@@ -765,8 +765,13 @@ const moduleSettings = {
             }));
         }
 
+        /**
+         * Set the visual state for each service for better user experience.
+         * Including state colors and correct icons based on settings.
+         * @param e The data bound event from Kendo.
+         */
         setServiceState(e) {
-            const columnIndex = this.wrapper.find("[data-field=state]").index();
+            const columnIndex = $("#services-grid").find("[data-field=state]").index();
 
             const rows = e.sender.tbody.children();
             for (let i = 0; i < rows.length; i++) {
@@ -810,6 +815,11 @@ const moduleSettings = {
             }
         }
 
+        /**
+         * Pause or unpause a service that is executed by the WTS.
+         * @param e The click event.
+         * @returns {Promise<void>}
+         */
         async togglePauseService(e) {
             const serviceId = e.currentTarget.closest("tr").querySelector("td").innerText;
             const currentState = e.currentTarget.closest("tr").querySelector(".paused-state").innerText === 'true';
@@ -826,6 +836,11 @@ const moduleSettings = {
             await this.updateServices();
         }
 
+        /**
+         * Mark or unmark a service for the WTS to run it an extra time outside of the normal run scheme of that service.
+         * @param e The click event.
+         * @returns {Promise<void>}
+         */
         async toggleExtraRunService(e) {
             const serviceId = e.currentTarget.closest("tr").querySelector("td").innerText;
             const currentState = e.currentTarget.closest("tr").querySelector(".extra-run-state").innerText === 'true';
@@ -854,6 +869,11 @@ const moduleSettings = {
             await this.updateServices();
         }
 
+        /**
+         * Open a window with the logs written by the WTS for a service.
+         * @param e The click event.
+         * @returns {Promise<void>}
+         */
         async openServiceLogs(e) {
             const columns = e.currentTarget.closest("tr").querySelectorAll("td");
             const serviceId = columns[0].innerText;
@@ -933,6 +953,10 @@ const moduleSettings = {
             this.serviceLogsGrid.scrollables[1].classList.add("fixed-table");
         }
 
+        /**
+         * Bind (un)fold event when logs are added to the grid.
+         * @param event The data bound event from Kendo.
+         */
         onServiceLogsGridDataBound(event) {
             event.sender.element.find(".folded-message").on("dblclick", clickEvent => {
                 if(clickEvent.currentTarget.classList.contains("folded-message")) {

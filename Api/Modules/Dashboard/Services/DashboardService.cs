@@ -798,7 +798,7 @@ WHERE id = ?serviceId");
             };
         }
 
-        // If the service is stopped no AIS instance is able to perform the extra run.
+        // If the service is stopped no WTS instance is able to perform the extra run.
         if (currentState.Equals("stopped", StringComparison.InvariantCultureIgnoreCase))
         {
             return new ServiceResult<ServiceExtraRunStates>()
