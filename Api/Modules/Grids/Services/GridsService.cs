@@ -206,13 +206,11 @@ namespace Api.Modules.Grids.Services
 
             var hasPredefinedSchema = false;
 
-            var usingCustomQuery = false;
             switch (mode)
             {
                 // For link overview mode it's possible to enter custom queries, use those if entered.
                 case EntityGridModes.LinkOverview when !String.IsNullOrWhiteSpace(selectQuery):
                 {
-                    usingCustomQuery = true;
                     forceAddColumns = !results.Columns.Any();
 
                     if (results.Columns.All(c => c.Selectable == false))
@@ -355,7 +353,6 @@ namespace Api.Modules.Grids.Services
                 }
                 case EntityGridModes.CustomQuery:
                 {
-                    usingCustomQuery = true;
                     var queryId = String.IsNullOrWhiteSpace(encryptedQueryId) ? 0 : Int32.Parse(encryptedQueryId.Replace(" ", "+").DecryptWithAesWithSalt(encryptionKey, true));
                     var countQueryId = String.IsNullOrWhiteSpace(encryptedCountQueryId) ? 0 : Int32.Parse(encryptedCountQueryId.Replace(" ", "+").DecryptWithAesWithSalt(encryptionKey, true));
 
@@ -1474,11 +1471,7 @@ namespace Api.Modules.Grids.Services
 
                     foreach (DataColumn dataColumn in dataTable.Columns)
                     {
-                        var columnName = dataColumn.ColumnName.Replace("_encrypt_withdate", "").Replace("_encrypt", "").Replace("_hide", "").MakeJsonPropertyName();
-                        if (usingCustomQuery)
-                        {
-                            columnName = columnName.ToLowerInvariant();
-                        }
+                        var columnName = dataColumn.ColumnName.ToLowerInvariant().Replace("_encrypt_withdate", "").Replace("_encrypt", "").Replace("_hide", "").MakeJsonPropertyName();
 
                         if (dataColumn.ColumnName.Contains("_encrypt", StringComparison.OrdinalIgnoreCase)
                             || dataColumn.ColumnName.Contains("_encrypt_hide", StringComparison.OrdinalIgnoreCase)
