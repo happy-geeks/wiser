@@ -22,8 +22,8 @@
     box-sizing: border-box;
     list-style: none;
     outline: 0;
-    resize: none;
-    position: relative;
+    resize: none; 
+    //position: relative;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
 }
@@ -33,7 +33,6 @@ html {
     min-height: 100%;
     width: 100%;
 }
-
 body {
     background-color: $body-color;
     color: $text-color;
@@ -41,7 +40,7 @@ body {
     overflow-x: hidden;
     width: 100%;
     display: flex;
-    flex-direction: column;
+    flex-direction: column; 
 
     &:after {
         @include icon-font;
@@ -67,6 +66,7 @@ ins, a {
 
 #fullForm {
     display: block;
+    z-index: 20;
 }
 
 .k-list {
@@ -115,20 +115,20 @@ ins, a {
             }
         }
 
-        .item {
+       .item {
             background-color: $white-color;
             padding: 0;
             padding-right: 10px;
 
             .flex-container {
                 display: flex;
-                align-items: center;
-
+                //align-items: center;
+                
                 label {
                     font-size: 14px;
                     font-weight: 500;
                     white-space: nowrap;
-                    margin-right: 12px;
+                    margin: 5px 12px 5px 0;
                     position: relative;
                     left: auto;
                     transform: none;
@@ -136,7 +136,7 @@ ins, a {
                     top: auto;
                     overflow: unset;
                 }
-
+                
                 > .k-dropdownlist {
                     display: flex;
 
@@ -179,13 +179,20 @@ ins, a {
                 align-items: center;
                 padding: 0;
             }
+           
+           .k-picker {
+               margin: 0;
+           }
+           .k-input-inner[type=text] {
+               border: 0;
+           }
         }
-
+        /*
         .k-daterangepicker {
             display: flex;
             gap: 8px;
             padding: 0 15px;
-        }
+        } */
 
         .k-textbox-container {
             display: flex;
@@ -304,6 +311,10 @@ ins, a {
 /**
  *  Tiles
  **/
+.k-widget.k-tilelayout {
+    background: transparent;
+}
+
 .k-tilelayout-item {
     @include tile-shadow($black-color, 0.05);
     border-color: $white-color;
