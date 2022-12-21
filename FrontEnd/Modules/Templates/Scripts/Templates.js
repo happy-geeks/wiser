@@ -72,6 +72,7 @@ const moduleSettings = {
                 "JS": 4,
                 "SCRIPTS": 4,
                 "QUERY": 5,
+                "SQL": 5,
                 "NORMAL": 6,
                 "DIRECTORY": 7,
                 "XML": 8,
