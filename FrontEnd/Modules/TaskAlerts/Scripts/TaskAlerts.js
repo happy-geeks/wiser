@@ -195,7 +195,7 @@ const moduleSettings = {
             });
 
             // Wiser update channel for pusher messages
-            const channel = pusher.subscribe("Wiser");
+            const channel = pusher.subscribe("agendering");
             channel.bind("update_event", (event) => {
                 console.log("Received message for `update_event`", event);
             });
@@ -204,7 +204,7 @@ const moduleSettings = {
             const eventId = await Wiser.api({ url: `${this.settings.wiserApiRoot}pusher/event-id` });
 
             // User update channel for pusher messages
-            channel.bind("agendering_" + eventId, (event) => {
+            channel.bind(`agendering_${eventId}`, (event) => {
                 $("#taskList li:not(#taskHistory)").remove(); // First remove all loaded tasks
 
                 console.log("Received message for pusher event `agendering`, for the logged-in user", event);
@@ -216,7 +216,7 @@ const moduleSettings = {
                 taskAlerts.loadTasks();
             });
 
-            console.log("New pusher element generated, and subscribed to the channel(s) `Wiser`");
+            console.log("New pusher element generated, and subscribed to the channel 'agendering'");
         }
 
         /**
@@ -416,7 +416,10 @@ const moduleSettings = {
                         url: `${this.settings.wiserApiRoot}pusher/message`,
                         method: "POST",
                         contentType: "application/json",
-                        data: JSON.stringify({ userId: userId })
+                        data: JSON.stringify({
+                            channel: "agendering",
+                            userId: userId
+                        })
                     });
 
                     created++;
@@ -483,7 +486,10 @@ const moduleSettings = {
                     url: `${this.settings.wiserApiRoot}pusher/message`,
                     method: "POST",
                     contentType: "application/json",
-                    data: JSON.stringify({ userId: this.editTaskUserSelect.value() })
+                    data: JSON.stringify({
+                        channel: "agendering",
+                        userId: this.editTaskUserSelect.value()
+                    })
                 });
 
                 // After updating the task, immediately close the form.

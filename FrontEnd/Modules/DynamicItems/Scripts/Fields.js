@@ -2274,7 +2274,7 @@ export class Fields {
                             contentType: "application/json",
                             data: JSON.stringify({
                                 userId: userId,
-                                channel: action.channel || "",
+                                channel: action.channel || "agendering",
                                 eventData: eventData || ""
                             })
                         });
