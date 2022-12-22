@@ -32,12 +32,6 @@ jobs:
       
     - name: Enable maintenance notice FrontEnd
       run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_DEV }}\_App_Offline.htm" -NewName "App_OffLine.htm"
-      
-    #- name: Stop application pool API
-    #  run: Stop-WebAppPool -Name "${{ secrets.APPLICATION_POOL_API_DEV }}"
-      
-    #- name: Stop application pool front-end
-    #  run: Stop-WebAppPool -Name "${{ secrets.APPLICATION_POOL_FRONT_END_DEV }}"
 
     - name: dotnet publish API
       run: |
@@ -68,11 +62,3 @@ jobs:
     - name: Disable maintenance notice FrontEnd
       if: ${{ always() }}
       run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_DEV }}\App_Offline.htm" -NewName "_App_OffLine.htm"
-      
-    #- name: Start application pool API
-    #  if: ${{ always() }}
-    #  run: Start-WebAppPool -Name "${{ secrets.APPLICATION_POOL_API_DEV }}"
-      
-    #- name: Start application pool front-end
-    #  if: ${{ always() }}
-    #  run: Start-WebAppPool -Name "${{ secrets.APPLICATION_POOL_FRONT_END_DEV }}"
