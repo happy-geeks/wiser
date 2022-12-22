@@ -1851,6 +1851,7 @@ export class Windows {
                             column.hidden = this.searchGridSettings.hideEnvironmentColumn || false;
                             break;
                         case "name":
+                        case "title":
                             column.hidden = this.searchGridSettings.hideTitleColumn || false;
                             break;
                         case "encrypted_id":

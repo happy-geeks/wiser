@@ -206,13 +206,11 @@ namespace Api.Modules.Grids.Services
 
             var hasPredefinedSchema = false;
 
-            var usingCustomQuery = false;
             switch (mode)
             {
                 // For link overview mode it's possible to enter custom queries, use those if entered.
                 case EntityGridModes.LinkOverview when !String.IsNullOrWhiteSpace(selectQuery):
                 {
-                    usingCustomQuery = true;
                     forceAddColumns = !results.Columns.Any();
 
                     if (results.Columns.All(c => c.Selectable == false))
@@ -228,7 +226,7 @@ namespace Api.Modules.Grids.Services
                     countQuery = countQuery?.ReplaceCaseInsensitive("'{itemId}'", "?itemId");
                     selectQuery = selectQuery.ReplaceCaseInsensitive("{itemId}", "?itemId");
                     countQuery = countQuery?.ReplaceCaseInsensitive("{itemId}", "?itemId");
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "", fieldMappings: fieldMappings);
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "", fieldMappings: fieldMappings, tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -288,7 +286,7 @@ namespace Api.Modules.Grids.Services
                                     ORDER BY current.changed_on DESC, current.id DESC
                                     {{limit}}";
 
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY current.changed_on DESC, current.id DESC");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY current.changed_on DESC, current.id DESC", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -340,7 +338,7 @@ namespace Api.Modules.Grids.Services
                                     {{sort}}
                                     {{limit}}";
 
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY dueDate DESC");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY dueDate DESC", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -355,7 +353,6 @@ namespace Api.Modules.Grids.Services
                 }
                 case EntityGridModes.CustomQuery:
                 {
-                    usingCustomQuery = true;
                     var queryId = String.IsNullOrWhiteSpace(encryptedQueryId) ? 0 : Int32.Parse(encryptedQueryId.Replace(" ", "+").DecryptWithAesWithSalt(encryptionKey, true));
                     var countQueryId = String.IsNullOrWhiteSpace(encryptedCountQueryId) ? 0 : Int32.Parse(encryptedCountQueryId.Replace(" ", "+").DecryptWithAesWithSalt(encryptionKey, true));
 
@@ -396,7 +393,7 @@ namespace Api.Modules.Grids.Services
                     countQuery = countQuery?.ReplaceCaseInsensitive("'{itemId}'", "?itemId");
                     selectQuery = selectQuery.ReplaceCaseInsensitive("{itemId}", "?itemId");
                     countQuery = countQuery?.ReplaceCaseInsensitive("{itemId}", "?itemId");
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (!String.IsNullOrWhiteSpace(countQuery) && (options?.FirstLoad ?? true))
@@ -753,7 +750,7 @@ namespace Api.Modules.Grids.Services
                     }
 
                     clientDatabaseConnection.AddParameter("userId", userId);
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY due_date DESC");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY due_date DESC", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     clientDatabaseConnection.AddParameter("entityType", entityType.Equals("all", StringComparison.OrdinalIgnoreCase) ? "" : entityType);
@@ -830,7 +827,7 @@ namespace Api.Modules.Grids.Services
                                 {{sort}}
                                 {{limit}}";
 
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY language_code ASC, `key` ASC");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY language_code ASC, `key` ASC", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -1371,7 +1368,7 @@ namespace Api.Modules.Grids.Services
                     }
 
                     var defaultSorting = mode == EntityGridModes.LinkOverview ? "ORDER BY i.title ASC" : $"ORDER BY {WiserItemsService.LinkOrderingFieldName} ASC, title ASC";
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, defaultSorting);
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, defaultSorting, tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -1474,11 +1471,7 @@ namespace Api.Modules.Grids.Services
 
                     foreach (DataColumn dataColumn in dataTable.Columns)
                     {
-                        var columnName = dataColumn.ColumnName.Replace("_encrypt_withdate", "").Replace("_encrypt", "").Replace("_hide", "").MakeJsonPropertyName();
-                        if (usingCustomQuery)
-                        {
-                            columnName = columnName.ToLowerInvariant();
-                        }
+                        var columnName = dataColumn.ColumnName.ToLowerInvariant().Replace("_encrypt_withdate", "").Replace("_encrypt", "").Replace("_hide", "").MakeJsonPropertyName();
 
                         if (dataColumn.ColumnName.Contains("_encrypt", StringComparison.OrdinalIgnoreCase)
                             || dataColumn.ColumnName.Contains("_encrypt_hide", StringComparison.OrdinalIgnoreCase)
@@ -1734,8 +1727,11 @@ namespace Api.Modules.Grids.Services
             string countQuery,
             ClaimsIdentity identity,
             string defaultSort = null,
-            List<FieldMapModel> fieldMappings = null)
+            List<FieldMapModel> fieldMappings = null,
+            string tablePrefix = null)
         {
+            tablePrefix ??= "";
+            
             // Note that this function contains ' ?? ""' after every ReplaceCaseInsensitive. This is because that function returns null if the input string is an empty string, which would cause lots of problems in the rest of the code.
             fieldMappings ??= new List<FieldMapModel>();
             
@@ -1944,7 +1940,7 @@ namespace Api.Modules.Grids.Services
                         }
                         else
                         {
-                            filtersQuery.AppendLine($"JOIN {WiserTableNames.WiserItemDetail} AS `idv{counter}` ON `idv{counter}`.item_id = `{itemTableAlias}`.id AND `idv{counter}`.`key` = '{fieldName}' AND ({valueSelector} {@operator} {parameterInWhere} OR {longValueSelector} {@operator} {parameterInWhere})");
+                            filtersQuery.AppendLine($"JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} AS `idv{counter}` ON `idv{counter}`.item_id = `{itemTableAlias}`.id AND `idv{counter}`.`key` = '{fieldName}' AND ({valueSelector} {@operator} {parameterInWhere} OR {longValueSelector} {@operator} {parameterInWhere})");
                         }
                     }
 
@@ -1998,7 +1994,7 @@ namespace Api.Modules.Grids.Services
 
                             fieldName = fieldName.ToMySqlSafeValue(false);
 
-                            joinsForSorting.AppendLine($"LEFT JOIN {WiserTableNames.WiserItemDetail} AS `{fieldName}` ON `{fieldName}`.item_id = `{itemTableAlias}`.id AND `{fieldName}`.`key` = '{fieldName}'");
+                            joinsForSorting.AppendLine($"LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} AS `{fieldName}` ON `{fieldName}`.item_id = `{itemTableAlias}`.id AND `{fieldName}`.`key` = '{fieldName}'");
                         }
 
                         selectQuery = selectQuery.ReplaceCaseInsensitive("{joinsForSorting}", joinsForSorting.ToString());
