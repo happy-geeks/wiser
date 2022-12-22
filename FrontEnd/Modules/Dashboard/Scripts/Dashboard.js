@@ -540,27 +540,6 @@ const moduleSettings = {
                         attributes: {
                             "class": "admin"
                         }
-                    },
-                    {
-                        field: "paused",
-                        hidden: true,
-                        attributes: {
-                            "class": "paused-state"
-                        }
-                    },
-                    {
-                        field: "extraRun",
-                        hidden: true,
-                        attributes: {
-                            "class": "extra-run-state"
-                        }
-                    },
-                    {
-                        field: "templateId",
-                        hidden: true,
-                        attributes: {
-                            "class": "service-template-id"
-                        }
                     }
                 ],
                 dataBound: this.setServiceState.bind(this)
@@ -846,7 +825,7 @@ const moduleSettings = {
          */
         async togglePauseService(e) {
             const serviceId = e.currentTarget.closest("tr").querySelector("td").innerText;
-            const currentState = e.currentTarget.closest("tr").querySelector(".paused-state").innerText === 'true';
+            const currentState = this.servicesGrid.dataItem(e.currentTarget.closest("tr")).paused;
 
             const result = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dashboard/services/${serviceId}/pause/${!currentState}`,
@@ -867,7 +846,7 @@ const moduleSettings = {
          */
         async toggleExtraRunService(e) {
             const serviceId = e.currentTarget.closest("tr").querySelector("td").innerText;
-            const currentState = e.currentTarget.closest("tr").querySelector(".extra-run-state").innerText === 'true';
+            const currentState = this.servicesGrid.dataItem(e.currentTarget.closest("tr")).extraRun;
 
             const result = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dashboard/services/${serviceId}/extra-run/${!currentState}`,
@@ -923,7 +902,7 @@ const moduleSettings = {
          */
         async openServiceLogs(e) {
             const columns = e.currentTarget.closest("tr").querySelectorAll("td");
-            const serviceId = columns[0].innerText;
+            const serviceId = this.servicesGrid.dataItem(e.currentTarget.closest("tr")).id;
 
             this.serviceWindow.title(`${columns[1].innerText} - ${columns[2].innerText}`).open().maximize();
             this.serviceWindow.element.data("serviceId", serviceId);
