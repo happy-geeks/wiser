@@ -61,7 +61,7 @@ namespace Api.Core.Models
             };
         }
 
-        // clients want to access resources (aka scopes)
+        
         /// <summary>
         /// Gets the needed clients
         /// </summary>

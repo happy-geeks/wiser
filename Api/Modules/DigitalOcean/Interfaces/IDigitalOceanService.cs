@@ -14,7 +14,7 @@ namespace Api.Modules.DigitalOcean.Interfaces
         string AuthorizationRedirect();
         
         /// <summary>
-        /// Processes a call back from Digital Ocean's OAUTH2 authentication.
+        /// Processes a callback from Digital Ocean's OAUTH2 authentication.
         /// </summary>
         /// <param name="code">The authentication code from Digital Ocean.</param>
         Task<string> ProcessCallbackAsync(string code);

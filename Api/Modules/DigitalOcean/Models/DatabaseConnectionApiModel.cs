@@ -1,7 +1,7 @@
 ﻿namespace Api.Modules.DigitalOcean.Models
 {
     /// <summary>
-    /// This class describes an object that makes an connection to the database via an API
+    /// This class describes an object that makes a connection to the database via an API
     /// </summary>
     public class DatabaseConnectionApiModel
     {
@@ -41,7 +41,7 @@
         public string Password { get; set; }
         
         /// <summary>
-        /// SSL that can used for logging in
+        /// SSL that can be used for logging in
         /// </summary>
         public string Ssl { get; set; }
     }

@@ -10,7 +10,7 @@ namespace Api.Core.Helpers
         /// <summary>
         /// Checks if a given type is numeric or not
         /// </summary>
-        /// <param name="type">Tyoe what needs to be checked</param>
+        /// <param name="type">Type what needs to be checked</param>
         public static bool IsNumericType(Type type)
         {
             return CheckIsNumericType(Nullable.GetUnderlyingType(type)) || CheckIsNumericType(type);

@@ -1,7 +1,7 @@
 ﻿namespace Api.Modules.DigitalOcean.Models
 {
     /// <summary>
-    /// Class that describes an object which has an response from an database
+    /// Class that describes an object which has a response from a database
     /// </summary>
     public class GetDatabaseResponseModel
     {
