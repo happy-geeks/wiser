@@ -28,10 +28,10 @@ jobs:
       run: dotnet test --no-build --verbosity normal
       
     - name: Enable maintenance notice API
-      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_API_DEV }}\_App_Offline.htm" -NewName "App_OffLine.htm"
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_API_DEV }}\_App_Offline.htm" -NewName "App_Offline.htm"
       
     - name: Enable maintenance notice FrontEnd
-      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_DEV }}\_App_Offline.htm" -NewName "App_OffLine.htm"
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_DEV }}\_App_Offline.htm" -NewName "App_Offline.htm"
 
     - name: dotnet publish API
       run: |
@@ -57,8 +57,8 @@ jobs:
       
     - name: Disable maintenance notice API
       if: ${{ always() }}
-      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_API_DEV }}\App_Offline.htm" -NewName "_App_OffLine.htm"
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_API_DEV }}\App_Offline.htm" -NewName "_App_Offline.htm"
       
     - name: Disable maintenance notice FrontEnd
       if: ${{ always() }}
-      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_DEV }}\App_Offline.htm" -NewName "_App_OffLine.htm"
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_DEV }}\App_Offline.htm" -NewName "_App_Offline.htm"
