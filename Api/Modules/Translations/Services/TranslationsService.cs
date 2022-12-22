@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Resources;
+using Api.Core.Services;
 using Api.Modules.Translations.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using Microsoft.Extensions.Localization;
@@ -26,7 +27,7 @@ public class TranslationsService : ITranslationsService, IScopedService
     }
 
     /// <inheritdoc />
-    public Dictionary<string, string> GetCurrentCultureResourceAsDict(string pathToResourceFileDirectory, string cultureAndCountry)
+    public ServiceResult<Dictionary<string, string>> GetCurrentCultureResourceAsDict(string pathToResourceFileDirectory, string cultureAndCountry)
     {
         var resourceFileAsDict = new Dictionary<string, string>(); 
         // Create a resourcemanager which will help fetch a current-culture resource file in the given directory.
@@ -59,27 +60,29 @@ public class TranslationsService : ITranslationsService, IScopedService
                 throw new MissingManifestResourceException();
             }
         }
-        
-        if (resourceSet != null)
+
+        if (resourceSet == null)
         {
-            foreach (DictionaryEntry entry in resourceSet)
-            {
-                var resourceKey = entry.Key.ToString();
-                var translationValue = "";
-                // Value should, but might not be, a string- So check if it's null first, then convert to string
-                // and check if empty.
-                if (entry.Value != null && entry.Value.ToString() != null)
-                {
-                    translationValue = entry.Value.ToString();
-                }
-                else
-                {
-                    // If the key does not have a translation, instead the key should be the translation/default value.
-                    translationValue = resourceKey;
-                }
-                resourceFileAsDict.Add(resourceKey,translationValue);
-            }
+            return new ServiceResult<Dictionary<string, string>>(resourceFileAsDict);
         }
-        return resourceFileAsDict;
+        
+        foreach (DictionaryEntry entry in resourceSet)
+        {
+            var resourceKey = entry.Key.ToString();
+            var translationValue = "";
+            // Value should, but might not be, a string- So check if it's null first, then convert to string
+            // and check if empty.
+            if (entry.Value != null && entry.Value.ToString() != null)
+            {
+                translationValue = entry.Value.ToString();
+            }
+            else
+            {
+                // If the key does not have a translation, instead the key should be the translation/default value.
+                translationValue = resourceKey;
+            }
+            resourceFileAsDict.Add(resourceKey,translationValue);
+        }
+        return new ServiceResult<Dictionary<string, string>>(resourceFileAsDict);
     }
 }
