@@ -3749,10 +3749,15 @@ export class EntityTab {
             case inputTypes.FILEUPLOAD:
             case inputTypes.IMAGEUPLOAD:
                 document.getElementById("allowMultipleFiles").checked = options.multiple;
-                if (options.validation && options.validation.allowedExtensions)
-                    document.getElementById("allowedExtensions").value = options.validation.allowedExtensions;
-                else
+                if (options.validation && options.validation.allowedExtensions && options.validation.allowedExtensions.length > 0) {
+                    document.getElementById("allowedExtensions").value = options.validation.allowedExtensions.join(",");
+                }
+                else if (resultSet.inputType === inputTypes.IMAGEUPLOAD) {
+                    document.getElementById("allowedExtensions").value = ".jpg,.jpeg,.png,.bmp,.gif,.svg";
+                }
+                else {
                     document.getElementById("allowedExtensions").value = "";
+                }
                 break;
             case inputTypes.DATERANGE:
                 // TODO parse given date like so? kendo.parseDate("10-11-2019", "dd-MM-yyyy")
