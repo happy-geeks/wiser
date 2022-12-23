@@ -155,17 +155,25 @@
                                                         <input id="entityName" type="text" class="textField k-input" autocomplete="off" />
                                                     </span>
                                                 </div>
-												<div class="item" style="width: 25%;">
+
+                                                <div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label>Tabelnaam voorvoegsel </label>
+                                                        <label>Vriendelijke Naam</label>
+                                                        <span class="info" data-type="friendlyName"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <span class="k-widget k-input k-state-default">
+                                                        <input id="friendlyName" type="text" class="textField k-input" autocomplete="off" />
+                                                    </span>
+                                                </div>
+                                            
+                                                <div class="item" style="width: 25%;">
+                                                    <h4>
+                                                        <label>Tabelnaam voorvoegsel</label>
                                                         <span class="info" data-type="entityDedicatedTablePrefix"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <span class="k-widget k-input k-state-default">
                                                         <input id="entityDedicatedTablePrefix" type="text" class="textField k-input" autocomplete="off" />
                                                     </span>
-                                                </div>
-
-                                                <div class="item" style="width: 50%;">
                                                 </div>
 
                                                 <div class="item" style="width: 25%;">
@@ -184,16 +192,6 @@
                                                     </h4>
                                                     <select id="acceptedChildTypes">
                                                     </select>
-                                                </div>
-
-                                                <div class="item" style="width: 25%;">
-                                                    <h4>
-                                                        <label>Vriendelijke Naam</label>
-                                                        <span class="info" data-type="friendlyName"><ins class="icon-info-full"></ins></span>
-                                                    </h4>
-                                                    <span class="k-widget k-input k-state-default">
-                                                        <input id="friendlyName" type="text" class="textField k-input" autocomplete="off" />
-                                                    </span>
                                                 </div>
 
                                                 <div class="item" style="width: 25%;">
@@ -239,6 +237,18 @@
                                                     </h4>
                                                     <select id="entityColor" placeholder="Maak uw keuze...">
                                                     </select>
+                                                </div>
+
+                                                <div class="item" style="width: 25%;">
+                                                    <h4>
+                                                        <label>Actie bij verwijderen</label>
+                                                        <span class="info" data-type="deleteAction"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <select id="deleteAction" placeholder="Maak uw keuze...">
+                                                    </select>
+                                                </div>
+
+                                                <div class="item" style="width: 25%;">
                                                 </div>
 
                                                 <div class="item" style="width: 15%;">
@@ -296,9 +306,15 @@
                                                 </div>
 
                                                 <div class="item" style="width: 10%;">
+                                                    <span class="inline">
+                                                        <label class="checkbox">
+                                                            <input id="showInDashboard" type="checkbox" />
+                                                            <span>Tonen in dashboard</span>
+                                                        </label>
+                                                    </span>
                                                 </div>
 
-                                                <div class="item">
+                                                <div class="item half">
                                                     <h4>
                                                         <label>Query na toevoegen</label>
                                                         <span class="info" data-type="queryAfterInsert"><ins class="icon-info-full"></ins></span>
@@ -306,15 +322,15 @@
                                                     <textarea id="queryAfterInsert"></textarea>
                                                 </div>
 
-                                                <div class="item">
+                                                <div class="item half">
                                                     <h4>
-                                                        <label>Query na bewerken</label>
-                                                        <span class="info" data-type="queryAfterUpdate"><ins class="icon-info-full"></ins></span>
+                                                        <label>Query na verwijderen</label>
+                                                        <span class="info" data-type="queryBeforeDelete"><ins class="icon-info-full"></ins></span>
                                                     </h4>
-                                                    <textarea id="queryAfterUpdate"></textarea>
+                                                    <textarea id="queryBeforeDelete"></textarea>
                                                 </div>
 
-                                                <div class="item">
+                                                <div class="item half">
                                                     <h4>
                                                         <label>Query voor het bijwerken</label>
                                                         <span class="info" data-type="queryBeforeUpdate"><ins class="icon-info-full"></ins></span>
@@ -322,12 +338,28 @@
                                                     <textarea id="queryBeforeUpdate"></textarea>
                                                 </div>
 
-                                                <div class="item">
+                                                <div class="item half">
                                                     <h4>
-                                                        <label>Query na verwijderen</label>
-                                                        <span class="info" data-type="queryBeforeDelete"><ins class="icon-info-full"></ins></span>
+                                                        <label>Query na bewerken</label>
+                                                        <span class="info" data-type="queryAfterUpdate"><ins class="icon-info-full"></ins></span>
                                                     </h4>
-                                                    <textarea id="queryBeforeDelete"></textarea>
+                                                    <textarea id="queryAfterUpdate"></textarea>
+                                                </div>
+
+                                                <div class="item half">
+                                                    <h4>
+                                                        <label>Template Query</label>
+                                                        <span class="info" data-type="templateQuery"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <textarea id="templateQuery"></textarea>
+                                                </div>
+
+                                                <div class="item half">
+                                                    <h4>
+                                                        <label>Template HTML</label>
+                                                        <span class="info" data-type="templateHtml"><ins class="icon-info-full"></ins></span>
+                                                    </h4>
+                                                    <textarea id="templateHtml"></textarea>
                                                 </div>
                                             </div>
                                         </div>

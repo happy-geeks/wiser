@@ -161,6 +161,10 @@ li.hint {
     margin-top: 10px;
 }
 /* FLEX */
+.formview .item.half {
+    width: 50%;
+}
+
 .item h4 + .inline {
     margin: 7px 0;
 }

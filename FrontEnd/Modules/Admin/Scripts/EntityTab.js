@@ -208,6 +208,16 @@ export class EntityTab {
             lineNumbers: true
         });
 
+        this.templateQueryField = CodeMirror.fromTextArea(document.getElementById("templateQuery"), {
+            mode: "text/x-mysql",
+            lineNumbers: true
+        });
+
+        this.templateHtmlField = CodeMirror.fromTextArea(document.getElementById("templateHtml"), {
+            mode: "text/html",
+            lineNumbers: true
+        });
+
         document.getElementById("hasCustomInsertQuery").addEventListener("change", (e) => {
             const element = document.querySelector(".customInsert");
             if (e.target.checked) {
@@ -546,6 +556,8 @@ export class EntityTab {
                     this.queryBeforeDelete.refresh();
                     this.searchQueryField.refresh();
                     this.searchCountQueryField.refresh();
+                    this.templateQueryField.refresh();
+                    this.templateHtmlField.refresh();
                 }
             }
         }).data("kendoTabStrip");
@@ -1016,6 +1028,19 @@ export class EntityTab {
             dataSource: [
                 { text: "Koppeling", value: "LinkOrdering" },
                 { text: "Titel", value: "ItemTitle" }
+            ],
+            dataTextField: "text",
+            dataValueField: "value"
+        }).data("kendoComboBox");
+
+        this.deleteAction = $("#deleteAction").kendoComboBox({
+            placeholder: "Maak uw keuze...",
+            clearButton: false,
+            dataSource: [
+                { text: "Archiveren", value: "Archive" },
+                { text: "Permanent verwijderen", value: "Permanent" },
+                { text: "Verbergen", value: "Hide" },
+                { text: "Niet toestaan", value: "Disallow" },
             ],
             dataTextField: "text",
             dataValueField: "value"
@@ -2256,6 +2281,8 @@ export class EntityTab {
         this.queryBeforeDelete.refresh();
         this.searchQueryField.refresh();
         this.searchCountQueryField.refresh();
+        this.templateQueryField.refresh();
+        this.templateHtmlField.refresh();
     }
 
     async setTabNameDropDown() {
@@ -2593,6 +2620,7 @@ export class EntityTab {
             entity.iconExpanded = this.entityIconExpanded.value();
             entity.defaultOrdering = this.defaultOrdering.value();
             entity.color = this.entityColor.value();
+            entity.deleteAction = this.deleteAction.value();
 
             entity.showInTreeView = document.getElementById("showInTreeView").checked;
             entity.showInSearch = document.getElementById("showInSearch").checked;
@@ -2600,12 +2628,15 @@ export class EntityTab {
             entity.saveTitleAsSeo = document.getElementById("saveTitleAsSEO").checked;
             entity.showTitleField = document.getElementById("showTitleField").checked;
             entity.saveHistory = document.getElementById("saveHistory").checked;
+            entity.showInDashboard = document.getElementById("showInDashboard").checked;
 
             entity.displayName = document.getElementById("friendlyName").value;
             entity.queryAfterInsert = this.queryAfterInsert.getValue();
             entity.queryAfterUpdate = this.queryAfterUpdate.getValue();
             entity.queryBeforeUpdate = this.queryBeforeUpdate.getValue();
             entity.queryBeforeDelete = this.queryBeforeDelete.getValue();
+            entity.templateQuery = this.templateQueryField.getValue();
+            entity.templateHtml = this.templateHtmlField.getValue();
 
             entity.dedicatedTablePrefix = document.getElementById("entityDedicatedTablePrefix").value;
 
@@ -3132,12 +3163,15 @@ export class EntityTab {
         document.getElementById("saveTitleAsSEO").checked = false;
         document.getElementById("showTitleField").checked = false;
         document.getElementById("saveHistory").checked = false;
+        document.getElementById("showInDashboard").checked = false;
 
         // codemirror fields
         this.queryAfterInsert.setValue("");
         this.queryAfterUpdate.setValue("");
         this.queryBeforeUpdate.setValue("");
         this.queryBeforeDelete.setValue("");
+        this.templateQueryField.setValue("");
+        this.templateHtmlField.setValue("");
     }
 
     setEntityFieldPropertiesToDefault() {
@@ -3283,12 +3317,15 @@ export class EntityTab {
         document.getElementById("saveTitleAsSEO").checked = resultSet.saveTitleAsSeo;
         document.getElementById("friendlyName").value = resultSet.displayName || "";
         document.getElementById("entityDedicatedTablePrefix").value = resultSet.dedicatedTablePrefix;
+        document.getElementById("showInDashboard").checked = resultSet.showInDashboard;
 
         // CodeMirror fields
         this.setCodeMirrorFields(this.queryAfterInsert, resultSet.queryAfterInsert);
         this.setCodeMirrorFields(this.queryAfterUpdate, resultSet.queryAfterUpdate);
         this.setCodeMirrorFields(this.queryBeforeUpdate, resultSet.queryBeforeUpdate);
         this.setCodeMirrorFields(this.queryBeforeDelete, resultSet.queryBeforeDelete);
+        this.setCodeMirrorFields(this.templateQueryField, resultSet.templateQuery);
+        this.setCodeMirrorFields(this.templateHtmlField, resultSet.templateHtml);
 
         //Select items in combobox 
         this.entityIcon.select("");
@@ -3314,6 +3351,11 @@ export class EntityTab {
         this.entityColor.select("");
         this.entityColor.select((dataItem) => {
             return dataItem.value === resultSet.color;
+        });
+
+        this.deleteAction.select("");
+        this.deleteAction.select((dataItem) => {
+            return dataItem.value == resultSet.deleteAction;
         });
 
         this.getEntityModules(resultSet.moduleId);
