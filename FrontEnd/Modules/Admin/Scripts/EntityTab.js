@@ -505,7 +505,6 @@ export class EntityTab {
             },
             activate: (event) => {
                 const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
-                console.log("entityTabStrip activate", tabName);
                 
                 if (tabName === "eigenschappen") {
                     // Refresh code mirrors, otherwise they won't work properly because they were invisible when they were initialized.
@@ -2996,7 +2995,6 @@ export class EntityTab {
                     if (found) return;
                     const value = target[prop];
                     if (prop === "autoIndex" && value == index) {
-                        console.log("FOUND!!");
                         // Found, remove depending on type
                         if (Utils.isArray(parent)) {
                             // base type is an array item
@@ -3024,7 +3022,6 @@ export class EntityTab {
 
         findIndex(targetObject, autoIndexId);
 
-        console.log(found ? "Found and removed.." : "Object not found");
         return found;
     }
 
@@ -3502,12 +3499,12 @@ export class EntityTab {
                 }
                 var panel = "";
                 // if dataQuery is set, set the codemirror field to the field's value
-                if (resultSet.dataQuery !== "") {
+                if (resultSet.dataQuery) {
                     panel = this.base.dataSourceType.PANEL3.id;
                     this.queryField.setValue(resultSet.dataQuery);
                     this.queryField.refresh();
                 } // if entity type is set, set datasource dropdown to entities and select right option
-                else if (options.entityType !== undefined) {
+                else if (options.entityType) {
                     panel = this.base.dataSourceType.PANEL2.id;
                     this.dataSourceEntities.select((dataItem) => {
                         return dataItem.name === options.entityType;
@@ -3525,7 +3522,7 @@ export class EntityTab {
                     });
 
                 } // if dataSource is set, set the grid datasource to the options dataSource
-                else if (options.dataSource !== undefined) {
+                else if (options.dataSource) {
                     panel = this.base.dataSourceType.PANEL1.id;
                     this.grid.setDataSource(options.dataSource);
                 }
