@@ -39,12 +39,8 @@ export class EntityTab {
         // add an entity property
         $(".addBtn").kendoButton({
             click: (e) => {
-                if (!e.sender.element[0].dataset.type) {
-                    console.warn("Sender element has no dataset with key 'type'");
-                    return;
-                }
                 const addType = e.sender.element[0].dataset.type;
-                if (!this.checkIfEntityIsSet(addType)) {
+                if (!addType || !this.checkIfEntityIsSet(addType)) {
                     return;
                 }
 
@@ -63,21 +59,35 @@ export class EntityTab {
 
         // delete an entity property
         $(".delBtn").kendoButton({
-            click: () => {
-                if (!this.checkIfEntityIsSet()) {
+            click: (event) => {
+                const addType = event.sender.element[0].dataset.type;
+                if (!addType || !this.checkIfEntityIsSet(addType)) {
                     return;
                 }
-                const tabNameProp = this.listOfTabProperties;
-                const index = tabNameProp.select().index();
-                const dataItem = tabNameProp.dataSource.view()[index];
-                if (!dataItem) {
-                    return;
+                
+                if (addType === "entityProperty") {
+                    const tabNameProp = this.listOfTabProperties;
+                    const index = tabNameProp.select().index();
+                    const dataItem = tabNameProp.dataSource.view()[index];
+                    if (!dataItem) {
+                        this.base.showNotification("notification", "Kies a.u.b. eerst een veld om te verwijderen", "error");
+                        return;
+                    }
+                    
+                    Wiser.showConfirmDialog(`Weet u zeker dat u het veld "${dataItem.displayName}" wilt verwijderen?`).then(() => {
+                        this.removeEntityProperty(dataItem.id);
+                    });
+                } else if (addType === "entity") {
+                    const selectedEntity = this.entitiesCombobox.dataItem();
+                    if (!selectedEntity) {
+                        this.base.showNotification("notification", "Kies a.u.b. eerst een entiteit om te verwijderen", "error");
+                        return;
+                    }
+                    
+                    Wiser.showConfirmDialog(`Weet u zeker dat u de entiteit "${selectedEntity.name}" wilt verwijderen?`).then(() => {
+                        this.removeEntity(selectedEntity.id);
+                    });
                 }
-
-                // ask for user confirmation before deleting
-                this.base.openDialog("Item verwijderen", `Weet u zeker dat u het veld "${dataItem.displayName}" wilt verwijderen?`, this.base.kendoPromptType.CONFIRM).then(() => {
-                    this.removeEntityProperty(dataItem.id);
-                });
             },
             icon: "delete"
         });
@@ -357,6 +367,28 @@ export class EntityTab {
         catch (exception) {
             console.error("Error while trying to delete an entity property", exception);
             this.base.showNotification("notification", `Veld is niet succesvol verwijderd, probeer het opnieuw`, "error");
+        }
+    }
+
+    /**
+     * Deletes an entity and all it's properties from the database.
+     * @param id The ID of the entity to delete.
+     */
+    async removeEntity(id) {
+        try {
+            await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}entity-types/${id}`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                method: "DELETE"
+            });
+
+            this.base.showNotification("notification", `Entiteit is succesvol verwijderd`, "success");
+            await this.reloadEntityList(true);
+            this.entityTabStrip.wrapper.hide();
+        } catch(exception) {
+            console.error(exception);
+            this.base.showNotification("notification", `Er is iets fout gegaan met het verwijderen van de module. Probeer het a.u.b. opnieuw of neem contact op met ons.`, "error");
         }
     }
 
@@ -2203,9 +2235,12 @@ export class EntityTab {
         }
 
         this.entityTabStrip.wrapper.show();
-        if (this.entitiesCombobox.dataItem().id) {
+        const selectedId = this.entitiesCombobox.dataItem().id;
+        if (selectedId) {
             await this.getEntityPropertiesOfSelected(this.entitiesCombobox.dataItem().id);
         }
+        
+        $("#entityView .delBtn").toggleClass("hidden", !selectedId);
 
         // set tabnames 
         await this.setTabNameDropDown();

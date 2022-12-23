@@ -686,7 +686,10 @@ ORDER BY `group` ASC");
 DELETE FROM {WiserTableNames.WiserPermission} WHERE module_id = ?id;";
             await clientDatabaseConnection.ExecuteAsync(query);
 
-            return new ServiceResult<bool>(true);
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
 
         /// <inheritdoc />

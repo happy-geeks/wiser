@@ -517,7 +517,9 @@ export class ModuleTab {
         }
 
         this.moduleCombobox.setDataSource(this.moduleList);
-        this.moduleGroup.setDataSource(this.moduleGroups);
+        if (this.moduleGroup) {
+            this.moduleGroup.setDataSource(this.moduleGroups);
+        }
         
         if (moduleIdToSelect !== null) {
             if (moduleIdToSelect === 0) {
@@ -653,6 +655,10 @@ export class ModuleTab {
         return false;
     }
 
+    /**
+     * Deletes a module and all it's permissions from the database.
+     * @param id The ID of the module to delete.
+     */
     async deleteModule(id) {
         try {
             await Wiser.api({

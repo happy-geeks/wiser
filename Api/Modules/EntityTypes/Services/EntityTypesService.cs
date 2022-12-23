@@ -386,5 +386,30 @@ WHERE FIND_IN_SET(?previousName, accepted_childtypes)";
                 StatusCode = HttpStatusCode.NoContent
             };
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id)
+        {
+            if (id <= 0)
+            {
+                throw new ArgumentException("Id must be greater than 0.", nameof(id));
+            }
+
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.AddParameter("id", id);
+
+            // Delete all properties/fields of the entity and then the entity itself.
+            var query = $@"DELETE property.* 
+FROM {WiserTableNames.WiserEntity} AS entity
+JOIN {WiserTableNames.WiserEntityProperty} AS property ON property.entity_name = entity.name AND property.module_id IN (0, entity.module_id)
+WHERE entity.id = ?id;
+DELETE FROM {WiserTableNames.WiserEntity} WHERE id = ?id;";
+            await clientDatabaseConnection.ExecuteAsync(query);
+
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
+        }
     }
 }

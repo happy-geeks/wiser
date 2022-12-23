@@ -158,8 +158,7 @@ namespace Api.Modules.Modules.Controllers
         /// <param name="id">The ID of the module.</param>
         [HttpDelete]
         [Route("{id:int}")]
-        [ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> DeleteAsync(int id)
         {
             return (await modulesService.DeleteAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
