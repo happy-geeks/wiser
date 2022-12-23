@@ -3107,14 +3107,14 @@ export class EntityTab {
         
         // Show all related inputs.
         $(".item[data-visible], label[data-visible]").each((index, element) => {
-            const items = element.dataset.visible.split(",");
+            const items = element.dataset.visible.split(" ");
             const filteredResults = items.filter(item => item.trim().toLowerCase() === curValue.toLowerCase());
             $(element).toggle(filteredResults.length > 0);
         });
         
         // Hide all related inputs.
         $(".item[invisible], label[invisible]").each((index, element) => {
-            const items = element.dataset.visible.split(",");
+            const items = element.dataset.visible.split(" ");
             const filteredResults = items.filter(item => item.trim().toLowerCase() === curValue.toLowerCase());
             $(element).toggle(filteredResults.length === 0);
         });
