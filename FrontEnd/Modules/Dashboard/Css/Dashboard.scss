@@ -22,8 +22,7 @@
     box-sizing: border-box;
     list-style: none;
     outline: 0;
-    resize: none; 
-    //position: relative;
+    resize: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
 }
@@ -40,7 +39,7 @@ body {
     overflow-x: hidden;
     width: 100%;
     display: flex;
-    flex-direction: column; 
+    flex-direction: column;
 
     &:after {
         @include icon-font;
@@ -114,15 +113,14 @@ ins, a {
                 }
             }
         }
-
+        
        .item {
             background-color: $white-color;
             padding: 0;
             padding-right: 10px;
 
             .flex-container {
-                display: flex;
-                //align-items: center;
+                display: flex;                
                 
                 label {
                     font-size: 14px;
@@ -187,12 +185,6 @@ ins, a {
                border: 0;
            }
         }
-        /*
-        .k-daterangepicker {
-            display: flex;
-            gap: 8px;
-            padding: 0 15px;
-        } */
 
         .k-textbox-container {
             display: flex;
