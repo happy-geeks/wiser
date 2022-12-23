@@ -444,23 +444,32 @@ export class ModuleTab {
     }
 
     async addModule(name) {
-        if (name === "") { return; }
-        await Wiser.api({
-            url: `${this.base.settings.wiserApiRoot}modules/settings`,
-            contentType: "application/json; charset=utf-8",
-            dataType: "json",
-            data: JSON.stringify(name),
-            method: "POST"
-        }).then((result) => {
-            // Also add root entity.
-            this.addRootEntityForNewModule(result).then(() => {
-                this.base.showNotification("notification", "Module succesvol toegevoegd", "success");
-                this.getModules(true, result);
-                this.base.entityTab.reloadEntityList(true);
+        if (name === "") { 
+            return;
+        }
+        
+        try {
+            const result = await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}modules/settings`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(name),
+                method: "POST"
             });
-        }).catch(() => {
-            this.base.showNotification("notification", "Module is niet succesvol toegevoegd, probeer het opnieuw", "error");
-        });
+
+            // Also add root entity.
+            await this.addRootEntityForNewModule(result);
+            this.base.showNotification("notification", "Module succesvol toegevoegd", "success");
+            await this.getModules(true, result);
+            await this.base.entityTab.reloadEntityList(true);
+            
+            // Reload the modules list in the side bar of Wiser.
+            await this.base.reloadModulesOnParentFrame();
+        }
+        catch(exception) {
+            console.error(exception);
+            this.base.showNotification("notification", "Er is iets fout gegaan met het aanmaken van de module. Probeer het a.u.b. opnieuw of neem contact op met ons.", "error");
+        }
     }
 
     /**
@@ -481,9 +490,11 @@ export class ModuleTab {
     }
 
     async onModuleComboBoxSelect(event) {
-        if (this.checkIfModuleIsSet((event.userTriggered === true))) {
-           this.getModuleById(this.moduleCombobox.dataItem().id);
+        if (!this.checkIfModuleIsSet((event.userTriggered === true))) {
+            return;
         }
+        
+        await this.getModuleById(this.moduleCombobox.dataItem().id);
     }
 
     async getModules(reloadDataSource = true, moduleIdToSelect = null) {
@@ -494,9 +505,7 @@ export class ModuleTab {
             });
 
             if (!this.moduleList) {
-                this.base.showNotification("notification",
-                    "Het ophalen van de queries is mislukt, probeer het opnieuw",
-                    "error");
+                this.base.showNotification("notification", "Het ophalen van de queries is mislukt, probeer het opnieuw", "error");
             }
             
             this.moduleGroups = await Wiser.api({
@@ -524,8 +533,8 @@ export class ModuleTab {
             url: `${this.base.settings.wiserApiRoot}modules/${id}/settings`,
             method: "GET"
         });
-        this.setModulePropertiesToDefault();
-        this.setModuleProperties(results);
+        await this.setModulePropertiesToDefault();
+        await this.setModuleProperties(results);
     }
 
     async setModulePropertiesToDefault() {
@@ -559,32 +568,38 @@ export class ModuleTab {
 
     // actions handled before save, such as checks
     async beforeSave() {
-        if (this.checkIfModuleIsSet(true)) {
-            const moduleIdElement = document.getElementById("moduleId");
-
-            if (moduleIdElement != null) {
-                if (!isNaN(moduleIdElement.value)) {
-                    const moduleId = parseInt(moduleIdElement.value);
-                    const moduleSettingsModel = new ModuleSettingsModel(
-                        moduleId,
-                        this.moduleCustomQuery.getValue(),
-                        this.moduleCountQuery.getValue(),
-                        this.moduleOptions.getValue(),
-                        document.getElementById("moduleName").value,
-                        this.moduleIcon.value(),
-                        this.moduleType.value(),
-                        this.moduleGroup.value()
-                    );
-                    if (moduleSettingsModel.errors.length > 0) {
-                        this.base.showNotification("notification", `Controleer de instellingen van de module, er zijn ${moduleSettingsModel.errors.length} fout(en) gevonden: ${moduleSettingsModel.errors.join(", ")}`, "error");
-                        return;
-                    }
-                    await this.updateModule(this.moduleCombobox.dataItem().id, moduleSettingsModel);
-                } else {
-                    this.base.showNotification("notification", `ID van de module moet een nummerieke waarde zijn!`, "error");
-                }
-            }
+        if (!this.checkIfModuleIsSet(true)) {
+            return;
         }
+        
+        const moduleIdElement = document.getElementById("moduleId");
+        if (moduleIdElement == null) {
+            return;
+        }
+
+        if (isNaN(moduleIdElement.value)) {
+            this.base.showNotification("notification", `ID van de module moet een nummerieke waarde zijn!`, "error");
+            return;
+        }
+        
+        const moduleId = parseInt(moduleIdElement.value);
+        const moduleSettingsModel = new ModuleSettingsModel(
+            moduleId,
+            this.moduleCustomQuery.getValue(),
+            this.moduleCountQuery.getValue(),
+            this.moduleOptions.getValue(),
+            document.getElementById("moduleName").value,
+            this.moduleIcon.value(),
+            this.moduleType.value(),
+            this.moduleGroup.value()
+        );
+        
+        if (moduleSettingsModel.errors.length > 0) {
+            this.base.showNotification("notification", `Controleer de instellingen van de module, er zijn ${moduleSettingsModel.errors.length} fout(en) gevonden: ${moduleSettingsModel.errors.join(", ")}`, "error");
+            return;
+        }
+        
+        await this.updateModule(this.moduleCombobox.dataItem().id, moduleSettingsModel);
     }
 
     async updateModule(id, moduleSettingsModel) {
@@ -595,25 +610,30 @@ export class ModuleTab {
                 dataType: "json",
                 data: JSON.stringify(moduleSettingsModel),
                 method: "PUT"
-            }).then(() => {
-                this.base.showNotification("notification", `Module is succesvol bijgewerkt`, "success");
-                this.getModules(true, moduleSettingsModel.id);
             });
-        } catch(result){
-            console.log(result);
-            if (result.responseText.includes("Duplicate entry")) {
+            
+            this.base.showNotification("notification", `Module is succesvol bijgewerkt`, "success");
+            await this.getModules(true, moduleSettingsModel.id);
+
+            // Reload the modules list in the side bar of Wiser.
+            await this.base.reloadModulesOnParentFrame();
+        } catch(exception) {
+            console.error(exception);
+            if (exception.responseText.includes("Duplicate entry")) {
                 this.base.showNotification("notification", `Het bijwerken van de module is mislukt, de ID van de module bestaat al.`, "error");
             } else {
                 this.base.showNotification("notification", `Het bijwerken van de module is mislukt, probeer het opnieuw`, "error");
             }
-        };
+        }
     }
 
     setCodeMirrorFields(field, value) {
-        if (field != null && field) {
-            field.setValue((value != null && value) ? value : "");
-            field.refresh();
+        if (!field) {
+            return;
         }
+        
+        field.setValue((value != null && value) ? value : "");
+        field.refresh();
     }
 
     checkIfModuleIsSet(showNotification = true) {

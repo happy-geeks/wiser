@@ -42,12 +42,12 @@ import {
     TOGGLE_PIN_MODULE,
     CLEAR_CACHE,
     CLEAR_CACHE_ERROR,
-    START_UPDATE_TIME_ACTIVE_TIMER,
     STOP_UPDATE_TIME_ACTIVE_TIMER,
     UPDATE_ACTIVE_TIME,
     GENERATE_TOTP_BACKUP_CODES,
     CLEAR_LOCAL_TOTP_BACKUP_CODES,
-    USER_BACKUP_CODES_GENERATED
+    USER_BACKUP_CODES_GENERATED,
+    MODULES_REQUEST
 } from "./store/mutation-types";
 import CacheService from "./shared/cache.service";
 
@@ -797,6 +797,10 @@ import CacheService from "./shared/cache.service";
                         await this.$store.dispatch(GENERATE_TOTP_BACKUP_CODES);
                         this.$store.dispatch(USER_BACKUP_CODES_GENERATED);
                         return false;
+                    },
+                    
+                    async reloadModules() {
+                        await this.$store.dispatch(MODULES_REQUEST);
                     },
 
                     onGenerateTotpBackupCodesPromptClose(event) {

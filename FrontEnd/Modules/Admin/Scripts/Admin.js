@@ -438,6 +438,17 @@ const moduleSettings = {
                     return $("<div></div>").kendoAlert(properties).data("kendoAlert").open().result;
             }
         }
+
+        /**
+         * Reload the list of modules in the side bar (on the left) of Wiser.
+         */
+        async reloadModulesOnParentFrame() {
+            if (!window.parent || !window.parent.main || !window.parent.main.vueApp || typeof(window.parent.main.vueApp.reloadModules) !== "function") {
+                return;
+            }
+
+            await window.parent.main.vueApp.reloadModules();
+        }
     }
 
     // Initialize the DynamicItems class and make one instance of it globally available.
