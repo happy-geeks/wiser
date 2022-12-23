@@ -314,7 +314,7 @@ export class EntityTab {
                 await this.onEntitiesComboBoxSelect(this);
             } else {
                 // select the right tab
-                await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem());
+                await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem(), true);
             }
         }
         catch (exception) {
@@ -346,7 +346,7 @@ export class EntityTab {
             });
             
             this.base.showNotification("notification", `Veld succesvol verwijderd`, "success");
-            await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem());
+            await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem(), true);
 
             // Select first item in list
             const firstElement = this.listOfTabProperties.element.find("[data-item]").first();
@@ -432,7 +432,7 @@ export class EntityTab {
                 await this.onEntitiesComboBoxSelect(this);
             } else {
                 // select the right tab
-                await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem());
+                await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem(), true);
             }
         }
         catch (exception) {
@@ -2255,7 +2255,7 @@ export class EntityTab {
     }
 
     // get entity properties of tab when tabname is selected
-    async tabNameDropDownListSelect(eventOrDataItem) {
+    async tabNameDropDownListSelect(eventOrDataItem, forceReload = false) {
         if (this.tabNameDropDownListSelectBusy) {
             return;
         }
@@ -2269,7 +2269,7 @@ export class EntityTab {
         tabName = eventOrDataItem.sender && eventOrDataItem.sender.dataItem() ? eventOrDataItem.sender.dataItem().tabName : eventOrDataItem.tabName;
         tabName = tabName === "Gegevens" || !tabName ? "Gegevens" : tabName;
         
-        if (this.previouslySelectedTab === tabName && this.previouslySelectedEntity === entityType) {
+        if (!forceReload && this.previouslySelectedTab === tabName && this.previouslySelectedEntity === entityType) {
             return;
         }
 
