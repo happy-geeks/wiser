@@ -480,12 +480,20 @@ export class ModuleTab {
             return;
         }
 
-        await Wiser.api({
-            url: `${this.base.settings.wiserApiRoot}entity-types?name=&moduleId=${moduleId}`,
-            contentType: "application/json; charset=utf-8",
-            dataType: "json",
-            method: "POST"
-        });
+        try {
+            await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}entity-types?name=&moduleId=${moduleId}`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                method: "POST"
+            });
+        }
+        catch (exception) {
+            console.error(exception);
+            if (exception && exception.status !== 409) {
+                this.base.showNotification("notification", "Er is iets fout gegaan met het aanmaken van het root item voor de nieuwe module. Verwijder a.u.b. de nieuwe module en robeer het opnieuw of neem contact op met ons.", "error");
+            }
+        }
     }
 
     async onModuleComboBoxSelect(event) {

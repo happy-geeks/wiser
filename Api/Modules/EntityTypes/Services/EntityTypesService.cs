@@ -16,6 +16,7 @@ using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using MySql.Data.MySqlClient;
 
 namespace Api.Modules.EntityTypes.Services
 {
@@ -253,11 +254,27 @@ GROUP BY entity_type";
         /// <inheritdoc />
         public async Task<ServiceResult<long>> CreateAsync(ClaimsIdentity identity, string name, int moduleId = 0)
         {
-            // Empty string is allowed, so a root entity can be created for a module.
-            clientDatabaseConnection.AddParameter("name", name ?? String.Empty);
-            clientDatabaseConnection.AddParameter("moduleId", moduleId);
-            var result = await clientDatabaseConnection.InsertRecordAsync($"INSERT INTO {WiserTableNames.WiserEntity} (name, module_id) VALUES (?name, ?moduleId)");
-            return new ServiceResult<long>(result);
+            try
+            {
+                // Empty string is allowed, so a root entity can be created for a module.
+                clientDatabaseConnection.AddParameter("name", name ?? String.Empty);
+                clientDatabaseConnection.AddParameter("moduleId", moduleId);
+                var result = await clientDatabaseConnection.InsertRecordAsync($"INSERT INTO {WiserTableNames.WiserEntity} (name, module_id) VALUES (?name, ?moduleId)");
+                return new ServiceResult<long>(result);
+            }
+            catch (MySqlException mySqlException)
+            {
+                if (mySqlException.Number == (int)MySqlErrorCode.DuplicateKeyEntry)
+                {
+                    return new ServiceResult<long>
+                    {
+                        StatusCode = HttpStatusCode.Conflict,
+                        ErrorMessage = $"An entry already exists with {nameof(name)} = '{name}', {nameof(moduleId)} = '{moduleId}'"
+                    };
+                }
+
+                throw;
+            }
         }
 
         /// <inheritdoc />
