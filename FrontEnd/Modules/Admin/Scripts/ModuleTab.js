@@ -28,17 +28,16 @@ export class ModuleTab {
                 if (!this.checkIfModuleIsSet()) {
                     return;
                 }
-                const dataItemId = this.moduleCombobox.dataItem().id;
-                if (!dataItemId) {
-                    this.base.showNotification("notification",
-                        "Item is niet succesvol verwijderd, probeer het opnieuw",
-                        "error");
+                
+                const moduleId = this.moduleCombobox.dataItem().id;
+                if (!moduleId) {
+                    this.base.showNotification("notification", "Kies a.u.b. eerst een module om te verwijderen", "error");
                     return;
                 }
 
                 // ask for user confirmation before deleting
-                this.base.openDialog("Module verwijderen", "Weet u zeker dat u deze query wilt verwijderen?", this.base.kendoPromptType.CONFIRM).then(() => {
-                    this.deleteQueryById(dataItemId);
+                Wiser.showConfirmDialog(`Weet u zeker dat u de module "${this.moduleCombobox.dataItem().description}" wilt verwijderen?`).then(() => {
+                    this.deleteModule(moduleId);
                 });
             },
             icon: "delete"
@@ -494,7 +493,10 @@ export class ModuleTab {
             return;
         }
         
-        await this.getModuleById(this.moduleCombobox.dataItem().id);
+        const moduleId = this.moduleCombobox.dataItem().id;
+        $(".delModuleBtn").toggleClass("hidden", !moduleId);
+        
+        await this.getModuleById(moduleId);
     }
 
     async getModules(reloadDataSource = true, moduleIdToSelect = null) {
@@ -649,5 +651,25 @@ export class ModuleTab {
         }
 
         return false;
+    }
+
+    async deleteModule(id) {
+        try {
+            await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}modules/${id}`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                method: "DELETE"
+            });
+
+            this.base.showNotification("notification", `Module is succesvol verwijderd`, "success");
+            await this.getModules(true);
+
+            // Reload the modules list in the side bar of Wiser.
+            await this.base.reloadModulesOnParentFrame();
+        } catch(exception) {
+            console.error(exception);
+            this.base.showNotification("notification", `Er is iets fout gegaan met het verwijderen van de module. Probeer het a.u.b. opnieuw of neem contact op met ons.`, "error");
+        }
     }
 }
