@@ -588,7 +588,7 @@ WHERE entity_name = '{entityName}'");
                 TemplateQueryStrings.Add("GET_ALL_INPUT_TYPES", @"SELECT DISTINCT inputtype FROM wiser_entityproperty ORDER BY inputtype");
                 TemplateQueryStrings.Add("DELETE_ENTITYPROPERTY", @"DELETE FROM wiser_entityproperty WHERE tab_name = '{tabName}' AND entity_name = '{entityName}' AND id = '{entityPropertyId}'");
                 TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_ADMIN", @"SELECT id, entity_name AS entityName, tab_name AS tabName, display_name AS displayName, ordering FROM wiser_entityproperty
-WHERE tab_name = '{tabName}' AND entity_name = '{entityName}'
+WHERE tab_name = IF('{tabName}' = 'Gegevens', '', '{tabName}') AND entity_name = '{entityName}'
 ORDER BY ordering ASC");
                 TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
 	entity.id,
