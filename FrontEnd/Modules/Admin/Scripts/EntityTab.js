@@ -1663,6 +1663,10 @@ export class EntityTab {
             culture: "nl-NL"
         }).data("kendoDatePicker");
         
+        $("#explanation").kendoEditor({
+            height: "400px"
+        });
+        
         this.labelStyle = $("#labelStyle").kendoDropDownList({
             dataTextField: "text",
             dataValueField: "value",
@@ -2651,7 +2655,7 @@ export class EntityTab {
         entityProperties.inputType = this.inputTypeSelector.value();
         entityProperties.displayName = $("#displayname").val();
         entityProperties.propertyName = $("#propertyname").val();
-        entityProperties.explanation = $("textarea#explanation").val();
+        entityProperties.explanation = $("textarea#explanation").data("kendoEditor").value();
         entityProperties.regexValidation = $('#regexValidation').val();
         entityProperties.mandatory = $("#mandatory").is(":checked");
         entityProperties.readOnly = $("#readonly").is(":checked");
@@ -3375,7 +3379,7 @@ export class EntityTab {
         document.getElementById("propertyname").value = resultSet.propertyName || "";
         document.getElementById("regexValidation").value = resultSet.regexValidation || "";
         document.getElementById("langCode").value = resultSet.languageCode || "";
-        document.getElementById("explanation").value = resultSet.explanation || "";
+        $("#explanation").data("kendoEditor").value(resultSet.explanation || "");
         document.getElementById("defaultValue").value = resultSet.defaultValue || "";
         document.getElementById("accessKey").value = resultSet.accessKey || "";
         document.getElementById("visibilityPathRegex").value = resultSet.visibilityPathRegex || "";
@@ -3760,7 +3764,6 @@ export class EntityTab {
                 }
                 break;
             case inputTypes.DATERANGE:
-                // TODO parse given date like so? kendo.parseDate("10-11-2019", "dd-MM-yyyy")
                 $("#daterangeFrom").data("kendoDatePicker").value(options.from);
                 $("#daterangeTill").data("kendoDatePicker").value(options.till);
                 break;

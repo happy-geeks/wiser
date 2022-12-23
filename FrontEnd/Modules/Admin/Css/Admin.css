@@ -407,6 +407,10 @@ li.hint {
     min-width: 50%;
 }
 
+.explanation-container {
+    height: 400px;
+}
+
 /* Tab strips */
 #EntityTabStrip .k-content,
 #EntityTabStrip .k-content .left-pane,
