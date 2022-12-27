@@ -501,14 +501,14 @@
                                                                     <select id="labelStyle"></select>
                                                                 </span>
                                                             </div>
-                                                        <div class="item" id="labelWidthContainer" style="width: 25%;">
-                                                            <h4>
-                                                                <label>Breedte label</label>
-                                                            </h4>
-                                                            <span class="k-widget k-input k-state-default">
-                                                                <select id="labelWidth"></select>
-                                                            </span>
-                                                        </div>
+                                                            <div class="item" id="labelWidthContainer" style="width: 25%;">
+                                                                <h4>
+                                                                    <label>Breedte label</label>
+                                                                </h4>
+                                                                <span class="k-widget k-input k-state-default">
+                                                                    <select id="labelWidth"></select>
+                                                                </span>
+                                                            </div>
                                                         
                                                             <div class="item" style="width: 25%;">
                                                                 <h4>
@@ -621,6 +621,10 @@
                                                                     <label class="checkbox" data-visible="Input SecureInput TextBox RadioButton CheckBox ComboBox MultiSelect NumericInput DateTimePicker ColorPicker">
                                                                         <input id="saveOnChange" type="checkbox">
                                                                         <span>Item automatisch opslaan wanneer de waarde van dit veld wordt aangepast</span>
+                                                                    </label>
+                                                                    <label class="checkbox" data-visible="Input SecureInput NumericInput ComboBox DateTimePicker ColorPicker">
+                                                                        <input id="saveOnEnter" type="checkbox">
+                                                                        <span>Item automatisch opslaan wanneer gebruiker op enter drukt in dit veld</span>
                                                                     </label>
                                                                 </span>
                                                             </div>
@@ -752,7 +756,6 @@
                                                             </div>
 
                                                             <div class="item" data-visible="NumericInput">
-
                                                                 <div class="item" style="width: 10%;">
                                                                     <span class="inline">
                                                                         <label class="checkbox">
@@ -1488,13 +1491,6 @@
                                                                     <input id="daterangeTill" />
                                                                 </div>
                                                             </div>
-                                                            <div class="item" data-visible="Chart">
-                                                                <h4>
-                                                                    <label>Opties JSON</label>
-                                                                    <span class="info" data-type="chart-json"><ins class="icon-info-full"></ins></span>
-                                                                </h4>
-                                                                <textarea id="jsonField"></textarea>
-                                                            </div>
 
                                                             <div class="item" data-visible="Qr">
                                                                 <div class="item" style="width: 25%;">
@@ -1576,6 +1572,16 @@
                                                                         </div>
                                                                     </div>
                                                                 </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="item-group">
+                                                            <h3>Overige instellingen</h3>
+                                                            <div class="item">
+                                                                <h4>
+                                                                    <label>Opties JSON</label>
+                                                                    <span class="info" data-type="optionsJson"><ins class="icon-info-full"></ins></span>
+                                                                </h4>
+                                                                <textarea id="optionsJson"></textarea>
                                                             </div>
                                                         </div>
                                                     </div>
