@@ -419,6 +419,10 @@ table.k-editor {
     height: 100%;
 }
 
+.aggregate-example {
+    padding-top: 35px;
+}
+
 /* Tab strips */
 #EntityTabStrip .k-content:not(iframe),
 #EntityTabStrip .k-content .left-pane,
