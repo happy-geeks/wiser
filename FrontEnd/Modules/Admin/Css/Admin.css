@@ -415,8 +415,12 @@ li.hint {
     height: 400px;
 }
 
+table.k-editor {
+    height: 100%;
+}
+
 /* Tab strips */
-#EntityTabStrip .k-content,
+#EntityTabStrip .k-content:not(iframe),
 #EntityTabStrip .k-content .left-pane,
 #EntityTabStrip .k-content .right-pane {
     height: calc(100vh - 258px);

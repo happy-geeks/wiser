@@ -53,7 +53,7 @@
             { name: "width", text: "Vul de breedte van het veld in" },
             { name: "height", text: "Vul de hoogte van het veld in" },
             { name: "overviewWidth", text: "Vul de breedte van het veld in het overzicht in" },
-            { name: "defaultValue", text: "Standaardwaarde" },
+            { name: "defaultValue", text: "De waarde die standaard ingevuld wordt, indien er geen andere waarde is ingevuld." },
             { name: "html editor layout", text: "Kies een layout voor de html editor" },
             { name: "datasource", text: "Kies waar de brondata vandaanmoet komen" },
             { name: "dataQuery", text: "Geef een query op. Let op! Geef id en name op." },

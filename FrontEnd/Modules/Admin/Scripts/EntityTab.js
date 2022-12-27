@@ -3154,6 +3154,9 @@ export class EntityTab {
             const filteredResults = items.filter(item => item.trim().toLowerCase() === curValue.toLowerCase());
             $(element).toggle(filteredResults.length === 0);
         });
+        
+        // Set the input name in the field group.
+        $("#inputTypeNameLegend").text(curValue);
     }
 
     setEntityPropertiesToDefault() {

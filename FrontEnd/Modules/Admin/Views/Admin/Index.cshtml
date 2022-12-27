@@ -411,10 +411,11 @@
                                                 </div>
                                                 <div class="right-pane">
                                                     <div class="pane-content flex-container">
-                                                        <div class="pane-content flex-container">
+                                                        <div class="item-group">
+                                                            <h3>Algemene instellingen</h3>
                                                             <div class="item">
                                                                 <h4>
-                                                                    <label for="input-type">Invoertype</label>
+                                                                    <label for="inputtypes">Invoertype</label>
                                                                     <span class="info" data-type="inputtype"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <select id="inputtypes" class="inputTypeCombobox">
@@ -508,9 +509,115 @@
                                                                     <select id="labelWidth"></select>
                                                                 </span>
                                                             </div>
-                                                            <div class="item" style="width: 50%;">
-                                                                &nbsp;
+
+                                                            <div class="item"  style="width: 75%;" data-visible="Input SecureInput TextBox GpsLocation HtmlEditor ColorPicker ComboBox DataSelector DateTimePicker MultiSelect NumericInput Qr RadioButton">
+                                                                <h4>
+                                                                    <label>Standaardwaarde</label>
+                                                                    <span class="info" data-type="defaultValue"><ins class="icon-info-full"></ins></span>
+                                                                </h4>
+                                                                <span class="k-widget k-input k-state-default">
+                                                                    <input id="defaultValue" type="text" class="textField k-input" autocomplete="off" value="" />
+                                                                </span>
                                                             </div>
+                                                            
+                                                            <div class="item" data-invisible="FileUpload ImageUpload ColorPicker DataSelector SubEntitiesGrid">
+                                                                <div class="toggle">
+                                                                    <input id="visible-in-table" type="checkbox" class="noForm">
+                                                                    <label class="checkbox" for="visible-in-table">
+                                                                        <span>Standaard zichtbaar in overzichtstabellen</span>
+                                                                    </label>
+                                                                    <div class="togglePanel">
+                                                                        <div class="item" style="width: 50%;">
+                                                                            <h4>
+                                                                                <label>Breedte in tabel (in pixels)</label>
+                                                                                <span class="info" data-type="overviewWidth"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input id="widthIfVisible" type="number" class="numeric" min="0" step="1" max="65535" autocomplete="off" />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="item" data-invisible="FileUpload ImageUpload DataSelector SubEntitiesGrid">
+                                                                <div class="toggle">
+                                                                    <input id="enableAggregation" type="checkbox" class="noForm">
+                                                                    <label class="checkbox" for="enableAggregation">
+                                                                        <span>Aggregatie inschakelen</span>
+                                                                    </label>
+                                                                    <div class="togglePanel">
+                                                                        <div class="item" style="width: 100%;">
+                                                                            <h4>
+                                                                                <label>Aggregatie-instellingen</label>
+                                                                                <span class="info" data-type="aggregateOptions"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <textarea id="aggregateOptions"></textarea>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="item">
+                                                                <span class="inline">
+                                                                    <label class="checkbox" data-invisible="RadioButton CheckBox Empty">
+                                                                        <input id="mandatory" type="checkbox">
+                                                                        <span>Verplicht veld</span>
+                                                                    </label>
+                                                                    <label class="checkbox" data-invisible="RadioButton CheckBox FileUpload ImageUpload ColorPicker DataSelector Empty">
+                                                                        <input id="readonly" type="checkbox">
+                                                                        <span>Alleen lezen veld</span>
+                                                                    </label>
+                                                                    <label class="checkbox" data-visible="Input SecureInput TextBox RadioButton CheckBox ComboBox MultiSelect NumericInput DateTimePicker ColorPicker">
+                                                                        <input id="saveOnChange" type="checkbox">
+                                                                        <span>Item automatisch opslaan wanneer de waarde van dit veld wordt aangepast</span>
+                                                                    </label>
+                                                                </span>
+                                                            </div>
+
+                                                            <div class="item dynamic">
+                                                                <h4>
+                                                                    <label>Afhankelijkheid</label>
+                                                                    <span class="info" data-type="dependsOn"><ins class="icon-info-full"></ins></span>
+                                                                </h4>
+                                                                <section>
+                                                                    <div class="inputRow dbInput inputFlex">
+                                                                        <select id="dependencyAction"></select>
+                                                                        
+                                                                        <select id="dependencyField"></select>
+
+                                                                        <select id="dependencyOperator"></select>
+
+                                                                        <span class="k-widget k-input k-state-default">
+                                                                            <input id="dependingValue" type="text" class="textField k-input" autocomplete="off" maxlength="255" placeholder="Waarde" />
+                                                                        </span>
+                                                                    </div>
+                                                                </section>
+                                                            </div>
+                                                            <div class="item explanation-container">
+                                                                <h4>
+                                                                    <label>Toelichting</label>
+                                                                    <span class="info" data-type="explanation"><ins class="icon-info-full"></ins></span>
+                                                                </h4>
+                                                                <textarea id="explanation"></textarea>
+                                                            </div>
+                                                            
+                                                            <div class="item">
+                                                                <input id="extendedExplanation" type="checkbox" class="noForm">
+                                                                <label class="checkbox" for="extendedExplanation">
+                                                                    <span>Uitgebreide uitleg</span>
+                                                                </label>
+                                                                <span class="info" data-type="extendedExplanation"><ins class="icon-info-full"></ins></span>
+                                                            </div>
+
+                                                            <div class="item">
+                                                                <h4>
+                                                                    <label>Script</label>
+                                                                    <span class="info" data-type="customScript"><ins class="icon-info-full"></ins></span>
+                                                                </h4>
+                                                                <textarea id="customScriptField"></textarea>
+                                                            </div>
+                                                        </div>
+                                                        <div class="item-group">
+                                                            <h3>Instellingen voor <span id="inputTypeNameLegend"></span></h3>
                                                             <div class="item" style="width: 50%;" data-visible="Input NumericInput SecureInput TextBox GpsLocation">
                                                                 <h4>
                                                                     <label>Regex validatie</label>
@@ -529,50 +636,8 @@
                                                                     <input id="visibilityPathRegex" type="text" class="textField k-input" max="255" autocomplete="off" />
                                                                 </span>
                                                             </div>
-                                                            <div class="item" data-invisible="FileUpload ImageUpload ColorPicker DataSelector SubEntitiesGrid">
-                                                                <div class="toggle">
-                                                                    <input id="visible-in-table" type="checkbox" class="noForm">
-                                                                    <label class="checkbox" for="visible-in-table">
-                                                                        <span>Standaard zichtbaar in overzichtstabellen</span>
-                                                                    </label>
-                                                                    <div class="togglePanel">
-                                                                        <div class="item" style="width: 50%;">
-                                                                            <h4>
-                                                                                <label>Breedte in tabel (in pixels)</label>
-                                                                                <span class="info" data-type="overviewWidth"><ins class="icon-info-full"></ins></span>
-                                                                            </h4>
-                                                                            <input id="widthIfVisible" type="number" class="numeric" min="0" step="1" max="65535" autocomplete="off" />
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="item" data-invisible="FileUpload ImageUpload DataSelector SubEntitiesGrid">
-                                                                <div class="toggle">
-                                                                    <input id="enableAggregation" type="checkbox" class="noForm">
-                                                                    <label class="checkbox" for="enableAggregation">
-                                                                        <span>Aggregatie inschakelen</span>
-                                                                    </label>
-                                                                    <div class="togglePanel">
-                                                                        <div class="item" style="width: 100%;">
-                                                                            <h4>
-                                                                                <label>Aggregatie-instellingen</label>
-                                                                                <span class="info" data-type="aggregateOptions"><ins class="icon-info-full"></ins></span>
-                                                                            </h4>
-                                                                            <textarea id="aggregateOptions"></textarea>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
                                                             <div class="item">
                                                                 <span class="inline">
-                                                                    <label class="checkbox" data-invisible="RadioButton CheckBox Empty">
-                                                                        <input id="mandatory" type="checkbox">
-                                                                        <span>Verplicht veld</span>
-                                                                    </label>
-                                                                    <label class="checkbox" data-invisible="RadioButton CheckBox FileUpload ImageUpload ColorPicker DataSelector Empty">
-                                                                        <input id="readonly" type="checkbox">
-                                                                        <span>Alleen lezen veld</span>
-                                                                    </label>
                                                                     <label class="checkbox" data-visible="Input">
                                                                         <input id="seofriendly" type="checkbox">
                                                                         <span>Waarde van dit veld ook opslaan als zoekmachine-vriendelijke tekst</span>
@@ -613,16 +678,6 @@
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
                                                                     <input id="textboxTypeDropDown" />
-                                                                </span>
-                                                            </div>
-
-                                                            <div class="item" data-visible="Input SecureInput TextBox GpsLocation">
-                                                                <h4>
-                                                                    <label>Standaardwaarde</label>
-                                                                    <span class="info" data-type="defaultValue"><ins class="icon-info-full"></ins></span>
-                                                                </h4>
-                                                                <span class="k-widget k-input k-state-default">
-                                                                    <input id="defaultValue" type="text" class="textField k-input" autocomplete="off" value="" />
                                                                 </span>
                                                             </div>
 
@@ -749,7 +804,6 @@
                                                                     </span>
                                                                 </div>
                                                             </div>
-
 
                                                             <div class="item" data-visible="HtmlEditor">
                                                                 <h4>
@@ -1425,7 +1479,6 @@
                                                                 <textarea id="jsonField"></textarea>
                                                             </div>
 
-
                                                             <div class="item" data-visible="Qr">
                                                                 <div class="item" style="width: 25%;">
                                                                     <h4>
@@ -1444,56 +1497,12 @@
                                                                     <textarea id="queryContent"></textarea>
                                                                 </div>
                                                             </div>
-
-                                                            <div class="item dynamic">
-                                                                <h4>
-                                                                    <label>Afhankelijkheid</label>
-                                                                    <span class="info" data-type="dependsOn"><ins class="icon-info-full"></ins></span>
-                                                                </h4>
-                                                                <section>
-                                                                    <div class="inputRow dbInput inputFlex">
-                                                                        <select id="dependencyAction"></select>
-                                                                        
-                                                                        <select id="dependencyField"></select>
-
-                                                                        <select id="dependencyOperator"></select>
-
-                                                                        <span class="k-widget k-input k-state-default">
-                                                                            <input id="dependingValue" type="text" class="textField k-input" autocomplete="off" maxlength="255" placeholder="Waarde" />
-                                                                        </span>
-                                                                    </div>
-                                                                </section>
-                                                            </div>
-                                                            <div class="item explanation-container">
-                                                                <h4>
-                                                                    <label>Toelichting</label>
-                                                                    <span class="info" data-type="explanation"><ins class="icon-info-full"></ins></span>
-                                                                </h4>
-                                                                <textarea id="explanation"></textarea>
-                                                            </div>
-                                                            
-                                                            <div class="item">
-                                                                <input id="extendedExplanation" type="checkbox" class="noForm">
-                                                                <label class="checkbox" for="extendedExplanation">
-                                                                    <span>Uitgebreide uitleg</span>
-                                                                </label>
-                                                                <span class="info" data-type="extendedExplanation"><ins class="icon-info-full"></ins></span>
-                                                            </div>
-
-                                                            <div class="item">
-                                                                <h4>
-                                                                    <label>Script</label>
-                                                                    <span class="info" data-type="customScript"><ins class="icon-info-full"></ins></span>
-                                                                </h4>
-                                                                <textarea id="customScriptField"></textarea>
-                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-
                                 </div>
                             </div>
                         </div>
