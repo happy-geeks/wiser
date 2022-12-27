@@ -2629,6 +2629,7 @@ export class EntityTab {
             entity.showTitleField = document.getElementById("showTitleField").checked;
             entity.saveHistory = document.getElementById("saveHistory").checked;
             entity.showInDashboard = document.getElementById("showInDashboard").checked;
+            entity.enableMultipleEnvironments = document.getElementById("enableMultipleEnvironments").checked;
 
             entity.displayName = document.getElementById("friendlyName").value;
             entity.queryAfterInsert = this.queryAfterInsert.getValue();
@@ -3164,6 +3165,7 @@ export class EntityTab {
         document.getElementById("showTitleField").checked = false;
         document.getElementById("saveHistory").checked = false;
         document.getElementById("showInDashboard").checked = false;
+        document.getElementById("enableMultipleEnvironments").checked = false;
 
         // codemirror fields
         this.queryAfterInsert.setValue("");
@@ -3318,6 +3320,7 @@ export class EntityTab {
         document.getElementById("friendlyName").value = resultSet.displayName || "";
         document.getElementById("entityDedicatedTablePrefix").value = resultSet.dedicatedTablePrefix;
         document.getElementById("showInDashboard").checked = resultSet.showInDashboard;
+        document.getElementById("enableMultipleEnvironments").checked = resultSet.enableMultipleEnvironments;
 
         // CodeMirror fields
         this.setCodeMirrorFields(this.queryAfterInsert, resultSet.queryAfterInsert);

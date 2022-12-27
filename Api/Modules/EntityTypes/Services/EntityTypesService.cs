@@ -200,7 +200,8 @@ GROUP BY entity_type";
                 EnableMultipleEnvironments = Convert.ToBoolean(dataRow["enable_multiple_environments"]),
                 IconExpanded = dataRow.Field<string>("icon_expanded"),
                 DedicatedTablePrefix = dataRow.Field<string>("dedicated_table_prefix"),
-                DeleteAction = deleteAction
+                DeleteAction = deleteAction,
+                ShowInDashboard = Convert.ToBoolean(dataRow["show_in_dashboard"])
             };
 
             return new ServiceResult<EntitySettingsModel>(result);
@@ -396,6 +397,7 @@ WHERE FIND_IN_SET(?previousName, accepted_childtypes)";
             clientDatabaseConnection.AddParameter("icon_expanded", settings.IconExpanded);
             clientDatabaseConnection.AddParameter("dedicated_table_prefix", settings.DedicatedTablePrefix);
             clientDatabaseConnection.AddParameter("delete_action", deleteAction);
+            clientDatabaseConnection.AddParameter("show_in_dashboard", settings.ShowInDashboard);
             await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserEntity, id);
 
             return new ServiceResult<bool>(true)

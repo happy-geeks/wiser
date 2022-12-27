@@ -76,7 +76,7 @@
             { name: "entityIcon", text: "Het icoon dat getoond moet worden voor items van dit type in de boom, wanneer die nog niet uitgeklapt is." },
             { name: "entityIconAdd", text: "Het icoon dat getoond moet worden bij de optie om een nieuw item van dit type toe te voegen aan de boom." },
             { name: "entityIconExpanded", text: "Het icoon dat getoond moet worden voor items van dit type in de boom, wanneer die wel uitgeklapt is." },
-            { name: "defaultOrdering", text: "De manier waarop items gesorteerd moeten worden in de boom (treeview), of andere plekken waar de template GET_ITEMS wordt gebruikt." },
+            { name: "defaultOrdering", text: "De manier waarop items gesorteerd moeten worden in de boom (tree view). Let op; indien dit ingesteld staat op 'naam', dan kan de volgorde van items niet meer handmatig aangepast worden in Wiser." },
             { name: "friendlyName", text: "De naam van dit entiteitstype zoals die aan de gebruiker getoond moet worden." },
             { name: "entityDedicatedTablePrefix", text: "Items van Wiser kunnen in verschillende tabellen worden opgeslagen. Standaard worden all items opgeslagen in wiser_item en wiser_itemdetail, behalve wanneer hier een voorvoegsel is ingevuld. Dan worden items van dit type opgeslagen in [voorvoegsel]_wiser_item en [voorvoegsel]_wiser_itemdetail." },
             { name: "searchQuery", text: "Dit wordt gebruikt bij velden van het type sub-entities-grid. Bij die velden kan een knop toegevoegd worden welke een popup opent waarin gezocht kan worden naar items om te koppelen. De query daarvoor kan hier gevuld worden. Zie Wiser documentatie voor meer informatie." },
@@ -86,7 +86,8 @@
             { name: "aggregateOptions", text: "Extra aggregatie-instellingen. Zie Wiser documentatie voor meer informatie." },
             { name: "templateQuery", text: "De query die uitgevoerd moet worden voor het ophalen van de data wanneer een item van dit entiteitstype als entiteit-blok op de pagina wordt gezet. Alle waardes die uit deze query komen, kunnen gebruikt worden in de Template HTML. Gebruik \"{itemId}\" of \"?itemId\" in deze query om het ID dat is ingevuld te gebruiken." },
             { name: "templateHtml", text: "De HTML die gebruikt moet worden wanneer een item van dit entiteitstype als entiteit-blok op de pagina wordt gezet. Alle waardes die uit de Template Query komen, kunnen hierin gebruikt worden als variabelen/vervangingen." },
-            { name: "deleteAction", text: "Wat er moet gebeuren wanneer een item van dit type wordt verwijderd. De volgende opties zijn mogelijk: Archiveren (staandaardoptie, items worden verplaatst naar archieftabellen), Permanent verwijderen (items worden direct en helemaal uit de database verwijderd), Verbergen (items worden gemarkeerd als verborgen) en Niet toestaan (items kunnen niet verwijderd worden)." }
+            { name: "deleteAction", text: "Wat er moet gebeuren wanneer een item van dit type wordt verwijderd. De volgende opties zijn mogelijk: Archiveren (staandaardoptie, items worden verplaatst naar archieftabellen), Permanent verwijderen (items worden direct en helemaal uit de database verwijderd), Verbergen (items worden gemarkeerd als verborgen) en Niet toestaan (items kunnen niet verwijderd worden)." },
+            { name: "enableMultipleEnvironments", text: "Met deze optie aan, kunnen er meerdere versies van items met dit entiteitstype bestaan. Items van dit type krijgen dan een extra optie in Wiser om die op te slaan naar een bepaalde omgeving (ontwikkeling, test, acceptatie en live). Hier worden dan aparte regels voor aangemaakt in de database en die worden aan elkaar gekoppeld dmv de kolom 'original_item_id'." }
         ];
     }
 }
