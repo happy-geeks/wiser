@@ -44,7 +44,7 @@
     getTranslations() {
         return [
             { name: "inputtype", text: "kies een invoertype" },
-            { name: "regexValidation", text: "Vul hier de regex validatie in" },
+            { name: "regexValidation", text: "Vul hier de regex in die gebruikt moet worden om de waarde van het veld te valideren tijdens invullen/opslaan." },
             { name: "languageCode", text: "Vul een taalcode in, zoals nl-NL" },
             { name: "displayName", text: "Vul hier de naam in" },
             { name: "propertyName", text: "Vul hier de eigenschap naam in" },
@@ -58,7 +58,6 @@
             { name: "datasource", text: "Kies waar de brondata vandaanmoet komen" },
             { name: "dataQuery", text: "Geef een query op. Let op! Geef id en name op." },
             { name: "qrContentQuery", text: "Geef een query op die de waarde van de QR-code geeft. Dat kan een URL of gewoon een stuk tekst zijn." },
-            { name: "automation", text: "" },
             { name: "dependsOn", text: "Velden kunnen afhankelijk van elkaar zijn. Hier kan ingesteld worden dat bijvoorbeeld veld X alleen getoond mag worden inden veld Y een bepaalde waarde heeft. Of dat veld X ververst moet worden nadat de waarde van veld Y wordt gewijzigd." },
             { name: "explanation", text: "Schrijf hier een duidelijke uitleg over wat het veld precies moet doen" },
             { name: "extendedExplanation", text: "Vink dit aan wanneer dit veld een lange (meer dan 1 zin) uitleg nodig heeft. De uitleg wordt dan niet meer onder het veld getoond, maar dit veld krijgt dan een info-icoon en als de gebruiker daarop klikt, wordt deze informatie aan de rechterkant van het scherm getoond." },
@@ -87,7 +86,8 @@
             { name: "templateQuery", text: "De query die uitgevoerd moet worden voor het ophalen van de data wanneer een item van dit entiteitstype als entiteit-blok op de pagina wordt gezet. Alle waardes die uit deze query komen, kunnen gebruikt worden in de Template HTML. Gebruik \"{itemId}\" of \"?itemId\" in deze query om het ID dat is ingevuld te gebruiken." },
             { name: "templateHtml", text: "De HTML die gebruikt moet worden wanneer een item van dit entiteitstype als entiteit-blok op de pagina wordt gezet. Alle waardes die uit de Template Query komen, kunnen hierin gebruikt worden als variabelen/vervangingen." },
             { name: "deleteAction", text: "Wat er moet gebeuren wanneer een item van dit type wordt verwijderd. De volgende opties zijn mogelijk: Archiveren (staandaardoptie, items worden verplaatst naar archieftabellen), Permanent verwijderen (items worden direct en helemaal uit de database verwijderd), Verbergen (items worden gemarkeerd als verborgen) en Niet toestaan (items kunnen niet verwijderd worden)." },
-            { name: "enableMultipleEnvironments", text: "Met deze optie aan, kunnen er meerdere versies van items met dit entiteitstype bestaan. Items van dit type krijgen dan een extra optie in Wiser om die op te slaan naar een bepaalde omgeving (ontwikkeling, test, acceptatie en live). Hier worden dan aparte regels voor aangemaakt in de database en die worden aan elkaar gekoppeld dmv de kolom 'original_item_id'." }
+            { name: "enableMultipleEnvironments", text: "Met deze optie aan, kunnen er meerdere versies van items met dit entiteitstype bestaan. Items van dit type krijgen dan een extra optie in Wiser om die op te slaan naar een bepaalde omgeving (ontwikkeling, test, acceptatie en live). Hier worden dan aparte regels voor aangemaakt in de database en die worden aan elkaar gekoppeld dmv de kolom 'original_item_id'." },
+            { name: "visibilityPathRegex", text: "Hiermee kan een regex ingesteld worden die uitgevoerd wordt op het volledige pad van het item, wanneer die geopend wordt in Wiser via een boom (tree view). Dit pad is de naam van alle bovenliggende items achter elkaar geplakt met slashes ertussen, bijvoorbeeld '/Eten & Drinken/Frisdranken/Cola/'. Indien de regex succesvol valideert op dit pad, wordt dit veld getoond, anders verborgen." }
         ];
     }
 }
