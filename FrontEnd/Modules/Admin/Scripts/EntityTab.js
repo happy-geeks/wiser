@@ -615,6 +615,16 @@ export class EntityTab {
             decimals: 0,
             format: "#"
         }).data("kendoNumericTextBox");
+        
+        this.checkBoxImageId = $("#checkBoxImageId").kendoNumericTextBox({
+            decimals: 0,
+            format: "#"
+        }).data("kendoNumericTextBox");
+
+        this.multiSelectMainImageId = $("#multiSelectMainImageId").kendoNumericTextBox({
+            decimals: 0,
+            format: "#"
+        }).data("kendoNumericTextBox");
 
         this.lastSelectedProperty = -1;
         // we use this property to check if the select in the tabname properties listview is by editing 
@@ -630,14 +640,14 @@ export class EntityTab {
         }).data("kendoListView");
 
         // entity module
-        this.entityModule = $("#entityModule").kendoComboBox({
+        this.entityModule = $("#entityModule").kendoDropDownList({
             placeholder: "Selecteer een module...",
             filter: "contains",
             clearButton: false,
             dataTextField: "moduleName",
             dataValueField: "id",
             dataSource: []
-        }).data("kendoComboBox");
+        }).data("kendoDropDownList");
 
 
         this.acceptedChildTypes = $("#acceptedChildTypes").kendoMultiSelect({
@@ -977,16 +987,16 @@ export class EntityTab {
         ];
 
         // Icon list
-        this.entityIcon = $("#entityIcon").kendoComboBox({
+        this.entityIcon = $("#entityIcon").kendoDropDownList({
             placeholder: "Maak uw keuze...",
             clearButton: false,
             dataSource: iconsDataSource,
             dataTextField: "text",
             dataValueField: "value",
             template: `<ins class="iconpreview-icon #: data.value #"></ins><span class="iconpreview-name">#: data.text #</span>`
-        }).data("kendoComboBox");
+        }).data("kendoDropDownList");
 
-        this.entityIconAdd = $("#entityIconAdd").kendoComboBox({
+        this.entityIconAdd = $("#entityIconAdd").kendoDropDownList({
             placeholder: "Maak uw keuze...",
             clearButton: false,
             dataSource: iconsDataSource,
@@ -997,18 +1007,18 @@ export class EntityTab {
                 text: "Maak uw keuze..."
             },
             template: `<ins class="iconpreview-icon #: data.value #"></ins><span class="iconpreview-name">#: data.text #</span>`
-        }).data("kendoComboBox");
+        }).data("kendoDropDownList");
 
-        this.entityIconExpanded = $("#entityIconExpanded").kendoComboBox({
+        this.entityIconExpanded = $("#entityIconExpanded").kendoDropDownList({
             placeholder: "Maak uw keuze...",
             clearButton: false,
             dataSource: iconsDataSource,
             dataTextField: "text",
             dataValueField: "value",
             template: `<ins class="iconpreview-icon #: data.value #"></ins><span class="iconpreview-name">#: data.text #</span>`
-        }).data("kendoComboBox");
+        }).data("kendoDropDownList");
 
-        this.entityColor = $("#entityColor").kendoComboBox({
+        this.entityColor = $("#entityColor").kendoDropDownList({
             placeholder: "Maak uw keuze...",
             clearButton: false,
             dataSource: [
@@ -1020,9 +1030,9 @@ export class EntityTab {
             ],
             dataTextField: "text",
             dataValueField: "value"
-        }).data("kendoComboBox");
+        }).data("kendoDropDownList");
 
-        this.defaultOrdering = $("#defaultOrdering").kendoComboBox({
+        this.defaultOrdering = $("#defaultOrdering").kendoDropDownList({
             placeholder: "Maak uw keuze...",
             clearButton: false,
             dataSource: [
@@ -1031,9 +1041,9 @@ export class EntityTab {
             ],
             dataTextField: "text",
             dataValueField: "value"
-        }).data("kendoComboBox");
+        }).data("kendoDropDownList");
 
-        this.deleteAction = $("#deleteAction").kendoComboBox({
+        this.deleteAction = $("#deleteAction").kendoDropDownList({
             placeholder: "Maak uw keuze...",
             clearButton: false,
             dataSource: [
@@ -1044,7 +1054,7 @@ export class EntityTab {
             ],
             dataTextField: "text",
             dataValueField: "value"
-        }).data("kendoComboBox");
+        }).data("kendoDropDownList");
 
         //SORTABLE
         this.sortableContainer = $("#tabNameProperties div").kendoSortable({
@@ -1090,8 +1100,6 @@ export class EntityTab {
             culture: "nl-NL",
             format: "HH:mm"
         }).data("kendoTimePicker");
-        // disable input to prevent bogus input.
-        //  $("#minimumTime").attr("readonly", true);
 
         //GRID
         this.grid = $("#valuegrid").kendoGrid({
@@ -1122,13 +1130,29 @@ export class EntityTab {
         }).data("kendoGrid");
 
         ////COMBOBOX - GENERAL
-        $("#checkedCheckbox").kendoComboBox({
+        $("#checkedCheckbox").kendoDropDownList({
             select: (e) => {
                 const dataItem = e.dataItem;
                 this.filterOptions = dataItem.value;
                 $(`.item[data-visible*="${dataItem.value}"], label[data-visible*="${dataItem.value}"]`).show();
             }
-        }).data("kendoComboBox");
+        }).data("kendoDropDownList");
+        
+        this.checkBoxMode = $("#checkBoxMode").kendoDropDownList({
+            cascade: (cascadeEvent) => {
+                const dataItem = cascadeEvent.sender.dataItem();
+                $(".togglePanel.checkBoxMode").removeClass("active");
+                $(`.togglePanel.checkBoxMode[data-panel="${dataItem.value}"]`).addClass("active");
+            }
+        }).data("kendoDropDownList");
+
+        this.multiSelectMode = $("#multiSelectMode").kendoDropDownList({
+            cascade: (cascadeEvent) => {
+                const dataItem = cascadeEvent.sender.dataItem();
+                $(".togglePanel.multiSelectMode").removeClass("active");
+                $(`.togglePanel.multiSelectMode[data-panel="${dataItem.value}"]`).addClass("active");
+            }
+        }).data("kendoDropDownList");
 
         this.numberFormat = $("#numberFormat").kendoDropDownList({
             clearButton: false,
@@ -1442,9 +1466,8 @@ export class EntityTab {
             dataValueField: "value",
             cascade: (cascadeEvent) => {
                 const dataItem = cascadeEvent.sender.dataItem();
-                $('.togglePanel.dataSource').removeClass('active');
-                $('.togglePanel.dataSource[data-panel="' + dataItem.id + '"]').addClass("active");
-                dataItem.id === "panel2" ? $("[data-show-for-panel=panel2]").show() : $("[data-show-for-panel=panel2]").hide();
+                $(".togglePanel.dataSource").removeClass("active");
+                $(`.togglePanel.dataSource[data-panel="${dataItem.id}"]`).addClass("active");
             }
         }).data("kendoDropDownList");
 
@@ -2727,12 +2750,15 @@ export class EntityTab {
         const inputTypes = this.base.inputTypes;
         switch (this.inputTypeSelector.text()) {
             case inputTypes.RADIOBUTTON:
-                entityProperties.defaultValue = $("#checkedCheckbox").data("kendoComboBox").value();
+                entityProperties.defaultValue = $("#checkedCheckbox").data("kendoDropDownList").value();
                 entityProperties.dataQuery = this.queryContentField.getValue();
                 break;
             case inputTypes.CHECKBOX:
                 // set default value to checkbox checked(1) or unchecked (0)
-                entityProperties.defaultValue = $("#checkedCheckbox").data("kendoComboBox").value();
+                entityProperties.defaultValue = $("#checkedCheckbox").data("kendoDropDownList").value();
+                entityProperties.options.mode = this.checkBoxMode.value();
+                entityProperties.options.imageId = this.checkBoxImageId.value();
+                entityProperties.options.imageUrl = $("#checkBoxImageUrl").val();
                 break;
             case inputTypes.NUMERIC:
                 entityProperties.options.decimals = this.numberOfDec.value();
@@ -2768,6 +2794,12 @@ export class EntityTab {
                 } else {
                     entityProperties.options.useDropDownList = null;
                 }
+                
+                entityProperties.options.mode = this.multiSelectMode.value();
+                entityProperties.options.mainImageId = this.multiSelectMainImageId.value();
+                entityProperties.options.mainImageUrl = $("#multiSelectMainImageUrl").val();
+                entityProperties.options.imagePropertyName = $("#multiSelectImagePropertyName").val();
+                
                 // check if panel 1 is selected, which is "Vaste waardes"
                 if (this.dataSourceFilter.dataItem().id === this.base.dataSourceType.PANEL1.id) {
                     var data = this.grid.dataSource.data();
@@ -3212,8 +3244,6 @@ export class EntityTab {
         document.getElementById("useDropDownList").checked = false;
         document.getElementById("searchInTitle").checked = false;
         document.getElementById("searchEverywhere").checked = false;
-        $("[data-show-for-panel=panel2]").hide();
-
 
         // secure input default
         $("#typeSecureInput").data("kendoDropDownList").select(0);
@@ -3443,7 +3473,7 @@ export class EntityTab {
                 });
             });
 
-        // set depending filter
+        // Drop downs
         this.dependencyOperator.select((dataItem) => {
             return (dataItem.value || "").toLowerCase() === (resultSet.dependsOn.operator || "").toLowerCase();
         });
@@ -3584,7 +3614,15 @@ export class EntityTab {
                 if (resultSet.inputType === inputTypes.COMBOBOX) {
                     document.getElementById("useDropDownList").checked = options.useDropDownList;
                 }
-                var panel = "";
+
+                this.multiSelectMode.select((dataItem) => {
+                    return (dataItem.value || "").toString().toLowerCase() === (options.mode || "").toString().toLowerCase();
+                });
+                this.multiSelectMainImageId.value(options.mainImageId || "");
+                $("#multiSelectMainImageUrl").val(options.mainImageUrl || "");
+                $("#multiSelectImagePropertyName").val(options.imagePropertyName || "");
+                
+                let panel = "";
                 // if dataQuery is set, set the codemirror field to the field's value
                 if (resultSet.dataQuery) {
                     panel = this.base.dataSourceType.PANEL3.id;
@@ -3594,7 +3632,7 @@ export class EntityTab {
                 else if (options.entityType) {
                     panel = this.base.dataSourceType.PANEL2.id;
                     this.dataSourceEntities.select((dataItem) => {
-                        return dataItem.name === options.entityType;
+                        return (dataItem.id || "").toLowerCase() === (options.entityType || "").toLowerCase();
                     });
                     document.getElementById("searchInTitle").checked = options.searchInTitle;
                     document.getElementById("searchEverywhere").checked = options.searchEverywhere;
@@ -3660,7 +3698,6 @@ export class EntityTab {
             case inputTypes.ITEMLINKER:
             case inputTypes.SUBENTITIESGRID:
             case inputTypes.ACTIONBUTTON:
-
                 // module id is only available for item linker 
                 // entity is a multiselect for item linker
                 if (resultSet.inputType === inputTypes.ITEMLINKER) {
@@ -3835,6 +3872,13 @@ export class EntityTab {
                     this.queryContentField.setValue(resultSet.dataQuery);
                     this.queryContentField.refresh();
                 }
+                break;
+            case inputTypes.CHECKBOX:
+                this.checkBoxMode.select((dataItem) => {
+                    return (dataItem.value || "").toString().toLowerCase() === (options.mode || "").toString().toLowerCase();
+                });
+                this.checkBoxImageId.value(options.imageId || "");
+                $("#checkBoxImageUrl").val(options.imageUrl || "");
                 break;
         }
     }

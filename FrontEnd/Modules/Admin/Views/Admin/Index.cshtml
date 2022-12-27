@@ -464,7 +464,7 @@
                                                                     <label>Breedte (in %)</label>
                                                                     <span class="info" data-type="width"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
-                                                                <input id="width" type="number" title="numeric" class="numeric" value="" min="0" max="100" step="1" autocomplete="off" />
+                                                                <input id="width" type="number" class="numeric" value="" min="0" max="100" step="1" autocomplete="off" />
                                                             </div>
 
                                                             <div class="item" style="width: 25%;">
@@ -472,7 +472,7 @@
                                                                     <label>Hoogte (in pixels)</label>
                                                                     <span class="info" data-type="height"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
-                                                                <input id="height" type="number" title="numeric" class="numeric" value="" max="65535" min="0" step="1" autocomplete="off" />
+                                                                <input id="height" type="number" class="numeric" value="" max="65535" min="0" step="1" autocomplete="off" />
                                                             </div>
                                                             <div class="item" style="width: 25%;">
                                                                 <h4>
@@ -520,7 +520,7 @@
                                                                 </span>
                                                             </div>
 
-                                                            <div class="item"  style="width: 50%;" data-visible="Input SecureInput TextBox GpsLocation HtmlEditor ColorPicker ComboBox DataSelector DateTimePicker MultiSelect NumericInput Qr RadioButton">
+                                                            <div class="item" style="width: 50%;" data-visible="Input SecureInput TextBox GpsLocation HtmlEditor ColorPicker ComboBox DataSelector DateTimePicker MultiSelect Qr Empty">
                                                                 <h4>
                                                                     <label>Standaardwaarde</label>
                                                                     <span class="info" data-type="defaultValue"><ins class="icon-info-full"></ins></span>
@@ -528,6 +528,27 @@
                                                                 <span class="k-widget k-input k-state-default">
                                                                     <input id="defaultValue" type="text" class="textField k-input" autocomplete="off" value="" />
                                                                 </span>
+                                                            </div>
+
+                                                            <div class="item" style="width: 50%" data-visible="NumericInput AutoIcrement">
+                                                                <h4>
+                                                                    <label>Standaardwaarde</label>
+                                                                    <span class="info" data-type="defaultValue"><ins class="icon-info-full"></ins></span>
+                                                                </h4>
+                                                                <span class="k-widget k-input k-state-default">
+                                                                    <input id="defaultNumeric" type="number" class="numeric" value="" min="0" step="1" autocomplete="off" />
+                                                                </span>
+                                                            </div>
+
+                                                            <div class="item" style="width: 50%" data-visible="RadioButton CheckBox">
+                                                                <h4>
+                                                                    <label>Standaardwaarde</label>
+                                                                    <span class="info" data-type="defaultValue"><ins class="icon-info-full"></ins></span>
+                                                                </h4>
+                                                                <select id="checkedCheckbox" placeholder="Maak uw keuze...">
+                                                                    <option value="1" selected>Aangevinkt</option>
+                                                                    <option value="0">Uitgevinkt</option>
+                                                                </select>
                                                             </div>
                                                             
                                                             <div class="item" data-invisible="FileUpload ImageUpload ColorPicker DataSelector SubEntitiesGrid">
@@ -676,10 +697,6 @@
                                                                         <input id="searchEverywhere" type="checkbox">
                                                                         <span>Toon alle items, i.p.v. alleen gekoppelde items</span>
                                                                     </label>
-                                                                    <label class="checkbox" data-visible="Input SecureInput TextBox RadioButton CheckBox ComboBox MultiSelect NumericInput DateTimePicker ColorPicker">
-                                                                        <input id="saveOnChange" type="checkbox">
-                                                                        <span>Item automatisch opslaan wanneer de waarde van dit veld wordt aangepast</span>
-                                                                    </label>
                                                                 </span>
                                                             </div>
 
@@ -701,27 +718,6 @@
                                                                 <span class="k-widget k-input k-state-default">
                                                                     <input id="textboxTypeDropDown" />
                                                                 </span>
-                                                            </div>
-
-                                                            <div class="item" data-visible="NumericInput AutoIcrement">
-                                                                <h4>
-                                                                    <label>Standaardwaarde</label>
-                                                                    <span class="info" data-type="defaultValue"><ins class="icon-info-full"></ins></span>
-                                                                </h4>
-                                                                <span class="k-widget k-input k-state-default">
-                                                                    <input id="defaultNumeric" type="number" title="numeric" class="numeric" value="" min="0" step="1" autocomplete="off" />
-                                                                </span>
-                                                            </div>
-
-                                                            <div class="item" data-visible="RadioButton CheckBox">
-                                                                <h4>
-                                                                    <label>Standaardwaarde</label>
-                                                                    <span class="info" data-type="defaultValue"><ins class="icon-info-full"></ins></span>
-                                                                </h4>
-                                                                <select id="checkedCheckbox" placeholder="Maak uw keuze...">
-                                                                    <option value="1" selected>Aangevinkt</option>
-                                                                    <option value="0">Uitgevinkt</option>
-                                                                </select>
                                                             </div>
 
                                                             <div class="item datetime" data-visible="DateTimePicker">
@@ -769,7 +765,7 @@
                                                                     <h4>
                                                                         <label>Aantal decimalen</label>
                                                                     </h4>
-                                                                    <input id="numberOfDecimals" type="number" title="numeric" class="numeric" value="" min="0" max="65" step="1" autocomplete="off" />
+                                                                    <input id="numberOfDecimals" type="number" class="numeric" value="" min="0" max="65" step="1" autocomplete="off" />
                                                                 </div>
 
                                                                 <div class="item" style="width: 10%;">
@@ -961,7 +957,7 @@
                                                                         <label>Module id</label>
                                                                         <span class="info" data-type=""><ins class="icon-info-full"></ins></span>
                                                                     </h4>
-                                                                    <input id="itemLinkerModuleId" type="number" title="numeric" class="numeric" value="" min="0" max="1000" step="1" autocomplete="off" />
+                                                                    <input id="itemLinkerModuleId" type="number" class="numeric" value="" min="0" max="1000" step="1" autocomplete="off" />
                                                                 </div>
                                                                 <div class="item" style="width: 33%;" data-visible="ItemLinker">
                                                                     <h4>
@@ -1169,7 +1165,6 @@
                                                             </div>
 
                                                             <div class="item" data-visible="SubEntitiesGrid">
-
                                                                 <div class="item" data-visible="SubEntitiesGrid">
                                                                     <div class="toggle">
                                                                         <input id="customQuery" type="checkbox" value="1" class="noForm" />
@@ -1418,7 +1413,7 @@
                                                                                 <label>Item link</label>
                                                                                 <span class="info" data-type="action-button-itemlink"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
-                                                                            <input type="number" title="numeric" class="actionButtonItemLink numeric" min="0" step="1" autocomplete="off" />
+                                                                            <input type="number" class="actionButtonItemLink numeric" min="0" step="1" autocomplete="off" />
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -1442,14 +1437,14 @@
                                                                         <label>Query item id</label>
                                                                         <span class="info" data-type="queryId"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
-                                                                    <input type="number" title="numeric" id="queryId" class="numeric" min="0" step="1" autocomplete="off" />
+                                                                    <input type="number" id="queryId" class="numeric" min="0" step="1" autocomplete="off" />
                                                                 </div>
                                                                 <div class="item" style="width: 25%;" data-visible="TimeLine">
                                                                     <h4>
                                                                         <label>Hoogte van het event gedeelte</label>
                                                                         <span class="info" data-type="timeline-event-height"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
-                                                                    <input type="number" title="numeric" id="timelineEventHeight" class="numeric" min="0" step="1" autocomplete="off" />
+                                                                    <input type="number" id="timelineEventHeight" class="numeric" min="0" step="1" autocomplete="off" />
                                                                 </div>
                                                                 <div class="item" style="width: 25%;" data-visible="TimeLine">
                                                                     <span class="inline titleMargin">
@@ -1507,7 +1502,7 @@
                                                                         <label>Grootte in pixels</label>
                                                                         <span class="info" data-type="qr-barcode-size"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
-                                                                    <input id="pixelSize" type="number" title="numeric" value="" min="0" step="1" autocomplete="off" />
+                                                                    <input id="pixelSize" type="number" min="0" step="1" autocomplete="off" />
                                                                 </div>
                                                             </div>
                                                             <div class="item" data-visible="Qr RadioButton">
@@ -1517,6 +1512,69 @@
                                                                         <span class="info" data-type="qrContentQuery"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <textarea id="queryContent"></textarea>
+                                                                </div>
+                                                            </div>
+                                                            <div class="item" data-visible="CheckBox">
+                                                                <div class="toggle">
+                                                                    <h4>
+                                                                        <label>Mode</label>
+                                                                        <span class="info" data-type="checkBoxMode"><ins class="icon-info-full"></ins></span>
+                                                                    </h4>
+                                                                    <select id="checkBoxMode" class="combo-toggle">
+                                                                        <option value="" selected>Standaard</option>
+                                                                        <option value="switch">Switch</option>
+                                                                    </select>
+                                                                    <div class="togglePanel checkBoxMode" data-panel="switch">
+                                                                        <div class="item" style="width: 25%;">
+                                                                            <h4>
+                                                                                <label>Afbeelding ID</label>
+                                                                                <span class="info" data-type="checkBoxImageId"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input id="checkBoxImageId" type="number" class="numeric" step="1" autocomplete="off" />
+                                                                        </div>
+                                                                        <div class="item" style="width: 75%;">
+                                                                            <h4>
+                                                                                <label>Afbeelding URL</label>
+                                                                                <span class="info" data-type="checkBoxImageUrl"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input id="checkBoxImageUrl" type="text" class="textField k-input" autocomplete="off" />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="item" data-visible="MultiSelect">
+                                                                <div class="toggle">
+                                                                    <h4>
+                                                                        <label>Mode</label>
+                                                                        <span class="info" data-type="multiSelectMode"><ins class="icon-info-full"></ins></span>
+                                                                    </h4>
+                                                                    <select id="multiSelectMode" class="combo-toggle">
+                                                                        <option value="" selected>Standaard</option>
+                                                                        <option value="checkBoxGroup">Checkboxgroep</option>
+                                                                    </select>
+                                                                    <div class="togglePanel multiSelectMode" data-panel="checkBoxGroup">
+                                                                        <div class="item" style="width: 25%;">
+                                                                            <h4>
+                                                                                <label>Hoofdafbeelding ID</label>
+                                                                                <span class="info" data-type="multiSelectMainImageId"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input id="multiSelectMainImageId" type="number" class="numeric" step="1" autocomplete="off" />
+                                                                        </div>
+                                                                        <div class="item" style="width: 50%;">
+                                                                            <h4>
+                                                                                <label>Hoofdafbeelding URL</label>
+                                                                                <span class="info" data-type="multiSelectMainImageUrl"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input id="multiSelectMainImageUrl" type="text" class="textField k-input" autocomplete="off" />
+                                                                        </div>
+                                                                        <div class="item" style="width: 25%;">
+                                                                            <h4>
+                                                                                <label>Afbeeldingtype</label>
+                                                                                <span class="info" data-type="multiSelectImagePropertyName"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input id="multiSelectImagePropertyName" type="text" class="textField k-input" autocomplete="off" />
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
