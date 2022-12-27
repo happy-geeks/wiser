@@ -84,7 +84,7 @@ const moduleSettings = {
                 ITEMLINKER: "ItemLinker",
                 LINKEDITEM: "LinkedItem",
                 MULTISELECT: "MultiSelect",
-                NUMERIC: "NumericInput",
+                NUMERICINPUT: "NumericInput",
                 RADIOBUTTON: "RadioButton",
                 SECUREINPUT: "SecureInput",
                 SUBENTITIESGRID: "SubEntitiesGrid",

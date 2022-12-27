@@ -1130,13 +1130,7 @@ export class EntityTab {
         }).data("kendoGrid");
 
         ////COMBOBOX - GENERAL
-        $("#checkedCheckbox").kendoDropDownList({
-            select: (e) => {
-                const dataItem = e.dataItem;
-                this.filterOptions = dataItem.value;
-                $(`.item[data-visible*="${dataItem.value}"], label[data-visible*="${dataItem.value}"]`).show();
-            }
-        }).data("kendoDropDownList");
+        $("#checkedCheckbox").kendoDropDownList().data("kendoDropDownList");
         
         this.checkBoxMode = $("#checkBoxMode").kendoDropDownList({
             cascade: (cascadeEvent) => {
@@ -2517,7 +2511,7 @@ export class EntityTab {
             //inputtype specific
             const inputTypes = this.base.inputTypes;
             switch (this.inputTypeSelector.dataItem().text) {
-                case inputTypes.NUMERIC:
+                case inputTypes.NUMERICINPUT:
                     if (this.minNumber.value() && this.minNumber.value() >= this.maxNumber.value()) {
                         this.base.showNotification("notification",
                             "Minimale waarde mag niet hoger zijn dan de maximale waarde!",
@@ -2767,7 +2761,7 @@ export class EntityTab {
                 entityProperties.options.imageId = this.checkBoxImageId.value();
                 entityProperties.options.imageUrl = $("#checkBoxImageUrl").val();
                 break;
-            case inputTypes.NUMERIC:
+            case inputTypes.NUMERICINPUT:
                 entityProperties.options.decimals = this.numberOfDec.value();
                 entityProperties.options.format = this.numberFormat.value() === "anders" ? document.getElementById("differentFormat").value : this.numberFormat.value();
                 entityProperties.options.round = document.getElementById("roundNumeric").checked;
@@ -3587,7 +3581,7 @@ export class EntityTab {
             case inputTypes.AUTOINCREMENT:
                 this.defaultNumeric.value(resultSet.defaultValue);
                 break;
-            case inputTypes.NUMERIC: {
+            case inputTypes.NUMERICINPUT: {
                 this.defaultNumeric.value(resultSet.defaultValue);
                 document.getElementById("roundNumeric").checked = getOptionValueAndDeleteForOptionsField("round");
                 document.getElementById("cultureNumber").value = getOptionValueAndDeleteForOptionsField("culture", "");
