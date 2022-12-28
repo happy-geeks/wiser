@@ -222,7 +222,7 @@ INSERT INTO `wiser_item`(`id`, `unique_uuid`, `parent_item_id`, `entity_type`, `
 # Content box templates
 INSERT INTO `wiser_item`(`id`, `unique_uuid`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (11, '', 'map', 700, 15, 0, 'Content box templates', NOW(), 'Systeem', NULL, '');
 INSERT INTO `wiser_item`(`id`, `unique_uuid`, `parent_item_id`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (12, '', 11, 'map', 700, 15, 0, 'Voorbeeld', NOW(), 'Systeem', NULL, '');
-INSERT INTO `wiser_item`(`id`, `unique_uuid`, `parent_item_id`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (13, '', 12, 'content-builder-snippet', 700, 15, 0, 'Voorbeeld', NOW(), 'Systeem', NULL, '');
+INSERT INTO `wiser_item`(`id`, `unique_uuid`, `parent_item_id`, `entity_type`, `moduleid`, `published_environment`, `readonly`, `title`, `added_on`, `added_by`, `changed_on`, `changed_by`) VALUES (13, '', 12, 'content-box-template', 700, 15, 0, 'Voorbeeld', NOW(), 'Systeem', NULL, '');
 
 -- ----------------------------
 -- Records of wiser_itemdetail
@@ -283,6 +283,7 @@ INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_t
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'template', 'template', 1, 0, 'one-to-one', 'none', 1);
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'ftp_configuration', 'ftp_configuration', 1, 0, 'one-to-one', 'none', 1);
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'content-builder-snippet', 'content-builder-snippet', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'content-box-template', 'content-box-template', 1, 0, 'one-to-one', 'none', 1);
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'shippingcost', 'shippingcost', 1, 0, 'one-to-one', 'none', 1);
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'deliverymethod', 'deliverymethod', 1, 0, 'one-to-one', 'none', 1);
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'paymentmethod', 'paymentmethod', 1, 0, 'one-to-one', 'none', 1);
