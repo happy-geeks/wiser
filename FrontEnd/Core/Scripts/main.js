@@ -475,16 +475,16 @@ import CacheService from "./shared/cache.service";
                         this.$refs.generalMessagePrompt.open();
                     },
 
-                    logout(event) {
+                    async logout(event) {
                         if (event) {
                             event.preventDefault();
                         }
                         
                         this.$store.dispatch(STOP_UPDATE_TIME_ACTIVE_TIMER);
                         // Update the user's active time one last time.
-                        this.$store.dispatch(UPDATE_ACTIVE_TIME);
+                        await this.$store.dispatch(UPDATE_ACTIVE_TIME);
                         this.$store.dispatch(CLOSE_ALL_MODULES);
-                        this.$store.dispatch(AUTH_LOGOUT);
+                        await this.$store.dispatch(AUTH_LOGOUT);
                     },
 
                     openModule(module) {

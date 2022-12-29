@@ -64,12 +64,13 @@ namespace Api.Modules.Customers.Services
         private readonly ITemplatesService templatesService;
         private readonly ICommunicationsService communicationsService;
         private readonly IRolesService rolesService;
+        private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly GclSettings gclSettings;
 
         /// <summary>
         /// Initializes a new instance of <see cref="UsersService"/>.
         /// </summary>
-        public UsersService(IWiserCustomersService wiserCustomersService, IOptions<ApiSettings> apiSettings, IDatabaseConnection clientDatabaseConnection, ILogger<UsersService> logger, ITemplatesService templatesService, ICommunicationsService communicationsService, IOptions<GclSettings> gclSettings, IRolesService rolesService)
+        public UsersService(IWiserCustomersService wiserCustomersService, IOptions<ApiSettings> apiSettings, IDatabaseConnection clientDatabaseConnection, ILogger<UsersService> logger, ITemplatesService templatesService, ICommunicationsService communicationsService, IOptions<GclSettings> gclSettings, IRolesService rolesService, IDatabaseHelpersService databaseHelpersService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.logger = logger;
@@ -78,6 +79,7 @@ namespace Api.Modules.Customers.Services
             this.templatesService = templatesService;
             this.communicationsService = communicationsService;
             this.rolesService = rolesService;
+            this.databaseHelpersService = databaseHelpersService;
             this.gclSettings = gclSettings.Value;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
@@ -935,10 +937,13 @@ namespace Api.Modules.Customers.Services
             {
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
+                // Make sure the WiserLoginLog exists and is up-to-date.
+                await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
+
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("id", decryptedLogId);
                 clientDatabaseConnection.AddParameter("user_id", userId);
-                var timeActiveData = await clientDatabaseConnection.GetAsync("SELECT time_active, time_active_changed_on FROM wiser_login_log WHERE id = ?id AND user_id = ?user_id");
+                var timeActiveData = await clientDatabaseConnection.GetAsync($"SELECT time_active, time_active_changed_on FROM {WiserTableNames.WiserLoginLog} WHERE id = ?id AND user_id = ?user_id");
                 if (timeActiveData.Rows.Count == 0)
                 {
                     logger.LogError($"UpdateUserTimeActiveAsync: Log ID '{decryptedLogId}' does not exist or doesn't belong to the current user.");
@@ -954,7 +959,7 @@ namespace Api.Modules.Customers.Services
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("time_active", timeActive);
                 clientDatabaseConnection.AddParameter("time_active_changed_on", DateTime.Now);
-                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync("wiser_login_log", decryptedLogId);
+                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserLoginLog, decryptedLogId);
 
                 result.ModelObject = timeActive;
                 result.StatusCode = HttpStatusCode.OK;
@@ -1013,10 +1018,13 @@ namespace Api.Modules.Customers.Services
             {
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
+                // Make sure the WiserLoginLog exists and is up-to-date.
+                await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
+
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("id", decryptedLoginLogId);
                 clientDatabaseConnection.AddParameter("user_id", userId);
-                var currentTimeActive = await clientDatabaseConnection.GetAsync("SELECT id FROM wiser_login_log WHERE id = ?id AND user_id = ?user_id");
+                var currentTimeActive = await clientDatabaseConnection.GetAsync($"SELECT id FROM {WiserTableNames.WiserLoginLog} WHERE id = ?id AND user_id = ?user_id");
                 if (currentTimeActive.Rows.Count == 0)
                 {
                     logger.LogError($"ResetTimeActiveChangedAsync: Log ID '{decryptedLoginLogId}' does not exist or doesn't belong to the current user.");
@@ -1027,7 +1035,7 @@ namespace Api.Modules.Customers.Services
 
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("time_active_changed_on", DateTime.Now);
-                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync("wiser_login_log", decryptedLoginLogId);
+                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserLoginLog, decryptedLoginLogId);
 
                 result.ModelObject = true;
                 result.StatusCode = HttpStatusCode.OK;
@@ -1281,16 +1289,20 @@ namespace Api.Modules.Customers.Services
 
             try
             {
+                await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+                // Make sure the WiserLoginLog exists and is up-to-date.
+                await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
+                
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("user_id", userId);
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
                 clientDatabaseConnection.AddParameter("time_active_changed_on", DateTime.Now);
 
-                // TODO: Use WiserTableNames after GCL has been updated.
-                var logId = await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync("wiser_login_log", 0UL);
+                var logId = await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserLoginLog, 0UL);
                 
                 // Remove outdated logs (data is retained for 3 months).
-                await clientDatabaseConnection.ExecuteAsync("DELETE FROM wiser_login_log WHERE added_on < DATE_SUB(NOW(), INTERVAL 3 MONTH)");
+                await clientDatabaseConnection.ExecuteAsync($"DELETE FROM {WiserTableNames.WiserLoginLog} WHERE added_on < DATE_SUB(NOW(), INTERVAL 3 MONTH)");
 
                 return logId;
             }

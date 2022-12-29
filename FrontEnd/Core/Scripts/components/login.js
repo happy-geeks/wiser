@@ -121,8 +121,8 @@ export default {
             }
         },
 
-        logout() {
-            this.$store.dispatch(AUTH_LOGOUT);
+        async logout() {
+            await this.$store.dispatch(AUTH_LOGOUT);
             this.toggleTotpBackupCodeScreen(false);
         },
 

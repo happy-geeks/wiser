@@ -373,12 +373,12 @@ public class DashboardService : IDashboardService, IScopedService
         var wherePart = whereParts.Count > 0 ? $" WHERE {String.Join(" AND ", whereParts)}" : String.Empty;
 
         // Retrieve user login count data.
-        var userLoginCountData = await clientDatabaseConnection.GetAsync($@"
-            SELECT user_id, COUNT(*) AS login_count
-            FROM {databasePart}wiser_login_log
-            {wherePart}
-            GROUP BY user_id
-            ORDER BY login_count DESC");
+        var query = $@"SELECT user_id, COUNT(*) AS login_count
+FROM {databasePart}{WiserTableNames.WiserLoginLog}
+{wherePart}
+GROUP BY user_id
+ORDER BY login_count DESC";
+        var userLoginCountData = await clientDatabaseConnection.GetAsync(query);
 
         // Turn data rows into a list of counts.
         var loginCounts = userLoginCountData.Rows.Cast<DataRow>().Select(dr => Convert.ToInt32(dr["login_count"])).ToList();
@@ -386,12 +386,12 @@ public class DashboardService : IDashboardService, IScopedService
         var loginCountOther = loginCounts.Count > 10 ? loginCounts.Skip(10).Sum() : 0;
 
         // Retrieve user login time active data.
-        var userLoginTimeData = await clientDatabaseConnection.GetAsync($@"
-            SELECT user_id, SEC_TO_TIME(SUM(TIME_TO_SEC(time_active))) AS time_active
-            FROM {databasePart}wiser_login_log
-            {wherePart}
-            GROUP BY user_id
-            ORDER BY TIME_TO_SEC(time_active) DESC");
+        query = $@"SELECT user_id, SEC_TO_TIME(SUM(TIME_TO_SEC(time_active))) AS time_active
+FROM {databasePart}{WiserTableNames.WiserLoginLog}
+{wherePart}
+GROUP BY user_id
+ORDER BY TIME_TO_SEC(time_active) DESC";
+        var userLoginTimeData = await clientDatabaseConnection.GetAsync(query);
 
         // Initialize two TimeSpans.
         var timeActiveTop10 = TimeSpan.Zero;
