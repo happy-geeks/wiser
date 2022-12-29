@@ -337,19 +337,23 @@ ins, a {
     .k-refresh-button {
         background-color: $white-color;
         box-shadow: none;
-        font-size: 14px;
+        font-size: 18px;
         line-height: 1.42857143;
         position: absolute;
-        top: auto;
+        top: 0;
         bottom: 100%;
         margin: 5px;
         padding: 4px;
         z-index: 10;
+        
+        &:hover {
+            background: var(--item-bg-color)!important;
+        }
     }
     
     .k-close-button {
         right: 0;
-    }
+    } 
     
     .k-refresh-button {
         right: 47px;
