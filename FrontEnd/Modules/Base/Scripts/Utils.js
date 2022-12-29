@@ -283,7 +283,7 @@ export class Wiser {
 
                 // If we have no refresh token for some reason, logout the user.
                 if (wiserMainWindow && wiserMainWindow.main && wiserMainWindow.main.vueApp) {
-                    wiserMainWindow.main.vueApp.logout();
+                    await wiserMainWindow.main.vueApp.logout();
                 }
                 
                 return Promise.reject("No refresh token found!");

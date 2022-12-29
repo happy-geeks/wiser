@@ -17,6 +17,27 @@ namespace Api.Modules.ContentBuilder.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns>A list with zero or more <see cref="ContentBuilderSnippetModel"/>.</returns>
         Task<ServiceResult<List<ContentBuilderSnippetModel>>> GetSnippetsAsync(ClaimsIdentity identity);
+        
+        /// <summary>
+        /// Gets all templates for the content box. Templates are pieces of HTML that the user can add in the Content Box.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <returns>A list with zero or more <see cref="ContentBuilderSnippetModel"/>.</returns>
+        Task<ServiceResult<List<ContentBoxTemplateModel>>> GetTemplatesAsync(ClaimsIdentity identity);
+        
+        /// <summary>
+        /// Gets all categories of templates for the content box. Templates are pieces of HTML that the user can add in the Content Box.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <returns>A list with zero or more <see cref="ContentBuilderSnippetModel"/>.</returns>
+        Task<ServiceResult<List<ContentBoxTemplateModel>>> GetTemplateCategoriesAsync(ClaimsIdentity identity);
+
+        /// <summary>
+        /// Gets the template javascript file for the ContentBox so that the tenant's templates can be used in the ContentBox.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <returns>A string with the contents of the javascript file.</returns>
+        Task<ServiceResult<string>> GetTemplateJavascriptFileAsync(ClaimsIdentity identity);
 
         /// <summary>
         /// Gets the HTML of an item, for the Content Builder.

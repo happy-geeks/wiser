@@ -26,9 +26,10 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// Get the template data of a template.
         /// </summary>
         /// <param name="templateId">The id of the template to retrieve the data from.</param>
-        /// <param name="environment">The environment the template needs to be active on.</param>
+        /// <param name="environment">Optional: The environment the template needs to be active on. Get the latest version if no environment has been given.</param>
+        /// <param name="version">Optional: If you want to get a specific version, enter that version number here.</param>
         /// <returns>A <see cref="TemplateSettingsModel"/> containing the current template data of the template with the given id.</returns>
-        Task<TemplateSettingsModel> GetDataAsync(int templateId, Environments? environment = null);
+        Task<TemplateSettingsModel> GetDataAsync(int templateId, Environments? environment = null, int? version = null);
 
         /// <summary>
         /// Get published environments from a template.
@@ -42,12 +43,13 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// Publish the template to an environment. This method will execute the publish model instructions it receives, logic for publishing linked environments should be handled in the servicelayer.
         /// </summary>
         /// <param name="templateId">The id of the template of which the environment should be published.</param>
-        /// <param name="publishModel">A publish model containing the versions that should be altered and their respective values to be altered with.</param>
-        /// <param name="publishLog"></param>
+        /// <param name="version">The version that should be deployed/published.</param>
+        /// <param name="environment">The environment to publish the version of the template to.</param>
+        /// <param name="publishLog">Information for the history of the template, to log the version change there.</param>
         /// <param name="username">The name of the authenticated user.</param>
         /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
         /// <returns>An int confirming the rows altered by the query.</returns>
-        Task<int> UpdatePublishedEnvironmentAsync(int templateId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username, string branchDatabaseName = null);
+        Task<int> UpdatePublishedEnvironmentAsync(int templateId, int version, Environments environment, PublishLogModel publishLog, string username, string branchDatabaseName = null);
         
         /// <summary>
         /// Get the templates linked to the current template and their relation to the current template.

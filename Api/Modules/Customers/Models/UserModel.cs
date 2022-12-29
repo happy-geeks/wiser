@@ -56,6 +56,11 @@ namespace Api.Modules.Customers.Models
         public string LastLoginIpAddress { get; set; }
 
         /// <summary>
+        /// Gets or sets the TOTP settings (2FA).
+        /// </summary>
+        public TotpAuthenticationModel TotpAuthentication { get; set; }
+
+        /// <summary>
         /// Gets or sets the name of the current branch / customer.
         /// </summary>
         public string CurrentBranchName { get; set; }

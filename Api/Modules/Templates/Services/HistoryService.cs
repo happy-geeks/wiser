@@ -194,6 +194,7 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("isDefaultHeader", newVersion.IsDefaultHeader, oldVersion.IsDefaultHeader, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("isDefaultFooter", newVersion.IsDefaultFooter, oldVersion.IsDefaultFooter, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("defaultHeaderFooterRegex", newVersion.DefaultHeaderFooterRegex, oldVersion.DefaultHeaderFooterRegex, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("isPartial", newVersion.IsPartial, oldVersion.IsPartial, historyModel);
 
             var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);

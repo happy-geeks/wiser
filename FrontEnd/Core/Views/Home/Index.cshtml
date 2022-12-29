@@ -1,5 +1,6 @@
 ﻿@using FrontEnd.Core.Models
 @using GeeksCoreLibrary.Core.Enums
+@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 @model BaseViewModel
 <style>
@@ -58,13 +59,14 @@
                     </span>
 
                 <ul class="sub-menu">
-                    <li><a href="#" v-if="user.adminAccountId" @@click="openCustomerManagement()"><ins class="icon-line-user-plus"></ins><span>Klant toevoegen</span></a></li>
-                    <li><a href="#" @@click="openMarkerIoScreen()"><ins class="icon-line-bug"></ins><span>Bug melden! (CTRL+B)</span></a></li>
+                    <li><a href="#" v-if="user.adminLogin" @@click="openCustomerManagement"><ins class="icon-line-user-plus"></ins><span>Klant toevoegen</span></a></li>
+                    <li><a href="#" @@click="openMarkerIoScreen"><ins class="icon-line-bug"></ins><span>Bug melden! (CTRL+B)</span></a></li>
                     <li><a href="#" @@click="openWiserIdPrompt"><ins class="icon-line-database-search"></ins><span>Wiser item openen (CTRL+O)</span></a></li>
+                    <li><a href="#" @@click="openGenerateTotpBackupCodesPrompt" v-if="user && user.totpAuthentication && user.totpAuthentication.enabled"><ins class="icon-line-lock"></ins><span>Nieuwe 2FA-backup-codes genereren</span></a></li>
                     <li><a href="#" @@click="openChangePasswordPrompt"><ins class="icon-line-lock"></ins><span>Wachtwoord wijzigen</span></a></li>
                     <li><a href="#" @@click="openWiserBranchesPrompt"><ins class="icon-table-backup"></ins><span>Wiser branches</span></a></li>
                     <li><a href="#" @@click="openClearCachePrompt"><ins class="icon-line-refresh"></ins><span>Cache van website legen</span></a></li>
-                    <li><a href="#" @@click="logout()"><ins class="icon-line-log-out"></ins><span>Uitloggen</span></a></li>
+                    <li><a href="#" @@click="logout"><ins class="icon-line-log-out"></ins><span>Uitloggen</span></a></li>
                 </ul>
             </li>
             <li class="logo">
@@ -87,10 +89,8 @@
             </section>
 
             <keep-alive>
-                <customer-management v-if="user.adminAccountId && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
+                <customer-management v-if="user.adminLogin && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
             </keep-alive>
-
-
         </main>
 
         <wiser-dialog class="general-message-dialog" :modal="true" :width="'400px'" :title="generalMessagePromptTitle" ref="generalMessagePrompt" :visible="false" :actions="[{ text: 'OK', primary: true }]">
@@ -148,7 +148,7 @@
                         
                         <div class="col col-12 form-row" v-if="openBranchSettings.selectedBranchType.id === 'website'">
                             <label for="website-url">Geef de URL op van uw website</label>
-                            <input type="url" id="website-url" placeholder="https://happyhorizon.com/" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="openBranchSettings.websiteUrl" required>
+                            <input type="url" id="website-url" placeholder="https://mywebsite.com/" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="openBranchSettings.websiteUrl" required>
                         </div>
                         
                         <div class="col col-12 form-row" v-if="isMainBranch">
@@ -160,7 +160,7 @@
                         <a href="#" class="btn btn-primary open-branch" @@click="openOrCopyBranch($event, false)">Branch openen</a>
                     </div>
                     <div :class="{ 'col': true, 'col-6': isMainBranch || branches.length > 0, 'col-9': !isMainBranch || !branches.length }">
-                        <h2>Branch terugzetten</h2>
+                        <h2>Branch terugzetten (mergen)</h2>
                         <p>
                             Hiermee kunnen wijzigingen die in een branch gedaan zijn, overgezet worden naar de productie-omgeving. U kunt dan kiezen welke wijzigingen doorgezet moeten worden, dat hoeft niet per se alles te zijn.
                             Het is niet mogelijk om verschillende branches samen te voegen. Het samenvoegen gaat altijd van een branch naar de productie-omgeving.
@@ -185,7 +185,7 @@
                             <ins class="icon-line-alert"></ins>
                             <span v-html="createBranchError"></span>
                         </section>
-                        <input type="text" id="newBranchName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="createBranchSettings.name" required>
+                        <input type="text" id="newBranchName" maxlength="25" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="createBranchSettings.name" required>
                     </div>
                     <div class="col col-12 form-row no-bottom-margin">
                         <label for="branche-data">Welke data wil je naar de branche overzetten?
@@ -662,6 +662,21 @@
                 <span v-html="clearCacheError"></span>
             </section>
         </wiser-dialog>
+        
+        <wiser-dialog :modal="true" :width="'400px'" :title="'2FA-backup-codes'" ref="generateTotpBackupCodesPrompt" :visible="false" :actions="totpBackupCodes.length > 0 ? [{ text: 'OK', primary: true }] : [{ text: 'Nee' }, { text: 'Ja', primary: true, action: generateNewTotpBackupCodes }]" @@close="onGenerateTotpBackupCodesPromptClose">
+            <p v-if="totpBackupCodes.length === 0">Weet u zeker dat u nieuwe backup-codes wilt genereren? Uw oude backup-codes zullen dan verloren gaan.</p>
+            <p v-else>
+                Hieronder vindt u uw backup-codes. Zorg dat u deze op ergens op een veilige plaats bewaart. Dit is de enige keer dat u deze codes kunt zien!<br/>
+                Let op: Elke backup-code kan maar 1 keer gebruikt worden.
+            </p>
+            <ul v-if="totpBackupCodes.length > 0" class="totp-backup-codes">
+                <li v-for="code in totpBackupCodes" :key="code">
+                    {{ code }}
+                </li>
+            </ul>
+            
+            <div class="error" v-if="generateTotpBackupCodesError">{{ generateTotpBackupCodesError }}</div>
+        </wiser-dialog>
     </div>
 </div>
 
@@ -678,7 +693,7 @@
                 <span>U heeft een ongeldig subdomein gebruikt. Controleer a.u.b. het subdomein of neem contact op met ons.</span>
             </section>
 
-            <div v-if="validSubDomain && loginStatus !== 'list' && loginStatus !== 'list_loading' && !showForgotPasswordScreen && !requirePasswordChange">
+            <div v-if="validSubDomain && loginStatus !== 'list' && loginStatus !== 'list_loading' && loginStatus !== 'totp' && loginStatus !== 'totp_loading' && loginStatus !== 'totp_error' && !showForgotPasswordScreen && !requirePasswordChange">
                 <div class="form-row">
                     <input type="text" id="username" placeholder="Gebruikersnaam" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="loginForm.username" required>
                 </div>
@@ -699,10 +714,32 @@
                 <div class="btn-row">
                     <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'loading' }">Inloggen</button>
 
-                    <a href="#" v-on:click="togglePasswordForgottenScreen(true)" id="forgotten-password">Wachtwoord vergeten?</a>
+                    <a href="#" @@click="togglePasswordForgottenScreen(true)" id="forgotten-password">Wachtwoord vergeten?</a>
                 </div>
             </div>
-            <div v-if="loginStatus === 'list' || loginStatus === 'list_loading' && !showForgotPasswordScreen">
+            <div v-if="(loginStatus === 'totp' || loginStatus === 'totp_loading' || loginStatus === 'totp_error') && !showForgotPasswordScreen" class="totp">
+                <p v-if="totpQrImageUrl">Scan de QR-code in uw authenticator-app en vul daarna de code in.</p>
+                <p v-else-if="showTotpBackupCodeScreen">Vul hier een van uw backup-codes in.</p>
+                <p v-else>Vul de code in van uw authenticator app.</p>
+
+                <div class="form-row" v-if="totpQrImageUrl"> 
+                    <img :src="totpQrImageUrl" alt="2FA Setup QR" />
+                </div>
+                <div v-if="showTotpBackupCodeScreen" class="form-row"> 
+                    <input type="text" name="totpBackupCode" v-model="loginForm.totpBackupCode" />
+                </div>
+                <div v-else class="form-row"> 
+                    <input type="text" name="totpPin" v-model="loginForm.totpPin" />
+                </div>
+                
+                <a v-if="!totpQrImageUrl && !showTotpBackupCodeScreen && !user.adminLogin" href="#" @@click="toggleTotpBackupCodeScreen(true)" id="totpBackupCode">Inloggen via backup-code?</a>
+
+                <div class="btn-row">
+                    <a href="#" class="btn btn-secundary" @@click="logout()">Annuleren</a>
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'totp_loading' }">Verder</button>
+                </div>
+            </div>
+            <div v-if="(loginStatus === 'list' || loginStatus === 'list_loading') && !showForgotPasswordScreen">
                 <p>Kies de gebruiker waarmee u wilt inloggen</p>
 
                 <div class="form-row"> 
@@ -738,8 +775,6 @@
                 <div class="form-row">
                     <input type="password" id="newPasswordRepeat" name="newPasswordRepeat" class="loginField passwordField" placeholder="Nogmaals uw nieuwe wachtwoord" v-model="changePasswordForm.newPasswordRepeat" />
                 </div>
-
-                <div class="error"></div>
 
                 <div class="btn-row">
                     <button id="submitPasswordChange" type="submit" :class="{ btn: true, 'btn-primary': true }">Wijzigen</button>
@@ -938,4 +973,4 @@
 }
 </script>
 
-<script type="module" src="/scripts/main.min.js"></script>
+<script src="@await WebPackService.GetManifestFileAsync("main.js")"></script>

@@ -19,5 +19,15 @@
         /// The key for indicating whether or not someone is logging in via a test environment.
         /// </summary>
         public const string IsTestEnvironmentKey = "isTestEnvironment";
+
+        /// <summary>
+        /// The key for the TOTP PIN that the user needs to enter when 2FA is enabled.
+        /// </summary>
+        public const string TotpPinKey = "totpPin";
+
+        /// <summary>
+        /// The key for the TOTP backup code that the user needs to enter when 2FA is enabled and they lost access to their authenticator app.
+        /// </summary>
+        public const string TotpBackupCodeKey = "totpBackupCode";
     }
 }

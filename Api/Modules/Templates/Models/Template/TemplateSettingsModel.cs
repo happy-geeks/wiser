@@ -46,6 +46,7 @@ namespace Api.Modules.Templates.Models.Template
         public bool IsDefaultHeader { get; set; }
         public bool IsDefaultFooter { get; set; }
         public string DefaultHeaderFooterRegex { get; set; }
+        public bool IsPartial { get; set; }
 
         // Css/Scss/Js settings.
         public ResourceInsertModes InsertMode { get; set; }

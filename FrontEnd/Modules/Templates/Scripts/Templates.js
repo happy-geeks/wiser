@@ -72,11 +72,12 @@ const moduleSettings = {
                 "JS": 4,
                 "SCRIPTS": 4,
                 "QUERY": 5,
+                "SQL": 5,
                 "NORMAL": 6,
                 "DIRECTORY": 7,
                 "XML": 8,
-                "AIS": 8,
-                "SERVICES": 8,
+                "AIS": 8, // Legacy AIS
+                "SERVICES": 8, // WTS
                 "ROUTINES": 9,
                 "VIEWS": 10,
                 "TRIGGERS": 11
@@ -181,6 +182,12 @@ const moduleSettings = {
             
             // Start the Pusher connection.
             await this.connectedUsers.init();
+            
+            // If we have a template ID in the query string, load that template immediately.
+            if (this.settings.templateId) {
+                await this.loadTemplate(this.settings.templateId);
+                this.selectedId = this.settings.templateId;
+            }
 
             window.processing.removeProcess(process);
         }
@@ -235,6 +242,10 @@ const moduleSettings = {
                     }
                 }
             }).data("kendoTabStrip");
+
+            if (!this.treeViewTabStrip) {
+                return;
+            }
 
             // Load the tabs via the API.
             this.treeViewTabs = await Wiser.api({
@@ -773,7 +784,9 @@ const moduleSettings = {
                     }).then(async (response) =>  {
                         document.getElementById("developmentTab").innerHTML = response;
                         await this.initKendoDeploymentTab();
+                        this.updateAlwaysLoadAndUrlRegexAvailability();
                         this.bindDeployButtons(id);
+                        this.bindDevelopmentTabEvents();
                     })
                 );
 
@@ -810,21 +823,9 @@ const moduleSettings = {
 
                 // Only load dynamic content and previews for HTML templates.
                 const isHtmlTemplate = this.templateSettings.type.toUpperCase() === "HTML";
+
                 // Database elements (views, routines and templates) disable some functionality that do not apply to these functions.
-                const isDatabaseElementTemplate = ["VIEW", "ROUTINE", "TRIGGER"].includes(this.templateSettings.type.toUpperCase());
-
-                if (isDatabaseElementTemplate) {
-                    // Disable and hide the "save and deploy to test" button.
-                    const saveAndDeployToTestButton = document.getElementById("saveAndDeployToTestButton");
-                    $(saveAndDeployToTestButton).getKendoButton().enable(false);
-                    saveAndDeployToTestButton.classList.add("hidden");
-
-                    // Published environments are not available for database elements.
-                    const publishedEnvironments = document.getElementById("published-environments");
-                    publishedEnvironments.querySelectorAll(".version-live, .version-accept, .version-test").forEach((element) => {
-                        element.classList.add("hidden");
-                    });
-                }
+                this.toggleElementsForDatabaseTemplates(this.templateSettings.type);
 
                 if (isVirtualTemplate) {
                     // History tab is not available for virtual items.
@@ -1015,6 +1016,26 @@ const moduleSettings = {
                 kendo.alert(`Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.<br>${exception.responseText || exception}`);
                 window.processing.removeProcess(process);
             }
+        }
+
+        /**
+         * Database elements (views, routines and templates) disable some functionality that do not apply to these functions.
+         * @param {string} templateType The type of template that is opened.
+         */
+        toggleElementsForDatabaseTemplates(templateType = "") {
+            const isDatabaseElementTemplate = ["VIEW", "ROUTINE", "TRIGGER"].includes(templateType.toUpperCase());
+
+            if (!isDatabaseElementTemplate) {
+                return;
+            }
+            
+            const saveAndDeployToTestButton = document.getElementById("saveAndDeployToTestButton");
+            $(saveAndDeployToTestButton).getKendoButton().enable(false);
+            saveAndDeployToTestButton.classList.add("hidden");
+            const publishedEnvironments = document.getElementById("published-environments");
+            publishedEnvironments.querySelectorAll(".version-accept, .version-test").forEach((element) => {
+                element.classList.add("hidden");
+            });
         }
 
         /**
@@ -1850,7 +1871,10 @@ const moduleSettings = {
                 }
             });
 
-            document.getElementById("searchForm").addEventListener("submit", this.onSearchFormSubmit.bind(this));
+            const searchForm = document.getElementById("searchForm");
+            if (searchForm) {
+                searchForm.addEventListener("submit", this.onSearchFormSubmit.bind(this));
+            }
 
             $(".window-content #left-pane div.k-content").on("dragover", (event) => {
                 event.preventDefault();
@@ -1865,7 +1889,19 @@ const moduleSettings = {
                 });
             });
         }
-        
+
+        /**
+         * Binds events for inputs on the development tab.
+         */
+        bindDevelopmentTabEvents() {
+            const alwaysLoadCheckbox = document.getElementById("loadAlways");
+            const urlRegexInput = document.getElementById("urlRegex");
+            if (alwaysLoadCheckbox && urlRegexInput) {
+                alwaysLoadCheckbox.addEventListener("change", this.updateAlwaysLoadAndUrlRegexAvailability.bind(this));
+                urlRegexInput.addEventListener("input", this.updateAlwaysLoadAndUrlRegexAvailability.bind(this));
+            }
+        }
+
         bindDeploymentTabEvents() {
             document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
             document.getElementById("saveAndDeployToTestButton").addEventListener("click", this.saveTemplate.bind(this, true));
@@ -2279,6 +2315,9 @@ const moduleSettings = {
             }
 
             this.bindDeploymentTabEvents();
+            
+            // Database elements (views, routines and templates) disable some functionality that do not apply to these functions.
+            this.toggleElementsForDatabaseTemplates(this.templateSettings.type);
         }
 
         /**
@@ -2448,6 +2487,27 @@ const moduleSettings = {
             const initialData = JSON.stringify(this.initialTemplateSettings);
             const currentData = JSON.stringify(this.getCurrentTemplateSettings());
             return initialData === currentData;
+        }
+
+        /**
+         * The "always load" checkbox and the "URL regex" input cannot be used at the same time.
+         * If one input is used, the other is disabled.
+         */
+        updateAlwaysLoadAndUrlRegexAvailability() {
+            const alwaysLoadCheckbox = document.getElementById("loadAlways");
+            const urlRegexInput = document.getElementById("urlRegex");
+            if (!alwaysLoadCheckbox || !urlRegexInput) {
+                return;
+            }
+
+            // URL regex input is disabled if the "always load" checkbox is checked.
+            urlRegexInput.disabled = alwaysLoadCheckbox.checked;
+            urlRegexInput.readOnly = alwaysLoadCheckbox.checked;
+
+            // The "always load" checkbox is disabled if the "URL regex" input has a value.
+            const urlRegexHasValue = urlRegexInput.value !== "";
+            alwaysLoadCheckbox.disabled = urlRegexHasValue;
+            alwaysLoadCheckbox.readOnly = urlRegexHasValue;
         }
     }
 

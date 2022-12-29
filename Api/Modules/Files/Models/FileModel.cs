@@ -1,4 +1,6 @@
-﻿namespace Api.Modules.Files.Models
+﻿using Newtonsoft.Json.Linq;
+
+namespace Api.Modules.Files.Models
 {
     /// <summary>
     /// A model for a Wiser file.
@@ -54,5 +56,10 @@
         /// Gets or sets the type of the corresponding link, if this is a file saved on a link.
         /// </summary>
         public int LinkType { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the object for storing extra data, such as alt texts in multiple languages for images.
+        /// </summary>
+        public FileExtraDataModel ExtraData { get; set; }
     }
 }
