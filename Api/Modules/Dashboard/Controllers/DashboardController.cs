@@ -58,12 +58,7 @@ public class DashboardController : ControllerBase
         return (await dashboardService.GetAisServicesAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
     }
 
-    /// <summary>
-    /// Pauses a service asynchronous
-    /// </summary>
-    /// <param name="id">The ID of the service that will be paused</param>
-    /// <param name="state">The state of the service that will be paused</param>
-    /// <returns></returns>
+
     [HttpPut, Route("services/{id:int}/pause/{state:bool}")]
     public async Task<IActionResult> PauseServiceAsync(int id, bool state)
     {
