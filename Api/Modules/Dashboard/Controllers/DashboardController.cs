@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Modules.Dashboard.Enums;
 using Api.Modules.Dashboard.Interfaces;
 using Api.Modules.Dashboard.Models;
 using GeeksCoreLibrary.Modules.WiserDashboard.Models;
@@ -59,7 +60,16 @@ public class DashboardController : ControllerBase
     }
 
 
-    [HttpPut, Route("services/{id:int}/pause/{state:bool}")]
+    /// <summary>
+    /// Pause or unpause a service from the WTS.
+    /// </summary>
+    /// <param name="id">The ID of the service to change the state of.</param>
+    /// <param name="state">The state to set. True to pause, false to unpause.</param>
+    /// <returns></returns>
+    [HttpPut]
+    [Route("services/{id:int}/pause/{state:bool}")]
+    [ProducesResponseType(typeof(ServicePauseStates), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ServicePauseStates), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> PauseServiceAsync(int id, bool state)
     {
         return (await dashboardService.SetAisServicePauseStateAsync((ClaimsIdentity) User.Identity, id, state)).GetHttpResponseMessage();
