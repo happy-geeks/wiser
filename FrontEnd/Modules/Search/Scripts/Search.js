@@ -119,8 +119,8 @@ const moduleSettings = {
                     },
                     {
                         template: (dataItem) => {
-                            const entityType = this.allEntityTypes.find(x => x.id === dataItem.entitytype) || {};
-                            return `<strong>${dataItem.title}</strong><br><small>${entityType.displayName || dataItem.entitytype}</small>`;
+                            const entityType = this.allEntityTypes.find(x => x.id === (dataItem.entityType || dataItem.entitytype)) || {};
+                            return `<strong>${dataItem.title}</strong><br><small>${entityType.displayName || dataItem.entityType || dataItem.entitytype}</small>`;
                         },
                         field: "title",
                         title: "Titel",
@@ -414,7 +414,7 @@ const moduleSettings = {
          */
         onShowDetailsClick(event) {
             const dataItem = this.resultsGrid.dataItem($(event.currentTarget).closest("tr"));
-            this.openDynamicItem(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid, dataItem.moduleId || dataItem.moduleid || dataItem.moduleId, dataItem.entitytype);
+            this.openDynamicItem(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid, dataItem.moduleId || dataItem.moduleid || dataItem.moduleId, dataItem.entityType || dataItem.entitytype);
         }
     }
 
