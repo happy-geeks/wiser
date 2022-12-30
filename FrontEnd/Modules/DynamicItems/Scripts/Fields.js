@@ -477,7 +477,7 @@ export class Fields {
                             break;
                     }
 
-                    const fieldContainer = container.closest(".k-tabstrip-wrapper").find(`[data-property-id='${dependency.propertyId}'].item`).toggle(showElement);
+                    const fieldContainer = container.closest(".k-tabstrip").find(`[data-property-id='${dependency.propertyId}'].item`).toggle(showElement);
                     const tabContainer = fieldContainer.closest(".k-content");
                     const allFields = tabContainer.find(".item");
                     const visibleFields = allFields.filter(index => allFields[index].style.display !== "none");
@@ -784,8 +784,9 @@ export class Fields {
      * @param {number} propertyId The ID of the property / field.
      * @param {any} actionDetails The details of the clicked action.
      * @param {any} event The click event.
+     * @param {string} entityType The entity type of the item that contains the grid.
      */
-    async onSubEntitiesGridToolbarActionClick(gridSelector, itemId, propertyId, actionDetails, event) {
+    async onSubEntitiesGridToolbarActionClick(gridSelector, itemId, propertyId, actionDetails, event, entityType) {
         event.preventDefault();
 
         // Get the grid and the selected data items.
@@ -828,7 +829,7 @@ export class Fields {
         }
 
         // Get the item details so that those values can be used as variables in a string.
-        const itemDetails = !itemId ? { encryptedId: this.base.settings.zeroEncrypted } : (await this.base.getItemDetails(itemId));
+        const itemDetails = !itemId ? { encryptedId: this.base.settings.zeroEncrypted } : (await this.base.getItemDetails(itemId, entityType));
 
         const userParametersWithValues = {};
         const success = await this.executeActionButtonActions(actionDetails.actions, userParametersWithValues, itemDetails, propertyId, selectedItems, senderGrid.element);
@@ -1054,6 +1055,42 @@ export class Fields {
             // Set the initial values from the query.
             dialogElement.find("input[name=fileName]").val(data.fileName);
             dialogElement.find("input[name=title]").val(data.title);
+
+            data.extraData = data.extraData || {};
+            data.extraData.AltTexts = data.extraData.AltTexts || {};
+            dialogElement.find(".alt-text").remove();
+            const altTextTemplateElement = dialogElement.find(".alt-text-template");
+            if (!this.base.allLanguages || !this.base.allLanguages.length) {
+                const clone = altTextTemplateElement.clone(true);
+                clone.removeClass("hidden").removeClass("alt-text-template").addClass("alt-text");
+                
+                const cloneLabel = clone.find("label");
+                cloneLabel.attr("for", `${cloneLabel.attr("for")}General`);
+                
+                const cloneInput = clone.find("input");
+                cloneInput.attr("name", "altText_general");
+                cloneInput.attr("id", `${cloneInput.attr("id")}General`);
+                cloneInput.data("language", "general");
+                cloneInput.val(data.extraData.AltTexts.general || "");
+                dialogElement.find(".formview").append(clone);
+            } else {
+                for (let language of this.base.allLanguages) {
+                    const languageCode = language.code.toLowerCase();
+                    const clone = altTextTemplateElement.clone(true);
+                    clone.removeClass("hidden").removeClass("alt-text-template").addClass("alt-text");
+
+                    const cloneLabel = clone.find("label");
+                    cloneLabel.attr("for", `${cloneLabel.attr("for")}${languageCode}`);
+                    cloneLabel.find(".language").text(language.name);
+
+                    const cloneInput = clone.find("input");
+                    cloneInput.attr("name", `altText_${language.code}`);
+                    cloneInput.attr("id", `${cloneInput.attr("id")}${languageCode}`);
+                    cloneInput.attr("data-language", languageCode);
+                    cloneInput.val(data.extraData.AltTexts[languageCode] || "");
+                    dialogElement.find(".formview").append(clone);
+                }
+            }
             
             if (changeImageDataDialog) {
                 changeImageDataDialog.destroy();
@@ -1072,9 +1109,20 @@ export class Fields {
                         text: "Opslaan",
                         primary: true,
                         action: (event) => {
+                            const process = `updateFile_${Date.now()}`;
+                            window.processing.addProcess(process);
+
                             try {
                                 const newFileName = dialogElement.find("input[name=fileName]").val();
                                 const newTitle = dialogElement.find("input[name=title]").val();
+                                const extraData = $.extend(true, {}, data.extraData);
+                                extraData.AltTexts = {};
+                                dialogElement.find(".alt-text input").each((index, element) => {
+                                    const input = $(element);
+                                    extraData.AltTexts[input.data("language").toLowerCase()] = input.val();
+                                });
+
+                                imageContainer.data("extraData", extraData);
 
                                 const promises = [
                                     Wiser.api({
@@ -1084,12 +1132,22 @@ export class Fields {
                                         dataType: "JSON"
                                     }),
                                     Wiser.api({
+                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/extra-data/?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
+                                        method: "PUT",
+                                        contentType: "application/json",
+                                        dataType: "JSON",
+                                        data: JSON.stringify(extraData)
+                                    })
+                                ];
+
+                                if (newTitle) {
+                                    promises.push(Wiser.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/title/${encodeURIComponent(newTitle)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                                         method: "PUT",
                                         contentType: "application/json",
                                         dataType: "JSON"
-                                    })
-                                ];
+                                    }));
+                                }
 
                                 Promise.all(promises).then(() => {
                                     imageContainer.data("fileName", newFileName);
@@ -1099,10 +1157,13 @@ export class Fields {
                                 }).catch((error) => {
                                     console.error(error);
                                     kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                                }).finally(() => {
+                                    window.processing.removeProcess(process);
                                 });
                             } catch (exception) {
                                 console.error(exception);
                                 kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                                window.processing.removeProcess(process);
                             }
                         }
                     }
@@ -2213,7 +2274,7 @@ export class Fields {
                             contentType: "application/json",
                             data: JSON.stringify({
                                 userId: userId,
-                                channel: action.channel || "",
+                                channel: action.channel || "agendering",
                                 eventData: eventData || ""
                             })
                         });
@@ -2545,8 +2606,11 @@ export class Fields {
 
                                                 const loader = mailDialog.element.find(".popup-loader").addClass("loading");
                                                 let documentOptions = "";
-                                                if (currentAction.pdfDocumentOptionsPropertyName) {
-                                                    documentOptions = currentTemplateDetails.property_[currentAction.pdfDocumentOptionsPropertyName] || "";
+                                                if (currentTemplateDetails.details && currentTemplateDetails.details.length > 0) {
+                                                    if (currentAction.pdfDocumentOptionsPropertyName) {
+                                                        const documentOptionsDetail = currentTemplateDetails.details.find(detail => detail.key === currentAction.pdfDocumentOptionsPropertyName);
+                                                        documentOptions = documentOptionsDetail ? (documentOptionsDetail.value || "") : "";
+                                                    }
                                                 }
 
                                                 // We cant use await here, because for some reason the event does not get fired anymore if we make this method async.

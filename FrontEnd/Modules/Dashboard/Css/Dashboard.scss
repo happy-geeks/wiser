@@ -4,6 +4,9 @@
 //// MIXINS
 @import '../../../Core/Scss/mixin/mixin';
 
+//// BASE
+@import "../../Base/scss/base.scss";
+
 /**
  *  Common styles
  **/
@@ -20,7 +23,6 @@
     list-style: none;
     outline: 0;
     resize: none;
-    position: relative;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
 }
@@ -30,7 +32,6 @@ html {
     min-height: 100%;
     width: 100%;
 }
-
 body {
     background-color: $body-color;
     color: $text-color;
@@ -64,6 +65,22 @@ ins, a {
 
 #fullForm {
     display: block;
+    z-index: 20;
+}
+
+.k-list {
+    overflow-y: auto;
+    
+    ul {
+        li {
+            cursor: pointer;
+            padding: 0 8px;
+            
+            &:hover {
+                background-color: var(--light-color);
+            }
+        }
+    }
 }
 
 /**
@@ -82,21 +99,54 @@ ins, a {
         .formview {
             display: flex;
             flex-direction: row;
+            flex-wrap: nowrap;
+            
+            &.full {
+                .item {
+                    width: auto;
+                    min-width: auto;
+                    max-width: none;
+                    
+                    &.drop-down {
+                        min-width: 25%;
+                    }
+                }
+            }
         }
-
-        .item {
+        
+       .item {
+            background-color: $white-color;
+            padding: 0;
             padding-right: 10px;
 
             .flex-container {
-                display: flex;
-                align-items: center;
-
+                display: flex;                
+                
                 label {
                     font-size: 14px;
                     font-weight: 500;
                     white-space: nowrap;
-                    margin-right: 12px;
+                    margin: 5px 12px 5px 0;
+                    position: relative;
+                    left: auto;
+                    transform: none;
+                    text-overflow: unset;
+                    top: auto;
+                    overflow: unset;
                 }
+                
+                > .k-dropdownlist {
+                    display: flex;
+
+                    .k-input-inner {
+                        padding: 4px 8px;
+                        flex-grow: 1;
+                    }
+                }
+                
+                .k-button {
+                    padding: 0;
+                } 
             }
 
             &.actions {
@@ -120,12 +170,20 @@ ins, a {
                     }
                 }
             }
-        }
-
-        .k-daterangepicker {
-            display: flex;
-            gap: 8px;
-            padding: 0 15px;
+            
+            .k-floating-label-container {
+                flex-direction: row-reverse;
+                flex-wrap: nowrap;
+                align-items: center;
+                padding: 0;
+            }
+           
+           .k-picker {
+               margin: 0;
+           }
+           .k-input-inner[type=text] {
+               border: 0;
+           }
         }
 
         .k-textbox-container {
@@ -245,6 +303,10 @@ ins, a {
 /**
  *  Tiles
  **/
+.k-widget.k-tilelayout {
+    background: transparent;
+}
+
 .k-tilelayout-item {
     @include tile-shadow($black-color, 0.05);
     border-color: $white-color;
@@ -271,18 +333,31 @@ ins, a {
         box-sizing: border-box;
     }
 
-    .k-close-button {
+    .k-close-button,
+    .k-refresh-button {
         background-color: $white-color;
         box-shadow: none;
         font-size: 14px;
         line-height: 1.42857143;
         position: absolute;
-        right: 0;
         top: auto;
         bottom: 100%;
         margin: 5px;
         padding: 4px;
         z-index: 10;
+    }
+    
+    .k-close-button {
+        right: 0;
+    }
+    
+    .k-refresh-button {
+        right: 47px;
+
+        .k-i-refresh:before {
+            font-size: 14px;
+            content: "\e103";
+        }
     }
 
     .k-button-icon {
@@ -590,10 +665,11 @@ progress {
                 height: 24px;
                 width: 24px;
                 opacity: 1;
+            }
 
-                .inactive-action {
-                    opacity: 0.5;
-                }
+            .wiser-icon {
+                height: 20px;
+                font-size: 20px;
             }
         }
     }

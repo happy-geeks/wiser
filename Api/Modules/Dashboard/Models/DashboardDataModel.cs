@@ -4,6 +4,9 @@ using Api.Modules.EntityTypes.Models;
 
 namespace Api.Modules.Dashboard.Models;
 
+/// <summary>
+/// This class describes an object for Data in an Dashboard
+/// </summary>
 public class DashboardDataModel
 {
     /// <summary>

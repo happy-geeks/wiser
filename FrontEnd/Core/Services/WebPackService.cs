@@ -4,6 +4,7 @@ using System.IO;
 using FrontEnd.Core.Interfaces;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 
 namespace FrontEnd.Core.Services;
@@ -37,8 +38,14 @@ public class WebPackService : IWebPackService
     }
 
     /// <inheritdoc />
-    public string GetManifestFile(string fileName)
+    public async Task<string> GetManifestFileAsync(string fileName)
     {
+        if (webHostEnvironment.IsDevelopment())
+        {
+            // On development, always reload the manifest, so that we don't have to rebuild to test every javascript change.
+            await InitializeAsync();
+        }
+
         return Manifest[fileName];
     }
 }

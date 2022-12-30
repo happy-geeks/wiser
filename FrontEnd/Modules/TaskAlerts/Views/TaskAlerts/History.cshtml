@@ -31,8 +31,8 @@
         </div>
     </div>
 
-    <script src="@WebPackService.GetManifestFile("Utils.js")"></script>
-    <script src="@WebPackService.GetManifestFile("Base.js")"></script>
-    <script src="@WebPackService.GetManifestFile("TaskHistory.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
+    <script src="@await WebPackService.GetManifestFileAsync("TaskHistory.js")"></script>
 </body>
 </html>

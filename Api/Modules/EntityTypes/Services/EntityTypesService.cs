@@ -16,6 +16,7 @@ using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using MySql.Data.MySqlClient;
 
 namespace Api.Modules.EntityTypes.Services
 {
@@ -199,7 +200,8 @@ GROUP BY entity_type";
                 EnableMultipleEnvironments = Convert.ToBoolean(dataRow["enable_multiple_environments"]),
                 IconExpanded = dataRow.Field<string>("icon_expanded"),
                 DedicatedTablePrefix = dataRow.Field<string>("dedicated_table_prefix"),
-                DeleteAction = deleteAction
+                DeleteAction = deleteAction,
+                ShowInDashboard = Convert.ToBoolean(dataRow["show_in_dashboard"])
             };
 
             return new ServiceResult<EntitySettingsModel>(result);
@@ -253,11 +255,27 @@ GROUP BY entity_type";
         /// <inheritdoc />
         public async Task<ServiceResult<long>> CreateAsync(ClaimsIdentity identity, string name, int moduleId = 0)
         {
-            // Empty string is allowed, so a root entity can be created for a module.
-            clientDatabaseConnection.AddParameter("name", name ?? String.Empty);
-            clientDatabaseConnection.AddParameter("moduleId", moduleId);
-            var result = await clientDatabaseConnection.InsertRecordAsync($"INSERT INTO {WiserTableNames.WiserEntity} (name, module_id) VALUES (?name, ?moduleId)");
-            return new ServiceResult<long>(result);
+            try
+            {
+                // Empty string is allowed, so a root entity can be created for a module.
+                clientDatabaseConnection.AddParameter("name", name ?? String.Empty);
+                clientDatabaseConnection.AddParameter("moduleId", moduleId);
+                var result = await clientDatabaseConnection.InsertRecordAsync($"INSERT INTO {WiserTableNames.WiserEntity} (name, module_id) VALUES (?name, ?moduleId)");
+                return new ServiceResult<long>(result);
+            }
+            catch (MySqlException mySqlException)
+            {
+                if (mySqlException.Number == (int)MySqlErrorCode.DuplicateKeyEntry)
+                {
+                    return new ServiceResult<long>
+                    {
+                        StatusCode = HttpStatusCode.Conflict,
+                        ErrorMessage = $"An entry already exists with {nameof(name)} = '{name}', {nameof(moduleId)} = '{moduleId}'"
+                    };
+                }
+
+                throw;
+            }
         }
 
         /// <inheritdoc />
@@ -379,7 +397,33 @@ WHERE FIND_IN_SET(?previousName, accepted_childtypes)";
             clientDatabaseConnection.AddParameter("icon_expanded", settings.IconExpanded);
             clientDatabaseConnection.AddParameter("dedicated_table_prefix", settings.DedicatedTablePrefix);
             clientDatabaseConnection.AddParameter("delete_action", deleteAction);
+            clientDatabaseConnection.AddParameter("show_in_dashboard", settings.ShowInDashboard);
             await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserEntity, id);
+
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id)
+        {
+            if (id <= 0)
+            {
+                throw new ArgumentException("Id must be greater than 0.", nameof(id));
+            }
+
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.AddParameter("id", id);
+
+            // Delete all properties/fields of the entity and then the entity itself.
+            var query = $@"DELETE property.* 
+FROM {WiserTableNames.WiserEntity} AS entity
+JOIN {WiserTableNames.WiserEntityProperty} AS property ON property.entity_name = entity.name AND property.module_id IN (0, entity.module_id)
+WHERE entity.id = ?id;
+DELETE FROM {WiserTableNames.WiserEntity} WHERE id = ?id;";
+            await clientDatabaseConnection.ExecuteAsync(query);
 
             return new ServiceResult<bool>(true)
             {

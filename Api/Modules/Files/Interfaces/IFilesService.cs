@@ -96,6 +96,18 @@ namespace Api.Modules.Files.Interfaces
         Task<ServiceResult<bool>> UpdateTitleAsync(string encryptedItemId, int fileId, string newTitle, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0);
 
         /// <summary>
+        /// Update the extra data of a file. This is data such as alt texts for different languages.
+        /// </summary>
+        /// <param name="encryptedItemId">The encrypted ID of the item the file is linked to.</param>
+        /// <param name="fileId">The ID of the file.</param>
+        /// <param name="extraData">The new information of the file.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
+        /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
+        /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
+        Task<ServiceResult<bool>> UpdateExtraDataAsync(string encryptedItemId, int fileId, FileExtraDataModel extraData, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0);
+
+        /// <summary>
         /// Adds an URL to an external file.
         /// </summary>
         /// <param name="encryptedItemId">The encrypted ID of the item the file is linked to.</param>

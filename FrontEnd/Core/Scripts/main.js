@@ -2,7 +2,7 @@
 
 import {TrackJS} from "trackjs";
 import {createApp, defineAsyncComponent} from "vue";
-import * as axios from "axios";
+import axios from "axios";
 
 import UsersService from "./shared/users.service";
 import ModulesService from "./shared/modules.service";
@@ -42,9 +42,12 @@ import {
     TOGGLE_PIN_MODULE,
     CLEAR_CACHE,
     CLEAR_CACHE_ERROR,
-    START_UPDATE_TIME_ACTIVE_TIMER,
     STOP_UPDATE_TIME_ACTIVE_TIMER,
-    UPDATE_ACTIVE_TIME
+    UPDATE_ACTIVE_TIME,
+    GENERATE_TOTP_BACKUP_CODES,
+    CLEAR_LOCAL_TOTP_BACKUP_CODES,
+    USER_BACKUP_CODES_GENERATED,
+    MODULES_REQUEST
 } from "./store/mutation-types";
 import CacheService from "./shared/cache.service";
 
@@ -200,7 +203,7 @@ import CacheService from "./shared/cache.service";
                         }
                     };
                 },
-                created() {
+                async created() {
                     this.$store.dispatch(GET_CUSTOMER_TITLE, this.appSettings.subDomain);
                     document.addEventListener("keydown", this.onAppKeyDown.bind(this));
                 },
@@ -382,6 +385,12 @@ import CacheService from "./shared/cache.service";
                         }
 
                         return url;
+                    },
+                    generateTotpBackupCodesError() {
+                        return this.$store.state.users.generateTotpBackupCodesError;
+                    },
+                    totpBackupCodes() {
+                        return this.$store.state.users.totpBackupCodes;
                     }
                 },
                 components: {
@@ -390,6 +399,15 @@ import CacheService from "./shared/cache.service";
                     "customerManagement": defineAsyncComponent(() => import(/* webpackChunkName: "customer-management" */"./components/customer-management")),
                     "login": login,
                     "taskAlerts": taskAlerts
+                },
+                watch: {
+                    async loginStatus(newValue, oldValue) {
+                        if (oldValue !== newValue && newValue === "success" && this.user.totpFirstTime && this.user.totpEnabled && !this.user.adminLogin) {
+                            // If the user just finished setting up TOTP (2FA) authentication, then immediately generate backup codes for them.
+                            this.openGenerateTotpBackupCodesPrompt();
+                            await this.generateNewTotpBackupCodes();
+                        }
+                    }
                 },
                 methods: {
                     onAppKeyDown(event) {
@@ -457,12 +475,16 @@ import CacheService from "./shared/cache.service";
                         this.$refs.generalMessagePrompt.open();
                     },
 
-                    logout() {
+                    async logout(event) {
+                        if (event) {
+                            event.preventDefault();
+                        }
+                        
                         this.$store.dispatch(STOP_UPDATE_TIME_ACTIVE_TIMER);
                         // Update the user's active time one last time.
-                        this.$store.dispatch(UPDATE_ACTIVE_TIME);
+                        await this.$store.dispatch(UPDATE_ACTIVE_TIME);
                         this.$store.dispatch(CLOSE_ALL_MODULES);
-                        this.$store.dispatch(AUTH_LOGOUT);
+                        await this.$store.dispatch(AUTH_LOGOUT);
                     },
 
                     openModule(module) {
@@ -521,7 +543,8 @@ import CacheService from "./shared/cache.service";
                         });
                     },
 
-                    openWiserIdPrompt() {
+                    openWiserIdPrompt(event) {
+                        event.preventDefault();
                         this.$refs.wiserIdPrompt.open();
                     },
 
@@ -659,7 +682,7 @@ import CacheService from "./shared/cache.service";
                             return false;
                         }
 
-                        // Copy the conflicts to the merge settings, so that the AIS will know what to do with the conflicts.
+                        // Copy the conflicts to the merge settings, so that the WTS will know what to do with the conflicts.
                         if (this.mergeBranchResult && this.mergeBranchResult.conflicts) {
                             this.branchMergeSettings.conflicts = this.mergeBranchResult.conflicts;
                         }
@@ -763,6 +786,27 @@ import CacheService from "./shared/cache.service";
                         return true;
                     },
 
+                    openGenerateTotpBackupCodesPrompt(event) {
+                        if (event) {
+                            event.preventDefault();
+                        }
+                        this.$refs.generateTotpBackupCodesPrompt.open();
+                    },
+
+                    async generateNewTotpBackupCodes() {
+                        await this.$store.dispatch(GENERATE_TOTP_BACKUP_CODES);
+                        this.$store.dispatch(USER_BACKUP_CODES_GENERATED);
+                        return false;
+                    },
+                    
+                    async reloadModules() {
+                        await this.$store.dispatch(MODULES_REQUEST);
+                    },
+
+                    onGenerateTotpBackupCodesPromptClose(event) {
+                        this.$store.dispatch(CLEAR_LOCAL_TOTP_BACKUP_CODES);
+                    },
+
                     onOpenModuleClick(event, module) {
                         event.preventDefault();
                         this.openModule(module);
@@ -803,8 +847,7 @@ import CacheService from "./shared/cache.service";
                                 name: "Website"
                             };
 
-                            const extraUserData = await main.usersService.getLoggedInUserData();
-                            this.openBranchSettings.selectedBranch = this.branches.find(branch => branch.id === extraUserData.currentBranchId);
+                            this.openBranchSettings.selectedBranch = this.branches.find(branch => branch.id === this.user.currentBranchId);
                         }
                     },
                     

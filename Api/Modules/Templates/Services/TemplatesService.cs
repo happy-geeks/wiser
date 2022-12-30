@@ -585,33 +585,10 @@ WHERE id = @_linkId;");
                 TemplateQueryStrings.Add("GET_OPTIONS_FOR_DEPENDENCY", @"SELECT DISTINCT entity_name AS entityName, IF(tab_name = """", ""Gegevens"", tab_name) as tabName, display_name AS displayName, property_name AS propertyName FROM wiser_entityproperty
 WHERE entity_name = '{entityName}'");
 
-                TemplateQueryStrings.Add("GET_AIS_DASHBOARD_OVERVIEW_DATA", @"SET @totalResults = (SELECT COUNT(*) FROM `ais_dashboard` WHERE DATE(started) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND FIND_IN_SET(color, '{color}'));
-
-SELECT 
-	id,
-    taskname,
-    config,
-    friendlyname AS friendlyName,
-    DATE_FORMAT(started, '%Y-%m-%d') AS startedDate,
-    DATE_FORMAT(started, '%H:%i') AS startedTime,
-    SUBTIME(TIME(ended), TIME(started)) AS runtime,
-    IFNULL(percentage, 0) AS percentageCompleted,
-    IFNULL(result, '') AS result,
-    IFNULL(groupname, '') AS groupname,
-	color, 
-    counter,
-    IFNULL(debuginformation, '') AS debugInformation,
-    0 AS hasChildren,
-    @totalResults AS totalResults
-FROM `ais_dashboard`
-WHERE DATE(started) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) 
-AND FIND_IN_SET(color, '{color}')
-ORDER BY startedDate DESC, startedTime DESC
-LIMIT {skip}, {take}");
                 TemplateQueryStrings.Add("GET_ALL_INPUT_TYPES", @"SELECT DISTINCT inputtype FROM wiser_entityproperty ORDER BY inputtype");
                 TemplateQueryStrings.Add("DELETE_ENTITYPROPERTY", @"DELETE FROM wiser_entityproperty WHERE tab_name = '{tabName}' AND entity_name = '{entityName}' AND id = '{entityPropertyId}'");
                 TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_ADMIN", @"SELECT id, entity_name AS entityName, tab_name AS tabName, display_name AS displayName, ordering FROM wiser_entityproperty
-WHERE tab_name = '{tabName}' AND entity_name = '{entityName}'
+WHERE tab_name = IF('{tabName}' = 'Gegevens', '', '{tabName}') AND entity_name = '{entityName}'
 ORDER BY ordering ASC");
                 TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
 	entity.id,
@@ -2765,15 +2742,30 @@ LIMIT 1";
 
                 viewModel.Javascript.PageStandardJavascriptFileName = null;
                 
-                match = regex.Match(viewModel.Javascript.GeneralFooterJavascriptFileName ?? "");
+                match = regex.Match(viewModel.Javascript.GeneralAsyncFooterJavaScriptFileName ?? "");
                 if (match.Success)
                 {
                     var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
                     viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
                 }
 
-                viewModel.Javascript.GeneralFooterJavascriptFileName = null;
-                
+                viewModel.Javascript.GeneralAsyncFooterJavaScriptFileName = null;
+
+                if (viewModel.Javascript.GeneralSyncFooterJavaScriptFileName != null)
+                {
+                    foreach (var generalSyncFooterJavaScriptFileName in viewModel.Javascript.GeneralSyncFooterJavaScriptFileName)
+                    {
+                        match = regex.Match(generalSyncFooterJavaScriptFileName ?? "");
+                        if (match.Success)
+                        {
+                            var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
+                            viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
+                        }
+                    }
+
+                    viewModel.Javascript.GeneralSyncFooterJavaScriptFileName = null;
+                }
+
                 match = regex.Match(viewModel.Javascript.PageAsyncFooterJavascriptFileName ?? "");
                 if (match.Success)
                 {
@@ -3084,7 +3076,8 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     {
                         templateType = TemplateTypes.Query;
                     }
-                    else if (path.Contains("/ais/", StringComparison.OrdinalIgnoreCase))
+                    // Support legacy AIS
+                    else if (path.Contains("/ais/", StringComparison.OrdinalIgnoreCase) || path.Contains("/services/", StringComparison.OrdinalIgnoreCase))
                     {
                         templateType = TemplateTypes.Xml;
                     }
@@ -3313,60 +3306,6 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
 
         private static string ConvertDynamicComponentSettingsFromLegacyToNew(string legacyComponentName, string legacySettingsJson)
         {
-            string viewComponentName;
-            switch (legacyComponentName)
-            {
-                case "JuiceControlLibrary.MLSimpleMenu":
-                case "JuiceControlLibrary.SimpleMenu":
-                case "JuiceControlLibrary.ProductModule":
-                {
-                    viewComponentName = "Repeater";
-                    break;
-                }
-                case "JuiceControlLibrary.AccountWiser2":
-                {
-                    viewComponentName = "Account";
-                    break;
-                }
-                case "JuiceControlLibrary.ShoppingBasket":
-                {
-                    viewComponentName = "ShoppingBasket";
-                    break;
-                }
-                case "JuiceControlLibrary.WebPage":
-                {
-                    viewComponentName = "WebPage";
-                    break;
-                }
-                case "JuiceControlLibrary.Pagination":
-                {
-                    viewComponentName = "Pagination";
-                    break;
-                }
-                case "JuiceControlLibrary.DynamicFilter":
-                {
-                    viewComponentName = "Filter";
-                    break;
-                }
-                case "JuiceControlLibrary.Sendform":
-                {
-                    viewComponentName = "WebForm";
-                    break;
-                }
-                case "JuiceControlLibrary.Configurator":
-                {
-                    viewComponentName = "Configurator";
-                    break;
-                }
-                case "JuiceControlLibrary.DataSelectorParser":
-                {
-                    viewComponentName = "DataSelectorParser";
-                    break;
-                }
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(legacyComponentName), legacyComponentName);
-            }
-
             // TODO: The main CmsSettingsModel of every component should have a method "ToSettingsModel", which will convert the legacy settings to the new settings. Use that.
 
             return null;

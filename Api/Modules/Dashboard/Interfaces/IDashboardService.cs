@@ -27,11 +27,11 @@ public interface IDashboardService
     Task<ServiceResult<DashboardDataModel>> GetDataAsync(ClaimsIdentity identity, DateTime? periodFrom = null, DateTime? periodTo = null, int branchId = 0, bool forceRefresh = false);
 
     /// <summary>
-    /// Retrieves the latest state of the services managed by the AIS.
+    /// Retrieves the latest state of the services managed by the WTS.
     /// </summary>
     /// <param name="identity">The identity of the authenticated user.</param>
     /// <returns>A collection of <see cref="Service"/> objects.</returns>
-    Task<ServiceResult<List<Service>>> GetAisServicesAsync(ClaimsIdentity identity);
+    Task<ServiceResult<List<Service>>> GetWtsServicesAsync(ClaimsIdentity identity);
 
     /// <summary>
     /// Retrieves the logs from the given service.
@@ -39,7 +39,7 @@ public interface IDashboardService
     /// <param name="identity">The identity of the authenticated user.</param>
     /// <param name="id">The ID of the service to get the logs from.</param>
     /// <returns>A collection of logs.</returns>
-    Task<ServiceResult<List<ServiceLog>>> GetAisServiceLogsAsync(ClaimsIdentity identity, int id);
+    Task<ServiceResult<List<ServiceLog>>> GetWtsServiceLogsAsync(ClaimsIdentity identity, int id);
 
     /// <summary>
     /// Set the pause state of a service.
@@ -48,5 +48,14 @@ public interface IDashboardService
     /// <param name="id">The ID of the service to set the pause state of.</param>
     /// <param name="state">The pause state.</param>
     /// <returns>Returns the pause state based on the given action.</returns>
-    Task<ServiceResult<ServicePauseStates>> SetAisServicePauseStateAsync(ClaimsIdentity identity, int id, bool state);
+    Task<ServiceResult<ServicePauseStates>> SetWtsServicePauseStateAsync(ClaimsIdentity identity, int id, bool state);
+    
+    /// <summary>
+    /// Set the extra run state of a service.
+    /// </summary>
+    /// <param name="identity">The identity of the authenticated user.</param>
+    /// <param name="id">The ID of the service to set the extra run state of.</param>
+    /// <param name="state">The extra run state.</param>
+    /// <returns>Returns the extra run state based on the given action.</returns>
+    Task<ServiceResult<ServiceExtraRunStates>> SetWtsServiceExtraRunStateAsync(ClaimsIdentity identity, int id, bool state);
 }

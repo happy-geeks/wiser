@@ -1,5 +1,8 @@
 ﻿namespace Api.Core.Models;
 
+/// <summary>
+/// This class describes a Simple Key Value Model
+/// </summary>
 public class SimpleKeyValueModel
 {
     /// <summary>

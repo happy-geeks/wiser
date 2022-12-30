@@ -42,7 +42,8 @@ module.exports = {
         path: path.join(__dirname, "wwwroot/scripts"),
         filename: "[name].[contenthash].min.js",
         chunkFilename: "[name].[contenthash].min.js",
-        publicPath: "/scripts/"
+        publicPath: "/scripts/",
+        clean: true
     },
     plugins: [
         new NodePolyfillPlugin(),
