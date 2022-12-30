@@ -904,9 +904,16 @@
         </div>
     </script>
 
-    @* <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script> *@
-    @* <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script> *@
-    <script src="@await WebPackService.GetManifestFileAsync("DynamicItems.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("runtime.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("vendors.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("Processing.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("kendo-ui.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("DynamicItems.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("Fields.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("Dialogs.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("Windows.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("Grids.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("DragAndDrop.js")"></script>
 
     <!-- CONTEXT MENU FOR TREEVIEW -->
     <ul id="menu"></ul>
