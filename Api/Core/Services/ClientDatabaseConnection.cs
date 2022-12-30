@@ -28,6 +28,9 @@ namespace Api.Core.Services
     /// </summary>
     public class ClientDatabaseConnection : IDatabaseConnection, IScopedService
     {
+        /// <summary>
+        /// A connection object to the Wiser Database.
+        /// </summary>
         public readonly IDatabaseConnection WiserDatabaseConnection;
         private readonly ApiSettings apiSettings;
         private readonly IHttpContextAccessor httpContextAccessor;

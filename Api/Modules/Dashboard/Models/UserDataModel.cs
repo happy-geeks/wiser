@@ -2,6 +2,9 @@
 
 namespace Api.Modules.Dashboard.Models;
 
+/// <summary>
+/// This class describes an object that keeps login data about a user
+/// </summary>
 public class UserDataModel
 {
     /// <summary>

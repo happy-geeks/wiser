@@ -64,5 +64,12 @@ namespace Api.Modules.EntityTypes.Interfaces
         /// <param name="id">The ID of the entity type.</param>
         /// <param name="settings">The settings to save.</param>
         Task<ServiceResult<bool>> UpdateAsync(ClaimsIdentity identity, int id, EntitySettingsModel settings);
+
+        /// <summary>
+        /// Deletes an entity type. This will only delete the entity type itself, not any items that use this type.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="id">The ID of the entity type.</param>
+        Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id);
     }
 }

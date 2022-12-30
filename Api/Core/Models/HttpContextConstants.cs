@@ -1,5 +1,8 @@
 ﻿namespace Api.Core.Models
 {
+    /// <summary>
+    /// Class for Http Context Constants
+    /// </summary>
     public class HttpContextConstants
     {
         /// <summary>

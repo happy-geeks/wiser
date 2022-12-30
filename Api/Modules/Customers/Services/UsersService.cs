@@ -410,23 +410,6 @@ namespace Api.Modules.Customers.Services
                     
                     UPDATE {WiserTableNames.WiserLoginAttempts} SET attempts = 0, blocked = 0 WHERE username = ?username;";
             await clientDatabaseConnection.ExecuteAsync(query);
-
-            int languageId;
-            switch (resetPasswordRequestModel.LanguageCode.ToUpperInvariant())
-            {
-                case "NL":
-                    languageId = 3930;
-                    break;
-                case "EN":
-                    languageId = 3942;
-                    break;
-                case "DE":
-                    languageId = 3572;
-                    break;
-                default:
-                    languageId = 3930;
-                    break;
-            }
             
             var mailTemplate = (await templatesService.GetTemplateByNameAsync("Wachtwoord vergeten", true)).ModelObject;
             mailTemplate.Content = mailTemplate.Content.Replace("{username}", resetPasswordRequestModel.Username).Replace("{password}", password).Replace("{subdomain}", resetPasswordRequestModel.SubDomain);

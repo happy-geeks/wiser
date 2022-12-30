@@ -191,7 +191,6 @@ namespace Api.Modules.DataSelectors.Controllers
         /// <summary>
         /// Replaces data selectors in a string to preview them in an HTML editor.
         /// </summary>
-        /// <param name="html">The HTML to replace the data selectors in for previewing in HTML editor.</param>
         [HttpPost]
         [Route("preview-for-html-editor")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]

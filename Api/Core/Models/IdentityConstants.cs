@@ -1,5 +1,8 @@
 ﻿namespace Api.Core.Models
 {
+    /// <summary>
+    /// Class for the constants of an Identity
+    /// </summary>
     public class IdentityConstants
     {
         /// <summary>
