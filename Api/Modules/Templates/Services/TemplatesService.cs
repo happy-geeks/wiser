@@ -3306,60 +3306,6 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
 
         private static string ConvertDynamicComponentSettingsFromLegacyToNew(string legacyComponentName, string legacySettingsJson)
         {
-            string viewComponentName;
-            switch (legacyComponentName)
-            {
-                case "JuiceControlLibrary.MLSimpleMenu":
-                case "JuiceControlLibrary.SimpleMenu":
-                case "JuiceControlLibrary.ProductModule":
-                {
-                    viewComponentName = "Repeater";
-                    break;
-                }
-                case "JuiceControlLibrary.AccountWiser2":
-                {
-                    viewComponentName = "Account";
-                    break;
-                }
-                case "JuiceControlLibrary.ShoppingBasket":
-                {
-                    viewComponentName = "ShoppingBasket";
-                    break;
-                }
-                case "JuiceControlLibrary.WebPage":
-                {
-                    viewComponentName = "WebPage";
-                    break;
-                }
-                case "JuiceControlLibrary.Pagination":
-                {
-                    viewComponentName = "Pagination";
-                    break;
-                }
-                case "JuiceControlLibrary.DynamicFilter":
-                {
-                    viewComponentName = "Filter";
-                    break;
-                }
-                case "JuiceControlLibrary.Sendform":
-                {
-                    viewComponentName = "WebForm";
-                    break;
-                }
-                case "JuiceControlLibrary.Configurator":
-                {
-                    viewComponentName = "Configurator";
-                    break;
-                }
-                case "JuiceControlLibrary.DataSelectorParser":
-                {
-                    viewComponentName = "DataSelectorParser";
-                    break;
-                }
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(legacyComponentName), legacyComponentName);
-            }
-
             // TODO: The main CmsSettingsModel of every component should have a method "ToSettingsModel", which will convert the legacy settings to the new settings. Use that.
 
             return null;

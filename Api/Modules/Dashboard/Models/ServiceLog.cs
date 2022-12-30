@@ -2,6 +2,9 @@
 
 namespace Api.Modules.Dashboard.Models;
 
+/// <summary>
+/// This class describes an object that keeps a log of a service
+/// </summary>
 public class ServiceLog
 {
     /// <summary>
