@@ -151,5 +151,17 @@ namespace Api.Modules.Modules.Controllers
         {
             return (await modulesService.GetModuleGroupsAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Deletes a module.
+        /// </summary>
+        /// <param name="id">The ID of the module.</param>
+        [HttpDelete]
+        [Route("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeleteAsync(int id)
+        {
+            return (await modulesService.DeleteAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
+        }
     }
 }

@@ -84,7 +84,7 @@ const moduleSettings = {
                 ITEMLINKER: "ItemLinker",
                 LINKEDITEM: "LinkedItem",
                 MULTISELECT: "MultiSelect",
-                NUMERIC: "NumericInput",
+                NUMERICINPUT: "NumericInput",
                 RADIOBUTTON: "RadioButton",
                 SECUREINPUT: "SecureInput",
                 SUBENTITIESGRID: "SubEntitiesGrid",
@@ -437,6 +437,17 @@ const moduleSettings = {
                 case this.kendoPromptType.ALERT:
                     return $("<div></div>").kendoAlert(properties).data("kendoAlert").open().result;
             }
+        }
+
+        /**
+         * Reload the list of modules in the side bar (on the left) of Wiser.
+         */
+        async reloadModulesOnParentFrame() {
+            if (!window.parent || !window.parent.main || !window.parent.main.vueApp || typeof(window.parent.main.vueApp.reloadModules) !== "function") {
+                return;
+            }
+
+            await window.parent.main.vueApp.reloadModules();
         }
     }
 

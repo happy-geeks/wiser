@@ -669,6 +669,28 @@ ORDER BY `group` ASC");
             var results = dataTable.Rows.Cast<DataRow>().Select(dataRow => dataRow.Field<string>("group"));
             return new ServiceResult<List<string>>(results.ToList());
         }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id)
+        {
+            if (id <= 0)
+            {
+                throw new ArgumentException("Id must be greater than 0.", nameof(id));
+            }
+
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.AddParameter("id", id);
+
+            // Delete the module itself and any permissions that have been set for the module.
+            var query = $@"DELETE FROM {WiserTableNames.WiserModule} WHERE id = ?id;
+DELETE FROM {WiserTableNames.WiserPermission} WHERE module_id = ?id;";
+            await clientDatabaseConnection.ExecuteAsync(query);
+
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
+        }
 
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> UpdateSettingsAsync(int id, ClaimsIdentity identity, ModuleSettingsModel moduleSettingsModel)

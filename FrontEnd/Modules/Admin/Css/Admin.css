@@ -161,6 +161,10 @@ li.hint {
     margin-top: 10px;
 }
 /* FLEX */
+.formview .item.half {
+    width: 50%;
+}
+
 .item h4 + .inline {
     margin: 7px 0;
 }
@@ -407,8 +411,20 @@ li.hint {
     min-width: 50%;
 }
 
+.explanation-container {
+    height: 400px;
+}
+
+table.k-editor {
+    height: 100%;
+}
+
+.aggregate-example {
+    padding-top: 35px;
+}
+
 /* Tab strips */
-#EntityTabStrip .k-content,
+#EntityTabStrip .k-content:not(iframe),
 #EntityTabStrip .k-content .left-pane,
 #EntityTabStrip .k-content .right-pane {
     height: calc(100vh - 258px);
