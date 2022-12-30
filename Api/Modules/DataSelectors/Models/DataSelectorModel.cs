@@ -51,6 +51,11 @@
         public bool AvailableForRendering { get; set; }
 
         /// <summary>
+        /// Gets or sets whether the result of this data selector should be shown in the "Dataselector" tile of the dashboard.
+        /// </summary>
+        public bool ShowInDashboard { get; set; }
+
+        /// <summary>
         /// Gets or sets the ID of the default HTML template for rendering. Only applicable if <see cref="AvailableForRendering"/> is set to <see langword="true"/>.
         /// </summary>
         public ulong DefaultTemplate { get; set; }

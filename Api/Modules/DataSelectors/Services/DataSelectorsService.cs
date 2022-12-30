@@ -286,24 +286,31 @@ ORDER BY name ASC");
             clientDatabaseConnection.AddParameter("savedJson", data.SavedJson);
             clientDatabaseConnection.AddParameter("showInExportModule", data.ShowInExportModule);
             clientDatabaseConnection.AddParameter("showInCommunicationModule", data.ShowInCommunicationModule);
+            clientDatabaseConnection.AddParameter("showInDashboard", data.ShowInDashboard);
 
             int result;
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id FROM {WiserTableNames.WiserDataSelector} WHERE name = ?name");
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id FROM `{WiserTableNames.WiserDataSelector}` WHERE name = ?name");
             if (dataTable.Rows.Count == 0)
             {
-                result = (int)await clientDatabaseConnection.InsertRecordAsync($@"INSERT INTO {WiserTableNames.WiserDataSelector} (name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template, show_in_communication_module)
-                                                                                    VALUES (?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate, ?showInCommunicationModule)");
+                result = (int)await clientDatabaseConnection.InsertRecordAsync($@"INSERT INTO {WiserTableNames.WiserDataSelector} (name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template, show_in_communication_module, show_in_dashboard)
+                                                                                    VALUES (?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate, ?showInCommunicationModule, ?showInDashboard)");
             }
             else
             {
                 result = dataTable.Rows[0].Field<int>("id");
-                await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.WiserDataSelector} SET request_json = ?requestJson, saved_json = ?savedJson, show_in_export_module = ?showInExportModule, available_for_rendering = ?availableForRendering, default_template = ?defaultTemplate, show_in_communication_module = ?showInCommunicationModule WHERE name = ?name");
+                await clientDatabaseConnection.ExecuteAsync($@"UPDATE `{WiserTableNames.WiserDataSelector}` SET request_json = ?requestJson, saved_json = ?savedJson, show_in_export_module = ?showInExportModule, available_for_rendering = ?availableForRendering, default_template = ?defaultTemplate, show_in_communication_module = ?showInCommunicationModule, show_in_dashboard = ?showInDashboard WHERE name = ?name");
             }
-            
-            // Add the permissions for the roles that have been marked. Will only add new ones to preserve limited permissions.
+
             clientDatabaseConnection.AddParameter("id", result);
-            
-            var query = $@"INSERT IGNORE INTO {WiserTableNames.WiserPermission} (role_id, data_selector_id, permissions)
+
+            // Set "show_in_dashboard" to 0 for all other data selector if this data selector has "show_in_dashboard" enabled.
+            if (data.ShowInDashboard)
+            {
+                await clientDatabaseConnection.ExecuteAsync($"UPDATE `{WiserTableNames.WiserDataSelector}` SET show_in_dashboard = 0 WHERE id <> ?id");
+            }
+
+            // Add the permissions for the roles that have been marked. Will only add new ones to preserve limited permissions.
+            var query = $@"INSERT IGNORE INTO `{WiserTableNames.WiserPermission}` (role_id, data_selector_id, permissions)
 VALUES(?roleId, ?id, 15)";
 
             foreach (var role in data.AllowedRoles.Split(","))
@@ -311,10 +318,10 @@ VALUES(?roleId, ?id, 15)";
                 clientDatabaseConnection.AddParameter("roleId", role);
                 await clientDatabaseConnection.ExecuteAsync(query);
             }
-            
+
             // Delete permissions for the roles that are missing in the allowed roles.
             clientDatabaseConnection.AddParameter("roles_with_permissions", data.AllowedRoles);
-            query = $"DELETE FROM {WiserTableNames.WiserPermission} WHERE data_selector_id = ?id AND data_selector_id != 0 AND NOT FIND_IN_SET(role_id, ?roles_with_permissions)";
+            query = $"DELETE FROM `{WiserTableNames.WiserPermission}` WHERE data_selector_id = ?id AND data_selector_id != 0 AND NOT FIND_IN_SET(role_id, ?roles_with_permissions)";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             return new ServiceResult<int>(result);
@@ -609,7 +616,7 @@ VALUES(?roleId, ?id, 15)";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<JToken>> GetDataSelectorResultAsJsonAsync(ClaimsIdentity identity, int id, bool asKeyValuePair, List<KeyValuePair<string, object>> parameters)
+        public async Task<ServiceResult<JToken>> GetDataSelectorResultAsJsonAsync(ClaimsIdentity identity, int id, bool asKeyValuePair, List<KeyValuePair<string, object>> parameters, bool skipPermissionsCheck = false)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
@@ -624,8 +631,8 @@ VALUES(?roleId, ?id, 15)";
                     ErrorMessage = $"Data selector with ID '{id}' does not exist."
                 };
             }
-            
-            if ((await wiserItemsService.GetUserDataSelectorPermissionsAsync(id, IdentityHelpers.GetWiserUserId(identity)) & AccessRights.Read) == AccessRights.Nothing)
+
+            if (!skipPermissionsCheck && (await wiserItemsService.GetUserDataSelectorPermissionsAsync(id, IdentityHelpers.GetWiserUserId(identity)) & AccessRights.Read) == AccessRights.Nothing)
             {
                 return new ServiceResult<JToken>
                 {
@@ -667,6 +674,14 @@ VALUES(?roleId, ?id, 15)";
             }
             
             return new ServiceResult<JToken>(combinedResult);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> CheckDashboardConflictAsync(int id)
+        {
+            clientDatabaseConnection.AddParameter("id", id);
+            var getDataSelectorResult = await clientDatabaseConnection.GetAsync("SELECT `name` FROM wiser_data_selector WHERE id <> ?id AND show_in_dashboard = 1 LIMIT 1");
+            return new ServiceResult<string>(getDataSelectorResult.Rows.Count == 0 ? null : getDataSelectorResult.Rows[0].Field<string>("name"));
         }
     }
 }

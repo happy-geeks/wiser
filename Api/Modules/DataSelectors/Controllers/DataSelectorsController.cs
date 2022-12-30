@@ -229,6 +229,21 @@ namespace Api.Modules.DataSelectors.Controllers
         }
 
         /// <summary>
+        /// Checks if there is a data selector that already has "show in dashboard" enabled. If so, the name of the
+        /// data selector will be returned. Otherwise, `null`.
+        /// </summary>
+        /// <param name="id">The ID of the current data selector, which will be excluded from the check. This will be 0 if it's a new data selector.</param>
+        /// <returns>Name of a data selector that has "show in dashboard" enabled, or <see langword="null">null</see> if no data selector has that option enabled.</returns>
+        [HttpGet]
+        [Route("{id:int}/check-dashboard-conflict")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> CheckForDashboardConflictAsync(int id)
+        {
+            var dataSelectorName = await dataSelectorsService.CheckDashboardConflictAsync(id);
+            return Content(dataSelectorName.ModelObject, MediaTypeNames.Text.Plain);
+        }
+        
+        /// <summary>
         /// Combine two <see cref="WiserDataSelectorRequestModel"/>s. Used to combine information from the body with the information from the query.
         /// </summary>
         /// <param name="model1">The first <see cref="WiserDataSelectorRequestModel"/>.</param>

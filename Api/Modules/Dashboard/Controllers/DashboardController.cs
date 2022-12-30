@@ -10,6 +10,7 @@ using GeeksCoreLibrary.Modules.WiserDashboard.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Dashboard.Controllers;
 
@@ -46,6 +47,20 @@ public class DashboardController : ControllerBase
     public async Task<IActionResult> Get([FromQuery]DateTime? periodFrom = null, [FromQuery]DateTime? periodTo = null, [FromQuery]int branchId = 0, [FromQuery]bool forceRefresh = false)
     {
         return (await dashboardService.GetDataAsync((ClaimsIdentity)User.Identity, periodFrom, periodTo, branchId, forceRefresh)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Gets the result of the data selector that has the "show in dashboard" option enabled, or null if no data
+    /// selector has that option enabled.
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet]
+    [Route("dataselector")]
+    [ProducesResponseType(typeof(JToken), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(JToken), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetDataSelectorResultAsync()
+    {
+        return (await dashboardService.GetDataSelectorResultAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
     }
 
     /// <summary>
