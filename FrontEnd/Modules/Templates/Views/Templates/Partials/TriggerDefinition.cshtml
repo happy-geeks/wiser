@@ -1,17 +1,19 @@
-﻿@model Api.Modules.Templates.Models.Template.TemplateSettingsModel
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@model Api.Modules.Templates.Models.Template.TemplateSettingsModel
 
 <div class="triggerTiming">
     <div class="item" style="width: 100%;">
-        <h4><label for="triggerTable">Tabel</label></h4>
+        <h4><label for="triggerTable">@Localizer["Table"]</label></h4>
         <div class="flex-container">
             <select id="triggerTable" class="combo-select" data-kendo-control="kendoDropDownList" data-filter="contains">
-                <option value="">Kies een tabel</option>
+                <option value="">@Localizer["Choose a table"]</option>
             </select>
         </div>
-        <div class="form-hint"><span>Voor welke tabel deze trigger gemaakt of aangepast wordt.</span></div>
+        <div class="form-hint"><span>@Localizer["For which table this trigger is created or modified."]</span></div>
     </div>
     <div class="item" style="width: 100%;">
-        <h4><label>Timing</label></h4>
+        <h4><label>@Localizer["Timing"]</label></h4>
 
         @foreach (var value in Enum.GetValues(Model.TriggerTiming.GetType()))
         {
@@ -24,10 +26,10 @@
         }
     </div>
     <div class="item" style="width: 100%;">
-        <h4><label for="triggerEvent">Event</label></h4>
+        <h4><label for="triggerEvent">@Localizer["Event"]</label></h4>
         <div class="flex-container">
             <select id="triggerEvent" class="combo-select">
-                <!option value="">Kies een event</!option>
+                <!option value="">@Localizer["Choose an event"]</!option>
                 @foreach (var value in Enum.GetValues(Model.TriggerEvent.GetType()))
                 {
                     @if ((int)value == 0) continue;
@@ -36,6 +38,6 @@
                 }
             </select>
         </div>
-        <div class="form-hint"><span>Voor welk soort event de trigger zal worden uitgevoerd.</span></div>
+        <div class="form-hint"><span>@Localizer["For what kind of event the trigger will be executed for."]</span></div>
     </div>
 </div>

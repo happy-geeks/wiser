@@ -1,27 +1,2445 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <root>
-    <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-        <xsd:element name="root" msdata:IsDataSet="true">
-            
-        </xsd:element>
-    </xsd:schema>
-    <resheader name="resmimetype">
-        <value>text/microsoft-resx</value>
-    </resheader>
-    <resheader name="version">
-        <value>1.3</value>
-    </resheader>
-    <resheader name="reader">
-        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-    </resheader>
-    <resheader name="writer">
-        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-    </resheader>
-    <data name="Hello" xml:space="preserve">
-        <value>Hello</value>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
     </data>
-    <data name="Welcome" xml:space="preserve">
-        <value>Welcome</value>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
     </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="'." xml:space="preserve">
+    <value>'.</value>
+  </data>
+  <data name="(De)selecting an item in this list will be immediately processed in the system." xml:space="preserve">
+    <value>(De)selecting an item in this list will be immediately processed in the system.</value>
+  </data>
+  <data name="A customer with this name already exists. Please choose another name." xml:space="preserve">
+    <value>A customer with this name already exists. Please choose another name.</value>
+  </data>
+  <data name="A customer with this subdomain already exists. Please choose another subdomain." xml:space="preserve">
+    <value>A customer with this subdomain already exists. Please choose another subdomain.</value>
+  </data>
+  <data name="A description of the image." xml:space="preserve">
+    <value>A description of the image.</value>
+  </data>
+  <data name="A new branch can be created here. A branch is a (partial) copy of your database. This can be used to safely implement changes in Wiser and test in a separate environment. After you've finished testing, you can rollback the changes in a branch back to the production environment." xml:space="preserve">
+    <value>A new branch can be created here. A branch is a (partial) copy of your database. This can be used to safely implement changes in Wiser and test in a separate environment. After you've finished testing, you can rollback the changes in a branch back to the production environment.</value>
+  </data>
+  <data name="Accept" xml:space="preserve">
+    <value>Accept</value>
+  </data>
+  <data name="Acceptance" xml:space="preserve">
+    <value>Acceptance</value>
+  </data>
+  <data name="Accepted entity(ies)" xml:space="preserve">
+    <value>Accepted entity(ies)</value>
+  </data>
+  <data name="Action" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="Action button" xml:space="preserve">
+    <value>Action button</value>
+  </data>
+  <data name="Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Active branch" xml:space="preserve">
+    <value>Active branch</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Add a task" xml:space="preserve">
+    <value>Add a task</value>
+  </data>
+  <data name="Add checkboxes to grid" xml:space="preserve">
+    <value>Add checkboxes to grid</value>
+  </data>
+  <data name="Add child object" xml:space="preserve">
+    <value>Add child object</value>
+  </data>
+  <data name="Add customer" xml:space="preserve">
+    <value>Add customer</value>
+  </data>
+  <data name="Add file" xml:space="preserve">
+    <value>Add file</value>
+  </data>
+  <data name="Add folder" xml:space="preserve">
+    <value>Add folder</value>
+  </data>
+  <data name="Add having" xml:space="preserve">
+    <value>Add having</value>
+  </data>
+  <data name="Add icon" xml:space="preserve">
+    <value>Add icon</value>
+  </data>
+  <data name="Add image" xml:space="preserve">
+    <value>Add image</value>
+  </data>
+  <data name="Add layer" xml:space="preserve">
+    <value>Add layer</value>
+  </data>
+  <data name="Add new file" xml:space="preserve">
+    <value>Add new file</value>
+  </data>
+  <data name="Add new folder" xml:space="preserve">
+    <value>Add new folder</value>
+  </data>
+  <data name="Add new image" xml:space="preserve">
+    <value>Add new image</value>
+  </data>
+  <data name="Add new template" xml:space="preserve">
+    <value>Add new template</value>
+  </data>
+  <data name="Add new Wiser account..." xml:space="preserve">
+    <value>Add new Wiser account...</value>
+  </data>
+  <data name="Add parent object" xml:space="preserve">
+    <value>Add parent object</value>
+  </data>
+  <data name="Add scope" xml:space="preserve">
+    <value>Add scope</value>
+  </data>
+  <data name="Add template" xml:space="preserve">
+    <value>Add template</value>
+  </data>
+  <data name="Add users" xml:space="preserve">
+    <value>Add users</value>
+  </data>
+  <data name="Added by" xml:space="preserve">
+    <value>Added by</value>
+  </data>
+  <data name="Added on" xml:space="preserve">
+    <value>Added on</value>
+  </data>
+  <data name="Adjust widths" xml:space="preserve">
+    <value>Adjust widths</value>
+  </data>
+  <data name="Advanced" xml:space="preserve">
+    <value>Advanced</value>
+  </data>
+  <data name="Aggregation" xml:space="preserve">
+    <value>Aggregation</value>
+  </data>
+  <data name="Aggregation-settings" xml:space="preserve">
+    <value>Aggregation-settings</value>
+  </data>
+  <data name="Alias" xml:space="preserve">
+    <value>Alias</value>
+  </data>
+  <data name="All below" xml:space="preserve">
+    <value>All below</value>
+  </data>
+  <data name="All branches" xml:space="preserve">
+    <value>All branches</value>
+  </data>
+  <data name="All options" xml:space="preserve">
+    <value>All options</value>
+  </data>
+  <data name="Allow full screen" xml:space="preserve">
+    <value>Allow full screen</value>
+  </data>
+  <data name="Allowed extensions" xml:space="preserve">
+    <value>Allowed extensions</value>
+  </data>
+  <data name="Allows you to insert a translation word. This word is then automatically translated on the website into the language the user has chosen. These translation words can be entered in the 'Translations' module." xml:space="preserve">
+    <value>Allows you to insert a translation word. This word is then automatically translated on the website into the language the user has chosen. These translation words can be entered in the 'Translations' module.</value>
+  </data>
+  <data name="Also find deleted items" xml:space="preserve">
+    <value>Also find deleted items</value>
+  </data>
+  <data name="Alt text" xml:space="preserve">
+    <value>Alt text</value>
+  </data>
+  <data name="Amount" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="Amount of items:" xml:space="preserve">
+    <value>Amount of items:</value>
+  </data>
+  <data name="An email with your new password has been sent." xml:space="preserve">
+    <value>An email with your new password has been sent.</value>
+  </data>
+  <data name="An existing branch can be opened here." xml:space="preserve">
+    <value>An existing branch can be opened here.</value>
+  </data>
+  <data name="Anchor position" xml:space="preserve">
+    <value>Anchor position</value>
+  </data>
+  <data name="and" xml:space="preserve">
+    <value>and</value>
+  </data>
+  <data name="and give permission on that page." xml:space="preserve">
+    <value>and give permission on that page.</value>
+  </data>
+  <data name="Anything added after X" xml:space="preserve">
+    <value>Anything added after X</value>
+  </data>
+  <data name="Anything added between X and Y" xml:space="preserve">
+    <value>Anything added between X and Y</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="Approve" xml:space="preserve">
+    <value>Approve</value>
+  </data>
+  <data name="Approving a conflict means that the modification of the selected branch will be used and the value in the original/production branch will be overwritten and thus lost. Rejecting a change is the other way around, the change from the original/production branch will be kept and the change from the selected branch will be lost." xml:space="preserve">
+    <value>Approving a conflict means that the modification of the selected branch will be used and the value in the original/production branch will be overwritten and thus lost. Rejecting a change is the other way around, the change from the original/production branch will be kept and the change from the selected branch will be lost.</value>
+  </data>
+  <data name="Archive" xml:space="preserve">
+    <value>Archive</value>
+  </data>
+  <data name="Ask when deleting item to Confirm" xml:space="preserve">
+    <value>Ask when deleting item to Confirm</value>
+  </data>
+  <data name="Attachments" xml:space="preserve">
+    <value>Attachments</value>
+  </data>
+  <data name="Attention!" xml:space="preserve">
+    <value>Attention!</value>
+  </data>
+  <data name="Attention:" xml:space="preserve">
+    <value>Attention:</value>
+  </data>
+  <data name="ATTENTION: not all conflicts have have been approved or denied yet!" xml:space="preserve">
+    <value>ATTENTION: not all conflicts have have been approved or denied yet!</value>
+  </data>
+  <data name="Auto play" xml:space="preserve">
+    <value>Auto play</value>
+  </data>
+  <data name="Automatically save item when the value of this field is changed" xml:space="preserve">
+    <value>Automatically save item when the value of this field is changed</value>
+  </data>
+  <data name="Average value (AVG)" xml:space="preserve">
+    <value>Average value (AVG)</value>
+  </data>
+  <data name="Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="BCC" xml:space="preserve">
+    <value>BCC</value>
+  </data>
+  <data name="bigint" xml:space="preserve">
+    <value>bigint</value>
+  </data>
+  <data name="binary" xml:space="preserve">
+    <value>binary</value>
+  </data>
+  <data name="bit" xml:space="preserve">
+    <value>bit</value>
+  </data>
+  <data name="blob" xml:space="preserve">
+    <value>blob</value>
+  </data>
+  <data name="Bottom" xml:space="preserve">
+    <value>Bottom</value>
+  </data>
+  <data name="Bottom-left" xml:space="preserve">
+    <value>Bottom-left</value>
+  </data>
+  <data name="Bottom-right" xml:space="preserve">
+    <value>Bottom-right</value>
+  </data>
+  <data name="Branche changed on" xml:space="preserve">
+    <value>Branche changed on</value>
+  </data>
+  <data name="Button icon" xml:space="preserve">
+    <value>Button icon</value>
+  </data>
+  <data name="Button text" xml:space="preserve">
+    <value>Button text</value>
+  </data>
+  <data name="by" xml:space="preserve">
+    <value>by</value>
+  </data>
+  <data name="By default, a JSON array of objects is always created for the results of the query. If this option is enabled, one object will be created with keys and values." xml:space="preserve">
+    <value>By default, a JSON array of objects is always created for the results of the query. If this option is enabled, one object will be created with keys and values.</value>
+  </data>
+  <data name="Cache" xml:space="preserve">
+    <value>Cache</value>
+  </data>
+  <data name="Cache location" xml:space="preserve">
+    <value>Cache location</value>
+  </data>
+  <data name="Cache number of minutes" xml:space="preserve">
+    <value>Cache number of minutes</value>
+  </data>
+  <data name="Cache regex" xml:space="preserve">
+    <value>Cache regex</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="cancel subscription?" xml:space="preserve">
+    <value>cancel subscription?</value>
+  </data>
+  <data name="Caps lock is on" xml:space="preserve">
+    <value>Caps lock is on</value>
+  </data>
+  <data name="CC" xml:space="preserve">
+    <value>CC</value>
+  </data>
+  <data name="Center" xml:space="preserve">
+    <value>Center</value>
+  </data>
+  <data name="Change" xml:space="preserve">
+    <value>Change</value>
+  </data>
+  <data name="Change date branch" xml:space="preserve">
+    <value>Change date branch</value>
+  </data>
+  <data name="Change date original" xml:space="preserve">
+    <value>Change date original</value>
+  </data>
+  <data name="Change HTML" xml:space="preserve">
+    <value>Change HTML</value>
+  </data>
+  <data name="Change password" xml:space="preserve">
+    <value>Change password</value>
+  </data>
+  <data name="Changed" xml:space="preserve">
+    <value>Changed</value>
+  </data>
+  <data name="Changed by" xml:space="preserve">
+    <value>Changed by</value>
+  </data>
+  <data name="Changed on" xml:space="preserve">
+    <value>Changed on</value>
+  </data>
+  <data name="char" xml:space="preserve">
+    <value>char</value>
+  </data>
+  <data name="Check this box if the customer also gets a configurator. Then will entities be added for, for example, configuration and configurationlines." xml:space="preserve">
+    <value>Check this box if the customer also gets a configurator. Then will entities be added for, for example, configuration and configurationlines.</value>
+  </data>
+  <data name="Check this box if the customer also gets a webshop. Then exstra entities will be added for, for example, shipping methods, VAT rules, etc." xml:space="preserve">
+    <value>Check this box if the customer also gets a webshop. Then exstra entities will be added for, for example, shipping methods, VAT rules, etc.</value>
+  </data>
+  <data name="Check this box if the customer's website will be multilingual. Then will the translations module and associated entity be added." xml:space="preserve">
+    <value>Check this box if the customer's website will be multilingual. Then will the translations module and associated entity be added.</value>
+  </data>
+  <data name="Checked" xml:space="preserve">
+    <value>Checked</value>
+  </data>
+  <data name="Child objects" xml:space="preserve">
+    <value>Child objects</value>
+  </data>
+  <data name="Choose a component" xml:space="preserve">
+    <value>Choose a component</value>
+  </data>
+  <data name="Choose a data type..." xml:space="preserve">
+    <value>Choose a data type...</value>
+  </data>
+  <data name="Choose a format..." xml:space="preserve">
+    <value>Choose a format...</value>
+  </data>
+  <data name="Choose a language code..." xml:space="preserve">
+    <value>Choose a language code...</value>
+  </data>
+  <data name="Choose a status..." xml:space="preserve">
+    <value>Choose a status...</value>
+  </data>
+  <data name="Choose a table" xml:space="preserve">
+    <value>Choose a table</value>
+  </data>
+  <data name="Choose a time when the import should be started. If no value is entered, or a moment in the past, the import will be started as soon as possible." xml:space="preserve">
+    <value>Choose a time when the import should be started. If no value is entered, or a moment in the past, the import will be started as soon as possible.</value>
+  </data>
+  <data name="Choose a time when there are not many users, for example at night, because importing data is a heavy process." xml:space="preserve">
+    <value>Choose a time when there are not many users, for example at night, because importing data is a heavy process.</value>
+  </data>
+  <data name="Choose an entity type" xml:space="preserve">
+    <value>Choose an entity type</value>
+  </data>
+  <data name="Choose an event" xml:space="preserve">
+    <value>Choose an event</value>
+  </data>
+  <data name="Choose in the column &amp;quot;Import to&amp;quot; the entity type of the items in the import file. This will automatically be filled in all other rows. At specification name, a choice will have to be made for each property to be imported. Only rows with a check mark are included in the import." xml:space="preserve">
+    <value>Choose in the column &amp;quot;Import to&amp;quot; the entity type of the items in the import file. This will automatically be filled in all other rows. At specification name, a choice will have to be made for each property to be imported. Only rows with a check mark are included in the import.</value>
+  </data>
+  <data name="Choose in the column &amp;quot;Linktype&amp;quot; the link type of the items in the import file. This allows values to be filled that are stored with a link between 2 items. In Wiser, these fields can always be found on the 'Fields from link' tab. At specification name, a choice will have to be made for each property to be imported. Only rows with a check mark are included in the import." xml:space="preserve">
+    <value>Choose in the column &amp;quot;Linktype&amp;quot; the link type of the items in the import file. This allows values to be filled that are stored with a link between 2 items. In Wiser, these fields can always be found on the 'Fields from link' tab. At specification name, a choice will have to be made for each property to be imported. Only rows with a check mark are included in the import.</value>
+  </data>
+  <data name="Choose one of the existing communications to open and edit." xml:space="preserve">
+    <value>Choose one of the existing communications to open and edit.</value>
+  </data>
+  <data name="Choose the entities between which links should be removed and choose the properties of values which should match the supplied data." xml:space="preserve">
+    <value>Choose the entities between which links should be removed and choose the properties of values which should match the supplied data.</value>
+  </data>
+  <data name="Choose the entity of the items to be deleted." xml:space="preserve">
+    <value>Choose the entity of the items to be deleted.</value>
+  </data>
+  <data name="Choose the language that serves as the source here. All fields on this item with this language will then be translated into other languages." xml:space="preserve">
+    <value>Choose the language that serves as the source here. All fields on this item with this language will then be translated into other languages.</value>
+  </data>
+  <data name="Choose the link type which is linked and you want to delete. The supplied file can contain the IDs of both the origin and the destination." xml:space="preserve">
+    <value>Choose the link type which is linked and you want to delete. The supplied file can contain the IDs of both the origin and the destination.</value>
+  </data>
+  <data name="Choose the property of the value which should match the supplied data." xml:space="preserve">
+    <value>Choose the property of the value which should match the supplied data.</value>
+  </data>
+  <data name="Choose the user you want to log in with" xml:space="preserve">
+    <value>Choose the user you want to log in with</value>
+  </data>
+  <data name="Choose users..." xml:space="preserve">
+    <value>Choose users...</value>
+  </data>
+  <data name="Clear cache" xml:space="preserve">
+    <value>Clear cache</value>
+  </data>
+  <data name="Clear website cache" xml:space="preserve">
+    <value>Clear website cache</value>
+  </data>
+  <data name="Click 'Add' to add a field to the entity" xml:space="preserve">
+    <value>Click 'Add' to add a field to the entity</value>
+  </data>
+  <data name="close module" xml:space="preserve">
+    <value>close module</value>
+  </data>
+  <data name="Color" xml:space="preserve">
+    <value>Color</value>
+  </data>
+  <data name="Column name with key" xml:space="preserve">
+    <value>Column name with key</value>
+  </data>
+  <data name="Column name with value" xml:space="preserve">
+    <value>Column name with value</value>
+  </data>
+  <data name="Commit" xml:space="preserve">
+    <value>Commit</value>
+  </data>
+  <data name="Communication" xml:space="preserve">
+    <value>Communication</value>
+  </data>
+  <data name="Complete" xml:space="preserve">
+    <value>Complete</value>
+  </data>
+  <data name="Complete HTML pages" xml:space="preserve">
+    <value>Complete HTML pages</value>
+  </data>
+  <data name="Completed" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="Component mode" xml:space="preserve">
+    <value>Component mode</value>
+  </data>
+  <data name="Configurators" xml:space="preserve">
+    <value>Configurators</value>
+  </data>
+  <data name="Conflicts" xml:space="preserve">
+    <value>Conflicts</value>
+  </data>
+  <data name="conflicts approved" xml:space="preserve">
+    <value>conflicts approved</value>
+  </data>
+  <data name="contains" xml:space="preserve">
+    <value>contains</value>
+  </data>
+  <data name="Content" xml:space="preserve">
+    <value>Content</value>
+  </data>
+  <data name="Content Box" xml:space="preserve">
+    <value>Content Box</value>
+  </data>
+  <data name="Content Builder" xml:space="preserve">
+    <value>Content Builder</value>
+  </data>
+  <data name="Content item id" xml:space="preserve">
+    <value>Content item id</value>
+  </data>
+  <data name="Content property name" xml:space="preserve">
+    <value>Content property name</value>
+  </data>
+  <data name="Content SMS" xml:space="preserve">
+    <value>Content SMS</value>
+  </data>
+  <data name="Content/" xml:space="preserve">
+    <value>Content</value>
+  </data>
+  <data name="Continue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="Copy Branch URL" xml:space="preserve">
+    <value>Copy Branch URL</value>
+  </data>
+  <data name="Copy to other languages" xml:space="preserve">
+    <value>Copy to other languages</value>
+  </data>
+  <data name="Count results (COUNT)" xml:space="preserve">
+    <value>Count results (COUNT)</value>
+  </data>
+  <data name="Count unique results (COUNT DISTINCT)" xml:space="preserve">
+    <value>Count unique results (COUNT DISTINCT)</value>
+  </data>
+  <data name="Create a new automatic communication message. Determine recipients and the content of the e-mail and/or text messages." xml:space="preserve">
+    <value>Create a new automatic communication message. Determine recipients and the content of the e-mail and/or text messages.</value>
+  </data>
+  <data name="Create a new communication" xml:space="preserve">
+    <value>Create a new communication</value>
+  </data>
+  <data name="Create another customer" xml:space="preserve">
+    <value>Create another customer</value>
+  </data>
+  <data name="Create branch" xml:space="preserve">
+    <value>Create branch</value>
+  </data>
+  <data name="Create new branch" xml:space="preserve">
+    <value>Create new branch</value>
+  </data>
+  <data name="Create new database schema" xml:space="preserve">
+    <value>Create new database schema</value>
+  </data>
+  <data name="Create new item (SHIFT+N)" xml:space="preserve">
+    <value>Create new item (SHIFT+N)</value>
+  </data>
+  <data name="Create new one" xml:space="preserve">
+    <value>Create new one</value>
+  </data>
+  <data name="Crop" xml:space="preserve">
+    <value>Crop</value>
+  </data>
+  <data name="Culture" xml:space="preserve">
+    <value>Culture</value>
+  </data>
+  <data name="Current date" xml:space="preserve">
+    <value>Current date</value>
+  </data>
+  <data name="Current month" xml:space="preserve">
+    <value>Current month</value>
+  </data>
+  <data name="Current subscription:" xml:space="preserve">
+    <value>Current subscription:</value>
+  </data>
+  <data name="Current year" xml:space="preserve">
+    <value>Current year</value>
+  </data>
+  <data name="Custom delete-query" xml:space="preserve">
+    <value>Custom delete-query</value>
+  </data>
+  <data name="Custom insert-query" xml:space="preserve">
+    <value>Custom insert-query</value>
+  </data>
+  <data name="Custom query" xml:space="preserve">
+    <value>Custom query</value>
+  </data>
+  <data name="Custom update-query" xml:space="preserve">
+    <value>Custom update-query</value>
+  </data>
+  <data name="customer.happygeeks.dev" xml:space="preserve">
+    <value>customer.happygeeks.dev</value>
+  </data>
+  <data name="Data" xml:space="preserve">
+    <value>Data</value>
+  </data>
+  <data name="Data file" xml:space="preserve">
+    <value>Data file</value>
+  </data>
+  <data name="Data file or URL" xml:space="preserve">
+    <value>Data file or URL</value>
+  </data>
+  <data name="Data selector" xml:space="preserve">
+    <value>Data selector</value>
+  </data>
+  <data name="Data Selector for export module" xml:space="preserve">
+    <value>Data Selector for export module</value>
+  </data>
+  <data name="Data selector id" xml:space="preserve">
+    <value>Data selector id</value>
+  </data>
+  <data name="Data source" xml:space="preserve">
+    <value>Data source</value>
+  </data>
+  <data name="Data type" xml:space="preserve">
+    <value>Data type</value>
+  </data>
+  <data name="Data." xml:space="preserve">
+    <value>Data</value>
+  </data>
+  <data name="Database" xml:space="preserve">
+    <value>Database</value>
+  </data>
+  <data name="date" xml:space="preserve">
+    <value>date</value>
+  </data>
+  <data name="Date and time" xml:space="preserve">
+    <value>Date and time</value>
+  </data>
+  <data name="Date:" xml:space="preserve">
+    <value>Date:</value>
+  </data>
+  <data name="daterangepicker" xml:space="preserve">
+    <value>daterangepicker</value>
+  </data>
+  <data name="datetime" xml:space="preserve">
+    <value>datetime</value>
+  </data>
+  <data name="Day of the month" xml:space="preserve">
+    <value>Day of the month</value>
+  </data>
+  <data name="decimal" xml:space="preserve">
+    <value>decimal</value>
+  </data>
+  <data name="Default value" xml:space="preserve">
+    <value>Default value</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Delete communication" xml:space="preserve">
+    <value>Delete communication</value>
+  </data>
+  <data name="Delete easily multiple items within Wiser." xml:space="preserve">
+    <value>Delete easily multiple items within Wiser.</value>
+  </data>
+  <data name="Delete file" xml:space="preserve">
+    <value>Delete file</value>
+  </data>
+  <data name="Delete image" xml:space="preserve">
+    <value>Delete image</value>
+  </data>
+  <data name="Delete items" xml:space="preserve">
+    <value>Delete items</value>
+  </data>
+  <data name="Delete items/" xml:space="preserve">
+    <value>Delete items/</value>
+  </data>
+  <data name="Delete links" xml:space="preserve">
+    <value>Delete links</value>
+  </data>
+  <data name="Delete role" xml:space="preserve">
+    <value>Delete role</value>
+  </data>
+  <data name="Delete template" xml:space="preserve">
+    <value>Delete template</value>
+  </data>
+  <data name="Delete this branch after successful merging" xml:space="preserve">
+    <value>Delete this branch after successful merging</value>
+  </data>
+  <data name="Deleted" xml:space="preserve">
+    <value>Deleted</value>
+  </data>
+  <data name="Deletion of items" xml:space="preserve">
+    <value>Deletion of items</value>
+  </data>
+  <data name="Dependency" xml:space="preserve">
+    <value>Dependency</value>
+  </data>
+  <data name="Deploy" xml:space="preserve">
+    <value>Deploy</value>
+  </data>
+  <data name="Deploy to acceptance" xml:space="preserve">
+    <value>Deploy to acceptance</value>
+  </data>
+  <data name="Deploy to live" xml:space="preserve">
+    <value>Deploy naar live</value>
+  </data>
+  <data name="Deploy to selected branch" xml:space="preserve">
+    <value>Deploy to selected branch</value>
+  </data>
+  <data name="Deploy to test" xml:space="preserve">
+    <value>Deploy to test</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Description of the task..." xml:space="preserve">
+    <value>Description of the task...</value>
+  </data>
+  <data name="Desired height (in pixels)" xml:space="preserve">
+    <value>Desired height (in pixels)</value>
+  </data>
+  <data name="Desired language code" xml:space="preserve">
+    <value>Desired language code</value>
+  </data>
+  <data name="Desired width (in pixels)" xml:space="preserve">
+    <value>Desired width (in pixels)</value>
+  </data>
+  <data name="Development" xml:space="preserve">
+    <value>Development</value>
+  </data>
+  <data name="Different format" xml:space="preserve">
+    <value>Different format</value>
+  </data>
+  <data name="Digital Ocean access token" xml:space="preserve">
+    <value>Digital Ocean access token</value>
+  </data>
+  <data name="Direct" xml:space="preserve">
+    <value>Direct</value>
+  </data>
+  <data name="Disable minifier" xml:space="preserve">
+    <value>Disable minifier</value>
+  </data>
+  <data name="Disapprove" xml:space="preserve">
+    <value>Disapprove</value>
+  </data>
+  <data name="does not begin with" xml:space="preserve">
+    <value>does not begin with</value>
+  </data>
+  <data name="does not contain" xml:space="preserve">
+    <value>does not contain</value>
+  </data>
+  <data name="does not end with" xml:space="preserve">
+    <value>does not end with</value>
+  </data>
+  <data name="Domain" xml:space="preserve">
+    <value>Domain</value>
+  </data>
+  <data name="Domain dev" xml:space="preserve">
+    <value>Domain dev</value>
+  </data>
+  <data name="Domain live" xml:space="preserve">
+    <value>Domain live</value>
+  </data>
+  <data name="Domain test" xml:space="preserve">
+    <value>Domain test</value>
+  </data>
+  <data name="double" xml:space="preserve">
+    <value>double</value>
+  </data>
+  <data name="Download file" xml:space="preserve">
+    <value>Download file</value>
+  </data>
+  <data name="Drag items to change the order" xml:space="preserve">
+    <value>Drag items to change the order</value>
+  </data>
+  <data name="Duplicate field" xml:space="preserve">
+    <value>Duplicate field</value>
+  </data>
+  <data name="During restoring a branch, the database will be locked so that no other changes can be made in between. This means that Wiser and any other products (such as a website) that are linked to the same database will also be unavailable. Therefore, make sure you start the merge at a time when it will have the least impact (such as at night)." xml:space="preserve">
+    <value>During restoring a branch, the database will be locked so that no other changes can be made in between. This means that Wiser and any other products (such as a website) that are linked to the same database will also be unavailable. Therefore, make sure you start the merge at a time when it will have the least impact (such as at night).</value>
+  </data>
+  <data name="Dynamic Content" xml:space="preserve">
+    <value>Dynamic Content</value>
+  </data>
+  <data name="E-commerce entities" xml:space="preserve">
+    <value>E-commerce entities</value>
+  </data>
+  <data name="E-mail" xml:space="preserve">
+    <value>E-mail</value>
+  </data>
+  <data name="E-mail address" xml:space="preserve">
+    <value>E-mail address</value>
+  </data>
+  <data name="Each" xml:space="preserve">
+    <value>Each</value>
+  </data>
+  <data name="Edit Name" xml:space="preserve">
+    <value>Edit Name</value>
+  </data>
+  <data name="Edit task" xml:space="preserve">
+    <value>Edit task</value>
+  </data>
+  <data name="Email content" xml:space="preserve">
+    <value>Email content</value>
+  </data>
+  <data name="Email data selector id" xml:space="preserve">
+    <value>Email data selector id</value>
+  </data>
+  <data name="Enable aggregation" xml:space="preserve">
+    <value>Enable aggregation</value>
+  </data>
+  <data name="Enables the data selector to be used in HTML editors in Wiser to add dynamic blocks of content to a page" xml:space="preserve">
+    <value>Enables the data selector to be used in HTML editors in Wiser to add dynamic blocks of content to a page</value>
+  </data>
+  <data name="Enables the data selector to be used in the communication module" xml:space="preserve">
+    <value>Enables the data selector to be used in the communication module</value>
+  </data>
+  <data name="Enables the data selector to be used in the export module" xml:space="preserve">
+    <value>Enables the data selector to be used in the export module</value>
+  </data>
+  <data name="ends with" xml:space="preserve">
+    <value>ends with</value>
+  </data>
+  <data name="Ensures that languages are loaded separately" xml:space="preserve">
+    <value>Ensures that languages are loaded separately</value>
+  </data>
+  <data name="Enter 0 to use the original height of the image." xml:space="preserve">
+    <value>Enter 0 to use the original height of the image.</value>
+  </data>
+  <data name="Enter 0 to use the original width of the image." xml:space="preserve">
+    <value>Enter 0 to use the original width of the image.</value>
+  </data>
+  <data name="Enter a name" xml:space="preserve">
+    <value>Enter a name</value>
+  </data>
+  <data name="Enter a name for a database schema that does not exist yet." xml:space="preserve">
+    <value>Enter a name for a database schema that does not exist yet.</value>
+  </data>
+  <data name="Enter a name for a database user that does not exist yet." xml:space="preserve">
+    <value>Enter a name for a database user that does not exist yet.</value>
+  </data>
+  <data name="Enter a name for the new branch" xml:space="preserve">
+    <value>Enter a name for the new branch</value>
+  </data>
+  <data name="Enter a name for this import so that you can recognize this import later." xml:space="preserve">
+    <value>Enter a name for this import so that you can recognize this import later.</value>
+  </data>
+  <data name="Enter a name of an existing database schema." xml:space="preserve">
+    <value>Enter a name of an existing database schema.</value>
+  </data>
+  <data name="Enter a name of an existing database user." xml:space="preserve">
+    <value>Enter a name of an existing database user.</value>
+  </data>
+  <data name="Enter a search value (press enter to search)..." xml:space="preserve">
+    <value>Enter a search value (press enter to search)...</value>
+  </data>
+  <data name="Enter a value..." xml:space="preserve">
+    <value>Enter a value...</value>
+  </data>
+  <data name="Enter the URL of your website" xml:space="preserve">
+    <value>Enter the URL of your website</value>
+  </data>
+  <data name="Entities" xml:space="preserve">
+    <value>Entities</value>
+  </data>
+  <data name="Entity" xml:space="preserve">
+    <value>Entity</value>
+  </data>
+  <data name="Entity of the type" xml:space="preserve">
+    <value>Entity of the type</value>
+  </data>
+  <data name="Entity to link" xml:space="preserve">
+    <value>Entity to link</value>
+  </data>
+  <data name="enum" xml:space="preserve">
+    <value>enum</value>
+  </data>
+  <data name="Environment" xml:space="preserve">
+    <value>Environment</value>
+  </data>
+  <data name="Event" xml:space="preserve">
+    <value>Event</value>
+  </data>
+  <data name="Everything" xml:space="preserve">
+    <value>Everything</value>
+  </data>
+  <data name="Everything added for X" xml:space="preserve">
+    <value>Everything added for X</value>
+  </data>
+  <data name="Example" xml:space="preserve">
+    <value>Example</value>
+  </data>
+  <data name="Execute query" xml:space="preserve">
+    <value>Execute query</value>
+  </data>
+  <data name="Explanation" xml:space="preserve">
+    <value>Explanation</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Extended explanation" xml:space="preserve">
+    <value>Extended explanation</value>
+  </data>
+  <data name="External files" xml:space="preserve">
+    <value>External files</value>
+  </data>
+  <data name="Extra entities" xml:space="preserve">
+    <value>Extra entities</value>
+  </data>
+  <data name="Factor" xml:space="preserve">
+    <value>Factor</value>
+  </data>
+  <data name="Field" xml:space="preserve">
+    <value>Field</value>
+  </data>
+  <data name="Field name" xml:space="preserve">
+    <value>Field name</value>
+  </data>
+  <data name="Fields" xml:space="preserve">
+    <value>Fields</value>
+  </data>
+  <data name="File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="Filename" xml:space="preserve">
+    <value>Filename</value>
+  </data>
+  <data name="Files / Images" xml:space="preserve">
+    <value>Files / Images</value>
+  </data>
+  <data name="Fill" xml:space="preserve">
+    <value>Fill</value>
+  </data>
+  <data name="Filter period" xml:space="preserve">
+    <value>Filter period</value>
+  </data>
+  <data name="First make a choice in the left menu." xml:space="preserve">
+    <value>First make a choice in the left menu.</value>
+  </data>
+  <data name="First open this page" xml:space="preserve">
+    <value>First open this page</value>
+  </data>
+  <data name="First, the image size will be made smaller until its width or height (whichever is greater) matches the specified size, then any remnants will be cuted off. Example: The image is 150x200 pixels and the desired size is 100x100 pixels. The final image will then be exactly 100x100 pizels, but because the proportions are now different, a piece of the image will be cuted off above and/or below. This can cause parts of an image to disappear." xml:space="preserve">
+    <value>First, the image size will be made smaller until its width or height (whichever is greater) matches the specified size, then any remnants will be cuted off. Example: The image is 150x200 pixels and the desired size is 100x100 pixels. The final image will then be exactly 100x100 pizels, but because the proportions are now different, a piece of the image will be cuted off above and/or below. This can cause parts of an image to disappear.</value>
+  </data>
+  <data name="First, the image will be scaled down until the width or height (whichever is smaller) matches the specified size, then the image is filled with white space until the result exactly matches. Example: The image is 150x200 pixels and the desired size is 100x100 pixels. The final image will then be exactly 100x100 pixels, but because the proportions are now different, left and/or right white space will be added to the image." xml:space="preserve">
+    <value>First, the image will be scaled down until the width or height (whichever is smaller) matches the specified size, then the image is filled with white space until the result exactly matches. Example: The image is 150x200 pixels and the desired size is 100x100 pixels. The final image will then be exactly 100x100 pixels, but because the proportions are now different, left and/or right white space will be added to the image.</value>
+  </data>
+  <data name="Fixed time" xml:space="preserve">
+    <value>Fixed time</value>
+  </data>
+  <data name="Fixed values" xml:space="preserve">
+    <value>Fixed values</value>
+  </data>
+  <data name="float" xml:space="preserve">
+    <value>float</value>
+  </data>
+  <data name="For each layer that you add, you need to have a column in your query named 'idN', where 'N' is the depth number (starting with 1)." xml:space="preserve">
+    <value>For each layer that you add, you need to have a column in your query named 'idN', where 'N' is the depth number (starting with 1).</value>
+  </data>
+  <data name="For what kind of event the trigger will be executed for." xml:space="preserve">
+    <value>For what kind of event the trigger will be executed for.</value>
+  </data>
+  <data name="For which table this trigger is created or modified." xml:space="preserve">
+    <value>For which table this trigger is created or modified.</value>
+  </data>
+  <data name="Forgot your password?" xml:space="preserve">
+    <value>Forgot your password?</value>
+  </data>
+  <data name="Format" xml:space="preserve">
+    <value>Format</value>
+  </data>
+  <data name="Formatting" xml:space="preserve">
+    <value>Formatting</value>
+  </data>
+  <data name="Formula" xml:space="preserve">
+    <value>Formula</value>
+  </data>
+  <data name="friday" xml:space="preserve">
+    <value>friday</value>
+  </data>
+  <data name="Friendly Name" xml:space="preserve">
+    <value>Friendly Name</value>
+  </data>
+  <data name="From" xml:space="preserve">
+    <value>From</value>
+  </data>
+  <data name="From which URL should this template be accessible? Here a regular expression can be specified for dynamic values and parameters. If you divide the regular expression into groups and give those groups names, then those names can be used as variables in this template. Example:" xml:space="preserve">
+    <value>From which URL should this template be accessible? Here a regular expression can be specified for dynamic values and parameters. If you divide the regular expression into groups and give those groups names, then those names can be used as variables in this template. Example:</value>
+  </data>
+  <data name="from_" xml:space="preserve">
+    <value>from_</value>
+  </data>
+  <data name="Function" xml:space="preserve">
+    <value>Function</value>
+  </data>
+  <data name="Generate Entities" xml:space="preserve">
+    <value>Generate Entities</value>
+  </data>
+  <data name="Generate file" xml:space="preserve">
+    <value>Generate file</value>
+  </data>
+  <data name="Generate standard entities" xml:space="preserve">
+    <value>Generate standard entities</value>
+  </data>
+  <data name="geometry" xml:space="preserve">
+    <value>geometry</value>
+  </data>
+  <data name="geometrycollection" xml:space="preserve">
+    <value>geometrycollection</value>
+  </data>
+  <data name="Get clusters" xml:space="preserve">
+    <value>Get clusters</value>
+  </data>
+  <data name="Group" xml:space="preserve">
+    <value>Group</value>
+  </data>
+  <data name="Group by" xml:space="preserve">
+    <value>Group by</value>
+  </data>
+  <data name="Group column" xml:space="preserve">
+    <value>Group column</value>
+  </data>
+  <data name="Group fields prefix" xml:space="preserve">
+    <value>Group fields prefix</value>
+  </data>
+  <data name="Has custom delete-query" xml:space="preserve">
+    <value>Has custom delete-query</value>
+  </data>
+  <data name="Has custom insert-query" xml:space="preserve">
+    <value>Has custom insert-query</value>
+  </data>
+  <data name="Has custom update-query" xml:space="preserve">
+    <value>Has custom update-query</value>
+  </data>
+  <data name="Having" xml:space="preserve">
+    <value>Having</value>
+  </data>
+  <data name="Header/footer regex" xml:space="preserve">
+    <value>Header/footer regex</value>
+  </data>
+  <data name="Height" xml:space="preserve">
+    <value>Height</value>
+  </data>
+  <data name="Height (in pixels)" xml:space="preserve">
+    <value>Height (in pixels)</value>
+  </data>
+  <data name="Height of the event area" xml:space="preserve">
+    <value>Height of the event area</value>
+  </data>
+  <data name="Hello" xml:space="preserve">
+    <value>Hello</value>
+  </data>
+  <data name="Here a data selector or query can be chosen for use in the content of the communication. This data selector or query is performed per receiver and must therefore only retrieve data for that receiver. This is completely optional." xml:space="preserve">
+    <value>Here a data selector or query can be chosen for use in the content of the communication. This data selector or query is performed per receiver and must therefore only retrieve data for that receiver. This is completely optional.</value>
+  </data>
+  <data name="Here you can set how the imported items should be linked. The value of the field that will create a link must be the numerical value of an item, i.e. the item ID. Link type what kind of link it will be. The column &amp;quot;Value is the target item&amp;quot; means that the imported item is linked to that item, instead of the item from that link being linked to the imported item. Only rows with a check mark are included in the import." xml:space="preserve">
+    <value>Here you can set how the imported items should be linked. The value of the field that will create a link must be the numerical value of an item, i.e. the item ID. Link type what kind of link it will be. The column &amp;quot;Value is the target item&amp;quot; means that the imported item is linked to that item, instead of the item from that link being linked to the imported item. Only rows with a check mark are included in the import. &lt;br /&gt;&lt;br /&gt;If you want all current links to be replaced, of each item in this import, with the links in this import, check the 'Remove current links' option for the relevant link(s) . This option makes sure that all links of each item in this import are first removed and then the new links are imported. &lt;br /&gt;&lt;strong&gt;&lt;u&gt;Attention!&lt;/u&gt;&lt;/strong&gt; With this option you may lose links if the supplied import file is not correct.</value>
+  </data>
+  <data name="Hide clear all filters button" xml:space="preserve">
+    <value>Hide clear all filters button</value>
+  </data>
+  <data name="Hide column environment" xml:space="preserve">
+    <value>Hide column environment</value>
+  </data>
+  <data name="Hide column id" xml:space="preserve">
+    <value>Hide column id</value>
+  </data>
+  <data name="Hide column link-id" xml:space="preserve">
+    <value>Hide column link-id</value>
+  </data>
+  <data name="Hide column title" xml:space="preserve">
+    <value>Hide column title</value>
+  </data>
+  <data name="Hide column type" xml:space="preserve">
+    <value>Hide column type</value>
+  </data>
+  <data name="Hide column with additional buttons/actions" xml:space="preserve">
+    <value>Hide column with additional buttons/actions</value>
+  </data>
+  <data name="Hide create new item button" xml:space="preserve">
+    <value>Hide create new item button</value>
+  </data>
+  <data name="Hide deselect all button" xml:space="preserve">
+    <value>Hide deselect all button</value>
+  </data>
+  <data name="Hide export to Excel button" xml:space="preserve">
+    <value>Hide export to Excel button</value>
+  </data>
+  <data name="Hide if no link" xml:space="preserve">
+    <value>Hide if no link</value>
+  </data>
+  <data name="Hide link existing items button" xml:space="preserve">
+    <value>Hide link existing items button</value>
+  </data>
+  <data name="Hide number of results" xml:space="preserve">
+    <value>Hide number of results</value>
+  </data>
+  <data name="Hide select all button" xml:space="preserve">
+    <value>Hide select all button</value>
+  </data>
+  <data name="Hide title field when opening item" xml:space="preserve">
+    <value>Hide title field when opening item</value>
+  </data>
+  <data name="Highest value (MAX)" xml:space="preserve">
+    <value>Highest value (MAX)</value>
+  </data>
+  <data name="History" xml:space="preserve">
+    <value>History</value>
+  </data>
+  <data name="Host" xml:space="preserve">
+    <value>Host</value>
+  </data>
+  <data name="Hotkey (access key)" xml:space="preserve">
+    <value>Hotkey (access key)</value>
+  </data>
+  <data name="How and where on the page should this CSS template be added?" xml:space="preserve">
+    <value>How and where on the page should this CSS-template be added?</value>
+  </data>
+  <data name="How and where on the page should this Javascript-template be added?" xml:space="preserve">
+    <value>How and where on the page should this Javascript-template be added?</value>
+  </data>
+  <data name="How and where on the page should this SCSS-template be added?" xml:space="preserve">
+    <value>How and where on the page should this SCSS-template be added?</value>
+  </data>
+  <data name="How long should the cache be kept? If this value is 0 or less, the setting 'GCL.DefaultTemplateCacheDuration' will be used for the appsettings.json." xml:space="preserve">
+    <value>How long should the cache be kept? If this value is 0 or less, the setting 'GCL.DefaultTemplateCacheDuration' will be used for the appsettings.json.</value>
+  </data>
+  <data name="HTML" xml:space="preserve">
+    <value>HTML</value>
+  </data>
+  <data name="HTML editor - formatting" xml:space="preserve">
+    <value>HTML editor - formatting</value>
+  </data>
+  <data name="Icon" xml:space="preserve">
+    <value>Icon</value>
+  </data>
+  <data name="Icon expanded" xml:space="preserve">
+    <value>Icon expanded</value>
+  </data>
+  <data name="ID" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="If a pre-load query has been filled in below and this query does not give a result, a 404 can be shown to the visitor." xml:space="preserve">
+    <value>If a pre-load query has been filled in below and this query does not give a result, a 404 can be shown to the visitor.</value>
+  </data>
+  <data name="If a valid regex is entered here, this header or footer will only be used for URLs that match this regex." xml:space="preserve">
+    <value>If a valid regex is entered here, this header or footer will only be used for URLs that match this regex.</value>
+  </data>
+  <data name="If a valid regex is entered here, this template will only be cached for URLs that match this regex." xml:space="preserve">
+    <value>If a valid regex is entered here, this template will only be cached for URLs that match this regex.</value>
+  </data>
+  <data name="If the results of the query should be grouped, enter the column by which to group." xml:space="preserve">
+    <value>If the results of the query should be grouped, enter the column by which to group.</value>
+  </data>
+  <data name="If the results of the query should be grouped, enter the prefix here for all columns that are from sub-items. These relevant columns must then start with this value in the results of the query." xml:space="preserve">
+    <value>If the results of the query should be grouped, enter the prefix here for all columns that are from sub-items. These relevant columns must then start with this value in the results of the query.</value>
+  </data>
+  <data name="If there is CSS from a CDN or similar, needs to be loaded, its URLs can be entered here." xml:space="preserve">
+    <value>If there is CSS from a CDN or similar, needs to be loaded, its URLs can be entered here.</value>
+  </data>
+  <data name="If there is javascript from a CDN or similar, needs to be loaded, its URLs can be entered here." xml:space="preserve">
+    <value>If there is javascript from a CDN or similar, needs to be loaded, its URLs can be entered here.</value>
+  </data>
+  <data name="If you select a mail template and a language (if you have multilingual in Wiser) above, that template will automatically be filled here." xml:space="preserve">
+    <value>If you select a mail template and a language (if you have multilingual in Wiser) above, that template will automatically be filled here. The mail can then be changed if you want to deviate from the chosen template. Dynamic values ​​can be used here that come from a data selector or query, these dynamic values ​​must be inside braces (for example: '{firstName}'). You can see which values ​​you can enter here in the data selector module. Open the relevant data selector there and click on the button 'Show result', there you will see a JSON object and all values ​​that are there can be used here.</value>
+  </data>
+  <data name="Images" xml:space="preserve">
+    <value>Images</value>
+  </data>
+  <data name="Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Import link properties" xml:space="preserve">
+    <value>Import link properties</value>
+  </data>
+  <data name="Import links" xml:space="preserve">
+    <value>Import links</value>
+  </data>
+  <data name="Import properties" xml:space="preserve">
+    <value>Import properties</value>
+  </data>
+  <data name="In addition, the following database users have been created:" xml:space="preserve">
+    <value>In addition, the following database users have been created:</value>
+  </data>
+  <data name="In memory" xml:space="preserve">
+    <value>In memory</value>
+  </data>
+  <data name="In progress" xml:space="preserve">
+    <value>In progress</value>
+  </data>
+  <data name="In this case no http(s) need to be added and no slash or similar at the end. Only the customer's primary domain." xml:space="preserve">
+    <value>In this case no http(s) need to be added and no slash or similar at the end. Only the customer's primary domain.</value>
+  </data>
+  <data name="InputType" xml:space="preserve">
+    <value>InputType</value>
+  </data>
+  <data name="Insert" xml:space="preserve">
+    <value>Insert</value>
+  </data>
+  <data name="Insert mode" xml:space="preserve">
+    <value>Insert mode</value>
+  </data>
+  <data name="int" xml:space="preserve">
+    <value>int</value>
+  </data>
+  <data name="integer" xml:space="preserve">
+    <value>integer</value>
+  </data>
+  <data name="is between" xml:space="preserve">
+    <value>is between</value>
+  </data>
+  <data name="Is configurator" xml:space="preserve">
+    <value>Is configurator</value>
+  </data>
+  <data name="is empty" xml:space="preserve">
+    <value>is empty</value>
+  </data>
+  <data name="is equal to" xml:space="preserve">
+    <value>is equal to</value>
+  </data>
+  <data name="Is folder" xml:space="preserve">
+    <value>Is folder</value>
+  </data>
+  <data name="is greater than" xml:space="preserve">
+    <value>is greater than</value>
+  </data>
+  <data name="is greater than or equal to" xml:space="preserve">
+    <value>is greater than or equal to</value>
+  </data>
+  <data name="Is item ID" xml:space="preserve">
+    <value>Is item ID</value>
+  </data>
+  <data name="is less than" xml:space="preserve">
+    <value>is less than</value>
+  </data>
+  <data name="is less than or equal to" xml:space="preserve">
+    <value>is less than or equal to</value>
+  </data>
+  <data name="Is multilingual" xml:space="preserve">
+    <value>Is multilingual</value>
+  </data>
+  <data name="is not empty" xml:space="preserve">
+    <value>is not empty</value>
+  </data>
+  <data name="is not equal to" xml:space="preserve">
+    <value>is not equal to</value>
+  </data>
+  <data name="Is SCSS include template" xml:space="preserve">
+    <value>Is SCSS include template</value>
+  </data>
+  <data name="Is this a SCSS template which is used by means of an import in other SCSS templates?" xml:space="preserve">
+    <value>Is this a SCSS template which is used by means of an import in other SCSS templates?</value>
+  </data>
+  <data name="Is webshop" xml:space="preserve">
+    <value>Is webshop</value>
+  </data>
+  <data name="Item" xml:space="preserve">
+    <value>Item</value>
+  </data>
+  <data name="Item id" xml:space="preserve">
+    <value>Item id</value>
+  </data>
+  <data name="Item link" xml:space="preserve">
+    <value>Item link</value>
+  </data>
+  <data name="Item selection options" xml:space="preserve">
+    <value>Item selection options</value>
+  </data>
+  <data name="items" xml:space="preserve">
+    <value>items</value>
+  </data>
+  <data name="Items cannot be edited in the line" xml:space="preserve">
+    <value>Items cannot be edited in the line</value>
+  </data>
+  <data name="Items cannot be opened" xml:space="preserve">
+    <value>Items cannot be opened</value>
+  </data>
+  <data name="json" xml:space="preserve">
+    <value>json</value>
+  </data>
+  <data name="Label style" xml:space="preserve">
+    <value>Label style</value>
+  </data>
+  <data name="Label width" xml:space="preserve">
+    <value>Label width</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Language code" xml:space="preserve">
+    <value>Language code</value>
+  </data>
+  <data name="Last month" xml:space="preserve">
+    <value>Last month</value>
+  </data>
+  <data name="Last X items" xml:space="preserve">
+    <value>Last X items</value>
+  </data>
+  <data name="Last year" xml:space="preserve">
+    <value>Last year</value>
+  </data>
+  <data name="Layer 0 is a special case; If you only have a single layer, then layer 0 is the one and only layer that you need. If you have more than 1 layers, then layer 0 is where you can add a global header, footer and no-data template. Layer 1 and higher are the templates that correspond with the layers that the query returns." xml:space="preserve">
+    <value>Layer 0 is a special case; If you only have a single layer, then layer 0 is the one and only layer that you need. If you have more than 1 layers, then layer 0 is where you can add a global header, footer and no-data template. Layer 1 and higher are the templates that correspond with the layers that the query returns.</value>
+  </data>
+  <data name="Left" xml:space="preserve">
+    <value>Left</value>
+  </data>
+  <data name="Limited formatting + layout (align and tables)" xml:space="preserve">
+    <value>Limited formatting + layout (align and tables)</value>
+  </data>
+  <data name="Limited formatting + layout (align and tables) + templates" xml:space="preserve">
+    <value>Limited formatting + layout (align and tables) + templates</value>
+  </data>
+  <data name="Limited formatting only" xml:space="preserve">
+    <value>Limited formatting only</value>
+  </data>
+  <data name="linestring" xml:space="preserve">
+    <value>linestring</value>
+  </data>
+  <data name="Link type" xml:space="preserve">
+    <value>Link type</value>
+  </data>
+  <data name="Link type number" xml:space="preserve">
+    <value>Link type number</value>
+  </data>
+  <data name="Link type/" xml:space="preserve">
+    <value>Link type/</value>
+  </data>
+  <data name="Linked (S)CSS templates" xml:space="preserve">
+    <value>Linked (S)CSS templates</value>
+  </data>
+  <data name="Linked JS templates" xml:space="preserve">
+    <value>Linked JS templates</value>
+  </data>
+  <data name="Linked Templates:" xml:space="preserve">
+    <value>Linked Templates:</value>
+  </data>
+  <data name="List of entities" xml:space="preserve">
+    <value>List of entities</value>
+  </data>
+  <data name="Live" xml:space="preserve">
+    <value>Live</value>
+  </data>
+  <data name="Load in Wiser HTML editors" xml:space="preserve">
+    <value>Load in Wiser HTML editors</value>
+  </data>
+  <data name="Load on every page" xml:space="preserve">
+    <value>Load on every page</value>
+  </data>
+  <data name="Loading data unsecured" xml:space="preserve">
+    <value>Loading data unsecured</value>
+  </data>
+  <data name="Log out" xml:space="preserve">
+    <value>Log out</value>
+  </data>
+  <data name="Logged in time" xml:space="preserve">
+    <value>Logged in time</value>
+  </data>
+  <data name="Login" xml:space="preserve">
+    <value>Login</value>
+  </data>
+  <data name="longblob" xml:space="preserve">
+    <value>longblob</value>
+  </data>
+  <data name="longtext" xml:space="preserve">
+    <value>longtext</value>
+  </data>
+  <data name="Lowest value (MIN)" xml:space="preserve">
+    <value>Lowest value (MIN)</value>
+  </data>
+  <data name="Make available for rendering" xml:space="preserve">
+    <value>Make available for rendering</value>
+  </data>
+  <data name="Make available in communication module" xml:space="preserve">
+    <value>Make available in communication module</value>
+  </data>
+  <data name="Make available in export module" xml:space="preserve">
+    <value>Make available in export module</value>
+  </data>
+  <data name="Make your choice..." xml:space="preserve">
+    <value>Make your choice...</value>
+  </data>
+  <data name="Match against" xml:space="preserve">
+    <value>Match against</value>
+  </data>
+  <data name="Match columns" xml:space="preserve">
+    <value>Match columns</value>
+  </data>
+  <data name="Maximum value" xml:space="preserve">
+    <value>Maximum value</value>
+  </data>
+  <data name="mediumblob" xml:space="preserve">
+    <value>mediumblob</value>
+  </data>
+  <data name="mediumint" xml:space="preserve">
+    <value>mediumint</value>
+  </data>
+  <data name="mediumtext" xml:space="preserve">
+    <value>mediumtext</value>
+  </data>
+  <data name="Menu" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="Method" xml:space="preserve">
+    <value>Method</value>
+  </data>
+  <data name="Minimum time" xml:space="preserve">
+    <value>Minimum time</value>
+  </data>
+  <data name="Minimum value" xml:space="preserve">
+    <value>Minimum value</value>
+  </data>
+  <data name="Mode" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="Module" xml:space="preserve">
+    <value>Module</value>
+  </data>
+  <data name="Module ID" xml:space="preserve">
+    <value>Module ID</value>
+  </data>
+  <data name="Module name" xml:space="preserve">
+    <value>Module name</value>
+  </data>
+  <data name="Modules" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="monday" xml:space="preserve">
+    <value>monday</value>
+  </data>
+  <data name="month/months" xml:space="preserve">
+    <value>month/months</value>
+  </data>
+  <data name="multilinestring" xml:space="preserve">
+    <value>multilinestring</value>
+  </data>
+  <data name="Multiple files" xml:space="preserve">
+    <value>Multiple files</value>
+  </data>
+  <data name="multipoint" xml:space="preserve">
+    <value>multipoint</value>
+  </data>
+  <data name="multipolygon" xml:space="preserve">
+    <value>multipolygon</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Name for item" xml:space="preserve">
+    <value>Name for item</value>
+  </data>
+  <data name="Name reciever" xml:space="preserve">
+    <value>Name reciever</value>
+  </data>
+  <data name="New" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="New role" xml:space="preserve">
+    <value>New role</value>
+  </data>
+  <data name="Newly created" xml:space="preserve">
+    <value>Newly created</value>
+  </data>
+  <data name="No aggregation" xml:space="preserve">
+    <value>No aggregation</value>
+  </data>
+  <data name="No caching" xml:space="preserve">
+    <value>no caching</value>
+  </data>
+  <data name="No entities found. Please contact us." xml:space="preserve">
+    <value>No entities found. Please contact us.</value>
+  </data>
+  <data name="No filter" xml:space="preserve">
+    <value>No filter</value>
+  </data>
+  <data name="No formatting" xml:space="preserve">
+    <value>No formatting</value>
+  </data>
+  <data name="No item selected yet" xml:space="preserve">
+    <value>No item selected yet</value>
+  </data>
+  <data name="No pairing types found." xml:space="preserve">
+    <value>No pairing types found.</value>
+  </data>
+  <data name="No status" xml:space="preserve">
+    <value>No status</value>
+  </data>
+  <data name="Normal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="Note: with items &lt;strong&gt;alle&lt;/strong&gt; linked items are always included!" xml:space="preserve">
+    <value>Note: with items &lt;strong&gt;alle&lt;/strong&gt; linked items are always included!</value>
+  </data>
+  <data name="Nothing" xml:space="preserve">
+    <value>Nothing</value>
+  </data>
+  <data name="Number of decimals" xml:space="preserve">
+    <value>Number of decimals</value>
+  </data>
+  <data name="Number of Items:" xml:space="preserve">
+    <value>Number of Items:</value>
+  </data>
+  <data name="Number of logins" xml:space="preserve">
+    <value>Number of logins</value>
+  </data>
+  <data name="Number of users:" xml:space="preserve">
+    <value>Number of users:</value>
+  </data>
+  <data name="Numeric" xml:space="preserve">
+    <value>Numeric</value>
+  </data>
+  <data name="numeric." xml:space="preserve">
+    <value>numeric</value>
+  </data>
+  <data name="Object instead of array" xml:space="preserve">
+    <value>Object instead of array</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Old" xml:space="preserve">
+    <value>Old</value>
+  </data>
+  <data name="On" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="On hard disk" xml:space="preserve">
+    <value>On hard disk</value>
+  </data>
+  <data name="One or more fixed receivers" xml:space="preserve">
+    <value>One or more fixed receivers (e-mail address or mobile phone number). Enter multiple values ​​(these may be separated by commas, semicolons and/or enters).</value>
+  </data>
+  <data name="Only fields that do not yet contain a value in the target languages will be translated. This functionality will never overwrite entered values." xml:space="preserve">
+    <value>Only fields that do not yet contain a value in the target languages will be translated. This functionality will never overwrite entered values.</value>
+  </data>
+  <data name="Only the subdomain, with lowercase letters, for example 'happygeeks'. This is required for Wiser customers, who must be able to log in via a subdomain, such as 'happygeeks.wiser.nl'." xml:space="preserve">
+    <value>Only the subdomain, with lowercase letters, for example 'happygeeks'. This is required for Wiser customers, who must be able to log in via a subdomain, such as 'happygeeks.wiser.nl'.</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Open branch" xml:space="preserve">
+    <value>Open branch</value>
+  </data>
+  <data name="Open changes" xml:space="preserve">
+    <value>Open changes</value>
+  </data>
+  <data name="Open existing communication" xml:space="preserve">
+    <value>Open existing communication</value>
+  </data>
+  <data name="Open scheduling" xml:space="preserve">
+    <value>Open scheduling</value>
+  </data>
+  <data name="Open url in" xml:space="preserve">
+    <value>Open url in</value>
+  </data>
+  <data name="Open window" xml:space="preserve">
+    <value>Open window</value>
+  </data>
+  <data name="Open Wiser item" xml:space="preserve">
+    <value>Open Wiser item</value>
+  </data>
+  <data name="Optional" xml:space="preserve">
+    <value>Optional</value>
+  </data>
+  <data name="Options" xml:space="preserve">
+    <value>Options</value>
+  </data>
+  <data name="Options JSON" xml:space="preserve">
+    <value>Options JSON</value>
+  </data>
+  <data name="OR" xml:space="preserve">
+    <value>OR</value>
+  </data>
+  <data name="Order by" xml:space="preserve">
+    <value>Order by</value>
+  </data>
+  <data name="Original changed on" xml:space="preserve">
+    <value>Original changed on</value>
+  </data>
+  <data name="Others" xml:space="preserve">
+    <value>Others</value>
+  </data>
+  <data name="Outcome data selector" xml:space="preserve">
+    <value>Outcome data selector</value>
+  </data>
+  <data name="Overview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Parameters" xml:space="preserve">
+    <value>Parameters</value>
+  </data>
+  <data name="Parent objects" xml:space="preserve">
+    <value>Parent objects</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="PDF background field name" xml:space="preserve">
+    <value>PDF background field name</value>
+  </data>
+  <data name="PDF document options dield name" xml:space="preserve">
+    <value>PDF document options dield name</value>
+  </data>
+  <data name="PDF file name" xml:space="preserve">
+    <value>PDF file name</value>
+  </data>
+  <data name="Phone number selector" xml:space="preserve">
+    <value>Phone number selector</value>
+  </data>
+  <data name="point" xml:space="preserve">
+    <value>point</value>
+  </data>
+  <data name="Port number" xml:space="preserve">
+    <value>Port number</value>
+  </data>
+  <data name="Pre-load query" xml:space="preserve">
+    <value>Pre-load query</value>
+  </data>
+  <data name="Prepare import" xml:space="preserve">
+    <value>Prepare import</value>
+  </data>
+  <data name="Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Price per month:" xml:space="preserve">
+    <value>Price per month:</value>
+  </data>
+  <data name="Print" xml:space="preserve">
+    <value>Print</value>
+  </data>
+  <data name="Procedure" xml:space="preserve">
+    <value>Procedure</value>
+  </data>
+  <data name="Properties" xml:space="preserve">
+    <value>Properties</value>
+  </data>
+  <data name="Property name" xml:space="preserve">
+    <value>Property name</value>
+  </data>
+  <data name="Published Environment" xml:space="preserve">
+    <value>Published Environment</value>
+  </data>
+  <data name="Query" xml:space="preserve">
+    <value>Query</value>
+  </data>
+  <data name="Query after insert" xml:space="preserve">
+    <value>Query after insert</value>
+  </data>
+  <data name="Query after update" xml:space="preserve">
+    <value>Query after update</value>
+  </data>
+  <data name="Query before delete" xml:space="preserve">
+    <value>Query before delete</value>
+  </data>
+  <data name="Query before update" xml:space="preserve">
+    <value>Query before update</value>
+  </data>
+  <data name="Query description" xml:space="preserve">
+    <value>Query description</value>
+  </data>
+  <data name="Query for the number of records" xml:space="preserve">
+    <value>Query for the number of records</value>
+  </data>
+  <data name="Query item id" xml:space="preserve">
+    <value>Query item id</value>
+  </data>
+  <data name="Query's" xml:space="preserve">
+    <value>Query's</value>
+  </data>
+  <data name="Random X items" xml:space="preserve">
+    <value>Random X items</value>
+  </data>
+  <data name="Read only" xml:space="preserve">
+    <value>Read only</value>
+  </data>
+  <data name="Read-only field" xml:space="preserve">
+    <value>Read-only field</value>
+  </data>
+  <data name="Receivers" xml:space="preserve">
+    <value>Receivers</value>
+  </data>
+  <data name="reciever email address" xml:space="preserve">
+    <value>reciever email address</value>
+  </data>
+  <data name="Recurring" xml:space="preserve">
+    <value>Recurring</value>
+  </data>
+  <data name="Recurring date" xml:space="preserve">
+    <value>Recurring date</value>
+  </data>
+  <data name="Redirect URL" xml:space="preserve">
+    <value>Redirect URL</value>
+  </data>
+  <data name="Redirects" xml:space="preserve">
+    <value>Redirects</value>
+  </data>
+  <data name="Refresh grid after line edit" xml:space="preserve">
+    <value>Refresh grid after line edit</value>
+  </data>
+  <data name="Regex for Path" xml:space="preserve">
+    <value>Regex for Path</value>
+  </data>
+  <data name="Regex validation" xml:space="preserve">
+    <value>Regex validation</value>
+  </data>
+  <data name="Reload item" xml:space="preserve">
+    <value>Reload item</value>
+  </data>
+  <data name="Remember filters per user" xml:space="preserve">
+    <value>Remember filters per user</value>
+  </data>
+  <data name="Remove layer" xml:space="preserve">
+    <value>Remove layer</value>
+  </data>
+  <data name="Remove profile" xml:space="preserve">
+    <value>Remove profile</value>
+  </data>
+  <data name="Rename file" xml:space="preserve">
+    <value>Rename file</value>
+  </data>
+  <data name="Rename image" xml:space="preserve">
+    <value>Rename image</value>
+  </data>
+  <data name="Rename template" xml:space="preserve">
+    <value>Rename template</value>
+  </data>
+  <data name="Repeat your new password" xml:space="preserve">
+    <value>Repeat your new password</value>
+  </data>
+  <data name="Report bug!" xml:space="preserve">
+    <value>Report bug!</value>
+  </data>
+  <data name="Required field" xml:space="preserve">
+    <value>Required field</value>
+  </data>
+  <data name="Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Restore branch" xml:space="preserve">
+    <value>Restore branch</value>
+  </data>
+  <data name="Restore existing branch to production" xml:space="preserve">
+    <value>Restore existing branch to production</value>
+  </data>
+  <data name="Return 404 status if pre-load query has no results" xml:space="preserve">
+    <value>Return 404 status if pre-load query has no results</value>
+  </data>
+  <data name="Returns" xml:space="preserve">
+    <value>Returns</value>
+  </data>
+  <data name="Reverse" xml:space="preserve">
+    <value>Reverse</value>
+  </data>
+  <data name="Right" xml:space="preserve">
+    <value>Right</value>
+  </data>
+  <data name="Roles" xml:space="preserve">
+    <value>Roles</value>
+  </data>
+  <data name="Roles that are allowed to execute this data selector via the API" xml:space="preserve">
+    <value>Roles that are allowed to execute this data selector via the API</value>
+  </data>
+  <data name="Roles that have permissions on the query" xml:space="preserve">
+    <value>Roles that have permissions on the query</value>
+  </data>
+  <data name="Routine type" xml:space="preserve">
+    <value>Routine type</value>
+  </data>
+  <data name="saturday" xml:space="preserve">
+    <value>saturday</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Save &amp;amp; close" xml:space="preserve">
+    <value>Save &amp;amp; close</value>
+  </data>
+  <data name="Save &amp;amp; deploy to test environment" xml:space="preserve">
+    <value>Save &amp;amp; deploy to test environment</value>
+  </data>
+  <data name="Save and close" xml:space="preserve">
+    <value>Save and close</value>
+  </data>
+  <data name="Save and create new item" xml:space="preserve">
+    <value>Save and create new item</value>
+  </data>
+  <data name="Save as PDF" xml:space="preserve">
+    <value>Save as PDF</value>
+  </data>
+  <data name="Save history" xml:space="preserve">
+    <value>Save history</value>
+  </data>
+  <data name="Save profile" xml:space="preserve">
+    <value>Save profile</value>
+  </data>
+  <data name="Save profile as..." xml:space="preserve">
+    <value>Save profile as...</value>
+  </data>
+  <data name="Save title as SEO" xml:space="preserve">
+    <value>Save title as SEO</value>
+  </data>
+  <data name="Save value of this field also as search engine friendly text" xml:space="preserve">
+    <value>Save value of this field also as search engine friendly text</value>
+  </data>
+  <data name="Saving Changes" xml:space="preserve">
+    <value>Saving Changes</value>
+  </data>
+  <data name="Scheduling history" xml:space="preserve">
+    <value>Scheduling history</value>
+  </data>
+  <data name="Schema name" xml:space="preserve">
+    <value>Schema name</value>
+  </data>
+  <data name="Scope" xml:space="preserve">
+    <value>Scope</value>
+  </data>
+  <data name="Script" xml:space="preserve">
+    <value>Script</value>
+  </data>
+  <data name="Search in fields" xml:space="preserve">
+    <value>Search in fields</value>
+  </data>
+  <data name="Search in title" xml:space="preserve">
+    <value>Search in titel</value>
+  </data>
+  <data name="Search-counter-query" xml:space="preserve">
+    <value>Search-counter-query</value>
+  </data>
+  <data name="Search-query" xml:space="preserve">
+    <value>Search-query</value>
+  </data>
+  <data name="Security key" xml:space="preserve">
+    <value>Security key</value>
+  </data>
+  <data name="Security method" xml:space="preserve">
+    <value>Security method</value>
+  </data>
+  <data name="Select a component" xml:space="preserve">
+    <value>Select a component</value>
+  </data>
+  <data name="Select a data file... (max. 25 MB)" xml:space="preserve">
+    <value>Select a data file... (max. 25 MB)</value>
+  </data>
+  <data name="Select a data selector" xml:space="preserve">
+    <value>Select a data selector</value>
+  </data>
+  <data name="Select a query" xml:space="preserve">
+    <value>Select a query</value>
+  </data>
+  <data name="Select a ZIP file with images... (max. 400 MB)" xml:space="preserve">
+    <value>Select a ZIP file with images... (max. 400 MB)</value>
+  </data>
+  <data name="Select or add entity" xml:space="preserve">
+    <value>Select or add entity</value>
+  </data>
+  <data name="Select or add module" xml:space="preserve">
+    <value>Select or add module</value>
+  </data>
+  <data name="Select or add query" xml:space="preserve">
+    <value>Select or add query</value>
+  </data>
+  <data name="Select period" xml:space="preserve">
+    <value>Select period</value>
+  </data>
+  <data name="Select required data" xml:space="preserve">
+    <value>Select required data</value>
+  </data>
+  <data name="Select required information from links" xml:space="preserve">
+    <value>Select required information from links</value>
+  </data>
+  <data name="Select the branch you want to open" xml:space="preserve">
+    <value>Select the branch you want to open</value>
+  </data>
+  <data name="Select the branch you want to synchronize first" xml:space="preserve">
+    <value>Select the branch you want to synchronize first</value>
+  </data>
+  <data name="Select the languages which all fields should be translated to. You can leave this field empty if you want to use all languages (that are set in the Master data module)." xml:space="preserve">
+    <value>Select the languages which all fields should be translated to. You can leave this field empty if you want to use all languages (that are set in the Master data module).</value>
+  </data>
+  <data name="Select the receivers via a data selector." xml:space="preserve">
+    <value>Select the receivers via a data selector.</value>
+  </data>
+  <data name="Select the receivers via a preset query." xml:space="preserve">
+    <value>Select the receivers via a preset query.</value>
+  </data>
+  <data name="Select to synchronize Wiser data" xml:space="preserve">
+    <value>Select to synchronize Wiser data</value>
+  </data>
+  <data name="Selection" xml:space="preserve">
+    <value>Selection</value>
+  </data>
+  <data name="Send" xml:space="preserve">
+    <value>Send</value>
+  </data>
+  <data name="Send on" xml:space="preserve">
+    <value>Send on</value>
+  </data>
+  <data name="Send pattern" xml:space="preserve">
+    <value>Send pattern</value>
+  </data>
+  <data name="Send time" xml:space="preserve">
+    <value>Send time</value>
+  </data>
+  <data name="Sender email address" xml:space="preserve">
+    <value>Sender email address</value>
+  </data>
+  <data name="Sender name" xml:space="preserve">
+    <value>Sender name</value>
+  </data>
+  <data name="SEO" xml:space="preserve">
+    <value>SEO</value>
+  </data>
+  <data name="server caching full template (based on full URL, including domain and query string)" xml:space="preserve">
+    <value>server caching full template (based on full URL, including domain and query string)</value>
+  </data>
+  <data name="server caching full template (per SEO friendly URL + query string combination different)" xml:space="preserve">
+    <value>server caching full template (per SEO friendly URL + query string combination different)</value>
+  </data>
+  <data name="server caching full template (per SEO friendly URL different)" xml:space="preserve">
+    <value>server caching full template (per SEO friendly URL different)</value>
+  </data>
+  <data name="server caching full template (regardless of URL)" xml:space="preserve">
+    <value>server caching full template (regardless of URL)</value>
+  </data>
+  <data name="Set 0 for no limit" xml:space="preserve">
+    <value>Set 0 for no limit</value>
+  </data>
+  <data name="Set a limit" xml:space="preserve">
+    <value>Set a limit</value>
+  </data>
+  <data name="Set current date as default" xml:space="preserve">
+    <value>Set current date as default</value>
+  </data>
+  <data name="Set the sort order" xml:space="preserve">
+    <value>Set the sort order</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Shopping baskets" xml:space="preserve">
+    <value>Shopping baskets</value>
+  </data>
+  <data name="Should caching be enabled for this template? If yes, what kind of caching. For example, caching can be the same for all URLs, or separate cache per URL/querystring." xml:space="preserve">
+    <value>Should caching be enabled for this template? If yes, what kind of caching. For example, caching can be the same for all URLs, or separate cache per URL/querystring.</value>
+  </data>
+  <data name="Show added by column" xml:space="preserve">
+    <value>Show added by column</value>
+  </data>
+  <data name="Show added on column" xml:space="preserve">
+    <value>Show added on column</value>
+  </data>
+  <data name="Show all items, instead of only linked items" xml:space="preserve">
+    <value>Show all items, instead of only linked items</value>
+  </data>
+  <data name="Show changed on column" xml:space="preserve">
+    <value>Show changed on column</value>
+  </data>
+  <data name="Show everything" xml:space="preserve">
+    <value>Show everything</value>
+  </data>
+  <data name="Show in communication module" xml:space="preserve">
+    <value>Show in communication module</value>
+  </data>
+  <data name="Show in export module" xml:space="preserve">
+    <value>Show in export module</value>
+  </data>
+  <data name="Show in overview tab" xml:space="preserve">
+    <value>Show in overview tab</value>
+  </data>
+  <data name="Show in search" xml:space="preserve">
+    <value>Show in search</value>
+  </data>
+  <data name="Show in tree view" xml:space="preserve">
+    <value>Show in tree view</value>
+  </data>
+  <data name="Show JSON" xml:space="preserve">
+    <value>Show JSON</value>
+  </data>
+  <data name="Show less" xml:space="preserve">
+    <value>Show less</value>
+  </data>
+  <data name="Show query" xml:space="preserve">
+    <value>Show query</value>
+  </data>
+  <data name="Show related videos" xml:space="preserve">
+    <value>Show related videos</value>
+  </data>
+  <data name="Show result" xml:space="preserve">
+    <value>Show result</value>
+  </data>
+  <data name="Show text if no link" xml:space="preserve">
+    <value>Show text if no link</value>
+  </data>
+  <data name="Show title field" xml:space="preserve">
+    <value>Show title field</value>
+  </data>
+  <data name="Size in pixels" xml:space="preserve">
+    <value>Size in pixels</value>
+  </data>
+  <data name="SMS" xml:space="preserve">
+    <value>SMS</value>
+  </data>
+  <data name="Sorting" xml:space="preserve">
+    <value>Sorting</value>
+  </data>
+  <data name="Source language" xml:space="preserve">
+    <value>Source language</value>
+  </data>
+  <data name="Start actions" xml:space="preserve">
+    <value>Start actions</value>
+  </data>
+  <data name="Start creating new branch" xml:space="preserve">
+    <value>Start creating new branch</value>
+  </data>
+  <data name="Start date and time" xml:space="preserve">
+    <value>Start date and time</value>
+  </data>
+  <data name="Start directly" xml:space="preserve">
+    <value>Start directly</value>
+  </data>
+  <data name="Start export" xml:space="preserve">
+    <value>Start export</value>
+  </data>
+  <data name="Start on:" xml:space="preserve">
+    <value>Start on:</value>
+  </data>
+  <data name="Start restore procedure" xml:space="preserve">
+    <value>Start restore procedure</value>
+  </data>
+  <data name="starts with" xml:space="preserve">
+    <value>starts with</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Stay logged in" xml:space="preserve">
+    <value>Stay logged in</value>
+  </data>
+  <data name="Step value" xml:space="preserve">
+    <value>Step value</value>
+  </data>
+  <data name="Stretch" xml:space="preserve">
+    <value>Stretch</value>
+  </data>
+  <data name="Subject" xml:space="preserve">
+    <value>Subject</value>
+  </data>
+  <data name="Sum of values (SUM)" xml:space="preserve">
+    <value>Sum of values (SUM)</value>
+  </data>
+  <data name="sunday" xml:space="preserve">
+    <value>sunday</value>
+  </data>
+  <data name="Tab" xml:space="preserve">
+    <value>Tab</value>
+  </data>
+  <data name="Table" xml:space="preserve">
+    <value>Table</value>
+  </data>
+  <data name="Table name prefix" xml:space="preserve">
+    <value>Table name prefix</value>
+  </data>
+  <data name="Tabname" xml:space="preserve">
+    <value>Tabname</value>
+  </data>
+  <data name="Target languages" xml:space="preserve">
+    <value>Target languages</value>
+  </data>
+  <data name="Task description" xml:space="preserve">
+    <value>Task description</value>
+  </data>
+  <data name="Template" xml:space="preserve">
+    <value>Template</value>
+  </data>
+  <data name="Templates" xml:space="preserve">
+    <value>Templates</value>
+  </data>
+  <data name="Test" xml:space="preserve">
+    <value>Test</value>
+  </data>
+  <data name="Text" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="Text on button" xml:space="preserve">
+    <value>Text on button</value>
+  </data>
+  <data name="Text only" xml:space="preserve">
+    <value>Text only</value>
+  </data>
+  <data name="Textbox type" xml:space="preserve">
+    <value>Textbox type</value>
+  </data>
+  <data name="The column in the query that contains the key for the object." xml:space="preserve">
+    <value>The column in the query that contains the key for the object.</value>
+  </data>
+  <data name="The column in the query that contains the value for the object." xml:space="preserve">
+    <value>The column in the query that contains the value for the object.</value>
+  </data>
+  <data name="The customer has been successfully created and has ID '" xml:space="preserve">
+    <value>The customer has been successfully created and has ID '</value>
+  </data>
+  <data name="The customer's full company name. For example, 'Happy Geeks B.V.'. Only we see this name, the customer does not see this name anywhere." xml:space="preserve">
+    <value>The customer's full company name. For example, 'Happy Geeks B.V.'. Only we see this name, the customer does not see this name anywhere.</value>
+  </data>
+  <data name="The domain that will be used for the live. If you do not enter it now, you will have to enter it later in the settings module at the customer.&lt;br /&gt;" xml:space="preserve">
+    <value>The domain that will be used for the live. If you do not enter it now, you will have to enter it later in the settings module at the customer.&lt;br /&gt;</value>
+  </data>
+  <data name="The domain that will be used for the test. If you do not enter it now, you will have to enter it later in the settings module at the customer.&lt;br /&gt;" xml:space="preserve">
+    <value>The domain that will be used for the test. If you do not enter it now, you will have to enter it later in the settings module at the customer.&lt;br /&gt;</value>
+  </data>
+  <data name="The image can be cutted off/filled at the bottom and left." xml:space="preserve">
+    <value>The image can be cutted off/filled at the bottom and left.</value>
+  </data>
+  <data name="The image can be cutted off/filled at the bottom and right." xml:space="preserve">
+    <value>The image can be cutted off/filled at the bottom and right.</value>
+  </data>
+  <data name="The image can be cutted off/filled at the bottom, left and right." xml:space="preserve">
+    <value>The image can be cutted off/filled at the bottom, left and right.</value>
+  </data>
+  <data name="The image can be cutted off/filled at the top and left." xml:space="preserve">
+    <value>The image can be cutted off/filled at the top and left.</value>
+  </data>
+  <data name="The image can be cutted off/filled at the top and right." xml:space="preserve">
+    <value>The image can be cutted off/filled at the top and right.</value>
+  </data>
+  <data name="The image can be cutted off/filled at the top, bottom and left." xml:space="preserve">
+    <value>The image can be cutted off/filled at the top, bottom and left.</value>
+  </data>
+  <data name="The image can be cutted off/filled at the top, bottom and right." xml:space="preserve">
+    <value>The image can be cutted off/filled at the top, bottom and right.</value>
+  </data>
+  <data name="The image can be cutted off/filled at the top, bottom left and right." xml:space="preserve">
+    <value>The image can be cutted off/filled at the top, bottom left and right.</value>
+  </data>
+  <data name="The image can be cutted off/filled at the top, left and right." xml:space="preserve">
+    <value>The image can be cutted off/filled at the top, left and right.</value>
+  </data>
+  <data name="The image is stretched or contracted until the resolution is exactly as specified. Warning: In many cases this causes distorted images." xml:space="preserve">
+    <value>The image is stretched or contracted until the resolution is exactly as specified. Warning: In many cases this causes distorted images.</value>
+  </data>
+  <data name="The image size will be made smaller or larger to the size closest to the desired size. Proportions of the original image can be preserved. Example: The image is 150x200 pixels and the desired size is 150x150. The final image size will then be 113x150 pixels." xml:space="preserve">
+    <value>The image size will be made smaller or larger to the size closest to the desired size. Proportions of the original image can be preserved. Example: The image is 150x200 pixels and the desired size is 150x150. The final image size will then be 113x150 pixels.</value>
+  </data>
+  <data name="The import is prepared. You will be notified as soon as it is completed." xml:space="preserve">
+    <value>The import is prepared. You will be notified as soon as it is completed.</value>
+  </data>
+  <data name="The position on the image from which to cut or fill." xml:space="preserve">
+    <value>The position on the image from which to cut or fill.</value>
+  </data>
+  <data name="The regular expression that the URL must meet to load this generic template." xml:space="preserve">
+    <value>The regular expression that the URL must meet to load this generic template. For example ^((?!newsitem).)*$ for all pages where 'newsitem' is not in the name.</value>
+  </data>
+  <data name="The selected items can be dragged" xml:space="preserve">
+    <value>The selected items can be dragged</value>
+  </data>
+  <data name="The SMS message to be sent" xml:space="preserve">
+    <value>The SMS message to be sent</value>
+  </data>
+  <data name="The specified ID occurs more than once. Choose which type you want to open:" xml:space="preserve">
+    <value>The specified ID occurs more than once. Choose which type you want to open:</value>
+  </data>
+  <data name="The type of data that is expected back. This is only for functions, not stored procedures." xml:space="preserve">
+    <value>The type of data that is expected back. This is only for functions, not stored procedures.</value>
+  </data>
+  <data name="The URL for Wiser dev has become:" xml:space="preserve">
+    <value>The URL for Wiser dev has become:</value>
+  </data>
+  <data name="The URL for Wiser Live has become:" xml:space="preserve">
+    <value>The URL for Wiser Live has become:</value>
+  </data>
+  <data name="The value of the field in the data file that should import the image must contain the name of the image as it is contained in the ZIP file, for example &amp;quot;product.jpg&amp;quot;. The images in the ZIP file must not be in a folder." xml:space="preserve">
+    <value>The value of the field in the data file that should import the image must contain the name of the image as it is contained in the ZIP file, for example &amp;quot;product.jpg&amp;quot;. The images in the ZIP file must not be in a folder.</value>
+  </data>
+  <data name="The way to resize the image:" xml:space="preserve">
+    <value>The way to resize the image:</value>
+  </data>
+  <data name="The website name, which is added to the back of the title on every page. Example: Contact - Happy Geeks" xml:space="preserve">
+    <value>The website name, which is added to the back of the title on every page. Example: Contact - Happy Geeks</value>
+  </data>
+  <data name="Then you will see some JSON. Copy the value of 'access_token' and paste it into this field. &lt;br /&gt; Then click on the 'Get Clusters' button below and then select the cluster to which the customer should be added." xml:space="preserve">
+    <value>Then you will see some JSON. Copy the value of 'access_token' and paste it into this field. &lt;br /&gt; Then click on the 'Get Clusters' button below and then select the cluster to which the customer should be added.</value>
+  </data>
+  <data name="There are no changes in Wiser data to synchronize." xml:space="preserve">
+    <value>There are no changes in Wiser data to synchronize.</value>
+  </data>
+  <data name="This action cannot be undone. If you do not check all the options above, changes may be lost." xml:space="preserve">
+    <value>This action cannot be undone. If you do not check all the options above, changes may be lost.</value>
+  </data>
+  <data name="This allows changes which is made in a branch to be transferred to the production environment. You can then choose which changes should be implemented, which does not necessarily have to be everything. It is not possible to merge different branches. The merge always goes from a branch to the production environment." xml:space="preserve">
+    <value>This allows changes which is made in a branch to be transferred to the production environment. You can then choose which changes should be implemented, which does not necessarily have to be everything. It is not possible to merge different branches. The merge always goes from a branch to the production environment.</value>
+  </data>
+  <data name="This allows this field to be copied to all languages ​​that do not yet have this field." xml:space="preserve">
+    <value>This allows this field to be copied to all languages ​​that do not yet have this field.</value>
+  </data>
+  <data name="This can be used to indicate where the e-mail address of the reseivers is exactly in the results of the query or data selector. This can be left blank if fixed reseivers are entered. If, for example, there is an 'email address' field in the data selector, then the value 'email address' can be entered here. If the e-mail address is on a deeper level, this can also be done by by separating with points, for example" xml:space="preserve">
+    <value>This can be used to indicate where the e-mail address of the reseivers is exactly in the results of the query or data selector. This can be left blank if fixed reseivers are entered. If, for example, there is an 'email address' field in the data selector, then the value 'email address' can be entered here. If the e-mail address is on a deeper level, this can also be done by by separating with points, for example</value>
+  </data>
+  <data name="This can be used to indicate where the telephone number of the recipients is exactly in the results of the query or data selector. This can be left blank if fixed recipients are entered. If, for example, there is a field 'telephone number' in the data selector, then the value '{telephone number}' can be entered here. If the phone number is on a deeper level, you can also separate it with dots, for example '{customer.phone}'." xml:space="preserve">
+    <value>This can be used to indicate where the telephone number of the recipients is exactly in the results of the query or data selector. This can be left blank if fixed recipients are entered. If, for example, there is a field 'telephone number' in the data selector, then the value '{telephone number}' can be entered here. If the phone number is on a deeper level, you can also separate it with dots, for example '{customer.phone}'.</value>
+  </data>
+  <data name="This only works if the data selector is loaded based on ID" xml:space="preserve">
+    <value>This only works if the data selector is loaded based on ID</value>
+  </data>
+  <data name="This query is executed 1 time at the beginning while loading this template. The results of this query can be used elsewhere in the template with the prefix 'template.'. For example, if the query returns a 'title' column, then the variable '{template.title}' can be used anywhere in the template, including dynamic components. Only the first line of the query result can be used. This query can also be used to put SEO meta tags on the page." xml:space="preserve">
+    <value>This query is executed 1 time at the beginning while loading this template. The results of this query can be used elsewhere in the template with the prefix 'template.'. For example, if the query returns a 'title' column, then the variable '{template.title}' can be used anywhere in the template, including dynamic components. Only the first line of the query result can be used. This query can also be used to put SEO meta tags on the page. The query must contain one or more of the following columns, which will then be processed automatically: SEOtitle, SEOdescription, SEOkeywords, SEOcanonical, noindex, nofollow and SEOrobots.</value>
+  </data>
+  <data name="This template is the default footer" xml:space="preserve">
+    <value>This template is the default footer</value>
+  </data>
+  <data name="This template is the default header" xml:space="preserve">
+    <value>This template is the default header</value>
+  </data>
+  <data name="thursday" xml:space="preserve">
+    <value>thursday</value>
+  </data>
+  <data name="Till" xml:space="preserve">
+    <value>Till</value>
+  </data>
+  <data name="Timing" xml:space="preserve">
+    <value>Timing</value>
+  </data>
+  <data name="To create a new tab; create a new field, or change an existing field, and enter the name for the new tab at 'Tab'" xml:space="preserve">
+    <value>To create a new tab; create a new field, or change an existing field, and enter the name for the new tab at 'Tab'</value>
+  </data>
+  <data name="Top" xml:space="preserve">
+    <value>Top</value>
+  </data>
+  <data name="Top-left" xml:space="preserve">
+    <value>Top-left</value>
+  </data>
+  <data name="Top-right" xml:space="preserve">
+    <value>Top-right</value>
+  </data>
+  <data name="Translate item" xml:space="preserve">
+    <value>Translate item</value>
+  </data>
+  <data name="Translations" xml:space="preserve">
+    <value>Translations</value>
+  </data>
+  <data name="tuesday" xml:space="preserve">
+    <value>tuesday</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Unchecked" xml:space="preserve">
+    <value>Unchecked</value>
+  </data>
+  <data name="Undelete item" xml:space="preserve">
+    <value>Undelete item</value>
+  </data>
+  <data name="Undo" xml:space="preserve">
+    <value>Undo</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="Upload" xml:space="preserve">
+    <value>Upload</value>
+  </data>
+  <data name="Url" xml:space="preserve">
+    <value>Url</value>
+  </data>
+  <data name="URL Regex" xml:space="preserve">
+    <value>URL Regex</value>
+  </data>
+  <data name="URL to website" xml:space="preserve">
+    <value>URL to website</value>
+  </data>
+  <data name="Use combobox as dropdown" xml:space="preserve">
+    <value>Use combobox as dropdown</value>
+  </data>
+  <data name="Use the Data selector to select which items should be deleted." xml:space="preserve">
+    <value>Use the Data selector to select which items should be deleted.</value>
+  </data>
+  <data name="User" xml:space="preserve">
+    <value>User</value>
+  </data>
+  <data name="User must be logged in to view this template" xml:space="preserve">
+    <value>User must be logged in to view this template</value>
+  </data>
+  <data name="User name" xml:space="preserve">
+    <value>User name</value>
+  </data>
+  <data name="User name_" xml:space="preserve">
+    <value>User name</value>
+  </data>
+  <data name="User parameters" xml:space="preserve">
+    <value>User parameters</value>
+  </data>
+  <data name="Users who have opened this template" xml:space="preserve">
+    <value>Users who have opened this template</value>
+  </data>
+  <data name="UUID" xml:space="preserve">
+    <value>UUID</value>
+  </data>
+  <data name="Value branch" xml:space="preserve">
+    <value>Value branch</value>
+  </data>
+  <data name="Value original" xml:space="preserve">
+    <value>Value original</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="Video-ID" xml:space="preserve">
+    <value>Video-ID</value>
+  </data>
+  <data name="View HTML" xml:space="preserve">
+    <value>View HTML</value>
+  </data>
+  <data name="Visible by default in summary tables" xml:space="preserve">
+    <value>Visible by default in summary tables</value>
+  </data>
+  <data name="Waiting for response" xml:space="preserve">
+    <value>Waiting for response</value>
+  </data>
+  <data name="We couldn't find an email address in your account. Please enter an email address so we can notify you when the import is completed." xml:space="preserve">
+    <value>We couldn't find an email address in your account. Please enter an email address so we can notify you when the import is completed.</value>
+  </data>
+  <data name="Website name" xml:space="preserve">
+    <value>Website name</value>
+  </data>
+  <data name="wednesday" xml:space="preserve">
+    <value>wednesday</value>
+  </data>
+  <data name="week/weeks" xml:space="preserve">
+    <value>week/weeks</value>
+  </data>
+  <data name="Welcome" xml:space="preserve">
+    <value>Welcome</value>
+  </data>
+  <data name="What" xml:space="preserve">
+    <value>What</value>
+  </data>
+  <data name="What is the desired company name and/or account name?" xml:space="preserve">
+    <value>What is the desired company name and/or account name?</value>
+  </data>
+  <data name="What is the subdomain to use for Wiser?" xml:space="preserve">
+    <value>What is the subdomain to use for Wiser?</value>
+  </data>
+  <data name="Where do you want to open the branch?" xml:space="preserve">
+    <value>Where do you want to open the branch?</value>
+  </data>
+  <data name="Where should the cache be stored? In memory is the fastest, but this cache is lost when the application pool is restarted." xml:space="preserve">
+    <value>Where should the cache be stored? In memory is the fastest, but this cache is lost when the application pool is restarted.</value>
+  </data>
+  <data name="Which data do you want to transfer to the branche?" xml:space="preserve">
+    <value>Which data do you want to transfer to the branche?</value>
+  </data>
+  <data name="Width" xml:space="preserve">
+    <value>Width</value>
+  </data>
+  <data name="Width (in %)" xml:space="preserve">
+    <value>Width (in %)</value>
+  </data>
+  <data name="Width in table (in pixels)" xml:space="preserve">
+    <value>Width in table (in pixels)</value>
+  </data>
+  <data name="Window height" xml:space="preserve">
+    <value>Window height</value>
+  </data>
+  <data name="Window width" xml:space="preserve">
+    <value>Window width</value>
+  </data>
+  <data name="Wiser branches" xml:space="preserve">
+    <value>Wiser branches</value>
+  </data>
+  <data name="Wiser items" xml:space="preserve">
+    <value>Wiser items</value>
+  </data>
+  <data name="Work in progress" xml:space="preserve">
+    <value>Work in progress</value>
+  </data>
+  <data name="You are currently logged in to a branch of this customer. It is not possible/allowed to use the template module in an industry.&lt;br/&gt; Please log into the customer's live environment and work in the template module there." xml:space="preserve">
+    <value>You are currently logged in to a branch of this customer. It is not possible/allowed to use the template module in an industry.&lt;br/&gt; Please log into the customer's live environment and work in the template module there.</value>
+  </data>
+  <data name="You entered the following database user:" xml:space="preserve">
+    <value>You entered the following database user:</value>
+  </data>
+  <data name="You have no other branches yet. Please create a new branch first using the 'Create new branch' option." xml:space="preserve">
+    <value>You have no other branches yet. Please create a new branch first using the 'Create new branch' option.</value>
+  </data>
+  <data name="You have used an invalid subdomain. Please check the subdomain or contact us." xml:space="preserve">
+    <value>You have used an invalid subdomain. Please check the subdomain or contact us.</value>
+  </data>
+  <data name="You need to choose a new password, please enter it here" xml:space="preserve">
+    <value>You need to choose a new password, please enter it here</value>
+  </data>
+  <data name="Your current password" xml:space="preserve">
+    <value>Your current password</value>
+  </data>
+  <data name="Your new password" xml:space="preserve">
+    <value>Your new password</value>
+  </data>
+  <data name="Your new password again" xml:space="preserve">
+    <value>Your new password again</value>
+  </data>
 </root>

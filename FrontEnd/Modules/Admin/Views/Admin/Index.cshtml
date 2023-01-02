@@ -1,11 +1,13 @@
-﻿@model FrontEnd.Core.Models.BaseViewModel
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@model FrontEnd.Core.Models.BaseViewModel
 @inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head runat="server">
     <meta charset="utf-8" />
-    <title>Wiser 3 - Admin</title>
+    <title>@Localizer["Wiser 3 - Admin"]</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -41,25 +43,25 @@
                 <!-- TABS -->
                 <div class="tabstrip k-tabstrip-wrapper" id="MainTabStrip">
                     <ul>
-                        <li class="k-state-active">Modules</li>
-                        <li>Entiteiten</li>
-                        <li>Rollen</li>
-                        <li>Query's</li>
-                        <li style="display:none">Entiteiten Genereren</li>
+                        <li class="k-state-active">@Localizer["Modules"]</li>
+                        <li>@Localizer["Entities"]</li>
+                        <li>@Localizer["Roles"]</li>
+                        <li>@Localizer["Query's"]</li>
+                        <li style="display:none">@Localizer["Generate Entities"]</li>
                     </ul>
                     <div class="tabSplit">
                         <div class="left-pane">
                             <div class="item">
                                 <h4>
-                                    <label>Module selecteren of toevoegen</label>
+                                    <label>@Localizer["Select or add module"]</label>
                                 </h4>
                                 <div class="item">
                                     <select id="moduleList"></select>
                                 </div>
                                 <div class="buttons">
                                     <span>
-                                        <button class="k-primary addModuleBtn">Toevoegen</button>
-                                        <button class="k-primary delModuleBtn" style="display: none">Verwijderen</button>
+                                        <button class="k-primary addModuleBtn">@Localizer["Add"]</button>
+                                        <button class="k-primary delModuleBtn" style="display: none">@Localizer["Delete"]</button>
                                     </span>
                                 </div>
                             </div>
@@ -69,7 +71,7 @@
                                 <div class="formview full">
                                     <div class="item" style="width: 25%;">
                                         <h4>
-                                            <label>ID van de module</label>
+                                            <label>@Localizer["Module ID"]</label>
                                         </h4>
                                         <span class="k-widget k-input k-state-default">
                                             <input id="moduleId" type="text" class="textField k-input" autocomplete="off" />
@@ -77,7 +79,7 @@
                                     </div>
                                     <div class="item" style="width: 50%;">
                                         <h4>
-                                            <label>Naam van de module</label>
+                                            <label>@Localizer["Module name"]</label>
                                         </h4>
                                         <span class="k-widget k-input k-state-default">
                                             <input id="moduleName" type="text" class="textField k-input" autocomplete="off" />
@@ -85,7 +87,7 @@
                                     </div>
                                     <div class="item" style="width: 25%;">
                                         <h4>
-                                            <label for="input-type">Icoon</label>
+                                            <label for="input-type">@Localizer["Icon"]</label>
                                             <span class="info" data-type="moduleIcon"><ins class="icon-info-full"></ins></span>
                                         </h4>
                                         <select id="moduleIcon">
@@ -93,32 +95,32 @@
                                     </div>
                                     <div class="item" style="width: 50%;">
                                         <h4>
-                                            <label>Type</label>
+                                            <label>@Localizer["Type"]</label>
                                         </h4>
-                                        <select id="moduleType" placeholder="Maak uw keuze...">
+                                        <select id="moduleType" placeholder="@Localizer["Make your choice..."]">
                                         </select>
                                     </div>
                                     <div class="item" style="width: 50%;">
                                         <h4>
-                                            <label>Groep</label>
+                                            <label>@Localizer["Group"]</label>
                                         </h4>
                                         <select id="moduleGroup"></select>
                                     </div>
                                     <div class="item" style="width: 100%;">
                                         <h4>
-                                            <label>Query</label>
+                                            <label>@Localizer["Query"]</label>
                                         </h4>
                                         <textarea id="moduleCustomQuery"></textarea>
                                     </div>
                                     <div class="item" style="width: 100%;">
                                         <h4>
-                                            <label>Query voor het aantal records</label>
+                                            <label>@Localizer["Query for the number of records"]</label>
                                         </h4>
                                         <textarea id="moduleCountQuery"></textarea>
                                     </div>
                                     <div class="item" style="width: 100%;">
                                         <h4>
-                                            <label>Opties</label>
+                                            <label>@Localizer["Options"]</label>
                                         </h4>
                                         <textarea id="moduleOptions"></textarea>
                                     </div>
@@ -131,24 +133,24 @@
                             <div class="formview full">
                                 <div class="item flex-container" id="entityView">
                                     <h4>
-                                        <label>Entiteit selecteren of toevoegen</label>
+                                        <label>@Localizer["Select or add entity"]</label>
                                     </h4>
                                     <div class="flex-container">
                                         <select id="entities"></select>
-                                        <button class="k-primary addBtn" data-type="entity" style="width: 25%; margin: 4px">Toevoegen</button>
+                                        <button class="k-primary addBtn" data-type="entity" style="width: 25%; margin: 4px">@Localizer["Add"]</button>
                                     </div>
                                 </div>
                                 <div class="item">
                                     <div class="tabstrip k-tabstrip-wrapper" id="EntityTabStrip">
                                         <ul>
-                                            <li class="k-state-active">Eigenschappen</li>
-                                            <li>Velden</li>
+                                            <li class="k-state-active">@Localizer["Properties"]</li>
+                                            <li>@Localizer["Fields"]</li>
                                         </ul>
                                         <div>
                                             <div class="pane-content flex-container">
                                                 <div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label>Naam</label>
+                                                        <label>@Localizer["Name"]</label>
                                                     </h4>
                                                     <span class="k-widget k-input k-state-default">
                                                         <input id="entityName" type="text" class="textField k-input" autocomplete="off" />
@@ -156,7 +158,7 @@
                                                 </div>
 												<div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label>Tabelnaam voorvoegsel </label>
+                                                        <label>@Localizer["Table name prefix"] </label>
                                                         <span class="info" data-type="entityDedicatedTablePrefix"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <span class="k-widget k-input k-state-default">
@@ -169,7 +171,7 @@
 
                                                 <div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label>Module</label>
+                                                        <label>@Localizer["Module"]</label>
                                                         <span class="info" data-type="entityModule"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <select id="entityModule">
@@ -178,7 +180,7 @@
 
                                                 <div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label>Geaccepteerde entiteit(en)</label>
+                                                        <label>@Localizer["Accepted entity(ies)"]</label>
                                                         <span class="info" data-type="entityAcceptedChildTypes"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <select id="acceptedChildTypes">
@@ -187,7 +189,7 @@
 
                                                 <div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label>Vriendelijke Naam</label>
+                                                        <label>@Localizer["Friendly Name"]</label>
                                                         <span class="info" data-type="friendlyName"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <span class="k-widget k-input k-state-default">
@@ -197,16 +199,16 @@
 
                                                 <div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label>Sortering</label>
+                                                        <label>@Localizer["Sorting"]</label>
                                                         <span class="info" data-type="defaultOrdering"><ins class="icon-info-full"></ins></span>
                                                     </h4>
-                                                    <select id="defaultOrdering" placeholder="Maak uw keuze...">
+                                                    <select id="defaultOrdering" placeholder="@Localizer["Make your choice..."]">
                                                     </select>
                                                 </div>
 
                                                 <div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label for="input-type">Icoon</label>
+                                                        <label for="input-type">@Localizer["Icon"]</label>
                                                         <span class="info" data-type="entityIcon"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <select id="entityIcon">
@@ -215,7 +217,7 @@
 
                                                 <div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label for="input-type">Icoon toevoegen</label>
+                                                        <label for="input-type">@Localizer["Add icon"]</label>
                                                         <span class="info" data-type="entityIconAdd"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <select id="entityIconAdd">
@@ -224,7 +226,7 @@
 
                                                 <div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label for="input-type">Icoon uitgeklapt</label>
+                                                        <label for="input-type">@Localizer["Icon expanded"]</label>
                                                         <span class="info" data-type="entityIconExpanded"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <select id="entityIconExpanded">
@@ -233,10 +235,10 @@
 
                                                 <div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label>Kleur</label>
+                                                        <label>@Localizer["Color"]</label>
                                                         <span class="info" data-type="entityColor"><ins class="icon-info-full"></ins></span>
                                                     </h4>
-                                                    <select id="entityColor" placeholder="Maak uw keuze...">
+                                                    <select id="entityColor" placeholder="@Localizer["Make your choice..."]">
                                                     </select>
                                                 </div>
 
@@ -244,7 +246,7 @@
                                                     <span class="inline">
                                                         <label class="checkbox">
                                                             <input id="showInTreeView" type="checkbox" />
-                                                            <span>Tonen in tree view</span>
+                                                            <span>@Localizer["Show in tree view"]</span>
                                                         </label>
                                                     </span>
                                                 </div>
@@ -253,7 +255,7 @@
                                                     <span class="inline">
                                                         <label class="checkbox">
                                                             <input id="showInSearch" type="checkbox" />
-                                                            <span>Tonen bij zoeken</span>
+                                                            <span>@Localizer["Show in search"]</span>
                                                         </label>
                                                     </span>
                                                 </div>
@@ -262,7 +264,7 @@
                                                     <span class="inline">
                                                         <label class="checkbox">
                                                             <input id="showInOverviewTab" type="checkbox" />
-                                                            <span>Tonen in overzicht</span>
+                                                            <span>@Localizer["Show in overview tab"]</span>
                                                         </label>
                                                     </span>
                                                 </div>
@@ -271,7 +273,7 @@
                                                     <span class="inline">
                                                         <label class="checkbox">
                                                             <input id="saveTitleAsSEO" type="checkbox" />
-                                                            <span>SEO titel opslaan</span>
+                                                            <span>@Localizer["Save title as SEO"]</span>
                                                         </label>
                                                     </span>
                                                 </div>
@@ -280,7 +282,7 @@
                                                     <span class="inline">
                                                         <label class="checkbox">
                                                             <input id="showTitleField" type="checkbox" />
-                                                            <span>Toon titel veld</span>
+                                                            <span>@Localizer["Show title field"]</span>
                                                         </label>
                                                     </span>
                                                 </div>
@@ -289,7 +291,7 @@
                                                     <span class="inline">
                                                         <label class="checkbox">
                                                             <input id="saveHistory" type="checkbox" />
-                                                            <span>Geschiedenis opslaan</span>
+                                                            <span>@Localizer["Save history"]</span>
                                                         </label>
                                                     </span>
                                                 </div>
@@ -299,7 +301,7 @@
 
                                                 <div class="item">
                                                     <h4>
-                                                        <label>Query na toevoegen</label>
+                                                        <label>@Localizer["Query after insert"]</label>
                                                         <span class="info" data-type="queryAfterInsert"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <textarea id="queryAfterInsert"></textarea>
@@ -307,7 +309,7 @@
 
                                                 <div class="item">
                                                     <h4>
-                                                        <label>Query na bewerken</label>
+                                                        <label>@Localizer["Query after update"]</label>
                                                         <span class="info" data-type="queryAfterUpdate"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <textarea id="queryAfterUpdate"></textarea>
@@ -315,7 +317,7 @@
 
                                                 <div class="item">
                                                     <h4>
-                                                        <label>Query voor het bijwerken</label>
+                                                        <label>@Localizer["Query before update"]</label>
                                                         <span class="info" data-type="queryBeforeUpdate"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <textarea id="queryBeforeUpdate"></textarea>
@@ -323,7 +325,7 @@
 
                                                 <div class="item">
                                                     <h4>
-                                                        <label>Query na verwijderen</label>
+                                                        <label>@Localizer["Query before delete"]</label>
                                                         <span class="info" data-type="queryBeforeDelete"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <textarea id="queryBeforeDelete"></textarea>
@@ -337,30 +339,30 @@
                                                     <div class="pane-content">
                                                         <div class="item" id="entityPropertyView" style="display: none;">
                                                             <h4>
-                                                                <label>Tabnaam</label>
+                                                                <label>@Localizer["Tabname"]</label>
                                                             </h4>
                                                             <select id="tabnames">
                                                             </select>
-                                                            <div class="form-hint"><span>Om een nieuwe tab te maken; maak een nieuw veld aan, of wijzig een bestaand veld, en vul bij "Tab" de naam voor de nieuwe tab in.</span></div>
+                                                            <div class="form-hint"><span>@Localizer["To create a new tab; create a new field, or change an existing field, and enter the name for the new tab at 'Tab'"]</span></div>
                                                             <ul id="tabNameProperties">
                                                             </ul>
-                                                            <div class="form-hint"><span>Sleep items om de volgorde te veranderen</span></div>
+                                                            <div class="form-hint"><span>@Localizer["Drag items to change the order"]</span></div>
                                                             <div class="buttons">
                                                                 <span>
-                                                                    <button class="k-primary addBtn" data-type="entityProperty">Toevoegen</button>
-                                                                    <button class="k-primary delBtn" data-type="entityProperty">Verwijderen</button>
+                                                                    <button class="k-primary addBtn" data-type="entityProperty">@Localizer["Add"]</button>
+                                                                    <button class="k-primary delBtn" data-type="entityProperty">@Localizer["Delete"]</button>
                                                                 </span>
                                                             </div>
-                                                            <div class="form-hint"><span>Klik op toevoegen om een veld toe te voegen aan de entiteit</span></div>
+                                                            <div class="form-hint"><span>@Localizer["Click 'Add' to add a field to the entity"]</span></div>
                                                             <div class="buttons">
                                                                 <span>
-                                                                    <button class="k-primary copyToOtherLanguagesButton" data-type="entityProperty">Kopiëren naar andere talen</button>
+                                                                    <button class="k-primary copyToOtherLanguagesButton" data-type="entityProperty">@Localizer["Copy to other languages"]</button>
                                                                 </span>
                                                             </div>
-                                                            <div class="form-hint"><span>Hiermee kan dit veld gekopieerd worden naar alle talen die dit veld nog niet hebben.</span></div>
+                                                            <div class="form-hint"><span>@Localizer["This allows rhis field to be copied to all languages that do not yet have this field."]</span></div>
                                                             <div class="buttons">
                                                                 <span>
-                                                                    <button class="k-primary duplicateEntityPropertyButton" data-type="entityProperty">Veld dupliceren</button>
+                                                                    <button class="k-primary duplicateEntityPropertyButton" data-type="entityProperty">@Localizer["Duplicate field"]</button>
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -371,7 +373,7 @@
                                                         <div class="pane-content flex-container">
                                                             <div class="item">
                                                                 <h4>
-                                                                    <label for="input-type">Invoertype</label>
+                                                                    <label for="input-type">@Localizer["InputType"]</label>
                                                                     <span class="info" data-type="inputtype"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <select id="inputtypes" class="inputTypeCombobox">
@@ -380,7 +382,7 @@
 
                                                             <div class="item" style="width: 25%;">
                                                                 <h4>
-                                                                    <label>Veld naam</label>
+                                                                    <label>@Localizer["Field name"]</label>
                                                                     <span class="info" data-type="displayName"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
@@ -390,7 +392,7 @@
 
                                                             <div class="item" style="width: 25%;">
                                                                 <h4>
-                                                                    <label>Eigenschap naam</label>
+                                                                    <label>@Localizer["Property name"]</label>
                                                                     <span class="info" data-type="propertyName"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
@@ -400,7 +402,7 @@
 
                                                             <div class="item" style="width: 25%;">
                                                                 <h4>
-                                                                    <label>Tab</label>
+                                                                    <label>@Localizer["Tab"]</label>
                                                                     <span class="info" data-type="tabName"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <select id="tabNameProperty">
@@ -409,7 +411,7 @@
 
                                                             <div class="item" style="width: 25%;">
                                                                 <h4>
-                                                                    <label>Groep</label>
+                                                                    <label>@Localizer["Group"]</label>
                                                                     <span class="info" data-type="groupName"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <select id="groupName"></select>
@@ -417,7 +419,7 @@
 
                                                             <div class="item" style="width: 25%;">
                                                                 <h4>
-                                                                    <label>Breedte (in %)</label>
+                                                                    <label>@Localizer["Width (in %)"]</label>
                                                                     <span class="info" data-type="width"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <input id="width" type="number" title="numeric" class="numeric" value="" min="0" max="100" step="1" autocomplete="off" />
@@ -425,14 +427,14 @@
 
                                                             <div class="item" style="width: 25%;">
                                                                 <h4>
-                                                                    <label>Hoogte (in pixels)</label>
+                                                                    <label>@Localizer["Height (in pixels)"]</label>
                                                                     <span class="info" data-type="height"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <input id="height" type="number" title="numeric" class="numeric" value="" max="65535" min="0" step="1" autocomplete="off" />
                                                             </div>
                                                             <div class="item" style="width: 25%;">
                                                                 <h4>
-                                                                    <label>Taalcode</label>
+                                                                    <label>@Localizer["Language code"]</label>
                                                                     <span class="info" data-type="languageCode"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
@@ -441,7 +443,7 @@
                                                             </div>
                                                             <div class="item" style="width: 25%;">
                                                                 <h4>
-                                                                    <label>Sneltoets (access key)</label>
+                                                                    <label>@Localizer["Hotkey (access key)"]</label>
                                                                     <span class="info" data-type="accessKey"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
@@ -450,7 +452,7 @@
                                                             </div>
                                                             <div class="item" style="width: 25%;">
                                                                 <h4>
-                                                                    <label>Labelstijl</label>
+                                                                    <label>@Localizer["Label style"]</label>
                                                                     <span class="info" data-type="labelStyle"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
@@ -459,7 +461,7 @@
                                                             </div>
                                                             <div class="item" id="labelWidthContainer" style="width: 25%;">
                                                                 <h4>
-                                                                    <label>Breedte label</label>
+                                                                    <label>@Localizer["Label width"]</label>
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
                                                                     <select id="labelWidth"></select>
@@ -470,7 +472,7 @@
                                                             </div>
                                                             <div class="item" style="width: 50%;" data-visible="Input NumericInput SecureInput TextBox GpsLocation">
                                                                 <h4>
-                                                                    <label>Regex validatie</label>
+                                                                    <label>@Localizer["Regex validation"]</label>
                                                                     <span class="info" data-type="regexValidation"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
@@ -479,7 +481,7 @@
                                                             </div>
                                                             <div class="item" style="width: 50%;" data-visible="Input NumericInput SecureInput TextBox GpsLocation">
                                                                 <h4>
-                                                                    <label>Regex voor pad</label>
+                                                                    <label>@Localizer["Regex for Path"]</label>
                                                                     <span class="info" data-type="visibilityPathRegex"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
@@ -490,12 +492,12 @@
                                                                 <div class="toggle">
                                                                     <input id="visible-in-table" type="checkbox" class="noForm">
                                                                     <label class="checkbox" for="visible-in-table">
-                                                                        <span>Standaard zichtbaar in overzichtstabellen</span>
+                                                                        <span>@Localizer["Visible by default in summary tables"]</span>
                                                                     </label>
                                                                     <div class="togglePanel">
                                                                         <div class="item" style="width: 50%;">
                                                                             <h4>
-                                                                                <label>Breedte in tabel (in pixels)</label>
+                                                                                <label>@Localizer["Width in table (in pixels)"]</label>
                                                                                 <span class="info" data-type="overviewWidth"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input id="widthIfVisible" type="number" class="numeric" min="0" step="1" max="65535" autocomplete="off" />
@@ -507,12 +509,12 @@
                                                                 <div class="toggle">
                                                                     <input id="enableAggregation" type="checkbox" class="noForm">
                                                                     <label class="checkbox" for="enableAggregation">
-                                                                        <span>Aggregatie inschakelen</span>
+                                                                        <span>@Localizer["Enable aggregation"]</span>
                                                                     </label>
                                                                     <div class="togglePanel">
                                                                         <div class="item" style="width: 100%;">
                                                                             <h4>
-                                                                                <label>Aggregatie-instellingen</label>
+                                                                                <label>@Localizer["Aggregation-settings"]</label>
                                                                                 <span class="info" data-type="aggregateOptions"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <textarea id="aggregateOptions"></textarea>
@@ -524,38 +526,38 @@
                                                                 <span class="inline">
                                                                     <label class="checkbox" data-invisible="RadioButton CheckBox Empty">
                                                                         <input id="mandatory" type="checkbox">
-                                                                        <span>Verplicht veld</span>
+                                                                        <span>@Localizer["Required field"]</span>
                                                                     </label>
                                                                     <label class="checkbox" data-invisible="RadioButton CheckBox FileUpload ImageUpload ColorPicker DataSelector Empty">
                                                                         <input id="readonly" type="checkbox">
-                                                                        <span>Alleen lezen veld</span>
+                                                                        <span>@Localizer["Read-only field"]</span>
                                                                     </label>
                                                                     <label class="checkbox" data-visible="Input">
                                                                         <input id="seofriendly" type="checkbox">
-                                                                        <span>Waarde van dit veld ook opslaan als zoekmachine-vriendelijke tekst</span>
+                                                                        <span>@Localizer["Save value of this field also as search engine friendly text"]</span>
                                                                     </label>
                                                                     <label class="checkbox" data-visible="Combobox">
                                                                         <input id="useDropDownList" type="checkbox">
-                                                                        <span>Combobox als dropdown gebruiken</span>
+                                                                        <span>@Localizer["Use combobox as dropdown"]</span>
                                                                     </label>
                                                                     <label class="checkbox" data-show-for-panel="panel2">
                                                                         <input id="searchInTitle" type="checkbox">
-                                                                        <span>Zoeken in titel</span>
+                                                                        <span>@Localizer["Search in title"]</span>
                                                                     </label>
                                                                     <label class="checkbox" data-show-for-panel="panel2">
                                                                         <input id="searchEverywhere" type="checkbox">
-                                                                        <span>Toon alle items, i.p.v. alleen gekoppelde items</span>
+                                                                        <span>@Localizer["Show all items, instead of only linked items"]</span>
                                                                     </label>
                                                                     <label class="checkbox" data-visible="Input SecureInput TextBox RadioButton CheckBox ComboBox MultiSelect NumericInput DateTimePicker ColorPicker">
                                                                         <input id="saveOnChange" type="checkbox">
-                                                                        <span>Item automatisch opslaan wanneer de waarde van dit veld wordt aangepast</span>
+                                                                        <span>@Localizer["Automatically save item when the value of this field is changed"]</span>
                                                                     </label>
                                                                 </span>
                                                             </div>
 
                                                             <div class="item tagList" data-show-for-panel="panel2">
                                                                 <h4>
-                                                                    <label>Zoek in velden</label>
+                                                                    <label>@Localizer["Search in fields"]</label>
                                                                     <span class="info" data-type="searchFields"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
@@ -565,7 +567,7 @@
 
                                                             <div class="item" data-visible="TextBox">
                                                                 <h4>
-                                                                    <label>Textbox type</label>
+                                                                    <label>@Localizer["Textbox type"]</label>
                                                                     <span class="info" data-type="textboxType"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
@@ -575,7 +577,7 @@
 
                                                             <div class="item" data-visible="Input SecureInput TextBox GpsLocation">
                                                                 <h4>
-                                                                    <label>Standaardwaarde</label>
+                                                                    <label>@Localizer["Default value"]</label>
                                                                     <span class="info" data-type="defaultValue"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
@@ -585,7 +587,7 @@
 
                                                             <div class="item" data-visible="NumericInput AutoIcrement">
                                                                 <h4>
-                                                                    <label>Standaardwaarde</label>
+                                                                    <label>@Localizer["Default value"]</label>
                                                                     <span class="info" data-type="defaultValue"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <span class="k-widget k-input k-state-default">
@@ -595,12 +597,12 @@
 
                                                             <div class="item" data-visible="RadioButton CheckBox">
                                                                 <h4>
-                                                                    <label>Standaardwaarde</label>
+                                                                    <label>@Localizer["Default value"]</label>
                                                                     <span class="info" data-type="defaultValue"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
-                                                                <select id="checkedCheckbox" placeholder="Maak uw keuze...">
-                                                                    <option value="1" selected>Aangevinkt</option>
-                                                                    <option value="0">Uitgevinkt</option>
+                                                                <select id="checkedCheckbox" placeholder="@Localizer["Make your choice..."]">
+                                                                    <option value="1" selected>@Localizer["Checked"]</option>
+                                                                    <option value="0">@Localizer["Unchecked"]Uitgevinkt</option>
                                                                 </select>
                                                             </div>
 
@@ -608,7 +610,7 @@
 
                                                                 <div class="item" style="width: 50%;">
                                                                     <h4>
-                                                                        <label>Mode</label>
+                                                                        <label>@Localizer["Mode"]</label>
                                                                         <span class="info" data-type="date-time picker mode"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <select id="dateTimeDropDown">
@@ -617,19 +619,19 @@
 
                                                                 <div data-invisible="time" class="item" style="width: 25%;">
                                                                     <h4>
-                                                                        <label>Huidige datum</label>
+                                                                        <label>@Localizer["Current date"]</label>
                                                                     </h4>
                                                                     <span class="inline">
                                                                         <label class="checkbox">
                                                                             <input type="checkbox" id="dateTimePickerSetNow" value="current-date">
-                                                                            <span>Huidige datum als default invullen</span>
+                                                                            <span>@Localizer["Set current date as default"]</span>
                                                                         </label>
                                                                     </span>
                                                                 </div>
 
                                                                 <div data-invisible="date" class="item" style="width: 25%;">
                                                                     <h4>
-                                                                        <label>Minimale tijd</label>
+                                                                        <label>@Localizer["Minimum time"]</label>
                                                                     </h4>
                                                                     <input id="minimumTime" />
                                                                 </div>
@@ -641,48 +643,48 @@
                                                                     <span class="inline">
                                                                         <label class="checkbox">
                                                                             <input type="checkbox" id="roundNumeric" checked="checked">
-                                                                            <span>Afronden</span>
+                                                                            <span>@Localizer["Complete"]</span>
                                                                         </label>
                                                                     </span>
                                                                 </div>
                                                                 <div class="item" style="width: 10%;">
                                                                     <h4>
-                                                                        <label>Aantal decimalen</label>
+                                                                        <label>@Localizer["Number of decimals"]</label>
                                                                     </h4>
                                                                     <input id="numberOfDecimals" type="number" title="numeric" class="numeric" value="" min="0" max="65" step="1" autocomplete="off" />
                                                                 </div>
 
                                                                 <div class="item" style="width: 10%;">
                                                                     <h4>
-                                                                        <label>Maximale waarde</label>
+                                                                        <label>@Localizer["Maximum value"]</label>
                                                                     </h4>
                                                                     <input id="maxNumber" type="number" class="numeric" value="" min="0" max="99999" step="1" autocomplete="off" />
                                                                 </div>
 
                                                                 <div class="item" style="width: 10%;">
                                                                     <h4>
-                                                                        <label>Minimale waarde</label>
+                                                                        <label>@Localizer["Minimum value"]</label>
                                                                     </h4>
                                                                     <input id="minNumber" type="number" class="numeric" value="" max="99999" step="1" autocomplete="off" />
                                                                 </div>
 
                                                                 <div class="item" style="width: 10%;">
                                                                     <h4>
-                                                                        <label>Stapwaarde</label>
+                                                                        <label>@Localizer["Step value"]</label>
                                                                     </h4>
                                                                     <input id="stepNumber" type="number" class="numeric" value="" max="99999" autocomplete="off" />
                                                                 </div>
 
                                                                 <div class="item" style="width: 10%;">
                                                                     <h4>
-                                                                        <label>Factor</label>
+                                                                        <label>@Localizer["Factor"]</label>
                                                                     </h4>
                                                                     <input id="factorNumber" type="number" class="numeric" value="1" max="99999" autocomplete="off" />
                                                                 </div>
 
                                                                 <div class="item" style="width: 10%;">
                                                                     <h4>
-                                                                        <label>Cultuur</label>
+                                                                        <label>@Localizer["Culture"]</label>
                                                                     </h4>
                                                                     <span class="k-widget k-input k-state-default">
                                                                         <input id="cultureNumber" type="text" value="nl-NL" class="textField k-input" maxlength="5" autocomplete="off" />
@@ -691,7 +693,7 @@
 
                                                                 <div class="item" style="width: 20%;">
                                                                     <h4>
-                                                                        <label>Format</label>
+                                                                        <label>@Localizer["Format"]</label>
                                                                     </h4>
                                                                     <select id="numberFormat">
                                                                     </select>
@@ -699,7 +701,7 @@
 
                                                                 <div class="item" style="width: 10%;" id="differentFormatHolder">
                                                                     <h4>
-                                                                        <label>Ander format</label>
+                                                                        <label>@Localizer["Different format"]</label>
                                                                     </h4>
                                                                     <span class="k-widget k-input k-state-default">
                                                                         <input id="differentFormat" type="text" class="textField k-input" maxlength="10" autocomplete="off" />
@@ -710,25 +712,25 @@
 
                                                             <div class="item" data-visible="HtmlEditor">
                                                                 <h4>
-                                                                    <label>HTML editor - opmaak</label>
+                                                                    <label>@Localizer["HTML editor - formatting"]</label>
                                                                     <span class="info" data-type="html editor layout"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <span class="inline">
                                                                     <label class="radio">
                                                                         <input id="mode1" type="radio" name="html-editor" value="1">
-                                                                        <span>Alleen beperkte opmaak</span>
+                                                                        <span>@Localizer["Limited formatting only"]</span>
                                                                     </label>
                                                                     <label class="radio">
                                                                         <input id="mode2" type="radio" name="html-editor" value="2">
-                                                                        <span>Beperkte opmaak + lay-out (uitlijnen en tabellen)</span>
+                                                                        <span>@Localizer["Limited formatting + layout (align and tables)"]</span>
                                                                     </label>
                                                                     <label class="radio">
                                                                         <input id="mode3" type="radio" name="html-editor" value="3">
-                                                                        <span>Beperkte opmaak + lay-out (uitlijnen en tabellen) + templates</span>
+                                                                        <span>@Localizer["Limited formatting + layout (align and tables) + templates"]</span>
                                                                     </label>
                                                                     <label class="radio">
                                                                         <input id="mode99" type="radio" name="html-editor" value="99">
-                                                                        <span>Alle opties</span>
+                                                                        <span>@Localizer["All options"]</span>
                                                                     </label>
                                                                 </span>
                                                             </div>
@@ -737,24 +739,24 @@
 
                                                                 <div class="item" style="width: 33%;">
                                                                     <h4>
-                                                                        <label>Type</label>
+                                                                        <label>@Localizer["Type"]</label>
                                                                         <span class="info" data-type="secure-input"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
-                                                                    <select id="typeSecureInput" placeholder="Maak uw keuze...">
+                                                                    <select id="typeSecureInput" placeholder="@Localizer["Make your choice..."]">
                                                                     </select>
                                                                 </div>
 
                                                                 <div class="item" style="width: 33%;">
                                                                     <h4>
-                                                                        <label>Beveiligingsmethode</label>
+                                                                        <label>@Localizer["Security method"]</label>
                                                                         <span class="info" data-type="secure-input-method"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
-                                                                    <select id="securityMethod" placeholder="Maak uw keuze...">
+                                                                    <select id="securityMethod" placeholder="@Localizer["Make your choice..."]">
                                                                     </select>
                                                                 </div>
                                                                 <div class="item secureInput" data-visible="JCL_AES" style="width: 33%;">
                                                                     <h4>
-                                                                        <label>Beveligingssleutel</label>
+                                                                        <label>@Localizer["Security key"]</label>
                                                                         <span class="info" data-type="secure-input-key"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <input id="securityKey" type="text" class="textField k-input" maxlength="100" autocomplete="off" />
@@ -764,7 +766,7 @@
                                                             <div class="item" data-visible="DataSelector">
 
                                                                 <h4>
-                                                                    <label>Tekst op knop</label>
+                                                                    <label>@Localizer["Text on button"]</label>
                                                                     <span class="info" data-type="data-selector-text"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <input id="dataSelectorText" type="text" class="textField k-input" maxlength="25" autocomplete="off" />
@@ -774,25 +776,25 @@
 
                                                                 <div class="item" style="width: 20%;">
                                                                     <h4>
-                                                                        <label>Entiteit om te koppelen</label>
+                                                                        <label>@Localizer["Entity to link"]</label>
                                                                         <span class="info" data-type="linked-item-entity"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
-                                                                    <select id="linkedItemEntity" placeholder="Maak uw keuze...">
+                                                                    <select id="linkedItemEntity" placeholder="@Localizer["Make your choice..."]">
                                                                     </select>
                                                                 </div>
 
                                                                 <div class="item" style="width: 20%;">
                                                                     <h4>
-                                                                        <label>Link type</label>
+                                                                        <label>@Localizer["Link type"]</label>
                                                                         <span class="info" data-type="linked-item-type"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
-                                                                    <select id="linkType" placeholder="Maak uw keuze...">
+                                                                    <select id="linkType" placeholder="@Localizer["Make your choice..."]">
                                                                     </select>
                                                                 </div>
 
                                                                 <div class="item" style="width: 20%;">
                                                                     <h4>
-                                                                        <label>Template</label>
+                                                                        <label>@Localizer["Template"]</label>
                                                                         <span class="info" data-type="linked-item-template"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <span class="k-widget k-input k-state-default">
@@ -801,7 +803,7 @@
                                                                 </div>
                                                                 <div class="item" style="width: 20%;">
                                                                     <h4>
-                                                                        <label>Tekst tonen indien geen link</label>
+                                                                        <label>@Localizer["Show text if no link"]</label>
                                                                         <span class="info" data-type="linked-item-no-link-text"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <span class="k-widget k-input k-state-default">
@@ -813,7 +815,7 @@
                                                                         <span class="inline titleMargin">
                                                                             <label class="checkbox" data-visible="LinkedItem">
                                                                                 <input id="textOnly" type="checkbox" />
-                                                                                <span>Alleen tekst</span>
+                                                                                <span>@Localizer["Text only"]</span>
                                                                             </label>
                                                                         </span>
                                                                     </div>
@@ -821,7 +823,7 @@
                                                                         <span class="inline titleMargin">
                                                                             <label class="checkbox" data-visible="LinkedItem">
                                                                                 <input id="reverse" type="checkbox" />
-                                                                                <span>Omdraaien</span>
+                                                                                <span>@Localizer["Reverse"]</span>
                                                                             </label>
                                                                         </span>
                                                                     </div>
@@ -829,7 +831,7 @@
                                                                         <span class="inline titleMargin">
                                                                             <label class="checkbox" data-visible="LinkedItem">
                                                                                 <input id="hideFieldIfNoLink" type="checkbox" />
-                                                                                <span>Verbergen indien geen link</span>
+                                                                                <span>@Localizer["Hide if no link"]</span>
                                                                             </label>
                                                                         </span>
                                                                     </div>
@@ -839,29 +841,29 @@
                                                             <div class="item" data-visible="ItemLinker SubEntitiesGrid">
                                                                 <div class="item" style="width: 33%;" data-visible="ItemLinker">
                                                                     <h4>
-                                                                        <label>Module id</label>
+                                                                        <label>@Localizer["Module ID"]</label>
                                                                         <span class="info" data-type=""><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <input id="itemLinkerModuleId" type="number" title="numeric" class="numeric" value="" min="0" max="1000" step="1" autocomplete="off" />
                                                                 </div>
                                                                 <div class="item" style="width: 33%;" data-visible="ItemLinker">
                                                                     <h4>
-                                                                        <label>Entiteit om te koppelen</label>
+                                                                        <label>@Localizer["Entity to link"]</label>
                                                                         <span class="info" data-type=""><ins class="icon-info-full"></ins></span>
                                                                     </h4>
-                                                                    <select id="itemLinkerEntity" placeholder="Maak uw keuze...">
+                                                                    <select id="itemLinkerEntity" placeholder="@Localizer["Make your choice..."]">
                                                                     </select>
                                                                 </div>
                                                                 <div class="item" style="width: 33%;" data-visible="SubEntitiesGrid">
                                                                     <h4>
-                                                                        <label>Entiteit om te koppelen</label>
+                                                                        <label>@Localizer["Entity to link"]</label>
                                                                         <span class="info" data-type=""><ins class="icon-info-full"></ins></span>
                                                                     </h4>
-                                                                    <input id="subEntityGridEntity" placeholder="Maak uw keuze..." />
+                                                                    <input id="subEntityGridEntity" placeholder="@Localizer["Make your choice..."]" />
                                                                 </div>
                                                                 <div class="item" data-visible="SubEntitiesGrid" style="width: 33%;">
                                                                     <h4>
-                                                                        <label>Data selector id</label>
+                                                                        <label>@Localizer["Data selector id"]</label>
                                                                         <span class="info" data-type="action-button-data-selector-id"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <input type="text" id="dataSelectorIdSubEntitiesGrid" class="textField k-input" maxlength="10" autocomplete="off" />
@@ -869,7 +871,7 @@
 
                                                                 <div class="item" style="width: 33%;">
                                                                     <h4>
-                                                                        <label>Link type nummer</label>
+                                                                        <label>@Localizer["Link type number"]</label>
                                                                         <span class="info" data-type=""><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <input id="itemLinkerTypeNumber" type="number" />
@@ -877,25 +879,25 @@
 
                                                                 <div class="item" style="width: 33%;">
                                                                     <h4>
-                                                                        <label>Verwijderen van items</label>
+                                                                        <label>@Localizer["Deletion of items"]</label>
                                                                         <span class="info" data-type=""><ins class="icon-info-full"></ins></span>
                                                                     </h4>
-                                                                    <select id="itemLinkerDeletionOfItems" placeholder="Maak uw keuze...">
+                                                                    <select id="itemLinkerDeletionOfItems" placeholder="@Localizer["Make your choice..."]">
                                                                     </select>
                                                                 </div>
 
                                                                 <div class="item" data-visible="SubEntitiesGrid" style="width: 33%;">
                                                                     <h4>
-                                                                        <label>Item selectie opties</label>
+                                                                        <label>@Localizer["Item selection options"]</label>
                                                                         <span class="info" data-type="grid-select-options"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
-                                                                    <select id="subEntitiesGridSelectOptions" placeholder="Maak uw keuze...">
+                                                                    <select id="subEntitiesGridSelectOptions" placeholder="@Localizer["Make your choice..."]">
                                                                     </select>
                                                                 </div>
 
                                                                 <div class="item" style="width: 33%;" data-visible="ItemLinker">
                                                                     <h4>
-                                                                        <label>Orderen</label>
+                                                                        <label>@Localizer["Order by"]</label>
                                                                         <span class="info" data-type=""><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <input id="itemLinkerOrderBy" type="text" class="textField k-input" maxlength="100" autocomplete="off" />
@@ -904,39 +906,39 @@
                                                                     <span class="inline checkboxGrid">
                                                                         <label class="checkbox">
                                                                             <input id="hideCommandColumn" type="checkbox">
-                                                                            <span>Kolom met extra knoppen/acties verbergen</span>
+                                                                            <span>@Localizer["Hide column with additional buttons/actions"]</span>
                                                                         </label>
                                                                         <label class="checkbox">
                                                                             <input id="hideExportButton" type="checkbox">
-                                                                            <span>Knop exporteren naar Excel verbergen</span>
+                                                                            <span>@Localizer["Hide export to Excel button"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="hideCreateButton" type="checkbox">
-                                                                            <span>Knop nieuw item aanmaken verbergen</span>
+                                                                            <span>@Localizer["Hide create new item button"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="hideLinkButton" type="checkbox">
-                                                                            <span>Knop bestaande items linken verbergen</span>
+                                                                            <span>@Localizer["Hide link existing items button"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="hideCount" type="checkbox">
-                                                                            <span>Aantal resultaten verbergen</span>
+                                                                            <span>@Localizer["Hide number of results"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="hideClearFiltersButton" type="checkbox">
-                                                                            <span>Knop om alle filters te wissen verbergen</span>
+                                                                            <span>@Localizer["Hide clear all filters button"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="hideTitleFieldInWindow" type="checkbox">
-                                                                            <span>Titelveld bij openen van item verbergen</span>
+                                                                            <span>@Localizer["Hide title field when opening item"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="ItemLinker">
                                                                             <input id="hideCheckAllButton" type="checkbox">
-                                                                            <span>Knop alles selecteren verbergen</span>
+                                                                            <span>@Localizer["Hide select all button"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="ItemLinker">
                                                                             <input id="hideUncheckAllButton" type="checkbox">
-                                                                            <span>Knop alles deselecteren verbergen</span>
+                                                                            <span>@Localizer["Hide deselect all button"]</span>
                                                                         </label>
                                                                     </span>
                                                                 </div>
@@ -944,39 +946,39 @@
                                                                     <span class="inline checkboxGrid">
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="showAddedOnColumn" type="checkbox">
-                                                                            <span>Toon toegevoegd op kolom</span>
+                                                                            <span>@Localizer["Show added on column"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="showAddedByColumn" type="checkbox">
-                                                                            <span>Toon toegevoegd door kolom</span>
+                                                                            <span>@Localizer["Show added by column"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="showChangedOnColumn" type="checkbox">
-                                                                            <span>Toon gewijzigd op kolom</span>
+                                                                            <span>@Localizer["Show changed on column"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="showChangedByColumn" type="checkbox">
-                                                                            <span>Toon gewijzigd door kolom</span>
+                                                                            <span>@Localizer["Show changed on column"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="hideIdColumn" type="checkbox">
-                                                                            <span>Kolom id verbergen</span>
+                                                                            <span>@Localizer["Hide column id"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="hideLinkIdColumn" type="checkbox">
-                                                                            <span>Kolom link-id verbergen</span>
+                                                                            <span>@Localizer["Hide column link-id"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="hideTypeColumn" type="checkbox">
-                                                                            <span>Kolom type verbergen</span>
+                                                                            <span>@Localizer["Hide column type"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="hideEnvironmentColumn" type="checkbox">
-                                                                            <span>Kolom omgeving verbergen</span>
+                                                                            <span>@Localizer["Hide column environment"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="hideTitleColumn" type="checkbox">
-                                                                            <span>Kolom titel verbergen</span>
+                                                                            <span>@Localizer["Hide column title"]</span>
                                                                         </label>
                                                                     </span>
                                                                 </div>
@@ -984,27 +986,27 @@
                                                                     <span class="inline checkboxGrid">
                                                                         <label class="checkbox">
                                                                             <input id="disableOpeningOfItems" type="checkbox" />
-                                                                            <span>Items kunnen niet geopend worden</span>
+                                                                            <span>@Localizer["Items cannot be opened"]</span>
                                                                         </label>
                                                                         <label class="checkbox">
                                                                             <input id="disableInlineEditing" type="checkbox" />
-                                                                            <span>Items kunnen niet in de rij aangepast worden</span>
+                                                                            <span>@Localizer["Items cannot be edited in the line"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="refreshGridAfterInlineEdit" type="checkbox" />
-                                                                            <span>Ververs grid na aanpassing in rij</span>
+                                                                            <span>@Localizer["Refresh grid after line edit"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="showDeleteConformations" type="checkbox" />
-                                                                            <span>Bevestiging vragen bij verwijderen van item</span>
+                                                                            <span>@Localizer["Ask when deleting item to Confirm"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="checkboxes" type="checkbox" />
-                                                                            <span>Checkboxen toevoegen aan grid</span>
+                                                                            <span>@Localizer["Add checkboxes to grid"]</span>
                                                                         </label>
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="keepFiltersState" type="checkbox" checked />
-                                                                            <span>Filters onthouden per gebruiker</span>
+                                                                            <span>@Localizer["Remember filters per user"]</span>
                                                                         </label>
                                                                     </span>
                                                                 </div>
@@ -1013,18 +1015,18 @@
                                                             <div class="item" data-visible="ComboBox MultiSelect">
                                                                 <div class="toggle">
                                                                     <h4>
-                                                                        <label>Databron</label>
+                                                                        <label>@Localizer["Data source"]</label>
                                                                         <span class="info" data-type="datasource"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
-                                                                    <select id="dataSourcefilter" class="combo-toggle" placeholder="Maak uw keuze...">
-                                                                        <option value="panel1" data-value="panel1" selected>Vaste waardes</option>
-                                                                        <option value="panel2" data-value="panel2">Lijst van entiteiten</option>
-                                                                        <option value="panel3" data-value="panel3">Query</option>
+                                                                    <select id="dataSourcefilter" class="combo-toggle" placeholder="@Localizer["Make your choice..."]">
+                                                                        <option value="panel1" data-value="panel1" selected>@Localizer["Fixed values"]</option>
+                                                                        <option value="panel2" data-value="panel2">@Localizer["List of entities"]</option>
+                                                                        <option value="panel3" data-value="panel3">@Localizer["Query"]</option>
                                                                     </select>
                                                                     <div class="togglePanel dataSource active" data-panel="panel1">
                                                                         <div class="item">
                                                                             <h4>
-                                                                                <label>Vaste waardes</label>
+                                                                                <label>@Localizer["Fixed values"]</label>
                                                                             </h4>
                                                                             <div id="valuegrid"></div>
                                                                         </div>
@@ -1032,7 +1034,7 @@
                                                                     <div class="togglePanel dataSource" data-panel="panel2">
                                                                         <div class="item">
                                                                             <h4>
-                                                                                <label>Entiteit</label>
+                                                                                <label>@Localizer["Entity"]</label>
                                                                             </h4>
                                                                             <select id="dataSourceEntities"></select>
                                                                         </div>
@@ -1040,7 +1042,7 @@
                                                                     <div class="togglePanel dataSource" data-panel="panel3">
                                                                         <div class="item">
                                                                             <h4>
-                                                                                <label>Query</label>
+                                                                                <label>@Localizer["Query"]</label>
                                                                                 <span class="info" data-type="dataQuery"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <textarea id="queryWindow"></textarea>
@@ -1055,11 +1057,11 @@
                                                                     <div class="toggle">
                                                                         <input id="customQuery" type="checkbox" value="1" class="noForm" />
                                                                         <label class="checkbox" for="customQuery">
-                                                                            <span>Custom query</span>
+                                                                            <span>@Localizer["Custom query"]</span>
                                                                         </label>
                                                                         <div class="togglePanel customQuery">
                                                                             <h4>
-                                                                                <label>Custom query</label>
+                                                                                <label>@Localizer["Custom query"]</label>
                                                                                 <span class="info" data-type="dataQuery"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <textarea id="queryFieldSubEntities"></textarea>
@@ -1071,11 +1073,11 @@
                                                                     <div class="toggle">
                                                                         <input id="hasCustomInsertQuery" type="checkbox" value="1" class="noForm">
                                                                         <label class="checkbox" for="hasCustomInsertQuery">
-                                                                            <span>Heeft custom insert-query</span>
+                                                                            <span>@Localizer["Has custom insert-query"]</span>
                                                                         </label>
                                                                         <div class="togglePanel customInsert">
                                                                             <h4>
-                                                                                <label>Custom insert-query</label>
+                                                                                <label>@Localizer["Custom insert-query"]</label>
                                                                                 <span class="info" data-type="dataQuery"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <textarea id="queryInsert"></textarea>
@@ -1087,11 +1089,11 @@
                                                                     <div class="toggle">
                                                                         <input id="hasCustomUpdateQuery" type="checkbox" value="1" class="noForm">
                                                                         <label class="checkbox" for="hasCustomUpdateQuery">
-                                                                            <span>Heeft custom update-query</span>
+                                                                            <span>@Localizer["Has custom update-query"]</span>
                                                                         </label>
                                                                         <div class="togglePanel customUpdate">
                                                                             <h4>
-                                                                                <label>Custom update-query</label>
+                                                                                <label>@Localizer["Custom update-query"]</label>
                                                                                 <span class="info" data-type="dataQuery"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <textarea id="queryUpdate"></textarea>
@@ -1103,11 +1105,11 @@
                                                                     <div class="toggle">
                                                                         <input id="hasCustomDeleteQuery" type="checkbox" value="1" class="noForm">
                                                                         <label class="checkbox" for="hasCustomDeleteQuery">
-                                                                            <span>Heeft custom delete-query</span>
+                                                                            <span>@Localizer["Has custom delete-query"]</span>
                                                                         </label>
                                                                         <div class="togglePanel customDelete">
                                                                             <h4>
-                                                                                <label>Custom delete-query</label>
+                                                                                <label>@Localizer["Custom delete-query"]</label>
                                                                                 <span class="info" data-type="dataQuery"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <textarea id="queryDelete"></textarea>
@@ -1118,7 +1120,7 @@
                                                             
                                                             <div class="item" data-visible="SubEntitiesGrid">
                                                                 <h4>
-                                                                    <label>Zoek-query</label>
+                                                                    <label>@Localizer["Search-query"]</label>
                                                                     <span class="info" data-type="searchQuery"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <textarea id="searchQuery"></textarea>
@@ -1126,7 +1128,7 @@
                                                             
                                                             <div class="item" data-visible="SubEntitiesGrid">
                                                                 <h4>
-                                                                    <label>Zoek-teller-query</label>
+                                                                    <label>@Localizer["Search-counter-query"]</label>
                                                                     <span class="info" data-type="searchCountQuery"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <textarea id="searchCountQuery"></textarea>
@@ -1134,7 +1136,7 @@
 
                                                             <div class="item" data-visible="ActionButton SubEntitiesGrid">
                                                                 <h4>
-                                                                    <label>Actieknop</label>
+                                                                    <label>@Localizer["Action button"]</label>
                                                                     <span class="info" data-type="actions"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <div id="actionButtonGrid"></div>
@@ -1145,14 +1147,14 @@
                                                                 <div class="item" data-visible="ActionButton SubEntitiesGrid">
                                                                     <div class="item" data-visible="ActionButton SubEntitiesGrid" style="width: 33%;">
                                                                         <h4>
-                                                                            <label>Knop text</label>
+                                                                            <label>@Localizer["Button text"]</label>
                                                                             <span class="info" data-type="action-button-text"><ins class="icon-info-full"></ins></span>
                                                                         </h4>
                                                                         <input id="actionButtonText" type="text" class="textField k-input" maxlength="100" autocomplete="off" />
                                                                     </div>
                                                                     <div class="item" data-visible="ActionButton SubEntitiesGrid" style="width: 33%;">
                                                                         <h4>
-                                                                            <label>Knop icoon</label>
+                                                                            <label>@Localizer["Button icon"]</label>
                                                                             <span class="info" data-type="action-button-icon"><ins class="icon-info-full"></ins></span>
                                                                         </h4>
                                                                         <input id="actionButtonIcon" type="text" class="textField k-input" maxlength="100" autocomplete="off" />
@@ -1160,7 +1162,7 @@
 
                                                                     <div class="item">
                                                                         <h4>
-                                                                            <label>Acties</label>
+                                                                            <label>@Localizer["Actions"]</label>
                                                                             <span class="info" data-type="action-button-user-parameters"><ins class="icon-info-full"></ins></span>
                                                                         </h4>
                                                                         <div id="actionButtonActionsGrid"></div>
@@ -1168,7 +1170,7 @@
                                                                 </div>
                                                                 <footer class="fixed">
                                                                     <div class="actions">
-                                                                        <button class="k-primary actionGridSave">Opslaan</button>
+                                                                        <button class="k-primary actionGridSave">@Localizer["Save"]</button>
                                                                     </div>
                                                                 </footer>
                                                             </div>
@@ -1176,78 +1178,78 @@
                                                                 <div class="tabStrip tabStripActionButton k-tabstrip-wrapper">
                                                                     <ul>
                                                                         <li data-visible="executeQuery executeQueryOnce">
-                                                                            Query uitvoeren
+                                                                            @Localizer["Execute query"]
                                                                         </li>
                                                                         <li data-visible="openUrl openUrlOnce">
-                                                                            Url
+                                                                            @Localizer["Url"]
                                                                         </li>
                                                                         <li data-visible="openWindow">
-                                                                            Open venster
+                                                                            @Localizer["Open window"]
                                                                         </li>
                                                                         <li data-visible="generateFile">
-                                                                            Genereer bestand
+                                                                            @Localizer["Generate file"]
                                                                         </li>
                                                                     </ul>
                                                                     <div class="flex-container">
                                                                         <div class="item">
                                                                             <h4>
-                                                                                <label>Query item id</label>
+                                                                                <label>@Localizer["Query item id"]</label>
                                                                                 <span class="info" data-type="action-button-itemid"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input type="text" id="actionButtonQueryItemId" class="textField k-input" maxlength="10" autocomplete="off" />
                                                                         </div>
                                                                         <div class="item">
                                                                             <h4>
-                                                                                <label>Gebruiker parameters</label>
+                                                                                <label>@Localizer["User parameters"]</label>
                                                                                 <span class="info" data-type="action-button-url"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <div class="actionButtonUserParametersGrid"></div>
                                                                         </div>
                                                                         <div class="item" data-visible="generateFile" style="width: 25%;">
                                                                             <h4>
-                                                                                <label>Data selector id</label>
+                                                                                <label>@Localizer["Data selector id"]</label>
                                                                                 <span class="info" data-type="action-button-data-selector-id"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input type="text" id="dataSelectorId" class="textField k-input" maxlength="10" autocomplete="off" />
                                                                         </div>
                                                                         <div class="item" data-visible="generateFile" style="width: 25%;">
                                                                             <h4>
-                                                                                <label>Content property naam</label>
+                                                                                <label>@Localizer["Content property name"]</label>
                                                                                 <span class="info" data-type="action-button-content-property-name"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input type="text" id="contentPropertyName" class="textField k-input" maxlength="10" autocomplete="off" />
                                                                         </div>
                                                                         <div class="item" data-visible="generateFile" style="width: 25%;">
                                                                             <h4>
-                                                                                <label>Content item id</label>
+                                                                                <label>@Localizer["Content item id"]</label>
                                                                                 <span class="info" data-type="action-button-content-item-id"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input type="text" id="contentItemId" class="textField k-input" maxlength="10" autocomplete="off" />
                                                                         </div>
                                                                         <div class="item" data-visible="generateFile" style="width: 25%;">
                                                                             <h4>
-                                                                                <label>Email data selector id</label>
+                                                                                <label>@Localizer["Email data selector id"]</label>
                                                                                 <span class="info" data-type="action-button-pdf-email-data-query-id"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input type="text" id="emailDataQueryId" class="textField k-input" maxlength="10" autocomplete="off" />
                                                                         </div>
                                                                         <div class="item" data-visible="generateFile" style="width: 33%;">
                                                                             <h4>
-                                                                                <label>PDF veldnaam achtergrond</label>
+                                                                                <label>@Localizer["PDF background field name"]PDF veldnaam achtergrond</label>
                                                                                 <span class="info" data-type="action-button-pdf-background-property-name"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input type="text" id="pdfBackgroundPropertyName" class="textField k-input" maxlength="255" autocomplete="off" />
                                                                         </div>
                                                                         <div class="item" data-visible="generateFile" style="width: 33%;">
                                                                             <h4>
-                                                                                <label>PDF document opties veldnaam</label>
+                                                                                <label>@Localizer["PDF document options dield name"]</label>
                                                                                 <span class="info" data-type="action-button-pdf-background-property-name"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input type="text" id="pdfDocumentOptionsPropertyName" class="textField k-input" maxlength="255" autocomplete="off" />
                                                                         </div>
                                                                         <div class="item" data-visible="generateFile" style="width: 33%;">
                                                                             <h4>
-                                                                                <label>PDF bestandsnaam</label>
+                                                                                <label>@Localizer["PDF file name"]</label>
                                                                                 <span class="info" data-type="action-button-pdf-filename"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input type="text" id="pdfFilename" class="textField k-input" maxlength="255" autocomplete="off" />
@@ -1256,28 +1258,28 @@
                                                                     <div>
                                                                         <div class="item">
                                                                             <h4>
-                                                                                <label>Url</label>
+                                                                                <label>@Localizer["Url"]</label>
                                                                                 <span class="info" data-type="action-button-url"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input type="text" id="actionButtonUrl" class="textField k-input" maxlength="255" autocomplete="off" />
                                                                         </div>
                                                                         <div class="item" style="width: 33%;">
                                                                             <h4>
-                                                                                <label>Venster hoogte</label>
+                                                                                <label>@Localizer["Window height"]</label>
                                                                                 <span class="info" data-type="action-button-url-height"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input type="text" id="actionButtonUrlWindowHeight" class="textField k-input" maxlength="255" autocomplete="off" />
                                                                         </div>
                                                                         <div class="item" style="width: 33%;">
                                                                             <h4>
-                                                                                <label>Venster breedte</label>
+                                                                                <label>@Localizer["Window width"]</label>
                                                                                 <span class="info" data-type="action-button-url-width"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input type="text" id="actionButtonUrlWindowWidth" class="textField k-input" maxlength="255" autocomplete="off" />
                                                                         </div>
                                                                         <div class="item" style="width: 33%;">
                                                                             <h4>
-                                                                                <label>Url openen in</label>
+                                                                                <label>@Localizer["Open url in"]</label>
                                                                                 <span class="info" data-type="action-button-url-open"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <select id="actionButtonUrlWindowOpen">
@@ -1288,7 +1290,7 @@
                                                                     <div>
                                                                         <div class="item">
                                                                             <h4>
-                                                                                <label>Item id</label>
+                                                                                <label>@Localizer["Item id"]</label>
                                                                                 <span class="info" data-type="action-button-itemid"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input type="text" id="actionButtonItemId" class="textField k-input" maxlength="10" autocomplete="off" />
@@ -1296,7 +1298,7 @@
 
                                                                         <div class="item">
                                                                             <h4>
-                                                                                <label>Item link</label>
+                                                                                <label>@Localizer["Item link"]</label>
                                                                                 <span class="info" data-type="action-button-itemlink"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input type="number" title="numeric" class="actionButtonItemLink numeric" min="0" step="1" autocomplete="off" />
@@ -1305,29 +1307,29 @@
                                                                 </div>
                                                                 <footer class="fixed clear">
                                                                     <div class="actions">
-                                                                        <button class="k-primary actionButtonSave">Opslaan</button>
+                                                                        <button class="k-primary actionButtonSave">@Localizer["Save"]</button>
                                                                     </div>
                                                                 </footer>
                                                             </div>
                                                             <div class="item" data-visible="TimeLine FileUpload Scheduler">
                                                                 <div class="item" style="width: 25%;" data-visible="TimeLine">
                                                                     <h4>
-                                                                        <label>Entiteit om te koppelen</label>
+                                                                        <label>@Localizer["Entity to link"]</label>
                                                                         <span class="info" data-type="timeline-entity"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
-                                                                    <select id="timelineEntity" placeholder="Maak uw keuze...">
+                                                                    <select id="timelineEntity" placeholder="@Localizer["Make your choice..."]">
                                                                     </select>
                                                                 </div>
                                                                 <div class="item" style="width: 25%;">
                                                                     <h4>
-                                                                        <label>Query item id</label>
+                                                                        <label>@Localizer["Query item id"]</label>
                                                                         <span class="info" data-type="queryId"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <input type="number" title="numeric" id="queryId" class="numeric" min="0" step="1" autocomplete="off" />
                                                                 </div>
                                                                 <div class="item" style="width: 25%;" data-visible="TimeLine">
                                                                     <h4>
-                                                                        <label>Hoogte van het event gedeelte</label>
+                                                                        <label>@Localizer["Height of the event area"]</label>
                                                                         <span class="info" data-type="timeline-event-height"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <input type="number" title="numeric" id="timelineEventHeight" class="numeric" min="0" step="1" autocomplete="off" />
@@ -1336,7 +1338,7 @@
                                                                     <span class="inline titleMargin">
                                                                         <label class="checkbox">
                                                                             <input id="disableOpeningOfItemsTimeLine" type="checkbox" />
-                                                                            <span>Items zijn niet te openen</span>
+                                                                            <span>@Localizer["Items cannot be opened"]</span>
                                                                         </label>
                                                                     </span>
                                                                 </div>
@@ -1344,7 +1346,7 @@
                                                             <div class="item" data-visible="FileUpload ImageUpload">
                                                                 <div class="item" style="width: 25%;">
                                                                     <h4>
-                                                                        <label>Toegestane extensies</label>
+                                                                        <label>@Localizer["Allowed extensions"]</label>
                                                                         <span class="info" data-type="allowed-extensions"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <input type="text" id="allowedExtensions" class="textField k-input" maxlength="100" autocomplete="off" />
@@ -1353,7 +1355,7 @@
                                                                     <span class="inline titleMargin">
                                                                         <label class="checkbox">
                                                                             <input id="allowMultipleFiles" type="checkbox" />
-                                                                            <span>Meerdere bestanden</span>
+                                                                            <span>@Localizer["Multiple files"]</span>
                                                                         </label>
                                                                     </span>
                                                                 </div>
@@ -1361,14 +1363,14 @@
                                                             <div class="item" data-visible="DateRange">
                                                                 <div class="item" style="width: 25%;">
                                                                     <h4>
-                                                                        <label>Van</label>
+                                                                        <label>@Localizer["From"]</label>
                                                                         <span class="info" data-type="daterange-from"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <input id="daterangeFrom" />
                                                                 </div>
                                                                 <div class="item" style="width: 25%;">
                                                                     <h4>
-                                                                        <label>Tot</label>
+                                                                        <label>@Localizer["Till"]</label>
                                                                         <span class="info" data-type="daterange-till"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <input id="daterangeTill" />
@@ -1376,7 +1378,7 @@
                                                             </div>
                                                             <div class="item" data-visible="Chart">
                                                                 <h4>
-                                                                    <label>Opties JSON</label>
+                                                                    <label>@Localizer["Options JSON"]</label>
                                                                     <span class="info" data-type="chart-json"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <textarea id="jsonField"></textarea>
@@ -1386,7 +1388,7 @@
                                                             <div class="item" data-visible="Qr">
                                                                 <div class="item" style="width: 25%;">
                                                                     <h4>
-                                                                        <label>Grootte in pixels</label>
+                                                                        <label>@Localizer["Size in pixels"]</label>
                                                                         <span class="info" data-type="qr-barcode-size"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <input id="pixelSize" type="number" title="numeric" value="" min="0" step="1" autocomplete="off" />
@@ -1395,7 +1397,7 @@
                                                             <div class="item" data-visible="Qr RadioButton">
                                                                 <div class="item">
                                                                     <h4>
-                                                                        <label>Query</label>
+                                                                        <label>@Localizer["Query"]</label>
                                                                         <span class="info" data-type="qrContentQuery"><ins class="icon-info-full"></ins></span>
                                                                     </h4>
                                                                     <textarea id="queryContent"></textarea>
@@ -1404,7 +1406,7 @@
 
                                                             <div class="item dynamic">
                                                                 <h4>
-                                                                    <label>Afhankelijkheid</label>
+                                                                    <label>@Localizer["Dependency"]</label>
                                                                     <span class="info" data-type="dependsOn"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <section>
@@ -1423,7 +1425,7 @@
                                                             </div>
                                                             <div class="item">
                                                                 <h4>
-                                                                    <label>Toelichting</label>
+                                                                    <label>@Localizer["Explanation"]</label>
                                                                     <span class="info" data-type="explanation"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <textarea id="explanation"></textarea>
@@ -1432,14 +1434,14 @@
                                                             <div class="item">
                                                                 <input id="extendedExplanation" type="checkbox" class="noForm">
                                                                 <label class="checkbox" for="extendedExplanation">
-                                                                    <span>Uitgebreide uitleg</span>
+                                                                    <span>@Localizer["Extended explanation"]</span>
                                                                 </label>
                                                                 <span class="info" data-type="extendedExplanation"><ins class="icon-info-full"></ins></span>
                                                             </div>
 
                                                             <div class="item">
                                                                 <h4>
-                                                                    <label>Script</label>
+                                                                    <label>@Localizer["Script"]</label>
                                                                     <span class="info" data-type="customScript"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
                                                                 <textarea id="customScriptField"></textarea>
@@ -1460,7 +1462,7 @@
                             <div class="pane-content">
                                 <div class="item">
                                     <h4>
-                                        <label>Rollen</label>
+                                        <label>@Localizer["Roles"]</label>
                                     </h4>
                                     <div id="roleList" class="sortable-container multi-select">
                                         <!-- Filled by Javascript -->
@@ -1468,8 +1470,8 @@
                                     <div class="form-hint"><span></span></div>
                                     <div class="buttons">
                                         <span>
-                                            <button class="k-primary addRoleBtn">Nieuwe rol</button>
-                                            <button class="k-primary delRoleBtn">Rol verwijderen</button>
+                                            <button class="k-primary addRoleBtn">@Localizer["New role"]</button>
+                                            <button class="k-primary delRoleBtn">@Localizer["Delete role"]</button>
                                         </span>
                                     </div>
                                 </div>
@@ -1479,8 +1481,8 @@
                             <div class="pane-content">
                                 <div class="tabstrip k-tabstrip-wrapper" id="RolesTabStrip">
                                     <ul>
-                                        <li class="k-state-active">Velden</li>
-                                        <li>Modules</li>
+                                        <li class="k-state-active">@Localizer["Fields"]</li>
+                                        <li>@Localizer["Modules"]</li>
                                     </ul>
                                     <div>
                                         <div id="EntityPropertiesGrid" class="multi-check"></div>
@@ -1496,15 +1498,15 @@
                         <div class="left-pane">
                             <div class="item">
                                 <h4>
-                                    <label>Query selecteren of toevoegen</label>
+                                    <label>@Localizer["Select or add query"]</label>
                                 </h4>
                                 <div class="item">
                                     <select id="queryList"></select>
                                 </div>
                                 <div class="buttons">
                                     <span>
-                                        <button class="k-primary addQueryBtn">Toevoegen</button>
-                                        <button class="k-primary delQueryBtn">Verwijderen</button>
+                                        <button class="k-primary addQueryBtn">@Localizer["Add"]</button>
+                                        <button class="k-primary delQueryBtn">@Localizer["Delete"]</button>
                                     </span>
                                 </div>
                             </div>
@@ -1514,7 +1516,7 @@
                                 <div class="formview full">
                                     <div class="item" style="width: 50%;">
                                         <h4>
-                                            <label>Beschrijving van de query</label>
+                                            <label>@Localizer["Query description"]</label>
                                         </h4>
                                         <span class="k-widget k-input k-state-default">
                                             <input id="queryDescription" type="text" class="textField k-input" autocomplete="off" />
@@ -1524,7 +1526,7 @@
                                         <span class="inline titleMargin">
                                             <label class="checkbox">
                                                 <input id="showInExportModule" type="checkbox" />
-                                                <span>Tonen in exportmodule</span>
+                                                <span>@Localizer["Show in export module"]</span>
                                             </label>
                                         </span>
                                     </div>
@@ -1532,19 +1534,19 @@
                                         <span class="inline titleMargin">
                                             <label class="checkbox">
                                                 <input id="showInCommunicationModule" type="checkbox" />
-                                                <span>Tonen in communicatiemodule</span>
+                                                <span>@Localizer["Show in communication module"]</span>
                                             </label>
                                         </span>
                                     </div>
                                     <div class="item" style="width: 25%;">
                                         <h4>
-                                            <Label>Rollen die permisies hebben op de query</Label>
+                                            <Label>@Localizer["Roles that have permissions on the query"]</Label>
                                         </h4>
                                         <select id="rolesWithPermissions"></select>
                                     </div>
                                     <div class="item" style="width: 100%;">
                                         <h4>
-                                            <label>Query</label>
+                                            <label>@Localizer["Query"]</label>
                                         </h4>
                                         <textarea id="queryFromWiser"></textarea>
                                     </div>
@@ -1558,18 +1560,18 @@
                                 <span class="inline">
                                     <label class="checkbox">
                                         <input id="generateEcommerceEntity" data-entity-group="ecommerce" data-entity-pretty-name="Ë-commerce" type="checkbox" />
-                                        <span>E-commerce entiteiten</span>
+                                        <span>@Localizer["E-commerce entities"]E-commerce entiteiten</span>
                                     </label>
 
                                     <label class="checkbox">
                                         <input id="generateExtra" data-entity-group="extra" data-entity-pretty-name="Extra" type="checkbox" />
-                                        <span>Extra entiteiten</span>
+                                        <span>@Localizer["Extra entities"]</span>
                                     </label>
                                 </span>
                             </div>
                             <div class="item">
                                 <span class="k-widget k-input k-state-default">
-                                    <button type="button" id="generateStandardEntities">Genereer standaard entiteiten</button>
+                                    <button type="button" id="generateStandardEntities">@Localizer["Generate standard entities"]</button>
                                 </span>
                             </div>
                         </div>
@@ -1583,7 +1585,7 @@
                     <li id="crumbTrail">Nog geen item geselecteerd</li>
                 </ul>-->
                 <div class="actions">
-                    <button class="k-primary saveButton">Opslaan</button>
+                    <button class="k-primary saveButton">@Localizer["Save"]</button>
                 </div>
             </footer>
         </div>

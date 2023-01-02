@@ -1,4 +1,6 @@
-﻿@{
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@{
     var versionList = Model.PublishedEnvironments.VersionList;
 }
 @model Api.Modules.Templates.Models.Template.TemplateSettingsModel
@@ -15,7 +17,7 @@
                     }
                 </select>
 
-                <button id="deployLive" class="k-primary">Deploy naar live</button>
+                <button id="deployLive" class="k-primary">@Localizer["Deploy to live"]</button>
             </div>
         </div>
 
@@ -28,7 +30,7 @@
                     }
                 </select>
 
-                <button id="deployAccept" class="k-primary">Deploy naar acceptatie</button>
+                <button id="deployAccept" class="k-primary">@Localizer["Deploy to acceptance"]</button>
             </div>
         </div>
 
@@ -41,13 +43,13 @@
                     }
                 </select>
 
-                <button id="deployTest" class="k-primary">Deploy naar test</button>
+                <button id="deployTest" class="k-primary">@Localizer["Deploy to test"]</button>
             </div>
         </div>
 
         <div class="item version-actions">
-            <button id="saveAndDeployToTestButton" class="k-primary saveButton">Opslaan &amp; deploy naar test-omgeving</button>
-            <button id="saveButton" class="k-primary saveButton">Opslaan</button>
+            <button id="saveAndDeployToTestButton" class="k-primary saveButton">@Localizer["Save &amp; deploy to test environment"]</button>
+            <button id="saveButton" class="k-primary saveButton">@Localizer["Save"]</button>
         </div>
     </div>
         
@@ -56,7 +58,7 @@
             <div class="flex-container">
                 <select id="branchesDropDown"></select>
 
-                <button id="deployToBranchButton" class="k-primary">Deploy naar geselecteerde branch</button>
+                <button id="deployToBranchButton" class="k-primary">@Localizer["Deploy to selected branch"]</button>
             </div>
         </div>
     </div>

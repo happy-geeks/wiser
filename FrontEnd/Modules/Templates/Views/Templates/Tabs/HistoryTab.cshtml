@@ -1,4 +1,6 @@
-﻿@using FrontEnd.Modules.Templates.Models
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@using FrontEnd.Modules.Templates.Models
 @model HistoryTabViewModel
 @{
     var publishLogCounter = 0;
@@ -6,10 +8,10 @@
 <div class="formview full historyContainer">
     <div class="row historyHeader">
         <div class="col col-6">
-            <h3>Oud</h3>
+            <h3>@Localizer["Old"]</h3>
         </div>
         <div class="col col-6">
-            <h3>Nieuw</h3>
+            <h3>@Localizer["New"]</h3>
         </div>
     </div>
     @foreach (var historyModel in Model.TemplateHistory)
@@ -20,16 +22,16 @@
             {
                 <div class="row historyLine">
                     <div class="col col-12 historyTagline">
-                        <span><span class="k-icon k-i-edit"></span> Published Environment |</span>
+                        <span><span class="k-icon k-i-edit"></span> @Localizer["Published Environment"] |</span>
                         <span><span class="k-icon k-i-calendar"></span> @Model.PublishHistory[i].GetDisplayChangedOn() |</span>
-                        <span><span class="k-icon k-i-user"></span> door @Model.PublishHistory[i].ChangedBy </span>
+                        <span><span class="k-icon k-i-user"></span> @Localizer["by"] @Model.PublishHistory[i].ChangedBy </span>
                     </div>
                     @if (Model.PublishHistory[i].PublishLog.OldLive != Model.PublishHistory[i].PublishLog.NewLive)
                     {
                         <div class="col col-6">
                             <div class="item" data-label-style="float" data-label-width="0">
                                 <span class="handler">&nbsp;</span>
-                                <h4><label for="text_101">Live @Model.PublishHistory[i].PublishLog.OldLive</label></h4>
+                                <h4><label for="text_101">@Localizer["Live"] @Model.PublishHistory[i].PublishLog.OldLive</label></h4>
                                 <span class="k-widget k-input k-state-default">
                                     <ins class="version live" title="live"></ins>
                                 </span>
@@ -40,7 +42,7 @@
                         <div class="col col-6">
                             <div class="item" data-label-style="float" data-label-width="0">
                                 <span class="handler">&nbsp;</span>
-                                <h4><label for="text_102">Live @Model.PublishHistory[i].PublishLog.NewLive</label></h4>
+                                <h4><label for="text_102">@Localizer["Live"] @Model.PublishHistory[i].PublishLog.NewLive</label></h4>
                                 <span class="k-widget k-input k-state-default">
                                     <ins class="version live" title="live"></ins>
                                 </span>
@@ -52,7 +54,7 @@
                         <div class="col col-6">
                             <div class="item" data-label-style="float" data-label-width="0">
                                 <span class="handler">&nbsp;</span>
-                                <h4><label for="text_101">Accept @Model.PublishHistory[i].PublishLog.OldAccept</label></h4>
+                                <h4><label for="text_101">@Localizer["Accept"] @Model.PublishHistory[i].PublishLog.OldAccept</label></h4>
                                 <span class="k-widget k-input k-state-default">
                                     <ins class="version accept" title="acceptatie"></ins>
                                 </span>
@@ -63,7 +65,7 @@
                         <div class="col col-6">
                             <div class="item" data-label-style="float" data-label-width="0">
                                 <span class="handler">&nbsp;</span>
-                                <h4><label for="text_102">Accept @Model.PublishHistory[i].PublishLog.NewAccept</label></h4>
+                                <h4><label for="text_102">@Localizer["Accept"] @Model.PublishHistory[i].PublishLog.NewAccept</label></h4>
                                 <span class="k-widget k-input k-state-default">
                                     <ins class="version accept" title="acceptatie"></ins>
                                 </span>
@@ -75,7 +77,7 @@
                         <div class="col col-6">
                             <div class="item" data-label-style="float" data-label-width="0">
                                 <span class="handler">&nbsp;</span>
-                                <h4><label for="text_101">Test @Model.PublishHistory[i].PublishLog.OldTest</label></h4>
+                                <h4><label for="text_101">@Localizer["Test"] @Model.PublishHistory[i].PublishLog.OldTest</label></h4>
                                 <span class="k-widget k-input k-state-default">
                                     <ins class="version test" title="test"></ins>
                                 </span>
@@ -86,7 +88,7 @@
                         <div class="col col-6">
                             <div class="item" data-label-style="float" data-label-width="0">
                                 <span class="handler">&nbsp;</span>
-                                <h4><label for="text_102">Test @Model.PublishHistory[i].PublishLog.NewTest</label></h4>
+                                <h4><label for="text_102">@Localizer["Test"] @Model.PublishHistory[i].PublishLog.NewTest</label></h4>
                                 <span class="k-widget k-input k-state-default">
                                     <ins class="version test" title="test"></ins>
                                 </span>
@@ -102,19 +104,19 @@
             <div class="col col-12 historyTagline">
                 @if (historyModel.Version <= Model.PublishedEnvironment.LiveVersion)
                 {
-                    <ins class="version live" title="live"></ins>
+                    <ins class="version live" title="@Localizer["Live"]"></ins>
                 }
                 else if (historyModel.Version <= Model.PublishedEnvironment.AcceptVersion)
                 {
-                    <ins class="version accept" title="acceptatie"></ins>
+                    <ins class="version accept" title="@Localizer["Acceptance"]"></ins>
                 }
                 else if (historyModel.Version <= Model.PublishedEnvironment.TestVersion)
                 {
-                    <ins class="version test" title="test"></ins>
+                    <ins class="version test" title="@Localizer["Test"]"></ins>
                 }
-                <span><span class="k-icon k-i-edit"></span> Versie @historyModel.Version |</span>
+                <span><span class="k-icon k-i-edit"></span> @Localizer["Version"] @historyModel.Version |</span>
                 <span><span class="k-icon k-i-calendar"></span> @historyModel.GetDisplayChangedOn() |</span>
-                <span><span class="k-icon k-i-user"></span> door @historyModel.ChangedBy </span>
+                <span><span class="k-icon k-i-user"></span> @Localizer["by"] @historyModel.ChangedBy </span>
             </div>
             @foreach (var change in historyModel.TemplateChanges)
             {
@@ -198,7 +200,7 @@
             {
                 <div class="row historyLine">
                     <div class="col col-12 historyTagline">
-                        <span>Linked Templates:</span>
+                        <span>@Localizer["Linked Templates:"]</span>
                     </div>
                 </div>
 
@@ -246,16 +248,16 @@
             {
                 <div class="row historyLine">
                     <div class="col col-12 historyTagline">
-                        <span>Dynamic Content:</span>
+                        <span>@Localizer["Dynamic Content"]:</span>
                     </div>
                 </div>
 
                 @foreach (var dynamicHistory in historyModel.DynamicContentChanges)
                 {
                     <div class="col col-12 historyTagline">
-                        <span><span class="k-icon k-i-edit"></span> Versie @dynamicHistory.Version |</span>
+                        <span><span class="k-icon k-i-edit"></span> @Localizer["Version"] @dynamicHistory.Version |</span>
                         <span><span class="k-icon k-i-calendar"></span> @dynamicHistory.GetDisplayChangedOn() |</span>
-                        <span><span class="k-icon k-i-user"></span> door @dynamicHistory.ChangedBy </span>
+                        <span><span class="k-icon k-i-user"></span> @Localizer["by"] @dynamicHistory.ChangedBy </span>
                     </div>
                     @if (dynamicHistory.ChangedFields != null)
                     {

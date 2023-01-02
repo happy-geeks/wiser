@@ -1,4 +1,6 @@
-﻿@using System.Web
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@using System.Web
 @model FrontEnd.Modules.ContentBox.Models.ContentBoxViewModel
 @inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
@@ -7,7 +9,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Content Box</title>
+    <title>@Localizer["Content Box"]</title>
 
     <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
     <!--<link href="/ContentBox/assets/minimalist-blocks/content.css" rel="stylesheet" type="text/css" />-->

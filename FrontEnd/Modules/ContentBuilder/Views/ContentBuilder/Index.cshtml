@@ -1,4 +1,6 @@
-﻿@using System.Web
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@using System.Web
 @model FrontEnd.Modules.ContentBuilder.Models.ContentBuilderViewModel
 @inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
@@ -7,7 +9,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Content Builder</title>
+    <title>@Localizer["Content Builder"]</title>
 
     <link href="/ContentBuilder/assets/minimalist-blocks/content.css" rel="stylesheet" type="text/css" />
     <link href="/ContentBuilder/assets/ionicons/css/ionicons.min.css" rel="stylesheet" type="text/css">
@@ -16,8 +18,8 @@
 <body>
     <div id="app" v-cloak>
         <div class="is-tool main-tools-container">
-            <button @@click="viewSnippets()" class="classic view-snippets-button">+ Toevoegen</button>
-            <button @@click="viewHtml()" class="classic view-html-button">HTML</button>
+            <button @@click="viewSnippets()" class="classic view-snippets-button">+ @Localizer["Add"]</button>
+            <button @@click="viewHtml()" class="classic view-html-button">@Localizer["HTML"]</button>
         </div>
 
         <div id="contentarea" class="container is-container">

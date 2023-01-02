@@ -1,11 +1,13 @@
-﻿@model FrontEnd.Modules.Communication.Models.CommunicationSettingsViewModel
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@model FrontEnd.Modules.Communication.Models.CommunicationSettingsViewModel
 @inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head runat="server">
     <meta charset="utf-8" />
-    <title>Wiser 3 - Communicatie</title>
+    <title>@Localizer["Wiser 3 - Communication"]</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -34,26 +36,26 @@
     <div class="left" id="NameContainer">
         <span id="CurrentName"></span>
         <input type="text" id="EditNameField" class="textField k-input hidden" maxlength="50" autocomplete="off"/>
-        <a id="EditNameButton" title="Naam wijzigen" href="#"><span class="icon-pencil"></span></a>
-        <a id="DeleteButton" title="Communicatie verwijderen" href="#"><span class="icon-delete"></span></a>
+        <a id="EditNameButton" title="@Localizer["Edit Name"]" href="#"><span class="icon-pencil"></span></a>
+                <a id="DeleteButton" title="@Localizer["Delete communication"]" href="#"><span class="icon-delete"></span></a>
     </div>
     <div class="right" id="ButtonContainer">
-        <button id="SaveButton" class="k-primary">Wijzigingen opslaan</button>
+        <button id="SaveButton" class="k-primary">@Localizer["Saving Changes"]</button>
     </div>
 </header>
 <div id="tabStrip">
 <ul>
     <li class="k-state-active">
-        Ontvangers
+        @Localizer["Receivers"]
     </li>
     <li>
-        Data
+        @Localizer["Data"]
     </li>
     <li>
-        Content
+        @Localizer["Content"]
     </li>
     <li>
-        Verzendpatroon
+        @Localizer["Send pattern"]
     </li>
 </ul>
 <div class="formview full" id="ReceiverContainer">
@@ -61,7 +63,7 @@
         <div id="StaticValuesForReceiversContainer">
             <input type="radio" name="receiverType" id="StaticReceiver" class="noForm rToggle" value="static"/>
             <header>
-                <label for="StaticReceiver" class="radio rToggle"><span>Een of meerdere vaste ontvangers (e-mailadres of GSM-nummer). Vul meerdere waardes in (deze mogen gescheiden worden door komma's, puntkomma's en/of enters).</span></label>
+                <label for="StaticReceiver" class="radio rToggle"><span>@Localizer["One or more fixed receivers"]</span></label>
             </header>
             <div>
                 <textarea id="StaticReceiverInput" name="staticReceiver"></textarea>
@@ -71,7 +73,7 @@
         <div id="DataSelectorForReceiversContainer">
             <input type="radio" name="receiverType" id="DataSelectorForReceiver" class="noForm rToggle" value="dataSelector"/>
             <header>
-                <label for="DataSelectorForReceiver" class="radio rToggle"><span>Selecteer de ontvangers via een dataselector.</span></label>
+                <label for="DataSelectorForReceiver" class="radio rToggle"><span>@Localizer["Select the receivers via a data selector."]</span></label>
             </header>
             <div>
                 <select id="DataSelectorForReceiverDropDown" name="dataSelectorForReceiver" class="kendo-dropdown-list">
@@ -82,7 +84,7 @@
         <div id="QueryForReceiversContainer">
             <input type="radio" name="receiverType" id="QueryForReceivers" class="noForm rToggle" value="query"/>
             <header>
-                <label for="QueryForReceivers" class="radio rToggle"><span>Selecteer de ontvangers via een vooraf ingestelde query.</span></label>
+                <label for="QueryForReceivers" class="radio rToggle"><span>@Localizer["Select the receivers via a preset query."]</span></label>
             </header>
             <div>
                 <select id="QueryForReceiversDropDown" name="query" class="kendo-dropdown-list">
@@ -93,11 +95,11 @@
 </div>
 <div class="formview full" id="DataContainer">
     <div class="item">
-        <p>Hier kan een dataselector of query gekozen worden voor gebruik in de inhoud van de communicatie. Deze dataselector of query wordt per ontvanger uitgevoerd en moet dus ook alleen data voor die ontvanger ophalen. Dit is geheel optioneel.</p>
+        <p>@Localizer["Here a data selector or query can be chosen for use in the content of the communication. This data selector or query is performed per receiver and must therefore only retrieve data for that receiver. This is completely optional."]</p>
         <div id="DataSelectorForContentContainer">
             <input type="radio" name="contentDataType" id="DataSelectorForContent" class="noForm rToggle" value="dataSelector"/>
             <header>
-                <label for="DataSelectorForContent" class="radio rToggle"><span>Selecteer een dataselector</span></label>
+                <label for="DataSelectorForContent" class="radio rToggle"><span>@Localizer["Select a data selector"]</span></label>
             </header>
             <div>
                 <select id="DataSelectorForContentDropDown" name="dataSelectorForContent" class="kendo-dropdown-list">
@@ -108,7 +110,7 @@
         <div id="QueryContainer">
             <input type="radio" name="contentDataType" id="QueryForContent" class="noForm rToggle" value="query"/>
             <header>
-                <label for="QueryForContent" class="radio rToggle"><span>Selecteer een query</span></label>
+                <label for="QueryForContent" class="radio rToggle"><span>@Localizer["Select a query"]</span></label>
             </header>
             <div>
                 <select id="QueryForContentDropDown" name="query" class="kendo-dropdown-list">
@@ -122,23 +124,23 @@
         <div class="item">
             <input type="checkbox" id="MailToggle" class="noForm cToggle"/>
             <header>
-                <label for="MailToggle" class="checkbox cToggle"><span>E-mail</span></label>
+                            <label for="MailToggle" class="checkbox cToggle"><span>@Localizer["E-mail"]</span></label>
             </header>
             <div>
                 <div class="item">
-                    <h4><label for="MailTemplateDropDown">Template</label></h4>
+                    <h4><label for="MailTemplateDropDown">@Localizer["Template"]</label></h4>
                     <select id="MailTemplateDropDown" class="drop-down-list">
                     </select>
                 </div>
 
                 <div class="item" id="LanguageDropDownContainer">
-                    <h4><label for="LanguageDropDown">Taal</label></h4>
+                    <h4><label for="LanguageDropDown">@Localizer["Language"]</label></h4>
                     <select id="LanguageDropDown" class="drop-down-list">
                     </select>
                 </div>
 
                 <div class="item">
-                    <h4><label for="MailSubject">Onderwerp</label></h4>
+                    <h4><label for="MailSubject">@Localizer["Subject"]</label></h4>
                     <span class="k-widget k-input k-state-default">
                         <input type="text" id="MailSubject" class="textField k-input" maxlength="100" autocomplete="off"/>
                     </span>
@@ -149,35 +151,35 @@
                     <span class="k-widget k-input k-state-default">
                         <input type="text" id="EmailSelector" class="textField k-input" maxlength="100" autocomplete="nope"/>
                     </span>
-                    <p class="form-hint">Hiermee kan aangegeven worden waar het e-mailadres van de ontvangers precies staat in de resultaten van de query of dataselector. Dit kan leeggelaten worden indien er vaste ontvangers zijn ingevuld. Indien er in de dataselector bijvoorbeeld een veld "emailadres" komt, dan kan hier de waarde "emailadres" ingevuld worden. Als het e-mailadres op een dieper niveau staat dan kan dat ook door te scheiden met punten, bijvoorbeeld "{customer.email}".</p>
-                </div>
+                    <p class="form-hint">@Localizer["This can be used to indicate where the e-mail address of the reseivers is exactly in the results of the query or data selector. This can be left blank if fixed reseivers are entered. If, for example, there is an 'email address' field in the data selector, then the value 'email address' can be entered here. If the e-mail address is on a deeper level, this can also be done by by separating with points, for example"] "{customer.email}".</p>
+                </div>                               
 
                 <div class="item">
-                    <h4><label for="MailBodyEditor">Inhoud mail</label></h4>
+                    <h4><label for="MailBodyEditor">@Localizer["Email content"]</label></h4>
                     <textarea id="MailBodyEditor" class="editor" rows="10" cols="30"></textarea>
-                    <p class="form-hint">Indien u hierboven een mailtemplate en een taal (indien u meertaligheid heeft in Wiser) selecteert, wordt die template automatisch hier gevuld. De mail kan dan vervolgens nog aangepast worden indien u wilt afwijken van de gekozen template. Hier kunnen dynamische waardes ingezet worden die uit een dataselector of query komen, deze dynamische waardes moeten binnen accolades staan (bijoorbeeld: "{firstName}"). Welke waardes u hier kunt invullen, kunt u zien in de dataselectormodule. Open daar de betreffende dataselector en klik op de knop "Toon resultaat", daar ziet u dan een JSON object en alle waardes die daarin staan kunt u hier gebruiken.</p>
+                                <p class="form-hint">@Localizer["If you select a mail template and a language (if you have multilingual in Wiser) above, that template will automatically be filled here."]</p>
                 </div>
             </div>
         </div>
         <div class="item">
             <input type="checkbox" id="SmsToggle" class="noForm cToggle"/>
             <header>
-                <label for="SmsToggle" class="checkbox cToggle"><span>SMS</span></label>
+                <label for="SmsToggle" class="checkbox cToggle"><span>@Localizer["SMS"]</span></label>
             </header>
             <div>
                 <div class="item">
-                    <h4><label for="PhoneNumberSelector">Telefoonnummer selector</label></h4>
+                    <h4><label for="PhoneNumberSelector">@Localizer["Phone number selector"]</label></h4>
                     <span class="k-widget k-input k-state-default">
                         <input type="text" id="PhoneNumberSelector" class="textField k-input" maxlength="100" autocomplete="nope"/>
                     </span>
-                    <p class="form-hint">Hiermee kan aangegeven worden waar het telefoonnummer van de ontvangers precies staat in de resultaten van de query of dataselector. Dit kan leeggelaten worden indien er vaste ontvangers zijn ingevuld. Indien er in de dataselector bijvoorbeeld een veld "telefoonnummer" komt, dan kan hier de waarde "{telefoonnummer}" ingevuld worden. Als het telefoonnummer op een dieper niveau staat dan kan dat ook door te scheiden met punten, bijvoorbeeld "{customer.phone}".</p>
+                        <p class="form-hint">@Localizer["This can be used to indicate where the telephone number of the recipients is exactly in the results of the query or data selector. This can be left blank if fixed recipients are entered. If, for example, there is a field 'telephone number' in the data selector, then the value '{telephone number}' can be entered here. If the phone number is on a deeper level, you can also separate it with dots, for example '{customer.phone}'."]</p>
                 </div>
 
                 <div class="item">
-                    <h4><label for="SmsMessage">Inhoud SMS</label></h4>
+                    <h4><label for="SmsMessage">@Localizer["Content SMS"]</label></h4>
                     <span class="k-widget k-input k-state-default">
-                        <textarea id="SmsMessage" class="k-textbox" placeholder="Het SMS-bericht dat gestuurd moet worden" data-limit="160"></textarea>
-                        <span>0 / 160</span>
+                        <textarea id="SmsMessage" class="k-textbox" placeholder="@Localizer["The SMS message to be sent"]" data-limit="160"></textarea>
+                        <span>@Localizer["0 / 160"]</span>
                     </span>
                 </div>
             </div>
@@ -187,19 +189,19 @@
 <div class="formview full" id="WhenContainer">
     <div class="formview full compact padding-8">
         <div class="item">
-            <h4><label>Verstuur op</label></h4>
+            <h4><label>@Localizer["Send on"]</label></h4>
             <div class="inline">
                 <div>
                     <input type="radio" name="sendMoment" id="Direct" class="noForm rToggle" value="Direct" checked="checked"/>
                     <header>
-                        <label for="Direct" class="radio rToggle"><span>Direct</span></label>
+                        <label for="Direct" class="radio rToggle"><span>@Localizer["Direct"]</span></label>
                     </header>
                 </div>
 
                 <div>
                     <input type="radio" name="sendMoment" id="Fixed" class="noForm rToggle" value="Fixed"/>
                     <header>
-                        <label for="Fixed" class="radio rToggle"><span>Vast moment</span></label>
+                        <label for="Fixed" class="radio rToggle"><span>@Localizer["Fixed time"]</span></label>
                     </header>
                     <div>
                         <input id="FixedDateTimePicker" class="datetimepicker" autocomplete="off"/>
@@ -209,47 +211,47 @@
                 <div>
                     <input type="radio" name="sendMoment" id="Recurring" class="noForm rToggle" value="Recurring"/>
                     <header>
-                        <label for="Recurring" class="radio rToggle"><span>Periodiek</span></label>
+                        <label for="Recurring" class="radio rToggle"><span>@Localizer["Recurring"]</span></label>
                     </header>
                     <div>
                         <div>
-                            <h4 class="margin-top-20"><label for="RecurringDateRangePicker">Periode</label></h4>
+                            <h4 class="margin-top-20"><label for="RecurringDateRangePicker">@Localizer["Recurring date"]</label></h4>
                             <span class="inline">
                                 <div id="RecurringDateRangePicker" class="daterangepicker"></div>
                             </span>
                         </div>
                         <div>
-                            <h4><label for="RecurringTimePicker">Verzendtijd</label></h4>
+                            <h4><label for="RecurringTimePicker">@Localizer["Send time"]</label></h4>
                             <span class="inline">
                                 <input id="RecurringTimePicker" class="timepicker" />
                             </span>
                         </div>
                         <div>
-                            <h4><label for="RecurringPeriodValueField">Elke</label></h4>
+                            <h4><label for="RecurringPeriodValueField">@Localizer["Each"]</label></h4>
                             <span class="inline w-10">
                                 <input type="number" id="RecurringPeriodValueField" class="numeric half-width" value="1"/>
                             </span>
                             <span class="inline w-75">
                                 <select id="RecurringPeriodTypeDropDown" class="combo-select half-width">
-                                    <option value="Week" selected>week/weken</option>
-                                    <option value="Month">maand/maanden</option>
+                                    <option value="Week" selected>@Localizer["week/weeks"]</option>
+                                    <option value="Month">@Localizer["month/months"]</option>
                                 </select>
                             </span>
                         </div>
                         <div id="RecurringWeeklyContainer">
-                            <h4><label>Op</label></h4>
+                            <h4><label>@Localizer["On"]</label></h4>
                             <span class="inline">
-                                <label class="checkbox"><input type="checkbox" name="recurringWeekDay" value="1"/> <span>maandag</span></label>
-                                <label class="checkbox"><input type="checkbox" name="recurringWeekDay" value="2"/> <span>dinsdag</span></label>
-                                <label class="checkbox"><input type="checkbox" name="recurringWeekDay" value="4"/> <span>woensdag</span></label>
-                                <label class="checkbox"><input type="checkbox" name="recurringWeekDay" value="8"/> <span>donderdag</span></label>
-                                <label class="checkbox"><input type="checkbox" name="recurringWeekDay" value="16"/> <span>vrijdag</span></label>
-                                <label class="checkbox"><input type="checkbox" name="recurringWeekDay" value="32"/> <span>zaterdag</span></label>
-                                <label class="checkbox"><input type="checkbox" name="recurringWeekDay" value="64"/> <span>zondag</span></label>
+                                <label class="checkbox"><input type="checkbox" name="recurringWeekDay" value="1"/> <span>@Localizer["monday"]</span></label>
+                                <label class="checkbox"><input type="checkbox" name="recurringWeekDay" value="2"/> <span>@Localizer["tuesday"]</span></label>
+                                <label class="checkbox"><input type="checkbox" name="recurringWeekDay" value="4"/> <span>@Localizer["wednesday"]</span></label>
+                                <label class="checkbox"><input type="checkbox" name="recurringWeekDay" value="8"/> <span>@Localizer["thursday"]</span></label>
+                                <label class="checkbox"><input type="checkbox" name="recurringWeekDay" value="16"/> <span>@Localizer["friday"]</span></label>
+                                <label class="checkbox"><input type="checkbox" name="recurringWeekDay" value="32"/> <span>@Localizer["saturday"]</span></label>
+                                <label class="checkbox"><input type="checkbox" name="recurringWeekDay" value="64"/> <span>@Localizer["sunday"]</span></label>
                             </span>
                         </div>
                         <div id="RecurringMonthlyContainer" class="hidden">
-                            <h4><label for="RecurringDayOfMonth">Dag van de maand</label></h4>
+                            <h4><label for="RecurringDayOfMonth">@Localizer["Day of the month"]</label></h4>
                             <span class="inline w-10">
                                 <input type="number" id="RecurringDayOfMonth" class="numeric half-width" value="1"/>
                             </span>

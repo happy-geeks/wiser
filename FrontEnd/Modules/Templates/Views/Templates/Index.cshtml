@@ -1,4 +1,6 @@
-﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
 @inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 @{
     Layout = "";
@@ -8,7 +10,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Wiser 3 - Templates module</title>
+    <title>@Localizer["Wiser 3 - Templates module"]</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -39,8 +41,7 @@
     <span id="popupNotification"></span>
     <div id="NotMainBranchNotification" class="hidden">
         <p>
-            Je bent op dit moment ingelogd bij een branch van deze klant. Het is niet mogelijk/toegestaan om de templatemodule te gebruiken in een branch.<br/>
-            Log a.u.b. in op de live-omgeving van de klant en werk daar in de templatemodule.
+            @Localizer["You are currently logged in to a branch of this customer. It is not possible/allowed to use the template module in an industry.<br/> Please log into the customer's live environment and work in the template module there."]
         </p>
     </div>
     <div id="wiser">
@@ -72,10 +73,10 @@
                         <div id="right-pane" style="background-color: #eeeeee;">
                             <div class="tabstrip k-tabstrip-wrapper">
                                 <ul>
-                                    <li class="development-tab k-state-active" data-name="development">Development</li>
-                                    <li class="dynamic-tab" data-name="dynamic-content">Dynamische content</li>
-                                    <li class="preview-tab" data-name="preview">Preview</li>
-                                    <li class="history-tab" data-name="history">Historie</li>
+                                    <li class="development-tab k-state-active" data-name="development">@Localizer["Development"]</li>
+                                    <li class="dynamic-tab" data-name="dynamic-content">@Localizer["Dynamic Content"]</li>
+                                    <li class="preview-tab" data-name="preview">@Localizer["Preview"]</li>
+                                    <li class="history-tab" data-name="history">@Localizer["History"]</li>
                                 </ul>
                                 <div id="developmentTab"></div>
                                 <div>
@@ -102,8 +103,8 @@
         </div>
         <footer class="fixed clear">
             <div class="actions">
-                <button class="k-primary" name="save">Update</button>
-                <button class="k-secondary" name="cancel">Annuleren</button>
+                <button class="k-primary" name="save">@Localizer["Update"]</button>
+                <button class="k-secondary" name="cancel">@Localizer["Cancel"]</button>
                 <button class="addDynamicContent"></button>
             </div>
         </footer>
@@ -113,11 +114,11 @@
         <div class="formview full static-fields">
             <div class="item">
                 <span class="inline">
-                    <label class="checkbox"><input type="checkbox" id="newItemIsDirectoryCheckBox" class="textField k-input" /><span>Is map</span></label>
+                    <label class="checkbox"><input type="checkbox" id="newItemIsDirectoryCheckBox" class="textField k-input" /><span>@Localizer["Is folder"]</span></label>
                 </span>
             </div>
             <div class="item">
-                <h4><label for="newItemTitleField">Naam</label></h4>
+                <h4><label for="newItemTitleField">@Localizer["Name"]</label></h4>
                 <span class="k-widget k-input k-state-default">
                     <input type="text" id="newItemTitleField" class="textField k-input" autocomplete="off" />
                 </span>
@@ -128,9 +129,9 @@
     <div id="addDynamicContentToHtmlDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label for="dynamicContentDropDown">Kies een component</label></h4>
+                <h4><label for="dynamicContentDropDown">@Localizer["Choose a component"]</label></h4>
                 <div class="flex-container">
-                    <select id="dynamicContentDropDown" class="select" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."></select>
+                    <select id="dynamicContentDropDown" class="select" placeholder="@Localizer["Make your choice..."]" data-placeholder="@Localizer["Make your choice..."]"></select>
                 </div>
             </div>
         </div>
@@ -139,9 +140,9 @@
     <div id="linkExistingDynamicContentDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label for="allDynamicContentDropDown">Kies een component</label></h4>
+                <h4><label for="allDynamicContentDropDown">@Localizer["Choose a component"]</label></h4>
                 <div class="flex-container">
-                    <select id="allDynamicContentDropDown" class="select" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."></select>
+                    <select id="allDynamicContentDropDown" class="select" placeholder="@Localizer["Make your choice..."]" data-placeholder="@Localizer["Make your choice..."]"></select>
                 </div>
             </div>
         </div>
