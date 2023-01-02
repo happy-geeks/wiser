@@ -86,24 +86,25 @@ namespace FrontEnd
             services.Configure<FrontEndSettings>(Configuration.GetSection("FrontEnd"));
 
             // Set Newtonsoft as the default JSON serializer and configure it to use camel case.
-            services.AddControllersWithViews(options => { options.AllowEmptyInputInBodyModelBinding = true; }).AddNewtonsoftJson(options =>
-            {
-                options.SerializerSettings.ContractResolver = new DefaultContractResolver()
+            services.AddControllersWithViews(options => { options.AllowEmptyInputInBodyModelBinding = true; })
+                .AddNewtonsoftJson(options =>
                 {
-                    NamingStrategy = new CamelCaseNamingStrategy(false, true, false)
-                };
+                    options.SerializerSettings.ContractResolver = new DefaultContractResolver()
+                    {
+                        NamingStrategy = new CamelCaseNamingStrategy(false, true, false)
+                    };
 
-                options.SerializerSettings.Formatting = Formatting.Indented;
-                options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
-                options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Local;
-                options.SerializerSettings.Converters.Add(new StringEnumConverter());
-            })
-                // Set localization to use resource files with suffices instead of directories.
-                // E.G. "Modules/Translations/Resources/Modules/Translations/Views/Index.nl.resx"
-                // Instead of "Modules/Translations/Resources/Modules.Translations.Views.Index.nl.resx"
-                .AddViewLocalization()
-                .AddDataAnnotationsLocalization();
+                    options.SerializerSettings.Formatting = Formatting.Indented;
+                    options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+                    options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Local;
+                    options.SerializerSettings.Converters.Add(new StringEnumConverter());
+                });
             
+            // Set localization to use resource files with suffices instead of directories.
+            // E.G. "Modules/Translations/Resources/Modules/Translations/Views/Index.nl.resx"
+            // Instead of "Modules/Translations/Resources/Modules.Translations.Views.Index.nl.resx"
+            services.AddControllersWithViews().AddViewLocalization();
+            services.AddControllersWithViews().AddDataAnnotationsLocalization();
             
             services.Configure<RequestLocalizationOptions>(options =>
             {
@@ -113,6 +114,7 @@ namespace FrontEnd
                 options.SetDefaultCulture(supportedCultures[0]);
                 options.FallBackToParentUICultures = true;
             });
+            
             // Setup localization.
             services.AddLocalization(options => options.ResourcesPath = "Modules/Translations/Resources");
 

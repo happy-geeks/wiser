@@ -49,18 +49,24 @@ import * as path from "path";
          * @returns {Object} Resources file translations in object form
          */
         async getTranslationOfModule(pathToModuleInTranslationResources, cultureAndCountry) {
-            const result = Wiser.api({
+            const result = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}Translations/get-translations-for-module`,
                 data: {pathToResourceFileDirectory: pathToModuleInTranslationResources, cultureAndCountry: cultureAndCountry},
                 method: "GET",
-                success: function(resourceJson) {
-                if (resourceJson != null) {
-                    return JSON.parse(resourceJson);
+            });
+            try {
+                return JSON.parse(result);
+            } catch (exception) {
+                if (exception instanceof SyntaxError) {
+                    console.error("Could not find translation in ${pathToModuleInTranslationResources}," +
+                        " or could not find given translation with language code ${cultureAndCountry}.", exception)
                 }
                 else {
-                    console.log('No resource found');
-                }} 
-            });
+                    // Re-throw the error if we don't want to catch that specific error.
+                    throw exception;
+                }
+                return null;
+            }
         }
     }
 

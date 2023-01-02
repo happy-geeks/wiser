@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Net;
+using Api.Core.Services;
 using Api.Modules.Translations.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -31,17 +33,20 @@ public class TranslationsController : Controller
     /// <returns>Json of the resource file</returns>
     [HttpGet]
     [Route("get-translations-for-module")]
-    public IActionResult GetCurrentCultureResourceAsJson(string pathToResourceFileDirectory, string cultureAndCountry)
+    public ServiceResult<Dictionary<string, string>> GetCurrentCultureResourceAsJson(string pathToResourceFileDirectory, string cultureAndCountry)
     {
-        Dictionary<string, string> resourceFileAsDict = translationsService.GetCurrentCultureResourceAsDict(pathToResourceFileDirectory, cultureAndCountry);
-        if (resourceFileAsDict != null)
+        var resourceFile = translationsService.GetCurrentCultureResourceAsDict(pathToResourceFileDirectory, cultureAndCountry);
+        if (resourceFile != null)
         {
-            return Json(JsonConvert.SerializeObject(resourceFileAsDict));
+            return resourceFile;
         }
         else
         {
-            // No proper translation is found, so return empty json (cannot return null)
-            return Json(new EmptyResult());
+            return new ServiceResult<Dictionary<string, string>>
+            {
+                StatusCode = HttpStatusCode.NotFound,
+                ErrorMessage = "Translation file for module not found"
+            };
         }
     }
 }

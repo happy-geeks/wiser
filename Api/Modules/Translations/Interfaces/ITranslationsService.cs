@@ -16,7 +16,7 @@ public interface ITranslationsService
     /// Should be located somewhere in Api/Modules/Translations/Resources</param>
     /// <param name="cultureAndCountry">Two letter culture dash two letter country, e.g: en-GB or en-US</param>
     /// <returns>Dict of strings</returns>
-    Dictionary<string, string> GetCurrentCultureResourceAsDict(string pathToResourceFileDirectory, string cultureAndCountry);
+    ServiceResult<Dictionary<string,string>> GetCurrentCultureResourceAsDict(string pathToResourceFileDirectory, string cultureAndCountry);
 
 
 }
