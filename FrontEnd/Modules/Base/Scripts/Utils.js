@@ -242,6 +242,26 @@ export class Strings {
     static isNullOrWhiteSpace(value) {
         return value === undefined || value === null || (typeof value === "string" && value.trim() === "");
     }
+
+    /**
+     * Makes sure that a string can be used as a JSON property by converting certain characters to placeholders.
+     * @param input {string} The input string to convert.
+     * @returns {string} A string that can safely be used as a JSON property.
+     */
+    static makeJsonPropertyName(input) {
+        if (!input) return input;
+        return input.replaceAll("-", "__h__").replaceAll(" ", "__s__").replaceAll(":", "__c__").replaceAll("(", "__bl__").replaceAll(")", "__br__").replaceAll(".", "__d__").replaceAll(",", "__co__");
+    }
+
+    /**
+     * Convert a string that was created by makeJsonPropertyName back into it's original form.
+     * @param input {string} The input string that was converted by makeJsonPropertyName.
+     * @returns {string} The original string.
+     */
+    static unmakeJsonPropertyName(input) {
+        if (!input) return input;
+        return input.replaceAll("__h__", "-").replaceAll("__s__", " ").replaceAll("__c__", ":").replaceAll("__bl__", "(").replaceAll("__br__", ")").replaceAll("__d__", ".").replaceAll("__co__", ",");
+    }
 }
 
 /**
