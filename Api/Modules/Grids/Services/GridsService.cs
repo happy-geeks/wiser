@@ -2432,7 +2432,7 @@ namespace Api.Modules.Grids.Services
 
             var userId = IdentityHelpers.GetWiserUserId(identity);
             query = query.ReplaceCaseInsensitive("{userId}", userId.ToString());
-            query = query.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity) ?? "");
+            query = query.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity, true) ?? "");
             query = query.ReplaceCaseInsensitive("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
             query = query.ReplaceCaseInsensitive("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
             query = query.ReplaceCaseInsensitive("{encryptedId}", encryptedId);
