@@ -135,6 +135,7 @@
             header.style.display = "";
 
             // Will make the save dialog open with the current name.
+            this.dataSelector.currentId = savedData.id;
             this.dataSelector.currentName = savedData.name;
 
             // Parse saved JSON string to an object.
@@ -346,7 +347,11 @@
                 if (typeof savedData.availableForRendering === "boolean") {
                     document.getElementById("availableForRendering").checked = savedData.availableForRendering;
                 }
-                
+
+                if (typeof savedData.showInDashboard === "boolean") {
+                    document.getElementById("showInDashboard").checked = savedData.showInDashboard;
+                }
+
                 if (savedData.allowedRoles) {
                     $("#allowedRoles").getKendoMultiSelect().value(savedData.allowedRoles.split(","));
                 }

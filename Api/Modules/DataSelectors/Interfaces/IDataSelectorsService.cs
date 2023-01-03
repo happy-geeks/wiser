@@ -105,15 +105,24 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// </summary>
         /// <returns>A list of WiserItemModel.</returns>
         Task<ServiceResult<List<WiserItemModel>>> GetTemplatesAsync(ClaimsIdentity identity);
-        
-        /// /// <summary>
+
+        /// <summary>
         /// Execute a data selector by ID and return the results as JSON.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="id">The ID of the data selector.</param>
         /// <param name="asKeyValuePair">If set to true the result of the query will be converted to a single object. Only columns with the names "key" and "value" are used.</param>
         /// <param name="parameters">The parameters to set before executing the data selector.</param>
+        /// <param name="skipPermissionsCheck">Optional: Whether the permissions check should be skipped. This should only ever be set to <see langword="true"/> when calling this function internally.</param>
         /// <returns>The results of the data selector as JSON.</returns>
-        Task<ServiceResult<JToken>> GetDataSelectorResultAsJsonAsync(ClaimsIdentity identity, int id, bool asKeyValuePair, List<KeyValuePair<string, object>> parameters);
+        Task<ServiceResult<JToken>> GetDataSelectorResultAsJsonAsync(ClaimsIdentity identity, int id, bool asKeyValuePair, List<KeyValuePair<string, object>> parameters, bool skipPermissionsCheck = false);
+
+        /// <summary>
+        /// Checks if there is a data selector that already has "show in dashboard" enabled. If so, the name of the
+        /// data selector will be returned. Otherwise, <see langword="null">null</see>.
+        /// </summary>
+        /// <param name="id">The ID of the current data selector, which will be excluded from the check. This will be 0 if it's a new data selector.</param>
+        /// <returns>Name of a data selector that has "show in dashboard" enabled, or <see langword="null">null</see> if no data selector has that option enabled.</returns>
+        Task<ServiceResult<string>> CheckDashboardConflictAsync(int id);
     }
 }
