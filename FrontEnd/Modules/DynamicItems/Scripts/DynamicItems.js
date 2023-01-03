@@ -172,7 +172,7 @@ const moduleSettings = {
             // Get user data from local storage.
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Admin (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? user.adminAccountName : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
             if (!this.settings.wiserApiRoot.endsWith("/")) {

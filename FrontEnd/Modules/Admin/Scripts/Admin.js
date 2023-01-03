@@ -157,7 +157,7 @@ const moduleSettings = {
 
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? user.adminAccountName : user.name;
             this.settings.happyEmployeeLoggedIn = user.juiceEmployeeName;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
