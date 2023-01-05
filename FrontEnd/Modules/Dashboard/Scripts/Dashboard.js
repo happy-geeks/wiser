@@ -13,7 +13,7 @@ import "../css/Dashboard.scss";
 const moduleSettings = {
 };
 
-((jQuery, moduleSettings) => {
+(($, moduleSettings) => {
     const defaultLayoutSettings = Object.freeze([
         {
             tileId: "dataChart",
@@ -44,6 +44,11 @@ const moduleSettings = {
             tileId: "taskAlerts",
             colSpan: 4,
             rowSpan: 2
+        },
+        {
+            tileId: "dataSelector",
+            colSpan: 4,
+            rowSpan: 2
         }
     ]);
 
@@ -63,15 +68,14 @@ const moduleSettings = {
             this.userData = null;
             this.entityData = null;
             this.openTaskAlertsData = null;
+            this.dataSelectorResult = null;
             
             this.servicesGrid = null;
             this.serviceWindow = null;
             this.serviceLogsGrid = null;
 
             // Fire event on page ready for direct actions
-            document.addEventListener("DOMContentLoaded", () => {
-                this.onPageReady();
-            });
+            document.addEventListener("DOMContentLoaded", this.onPageReady.bind(this));
         }
 
         async onPageReady() {
@@ -143,6 +147,9 @@ const moduleSettings = {
             this.mainLoader.toggleClass("loading", show);
         }
 
+        /**
+         * Bind the various keys and update events.
+         */
         setBindings() {
             document.getElementById("editSub").querySelectorAll("input[type='checkbox'][data-toggle-tile]").forEach((checkbox) => {
                 checkbox.addEventListener("change", (event) => {
@@ -223,6 +230,9 @@ const moduleSettings = {
             });
         }
 
+        /**
+         * Initializes the dashboard's elements with Kendo widgets.
+         */
         async initializeKendoElements() {
             // create ComboBox from select HTML element
             $(".combo-select").kendoComboBox();
@@ -315,7 +325,7 @@ const moduleSettings = {
         }
 
         /**
-         * Initializes the Wiser items usage data chart.
+         * Initializes the Wiser items count data chart.
          */
         initializeItemsDataChart() {
             const dataChartElement = document.getElementById("data-chart");
@@ -547,6 +557,9 @@ const moduleSettings = {
             this.servicesGrid.scrollables[1].classList.add("fixed-table");
         }
 
+        /**
+         * Retrieves information about the branches this Wiser installation has.
+         */
         async updateBranches() {
             const branches = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}branches`
@@ -568,6 +581,27 @@ const moduleSettings = {
 
             // Select first item, which is always the current branch.
             branchesSelect.select(0);
+        }
+
+        /**
+         * Updates the data selector result by retrieving it from the API.
+         */
+        async getDataSelectorResult() {
+            try {
+                this.dataSelectorResult = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}dashboard/dataselector`
+                });
+                if (!this.dataSelectorResult) {
+                    this.dataSelectorResult = {};
+                }
+                this.updateDataSelectorContent();
+            } catch (exception) {
+                console.error(exception);
+                Wiser.alert({
+                    title: "Ophalen dataselector data mislukt",
+                    content: "Het ophalen van de data selector data is mislukt. Probeer het a.u.b. nogmaals, of neem contact met ons op."
+                });
+            }
         }
 
         /**
@@ -672,8 +706,14 @@ const moduleSettings = {
             }
             this.openTaskAlertsData = openTaskAlertsData;
             this.updateOpenTaskAlertsChart();
+
+            // Update data selector result.
+            await this.getDataSelectorResult();
         }
 
+        /**
+         * Update/refresh the Wiser items usage chart.
+         */
         updateItemsDataChart() {
             const dataChartElement = document.getElementById("data-chart");
             if (!dataChartElement) return;
@@ -690,6 +730,9 @@ const moduleSettings = {
             dataChart.setDataSource(this.itemsData[filter]);
         }
 
+        /**
+         * Update/refresh the Wiser user data chart.
+         */
         updateUserDataChart() {
             const usersChartElement = document.getElementById("users-chart");
             if (!usersChartElement) return;
@@ -699,6 +742,9 @@ const moduleSettings = {
             usersChart.findSeriesByIndex(0).data(this.userData[filter]);
         }
 
+        /**
+         * Update/refresh the chart with data about up to three specific entities.
+         */
         updateEntityUsageData() {
             const entityDataElement = document.getElementById("entityData");
             if (!entityDataElement) return;
@@ -740,6 +786,73 @@ const moduleSettings = {
             document.getElementById("totalOpenTaskAlerts").innerText = totalOpenTaskAlerts.toString();
         }
 
+        /**
+         * Turns the data selector result into a human readable piece of HTML.
+         */
+        updateDataSelectorContent() {
+            const contentDiv = document.getElementById("data-selector-result");
+            if (!contentDiv) return;
+
+            if (!this.dataSelectorResult || (Array.isArray(this.dataSelectorResult) && this.dataSelectorResult.length === 0) || Object.keys(this.dataSelectorResult).length === 0) {
+                contentDiv.innerText = "Er is geen dataselector resultaat om te tonen.";
+                return;
+            }
+
+            // Make sure it's an array (to not have to constantly check the type of the variable).
+            const data = !Array.isArray(this.dataSelectorResult) ? [this.dataSelectorResult] : this.dataSelectorResult;
+
+            // Empty the content div first.
+            contentDiv.replaceChildren();
+
+            if (data.length === 1) {
+                const keys = Object.keys(data[0]);
+                const html = document.createElement("div");
+                const list = document.createElement("ul");
+
+                if (keys.length === 1) {
+                    const listItem = document.createElement("li");
+                    listItem.innerText = data[0][keys[0]];
+                    list.append(listItem);
+                } else {
+                    keys.forEach((key, index) => {
+                        const listItem = document.createElement("li");
+                        listItem.innerText = `${key}: ${data[0][key]}`;
+                        list.append(listItem);
+                    });
+                }
+
+                //html.append(list);
+                contentDiv.append(list);
+            } else {
+                data.forEach((row, index) => {
+                    const keys = Object.keys(row);
+                    const html = document.createElement("div");
+                    const header = document.createElement("strong");
+                    const list = document.createElement("ul");
+
+                    header.innerText = `Resultaat #${index + 1}`;
+
+                    if (keys.length === 1) {
+                        const listItem = document.createElement("li");
+                        listItem.innerText = row[keys[0]];
+                        list.append(listItem);
+                    } else {
+                        keys.forEach((key, index) => {
+                            const listItem = document.createElement("li");
+                            listItem.innerText = `${key}: ${row[key]}`;
+                            list.append(listItem);
+                        });
+                    }
+
+                    //html.append(header, list);
+                    contentDiv.append(header, list);
+                });
+            }
+        }
+
+        /**
+         * Update the service grid with information about the WTS services.
+         */
         async updateServices() {
             if (!this.servicesGrid) return;
 
@@ -832,7 +945,7 @@ const moduleSettings = {
                 method: "PUT"
             });
 
-            if(result === 'WillPauseAfterRunFinished') {
+            if (result === "WillPauseAfterRunFinished") {
                 kendo.alert("De service is momenteel nog bezig. Zodra deze klaar is zal deze automatisch gepauzeerd worden.");
             }
 
@@ -894,7 +1007,7 @@ const moduleSettings = {
             
             this.serviceTemplateWindow.title(`Template: ${templateId}`).open().maximize();
         }
-        
+
         /**
          * Open a window with the logs written by the WTS for a service.
          * @param e The click event.
@@ -1169,7 +1282,12 @@ const moduleSettings = {
             this.updateEntityUsageData();
             this.updateOpenTaskAlertsChart();
 
-            await this.saveUserSettings();
+            this.updateDataSelectorContent();
+
+            await Promise.all([
+                this.updateServices(),
+                this.saveUserSettings()
+            ]);
         }
 
         /**
@@ -1202,7 +1320,12 @@ const moduleSettings = {
             this.updateEntityUsageData();
             this.updateOpenTaskAlertsChart();
 
-            await this.saveUserSettings();
+            this.updateDataSelectorContent();
+
+            await Promise.all([
+                this.updateServices(),
+                this.saveUserSettings()
+            ]);
         }
 
         /**

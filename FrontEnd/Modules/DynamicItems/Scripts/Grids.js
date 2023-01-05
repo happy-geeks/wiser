@@ -1113,7 +1113,7 @@ export class Grids {
                 encryptedId = dataItem[`encryptedId_${options.entityType || entityType}`] || dataItem[`encryptedid_${options.entityType || entityType}`] || dataItem[`encrypted_id_${options.entityType || entityType}`] || dataItem[`idencrypted_${options.entityType || entityType}`] || encryptedId;
             } else if (!options.usingDataSelector) {
                 // If the clicked column has a field property, it should contain the entity name. Then we can find the ID column for that same entity.
-                const split = column.field.split(/_(.+)/).filter(s => s !== "");
+                const split = Strings.unmakeJsonPropertyName(column.field).split(/_(.+)/).filter(s => s !== "");
                 if (split.length < 2 && !entityType) {
                     if (!options.hideCommandColumn && (!this.base.settings.gridViewSettings || !this.base.settings.gridViewSettings.hideCommandColumn)) {
                         console.error(`Could not retrieve entity type from clicked column ('${column.field}')`);
@@ -1132,13 +1132,15 @@ export class Grids {
                         if (!dataItem.hasOwnProperty(key)) {
                             continue;
                         }
+                        
+                        const columnName = Strings.unmakeJsonPropertyName(key);
 
-                        if (!idFound && (key.indexOf(`ID_${entityType}`) === 0 || key.indexOf(`id_${entityType}`) === 0 || key.indexOf(`itemId_${entityType}`) === 0 || key.indexOf(`itemid_${entityType}`) === 0 || key.indexOf(`item_id_${entityType}`) === 0)) {
+                        if (!idFound && (columnName.indexOf(`ID_${entityType}`) === 0 || columnName.indexOf(`id_${entityType}`) === 0 || columnName.indexOf(`itemId_${entityType}`) === 0 || columnName.indexOf(`itemid_${entityType}`) === 0 || columnName.indexOf(`item_id_${entityType}`) === 0)) {
                             itemId = dataItem[key];
                             idFound = true;
                         }
 
-                        if (!encryptedIdFound && (key.indexOf(`encryptedId_${entityType}`) === 0 || key.indexOf(`encryptedid_${entityType}`) === 0 || key.indexOf(`encrypted_id_${entityType}`) === 0 || key.indexOf(`idencrypted_${entityType}`) === 0)) {
+                        if (!encryptedIdFound && (columnName.indexOf(`encryptedId_${entityType}`) === 0 || columnName.indexOf(`encryptedid_${entityType}`) === 0 || columnName.indexOf(`encrypted_id_${entityType}`) === 0 || columnName.indexOf(`idencrypted_${entityType}`) === 0)) {
                             encryptedId = dataItem[key];
                             encryptedIdFound = true;
                         }
@@ -1345,7 +1347,8 @@ export class Grids {
                                 primary: true,
                                 action: (e) => {
                                     const destinationItemId = dataItem.encryptedDestinationItemId || senderGrid.element.closest(".item").data("itemIdEncrypted");
-                                    this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.linkTypeNumber || dataItem.link_type_number).then(() => {
+                                    const linkType = dataItem.linkTypeNumber || dataItem.link_type_number || dataItem.linktypenumber || dataItem.linkType || dataItem.link_type || dataItem.linktype;
+                                    this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, linkType).then(() => {
                                         senderGrid.dataSource.read();
                                     });
                                 }
@@ -1382,7 +1385,8 @@ export class Grids {
                     }
 
                     const destinationItemId = dataItem.encryptedDestinationItemId || dataItem.encrypted_destination_item_id || senderGrid.element.closest(".item").data("itemIdEncrypted");
-                    await this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.linkTypeNumber || dataItem.linktypenumber || dataItem.link_type_number);
+                    const linkType = dataItem.linkTypeNumber || dataItem.link_type_number || dataItem.linktypenumber || dataItem.linkType || dataItem.link_type || dataItem.linktype;
+                    await this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, linkType);
                     senderGrid.dataSource.read();
                     break;
                 }
