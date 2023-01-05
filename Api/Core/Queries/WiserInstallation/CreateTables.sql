@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS `wiser_entityproperty`  (
   `entity_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `link_type` int(11) NOT NULL DEFAULT 0,
   `visible_in_overview` tinyint NOT NULL DEFAULT 0,
+  `overview_fieldtype` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `overview_width` smallint NOT NULL DEFAULT 100,
   `tab_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `group_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
