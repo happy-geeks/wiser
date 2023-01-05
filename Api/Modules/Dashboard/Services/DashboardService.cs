@@ -11,12 +11,14 @@ using Api.Modules.Branches.Interfaces;
 using Api.Modules.Dashboard.Enums;
 using Api.Modules.Dashboard.Interfaces;
 using Api.Modules.Dashboard.Models;
+using Api.Modules.DataSelectors.Interfaces;
 using Api.Modules.EntityTypes.Models;
 using Api.Modules.TaskAlerts.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.WiserDashboard.Models;
+using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Dashboard.Services;
 
@@ -27,16 +29,18 @@ public class DashboardService : IDashboardService, IScopedService
     private readonly IDatabaseHelpersService databaseHelpersService;
     private readonly IBranchesService branchesService;
     private readonly ITaskAlertsService taskAlertsService;
+    private readonly IDataSelectorsService dataSelectorsService;
 
     /// <summary>
     /// Creates a new instance of <see cref="DashboardService"/>.
     /// </summary>
-    public DashboardService(IDatabaseConnection clientDatabaseConnection, IDatabaseHelpersService databaseHelpersService, IBranchesService branchesService, ITaskAlertsService taskAlertsService)
+    public DashboardService(IDatabaseConnection clientDatabaseConnection, IDatabaseHelpersService databaseHelpersService, IBranchesService branchesService, ITaskAlertsService taskAlertsService, IDataSelectorsService dataSelectorsService)
     {
         this.clientDatabaseConnection = clientDatabaseConnection;
         this.databaseHelpersService = databaseHelpersService;
         this.branchesService = branchesService;
         this.taskAlertsService = taskAlertsService;
+        this.dataSelectorsService = dataSelectorsService;
     }
 
     /// <inheritdoc />
@@ -818,5 +822,27 @@ WHERE id = ?serviceId");
             StatusCode = HttpStatusCode.OK,
             ModelObject = state ? ServiceExtraRunStates.Marked : ServiceExtraRunStates.Unmarked
         };
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<JToken>> GetDataSelectorResultAsync(ClaimsIdentity identity)
+    {
+        // First get the ID of the data selector whose result needs to be returned.
+        var dataSelectorData = await clientDatabaseConnection.GetAsync($"SELECT id FROM `{WiserTableNames.WiserDataSelector}` WHERE show_in_dashboard = 1 LIMIT 1");
+
+        if (dataSelectorData.Rows.Count == 0)
+        {
+            return new ServiceResult<JToken>(null);
+        }
+
+        // Get the ID from the result and validate it.
+        var dataSelectorId = Convert.ToInt32(dataSelectorData.Rows[0]["id"]);
+        if (dataSelectorId <= 0)
+        {
+            return new ServiceResult<JToken>(null);
+        }
+
+        // Simply return the data selector service's result, as it's exactly the same type.
+        return await dataSelectorsService.GetDataSelectorResultAsJsonAsync(identity, dataSelectorId, false, null, true);
     }
 }
