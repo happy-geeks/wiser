@@ -1047,6 +1047,20 @@ export class Misc {
         document.body.removeChild(anchor);
         window.URL.revokeObjectURL(pdfUrl);
     }
+
+    static addEventToFixToolTipPositions(toolTipSelector = ".info") {
+        const body = $(document.body);
+        body.on("mouseenter", toolTipSelector, (event) => {
+            const toolTip = event.currentTarget;
+            const rectangle = toolTip.getBoundingClientRect();
+            const isOutOfBoundsRight = body.width() - rectangle.right - 350 <= 0;
+            if (isOutOfBoundsRight) {
+                toolTip.classList.add("tooltip-left");
+            } else {
+                toolTip.classList.remove("tooltip-left");
+            }
+        });
+    }
 }
 
 // Make the classes globally available, so that they also work in scripts that are not loaded via Webpack.

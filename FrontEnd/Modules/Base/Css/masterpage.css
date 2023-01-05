@@ -947,9 +947,9 @@ input:checked + .checkbox span:after,
 	width: 300px;
 	z-index: 1001;
 }
-.info.tooltip-links:before {
+.info.tooltip-left:before {
 	left: inherit;
-	right: -8px; 
+	right: -8px;
 }
 .info-link.right > span {
 	right: -8px;

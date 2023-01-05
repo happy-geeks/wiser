@@ -5,7 +5,7 @@ import { EntityTab } from "../Scripts/EntityTab.js";
 import { EntityFieldTab } from "../Scripts/EntityFieldTab.js";
 import { EntityPropertyTab } from "../Scripts/EntityPropertyTab.js";
 import { WiserQueryTab } from "../Scripts/WiserQueryTab.js";
-import { Wiser } from "../../Base/Scripts/Utils.js";
+import { Wiser, Misc } from "../../Base/Scripts/Utils.js";
 
 
 require("@progress/kendo-ui/js/kendo.all.js");
@@ -274,6 +274,8 @@ const moduleSettings = {
                 },
                 icon: "gear"
             });
+
+            Misc.addEventToFixToolTipPositions();
         }
 
         async saveChanges(e) {
