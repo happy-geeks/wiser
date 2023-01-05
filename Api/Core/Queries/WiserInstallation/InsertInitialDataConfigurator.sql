@@ -151,3 +151,40 @@ INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `link_type`, `vi
 INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `link_type`, `visible_in_overview`, `overview_width`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `regex_validation`, `mandatory`, `readonly`, `default_value`, `css`, `width`, `height`, `options`, `data_query`, `action_query`, `search_query`, `search_count_query`, `grid_delete_query`, `grid_insert_query`, `grid_update_query`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `extended_explanation`, `label_style`, `label_width`, `aggregate_options`, `enable_aggregation`, `access_key`, `visibility_path_regex`) VALUES (0, 'configurationline', 0, 0, 100, '', '', 'input', 'Substap', 'sub_step', NULL, 3, '', 33, 1, NULL, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', NULL, 0, NULL, 0, 0, NULL, NULL, NULL, 0, '', '');
 INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `link_type`, `visible_in_overview`, `overview_width`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `regex_validation`, `mandatory`, `readonly`, `default_value`, `css`, `width`, `height`, `options`, `data_query`, `action_query`, `search_query`, `search_count_query`, `grid_delete_query`, `grid_insert_query`, `grid_update_query`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `extended_explanation`, `label_style`, `label_width`, `aggregate_options`, `enable_aggregation`, `access_key`, `visibility_path_regex`) VALUES (0, 'configurationline', 0, 0, 100, '', '', 'input', 'Waarde', 'value', NULL, 6, '', 33, 1, NULL, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', NULL, 0, NULL, 0, 0, NULL, NULL, NULL, 0, '', '');
 INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `link_type`, `visible_in_overview`, `overview_width`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `regex_validation`, `mandatory`, `readonly`, `default_value`, `css`, `width`, `height`, `options`, `data_query`, `action_query`, `search_query`, `search_count_query`, `grid_delete_query`, `grid_insert_query`, `grid_update_query`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `extended_explanation`, `label_style`, `label_width`, `aggregate_options`, `enable_aggregation`, `access_key`, `visibility_path_regex`) VALUES (0, 'configurationline', 0, 0, 100, '', '', 'input', 'Waarde naam', 'value_name', NULL, 4, '', 33, 1, NULL, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', NULL, 0, NULL, 0, 0, NULL, NULL, NULL, 0, '', '');
+
+-- ----------------------------
+-- Example configurator
+-- ----------------------------
+-- Configurator
+INSERT INTO `wiser_item` (`entity_type`, `moduleid`, `published_environment`, `title`) VALUES ('configurator', 800, 15, 'ExampleConfigurator');
+SET @configuratorId = (SELECT LAST_INSERT_ID());
+
+-- Main step 1
+INSERT INTO `wiser_item` (`entity_type`, `moduleid`, `published_environment`, `title`) VALUES ('hoofdstap', 800, 15, 'MainStep1');
+SET @mainStepOneId = (SELECT LAST_INSERT_ID());
+INSERT INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@mainStepOneId, @configuratorId, 1);
+
+-- Main step 1 - Step 1
+INSERT INTO `wiser_item` (`entity_type`, `moduleid`, `published_environment`, `title`) VALUES ('stap', 800, 15, 'Step1');
+SET @stepOneOneId = (SELECT LAST_INSERT_ID());
+INSERT INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@stepOneOneId, @mainStepOneId, 1);
+
+-- Main step 1 - Step 2
+INSERT INTO `wiser_item` (`entity_type`, `moduleid`, `published_environment`, `title`) VALUES ('stap', 800, 15, 'Step2');
+SET @stepOneTwoId = (SELECT LAST_INSERT_ID());
+INSERT INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@stepOneTwoId, @mainStepOneId, 1);
+
+-- Main step 2 - Step 2 - Sub step 1
+INSERT INTO `wiser_item` (`entity_type`, `moduleid`, `published_environment`, `title`) VALUES ('substap', 800, 15, 'Substep1');
+SET @subStepOneTwoOneId = (SELECT LAST_INSERT_ID());
+INSERT INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@subStepOneTwoOneId, @stepOneTwoId, 1);
+
+-- Main step 2
+INSERT INTO `wiser_item` (`entity_type`, `moduleid`, `published_environment`, `title`) VALUES ('hoofdstap', 800, 15, 'MainStep2');
+SET @mainStepTwoId = (SELECT LAST_INSERT_ID());
+INSERT INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@mainStepTwoId, @configuratorId, 1);
+
+-- Main step 2 - Step 1
+INSERT INTO `wiser_item` (`entity_type`, `moduleid`, `published_environment`, `title`) VALUES ('stap', 800, 15, 'Step1');
+SET @stepTwoOneId = (SELECT LAST_INSERT_ID());
+INSERT INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@stepTwoOneId, @mainStepTwoId, 1);
