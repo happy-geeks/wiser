@@ -51,10 +51,8 @@ import {
 } from "./store/mutation-types";
 import CacheService from "./shared/cache.service";
 
-console.log("main.js loaded");
 class Main {
     constructor(settings) {
-        console.log("main class initiated");
         this.vueApp = null;
         this.appSettings = null;
 
@@ -957,5 +955,4 @@ class Main {
     }
 }
 
-console.log("initiating main class");
 window.main = new Main();
