@@ -973,4 +973,13 @@
 }
 </script>
 
-<script src="@await WebPackService.GetManifestFileAsync("main.js")"></script>
+<script defer src="@await WebPackService.GetManifestFileAsync("runtime.js")"></script>
+<script defer src="@await WebPackService.GetManifestFileAsync("vendors.js")"></script>
+<script defer src="@await WebPackService.GetManifestFileAsync("kendo-intl.js")"></script>
+<script defer src="@await WebPackService.GetManifestFileAsync("kendo-popup-common.js")"></script>
+<script defer src="@await WebPackService.GetManifestFileAsync("kendo-vue-common.js")"></script>
+<script defer src="@await WebPackService.GetManifestFileAsync("kendo-vue-buttons.js")"></script>
+<script defer src="@await WebPackService.GetManifestFileAsync("kendo-vue-dropdowns.js")"></script>
+<script defer src="@await WebPackService.GetManifestFileAsync("kendo-vue-animation.js")"></script>
+<script defer src="@await WebPackService.GetManifestFileAsync("kendo-vue-popup.js")"></script>
+<script defer src="@await WebPackService.GetManifestFileAsync("main.js")"></script>

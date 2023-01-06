@@ -44,6 +44,9 @@
     }
     </script>
     <script type="module" src="/ContentBox/contentbox/lang/en.js"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("ContentBox.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("runtime.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("vendors.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("contentbox.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("ContentBox.js")"></script>
 </body>
 </html>

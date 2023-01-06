@@ -237,10 +237,12 @@
         </div>
     </div>
 
-    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("ImportExport.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Import.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Export.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("runtime.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("vendors.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("Processing.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("kendo-ui.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("ImportExport.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("Import.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("Export.js")"></script>
 </body>
 </html>

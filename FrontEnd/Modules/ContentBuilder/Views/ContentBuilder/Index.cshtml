@@ -37,6 +37,9 @@
         "markerIoToken": "@Model.Settings.MarkerIoToken"
     }
     </script>
-    <script src="@await WebPackService.GetManifestFileAsync("ContentBuilder.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("runtime.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("vendors.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("contentbuilder.js")"></script>
+    <script defer src="@await WebPackService.GetManifestFileAsync("ContentBuilder.js")"></script>
 </body>
 </html>
