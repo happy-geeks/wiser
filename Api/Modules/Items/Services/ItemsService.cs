@@ -316,7 +316,7 @@ namespace Api.Modules.Items.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
             var parentId = await wiserCustomersService.DecryptValue<ulong>(encryptedParentId, identity);
-            var username = IdentityHelpers.GetUserName(identity);
+            var username = IdentityHelpers.GetUserName(identity, true);
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
 
@@ -383,7 +383,7 @@ namespace Api.Modules.Items.Services
                 }
 
                 var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(item.EntityType);
-                var username = IdentityHelpers.GetUserName(identity);
+                var username = IdentityHelpers.GetUserName(identity, true);
                 var customer = await wiserCustomersService.GetSingleAsync(identity);
                 var encryptionKey = customer.ModelObject.EncryptionKey;
                 var allLinkSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
@@ -615,7 +615,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var username = IdentityHelpers.GetUserName(identity);
+            var username = IdentityHelpers.GetUserName(identity, true);
             var encryptionKey = customer.ModelObject.EncryptionKey;
 
             ulong parentId = 0;
@@ -664,7 +664,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var username = IdentityHelpers.GetUserName(identity);
+            var username = IdentityHelpers.GetUserName(identity, true);
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
             if (itemId <= 0)
             {
@@ -712,7 +712,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var username = IdentityHelpers.GetUserName(identity);
+            var username = IdentityHelpers.GetUserName(identity, true);
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
             if (itemId <= 0)
             {
@@ -756,7 +756,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var username = IdentityHelpers.GetUserName(identity);
+            var username = IdentityHelpers.GetUserName(identity, true);
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
             if (itemId <= 0)
             {
@@ -854,7 +854,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var username = IdentityHelpers.GetUserName(identity);
+            var username = IdentityHelpers.GetUserName(identity, true);
             var userEmailAddress = IdentityHelpers.GetEmailAddress(identity);
             var userType = IdentityHelpers.GetRoles(identity);
             var queryId = await wiserCustomersService.DecryptValue<int>(encryptedQueryId, identity);
@@ -1310,7 +1310,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     filesJson = parsedFilesJson.ToString();
                     
                     // Fix the ordering of the files in this field, to prevent problems with changing the ordering later.
-                    await filesService.FixOrderingAsync(itemId, itemLinkId, propertyName);
+                    await filesService.FixOrderingAsync(itemId, itemLinkId, propertyName, identity);
                 }
 
                 var extraAttributes = "";
@@ -2554,7 +2554,7 @@ ORDER BY {orderByClause}";
             
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
-            var username = IdentityHelpers.GetUserName(identity);
+            var username = IdentityHelpers.GetUserName(identity, true);
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;

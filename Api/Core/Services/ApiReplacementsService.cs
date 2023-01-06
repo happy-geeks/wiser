@@ -35,7 +35,7 @@ namespace Api.Core.Services
             {
                 { "userId", userId },
                 { "encryptedUserId", userId.ToString().EncryptWithAesWithSalt(withDateTime: true) },
-                { "username", IdentityHelpers.GetUserName(identity) },
+                { "username", IdentityHelpers.GetUserName(identity, true) },
                 { "userType", IdentityHelpers.GetRoles(identity) },
                 { "subDomain", IdentityHelpers.GetSubDomain(identity) },
                 { "isTest", IdentityHelpers.IsTestEnvironment(identity) }
