@@ -107,6 +107,10 @@ namespace Api.Core.Helpers
             {
                 result = claimsIdentity?.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Name)?.Value;
             }
+            else
+            {
+                result += " (Admin)";
+            }
 
             return result;
         }

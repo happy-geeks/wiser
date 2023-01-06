@@ -173,7 +173,7 @@ namespace Api.Modules.Imports.Services
                         {
                             Item = new WiserItemModel
                             {
-                                ChangedBy = IdentityHelpers.GetUserName(identity),
+                                ChangedBy = IdentityHelpers.GetUserName(identity, true),
                                 ModuleId = moduleId
                             }
                         };
@@ -403,7 +403,7 @@ namespace Api.Modules.Imports.Services
                                         ItemId = importItem.Item.Id,
                                         FileName = Path.GetFileName(image.FilePath),
                                         Extension = Path.GetExtension(image.FilePath),
-                                        AddedBy = IdentityHelpers.GetUserName(identity),
+                                        AddedBy = IdentityHelpers.GetUserName(identity, true),
                                         PropertyName = image.PropertyName
                                     };
                                     importItem.Files.Add(itemFile);
@@ -560,7 +560,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("name", importRequest.Name);
                 clientDatabaseConnection.AddParameter("start_on", parsedDate);
-                clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity));
+                clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true));
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
                 clientDatabaseConnection.AddParameter("user_id", userId);
                 clientDatabaseConnection.AddParameter("customer_id", customer.CustomerId);
@@ -584,7 +584,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("items_failed", importResult.Failed);
                 clientDatabaseConnection.AddParameter("errors", String.Join(Environment.NewLine, importResult.Errors));
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
-                clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity));
+                clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true));
                 await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>(WiserTableNames.WiserImportLog);
             }
             catch (Exception exception)

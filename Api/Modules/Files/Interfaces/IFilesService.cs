@@ -141,8 +141,9 @@ namespace Api.Modules.Files.Interfaces
         /// <param name="itemId">The ID of the item the files belong to.</param>
         /// <param name="itemLinkId">The ID of the link, if the files belong to an item link.</param>
         /// <param name="propertyName">The name of the property the files belong to.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
         /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
-        Task FixOrderingAsync(ulong itemId, ulong itemLinkId, string propertyName, string entityType = null, int linkType = 0);
+        Task FixOrderingAsync(ulong itemId, ulong itemLinkId, string propertyName, ClaimsIdentity identity, string entityType = null, int linkType = 0);
     }
 }
