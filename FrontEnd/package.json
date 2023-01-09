@@ -21,7 +21,7 @@
     "csslint": "^1.0.5",
     "jshint": "^2.13.6",
     "jszip": "^3.10.1",
-    "luxon": "^3.1.1",
+    "luxon": "^3.2.1",
     "node-polyfill-webpack-plugin": "^2.0.1",
     "path-browserify": "^1.0.1",
     "pretty": "^2.0.0",
