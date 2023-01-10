@@ -112,6 +112,9 @@ public class Tests
     }
     
     [Test]
+    // 1. Login normal user;
+    // 2. Logout normal user;
+    // 3. Login normal user after logout.
     public void LoginPortal()
     {
         foreach (var url in testSettings.TestUrls)
@@ -134,6 +137,13 @@ public class Tests
     }
 
     [Test]
+    // 1. Open tree view module;
+    // 2. Select folder;
+    // 3. Add item;
+    // 4. Modify item + save;
+    // 5. Reopen item;
+    // 6. Delete item;
+    // 7. Close tree view module.
     public void WiserItem()
     {
         foreach (var url in testSettings.TestUrls)
@@ -219,6 +229,125 @@ public class Tests
             driver.SwitchTo().DefaultContent();
             driver.FindElement(By.CssSelector(".close-module")).Click();
 
+            Logout();
+        }
+    }
+    
+    [Test]
+    // 1. Open grid module;
+    // 2. Filter grid;
+    // 3. Open item;
+    // 4. Close item;
+    // 5. Reset filter;
+    // 6. Close grid module.
+    public void WiserGrid()
+    {
+        foreach (var url in testSettings.TestUrls)
+        {
+            driver.Navigate().GoToUrl(url);
+            LoginWiserUser();
+
+            // Open Wiser user module.
+            WaitTillElementIsFound(By.CssSelector("a[title='Gebruikers - Wiser']"));
+            driver.FindElement(By.CssSelector("a[title='Gebruikers - Wiser']")).Click();
+            driver.SwitchTo().Frame(driver.FindElement(By.Id("806_1")));
+            
+            // Filter items.
+            WaitTillElementIsFound(By.CssSelector("th[data-field=title_wiseruser] .k-icon"));
+            driver.FindElement(By.CssSelector("th[data-field=title_wiseruser] .k-icon")).Click();
+            WaitTillElementIsDisplayed(By.CssSelector(".k-animation-container input"));
+            driver.FindElement(By.CssSelector(".k-animation-container input")).SendKeys("Admin");
+            driver.FindElement(By.CssSelector(".k-animation-container button[type=submit]")).Click();
+
+            Thread.Sleep(1000); // Grid is refreshed, when searching directly the found element will be removed and causing an error.
+            Assert.That(driver.FindElements(By.CssSelector(".k-grid-content tr")).Count, Is.EqualTo(1));
+            
+            // Open item.
+            WaitTillElementIsDisplayed(By.CssSelector(".k-grid-openDetails"));
+            driver.FindElement(By.CssSelector(".k-grid-openDetails")).Click();
+            
+            // Close item.
+            Thread.Sleep(1000); // Window is being opened, when searching element will be found and clicked before the window fully opened causing an error because the click would trigger another item.
+            Assert.That(driver.FindElement(By.CssSelector("input[name=username_")).GetDomAttribute("value"), Is.EqualTo("Admin"));
+            driver.FindElement(By.CssSelector(".cancelItemPopup.k-button")).Click();
+            
+            // Reset filter.
+            driver.FindElement(By.CssSelector("th[data-field=title_wiseruser] .k-icon")).Click();
+            Thread.Sleep(1000); // Popup animation is being played, when searching element will be found and clicked before the popup fully opened causing an error because the click would trigger another item.
+            driver.FindElement(By.CssSelector(".k-animation-container button[type=reset]")).Click();
+            Thread.Sleep(1000); // Wait a moment for the filter to be saved. If module is closed to quickly the filter will stay active for the user causing a problem during test.
+            Assert.That(driver.FindElements(By.CssSelector(".k-grid-content tr")).Count, Is.GreaterThan(1));
+            
+            // Close module.
+            driver.SwitchTo().DefaultContent();
+            driver.FindElement(By.CssSelector(".close-module")).Click();
+
+            Logout();
+        }
+    }
+
+    [Test]
+    // 1. Open search module;
+    // 2. Search for item;
+    // 3. Close search module.
+    public void Search()
+    {
+        foreach (var url in testSettings.TestUrls)
+        {
+            driver.Navigate().GoToUrl(url);
+            LoginWiserUser();
+
+            // Open search module.
+            WaitTillElementIsDisplayed(By.CssSelector(".icon-line-search"));
+            driver.FindElement(By.CssSelector(".icon-line-search")).Click();
+            driver.SwitchTo().Frame(driver.FindElement(By.Id("709_1")));
+            
+            // Search for item.
+            WaitTillElementIsFound(By.CssSelector(".search-container .k-input-inner"));
+            driver.FindElement(By.CssSelector(".search-container .k-input-inner")).SendKeys("Wiser gebruiker");
+            driver.FindElement(By.Id("search-field")).SendKeys("Admin");
+            driver.FindElement(By.Id("search-field")).SendKeys(Keys.Enter);
+            
+            Thread.Sleep(1000); // Grid is refreshed, when searching directly the results are not yet loaded.
+            Assert.That(driver.FindElements(By.CssSelector("#search-grid tr.k-master-row")).Count, Is.EqualTo(1));
+            
+            // Close search module.
+            driver.SwitchTo().DefaultContent();
+            driver.FindElement(By.CssSelector(".close-module")).Click();
+            
+            Logout();
+        }
+    }
+
+    [Test]
+    // 1. Open popup to open item by ID;
+    // 2. Search for item;
+    // 3. Close item window.
+    public void OpenWiserItemById()
+    {
+        foreach (var url in testSettings.TestUrls)
+        {
+            driver.Navigate().GoToUrl(url);
+            LoginWiserUser();
+
+            // Open popup to open an item by ID.
+            var actions = new Actions(driver);
+            actions.MoveToElement(driver.FindElement(By.CssSelector(".sub-title"))).Perform();
+            WaitTillElementIsDisplayed(By.CssSelector(".sub-menu > li:nth-child(3)"));
+            driver.FindElement(By.CssSelector(".sub-menu > li:nth-child(3)")).Click();
+            
+            // Open the item with the ID of the admin user.
+            driver.FindElement(By.Id("wiserId")).SendKeys("51111");
+            driver.FindElement(By.CssSelector(".btn-primary")).Click();
+            WaitTillElementIsFound(By.Id("wiserItem_51111_wiseruser_1"));
+            driver.SwitchTo().Frame(driver.FindElement(By.Id("wiserItem_51111_wiseruser_1")));
+            WaitTillElementIsDisplayed(By.Id("field_734"));
+            Assert.That(driver.FindElement(By.Id("field_734")).GetDomAttribute("value"), Is.EqualTo("Admin"));
+            
+            // Close the opened item.
+            driver.SwitchTo().DefaultContent();
+            driver.FindElement(By.CssSelector(".close-module")).Click();
+            
             Logout();
         }
     }
