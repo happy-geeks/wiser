@@ -1,6 +1,6 @@
 ﻿@using System.Globalization
 @model FrontEnd.Modules.Base.Models.BaseModuleViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -114,10 +114,10 @@
         </li>
     </script>
 
-    <script defer src="@await WebPackService.GetManifestFileAsync("runtime.js")"></script>
-    <script defer src="@await WebPackService.GetManifestFileAsync("vendors.js")"></script>
-    <script defer src="@await WebPackService.GetManifestFileAsync("Processing.js")"></script>
-    <script defer src="@await WebPackService.GetManifestFileAsync("kendo-ui.js")"></script>
-    <script defer src="@await WebPackService.GetManifestFileAsync("TaskAlerts.js")"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="TaskAlerts.js"></webpack-script>
 </body>
 </html>

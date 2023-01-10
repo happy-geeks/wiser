@@ -1,6 +1,6 @@
 ﻿@using FrontEnd.Core.Models
 @using GeeksCoreLibrary.Core.Enums
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 @model BaseViewModel
 <style>
@@ -973,14 +973,14 @@
 }
 </script>
 
-<script defer src="@await WebPackService.GetManifestFileAsync("runtime.js")"></script>
-<script defer src="@await WebPackService.GetManifestFileAsync("vendors.js")"></script>
-<script defer src="@await WebPackService.GetManifestFileAsync("kendo-intl.js")"></script>
-<script defer src="@await WebPackService.GetManifestFileAsync("kendo-popup-common.js")"></script>
-<script defer src="@await WebPackService.GetManifestFileAsync("kendo-vue-common.js")"></script>
-<script defer src="@await WebPackService.GetManifestFileAsync("kendo-vue-buttons.js")"></script>
-<script defer src="@await WebPackService.GetManifestFileAsync("kendo-vue-dropdowns.js")"></script>
-<script defer src="@await WebPackService.GetManifestFileAsync("kendo-vue-intl.js")"></script>
-<script defer src="@await WebPackService.GetManifestFileAsync("kendo-vue-animation.js")"></script>
-<script defer src="@await WebPackService.GetManifestFileAsync("kendo-vue-popup.js")"></script>
-<script defer src="@await WebPackService.GetManifestFileAsync("main.js")"></script>
+<webpack-script file-name="runtime.js"></webpack-script>
+<webpack-script file-name="vendors.js"></webpack-script>
+<webpack-script file-name="kendo-intl.js"></webpack-script>
+<webpack-script file-name="kendo-popup-common.js"></webpack-script>
+<webpack-script file-name="kendo-vue-common.js"></webpack-script>
+<webpack-script file-name="kendo-vue-buttons.js"></webpack-script>
+<webpack-script file-name="kendo-vue-dropdowns.js"></webpack-script>
+<webpack-script file-name="kendo-vue-intl.js"></webpack-script>
+<webpack-script file-name="kendo-vue-animation.js"></webpack-script>
+<webpack-script file-name="kendo-vue-popup.js"></webpack-script>
+<webpack-script file-name="main.js"></webpack-script>

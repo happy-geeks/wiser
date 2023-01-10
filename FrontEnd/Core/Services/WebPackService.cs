@@ -46,6 +46,6 @@ public class WebPackService : IWebPackService
             await InitializeAsync();
         }
 
-        return Manifest[fileName];
+        return Manifest.ContainsKey(fileName) ? Manifest[fileName] : null;
     }
 }
