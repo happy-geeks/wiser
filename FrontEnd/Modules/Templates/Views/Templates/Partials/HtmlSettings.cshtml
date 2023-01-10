@@ -83,11 +83,6 @@
             <div class="form-hint"><span>Indien hier een geldige regex is ingevuld, wordt deze header of footer alleen gebruikt voor URL's die voldoen aan deze regex.</span></div>
         </div>
     </div>
-
-    <input id="loginRequired" name="loginRequired" type="checkbox" @(Model.LoginRequired ? "checked" : "") class="hidden">
-    <label class="checkbox" for="loginRequired">
-        <span>Gebruiker moet ingelogd zijn om deze template te zien</span>
-    </label>
     
     <input id="isPartial" name="isPartial" type="checkbox" @(Model.IsPartial ? "checked" : "") class="hidden" />
     <label class="checkbox" for="isPartial">
@@ -98,6 +93,11 @@
             Wanneer aangevinkt wordt de ombouw nooit om de template gedaan wanneer deze wordt opgevraagd via een XHR call.
         </span>
     </div>
+
+    <input id="loginRequired" name="loginRequired" type="checkbox" @(Model.LoginRequired ? "checked" : "") class="hidden">
+    <label class="checkbox" for="loginRequired">
+        <span>Gebruiker moet ingelogd zijn om deze template te zien</span>
+    </label>
 
     <div class="user-check-panel">
         <div class="item" data-label-style="float" data-label-width="0">
