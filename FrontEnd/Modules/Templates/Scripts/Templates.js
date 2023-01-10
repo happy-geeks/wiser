@@ -1792,7 +1792,10 @@ const moduleSettings = {
                 contentType: "application/json"
             });
 
-            window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
+            // No message needs to be shown if deployed to the development environment because this is default.
+            if (environmentEnum !== 1) {
+                window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
+            }
             this.historyLoaded = false;
             await this.reloadMetaData(templateId);
         }
@@ -2194,10 +2197,8 @@ const moduleSettings = {
                 window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
                 this.historyLoaded = false;
 
-                if (alsoDeployToTest === true) {
-                    const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
-                    await this.deployEnvironment("test", templateId, version);
-                }
+                const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
+                await this.deployEnvironment(alsoDeployToTest === true ? "test" : "development", templateId, version);
 
                 if (reloadTemplateAfterSave) {
                     await this.loadTemplate(templateId);
