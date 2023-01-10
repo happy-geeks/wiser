@@ -135,7 +135,10 @@ public class Tests
     [Test]
     // 1. Login normal user;
     // 2. Logout normal user;
-    // 3. Login normal user after logout.
+    // 3. Login normal user after logout;
+    // 4. Login as Wiser admin user;
+    // 5. Select user to login as;
+    // 6. Logout.
     public void LoginPortal()
     {
         foreach (var url in testSettings.TestUrls)
@@ -150,6 +153,25 @@ public class Tests
             
             // Check if flow can be repeated after logging out.
             LoginWiserUser();
+            Assert.That(driver.FindElement(By.ClassName("sub-title")).Text, Is.EqualTo("TestMark"));
+            
+            Logout();
+            Assert.That(driver.FindElements(By.ClassName("sub-title")).Count, Is.EqualTo(0));
+            
+            // Login as Admin user.
+            driver.FindElement(By.Id("username")).SendKeys(testSettings.WiserAdminAccountName);
+            driver.FindElement(By.Id("password")).SendKeys(testSettings.WiserAdminAccountPassword);
+            driver.FindElement(By.CssSelector("#loginForm .btn-primary")).Click();
+            Thread.Sleep(1000); // Wait for a moment because the DOM is being modified and the selectors would get the previous values.
+            
+            // Select the user to login as.
+            driver.FindElement(By.CssSelector("#loginForm input")).Clear();
+            driver.FindElement(By.CssSelector("#loginForm input")).SendKeys("TestMark");
+            driver.FindElement(By.CssSelector("#loginForm input")).SendKeys(Keys.Enter);
+            driver.FindElement(By.CssSelector("#loginForm .btn-primary")).Click();
+            
+            // Validate the admin is logged in as the selected user.
+            WaitTillElementIsFound(By.ClassName("sub-title"));
             Assert.That(driver.FindElement(By.ClassName("sub-title")).Text, Is.EqualTo("TestMark"));
             
             Logout();
