@@ -40,6 +40,7 @@ const moduleSettings = {
             this.selectedEntityType = "";
 
             // Saving and loading.
+            this.currentId = 0;
             this.currentName = "";
             this.dataLoad = new DataLoad(this);
 
@@ -90,7 +91,7 @@ const moduleSettings = {
 
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
@@ -155,6 +156,7 @@ const moduleSettings = {
 
         setBindings() {
             const exportModeCheckbox = document.getElementById("useExportMode");
+            const showInDashboardCheckbox = document.getElementById("showInDashboard");
             const newButton = document.getElementById("newButton");
             const saveButton = document.getElementById("saveButton");
             const loadButton = document.getElementById("loadButton");
@@ -181,6 +183,9 @@ const moduleSettings = {
                         exportModeCheckbox.checked = !exportModeCheckbox.checked;
                     });
                 });
+            }
+            if (showInDashboardCheckbox) {
+                showInDashboardCheckbox.addEventListener("change", this.checkForDashboardConflict.bind(this));
             }
 
             if (newButton) {
@@ -1087,7 +1092,9 @@ const moduleSettings = {
                 savedJson: JSON.stringify(this.createJsonRequest(true)),
                 showInExportModule: document.getElementById("showInExportModule").checked ? 1 : 0,
                 showInCommunicationModule: document.getElementById("showInCommunicationModule").checked ? 1 : 0,
-                availableForRendering: document.getElementById("availableForRendering").checked ? 1 : 0
+                availableForRendering: document.getElementById("availableForRendering").checked ? 1 : 0,
+                showInDashboard: document.getElementById("showInDashboard").checked ? 1 : 0,
+                allowedRoles: this.allowedRoles.value().join()
             };
 
             const saveResult = await Wiser.api({
@@ -1105,9 +1112,13 @@ const moduleSettings = {
                 dropdown.getKendoDropDownList().dataSource.read();
             }
 
+            // Remember current ID and name.
+            this.currentId = saveResult;
+            this.currentName = name;
+
             // Set ID and name in header.
             const header = document.getElementById("dataSelectorId");
-            header.querySelector("h3 > label").innerHTML = `${name} (ID: ${saveResult})`;
+            header.querySelector("h3 > label").innerHTML = `${this.currentName} (ID: ${this.currentId})`;
             header.style.display = "";
 
             // Trigger save event. This event can be used on places that load the data selector in an iframe, such as the module DynamicItems.
@@ -1953,6 +1964,19 @@ const moduleSettings = {
                 }
             });
 
+            this.allowedRoles = $("#allowedRoles").kendoMultiSelect({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: `${this.settings.serviceRoot}/GET_ROLES`
+                        }
+                    }
+                },
+                dataTextField: "roleName",
+                dataValueField: "id",
+                multiple: "multiple"
+            }).data("kendoMultiSelect");
+
             //TREEVIEW
             context.querySelectorAll(".checkTree").forEach((e) => {
                 const element = $(e);
@@ -2099,6 +2123,26 @@ const moduleSettings = {
                     return;
                 }
                 kendoWidget.destroy();
+            });
+        }
+
+        /**
+         * Checks if there's a data selector that has "show in dashboard" already enabled. This will only occur if the
+         * checkbox for "show in dashboard" is be enabled.
+         */
+        async checkForDashboardConflict(event) {
+            if (!event.currentTarget.checked) return;
+
+            const result = await Wiser.api({
+                url: `${this.settings.wiserApiRoot}data-selectors/${this.currentId}/check-dashboard-conflict`,
+                method: "GET"
+            });
+
+            if (!result) return;
+
+            Wiser.alert({
+                title: "Andere data selector in gebruik",
+                content: `De data selector '${result}' wordt al gebruikt om te tonen in het dashboard. Als u deze data selector opslaat, dan zal '${result}' niet meer gebruikt worden in het dashboard.`
             });
         }
     }

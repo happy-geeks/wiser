@@ -7,6 +7,7 @@ using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Newtonsoft.Json;
@@ -189,27 +190,48 @@ ORDER BY templatePath ASC, component.title ASC";
         }
 
         /// <inheritdoc />
-        public async Task<int> UpdatePublishedEnvironmentAsync(int contentId, Dictionary<int, int> publishModel, PublishLogModel publishLog, string username, string branchDatabaseName = null)
+        public async Task<int> UpdatePublishedEnvironmentAsync(int contentId, int version, Environments environment, PublishLogModel publishLog, string username, string branchDatabaseName = null)
         {
-            connection.ClearParameters();
+            switch (environment)
+            {
+                case Environments.Test:
+                    environment |= Environments.Development;
+                    break;
+                case Environments.Acceptance:
+                    environment |= Environments.Test | Environments.Development;
+                    break;
+                case Environments.Live:
+                    environment |= Environments.Acceptance | Environments.Test | Environments.Development;
+                    break;
+            }
+
             connection.AddParameter("contentId", contentId);
+            connection.AddParameter("version", version);
+            connection.AddParameter("environment", (int)environment);
 
             var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
-            var baseQueryPart = $@"UPDATE {databaseNamePrefix}{WiserTableNames.WiserDynamicContent} SET published_environment = CASE version";
+            
+            // Add the bit of the selected environment to the selected version.
+            var query = $@"UPDATE {databaseNamePrefix}{WiserTableNames.WiserDynamicContent}
+SET published_environment = published_environment | ?environment
+WHERE content_id = ?contentId
+AND version = ?version";
+            var affectedRows = await connection.ExecuteAsync(query);
+            
+            // Query to remove the selected environment from all other versions, the ~ operator flips all the bits (1s become 0s and 0s become 1s).
+            // This way we can safely turn off just the specific bits without having to check to see if the bit is set.
+            query = $@"UPDATE {databaseNamePrefix}{WiserTableNames.WiserDynamicContent}
+SET published_environment = published_environment & ~?environment
+WHERE content_id = ?contentId
+AND version != ?version";
 
-            var dynamicQueryPart = "";
-            var dynamicWherePart = " AND version IN (";
-            foreach (var versionChange in publishModel)
+            affectedRows += await connection.ExecuteAsync(query);
+
+            if (affectedRows == 0)
             {
-                dynamicQueryPart += $" WHEN {versionChange.Key} THEN published_environment + {versionChange.Value}";
-                dynamicWherePart += $"{versionChange.Key},";
+                return affectedRows;
             }
-            dynamicWherePart = $"{dynamicWherePart[..^1]})";
-            var endQueryPart = @" END
-WHERE content_id = ?contentId";
-
-            var query = baseQueryPart + dynamicQueryPart + endQueryPart + dynamicWherePart;
-
+            
             connection.AddParameter("oldlive", publishLog.OldLive);
             connection.AddParameter("oldaccept", publishLog.OldAccept);
             connection.AddParameter("oldtest", publishLog.OldTest);
@@ -219,20 +241,32 @@ WHERE content_id = ?contentId";
             connection.AddParameter("now", DateTime.Now);
             connection.AddParameter("username", username);
 
-            var logQuery = $@"INSERT INTO {databaseNamePrefix}{WiserTableNames.WiserDynamicContentPublishLog} (content_id, old_live, old_accept, old_test, new_live, new_accept, new_test, changed_on, changed_by) 
-            VALUES(
-                ?contentId,
-                ?oldlive,
-                ?oldaccept,
-                ?oldtest,
-                ?newlive,
-                ?newaccept,
-                ?newtest,
-                ?now,
-                ?username
-            )";
+            query = $@"INSERT INTO {databaseNamePrefix}{WiserTableNames.WiserDynamicContentPublishLog}
+(
+    content_id,
+    old_live,
+    old_accept,
+    old_test,
+    new_live,
+    new_accept,
+    new_test,
+    changed_on,
+    changed_by
+) 
+VALUES
+(
+    ?contentId,
+    ?oldlive,
+    ?oldaccept,
+    ?oldtest,
+    ?newlive,
+    ?newaccept,
+    ?newtest,
+    ?now,
+    ?username
+)";
 
-            return await connection.ExecuteAsync(query + ";" + logQuery);
+            return await connection.ExecuteAsync(query);
         }
 
         /// <inheritdoc />

@@ -1,4 +1,5 @@
 @model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 @{
     ViewBag.Title = "VCS";
@@ -88,7 +89,10 @@
          </div> 
     </div>
 
-    <script src="/scripts/Utils.min.js"></script>
-    <script src="/scripts/VersionControl.min.js"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="VersionControl.js"></webpack-script>
 </body>
 </html>

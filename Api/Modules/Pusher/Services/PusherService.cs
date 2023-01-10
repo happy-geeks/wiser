@@ -61,7 +61,7 @@ namespace Api.Modules.Pusher.Services
 
             if (String.IsNullOrWhiteSpace(data.Channel))
             {
-                data.Channel = "agendering";
+                data.Channel = "Wiser";
             }
 
             if (data.EventData == null)
@@ -82,10 +82,10 @@ namespace Api.Modules.Pusher.Services
             };
 
             // Global messages do not fire events for a specific user.
-            var eventName = data.IsGlobalMessage ? data.Channel : $"{data.Channel}_{pusherId}";
+            var eventName = !String.IsNullOrWhiteSpace(data.EventName) ? data.EventName : data.IsGlobalMessage ? data.Channel : $"{data.Channel}_{pusherId}";
 
             var pusher = new PusherServer.Pusher(apiSettings.PusherAppId, apiSettings.PusherAppKey, apiSettings.PusherAppSecret, options);
-            var result = await pusher.TriggerAsync("Wiser", eventName, data.EventData);
+            var result = await pusher.TriggerAsync(data.Channel, eventName, data.EventData);
             var success = (int)result.StatusCode >= 200 && (int)result.StatusCode < 300;
             return new ServiceResult<bool>(success)
             {

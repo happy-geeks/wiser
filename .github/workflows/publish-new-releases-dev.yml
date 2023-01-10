@@ -27,11 +27,11 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal
       
-    - name: Stop application pool API
-      run: Stop-WebAppPool -Name "${{ secrets.APPLICATION_POOL_API_DEV }}"
+    - name: Enable maintenance notice API
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_API_DEV }}\_App_Offline.htm" -NewName "App_Offline.htm"
       
-    - name: Stop application pool front-end
-      run: Stop-WebAppPool -Name "${{ secrets.APPLICATION_POOL_FRONT_END_DEV }}"
+    - name: Enable maintenance notice FrontEnd
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_DEV }}\_App_Offline.htm" -NewName "App_Offline.htm"
 
     - name: dotnet publish API
       run: |
@@ -55,10 +55,10 @@ jobs:
       run: |
         dotnet publish FrontEnd -c Release -o "${{ secrets.PUBLISH_LOCATION_FRONT_END_DEV }}" --self-contained true -r win-x64 /p:EnvironmentName=Test
       
-    - name: Start application pool API
+    - name: Disable maintenance notice API
       if: ${{ always() }}
-      run: Start-WebAppPool -Name "${{ secrets.APPLICATION_POOL_API_DEV }}"
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_API_DEV }}\App_Offline.htm" -NewName "_App_Offline.htm"
       
-    - name: Start application pool front-end
+    - name: Disable maintenance notice FrontEnd
       if: ${{ always() }}
-      run: Start-WebAppPool -Name "${{ secrets.APPLICATION_POOL_FRONT_END_DEV }}"
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_DEV }}\App_Offline.htm" -NewName "_App_Offline.htm"

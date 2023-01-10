@@ -64,5 +64,12 @@ namespace Api.Modules.Modules.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns>A list with all group names.</returns>
         Task<ServiceResult<List<string>>> GetModuleGroupsAsync(ClaimsIdentity identity);
+
+        /// <summary>
+        /// Deletes a module.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="id">The ID of the module.</param>
+        Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id);
     }
 }

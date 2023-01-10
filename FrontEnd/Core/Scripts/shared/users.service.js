@@ -7,9 +7,11 @@ export default class UsersService extends BaseService {
      * @param {string} username The username.
      * @param {string} password The password.
      * @param {string} selectedUser If an admin account is logging in, add the username they selected here.
+     * @param {string} totpPin If 2FA is enabled, the PIN should be entered here.
+     * @param {string} totpBackupCode If 2FA is enabled and the user doesn't have access to their authentication app anymore, they can enter one of their backup codes here.
      * @returns {any} An object that looks like this: { success: true, message: "", data: {}}
      */
-    async loginUser(username, password, selectedUser) {
+    async loginUser(username, password, selectedUser, totpPin = "", totpBackupCode = "") {
         const result = {};
 
         try {
@@ -21,6 +23,8 @@ export default class UsersService extends BaseService {
             loginData.append("client_id", this.base.appSettings.apiClientId);
             loginData.append("client_secret", this.base.appSettings.apiClientSecret);
             loginData.append("isTestEnvironment", this.base.appSettings.isTestEnvironment);
+            loginData.append("totpPin", totpPin);
+            loginData.append("totpBackupCode", totpBackupCode);
             if (selectedUser) {
                 loginData.append("selectedUser", selectedUser);
             }
@@ -153,15 +157,13 @@ export default class UsersService extends BaseService {
 
             if (!result) {
                 const response = await this.base.api.get(`/api/v3/users/self`);
-                result = response.data;
-                if (result) {
-                    sessionStorage.setItem("userSettings", JSON.stringify({ dateTime: new Date(), data: result }));
-                }
+                result = response.data || {};
             }
 
             result.success = true;
             result.data = result;
         } catch (error) {
+            result = result || {};
             result.success = false;
             console.error("Error getLoggedInUserData", error);
             result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van informatie over de ingelogde gebruiker. Probeer het a.u.b. nogmaals of neem contact op met ons.";
@@ -251,13 +253,17 @@ export default class UsersService extends BaseService {
     }
 
     async updateActiveTime(encryptedLoginLogId) {
-        encryptedLoginLogId = encryptedLoginLogId || this.getEncryptedLoginLogId();
-        if (!encryptedLoginLogId) {
-            console.warn("Couldn't update the active time. There's no login log ID.");
-            return;
+        try {
+            encryptedLoginLogId = encryptedLoginLogId || this.getEncryptedLoginLogId();
+            if (!encryptedLoginLogId) {
+                console.warn("Couldn't update the active time. There's no login log ID.");
+                return;
+            }
+    
+            await this.base.api.put(`/api/v3/users/update-active-time?encryptedLoginLogId=${encodeURIComponent(encryptedLoginLogId)}`);
+        } catch (exception) {
+            console.warn("Error in updateActiveTime", exception);
         }
-
-        await this.base.api.put(`/api/v3/users/update-active-time?encryptedLoginLogId=${encodeURIComponent(encryptedLoginLogId)}`);
     }
 
     async startUpdateTimeActiveTimer() {
@@ -279,5 +285,35 @@ export default class UsersService extends BaseService {
             console.error("Error in startUpdateTimeActiveTimer", exception);
             return null;
         }
+    }
+
+    async generateTotpBackupCodes() {
+        const result = {};
+
+        try {
+            const response = await this.base.api.post(`/api/v3/users/totp-backup-codes`);
+            result.success = true;
+            result.data = response.data;
+        } catch (error) {
+            result.success = false;
+            console.error("Error generating new TOTP backup codes", typeof(error.toJSON) === "function" ? error.toJSON() : error);
+            result.message = "Er is een onbekende fout opgetreden tijdens het opnieuw genereren van 2FA-backup-codes. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                console.warn(error.response);
+            } else if (error.request) {
+                // The request was made but no response was received
+                // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                // http.ClientRequest in node.js
+                console.warn(error.request);
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                console.warn(error.message);
+            }
+        }
+
+        return result;
     }
 }

@@ -119,7 +119,7 @@ namespace Api.Modules.Modules.Services
             var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
             
             // Make sure that all triggers for Wiser tables are up-to-date.
-            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2022, 10, 28))
+            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2023, 1, 3))
             {
                 var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
                 await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
@@ -128,49 +128,49 @@ namespace Api.Modules.Modules.Services
                 clientDatabaseConnection.AddParameter("tableName", TriggersName);
                 clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
                 await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
-                                                            VALUES (?tableName, ?lastUpdate) 
-                                                            ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)");
+VALUES (?tableName, ?lastUpdate) 
+ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)");
             }
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
 
             var query = $@"(
-                            SELECT
-	                            permission.module_id,
-	                            MAX(permission.permissions) AS permissions,
-                                module.name,
-                                module.icon,
-                                module.type,
-                                module.group,
-                                module.options,
-                                module.custom_query
-                            FROM {WiserTableNames.WiserUserRoles} AS user_role
-                            JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
-                            JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
-                            JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
-                            WHERE user_role.user_id = ?userId
-                            GROUP BY permission.module_id
-                            ORDER BY permission.module_id, permission.permissions
-                        )";
+    SELECT
+	    permission.module_id,
+	    MAX(permission.permissions) AS permissions,
+        module.name,
+        module.icon,
+        module.type,
+        module.group,
+        module.options,
+        module.custom_query
+    FROM {WiserTableNames.WiserUserRoles} AS user_role
+    JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
+    JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
+    JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
+    WHERE user_role.user_id = ?userId
+    GROUP BY permission.module_id
+    ORDER BY permission.module_id, permission.permissions
+)";
 
             if (isAdminAccount)
             {
                 query += $@"
-                        UNION
-                        (
-                            SELECT
-                                module.id AS module_id,
-                                15 AS permissions,
-                                module.name,
-                                module.icon,
-                                module.type,
-                                module.group,
-                                module.options,
-                                module.custom_query
-                            FROM {WiserTableNames.WiserModule} AS module
-                            WHERE module.id IN ({String.Join(",", modulesForAdmins)})
-                        )";
+UNION
+(
+    SELECT
+        module.id AS module_id,
+        15 AS permissions,
+        module.name,
+        module.icon,
+        module.type,
+        module.group,
+        module.options,
+        module.custom_query
+    FROM {WiserTableNames.WiserModule} AS module
+    WHERE module.id IN ({String.Join(",", modulesForAdmins)})
+)";
             }
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
@@ -668,6 +668,28 @@ AND `group` <> ''
 ORDER BY `group` ASC");
             var results = dataTable.Rows.Cast<DataRow>().Select(dataRow => dataRow.Field<string>("group"));
             return new ServiceResult<List<string>>(results.ToList());
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id)
+        {
+            if (id <= 0)
+            {
+                throw new ArgumentException("Id must be greater than 0.", nameof(id));
+            }
+
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.AddParameter("id", id);
+
+            // Delete the module itself and any permissions that have been set for the module.
+            var query = $@"DELETE FROM {WiserTableNames.WiserModule} WHERE id = ?id;
+DELETE FROM {WiserTableNames.WiserPermission} WHERE module_id = ?id;";
+            await clientDatabaseConnection.ExecuteAsync(query);
+
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
 
         /// <inheritdoc />

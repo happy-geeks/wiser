@@ -1,4 +1,5 @@
-﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+﻿@model FrontEnd.Modules.Templates.Models.TemplateViewModel
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 @{
     Layout = "";
 }
@@ -34,7 +35,8 @@
       data-track-js-token="@Model.Settings.TrackJsToken"
       data-api-client-id="@Model.Settings.ApiClientId"
       data-api-client-secret="@Model.Settings.ApiClientSecret"
-      data-pusher-app-key="@Model.Settings.PusherAppKey">
+      data-pusher-app-key="@Model.Settings.PusherAppKey"
+      data-template-id="@Model.TemplateId">
     <span id="popupNotification"></span>
     <div id="NotMainBranchNotification" class="hidden">
         <p>
@@ -44,13 +46,20 @@
     </div>
     <div id="wiser">
         <div id="window" style="margin: 0 auto; padding: 0;">
-            <div class="window-header">
-                <form id="searchForm" class="search-container">
-                    <input type="text" placeholder="Zoeken" id="search-field" class="k-input" autocomplete="off">
-                    <button class="icon-line-search"></button>
-                    <div class="loader-icon"><div></div><div></div><div></div><div></div></div>
-                </form>
-            </div>
+            @if (Model.TemplateId == 0)
+            {
+                <div class="window-header">
+                    <form id="searchForm" class="search-container">
+                        <input type="text" placeholder="Zoeken" id="search-field" class="k-input" autocomplete="off">
+                        <button class="icon-line-search"></button>
+                        <div class="loader-icon">
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div></div>
+                    </form>
+                </div>
+            }
 
             <div class="window-content">
 
@@ -58,14 +67,17 @@
 
                     <div id="horizontal" style="border: 0; height: 100%; width: 100%;">
 
-                        <div id="left-pane" style="background-color: #cccccc;">
-                            <div class="pane-content">
-                                <div class="tabstrip-treeview k-tabstrip-wrapper">
+                        @if (Model.TemplateId == 0)
+                        {
+                            <div id="left-pane" style="background-color: #cccccc;">
+                                <div class="pane-content">
+                                    <div class="tabstrip-treeview k-tabstrip-wrapper">
+                                    </div>
+                                    <button id="addButton" class="k-primary k-button-round"></button>
                                 </div>
-                                <button id="addButton" class="k-primary k-button-round"></button>
+                                <ul id="treeViewContextMenu"></ul>
                             </div>
-                            <ul id="treeViewContextMenu"></ul>
-                        </div>
+                        }
 
 
                         <div id="right-pane" style="background-color: #eeeeee;">
@@ -78,7 +90,7 @@
                                 </ul>
                                 <div id="developmentTab"></div>
                                 <div>
-                                    <partial name="Tabs/DynamicContentTab" />
+                                    <partial name="Tabs/DynamicContentTab"/>
                                 </div>
                                 <div id="previewTab"></div>
                                 <div id="historyTab"></div>
@@ -155,8 +167,10 @@
         </div>
     </div>
 
-    <script src="/scripts/Utils.min.js"></script>
-    <script src="/scripts/Base.min.js"></script>
-    <script src="/scripts/Templates.min.js"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="Templates.js"></webpack-script>
 </body>
 </html>

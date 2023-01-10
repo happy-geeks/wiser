@@ -72,6 +72,9 @@ export class RoleTab {
                 method: "GET"
             });
 
+            // Reload the modules list in the side bar of Wiser.
+            await this.base.reloadModulesOnParentFrame();
+
             this.base.showNotification("notification", `De wijzigingen zijn opgeslagen.`, "success");
         }
         catch(exception) {
@@ -136,6 +139,14 @@ export class RoleTab {
                     {
                         field: "entityName",
                         title: "Entiteit"
+                    },
+                    {
+                        field: "tabName",
+                        title: "Tab"
+                    },
+                    {
+                        field: "groupName",
+                        title: "Groep"
                     },
                     {
                         field: "displayName",

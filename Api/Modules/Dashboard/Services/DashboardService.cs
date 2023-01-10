@@ -11,15 +11,14 @@ using Api.Modules.Branches.Interfaces;
 using Api.Modules.Dashboard.Enums;
 using Api.Modules.Dashboard.Interfaces;
 using Api.Modules.Dashboard.Models;
+using Api.Modules.DataSelectors.Interfaces;
 using Api.Modules.EntityTypes.Models;
 using Api.Modules.TaskAlerts.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
-using GeeksCoreLibrary.Modules.Databases.Enums;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.Databases.Models;
 using GeeksCoreLibrary.Modules.WiserDashboard.Models;
-using MySql.Data.MySqlClient;
+using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Dashboard.Services;
 
@@ -30,16 +29,18 @@ public class DashboardService : IDashboardService, IScopedService
     private readonly IDatabaseHelpersService databaseHelpersService;
     private readonly IBranchesService branchesService;
     private readonly ITaskAlertsService taskAlertsService;
+    private readonly IDataSelectorsService dataSelectorsService;
 
     /// <summary>
     /// Creates a new instance of <see cref="DashboardService"/>.
     /// </summary>
-    public DashboardService(IDatabaseConnection clientDatabaseConnection, IDatabaseHelpersService databaseHelpersService, IBranchesService branchesService, ITaskAlertsService taskAlertsService)
+    public DashboardService(IDatabaseConnection clientDatabaseConnection, IDatabaseHelpersService databaseHelpersService, IBranchesService branchesService, ITaskAlertsService taskAlertsService, IDataSelectorsService dataSelectorsService)
     {
         this.clientDatabaseConnection = clientDatabaseConnection;
         this.databaseHelpersService = databaseHelpersService;
         this.branchesService = branchesService;
         this.taskAlertsService = taskAlertsService;
+        this.dataSelectorsService = dataSelectorsService;
     }
 
     /// <inheritdoc />
@@ -97,6 +98,8 @@ public class DashboardService : IDashboardService, IScopedService
             }
         }
 
+        // Make sure the tables exist.
+        await CheckAndUpdateTablesAsync(databaseName);
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
         if (!String.IsNullOrWhiteSpace(databaseName))
@@ -114,9 +117,6 @@ public class DashboardService : IDashboardService, IScopedService
         // If both the "periodFrom" parameter and "periodTo" parameter have no value, then the cached data should be used.
         if (!periodFrom.HasValue && !periodTo.HasValue)
         {
-            // Make sure the tables exist: TODO: Update this to use the GCL to create/update tables.
-            await EnsureTablesAsync(databaseName);
-
             var queryDatabasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
 
             // Check if table data is new enough.
@@ -124,7 +124,7 @@ public class DashboardService : IDashboardService, IScopedService
             if (!forceRefresh)
             {
                 // If a refresh isn't forced, check if the data exists or if it has expired.
-                var status = await clientDatabaseConnection.GetAsync($"SELECT last_update FROM {queryDatabasePart}wiser_dashboard LIMIT 1");
+                var status = await clientDatabaseConnection.GetAsync($"SELECT last_update FROM {queryDatabasePart}`{WiserTableNames.WiserDashboard}` LIMIT 1");
                 refreshData = status.Rows.Count == 0 || status.Rows[0].Field<DateTime>("last_update") < DateTime.Now.AddDays(-1);
             }
 
@@ -133,7 +133,7 @@ public class DashboardService : IDashboardService, IScopedService
                 await RefreshTableDataAsync(databaseName);
             }
 
-            var wiserStatsData = await clientDatabaseConnection.GetAsync($"SELECT items_data, entities_data, user_login_count_top10, user_login_count_other, user_login_time_top10, user_login_time_other FROM {queryDatabasePart}wiser_dashboard");
+            var wiserStatsData = await clientDatabaseConnection.GetAsync($"SELECT items_data, entities_data, user_login_count_top10, user_login_count_other, user_login_time_top10, user_login_time_other FROM {queryDatabasePart}`{WiserTableNames.WiserDashboard}`");
             if (wiserStatsData.Rows.Count == 0)
             {
                 // This should not be possible, so throw an error here if this happens.
@@ -377,12 +377,12 @@ public class DashboardService : IDashboardService, IScopedService
         var wherePart = whereParts.Count > 0 ? $" WHERE {String.Join(" AND ", whereParts)}" : String.Empty;
 
         // Retrieve user login count data.
-        var userLoginCountData = await clientDatabaseConnection.GetAsync($@"
-            SELECT user_id, COUNT(*) AS login_count
-            FROM {databasePart}wiser_login_log
-            {wherePart}
-            GROUP BY user_id
-            ORDER BY login_count DESC");
+        var query = $@"SELECT user_id, COUNT(*) AS login_count
+FROM {databasePart}{WiserTableNames.WiserLoginLog}
+{wherePart}
+GROUP BY user_id
+ORDER BY login_count DESC";
+        var userLoginCountData = await clientDatabaseConnection.GetAsync(query);
 
         // Turn data rows into a list of counts.
         var loginCounts = userLoginCountData.Rows.Cast<DataRow>().Select(dr => Convert.ToInt32(dr["login_count"])).ToList();
@@ -390,12 +390,12 @@ public class DashboardService : IDashboardService, IScopedService
         var loginCountOther = loginCounts.Count > 10 ? loginCounts.Skip(10).Sum() : 0;
 
         // Retrieve user login time active data.
-        var userLoginTimeData = await clientDatabaseConnection.GetAsync($@"
-            SELECT user_id, SEC_TO_TIME(SUM(TIME_TO_SEC(time_active))) AS time_active
-            FROM {databasePart}wiser_login_log
-            {wherePart}
-            GROUP BY user_id
-            ORDER BY TIME_TO_SEC(time_active) DESC");
+        query = $@"SELECT user_id, SEC_TO_TIME(SUM(TIME_TO_SEC(time_active))) AS time_active
+FROM {databasePart}{WiserTableNames.WiserLoginLog}
+{wherePart}
+GROUP BY user_id
+ORDER BY TIME_TO_SEC(time_active) DESC";
+        var userLoginTimeData = await clientDatabaseConnection.GetAsync(query);
 
         // Initialize two TimeSpans.
         var timeActiveTop10 = TimeSpan.Zero;
@@ -597,65 +597,28 @@ public class DashboardService : IDashboardService, IScopedService
     }
 
     /// <summary>
-    /// Makes sure the wiser_dashboard table exists.
-    /// TODO: Creation of the tables should be moved to the GCL. But this should only be done once the table definitions are final.
+    /// Makes sure the necessary table exist and that the necessary tables have the necessary columns.
     /// </summary>
-    private async Task EnsureTablesAsync(string databaseName = null)
+    /// <param name="databaseName">The name of the database that is currently being worked in (for the branches functionality).</param>
+    private async Task CheckAndUpdateTablesAsync(string databaseName = null)
     {
-        var tableChanges = await databaseHelpersService.GetLastTableUpdatesAsync(databaseName);
-
-        var tableDefinition = new WiserTableDefinitionModel
+        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
         {
-            Name = "wiser_dashboard", // TODO: Use WiserTableNames
-            LastUpdate = new DateTime(2022, 7, 7),
-            Columns = new List<ColumnSettingsModel>
-            {
-                new("id", MySqlDbType.Int32, notNull: true, isPrimaryKey: true, autoIncrement: true),
-                new("last_update", MySqlDbType.DateTime, notNull: true),
-                new("items_data", MySqlDbType.MediumText),
-                new("entities_data", MySqlDbType.MediumText),
-                new("user_login_count_top10", MySqlDbType.Int32, notNull: true, defaultValue: "0"),
-                new("user_login_count_other", MySqlDbType.Int32, notNull: true, defaultValue: "0"),
-                new("user_login_time_top10", MySqlDbType.Time, notNull: true, defaultValue: "00:00:00"),
-                new("user_login_time_other", MySqlDbType.Time, notNull: true, defaultValue: "00:00:00")
-            }
-        };
-
-        if (!tableChanges.ContainsKey(tableDefinition.Name.ToLowerInvariant()) || tableChanges[tableDefinition.Name.ToLowerInvariant()] < tableDefinition.LastUpdate)
-        {
-            await databaseHelpersService.CreateOrUpdateTableAsync(tableDefinition.Name, tableDefinition.Columns, databaseName: databaseName);
-        }
-
-        tableDefinition = new WiserTableDefinitionModel
-        {
-            Name = "wiser_login_log", // TODO: Use WiserTableNames
-            LastUpdate = new DateTime(2022, 7, 7),
-            Columns = new List<ColumnSettingsModel>
-            {
-                new("id", MySqlDbType.UInt64, notNull: true, isPrimaryKey: true, autoIncrement: true),
-                new("user_id", MySqlDbType.UInt64, notNull: true),
-                new("time_active", MySqlDbType.Time, notNull: true, defaultValue: "00:00:00"),
-                new("added_on", MySqlDbType.DateTime, notNull: true),
-                new("time_active_changed_on", MySqlDbType.DateTime, notNull: true, comment: "The last time the time_active field was updated.")
-            },
-            Indexes = new List<IndexSettingsModel>
-            {   // TODO: Use WiserTableNames
-                new("wiser_login_log", "idx_added_on", IndexTypes.Normal, new List<string> { "added_on" }),
-                new("wiser_login_log", "idx_user_Id", IndexTypes.Normal, new List<string> { "user_id" })
-            }
-        };
-
-        if (!tableChanges.ContainsKey(tableDefinition.Name.ToLowerInvariant()) || tableChanges[tableDefinition.Name.ToLowerInvariant()] < tableDefinition.LastUpdate)
-        {
-            await databaseHelpersService.CreateOrUpdateTableAsync(tableDefinition.Name, tableDefinition.Columns, databaseName: databaseName);
-            await databaseHelpersService.CreateOrUpdateIndexesAsync(tableDefinition.Indexes, databaseName);
-        }
+            // Ensure entities table has the "show_in_dashboard" column.
+            WiserTableNames.WiserEntity,
+            // Ensure data selector table has the "show_in_dashboard" column.
+            WiserTableNames.WiserDataSelector,
+            // Main dashboard table.
+            WiserTableNames.WiserDashboard,
+            // For the user login data.
+            WiserTableNames.WiserLoginLog
+        }, databaseName);
     }
 
     /// <summary>
     /// Refreshes the base Wiser statistics data. This is without a period, and will be remembered for a day.
     /// </summary>
-    /// <param name="databaseName"></param>
+    /// <param name="databaseName">The name of the database that is currently being worked in (for the branches functionality).</param>
     private async Task RefreshTableDataAsync(string databaseName = null)
     {
         var databasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
@@ -676,7 +639,7 @@ public class DashboardService : IDashboardService, IScopedService
         var userData = await GetUserDataAsync(databaseName: databaseName);
 
         // Clear old data first.
-        await clientDatabaseConnection.ExecuteAsync($"TRUNCATE TABLE {databasePart}wiser_dashboard");
+        await clientDatabaseConnection.ExecuteAsync($"TRUNCATE TABLE {databasePart}`{WiserTableNames.WiserDashboard}`");
 
         clientDatabaseConnection.ClearParameters();
         clientDatabaseConnection.AddParameter("last_update", DateTime.Now);
@@ -686,21 +649,21 @@ public class DashboardService : IDashboardService, IScopedService
         clientDatabaseConnection.AddParameter("user_login_count_other", userData.UserLoginCountOther);
         clientDatabaseConnection.AddParameter("user_login_time_top10", userData.UserLoginTimeTop10);
         clientDatabaseConnection.AddParameter("user_login_time_other", userData.UserLoginTimeOther);
-        await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {databasePart}wiser_dashboard (last_update, items_data, entities_data, user_login_count_top10, user_login_count_other, user_login_time_top10, user_login_time_other) VALUES (?last_update, ?items_data, ?entities_data, ?user_login_count_top10, ?user_login_count_other, ?user_login_time_top10, ?user_login_time_other)");
+        await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {databasePart}`{WiserTableNames.WiserDashboard}` (last_update, items_data, entities_data, user_login_count_top10, user_login_count_other, user_login_time_top10, user_login_time_other) VALUES (?last_update, ?items_data, ?entities_data, ?user_login_count_top10, ?user_login_count_other, ?user_login_time_top10, ?user_login_time_other)");
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<List<Service>>> GetAisServicesAsync(ClaimsIdentity identity)
+    public async Task<ServiceResult<List<Service>>> GetWtsServicesAsync(ClaimsIdentity identity)
     {
         await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>()
         {
-            WiserTableNames.AisLogs,
-            WiserTableNames.AisServices
+            WiserTableNames.WtsLogs,
+            WiserTableNames.WtsServices
         });
         
         var services = new List<Service>();
 
-        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT * FROM {WiserTableNames.AisServices}");
+        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT * FROM {WiserTableNames.WtsServices}");
 
         if (dataTable.Rows.Count == 0)
         {
@@ -724,7 +687,9 @@ public class DashboardService : IDashboardService, IScopedService
                 NextRun = row.Field<DateTime?>("next_run"),
                 RunTime = row.Field<double>("run_time"),
                 State = row.Field<string>("state"),
-                Paused = row.Field<bool>("paused")
+                Paused = row.Field<bool>("paused"),
+                ExtraRun = row.Field<bool>("extra_run"),
+                TemplateId = row["template_id"] == DBNull.Value ? -1 : row.Field<int>("template_id")
             };
             
             services.Add(service);
@@ -738,14 +703,14 @@ public class DashboardService : IDashboardService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<List<ServiceLog>>> GetAisServiceLogsAsync(ClaimsIdentity identity, int id)
+    public async Task<ServiceResult<List<ServiceLog>>> GetWtsServiceLogsAsync(ClaimsIdentity identity, int id)
     {
         var logs = new List<ServiceLog>();
         
         clientDatabaseConnection.AddParameter("serviceId", id);
         var datatable = await clientDatabaseConnection.GetAsync($@"SELECT log.*
-                                                                        FROM {WiserTableNames.AisServices} AS service
-                                                                        JOIN {WiserTableNames.AisLogs} AS log ON log.configuration = service.configuration AND log.time_id = service.time_id
+                                                                        FROM {WiserTableNames.WtsServices} AS service
+                                                                        JOIN {WiserTableNames.WtsLogs} AS log ON log.configuration = service.configuration AND log.time_id = service.time_id
                                                                         WHERE service.id = ?serviceId
                                                                         ORDER BY log.added_on DESC");
 
@@ -776,12 +741,12 @@ public class DashboardService : IDashboardService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<ServicePauseStates>> SetAisServicePauseStateAsync(ClaimsIdentity identity, int id, bool state)
+    public async Task<ServiceResult<ServicePauseStates>> SetWtsServicePauseStateAsync(ClaimsIdentity identity, int id, bool state)
     {
         clientDatabaseConnection.AddParameter("serviceId", id);
         clientDatabaseConnection.AddParameter("pauseState", state);
 
-        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT state FROM {WiserTableNames.AisServices} WHERE id = ?serviceId");
+        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT state FROM {WiserTableNames.WtsServices} WHERE id = ?serviceId");
 
         if (dataTable.Rows.Count == 0)
         {
@@ -795,10 +760,11 @@ public class DashboardService : IDashboardService, IScopedService
         // If the service is currently running the pause will be activated after the run completed.
         var currentState = dataTable.Rows[0].Field<string>("state");
         var serviceIsCurrentlyRunning = currentState.Equals("running", StringComparison.InvariantCultureIgnoreCase);
+        var serviceIsNotActive = currentState.Equals("stopped", StringComparison.InvariantCultureIgnoreCase);
 
-        await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.AisServices}
+        await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.WtsServices}
 SET paused = ?pauseState
-{(state && !serviceIsCurrentlyRunning ? ", state = 'paused'" : "")}
+{(state && !serviceIsCurrentlyRunning && !serviceIsNotActive ? ", state = 'paused'" : !state &&!serviceIsCurrentlyRunning && !serviceIsNotActive ? ", state = 'active'" : "")}
 WHERE id = ?serviceId");
 
         return new ServiceResult<ServicePauseStates>()
@@ -806,5 +772,77 @@ WHERE id = ?serviceId");
             StatusCode = HttpStatusCode.OK,
             ModelObject = !state ? ServicePauseStates.Unpaused : serviceIsCurrentlyRunning ? ServicePauseStates.WillPauseAfterRunFinished : ServicePauseStates.Paused
         };
+    }
+    
+    /// <inheritdoc />
+    public async Task<ServiceResult<ServiceExtraRunStates>> SetWtsServiceExtraRunStateAsync(ClaimsIdentity identity, int id, bool state)
+    {
+        clientDatabaseConnection.AddParameter("serviceId", id);
+        clientDatabaseConnection.AddParameter("extraRunState", state);
+
+        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT state FROM {WiserTableNames.WtsServices} WHERE id = ?serviceId");
+
+        if (dataTable.Rows.Count == 0)
+        {
+            return new ServiceResult<ServiceExtraRunStates>()
+            {
+                StatusCode = HttpStatusCode.NotFound,
+                ErrorMessage = $"There is no service with ID '{id}' and can therefore not be marked for an extra run."
+            };
+        }
+
+        var currentState = dataTable.Rows[0].Field<string>("state");
+        
+        // If the service is currently running the extra run state can't change.
+        if (currentState.Equals("running", StringComparison.InvariantCultureIgnoreCase))
+        {
+            return new ServiceResult<ServiceExtraRunStates>()
+            {
+                StatusCode = HttpStatusCode.OK,
+                ModelObject = ServiceExtraRunStates.ServiceRunning
+            };
+        }
+
+        // If the service is stopped no WTS instance is able to perform the extra run.
+        if (currentState.Equals("stopped", StringComparison.InvariantCultureIgnoreCase))
+        {
+            return new ServiceResult<ServiceExtraRunStates>()
+            {
+                StatusCode = HttpStatusCode.OK,
+                ModelObject = ServiceExtraRunStates.WtsOffline
+            };
+        }
+
+        await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.WtsServices}
+SET extra_run = ?extraRunState
+WHERE id = ?serviceId");
+
+        return new ServiceResult<ServiceExtraRunStates>()
+        {
+            StatusCode = HttpStatusCode.OK,
+            ModelObject = state ? ServiceExtraRunStates.Marked : ServiceExtraRunStates.Unmarked
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<JToken>> GetDataSelectorResultAsync(ClaimsIdentity identity)
+    {
+        // First get the ID of the data selector whose result needs to be returned.
+        var dataSelectorData = await clientDatabaseConnection.GetAsync($"SELECT id FROM `{WiserTableNames.WiserDataSelector}` WHERE show_in_dashboard = 1 LIMIT 1");
+
+        if (dataSelectorData.Rows.Count == 0)
+        {
+            return new ServiceResult<JToken>(null);
+        }
+
+        // Get the ID from the result and validate it.
+        var dataSelectorId = Convert.ToInt32(dataSelectorData.Rows[0]["id"]);
+        if (dataSelectorId <= 0)
+        {
+            return new ServiceResult<JToken>(null);
+        }
+
+        // Simply return the data selector service's result, as it's exactly the same type.
+        return await dataSelectorsService.GetDataSelectorResultAsJsonAsync(identity, dataSelectorId, false, null, true);
     }
 }

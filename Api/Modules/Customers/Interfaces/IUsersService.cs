@@ -27,9 +27,10 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="username">The e-mail address of the admin account.</param>
         /// <param name="password">The password of the admin account.</param>
         /// <param name="ipAddress">The IP address of the user that is trying to login.</param>
+        /// <param name="totpPin">When the user is logging in with TOTP, then the PIN of the user should be entered here. </param>
         /// <returns>A populated <see cref="AdminAccountModel"/> if successful, a 401 error if not.</returns>
-        Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null);
-        
+        Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null, string totpPin = null);
+
         /// <summary>
         /// Login a customer to Wiser. Normal users login with their username and password.
         /// Admin accounts login via their own credentials and can then login as any other user.
@@ -41,8 +42,10 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="generateAuthenticationTokenForCookie">Optional: Indicate whether to generate a token for a login cookie so that the user stays login for a certain amount of time.</param>
         /// <param name="ipAddress">The IP address of the user.</param>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user to check for rights.</param>
+        /// <param name="totpPin">When the user is logging in with TOTP, then the PIN of the user should be entered here. </param>
+        /// <param name="totpBackupCode">When the user entered a backup code to access their account, instead of a PIN.</param>
         /// <returns>Either an unauthorized error, or the <see cref="UserModel"/> of the user that is trying to login.</returns>
-        Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null);
+        Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null, string totpBackupCode = null);
 
         /// <summary>
         /// Sends a new password to a user.
@@ -188,5 +191,45 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="includePermissions">Optional: Whether to include all permissions that each role has. Default is <see langword="false"/>.</param>
         /// <returns>A list of <see cref="RoleModel"/> with all available roles that users can have.</returns>
         Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false);
+
+        /// <summary>
+        /// Authenticates the TOTP code with the unique key of an user (2FA).
+        /// </summary>
+        /// <param name="key">Secret stored key</param>
+        /// <param name="code">Code from authenticator app</param>
+        /// <returns></returns>
+        bool ValidateTotpPin(string key, string code);
+
+        /// <summary>
+        /// Setup TOTP authentication (2FA).
+        /// </summary>
+        /// <param name="account">Account-name (equal to e-mail address)</param>
+        /// <param name="key">Secret stored key</param>
+        /// <returns>QR Image URL</returns>
+        string SetUpTotpAuthentication(string account, string key);
+
+        /// <summary>
+        /// (Re)generate backup codes for TOTP (2FA) authentication.
+        /// This will delete any remaining backup codes from the user and generate new ones.
+        /// They will be hashed before they're saved in the database and can therefor only be shown to the user once!
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <returns>A list with the new backup codes.</returns>
+        Task<ServiceResult<List<string>>> GenerateTotpBackupCodesAsync(ClaimsIdentity identity);
+
+        /// <summary>
+        /// Gets the layout data of the dashboard of the currently logged in user.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <returns>A JSON string representing the layout data.</returns>
+        Task<ServiceResult<string>> GetDashboardSettingsAsync(ClaimsIdentity identity);
+
+        /// <summary>
+        /// Saves the layout data of the dashboard to the currently logged in user.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="settings">The JSON that represents the dashboard layout data.</param>
+        /// <returns>A boolean whether the saving of the data was successful.</returns>
+        Task<ServiceResult<bool>> SaveDashboardSettingsAsync(ClaimsIdentity identity, JToken settings);
     }
 }

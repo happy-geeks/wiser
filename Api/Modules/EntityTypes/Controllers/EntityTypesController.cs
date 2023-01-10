@@ -105,7 +105,7 @@ namespace Api.Modules.EntityTypes.Controllers
         }
 
         /// <summary>
-        /// Creates a new entity type.
+        /// Updates an existing entity type.
         /// </summary>
         /// <param name="id">The ID of the entity type.</param>
         /// <param name="settings">The settings to save.</param>
@@ -116,6 +116,18 @@ namespace Api.Modules.EntityTypes.Controllers
         public async Task<IActionResult> UpdateAsync(int id, EntitySettingsModel settings)
         {
             return (await entityTypesService.UpdateAsync((ClaimsIdentity)User.Identity, id, settings)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Deletes an entity type. This will only delete the entity type itself, not any items that use this type.
+        /// </summary>
+        /// <param name="id">The ID of the entity type.</param>
+        [HttpDelete]
+        [Route("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeleteAsync(int id)
+        {
+            return (await entityTypesService.DeleteAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
         }
     }
 }

@@ -5,6 +5,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Api.Core.Filters
 {
+    /// <inheritdoc />
     public class AuthorizeOperationFilter : IOperationFilter
     {
         /// <inheritdoc />

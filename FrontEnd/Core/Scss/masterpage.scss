@@ -1133,3 +1133,14 @@ body {
         box-shadow: 0 2px 6px rgba($black-color, 0.2), 0 2px 3px rgba($black-color, 0.05);
     }
 }
+
+ul.totp-backup-codes {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 10px 0;
+    
+    li {
+        flex: 50%;
+        text-align: center;
+    }
+}

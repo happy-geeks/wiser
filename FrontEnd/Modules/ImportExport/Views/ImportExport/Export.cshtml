@@ -1,4 +1,5 @@
 ﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 <!DOCTYPE html>
 <html>
@@ -37,8 +38,8 @@
         </div>
     </div>
 
-    <script src="/scripts/Utils.min.js"></script>
-    <script src="/scripts/Base.min.js"></script>
-    <script src="/scripts/Export.min.js"></script>
+    <webpack-script file-name="Utils.js"></webpack-script>
+    <webpack-script file-name="Base.js"></webpack-script>
+    <webpack-script file-name="Export.js"></webpack-script>
 </body>
 </html>

@@ -1,5 +1,8 @@
 ﻿namespace Api.Core.Extensions
 {
+    /// <summary>
+    /// A class that converts strings to JSON and back
+    /// </summary>
     public static class StringExtensions
     {
         /// <summary>

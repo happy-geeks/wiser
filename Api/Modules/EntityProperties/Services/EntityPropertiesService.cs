@@ -447,7 +447,6 @@ INSERT INTO {WiserTableNames.WiserEntityProperty}
     entity_name,
     link_type,
     visible_in_overview,
-    overview_fieldtype,
     overview_width,
     tab_name,
     group_name,
@@ -491,7 +490,6 @@ SELECT
     entity_name,
     link_type,
     visible_in_overview,
-    overview_fieldtype,
     overview_width,
     tab_name,
     group_name,
@@ -662,6 +660,36 @@ AND otherEntityProperty.id IS NULL";
 
             await clientDatabaseConnection.ExecuteAsync(query);
             return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> FixOrderingAsync(ClaimsIdentity identity, string entityType = null, int linkType = 0)
+        {
+            clientDatabaseConnection.AddParameter("entityType", entityType);
+            clientDatabaseConnection.AddParameter("linkType", linkType);
+            var whereClause = linkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
+            var query = $@"SET @orderingNumber = 0;
+
+UPDATE {WiserTableNames.WiserEntityProperty} AS property
+JOIN (
+	SELECT 
+		x.id,
+		(@orderingNumber := @orderingNumber + 1) AS ordering
+	FROM (
+		SELECT
+			id
+		FROM {WiserTableNames.WiserEntityProperty}
+		WHERE {whereClause}
+		ORDER BY ordering ASC
+	) AS x
+) AS ordering ON ordering.id = property.id
+SET property.ordering = ordering.ordering
+WHERE {whereClause}";
+            await clientDatabaseConnection.ExecuteAsync(query);
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
 
         private static FilterOperators? ToFilterOperator(string value)
