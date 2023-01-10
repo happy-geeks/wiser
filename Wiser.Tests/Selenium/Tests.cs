@@ -44,6 +44,13 @@ public class Tests
         driver.Quit();
     }
 
+    /// <summary>
+    /// Wait till an element can be found or the timeout has been surpassed.
+    /// If an element can't be found an exception will be given.
+    /// This method ignores it to wait until the element can be found.
+    /// </summary>
+    /// <param name="by">The <see cref="By"/> selector to use to find the element.</param>
+    /// <param name="element">Optional: An <see cref="IWebElement"/> to perform the selector on instead of the <see cref="driver"/>.</param>
     private void WaitTillElementIsFound(By by, IWebElement? element = null)
     {
         var timeoutCount = 0;
@@ -70,6 +77,13 @@ public class Tests
         }
     }
     
+    /// <summary>
+    /// Wait till an element is displayed or the timeout has been surpassed.
+    /// If an element can't be found an exception will be given and if it is not displayed no action can be performed on it.
+    /// This method ignores it to wait until the element can be found and is displayed.
+    /// </summary>
+    /// <param name="by">The <see cref="By"/> selector to use to find the element.</param>
+    /// <param name="element">Optional: An <see cref="IWebElement"/> to perform the selector on instead of the <see cref="driver"/>.</param>
     private void WaitTillElementIsDisplayed(By by, IWebElement? element = null)
     {
         var timeoutCount = 0;
@@ -94,6 +108,9 @@ public class Tests
         }
     }
 
+    /// <summary>
+    /// Login a normal user. Used in all tests.
+    /// </summary>
     private void LoginWiserUser()
     {
         WaitTillElementIsFound(By.CssSelector("#loginForm .btn"));
@@ -103,12 +120,16 @@ public class Tests
         WaitTillElementIsFound(By.ClassName("sub-title"));
     }
 
+    /// <summary>
+    /// Logout a user. Used in all tests.
+    /// </summary>
     private void Logout()
     {
         var actions = new Actions(driver);
         actions.MoveToElement(driver.FindElement(By.CssSelector(".sub-title"))).Perform();
-        WaitTillElementIsDisplayed(By.CssSelector(".sub-menu > li:nth-child(7) span"));
-        driver.FindElement(By.CssSelector(".sub-menu > li:nth-child(7) span")).Click();
+        WaitTillElementIsDisplayed(By.CssSelector(".sub-menu > li:last-child span"));
+        driver.FindElement(By.CssSelector(".sub-menu > li:last-child span")).Click();
+        WaitTillElementIsDisplayed(By.Id("loginForm"));
     }
     
     [Test]
@@ -345,6 +366,49 @@ public class Tests
             Assert.That(driver.FindElement(By.Id("field_734")).GetDomAttribute("value"), Is.EqualTo("Admin"));
             
             // Close the opened item.
+            driver.SwitchTo().DefaultContent();
+            driver.FindElement(By.CssSelector(".close-module")).Click();
+            
+            Logout();
+        }
+    }
+
+    [Test]
+    // 1. Open data selector module;
+    // 2. Load data selector;
+    // 3. Get results of data selector;
+    // 4. Close data selector module.
+    public void DataSelector()
+    {
+        foreach (var url in testSettings.TestUrls)
+        {
+            driver.Navigate().GoToUrl(url);
+            LoginWiserUser();
+
+            // Open data selector module.
+            WaitTillElementIsFound(By.CssSelector("a[title='Dataselector']"));
+            driver.FindElement(By.CssSelector("a[title='Dataselector']")).Click();
+            driver.SwitchTo().Frame(driver.FindElement(By.Id("706_1")));
+            
+            // Load data selector.
+            driver.FindElement(By.Id("loadButton")).Click();
+            WaitTillElementIsDisplayed(By.CssSelector(".k-dialog .k-input-value-text"));
+            driver.FindElement(By.CssSelector(".k-dialog .k-input-value-text")).Click();
+            WaitTillElementIsDisplayed(By.CssSelector(".k-animation-container .k-input-inner"));
+            driver.FindElement(By.CssSelector(".k-animation-container .k-input-inner")).SendKeys("Alle users in Wiser");
+            Thread.Sleep(1000); // Wait a moment for the filter to give the results.
+            WaitTillElementIsDisplayed(By.CssSelector("#dataSelectorItems-list li"));
+            driver.FindElement(By.CssSelector("#dataSelectorItems-list li")).Click();
+            driver.FindElement(By.CssSelector(".k-actions button")).Click();
+            
+            // Open results.
+            Thread.Sleep(1000); // Data selector is reloaded, wait a moment to prevent the previous data selector to be used.
+            WaitTillElementIsDisplayed(By.Id("viewJsonResultButton"));
+            driver.FindElement(By.Id("viewJsonResultButton")).Click();
+            WaitTillElementIsFound(By.CssSelector("#viewResult .CodeMirror-code .CodeMirror-line"));
+            Assert.That(driver.FindElements(By.CssSelector("#viewResult .CodeMirror-code .CodeMirror-line")).Count, Is.GreaterThan(1));
+            
+            // Close data selector.
             driver.SwitchTo().DefaultContent();
             driver.FindElement(By.CssSelector(".close-module")).Click();
             
