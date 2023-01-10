@@ -7,6 +7,7 @@ using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
+using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.Enums;
@@ -210,6 +211,24 @@ namespace Api.Modules.Templates.Services
         public async Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, List<int> templateIds, int branchId)
         {
             return await templatesService.DeployToBranchAsync(identity, templateIds, branchId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<MeasurementSettings>> GetMeasurementSettingsAsync(int templateId)
+        {
+            return await templatesService.GetMeasurementSettingsAsync(templateId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveMeasurementSettingsAsync(int templateId, MeasurementSettings settings)
+        {
+            return await templatesService.SaveMeasurementSettingsAsync(templateId, settings);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0, string urlRegex = null, Environments environment = Environments.Live, ulong userId = 0, string languageCode = null, int pageSize = 500, int pageNumber = 1)
+        {
+            return await templatesService.GetRenderLogsAsync(templateId, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber);
         }
     }
 }

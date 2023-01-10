@@ -63,6 +63,7 @@ const moduleSettings = {
             this.historyLoaded = false;
             this.initialTemplateSettings = null;
             this.branches = null;
+            this.renderLogsGrid = null;
 
             this.templateTypes = Object.freeze({
                 "UNKNOWN": 0,
@@ -1011,6 +1012,98 @@ const moduleSettings = {
 
                 this.preview.initPreviewProfileInputs(true, true);
                 this.preview.bindPreviewButtons();
+                
+                // Measurements.
+                this.renderLogsGrid = $("#renderLogsGrid").kendoGrid({
+                    dataSource: {
+                        transport: {
+                            read: (readOptions) => {
+                                console.log("readOptions renderLogsGrid", readOptions);
+                                Wiser.api({
+                                    url: `${this.settings.wiserApiRoot}templates/${id}/render-logs`,
+                                    dataType: "json",
+                                    method: "GET"
+                                }).then((response) => {
+                                    readOptions.success(response);
+                                }).catch((error) => {
+                                    readOptions.error(error);
+                                });
+                            }
+                        },
+                        pageSize: 500
+                    },
+                    scrollable: true,
+                    resizable: true,
+                    selectable: false,
+                    filterable: {
+                        extra: false,
+                        operators: {
+                            string: {
+                                startswith: "Begint met",
+                                eq: "Is gelijk aan",
+                                neq: "Is ongelijk aan",
+                                contains: "Bevat",
+                                doesnotcontain: "Bevat niet",
+                                endswith: "Eindigt op"
+                            }
+                        },
+                        messages: {
+                            isTrue: "<span>Ja</span>",
+                            isFalse: "<span>Nee</span>"
+                        }
+                    },
+                    pageable: true,
+                    columns: [
+                        {
+                            field: "environment",
+                            title: "Omgeving",
+                            width: 100,
+                            filterable: true
+                        },
+                        {
+                            field: "languageCode",
+                            title: "Taal",
+                            width: 25,
+                            filterable: true
+                        },
+                        {
+                            field: "userId",
+                            title: "Gebruiker",
+                            width: 50,
+                            filterable: true
+                        },
+                        {
+                            field: "start",
+                            title: "Datum",
+                            width: 150,
+                            filterable: true
+                        },
+                        {
+                            field: "timeTaken",
+                            title: "Gemeten tijd",
+                            width: 150,
+                            filterable: true
+                        },
+                        {
+                            field: "url",
+                            title: "Url",
+                            filterable: true
+                        },
+                        {
+                            field: "version",
+                            title: "Versie",
+                            width: 50,
+                            filterable: true
+                        },
+                        {
+                            field: "error",
+                            title: "Gelukt",
+                            width: 150,
+                            filterable: false,
+                            template: `# if (!error) { # Ja # } else { # Nee # } #`
+                        }
+                    ]
+                }).data("kendoGrid");
             } catch (exception) {
                 console.error(exception);
                 kendo.alert(`Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.<br>${exception.responseText || exception}`);

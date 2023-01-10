@@ -177,7 +177,7 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         void DecryptEditorValueIfEncrypted(string encryptionKey, TemplateSettingsModel rawTemplateModel);
 
         /// <summary>
-        /// Deploys one or more templates from the main branch to a sub branch.
+        /// Deploy one or more templates from the main branch to a sub branch.
         /// </summary>
         /// <param name="templateIds">The IDs of the templates to deploy.</param>
         /// <param name="branchDatabaseName">The name of the database that contains the sub branch.</param>

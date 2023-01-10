@@ -95,6 +95,12 @@ namespace FrontEnd.Modules.Templates.Controllers
             return PartialView("Tabs/PreviewTab");
         }
 
+        [HttpGet, Route("MeasurementsTab")]
+        public IActionResult MeasurementsTab()
+        {
+            return PartialView("Tabs/MeasurementsTab");
+        }
+
         [HttpPost, Route("PublishedEnvironments")]
         public IActionResult PublishedEnvironments([FromBody]TemplateSettingsModel tabViewData)
         {

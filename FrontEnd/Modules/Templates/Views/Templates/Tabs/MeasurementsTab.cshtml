@@ -1,0 +1,51 @@
+<div class="formview full previewContainer">
+    <div class="row measurement-settings">
+        <div class="col col-12">
+            <div class="flex-container item">
+                <label>Meten in omgeving:</label>
+                <span class="inline">
+                    <label class="checkbox">
+                        <input type="checkbox" id="measureInDevelopment" class="textField k-input" name="measureInDevelopment" value="1" />
+                        <span>Development</span>
+                    </label>
+                </span>
+                <span class="inline">
+                    <label class="checkbox">
+                        <input type="checkbox" id="measureInTest" class="textField k-input" name="measureInTest" value="1" />
+                        <span>Test</span>
+                    </label>
+                </span>
+                <span class="inline">
+                    <label class="checkbox">
+                        <input type="checkbox" id="measureInAcceptance" class="textField k-input" name="measureInAcceptance" value="1" />
+                        <span>Acceptatie</span>
+                    </label>
+                </span>
+                <span class="inline">
+                    <label class="checkbox">
+                        <input type="checkbox" id="measureInLive" class="textField k-input" name="measureInLive" value="1" />
+                        <span>Live</span>
+                    </label>
+                </span>
+                
+                <button id="saveMeasuringSettingsButton" class="k-primary k-button">Opslaan</button>
+            </div>
+        </div>
+    </div>
+    <div class="row measurement-results">
+        <div class="col col-12">
+            <div class="flex-container item">
+                <label>Meetresultaten:</label>
+                <div id="renderLogsGrid" class="grid"></div>
+            </div>
+        </div>
+    </div>
+    <div class="row measurement-statistics">
+        <div class="col col-12">
+            <div class="flex-container item">
+                <label>Statistieken:</label>
+                <div id="measurementCharts" class="chart"></div>
+            </div>
+        </div>
+    </div>
+</div>
