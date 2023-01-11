@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FrontEnd.Modules.ImportExport.Interfaces;
 using FrontEnd.Modules.ImportExport.Models;
+using GeeksCoreLibrary.Modules.Exports.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualBasic.FileIO;
 using Newtonsoft.Json;
@@ -13,7 +14,14 @@ namespace FrontEnd.Modules.ImportExport.Services
 {
     public class ImportsService : IImportsService
     {
+        private readonly IExcelService excelService;
+        
         private const uint ImportLimit = 1000000;
+
+        public ImportsService(IExcelService excelService)
+        {
+            this.excelService = excelService;
+        }
 
         /// <inheritdoc />
         public async Task<FeedFileUploadResultModel> HandleFeedFileUploadAsync(IFormCollection formCollection, string uploadsDirectory)
@@ -34,51 +42,64 @@ namespace FrontEnd.Modules.ImportExport.Services
                 await uploadedFile.CopyToAsync(fileStream);
             }
             
-            byte[] fileBytes;
-            await using (var memoryStream = new MemoryStream())
+            var uploadResult = new FeedFileUploadResultModel
             {
-                await uploadedFile.CopyToAsync(memoryStream);
-                fileBytes = memoryStream.ToArray();
-            }
-            
-            var uploadResult = new FeedFileUploadResultModel { ImportLimit = ImportLimit };
-            switch (fileBytes.Length)
-            {
-                case 0:
-                    return uploadResult;
-                case >= 3:
-                    // If the file has the UTF-8 BOM, it can't properly detect if a column called "id" exists if the first column is the id column.
-                    fileBytes = RemoveUtf8BomBytes(fileBytes);
-                    break;
-            }
+                ImportLimit = ImportLimit,
+                Filename = filePath
+            };
 
-            // Turn the bytes into a string.
-            var fileContents = Encoding.UTF8.GetString(fileBytes);
-
-            var linesCounted = 0U;
-            using (var stringReader = new StringReader(fileContents))
+            if (filePath.EndsWith(".xlsx", StringComparison.InvariantCultureIgnoreCase))
             {
-                using (var reader = new TextFieldParser(stringReader))
+                uploadResult.Columns = excelService.GetColumnNames(filePath).ToArray();
+                // One line is subtracted because the header line doesn't count.
+                uploadResult.RowCount = Convert.ToUInt32(excelService.GetRowCount(filePath) - 1);
+            }
+            else
+            {
+                byte[] fileBytes;
+                await using (var memoryStream = new MemoryStream())
                 {
-                    reader.Delimiters = new[] { ";" };
-                    reader.TextFieldType = FieldType.Delimited;
-                    reader.HasFieldsEnclosedInQuotes = true;
+                    await uploadedFile.CopyToAsync(memoryStream);
+                    fileBytes = memoryStream.ToArray();
+                }
 
-                    uploadResult.Columns = reader.ReadFields();
-                    uploadResult.Filename = filePath;
+                switch (fileBytes.Length)
+                {
+                    case 0:
+                        return uploadResult;
+                    case >= 3:
+                        // If the file has the UTF-8 BOM, it can't properly detect if a column called "id" exists if the first column is the id column.
+                        fileBytes = RemoveUtf8BomBytes(fileBytes);
+                        break;
+                }
 
-                    // Need to read through the entire document once to determine how many lines the document contains.
-                    // Splitting on newlines isn't good enough as it's valid in CSV documents for lines to contain line breaks.
-                    while (!reader.EndOfData)
+                // Turn the bytes into a string.
+                var fileContents = Encoding.UTF8.GetString(fileBytes);
+
+                var linesCounted = 0U;
+                using (var stringReader = new StringReader(fileContents))
+                {
+                    using (var reader = new TextFieldParser(stringReader))
                     {
-                        reader.ReadFields();
-                        linesCounted += 1U;
+                        reader.Delimiters = new[] {";"};
+                        reader.TextFieldType = FieldType.Delimited;
+                        reader.HasFieldsEnclosedInQuotes = true;
+
+                        uploadResult.Columns = reader.ReadFields();
+
+                        // Need to read through the entire document once to determine how many lines the document contains.
+                        // Splitting on newlines isn't good enough as it's valid in CSV documents for lines to contain line breaks.
+                        while (!reader.EndOfData)
+                        {
+                            reader.ReadFields();
+                            linesCounted += 1U;
+                        }
                     }
                 }
-            }
 
-            // One line is subtracted because the header line doesn't count.
-            uploadResult.RowCount = linesCounted;
+                // One line is subtracted because the header line doesn't count.
+                uploadResult.RowCount = linesCounted;
+            }
 
             if (uploadResult.Columns != null && uploadResult.Columns.Contains("id", StringComparer.OrdinalIgnoreCase))
             {
