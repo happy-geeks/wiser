@@ -2007,7 +2007,7 @@ const moduleSettings = {
             const urlRegexElement = document.getElementById("urlRegex");
 
             const settings = Object.assign({
-                templateId: this.selectedId,
+                templateId: this.selectedId || this.settings.templateId || 0,
                 name: this.templateSettings.name || "",
                 type: this.templateSettings.type,
                 parentId: this.templateSettings.parentId,
