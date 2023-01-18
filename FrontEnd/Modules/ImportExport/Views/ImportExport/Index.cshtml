@@ -1,11 +1,13 @@
-﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
 @inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html>
 
 <head runat="server">
-    <title>Wiser 3 - Import/Export</title>
+    <title>@Localizer["Wiser 3 - Import/Export"]</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -42,10 +44,10 @@
                 <!-- TABS -->
                 <div id="tabstrip">
                     <ul>
-                        <li class="k-state-active">Import</li>
-                        <li>Export</li>
-                        <li>Verwijderen items</li>
-                        <li>Verwijderen koppelingen</li>
+                        <li class="k-state-active">@Localizer["Import"]</li>
+                        <li>@Localizer["Export"]</li>
+                        <li>@Localizer["Delete items/"]</li>
+                        <li>@Localizer["Delete links"]</li>
                     </ul>
 
                     <div id="ImportHtml"></div>
@@ -57,12 +59,12 @@
                             <div class="formview compact" id="DeleteItemsContainer">
                                 <div class="item">
                                     <h4 class="tooltip">
-                                        <label>Verwijderen items</label>
+                                        <label>@Localizer["Delete items/"]</label>
                                         <span class="info-link">
                                             <ins class="icon-info-full"></ins>
                                             <span class="info-tooltip">
                                                 <span>
-                                                    Verwijder gemakkelijk meerdere items binnen Wiser.
+                                                    @Localizer["Delete easily multiple items within Wiser."]
                                                 </span>
                                             </span>
                                         </span>
@@ -73,50 +75,50 @@
                                     <div>
                                         <input type="radio" name="DeleteItemsType" id="DeleteItemsFile" class="noForm rToggle" value="datafile" checked="checked" />
                                         <header>
-                                            <label for="DeleteItemsFile" class="radio rToggle"><span>Bestand</span></label>
+                                            <label for="DeleteItemsFile" class="radio rToggle"><span>@Localizer["File"]</span></label>
                                         </header>
                                         <div>
                                             <div class="item">
                                                 <h4>
-                                                    <label>Data-bestand</label>
+                                                    <label>@Localizer["Data file"]</label>
                                                 </h4>
                                                 <input name="fileUpload" class="fileUpload removeItemsFileUpload" type="file" />
-                                                <div class="form-hint"><span>Selecteer een data-bestand... (max. 25 MB)</span></div>
+                                                <div class="form-hint"><span>@Localizer["Select a data file... (max. 25 MB)"]</span></div>
                                                 <div class="clear clear15"></div>
                                             </div>
 
                                             <div class="item">
                                                 <h4 class="tooltip-left">
-                                                    <label>Entiteit</label>
+                                                    <label>@Localizer["Entity"]</label>
                                                     <span class="info-link">
                                                         <ins class="icon-info-full"></ins>
                                                         <span class="info-tooltip">
                                                             <span>
-                                                                Kies de entititeit van de items die verwijderd moeten worden.
+                                                                @Localizer["Choose the entity of the items to be deleted."]
                                                             </span>
                                                         </span>
                                                     </span>
                                                 </h4>
                                                 <div id="EntityTypesContainer">
-                                                    <select class="combo-select" placeholder="Maak uw keuze...">
+                                                    <select class="combo-select" placeholder="@Localizer["Make your choice..."]">
                                                     </select>
                                                 </div>
                                             </div>
 
                                             <div class="item">
                                                 <h4 class="tooltip-left">
-                                                    <label>Matchen tegen</label>
+                                                    <label>@Localizer["Match against"]</label>
                                                     <span class="info-link">
                                                         <ins class="icon-info-full"></ins>
                                                         <span class="info-tooltip">
                                                             <span>
-                                                                Kies de eigenschap waarvan de waarde overeen moet komen met de aangeleverde gegevens.
+                                                                @Localizer["Choose the property of the value which should match the supplied data."]
                                                             </span>
                                                         </span>
                                                     </span>
                                                 </h4>
                                                 <div id="EntityPropertiesContainer">
-                                                    <select class="combo-select" placeholder="Maak uw keuze...">
+                                                    <select class="combo-select" placeholder="@Localizer["Make your choice..."]">
                                                     </select>
                                                 </div>
                                             </div>
@@ -126,17 +128,17 @@
                                     <div>
                                         <input type="radio" name="DeleteItemsType" id="DeleteItemsDataSelector" class="noForm rToggle" value="dataselector" />
                                         <header>
-                                            <label for="DeleteItemsDataSelector" class="radio rToggle"><span>Selectie</span></label>
+                                            <label for="DeleteItemsDataSelector" class="radio rToggle"><span>@Localizer["Selection"]</span></label>
                                         </header>
                                         <div>
                                             <div class="item">
                                                 <h4 class="tooltip-left">
-                                                    <label>Data selector</label>
+                                                    <label>@Localizer["Data selector"]</label>
                                                     <span class="info-link">
                                                         <ins class="icon-info-full"></ins>
                                                         <span class="info-tooltip">
                                                             <span>
-                                                                Gebruik de Data selector om een selectie te maken welke items verwijderd moeten worden.
+                                                                @Localizer["Use the Data selector to select which items should be deleted."]
                                                             </span>
                                                         </span>
                                                     </span>
@@ -151,7 +153,7 @@
 
                                 <footer class="fixed">
                                     <div class="actions">
-                                        <button id="deleteItemsButton" class="k-primary button rightButton">Start acties</button>
+                                        <button id="deleteItemsButton" class="k-primary button rightButton">@Localizer["Start actions"]</button>
                                     </div>
                                 </footer>
 
@@ -164,12 +166,12 @@
                             <div class="formview compact" id="DeleteConnectionsContainer">
                                 <div class="item">
                                     <h4 class="tooltip">
-                                        <label>Verwijderen koppelingen</label>
+                                        <label>@Localizer["Verwijderen koppelingen"]</label>
                                         <span class="info-link">
                                             <ins class="icon-info-full"></ins>
                                             <span class="info-tooltip">
                                                 <span>
-                                                    Verwijder gemakkelijk meerdere koppelingen tussen items binnen Wiser.
+                                                    @Localizer["Delete easily multiple items within Wiser."]
                                                 </span>
                                             </span>
                                         </span>
@@ -178,37 +180,37 @@
 
                                 <div class="item">
                                     <h4>
-                                        <label>Data-bestand</label>
+                                        <label>@Localizer["Data file"]</label>
                                     </h4>
                                     <input name="fileUpload" class="fileUpload removeConnectionsFileUpload" type="file" />
-                                    <div class="form-hint"><span>Selecteer een data-bestand... (max. 25 MB)</span></div>
+                                    <div class="form-hint"><span>@Localizer["Select a data file... (max. 25 MB)"]</span></div>
                                     <div class="clear clear15"></div>
                                 </div>
 
                                 <div class="item singleColumnItem">
                                     <h4 class="tooltip-left">
-                                        <label>Koppeltype</label>
+                                        <label>@Localizer["Link type/"]</label>
                                         <span class="info-link">
                                             <ins class="icon-info-full"></ins>
                                             <span class="info-tooltip">
                                                 <span>
-                                                    Kies het koppelingstype waarmee de koppeling is gelegd die je wilt verwijderen. Het aangeleverde bestand kan de ids van zowel de oorsprong als de bestemming bevatten.
+                                                    @Localizer["Choose the link type which is linked and you want to delete. The supplied file can contain the IDs of both the origin and the destination."]
                                                 </span>
                                             </span>
                                         </span>
                                     </h4>
-                                    <select id="deleteConnectionsLinkCombobox" class="combo-select" placeholder="Maak uw keuze...">
+                                    <select id="deleteConnectionsLinkCombobox" class="combo-select" placeholder="@Localizer["Make your choice..."]">
                                     </select>
                                 </div>
 
                                 <div class="item multipleColumnsItem">
                                     <h4 class="tooltip">
-                                        <label>Matchen kolommen</label>
+                                        <label>@Localizer["Match columns"]</label>
                                         <span class="info-link">
                                             <ins class="icon-info-full"></ins>
                                             <span class="info-tooltip tooltip-wide">
                                                 <span>
-                                                    Kies de entiteiten waartussen koppelingen moeten worden verwijderd en kies de eigenschapen waarvan de waardes overeen moeten komen met de aangeleverde gegevens.
+                                                    @Localizer["Choose the entities between which links should be removed and choose the properties of values which should match the supplied data."]
                                                 </span>
                                             </span>
                                         </span>
@@ -218,7 +220,7 @@
 
                                 <footer class="fixed clear">
                                     <div class="actions">
-                                        <button id="deleteConnectionsButton" class="k-primary button rightButton">Start acties</button>
+                                        <button id="deleteConnectionsButton" class="k-primary button rightButton">@Localizer["Start actions"]</button>
                                     </div>
                                 </footer>
                             </div>
@@ -230,8 +232,8 @@
             <!-- WINDOW - ALERT -->
             <div id="import-upload" class="x-window alert-window">
                 <div class="item clear">
-                    <p>De import is klaargezet. Zodra deze gereed is, ontvangt u bericht.</p>
-                    <button id="closeButton" class="k-primary button rightButton">OK</button>
+                    <p>@Localizer["The import is prepared. You will be notified as soon as it is completed."]</p>
+                    <button id="closeButton" class="k-primary button rightButton">@Localizer["OK"]</button>
                 </div>
             </div>
         </div>

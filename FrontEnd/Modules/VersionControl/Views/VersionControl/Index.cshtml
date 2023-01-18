@@ -1,3 +1,5 @@
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
 @model FrontEnd.Modules.Base.Models.BaseModuleViewModel
 @inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
@@ -11,7 +13,7 @@
 <html>
 <head runat="server">
     <meta charset="utf-8" />
-    <title>Wiser 3 - Versiebeheermodule</title>
+    <title>@Localizer["Wiser 3 - Versiebeheermodule"]</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.material.min.css" rel="stylesheet" />
@@ -35,31 +37,30 @@
       data-api-client-secret="@Model.Settings.ApiClientSecret">
     <div id="NotMainBranchNotification" class="hidden">
         <p>
-            Je bent op dit moment ingelogd bij een branch van deze klant. Het is niet mogelijk/toegestaan om de templatemodule te gebruiken in een branch.<br/>
-            Log a.u.b. in op de live-omgeving van de klant en werk daar in de templatemodule.
+            @Localizer["You are currently logged in to a branch of this customer. It is not possible/allowed to use the template module in an industry.<br/> Please log into the customer's live environment and work in the template module there."]
         </p>
     </div>
     <div id="wiser">
         <div id="tabstrip" class="tabstrip k-tabstrip-wrapper">
             <ul>
-                <li id="changeHistoryTab" class="k-state-active">Openstaande wijzigingen</li>
-                <li id="deployTab">Deploy</li>
-                <li id="historyTab">Historie</li>
+                <li id="changeHistoryTab" class="k-state-active">@Localizer["Open changes"]</li>
+                <li id="deployTab">@Localizer["Deploy"]</li>
+                <li id="historyTab">@Localizer["History"]</li>
             </ul>
             <div id="templateChangeHistory">
                 <form class="formData">
                     <div id="commitData">
                         <select id="commitEnvironment"></select>
-                        <label for="commitDescription">Omschrijving</label>
+                        <label for="commitDescription">@Localizer["Description"]</label>
                         <textarea type="text" id="commitDescription"></textarea>                            
                     </div>
                     <div id="gridsContainer">
                         <h2>Templates</h2>
                         <div id="templateChangesGrid"></div>
-                        <h2>Dynamische content</h2>
+                        <h2>@Localizer["Dynamic Content"]</h2>
                         <div id="dynamicContentChangesGrid"></div>
                     </div>
-                    <button id="commitButton">Commit</button>
+                    <button id="commitButton">@Localizer["Commit"]</button>
                 </form>
             </div>
             <div id="deploy">
@@ -68,15 +69,15 @@
                         <div id="deployGrid"></div>
                     </div>
                 </div>
-                <button class="environment-deploy" id="deployCommitToLive">deploy naar live</button>
-                <button class="environment-deploy" id="deployCommitToAcceptance">deploy naar acceptatie</button>
-                <button class="environment-deploy" id="deployCommitToTest">deploy naar test</button>
+                <button class="environment-deploy" id="deployCommitToLive">@Localizer["Deploy to live"]</button>
+                <button class="environment-deploy" id="deployCommitToAcceptance">@Localizer["Deploy to acceptance"]</button>
+                <button class="environment-deploy" id="deployCommitToTest">@Localizer["Deploy to test"]</button>
                 <div class="branch-container hidden" id="deployToBranchContainer">
                     <select id="branchesDropDown"></select>
-                    <button class="branch-deploy" id="deployCommitToBranch">deploy naar geselecteerde branch</button>
+                    <button class="branch-deploy" id="deployCommitToBranch">@Localizer["Deploy to selected branch"]</button>
                 </div>
             </div>
-            <div id="history">Work in progress</div>
+            <div id="history">@Localizer["Work in progress"]</div>
         </div>
     </div>
 

@@ -1,9 +1,11 @@
-﻿@using FrontEnd.Core.Models
-@using GeeksCoreLibrary.Core.Enums
 @using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@using FrontEnd.Core.Models
+@using GeeksCoreLibrary.Core.Enums
 @inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 @model BaseViewModel
+
 
 <style> 
     [v-cloak] {
@@ -16,7 +18,7 @@
         <header v-if="user.loggedIn && !requirePasswordChange">
             <ul class="main-menu">
                 <li id="side-menu">
-                    <div id="menu-btn" @@click="toggleMenuState()"><ins class="icon-menu"></ins><span>Menu</span></div>
+                    <div id="menu-btn" @@click="toggleMenuState()"><ins class="icon-menu"></ins><span>@Localizer["Menu"]</span></div>
                     <div id="side-btn" @@click="toggleMenuActive()"><ins class="icon-chevron-right"></ins></div>
 
                     <nav id="side-nav">
@@ -42,7 +44,7 @@
                     <div v-for="module in openedModules" :key="module.id" :class="{ 'tab-item': true, active: module.id === activeModule }" @@click="setActiveModule($event, module.id)" :title="module.name">
                         <ins :class="module.icon"></ins>
                         <strong>{{ module.name }}</strong>
-                        <span class="close-module" title="module sluiten" @@click="closeModule(module)"></span>
+                        <span class="close-module" title="@Localizer["close module"]" @@click="closeModule(module)"></span>
                     </div>
                 </li>
 
@@ -55,19 +57,19 @@
 
                 <li class="login">
                     <span>
-                        <strong class="title">Welkom</strong>
+                        <strong class="title">@Localizer["Welcome"]</strong>
                         <span class="sub-title">{{ user.name }}</span>
                         <ins class="icon-chevron-down"></ins>
                     </span>
 
                 <ul class="sub-menu">
-                    <li><a href="#" v-if="user.adminAccountId" @@click="openCustomerManagement()"><ins class="icon-line-user-plus"></ins><span>Klant toevoegen</span></a></li>
-                    <li><a href="#" @@click="openMarkerIoScreen()"><ins class="icon-line-bug"></ins><span>Bug melden! (CTRL+B)</span></a></li>
-                    <li><a href="#" @@click="openWiserIdPrompt"><ins class="icon-line-database-search"></ins><span>Wiser item openen (CTRL+O)</span></a></li>
-                    <li><a href="#" @@click="openChangePasswordPrompt"><ins class="icon-line-lock"></ins><span>Wachtwoord wijzigen</span></a></li>
-                    <li><a href="#" @@click="openWiserBranchesPrompt"><ins class="icon-table-backup"></ins><span>Wiser branches</span></a></li>
-                    <li><a href="#" @@click="openClearCachePrompt"><ins class="icon-line-refresh"></ins><span>Cache van website legen</span></a></li>
-                    <li><a href="#" @@click="logout()"><ins class="icon-line-log-out"></ins><span>Uitloggen</span></a></li>
+                        <li><a href="#" v-if="user.adminAccountId" @@click="openCustomerManagement()"><ins class="icon-line-user-plus"></ins><span>@Localizer["Add customer"]</span></a></li>
+                        <li><a href="#" @@click="openMarkerIoScreen()"><ins class="icon-line-bug"></ins><span>@Localizer["Report bug!"] (CTRL+B)</span></a></li>
+                    <li><a href="#" @@click="openWiserIdPrompt"><ins class="icon-line-database-search"></ins><span>@Localizer["Open Wiser item"] (CTRL+O)</span></a></li>
+                    <li><a href="#" @@click="openChangePasswordPrompt"><ins class="icon-line-lock"></ins><span>@Localizer["Change password"]</span></a></li>
+                        <li><a href="#" @@click="openWiserBranchesPrompt"><ins class="icon-table-backup"></ins><span>@Localizer["Wiser branches"]</span></a></li>
+                        <li><a href="#" @@click="openClearCachePrompt"><ins class="icon-line-refresh"></ins><span>@Localizer["Clear website cache"]</span></a></li>
+                        <li><a href="#" @@click="logout()"><ins class="icon-line-log-out"></ins><span>@Localizer["Log out"]</span></a></li>
                 </ul>
             </li>
             <li class="logo">
@@ -107,20 +109,20 @@
             </div>
         </wiser-dialog>
         <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
-            <p>Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:</p>
+            <p>@Localizer["The specified ID occurs more than once. Choose which type you want to open:"]</p>
             <div class="form-row">
                 <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
             </div>
         </wiser-dialog>
-        <wiser-dialog :modal="true" :width="'400px'" :title="'Wachtwoord wijzigen'" ref="changePasswordPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Opslaan', primary: true, action: changePassword }]">
+        <wiser-dialog :modal="true" :width="'400px'" :title="'@Localizer["Change password"]'" ref="changePasswordPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Opslaan', primary: true, action: changePassword }]">
             <div class="form-row">
-                <input type="password" id="oldPassword" name="oldPassword" class="loginField passwordField" placeholder="Uw huidig wachtwoord" v-model="changePasswordPromptOldPasswordValue" />
+                <input type="password" id="oldPassword" name="oldPassword" class="loginField passwordField" placeholder="@Localizer["Your current password"]" v-model="changePasswordPromptOldPasswordValue" />
             </div>
             <div class="form-row">
-                <input type="password" id="newPassword" name="newPassword" class="loginField passwordField" placeholder="Uw nieuwe wachtwoord" v-model="changePasswordPromptNewPasswordValue" />
+                <input type="password" id="newPassword" name="newPassword" class="loginField passwordField" placeholder="@Localizer["Your new password"]" v-model="changePasswordPromptNewPasswordValue" />
             </div>
             <div class="form-row">
-                <input type="password" id="newPasswordRepeat" name="newPasswordRepeat" class="loginField passwordField" placeholder="Nogmaals uw nieuwe wachtwoord" v-model="changePasswordPromptNewPasswordRepeatValue" />
+                <input type="password" id="newPasswordRepeat" name="newPasswordRepeat" class="loginField passwordField" placeholder="@Localizer["Repeat your new password"]" v-model="changePasswordPromptNewPasswordRepeatValue" />
             </div>
 
             <div class="error" v-if="changePasswordError">{{ changePasswordError }}</div>
@@ -129,52 +131,47 @@
             <div class="container">
                 <div class="row equal">
                     <div class="col col-3" v-if="isMainBranch">
-                        <h2>Branch maken</h2>
+                        <h2>@Localizer["Create branch"]</h2>
                         <p>
-                            Hier kan een nieuwe branch gemaakt worden. Een branch is een (deel-)kopie van uw database. 
-                            Dit kan gebruikt worden om wijzigingen in Wiser op een veilige manier door te voeren en te testen in een aparte omgeving.
-                            Nadat u klaar bent met testen, kunt u de wijzigingen in een branch weer terugzetten naar de productie-omgeving. 
+                            @Localizer["A new branch can be created here. A branch is a (partial) copy of your database.This can be used to safely implement changes in Wiser and test in a separate environment. After you've finished testing, you can rollback the changes in a branch back to the production environment."]. 
                         </p>
 
-                        <button v-if="isMainBranch" class="btn btn-primary" @@click="openCreateBranchPrompt">Nieuwe branch maken</button>
+                        <button v-if="isMainBranch" class="btn btn-primary" @@click="openCreateBranchPrompt">@Localizer["Create new branch"]</button>
                     </div>
                     <div class="col col-3" v-if="branches.length > 0">
-                        <h2>Branch openen</h2>
+                        <h2>@Localizer["Open branch"]</h2>
                         <p>
-                            Hier kan een bestaande branch geopend worden.
+                            @Localizer["An existing branch can be opened here."]
                         </p>
                         
                         <div class="col col-12 form-row" v-if="isMainBranch">
-                            <label for="open-branch-type">Waar wilt u de branch openen?</label>
+                            <label for="open-branch-type">@Localizer["Where do you want to open the branch?"]</label>
                             <dropdownlist id="open-branch-type" class="full-width" :data-items="openBranchTypes" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranchType"></dropdownlist>
                         </div>
                         
                         <div class="col col-12 form-row" v-if="openBranchSettings.selectedBranchType.id === 'website'">
-                            <label for="website-url">Geef de URL op van uw website</label>
+                            <label for="website-url">@Localizer["Enter the URL of your website"]</label>
                             <input type="url" id="website-url" placeholder="https://happyhorizon.com/" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="openBranchSettings.websiteUrl" required>
                         </div>
                         
                         <div class="col col-12 form-row" v-if="isMainBranch">
-                            <label for="available-branches">Selecteer de branch die u wilt openen</label>
+                            <label for="available-branches">@Localizer["Select the branch you want to open"]</label>
                             <dropdownlist id="available-branches-to-open" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranch"></dropdownlist>
                         </div>
 
-                        <a href="#" class="btn btn-primary copy-branch-url" @@click="openOrCopyBranch($event, true)">Branch URL kopiëren</a>
-                        <a href="#" class="btn btn-primary open-branch" @@click="openOrCopyBranch($event, false)">Branch openen</a>
+                        <a href="#" class="btn btn-primary copy-branch-url" @@click="openOrCopyBranch($event, true)">@Localizer["Copy Branch URL"]</a>
+                        <a href="#" class="btn btn-primary open-branch" @@click="openOrCopyBranch($event, false)">@Localizer["Open branch"]</a>
                     </div>
                     <div :class="{ 'col': true, 'col-6': isMainBranch || branches.length > 0, 'col-9': !isMainBranch || !branches.length }">
-                        <h2>Branch terugzetten</h2>
+                        <h2>@Localizer["Restore branch"]</h2>
                         <p>
-                            Hiermee kunnen wijzigingen die in een branch gedaan zijn, overgezet worden naar de productie-omgeving. U kunt dan kiezen welke wijzigingen doorgezet moeten worden, dat hoeft niet per se alles te zijn.
-                            Het is niet mogelijk om verschillende branches samen te voegen. Het samenvoegen gaat altijd van een branch naar de productie-omgeving.
+                            @Localizer["This allows changes which is made in a branch to be transferred to the production environment. You can then choose which changes should be implemented, which does not necessarily have to be everything. It is not possible to merge different branches. The merge always goes from a branch to the production environment."]
                         </p>
                         <p>
-                            <strong>Let op:</strong> Tijdens het terugzetten van een branch wordt de database geblokkeerd zodat er geen andere wijziging tussendoor gedaan kunnen worden. 
-                            Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gekoppeld zijn aan dezelfde database, ook niet bereikbaar zullen zijn. 
-                            Zorg daarom dat u het samenvoegen start op een moment waarbij dit het minste impact heeft (zoals 's nachts).
+                            <strong>@Localizer["Attention:"]</strong> @Localizer["During restoring a branch, the database will be locked so that no other changes can be made in between. This means that Wiser and any other products (such as a website) that are linked to the same database will also be unavailable. Therefore, make sure you start the merge at a time when it will have the least impact (such as at night)."]
                         </p>
 
-                        <button class="btn btn-primary" @@click="openMergeBranchPrompt">Bestaande branch terugzetten naar productie</button>
+                        <button class="btn btn-primary" @@click="openMergeBranchPrompt">@Localizer["Restore existing branch to production"]</button>
                     </div>
                 </div>
             </div>
@@ -183,7 +180,7 @@
             <div class="container stretch">
                 <div class="row no-scroll">
                     <div class="col col-12 form-row">
-                        <label for="newBranchName">Geef een naam op voor de nieuwe branche</label>
+                        <label for="newBranchName">@Localizer["Enter a name for the new branch"]</label>
                         <section class="full-error" v-if="createBranchError">
                             <ins class="icon-line-alert"></ins>
                             <span v-html="createBranchError"></span>
@@ -191,8 +188,9 @@
                         <input type="text" id="newBranchName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="createBranchSettings.name" required>
                     </div>
                     <div class="col col-12 form-row no-bottom-margin">
-                        <label for="branche-data">Welke data wil je naar de branche overzetten?
-                            <span class="label-info">Let op: bij items worden ook altijd <strong>alle</strong> gekoppelde items meegenomen!</span>
+                        <label for="branche-data">
+                            @Localizer["Which data do you want to transfer to the branche?"]
+                            <span class="label-info">@Localizer["Note: with items <strong>alle</strong> linked items are always included!"]</span>
                         </label>
                     </div>
                     <div class="col col-12 table-row no-top-margin">
@@ -200,39 +198,39 @@
                             <table>
                                 <thead>
                                 <tr>
-                                    <th>Item</th>
-                                    <th>Aantal</th>
-                                    <th>Wat</th>
+                                    <th>@Localizer["Item"]</th>
+                                    <th>@Localizer["Amount"]</th>
+                                    <th>@Localizer["What"]</th>
                                     <th></th>
                                 </tr>
                                 </thead>
                                 <tbody v-if="!entitiesForBranches || !entitiesForBranches.length">
                                     <tr>
-                                        <td colspan="4">Geen entiteiten gevonden. Neem a.u.b. contact op met ons.</td>
+                                        <td colspan="4">@Localizer["No entities found. Please contact us."]</td>
                                     </tr>
                                 </tbody>
                                 <tbody v-else>
                                     <tr>
-                                        <td>Alle onderstaande</td>
+                                        <td>@Localizer["All below"]</td>
                                         <td>{{ totalAmountOfItemsForCreatingBranch }}</td>
                                         <td>
                                             <select v-model="createBranchSettings.entities.all.mode" @@change="onCreateBranchAllSettingsChange">
-                                                <option value="0">Alles</option>
-                                                <option value="1">Niets</option>
-                                                <option value="2">Willekeurig X items</option>
-                                                <option value="3">Laatste X items</option>
-                                                <option value="4">Alles wat toegevoegd is voor X</option>
-                                                <option value="5">Alles wat toegevoegd is na X</option>
-                                                <option value="6">Alles wat toegevoegd is tussen X en Y</option>
+                                                <option value="0">@Localizer["Everything"]</option>
+                                                <option value="1">@Localizer["Nothing"]</option>
+                                                <option value="2">@Localizer["Random X items"]</option>
+                                                <option value="3">@Localizer["Last X items"]</option>
+                                                <option value="4">@Localizer["Everything added for X"]</option>
+                                                <option value="5">@Localizer["Anything added after X"]</option>
+                                                <option value="6">@Localizer["Anything added between X and Y"]</option>
                                             </select>
                                         </td>
                                         <td class="extra">
                                             <label class="number-of-items" v-if="createBranchSettings.entities.all.mode == 2 || createBranchSettings.entities.all.mode == 3">
-                                                <span>Aantal items:</span>
+                                                <span>@Localizer["Amount of items:"]</span>
                                                 <input type="number" v-model="createBranchSettings.entities.all.amountOfItems" @@change="onCreateBranchAllSettingsChange" />
                                             </label>
                                             <label class="single-date" v-if="createBranchSettings.entities.all.mode == 4 || createBranchSettings.entities.all.mode == 5">
-                                                <span>Datum:</span>
+                                                <span>@Localizer["Date:"]</span>
                                                 <input type="date" v-model="createBranchSettings.entities.all.start" @@change="onCreateBranchAllSettingsChange" />
                                             </label>
                                             <div class="date-range" v-if="createBranchSettings.entities.all.mode == 6">
@@ -246,22 +244,22 @@
                                         <td>{{ entity.totalItems }}</td>
                                         <td>
                                             <select v-model="createBranchSettings.entities[entity.id].mode" v-if="createBranchSettings.entities[entity.id]">
-                                                <option value="0">Alles</option>
-                                                <option value="1">Niets</option>
-                                                <option value="2">Willekeurig X items</option>
-                                                <option value="3">Laatste X items</option>
-                                                <option value="4">Alles wat toegevoegd is voor X</option>
-                                                <option value="5">Alles wat toegevoegd is na X</option>
-                                                <option value="6">Alles wat toegevoegd is tussen X en Y</option>
+                                                <option value="0">@Localizer["Everything"]</option>
+                                                <option value="1">@Localizer["Nothing"]</option>
+                                                <option value="2">@Localizer["Random X items"]</option>
+                                                <option value="3">@Localizer["Last X items"]</option>
+                                                <option value="4">@Localizer["Everything added for X"]</option>
+                                                <option value="5">@Localizer["Anything added after X"]</option>
+                                                <option value="6">@Localizer["Anything added between X and Y"]</option>
                                             </select>
                                         </td>
                                         <td class="extra">
                                             <label class="number-of-items" v-if="createBranchSettings.entities[entity.id] && (createBranchSettings.entities[entity.id].mode == 2 || createBranchSettings.entities[entity.id].mode == 3)">
-                                                <span>Aantal items:</span>
+                                                <span>@Localizer["Amount of items:"]</span>
                                                 <input type="number" v-model="createBranchSettings.entities[entity.id].amountOfItems"/>
                                             </label>
                                             <label class="single-date" v-if="createBranchSettings.entities[entity.id] && (createBranchSettings.entities[entity.id].mode == 4 || createBranchSettings.entities[entity.id].mode == 5)">
-                                                <span>Datum:</span>
+                                                <span>@Localizer["Date:"]</span>
                                                 <input type="date" v-model="createBranchSettings.entities[entity.id].start"/>
                                             </label>
                                             <div class="date-range" v-if="createBranchSettings.entities[entity.id] && createBranchSettings.entities[entity.id].mode == 6">
@@ -279,33 +277,33 @@
                     <div class="col col-8 inline">
                         <label class="radio">
                             <input type="radio" name="start-time" value="direct" v-model="createBranchSettings.startMode" />
-                            <span>Direct starten</span>
+                            <span>@Localizer["Start directly"]</span>
                         </label>
                         <label class="radio">
                             <input type="radio" name="start-time" value="delayed" v-model="createBranchSettings.startMode" />
-                            <span>Starten op:</span>
+                            <span>@Localizer["Start on:"]</span>
                         </label>
                         <label>
                             <input type="datetime-local" name="start-time-picker"  v-model="createBranchSettings.startOn" />
                         </label>
                     </div>
                     <div class="col col-4 align-right">
-                        <button class="btn btn-primary" @@click="createBranch">Start aanmaken nieuwe branch</button>
+                        <button class="btn btn-primary" @@click="createBranch">@Localizer["Start creating new branch"]</button>
                     </div>
                 </footer>
             </div>
         </wiser-dialog>
-        <wiser-dialog class="branches-dialog full-height" :modal="true" :width="'1200px'" :title="'Branch terugzetten'" ref="wiserMergeBranchPrompt" :visible="false" :actions="[]" @@open="onWiserMergeBranchPromptOpen">
+        <wiser-dialog class="branches-dialog full-height" :modal="true" :width="'1200px'" :title="'@Localizer["Restore branch"]'" ref="wiserMergeBranchPrompt" :visible="false" :actions="[]" @@open="onWiserMergeBranchPromptOpen">
             <div class="container">
                 <div class="row" v-if="!branches || !branches.length">
                     <section class="full-error">
                         <ins class="icon-line-alert"></ins>
-                        <span>U heeft nog geen andere branches. Maak a.u.b. eerst een nieuwe branch aan via de optie "Nieuwe branch aanmaken".</span>
+                        <span>@Localizer["You have no other branches yet. Please create a new branch first using the 'Create new branch' option."]</span>
                     </section>
                 </div>
                 <div class="row scroll" v-else>
                     <div class="col col-12 form-row" v-if="isMainBranch">
-                        <label for="available-branches">Selecteer eerst de branch die u wilt synchroniseren</label>
+                        <label for="available-branches">@Localizer["Select the branch you want to synchronize first"]</label>
                         <dropdownlist id="available-branches" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="branchMergeSettings.selectedBranch" @@change="onSelectedBranchChange"></dropdownlist>
                     </div>
                     
@@ -315,28 +313,28 @@
                     </section>
                     
                     <div class="col col-12 form-row no-bottom-margin" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
-                        <label>Selecteer te synchroniseren Wiser data</label>
+                        <label>@Localizer["Select to synchronize Wiser data"]</label>
                     </div>
                     <div class="col col-12 table-row no-top-margin" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
                         <div class="fixed-table">
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>Item</th>
-                                        <th>Alles</th>
-                                        <th>Nieuw</th>
-                                        <th>Verwijderd</th>
-                                        <th>Gewijzigd</th>
+                                        <th>@Localizer["Item"]</th>
+                                        <th>@Localizer["Everything"]</th>
+                                        <th>@Localizer["New"]</th>
+                                        <th>@Localizer["Deleted"]</th>
+                                        <th>@Localizer["Changed"]</th>
                                     </tr>
                                 </thead>
                                 <tbody v-if="!branchChanges || !branchChanges.entities || !branchChanges.entities.length">
                                     <tr>
-                                        <td colspan="5">Er zijn geen wijzigingen aan Wiser data om te synchroniseren.</td>
+                                        <td colspan="5">@Localizer["There are no changes in Wiser data to synchronize."]</td>
                                     </tr>
                                 </tbody>
                                 <tbody v-else>
                                     <tr>
-                                        <td>Alle onderstaande</td>
+                                        <td>@Localizer["All below"]</td>
                                         <td>
                                             <label class="checkbox">
                                                 <input type="checkbox" v-model="branchMergeSettings.entities.all.everything" @@change="onBranchMergeSettingChange($event, 'entities', 'all', 'everything')" />
@@ -402,21 +400,21 @@
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>Item</th>
-                                        <th>Alles</th>
-                                        <th>Nieuw</th>
-                                        <th>Verwijderd</th>
-                                        <th>Gewijzigd</th>
+                                        <th>@Localizer["Item"]</th>
+                                        <th>@Localizer["Everything"]</th>
+                                        <th>@Localizer["New"]</th>
+                                        <th>@Localizer["Deleted"]</th>
+                                        <th>@Localizer["Changed"]</th>
                                     </tr>
                                 </thead>
                                 <tbody v-if="!branchChanges || !branchChanges.settings || !branchChanges.settings.length">
                                     <tr>
-                                        <td colspan="5">Er zijn geen wijzigingen aan Wiser inrichting om te synchroniseren.</td>
+                                        <td colspan="5">@Localizer["There are no changes in Wiser data to synchronize."]</td>
                                     </tr>
                                 </tbody>
                                 <tbody v-else>
                                     <tr>
-                                        <td>Alle onderstaande</td>
+                                        <td>@Localizer["All below"]</td>
                                         <td>
                                             <label class="checkbox">
                                                 <input type="checkbox" v-model="branchMergeSettings.settings.all.everything" @@change="onBranchMergeSettingChange($event, 'settings', 'all', 'everything')" />
@@ -477,9 +475,9 @@
                     <div class="col col-12 form-row" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
                         <label class="checkbox">
                             <input type="checkbox" v-model="branchMergeSettings.deleteAfterSuccessfulMerge" />
-                            <span>Verwijder deze branche na succesvol mergen</span>
+                            <span>@Localizer["Delete this branch after successful merging"]</span>
                         </label>
-                        <p><strong>Let op!</strong> Deze actie kan niet meer ongedaan gemaakt worden. Als u hierboven niet alle opties aanvinkt, kunnen er wijzigingen verloren gaan.</p>
+                        <p><strong>@Localizer["Attention:"]</strong> @Localizer["This action cannot be undone. If you do not check all the options above, changes may be lost."]</p>
                     </div>
                 </div>
             </div>
@@ -488,53 +486,53 @@
                     <div class="col col-8 inline">
                         <label class="radio">
                             <input type="radio" name="start-time" value="direct" v-model="branchMergeSettings.startMode" />
-                            <span>Direct starten</span>
+                            <span>@Localizer["Start directly"]</span>
                         </label>
                         <label class="radio">
                             <input type="radio" name="start-time" value="delayed" v-model="branchMergeSettings.startMode" />
-                            <span>Starten op:</span>
+                            <span>@Localizer["Start on:"]</span>
                         </label>
                         <label>
                             <input type="datetime-local" name="start-time-picker" v-model="branchMergeSettings.startOn" />
                         </label>
                     </div>
                     <div class="col col-4 align-right">
-                        <button class="btn btn-primary" @@click="mergeBranch">Start terugzet procedure</button>
+                        <button class="btn btn-primary" @@click="mergeBranch">@Localizer["Start restore procedure"]</button>
                     </div>
                 </div>
             </footer>
         </wiser-dialog>
         
-        <wiser-dialog class="branches-dialog" :modal="true" :width="'1500px'" :title="'Conflicten'" ref="wiserMergeConflictsPrompt" :visible="false" :actions="[]">
+        <wiser-dialog class="branches-dialog" :modal="true" :width="'1500px'" :title="'@Localizer["Conflicts"]'" ref="wiserMergeConflictsPrompt" :visible="false" :actions="[]">
             <div class="container stretch">
                 <div class="row no-scroll">
                     <div class="col col-12 flex-inline">
                         <select v-model="batchHandleConflictSettings.property">
-                            <option value="type">Type</option>
-                            <option value="field">Veldnaam</option>
-                            <option value="changeDateOriginal">Wijzigingsdatum origineel</option>
-                            <option value="changeDateBranch">Wijzigingsdatum branch</option>
-                            <option value="originalValue">Waarde origineel</option>
-                            <option value="branchValue">Waarde branch</option>
+                            <option value="type">@Localizer["Type"]</option>
+                            <option value="field">@Localizer["Field name"]</option>
+                            <option value="changeDateOriginal">@Localizer["Change date original"]</option>
+                            <option value="changeDateBranch">@Localizer["Change date branch"]</option>
+                            <option value="originalValue">@Localizer["Value original"]</option>
+                            <option value="branchValue">@Localizer["Value branch"]Waarde branch</option>
                         </select>
 
                         <select v-model="batchHandleConflictSettings.operator">
-                            <option value="contains" v-if="batchHandleConflictSettings.property !== 'changeDateOriginal' && batchHandleConflictSettings.property !== 'changeDateBranch'">bevat</option>
-                            <option value="equals">is gelijk aan</option>
-                            <option value="greaterThan" v-if="batchHandleConflictSettings.property !== 'field' && batchHandleConflictSettings.property !== 'type'">is groter dan</option>
-                            <option value="lessThan" v-if="batchHandleConflictSettings.property !== 'field' && batchHandleConflictSettings.property !== 'type'">is kleiner dan</option>
-                            <option value="between" v-if="batchHandleConflictSettings.property !== 'field' && batchHandleConflictSettings.property !== 'type'">is tussen</option>
+                            <option value="contains" v-if="batchHandleConflictSettings.property !== 'changeDateOriginal' && batchHandleConflictSettings.property !== 'changeDateBranch'">@Localizer["contains"]</option>
+                            <option value="equals">@Localizer["is equal to"]</option>
+                            <option value="greaterThan" v-if="batchHandleConflictSettings.property !== 'field' && batchHandleConflictSettings.property !== 'type'">@Localizer["is greater than"]</option>
+                            <option value="lessThan" v-if="batchHandleConflictSettings.property !== 'field' && batchHandleConflictSettings.property !== 'type'">@Localizer["is less than"]</option>
+                            <option value="between" v-if="batchHandleConflictSettings.property !== 'field' && batchHandleConflictSettings.property !== 'type'">@Localizer["is between"]</option>
                         </select>
 
                         <input :type="batchHandleConflictSettings.property === 'changeDateOriginal' || batchHandleConflictSettings.property === 'changeDateBranch' ? 'date' : 'text'" v-model="batchHandleConflictSettings.start" />
-                        <span v-if="batchHandleConflictSettings.operator === 'between'">en</span>
+                        <span v-if="batchHandleConflictSettings.operator === 'between'">@Localizer["and"]</span>
                         <input v-if="batchHandleConflictSettings.operator === 'between'" :type="batchHandleConflictSettings.property === 'changeDateOriginal' || batchHandleConflictSettings.property === 'changeDateBranch' ? 'date' : 'text'" v-model="batchHandleConflictSettings.end" />
 
-                        <button class="btn btn-primary" @@click="onAcceptMultipleConflictsClick">Keur goed</button>
-                        <button class="btn btn-alert" @@click="onDenyMultipleConflictsClick">Keur af</button>
+                        <button class="btn btn-primary" @@click="onAcceptMultipleConflictsClick">@Localizer["Approve"]</button>
+                        <button class="btn btn-alert" @@click="onDenyMultipleConflictsClick">@Localizer["Disapprove"]</button>
                     </div>
                     <div class="col col-12 flex-inline">
-                        <p>Het goedkeuren van een conflict betekent dat de aanpassing van de geselecteerde branch wordt gebruikt en de waarde in de originele/productie branch wordt overschreven en dus verloren gaat. Het afkeuren van een wijziging is andersom, dan wordt de wijziging van de originele/productie branch behouden en gaat de wijziging van de geselecteerde branch verloren.</p>
+                        <p>@Localizer["Approving a conflict means that the modification of the selected branch will be used and the value in the original/production branch will be overwritten and thus lost. Rejecting a change is the other way around, the change from the original/production branch will be kept and the change from the selected branch will be lost."]</p>
                     </div>
                     
                     <div class="col col-12 table-row no-top-margin">
@@ -542,14 +540,14 @@
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>Type</th>
-                                        <th>Naam</th>
-                                        <th>Veld</th>
-                                        <th>Waarde origineel</th>
-                                        <th>Waarde branche</th>
-                                        <th>Origineel gewijzigd op</th>
-                                        <th>Branche gewijzigd op</th>
-                                        <th>Actie</th>
+                                        <th>@Localizer["Type"]</th>
+                                        <th>@Localizer["Name"]</th>
+                                        <th>@Localizer["Field"]</th>
+                                        <th>@Localizer["Value original"]</th>
+                                        <th>@Localizer["Value branch"]</th>
+                                        <th>@Localizer["Original changed on"]</th>
+                                        <th>@Localizer["Branche changed on"]</th>
+                                        <th>@Localizer["Action"]</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -564,8 +562,8 @@
                                         <td>{{ conflict.prettyChangeDateInBranch }}<br>
                                             door {{ conflict.changedByInBranch }}</td>
                                         <td>
-                                            <button class="btn btn-primary" @@click="onApproveConflictClick(conflict)">Keur goed</button>
-                                            <button class="btn btn-alert" @@click="onDenyConflictClick(conflict)">Keur af</button>
+                                            <button class="btn btn-primary" @@click="onApproveConflictClick(conflict)">@Localizer["Approve"]</button>
+                                            <button class="btn btn-alert" @@click="onDenyConflictClick(conflict)">@Localizer["Disapprove"]</button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -576,12 +574,12 @@
                 <footer class="row fixed no-bottom-padding">
                     <div class="col col-6 inline">
                         <span class="error" v-if="!areAllConflictsHandled">
-                            LET OP: nog niet alle conflicten hebben een akkoord of deny toegekend gekregen!
+                            @Localizer["ATTENTION: not all conflicts have have been approved or denied yet!"]
                         </span>
                     </div>
                     <div class="col col-6 align-right">
-                        <span>{{ totalAmountOfApprovedMergeConflicts }} van {{ totalAmountOfMergeConflicts }} conflicten akkoord</span>
-                        <button class="btn btn-primary" @@click="mergeBranch">Start terugzet procedure</button>
+                        <span>{{ totalAmountOfApprovedMergeConflicts }} @Localizer["from_"] {{ totalAmountOfMergeConflicts }} @Localizer["conflicts approved"]</span>
+                        <button class="btn btn-primary" @@click="mergeBranch">@Localizer["Start restore procedure"]</button>
                     </div>
                 </footer>
             </div>
@@ -592,24 +590,24 @@
             </div>
         </wiser-dialog>
         <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
-            <p>Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:</p>
+            <p>@Localizer["The specified ID occurs more than once. Choose which type you want to open:"]</p>
             <div class="form-row">
                 <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
             </div>
         </wiser-dialog>
-        <wiser-dialog :modal="true" :width="'400px'" :title="'Cache legen'" ref="clearCachePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'OK', primary: true, action: clearWebsiteCache }]">
+        <wiser-dialog :modal="true" :width="'400px'" :title="'@Localizer["Clear cache"]'" ref="clearCachePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'OK', primary: true, action: clearWebsiteCache }]">
             <div class="form-row">
                 <label class="checkbox" for="cache_all">
                     <input type="checkbox" id="cache_all" name="cache_all" value="all" v-model="clearCacheSettings.areas" @@change="onCacheTypeChecked($event, 'all')" />
-                    <span>Alles</span>
+                    <span>@Localizer["Everything"]</span>
                 </label>
                 <label class="checkbox" for="cache_content">
                     <input type="checkbox" id="cache_content" name="cache_content" value="content" class="cache-type" v-model="clearCacheSettings.areas" @@change="onCacheTypeChecked($event, 'content')" />
-                    <span>Complete HTML pagina's</span>
+                    <span>@Localizer["Complete HTML pages"]</span>
                 </label>
                 <label class="checkbox" for="cache_files">
                     <input type="checkbox" id="cache_files" name="cache_files" value="files" class="cache-type" v-model="clearCacheSettings.areas" @@change="onCacheTypeChecked($event, 'files')" />
-                    <span>Bestanden / afbeeldingen</span>
+                    <span>@Localizer["Files / Images"]</span>
                 </label>
                 @foreach (CacheAreas cacheSetting in Enum.GetValues(typeof(CacheAreas)))
                 {
@@ -618,36 +616,36 @@
                         @switch (cacheSetting)
                         {
                             case CacheAreas.Configurators:
-                                <span>Configuratoren</span>
+                                <span>@Localizer["Configurators"]</span>
                                 break;
                             case CacheAreas.Unknown:
                                 continue;
                             case CacheAreas.Languages:
-                                <span>Vertalingen</span>
+                                <span>@Localizer["Translations"]</span>
                                 break;
                             case CacheAreas.Objects:
-                                <span>Instellingen</span>
+                                <span>@Localizer["Settings"]</span>
                                 break;
                             case CacheAreas.Redirects:
-                                <span>Redirects</span>
+                                <span>@Localizer["Redirects"]</span>
                                 break;
                             case CacheAreas.Seo:
-                                <span>SEO</span>
+                                <span>@Localizer["SEO"]</span>
                                 break;
                             case CacheAreas.Database:
-                                <span>Overige</span>
+                                <span>@Localizer["Others"]</span>
                                 break;
                             case CacheAreas.Templates:
-                                <span>Templates</span>
+                                <span>"@Localizer["Templates"]"</span>
                                 break;
                             case CacheAreas.WiserItems:
-                                <span>Wiser items</span>
+                                <span>@Localizer["Wiser items"]</span>
                                 break;
                             case CacheAreas.ShoppingBaskets:
-                                <span>Winkelmandjes</span>
+                                <span>@Localizer["Shopping baskets"]</span>
                                 break;
                             case CacheAreas.DataSelectors:
-                                <span>Dataselectors</span>
+                                <span>@Localizer["Dataselectors"]</span>
                                 break;
                             default:
                                 <span>@cacheSetting</span>
@@ -657,7 +655,7 @@
                 }
             </div>
             <div class="form-row">
-                <input type="url" id="url" name="url" placeholder="URL naar website" class="full-width" v-model="clearCacheSettings.url" />
+                <input type="url" id="url" name="url" placeholder="@Localizer["URL to website"]" class="full-width" v-model="clearCacheSettings.url" />
             </div>
 
             <section class="full-error" v-if="clearCacheError">
@@ -678,75 +676,75 @@
             </section>
             <section class="full-error" v-if="!validSubDomain">
                 <ins class="icon-line-alert"></ins>
-                <span>U heeft een ongeldig subdomein gebruikt. Controleer a.u.b. het subdomein of neem contact op met ons.</span>
+                <span>@Localizer["You have used an invalid subdomain. Please check the subdomain or contact us."]</span>
             </section>
 
             <div v-if="validSubDomain && loginStatus !== 'list' && loginStatus !== 'list_loading' && !showForgotPasswordScreen && !requirePasswordChange">
                 <div class="form-row">
-                    <input type="text" id="username" placeholder="Gebruikersnaam" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="loginForm.username" required>
+                    <input type="text" id="username" placeholder="@Localizer["User name"]" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="loginForm.username" required>
                 </div>
 
                 <div class="form-row">
-                    <input type="password" id="password" placeholder="Wachtwoord" autocomplete="off" v-model="loginForm.password" @@keydown="checkCapslock($event)" required>
+                    <input type="password" id="password" placeholder="@Localizer["Password"]" autocomplete="off" v-model="loginForm.password" @@keydown="checkCapslock($event)" required>
                     <ins id="password-toggle" class="icon-eye-visible" v-on:click="togglePassword()"></ins>
 
-                    <div class="pwd-message" v-if="loginForm.capslock">Caps lock staat aan</div>
+                    <div class="pwd-message" v-if="loginForm.capslock">@Localizer["Caps lock is on"]</div>
                 </div>
 
                 <div class="form-row">
                     <label id="remember" class="check-box">
-                        <input type="checkbox" name="remember" class="no-form" v-model="loginForm.rememberMe"><span>Ingelogd blijven</span>
+                        <input type="checkbox" name="remember" class="no-form" v-model="loginForm.rememberMe"><span>@Localizer["Stay logged in"]</span>
                     </label>
                 </div>
 
                 <div class="btn-row">
-                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'loading' }">Inloggen</button>
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'loading' }">@Localizer["Login"]</button>
 
-                    <a href="#" v-on:click="togglePasswordForgottenScreen(true)" id="forgotten-password">Wachtwoord vergeten?</a>
+                    <a href="#" v-on:click="togglePasswordForgottenScreen(true)" id="forgotten-password">@Localizer["Forgot your password?"]</a>
                 </div>
             </div>
             <div v-if="loginStatus === 'list' || loginStatus === 'list_loading' && !showForgotPasswordScreen">
-                <p>Kies de gebruiker waarmee u wilt inloggen</p>
+                <p>@Localizer["Choose the user you want to log in with"]</p>
 
                 <div class="form-row"> 
                     <combobox :data-items="listOfUsers" :text-field="'Title'" :data-item-key="'username'" v-model="loginForm.selectedUser" :filterable="true" @@filterchange="userFilterChange"></combobox>
                 </div>
 
                 <div class="btn-row">
-                    <a href="#" class="btn btn-secundary" @@click="logout()">Annuleren</a>
-                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'list_loading' }">Verder</button>
+                    <a href="#" class="btn btn-secundary" @@click="logout()">@Localizer["Cancel"]</a>
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'list_loading' }">@Localizer["Continue"]</button>
                 </div>
             </div>
             <div v-if="showForgotPasswordScreen" class="forgotPasswordScreen">
                 <section class="success" v-if="resetPassword">
-                    <span>Een email is verstuurd met uw nieuwe wachtwoord.</span>
+                    <span>@Localizer["An email with your new password has been sent."]</span>
                 </section>
                 <div class="form-row">
-                    <input type="text" class="loginField usernameField" placeholder="Gebruikersnaam" v-model="forgotPasswordForm.username" />
+                    <input type="text" class="loginField usernameField" placeholder="@Localizer["User name"]" v-model="forgotPasswordForm.username" />
                 </div>
                 <div class="form-row">
-                    <input type="text" class="loginField passwordField" placeholder="E-mailadres" v-model="forgotPasswordForm.email" />
+                    <input type="text" class="loginField passwordField" placeholder="@Localizer["E-mail address"]" v-model="forgotPasswordForm.email" />
                 </div>
 
                 <div class="btn-row">
-                    <button type="submit" :class="{ btn: true, 'btn-primary': true }">Verzenden</button>
-                    <div :class="{ btn: true }" v-on:click="togglePasswordForgottenScreen(false)">Annuleren</div>
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true }">@Localizer["Send"]</button>
+                    <div :class="{ btn: true }" v-on:click="togglePasswordForgottenScreen(false)">@Localizer["Cancel"]</div>
                 </div>
             </div>
             <div class="changePasswordAfterLogin" v-if="requirePasswordChange">
-                <h3>U moet een nieuw wachtwoord kiezen, vul dit a.u.b. hier in</h3>
+                <h3>@Localizer["You need to choose a new password, please enter it here"]</h3>
                 <div class="form-row">
-                    <input type="password" id="newPassword" name="newPassword" class="loginField passwordField" placeholder="Uw nieuwe wachtwoord" v-model="changePasswordForm.newPassword" />
+                    <input type="password" id="newPassword" name="newPassword" class="loginField passwordField" placeholder="@Localizer["Your new password"]" v-model="changePasswordForm.newPassword" />
                 </div>
                 <div class="form-row">
-                    <input type="password" id="newPasswordRepeat" name="newPasswordRepeat" class="loginField passwordField" placeholder="Nogmaals uw nieuwe wachtwoord" v-model="changePasswordForm.newPasswordRepeat" />
+                    <input type="password" id="newPasswordRepeat" name="newPasswordRepeat" class="loginField passwordField" placeholder="@Localizer["Your new password again"]" v-model="changePasswordForm.newPasswordRepeat" />
                 </div>
 
                 <div class="error"></div>
 
                 <div class="btn-row">
-                    <button id="submitPasswordChange" type="submit" :class="{ btn: true, 'btn-primary': true }">Wijzigen</button>
-                    <button id="cancelPasswordChange" :class="{ btn: true }">Annuleren</button>
+                    <button id="submitPasswordChange" type="submit" :class="{ btn: true, 'btn-primary': true }">@Localizer["Change"]</button>
+                    <button id="cancelPasswordChange" :class="{ btn: true }">@Localizer["Cancel"]</button>
                 </div>
             </div>
         </form>
@@ -755,119 +753,118 @@
 
 <script type="text/html" id="customer-management-template">
     <div :class="{ loading: loading, 'form-inline': true, 'new-customer-form': true }">
-        <h1>Nieuwe Wiser account toevoegen...</h1>
+        <h1>@Localizer["Add new Wiser account..."]</h1>
         <p class="success" v-if="currentStep === 'end'">
-            De klant is successvol aangemaakt en heeft als ID '<em>{{ createCustomerResult.data.id }}</em>' gekregen.<br />
-            De URL voor Wiser Live is geworden: <a :href="'https://' + newCustomerData.subDomain + '.wiser3.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.nl</a>.<br />
-            De URL voor Wiser dev is geworden: <a :href="'http://' + newCustomerData.subDomain + '.wiser3.juicedev.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.juicedev.nl</a>.
+            @Localizer["The customer has been successfully created and has been given ID '"]<em>{{ createCustomerResult.data.id }}</em>@Localizer["'."]<br />
+            @Localizer["The URL for Wiser Live has become:"] <a :href="'https://' + newCustomerData.subDomain + '.wiser3.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.nl</a>.<br />
+            @Localizer["The URL for Wiser dev has become:"] <a :href="'http://' + newCustomerData.subDomain + '.wiser3.juicedev.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.juicedev.nl</a>.
         </p>
-        <p v-if="newCustomerData.createNewDatabase">Verder zijn nog de volgende databasegebruikers aangemaakt:</p>
-        <p v-else>Je hebt de volgende databasegebruiker ingevuld:</p>
+        <p v-if="newCustomerData.createNewDatabase">@Localizer["In addition, the following database users have been created:"]</p>
+        <p v-else>@Localizer["You entered the following database user:"]</p>
         <ul class="success" v-if="currentStep === 'end'">
             <li v-for="user in createCustomerResult.databaseUsers" :key="user.name">
                 <strong>{{ user.name }}:</strong> {{ user.password }}
             </li>
         </ul>
-        <p class="success" v-if="currentStep === 'end'"><a href="#" class="btn btn-secundary" @@click="reset">Nog een klant aanmaken</a></p>
+        <p class="success" v-if="currentStep === 'end'"><a href="#" class="btn btn-secundary" @@click="reset">@Localizer["Create another customer"]</a></p>
         <form method="post" v-if="currentStep !== 'end'">
             <section class="step" v-if="currentStep === 1">
                 <div class="form-row">
-                    <label for="newCustomerName">Wat is de gewenste bedrijfsnaam en/of accountnaam?</label>
+                    <label for="newCustomerName">@Localizer["What is the desired company name and/or account name?"]</label>
                     <input type="text" id="newCustomerName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.name" required :class="{ error: errors.indexOf('NameNotAvailable') > -1, small: true }" placeholder="Happy Geeks B.V.">
-                    <p class="hint">De volledige bedrijfsnaam van de klant. Bijvoorbeeld 'Happy Geeks B.V.'. Alleen wij zien deze naam terug, de klant ziet deze naam nergens.</p>
+                    <p class="hint">@Localizer["The customer's full company name. For example, 'Happy Geeks B.V.'. Only we see this name, the customer does not see this name anywhere."]</p>
                 </div>
                 <div class="form-row error-row" v-if="errors.indexOf('NameNotAvailable') > -1">
                     <ins class="icon-line-alert"></ins>
-                    <span>Er bestaat al een klant met deze naam. Kies a.u.b. een andere naam.</span>
+                    <span>@Localizer["A customer with this name already exists. Please choose another name."]</span>
                 </div>
 
                 <div class="form-row">
-                    <label for="subDomain">Wat is het subdomein dat gebruikt moet worden voor Wiser?</label>
+                    <label for="subDomain">@Localizer["What is the subdomain to use for Wiser?"]</label>
                     <input type="text" id="subDomain" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.subDomain" required :class="{ error: errors.indexOf('SubDomainNotAvailable') > -1, small: true }" placeholder="happygeeks"><span class="hint">.wiser.nl</span>
-                    <p class="hint">Alleen het subdomein, met kleine letters, bijvoorbeeld 'happygeeks'. Dit is verplicht voor Wiser klanten, die moeten kunnen inloggen via een subdomein, zoals 'happygeeks.wiser.nl'.</p>
+                    <p class="hint">@Localizer["Only the subdomain, with lowercase letters, for example 'happygeeks'. This is required for Wiser customers, who must be able to log in via a subdomain, such as 'happygeeks.wiser.nl'."]</p>
                 </div>
                 <div class="form-row error-row" v-if="errors.indexOf('SubDomainNotAvailable') > -1">
                     <ins class="icon-line-alert"></ins>
-                    <span>Er bestaat al een klant met dit subdomein. Kies a.u.b. een ander subdomein.</span>
+                    <span>@Localizer["A customer with this subdomain already exists. Please choose another subdomain."]</span>
                 </div>
                 <div class="form-row">
                     <label>
                         <input type="checkbox" name="isConfigurator" v-model="newCustomerData.isMultiLanguage" />
-                        Is meertalig
+                        @Localizer["Is multilingual"]
                     </label>
-                    <p class="hint">Zet dit vinkje aan indien de website van de klant meertalig wordt. Dan wordt de vertalingenmodule en bijbehorende entiteit toegevoegd.</p>
+                    <p class="hint">@Localizer["Check this box if the customer's website will be multilingual. Then will the translations module and associated entity be added."]</p>
                 </div>
                 <div class="form-row">
                     <label>
                         <input type="checkbox" name="isWebShop" v-model="newCustomerData.isWebShop" />
-                        Is webshop
+                        @Localizer["Is webshop"]
                     </label>
-                    <p class="hint">Zet dit vinkje aan indien de klant ook een webshop krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld verzendmethodes, btw-regels etc.</p>
+                    <p class="hint">@Localizer["Check this box if the customer also gets a webshop. Then exstra entities will be added for, for example, shipping methods, VAT rules, etc."]</p>
                 </div>
                 <div class="form-row">
                     <label>
                         <input type="checkbox" name="isConfigurator" v-model="newCustomerData.isConfigurator" />
-                        Is configurator
+                        @Localizer["Is configurator"]
                     </label>
-                    <p class="hint">Zet dit vinkje aan indien de klant ook een configurator krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld configuration en configurationlines.</p>
+                    <p class="hint">@Localizer["Check this box if the customer also gets a configurator. Then will entities be added for, for example, configuration and configurationlines."]</p>
                 </div>
             </section>
 
             <section class="step" v-if="currentStep === 2">
                 <fieldset>
-                    <legend>Domein</legend>
+                    <legend>@Localizer["Domain"]</legend>
 
                     <div class="form-row">
-                        <label for="siteName">Naam van website</label>
+                        <label for="siteName">@Localizer["Website name"]</label>
                         <input type="text" id="siteName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.siteName" placeholder="Happy Geeks">
-                        <p class="hint">De naam van de website, deze wordt op elke pagina achteraan de titel toegevoegd. Voorbeeld: Contact - Happy Geeks</p>
+                        <p class="hint">@Localizer["The website name, which is added to the back of the title on every page. Example: Contact - Happy Geeks"]</p>
                     </div>
 
                     <div class="form-row">
-                        <label for="hostDev">Domein dev</label>
+                        <label for="hostDev">@Localizer["Domain dev"]</label>
                         <input type="text" id="hostDev" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostDev" placeholder="happygeeks.nl.juicedev.nl">
                         <p class="hint">
-                            Het domein wat straks voor de test gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
-                            <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
+                            @Localizer["The domain that will be used for the test. If you do not enter it now, you will have to enter it later in the settings module at the customer.<br />"]
+                            <strong>@Localizer["In this case no http(s) need to be added and no slash or similar at the end. Only the customer's primary domain."]</strong>
                         </p>
                     </div>
 
                     <div class="form-row">
-                        <label for="hostTest">Domein test</label>
-                        <input type="text" id="hostTest" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostTest" placeholder="klant.happygeeks.dev">
+                        <label for="hostTest">@Localizer["Domain test"]</label>
+                        <input type="text" id="hostTest" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostTest" placeholder="@Localizer["customer.happygeeks.dev"]">
                         <p class="hint">
-                            Het domein wat straks voor de test gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
-                            <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
+                            @Localizer["The domain that will be used for the test. If you do not enter it now, you will have to enter it later in the settings module at the customer.<br />"]
+                            <strong>@Localizer["In this case no http(s) need to be added and no slash or similar at the end. Only the customer's primary domain."]</strong>
                         </p>
                     </div>
 
                     <div class="form-row">
-                        <label for="hostLive">Domein live</label>
+                        <label for="hostLive">@Localizer["Domain live"]</label>
                         <input type="text" id="hostLive" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostLive" placeholder="happygeeks.nl">
                         <p class="hint">
-                            Het domein wat straks voor de live gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
-                            <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
+                            @Localizer["The domain that will be used for the live. If you do not enter it now, you will have to enter it later in the settings module at the customer.<br />"]
+                            <strong>@Localizer["In this case no http(s) need to be added and no slash or similar at the end. Only the customer's primary domain."]</strong>
                         </p>
                     </div>
                 </fieldset>
 
                 <fieldset>
-                    <legend>Database</legend>
+                    <legend>@Localizer["Database"]</legend>
 
                     <div class="form-row">
                         <label>
                             <input type="checkbox" name="newDatabase" v-model="newCustomerData.createNewDatabase" />
-                            Nieuw databaseschema maken
+                            @Localizer["Create new database schema"]
                         </label>
                     </div>
 
                     <div class="form-row" v-if="newCustomerData.createNewDatabase">
-                        <label for="digitalOceanApiAccessToken">Digital Ocean access token</label>
+                        <label for="digitalOceanApiAccessToken">@Localizer["Digital Ocean access token"]</label>
                         <input type="text" id="digitalOceanApiAccessToken" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.digitalOceanApiAccessToken" required>
                         <p class="hint">
-                            <a href="@(Model.Settings.ApiBaseUrl)api/v3/digital-ocean/authorize" target="_blank">Open eerst deze pagina</a> en geef toestemming op die pagina.
-                            Vervolgens krijg je wat JSON te zien. Kopieer hieruit de waarde van "access_token" en plak die in dit veld.<br />
-                            Klik daarna op de knop "Haal clusters op" hieronder en selecteer daarna het cluster waar de klant aan toegevoegd moet worden.
+                            <a href="@(Model.Settings.ApiBaseUrl)api/v3/digital-ocean/authorize" target="_blank">@Localizer["First open this page"]</a> @Localizer["First open this page"]
+                            @Localizer["Then you will see some JSON. Copy the value of 'access_token' and paste it into this field. <br /> Then click on the 'Get Clusters' button below and then select the cluster to which the customer should be added."]
                         </p>
                     </div>
 
@@ -880,34 +877,34 @@
                         </li>
                     </ul>
                     <div class="btn-row" v-else-if="newCustomerData.createNewDatabase">
-                        <button type="button" class="btn btn-primary" @@click="getDbClusters">Haal clusters op</button>
+                        <button type="button" class="btn btn-primary" @@click="getDbClusters">@Localizer["Get clusters"]</button>
                     </div>
 
                     <div class="form-row" v-if="!newCustomerData.createNewDatabase">
-                        <label for="databaseHost">Host <strong>*</strong></label>
+                        <label for="databaseHost">@Localizer["Host"] <strong>*</strong></label>
                         <input type="text" id="databaseHost" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseHost" required>
                     </div>
 
                     <div class="form-row">
-                        <label for="databaseUsername">Loginnaam <strong>*</strong></label>
+                        <label for="databaseUsername">@Localizer["User name_"] <strong>*</strong></label>
                         <input type="text" id="databaseUsername" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseUsername" required>
-                        <p class="hint" v-if="newCustomerData.createNewDatabase">Vul een naam in voor een databagebruiker die nog niet bestaat.</p>
-                        <p class="hint" v-else>Vul een naam in van een bestaande databasegebruiker.</p>
+                        <p class="hint" v-if="newCustomerData.createNewDatabase">@Localizer["Enter a name for a database user that does not exist yet."]</p>
+                        <p class="hint" v-else>@Localizer["Enter a name of an existing database user."]</p>
                     </div>
 
                     <div class="form-row" v-if="!newCustomerData.createNewDatabase">
-                        <label for="databasePassword">Wachtwoord <strong>*</strong></label>
+                        <label for="databasePassword">@Localizer["Password"] <strong>*</strong></label>
                         <input type="text" id="databasePassword" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databasePassword" required>
                     </div>
 
                     <div class="form-row">
-                        <label for="databaseSchema">Schemanaam <strong>*</strong></label>
+                        <label for="databaseSchema">@Localizer["Schema name"] <strong>*</strong></label>
                         <input type="text" id="databaseSchema" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseSchema" required>
-                        <p class="hint" v-if="newCustomerData.createNewDatabase">Vul een naam in voor een databaseschema die nog niet bestaat.</p>
-                        <p class="hint" v-else>Vul een naam in van een bestaand databaseschema.</p>
+                        <p class="hint" v-if="newCustomerData.createNewDatabase">@Localizer["Enter a name for a database schema that does not exist yet."]</p>
+                        <p class="hint" v-else>@Localizer["Enter a name of an existing database schema."]</p>
                     </div>
                     <div class="form-row" v-if="!newCustomerData.createNewDatabase">
-                        <label for="databasePort">Poortnummer <strong>*</strong></label>
+                        <label for="databasePort">@Localizer["Port number"] <strong>*</strong></label>
                         <input type="number" id="databasePort" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databasePort" required min="1" step="1">
                     </div>
                 </fieldset>
@@ -919,7 +916,7 @@
             </div>
 
             <div class="btn-row">
-                <a href="#" class="btn btn-secundary" v-if="currentStep > 1" @@click="previousStep">Terug</a>
+                <a href="#" class="btn btn-secundary" v-if="currentStep > 1" @@click="previousStep">@Localizer["Back"]</a>
                 <button type="submit" class="btn btn-primary" @@click="nextStep">{{ nextButtonText }}</button>
             </div>
         </form>

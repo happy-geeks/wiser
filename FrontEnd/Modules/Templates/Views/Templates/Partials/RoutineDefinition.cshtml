@@ -1,66 +1,68 @@
-﻿@using GeeksCoreLibrary.Modules.Templates.Enums
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@using GeeksCoreLibrary.Modules.Templates.Enums
 @model Api.Modules.Templates.Models.Template.TemplateSettingsModel
 
 <div class="routineType">
     <div class="item" style="width: 100%;">
-        <h4><label>Routine type</label></h4>
+        <h4><label>@Localizer["Routine type"]</label></h4>
 
         <label class="radio">
             <input name="routineType" type="radio" value="@((int)RoutineTypes.Function)" @(Model.RoutineType is RoutineTypes.Function or RoutineTypes.Unknown ? "checked" : "")/>
-            <span>Function</span>
+            <span>@Localizer["Function"]</span>
         </label>
 
         <label class="radio">
             <input name="routineType" type="radio" value="@((int)RoutineTypes.Procedure)" @(Model.RoutineType == RoutineTypes.Procedure ? "checked" : "") />
-            <span>Procedure</span>
+            <span>@Localizer["Procedure"]</span>
         </label>
     </div>
     <div class="item editor-container" style="width: 100%;">
-        <h4><label for="routineParameters">Parameters</label></h4>
+        <h4><label for="routineParameters">@Localizer["Parameters"]</label></h4>
         <textarea class="routineParameters" id="routineParameters" data-editor-type="text/x-mysql">@Model.RoutineParameters</textarea>
         <div class="form-hint"><span></span></div>
     </div>
     <div class="item" style="width: 100%;">
-        <h4><label for="routineReturnType">Returns</label></h4>
+        <h4><label for="routineReturnType">@Localizer["Returns"]</label></h4>
         <div class="flex-container">
             <select id="routineReturnType" class="combo-select">
                 <!option value="">Kies een return type</!option>
-                <!option value="bigint" @(Model.RoutineReturnType == "bigint" ? "selected" : "")>bigint</!option>
-                <!option value="binary" @(Model.RoutineReturnType == "binary" ? "selected" : "")>binary</!option>
-                <!option value="bit" @(Model.RoutineReturnType == "bit" ? "selected" : "")>bit</!option>
-                <!option value="blob" @(Model.RoutineReturnType == "blob" ? "selected" : "")>blob</!option>
-                <!option value="char" @(Model.RoutineReturnType == "char" ? "selected" : "")>char</!option>
-                <!option value="date" @(Model.RoutineReturnType == "date" ? "selected" : "")>date</!option>
-                <!option value="datetime" @(Model.RoutineReturnType == "datetime" ? "selected" : "")>datetime</!option>
-                <!option value="decimal" @(Model.RoutineReturnType == "decimal" ? "selected" : "")>decimal</!option>
-                <!option value="double" @(Model.RoutineReturnType == "double" ? "selected" : "")>double</!option>
-                <!option value="enum" @(Model.RoutineReturnType == "enum" ? "selected" : "")>enum</!option>
-                <!option value="float" @(Model.RoutineReturnType == "float" ? "selected" : "")>float</!option>
-                <!option value="geometry" @(Model.RoutineReturnType == "geometry" ? "selected" : "")>geometry</!option>
-                <!option value="geometrycollection" @(Model.RoutineReturnType == "geometrycollection" ? "selected" : "")>geometrycollection</!option>
-                <!option value="int" @(Model.RoutineReturnType == "int" ? "selected" : "")>int</!option>
-                <!option value="integer" @(Model.RoutineReturnType == "integer" ? "selected" : "")>integer</!option>
-                <!option value="json" @(Model.RoutineReturnType == "json" ? "selected" : "")>json</!option>
-                <!option value="linestring" @(Model.RoutineReturnType == "linestring" ? "selected" : "")>linestring</!option>
-                <!option value="longblob" @(Model.RoutineReturnType == "longblob" ? "selected" : "")>longblob</!option>
-                <!option value="longtext" @(Model.RoutineReturnType == "longtext" ? "selected" : "")>longtext</!option>
-                <!option value="mediumblob" @(Model.RoutineReturnType == "mediumblob" ? "selected" : "")>mediumblob</!option>
-                <!option value="mediumint" @(Model.RoutineReturnType == "mediumint" ? "selected" : "")>mediumint</!option>
-                <!option value="mediumtext" @(Model.RoutineReturnType == "mediumtext" ? "selected" : "")>mediumtext</!option>
-                <!option value="multilinestring" @(Model.RoutineReturnType == "multilinestring" ? "selected" : "")>multilinestring</!option>
-                <!option value="multipoint" @(Model.RoutineReturnType == "multipoint" ? "selected" : "")>multipoint</!option>
-                <!option value="multipolygon" @(Model.RoutineReturnType == "multipolygon" ? "selected" : "")>multipolygon</!option>
-                <!option value="numeric" @(Model.RoutineReturnType == "numeric" ? "selected" : "")>numeric</!option>
-                <!option value="point" @(Model.RoutineReturnType == "point" ? "selected" : "")>point</!option>
+                <!option value="bigint" @(Model.RoutineReturnType == "bigint" ? "selected" : "")>@Localizer["bigint"]</!option>
+                <!option value="binary" @(Model.RoutineReturnType == "binary" ? "selected" : "")>@Localizer["binary"]</!option>
+                <!option value="bit" @(Model.RoutineReturnType == "bit" ? "selected" : "")>@Localizer["bit"]</!option>
+                <!option value="blob" @(Model.RoutineReturnType == "blob" ? "selected" : "")>@Localizer["blob"]</!option>
+                <!option value="char" @(Model.RoutineReturnType == "char" ? "selected" : "")>@Localizer["char"]</!option>
+                <!option value="date" @(Model.RoutineReturnType == "date" ? "selected" : "")>@Localizer["date"]</!option>
+                <!option value="datetime" @(Model.RoutineReturnType == "datetime" ? "selected" : "")>@Localizer["datetime"]</!option>
+                <!option value="decimal" @(Model.RoutineReturnType == "decimal" ? "selected" : "")>@Localizer["decimal"]</!option>
+                <!option value="double" @(Model.RoutineReturnType == "double" ? "selected" : "")>@Localizer["double"]</!option>
+                <!option value="enum" @(Model.RoutineReturnType == "enum" ? "selected" : "")>@Localizer["enum"]</!option>
+                <!option value="float" @(Model.RoutineReturnType == "float" ? "selected" : "")>@Localizer["float"]</!option>
+                <!option value="geometry" @(Model.RoutineReturnType == "geometry" ? "selected" : "")>@Localizer["geometry"]</!option>
+                <!option value="geometrycollection" @(Model.RoutineReturnType == "geometrycollection" ? "selected" : "")>@Localizer["geometrycollection"]</!option>
+                <!option value="int" @(Model.RoutineReturnType == "int" ? "selected" : "")>@Localizer["int"]</!option>
+                <!option value="integer" @(Model.RoutineReturnType == "integer" ? "selected" : "")>@Localizer["integer"]</!option>
+                <!option value="json" @(Model.RoutineReturnType == "json" ? "selected" : "")>@Localizer["json"]</!option>
+                <!option value="linestring" @(Model.RoutineReturnType == "linestring" ? "selected" : "")>@Localizer["linestring"]</!option>
+                <!option value="longblob" @(Model.RoutineReturnType == "longblob" ? "selected" : "")>@Localizer["longblob"]</!option>
+                <!option value="longtext" @(Model.RoutineReturnType == "longtext" ? "selected" : "")>@Localizer["longtext"]</!option>
+                <!option value="mediumblob" @(Model.RoutineReturnType == "mediumblob" ? "selected" : "")>@Localizer["mediumblob"]</!option>
+                <!option value="mediumint" @(Model.RoutineReturnType == "mediumint" ? "selected" : "")>@Localizer["mediumint"]</!option>
+                <!option value="mediumtext" @(Model.RoutineReturnType == "mediumtext" ? "selected" : "")>@Localizer["mediumtext"]</!option>
+                <!option value="multilinestring" @(Model.RoutineReturnType == "multilinestring" ? "selected" : "")>@Localizer["multilinestring"]</!option>
+                <!option value="multipoint" @(Model.RoutineReturnType == "multipoint" ? "selected" : "")>@Localizer["multipoint"]</!option>
+                <!option value="multipolygon" @(Model.RoutineReturnType == "multipolygon" ? "selected" : "")>@Localizer["multipolygon"]</!option>
+                <!option value="numeric" @(Model.RoutineReturnType == "numeric" ? "selected" : "")>@Localizer["numeric."]</!option>
+                <!option value="point" @(Model.RoutineReturnType == "point" ? "selected" : "")>@Localizer["point"]</!option>
             </select>
         </div>
-        <div class="form-hint"><span>Het type van de data die terug wordt verwacht. Dit is alleen voor functions, niet voor stored procedures.</span></div>
+        <div class="form-hint"><span>@Localizer["The type of data that is expected back. This is only for functions, not stored procedures."]</span></div>
     </div>
 </div>
 <div class="item full-width" data-label-style="float" data-label-width="0">
-    <h4><label for="urlRegex">URL Regex</label></h4>
+    <h4><label for="urlRegex">@Localizer["URL Regex"]</label></h4>
     <span class="k-widget k-input k-state-default">
         <input type="text" id="urlRegex" class="textField k-input" name="urlRegex" value="@Model.UrlRegex" autocomplete="off" pattern=".*">
     </span>
-    <div class="form-hint"><span>Vanaf welke URL moet deze template bereikbaar zijn? Hier kan een regular expression opgegeven worden voor dynamische waardes en parameters. Indien je de regular expression opdeelt in groepen en die groepen namen geeft, dan kunnen die namen gebruikt worden als variabelen in deze template. Voorbeeld: \/product\/(?&lt;productId&gt;[0-9]+)\/</span></div>
+    <div class="form-hint"><span>@Localizer["From which URL should this template be accessible? Here a regular expression can be specified for dynamic values and parameters. If you divide the regular expression into groups and give those groups names, then those names can be used as variables in this template. Example:"] \/product\/(?&lt;productId&gt;[0-9]+)\/</span></div>
 </div>

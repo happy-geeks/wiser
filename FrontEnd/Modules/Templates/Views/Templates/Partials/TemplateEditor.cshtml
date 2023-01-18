@@ -1,6 +1,8 @@
-﻿@model FrontEnd.Modules.Templates.Models.DevelopmentTabViewModel
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@model FrontEnd.Modules.Templates.Models.DevelopmentTabViewModel
 <div class="item editor-container" style="width: 100%;">
-    <h4><label for="editor">Template (@Model.TemplateSettings.Type.ToString())</label></h4>
+    <h4><label for="editor">@Localizer["Template"] (@Model.TemplateSettings.Type.ToString())</label></h4>
     <textarea class="editor" rows="10" cols="30" id="editor" data-editor-type="@Model.EditorType">@Model.TemplateSettings.EditorValue</textarea>
     <div class="form-hint"><span></span></div>
 </div>

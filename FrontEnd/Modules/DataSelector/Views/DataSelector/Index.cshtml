@@ -1,11 +1,13 @@
-﻿@model FrontEnd.Modules.DataSelector.Models.DataSelectorViewModel
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@model FrontEnd.Modules.DataSelector.Models.DataSelectorViewModel
 @inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html>
 <head runat="server">
     <meta charset="utf-8" />
-    <title>Wiser 3 - Data selector</title>
+    <title>@Localizer["Wiser 3 - Data selector"]</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -38,86 +40,86 @@
                     </div>
 
                     <div class="item">
-                        <h4><label>Data Selector voor export module</label></h4>
+                        <h4><label>@Localizer["Data Selector for export module"]</label></h4>
                         <label class="checkbox">
                             <input type="checkbox" id="useExportMode" @if (@Model.ExportMode) { @Html.Raw("checked") } />
-                            <span>Data Selector voor export module</span>
+                            <span>@Localizer["Data Selector for export module"]</span>
                         </label>
-                        <div class="form-hint"><span>Zorgt ervoor dat talen apart geladen worden</span></div>
+                        <div class="form-hint"><span>@Localizer["Ensures that languages are loaded separately"]</span></div>
                     </div>
 
                     <div class="item">
-                        <h4><label>Entiteit van het type</label></h4>
-                        <select id="selectEntity" class="drop-down-list" data-option-label="Maak uw keuze..." data-data-text-field="text" data-data-value-field="value"></select>
+                        <h4><label>@Localizer["Entity of the type"]</label></h4>
+                        <select id="selectEntity" class="drop-down-list" data-option-label="@Localizer["Make your choice..."]" data-data-text-field="text" data-data-value-field="value"></select>
                     </div>
 
                     <div id="connectionBlocks"></div>
 
                     <div class="item">
-                        <h4><label>Groeperen op</label></h4>
+                        <h4><label>@Localizer["Group by"]</label></h4>
                         <select id="groupBy" class="multi-select" multiple="multiple"
                                 data-placeholder="Maak een keuze..." data-sortable="true"
                                 data-data-text-field="aliasOrValue" data-data-value-field="aliasOrValue" data-filter="contains"
                                 data-item-template-id="propertyWithAliasTemplate" data-tag-template-id="propertyWithAliasTagListTemplate"></select>
-                        <div class="form-hint"><span>De geselecteerde items kunnen versleept worden</span></div>
+                        <div class="form-hint"><span>@Localizer["The selected items can be dragged"]</span></div>
                     </div>
 
                     <div class="item dynamic havingList">
-                        <h4><label>Having</label></h4>
+                        <h4><label>@Localizer["Having"]</label></h4>
                         <div class="havingContainer" id="havingContainer"></div>
-                        <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Having toevoegen</span></button>
+                        <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>@Localizer["Add having"]</span></button>
                     </div>
 
                     <div class="item">
-                        <h4><label>Stel de sorteervolgorde in</label></h4>
+                        <h4><label>@Localizer["Set the sort order"]</label></h4>
                         <select id="sorting" class="multi-select" multiple="multiple"
-                                data-placeholder="Maak een keuze..." data-sortable="true"
+                                data-placeholder="@Localizer["Make your choice..."]" data-sortable="true"
                                 data-data-text-field="aliasOrValue" data-data-value-field="aliasOrValue" data-filter="contains"
                                 data-item-template-id="propertyWithAliasTemplate" data-tag-template-id="orderByTagListTemplate"></select>
-                        <div class="form-hint"><span>De geselecteerde items kunnen versleept worden</span></div>
+                        <div class="form-hint"><span>@Localizer["The selected items can be dragged"]</span></div>
                     </div>
 
                     <div class="item">
-                        <h4><label>Stel een limiet in</label></h4>
+                        <h4><label>@Localizer["Set a limit"]</label></h4>
                         <input id="exportLimit" type="text" class="k-input" value="0" />
-                        <div class="form-hint"><span>Stel 0 in voor geen limiet</span></div>
+                        <div class="form-hint"><span>@Localizer["Set 0 for no limit"]</span></div>
                     </div>
 
                     <div class="item">
                         <label class="checkbox">
                             <input type="checkbox" id="insecureData" />
-                            <span>Data onbeveiligd inladen</span>
+                            <span>@Localizer["Loading data unsecured"]</span>
                         </label>
-                        <div class="form-hint"><span>Dit werkt alleen als de dataselector op basis van ID geladen wordt</span></div>
+                        <div class="form-hint"><span>@Localizer["This only works if the data selector is loaded based on ID"]</span></div>
                     </div>
 
                     <div class="item">
                         <label class="checkbox">
                             <input type="checkbox" id="showInExportModule" />
-                            <span>Beschikbaar maken in exportmodule</span>
+                            <span>@Localizer["Make available in export module"]</span>
                         </label>
-                        <div class="form-hint"><span>Zorgt ervoor dat de dataselector gebruikt kan worden in de exportmodule</span></div>
+                        <div class="form-hint"><span>@Localizer["Enables the data selector to be used in the export module"]</span></div>
                     </div>
 
                     <div class="item">
                         <label class="checkbox">
                             <input type="checkbox" id="showInCommunicationModule" />
-                            <span>Beschikbaar maken in communicatiemodule</span>
+                            <span>@Localizer["Make available in communication module"]</span>
                         </label>
-                        <div class="form-hint"><span>Zorgt ervoor dat de dataselector gebruikt kan worden in de communicatiemodule</span></div>
+                        <div class="form-hint"><span>@Localizer["Enables the data selector to be used in the communication module"]</span></div>
                     </div>
 
                     <div class="item">
                         <label class="checkbox">
                             <input type="checkbox" id="availableForRendering" />
-                            <span>Beschikbaar maken voor rendering</span>
+                            <span>@Localizer["Make available for rendering"]</span>
                         </label>
-                        <div class="form-hint"><span>Zorgt ervoor dat de dataselector gebruikt kan worden in HTML-editors in Wiser om zo dynamische blokken van content toe te voegen op een pagina</span></div>
+                        <div class="form-hint"><span>@Localizer["Enables the data selector to be used in HTML editors in Wiser to add dynamic blocks of content to a page"]</span></div>
                     </div>
                     
                     <div class="item">
                         <h4>
-                            <Label>Rollen die deze data selector mogen uitvoeren via de API</Label>
+                            <Label>@Localizer["Roles that are allowed to execute this data selector via the API"]</Label>
                         </h4>
                         <select id="allowedRoles"></select>
                     </div>
@@ -128,13 +130,13 @@
                     <div class="item fixed">
                         @if (!Model.EmbedOptions.Contains("no-save-button", StringComparer.OrdinalIgnoreCase))
                         {
-                            <button type="button" class="kendoButton k-primary" id="saveButton" data-icon="save"><span>Opslaan</span></button>
+                            <button type="button" class="kendoButton k-primary" id="saveButton" data-icon="save"><span>@Localizer["Save"]</span></button>
                         }
-                        <button type="button" class="kendoButton k-button k-blue" id="loadButton" data-icon="upload"><span>Laden</span></button>
-                        <button type="button" class="kendoButton k-button k-blue" id="viewJsonResultButton" data-icon="eye"><span>Toon resultaat</span></button>
-                        <button type="button" class="kendoButton k-button k-blue" id="viewQueryButton" data-icon="eye"><span>Toon query</span></button>
-                        <button type="button" class="kendoButton k-button k-blue" id="viewJsonRequestButton" data-icon="eye"><span>Toon JSON</span></button>
-                        <button type="button" class="kendoButton k-button k-blue" id="newButton" data-icon="file"><span>Nieuw</span></button>
+                        <button type="button" class="kendoButton k-button k-blue" id="loadButton" data-icon="upload"><span>@Localizer["Upload"]</span></button>
+                        <button type="button" class="kendoButton k-button k-blue" id="viewJsonResultButton" data-icon="eye"><span>@Localizer["Show result"]</span></button>
+                        <button type="button" class="kendoButton k-button k-blue" id="viewQueryButton" data-icon="eye"><span>@Localizer["Show query"]</span></button>
+                        <button type="button" class="kendoButton k-button k-blue" id="viewJsonRequestButton" data-icon="eye"><span>@Localizer["Show JSON"]</span></button>
+                        <button type="button" class="kendoButton k-button k-blue" id="newButton" data-icon="file"><span>@Localizer["New"]</span></button>
 
                         <div id="viewResult">
                             <ins id="resultClose" class="icon-close"></ins>
@@ -258,38 +260,38 @@
         <div class="connectionBlock">
             <div class="blockItems">
                 <div class="item dynamic scopesList">
-                    <h4><label>Scope</label></h4>
+                    <h4><label>@Localizer["Scope"]</label></h4>
                     <div class="scopesContainer"></div>
-                    <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Scope toevoegen</span></button>
+                    <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>@Localizer["Add scope"]</span></button>
                 </div>
 
                 <div class="item exportFields">
-                    <h4><label>Selecteer benodigde gegevens</label></h4>
+                    <h4><label>@Localizer["Select required data"]</label></h4>
                     <select class="select-details multi-select" multiple="multiple"
-                        data-placeholder="Maak uw keuze..." data-filter="contains"
+                        data-placeholder="@Localizer["Make your choice..."]" data-filter="contains"
                         data-data-text-field="displayName" data-data-value-field="value"
                         data-item-template-id="propertyWithAliasTemplate" data-tag-template-id="propertyWithAliasTagListTemplate"></select>
                     <!-- Item properties editor here -->
                 </div>
 
                 <div class="item exportFieldsLinks">
-                    <h4><label>Selecteer benodigde gegevens van koppelingen</label></h4>
+                    <h4><label>@Localizer["Select required information from links"]</label></h4>
                     <select class="select-details-links multi-select" multiple="multiple"
-                        data-placeholder="Maak uw keuze..." data-filter="contains"
+                        data-placeholder="@Localizer["Make your choice..."]" data-filter="contains"
                         data-data-text-field="displayName" data-data-value-field="value"
                         data-item-template-id="linkPropertyWithAliasTemplate" data-tag-template-id="linkPropertyWithAliasTagListTemplate"></select>
                 </div>
 
                 <div class="item dynamic linkedToList direction-down">
-                    <h4><label>Onderliggende objecten</label></h4>
+                    <h4><label>@Localizer["Child objects"]</label></h4>
                     <div class="linkedToContainer"></div>
-                    <button type="button" class="kendoButton scope-button add-linked-to-button k-button k-blue" data-icon="plus"><span>Onderliggend object toevoegen</span></button>
+                    <button type="button" class="kendoButton scope-button add-linked-to-button k-button k-blue" data-icon="plus"><span>@Localizer["Add child object"]</span></button>
                 </div>
 
                 <div class="item dynamic linkedToList direction-up">
-                    <h4><label>Bovenliggende objecten</label></h4>
+                    <h4><label>@Localizer["Parent objects"]</label></h4>
                     <div class="linkedToContainer"></div>
-                    <button type="button" class="kendoButton scope-button add-linked-to-button k-button k-blue" data-icon="plus"><span>Bovenliggend object toevoegen</span></button>
+                    <button type="button" class="kendoButton scope-button add-linked-to-button k-button k-blue" data-icon="plus"><span>@Localizer["Add parent object"]</span></button>
                 </div>
             </div>
         </div>
@@ -298,14 +300,14 @@
     <script id="subSelectionTemplate" type="text/x-wiser-template">
         <div class="subSelection">
             <div class="subEntitySelect">
-                <label>Entiteit van het type</label>
-                <select class="sub-entity-select drop-down-list" data-option-label="Maak uw keuze..." data-data-text-field="text" data-data-value-field="value"></select>
+                <label>@Localizer["Entity of the type"]</label>
+                <select class="sub-entity-select drop-down-list" data-option-label="@Localizer["Make your choice..."]" data-data-text-field="text" data-data-value-field="value"></select>
             </div>
 
             <div class="subExportFields">
-                <label>Selecteer benodigde gegevens</label>
+                <label>@Localizer["Select required data"]</label>
                 <select class="sub-select-details multi-select" multiple="multiple"
-                    data-placeholder="Maak uw keuze..." data-filter="contains"
+                    data-placeholder="@Localizer["Make your choice..."]" data-filter="contains"
                     data-data-text-field="displayName" data-data-value-field="value"
                     data-item-template-id="propertyWithAliasTemplate" data-tag-template-id="propertyWithAliasTagListTemplate"></select>
                 <!-- Item properties editor here -->
@@ -324,33 +326,33 @@
 
             <button type="button" class="kendoButton edit-field-button k-button" data-icon-class="icon-tool"></button>
 
-            <select class="scope-comparison-select drop-down-list" data-option-label="Maak keuze">
-                <option value="is equal to">is gelijk aan</option>
-                <option value="is not equal to">is ongelijk aan</option>
-                <option value="is less than">is kleiner dan</option>
-                <option value="is less than or equal to">is kleiner dan of gelijk aan</option>
-                <option value="is greater than">is hoger dan</option>
-                <option value="is greater than or equal to">is hoger dan of gelijk aan</option>
-                <option value="contains">bevat</option>
-                <option value="does not contain">bevat niet</option>
-                <option value="begin with">begint met</option>
-                <option value="does not begin with">begint niet met</option>
-                <option value="end with">eindigt met</option>
-                <option value="does not end with">eindigt niet met</option>
-                <option value="is empty">is leeg</option>
-                <option value="is not empty">is niet leeg</option>
+            <select class="scope-comparison-select drop-down-list" data-option-label="@Localizer["Make your choice..."]">
+                <option value="is equal to">@Localizer["is equal to"]</option>
+                <option value="is not equal to">@Localizer["is not equal to"]</option>
+                <option value="is less than">@Localizer["is less than"]</option>
+                <option value="is less than or equal to">@Localizer["is less than or equal to"]</option>
+                <option value="is greater than">@Localizer["is greater than"]</option>
+                <option value="is greater than or equal to">@Localizer["is greater than or equal to"]</option>
+                <option value="contains">@Localizer["contains"]</option>
+                <option value="does not contain">@Localizer["does not contain"]</option>
+                <option value="begin with">@Localizer["begin with"]</option>
+                <option value="does not begin with">@Localizer["does not begin with"]</option>
+                <option value="end with">@Localizer["ends with"]</option>
+                <option value="does not end with">@Localizer["does not end with"]</option>
+                <option value="is empty">@Localizer["is empty"]</option>
+                <option value="is not empty">@Localizer["is not empty"]</option>
             </select>
 
             <select class="scope-value-select multi-select-add" multiple="multiple"
-                data-placeholder="Maak uw keuze..."
+                data-placeholder="@Localizer["Make your choice..."]"
                 data-data-text-field="text" data-data-value-field="value" data-accept-custom-input="true"
             ></select>
 
             <div class="k-widget free-input inline" style="display: none;">
-                <input type="text" class="k-input" placeholder="Geef een waarde..." />
+                <input type="text" class="k-input" placeholder="@Localizer["Enter a value..."]" />
             </div>
 
-            <button type="button" class="or-button or-button-scope k-button k-blue">OF</button>
+            <button type="button" class="or-button or-button-scope k-button k-blue">@Localizer["OR"]</button>
 
             <!-- Item properties editor here -->
         </div>
@@ -360,73 +362,73 @@
         <div class="inputRow dbInput">
             <button type="button" class="kendoButton delete-button k-button" data-icon-class="icon-delete"></button>
 
-            <select class="linked-to-property-select drop-down-list" data-option-label="Selecteer koppeltype" data-data-text-field="name" data-data-value-field="linkKey" data-no-data-template="Geen koppeltypes gevonden."></select>
+            <select class="linked-to-property-select drop-down-list" data-option-label="Selecteer koppeltype" data-data-text-field="name" data-data-value-field="linkKey" data-no-data-template="@Localizer["No pairing types found."]"></select>
 
             <div class="checkTree" data-data-text-field="name" data-data-value-field="id"></div>
 
             <div class="optional-checkbox">
                 <label class="checkbox">
                     <input type="checkbox" class="k-input" />
-                    <span>Optioneel</span>
+                    <span>@Localizer["Optional"]</span>
                 </label>
             </div>
 
-            <button type="button" class="or-button or-button-linked-to k-button k-blue">OF</button>
+            <button type="button" class="or-button or-button-linked-to k-button k-blue">@Localizer["OR"]</button>
         </div>
     </script>
 
     <script id="fieldEditorTemplate" type="text/x-wiser-template">
         <div class="itemProperties">
             <div class="dataTypeWrapper">
-                <label>Datatype</label>
-                <select class="drop-down-list dataType" data-placeholder="Kies een datatype...">
-                    <option value="string">Tekst</option>
-                    <option value="decimal">Numeriek</option>
-                    <option value="datetime">Datum en tijd</option>
+                <label>@Localizer["Data type"]</label>
+                <select class="drop-down-list dataType" data-placeholder="@Localizer["Choose a data type..."]">
+                    <option value="string">@Localizer["Text"]</option>
+                    <option value="decimal">@Localizer["Numeric"]</option>
+                    <option value="datetime">@Localizer["Date and time"]</option>
                 </select>
             </div>
 
             <div class="havingDataTypeWrapper">
-                <label>Datatype</label>
-                <select class="drop-down-list havingDataType" data-placeholder="Kies een datatype...">
-                    <option value="string">Tekst</option>
-                    <option value="formula">Formule</option>
+                <label>@Localizer["Data type"]</label>
+                <select class="drop-down-list havingDataType" data-placeholder="@Localizer["Choose a data type..."]>
+                    <option value="string">@Localizer["Text"]</option>
+                    <option value="formula">@Localizer["Formula"]</option>
                 </select>
             </div>
 
             <div class="languageCodeWrapper">
-                <label>Gewenste language-code</label>
-                <select class="multi-select languageCode" data-placeholder="Kies een taalcode..." data-data-text-field="text" data-data-value-field="value" data-accept-custom-input="true"></select>
+                <label>@Localizer["Desired language code"]</label>
+                <select class="multi-select languageCode" data-placeholder="@Localizer["Choose a language code..."]" data-data-text-field="text" data-data-value-field="value" data-accept-custom-input="true"></select>
             </div>
 
             <div class="aggregationWrapper">
-                <label>Aggregatie</label>
+                <label>@Localizer["Aggregation"]</label>
                 <select class="drop-down-list aggregation" data-placeholder="Kies een aggregatie...">
-                    <option value="">Geen aggregatie</option>
-                    <option value="count">Telling resultaten (COUNT)</option>
-                    <option value="countdistinct">Telling unieke resultaten (COUNT DISTINCT)</option>
-                    <option value="sum">Som van waardes (SUM)</option>
-                    <option value="min">Laagste waarde (MIN)</option>
-                    <option value="max">Hoogste waarde (MAX)</option>
-                    <option value="avg">Gemiddelde waarde (AVG)</option>
+                    <option value="">@Localizer["No aggregation"]</option>
+                    <option value="count">@Localizer["Count results (COUNT)"]</option>
+                    <option value="countdistinct">@Localizer["Count unique results (COUNT DISTINCT)"]</option>
+                    <option value="sum">@Localizer["Sum of values (SUM)"]</option>
+                    <option value="min">@Localizer["Lowest value (MIN)"]</option>
+                    <option value="max">@Localizer["Highest value (MAX)"]</option>
+                    <option value="avg">@Localizer["Average value (AVG)"]</option>
                 </select>
             </div>
 
             <div class="formattingWrapper">
-                <label>Formatting</label>
-                <select class="combo-select formatting" data-placeholder="Kies een formatting..." data-open-on-focus="true">
-                    <option value="">Geen formatting</option>
+                <label>@Localizer["Formatting"]</label>
+                <select class="combo-select formatting" data-placeholder="@Localizer["Choose a format..."]" data-open-on-focus="true">
+                    <option value="">@Localizer["No formatting"]</option>
                     <%= PropertyFormattingOptionsHtml %>
                 </select>
             </div>
 
             <div class="fieldAliasWrapper">
-                <label>Alias</label>
-                <input type="text" class="k-input fieldAlias" placeholder="Alias" />
+                <label>@Localizer["Alias"]</label>
+                <input type="text" class="k-input fieldAlias" placeholder="@Localizer["Alias"]" />
             </div>
 
             <div class="isItemIdWrapper">
-                <label>Is item ID</label>
+                <label>@Localizer["Is item ID"]</label>
                 <label class="checkbox"><input type="checkbox" class="isItemId" /><span></span></label>
             </div>
 
@@ -434,8 +436,8 @@
             </div>
 
             <div class="toolBar">
-                <button type="button" class="kendoButton k-button k-primary saveItemProperties" data-icon="save"><span>Toepassen</span></button>
-                <button type="button" class="kendoButton k-button k-blue closeItemProperties" data-icon="cancel"><span>Annuleren</span></button>
+                <button type="button" class="kendoButton k-button k-primary saveItemProperties" data-icon="save"><span>@Localizer["Apply"]</span></button>
+                <button type="button" class="kendoButton k-button k-blue closeItemProperties" data-icon="cancel"><span>@Localizer["Cancel"]</span></button>
             </div>
         </div>
     </script>

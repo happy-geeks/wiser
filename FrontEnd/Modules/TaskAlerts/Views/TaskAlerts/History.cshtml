@@ -1,11 +1,13 @@
-﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
 @inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head runat="server">
     <meta charset="utf-8" />
-    <title>Wiser 3 - Task Alerts history</title>
+    <title>@Localizer["Wiser 3 - Task Alerts history"]</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />

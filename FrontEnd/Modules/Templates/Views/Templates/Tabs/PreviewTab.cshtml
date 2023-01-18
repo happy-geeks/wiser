@@ -1,4 +1,7 @@
-﻿<div class="formview full previewContainer">
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+
+<div class="formview full previewContainer">
     <div class="row preview-settings">
         <div class="col preview-profile">
             <div class="row">
@@ -8,7 +11,7 @@
                             <select id="preview-combo-select"></select>
                         </div>
                         <div class="dropdown-button">
-                            <button id="preview-remove-profile" class="k-primary k-button">Verwijder profiel</button>
+                            <button id="preview-remove-profile" class="k-primary k-button">@Localizer["Remove profile"]</button>
                         </div>
                     </div>
                 </div>
@@ -17,7 +20,7 @@
                 <div class="col col-12">
                     <div class="item" data-label-style="float" data-label-width="0">
                         <span class="handler">&nbsp;</span>
-                        <h4><label for="profile-url">URL</label></h4>
+                        <h4><label for="profile-url">@Localizer["URL"]</label></h4>
                         <span class="k-widget k-input k-state-default">
                             <input type="url" id="profile-url" class="textField k-input" autocomplete="off" />
                         </span>
@@ -38,8 +41,8 @@
                 <div class="col col-12">
                     <div class="item">
                         <div class="button-container">
-                            <button id="preview-save-profile-as" class="k-primary k-button">Profiel opslaan als...</button>
-                            <button id="preview-save-profile" class="k-primary k-button">Profiel opslaan</button>
+                            <button id="preview-save-profile-as" class="k-primary k-button">@Localizer["Save profile as..."]</button>
+                            <button id="preview-save-profile" class="k-primary k-button">@Localizer["Save profile"]</button>
                         </div>
                     </div>
                 </div>

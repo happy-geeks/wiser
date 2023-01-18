@@ -1,4 +1,6 @@
-﻿@using System.IO
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@using System.IO
 @model FrontEnd.Modules.Base.Models.BaseModuleViewModel
 @inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
@@ -6,7 +8,7 @@
 <html>
 <head runat="server">
     <meta charset="utf-8" />
-    <title>Wiser 3 - Dashboard</title>
+    <title>@Localizer["Wiser 3 - Dashboard"]</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -37,34 +39,34 @@
                     <div class="formview full">
                         <div class="item">
                             <div class="flex-container">
-                                <label>Filter periode</label>
-                                <select id="periodFilter" class="drop-down-list" placeholder="Maak uw keuze..." data-role="dropdownlist">
-                                    <option value="all" selected="selected">Geen filter</option>
-                                    <option value="currentMonth">Huidige maand</option>
-                                    <option value="lastMonth">Vorige maand</option>
-                                    <option value="currentYear">Dit jaar</option>
-                                    <option value="lastYear">Vorig jaar</option>
-                                    <option value="custom">Selecteer periode</option>
+                                <label>@Localizer["Filter period"]</label>
+                                <select id="periodFilter" class="drop-down-list" placeholder="@Localizer["Make your choice..."]" data-role="dropdownlist">
+                                    <option value="all" selected="selected">@Localizer["No filter"]</option>
+                                    <option value="currentMonth">@Localizer["Current month"]</option>
+                                    <option value="lastMonth">@Localizer["Last month"]</option>
+                                    <option value="currentYear">@Localizer["Current year"]</option>
+                                    <option value="lastYear">@Localizer["Last year"]</option>
+                                    <option value="custom">@Localizer["Select period"] </option>
                                 </select>
                             </div>
                         </div>
                         <div class="item">
                             <div class="flex-container">
-                                <div id="periodPicker" class="daterangepicker" title="daterangepicker"></div>
+                                <div id="periodPicker" class="daterangepicker" title="@Localizer["daterangepicker"]"></div>
                             </div>
                         </div>
                         <div class="item">
                             <div class="flex-container">
                                 <label>Branche</label>
-                                <select id="branchesSelect" class="drop-down-list" placeholder="Maak uw keuze..." data-role="dropdownlist">
-                                    <option value="0">Actieve branch</option>
-                                    <option value="-1">Alle branches</option>
+                                <select id="branchesSelect" class="drop-down-list" placeholder="@Localizer["Make your choice..."]" data-role="dropdownlist">
+                                    <option value="0">@Localizer["Active branch"]</option>
+                                    <option value="-1">@Localizer["All branches"]</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="item actions">
-                            <button type="button"><ins class="icon-reset" title="Reset" id="refreshDataButton"></ins></button>
+                            <button type="button"><ins class="icon-reset" title="@Localizer["Reset"]" id="refreshDataButton"></ins></button>
 
                             <ul id="mainEditMenu" class="editMenu">
                                 <li>
@@ -73,49 +75,49 @@
                                         <li>
                                             <label>
                                                 <input type="checkbox" name="" class="hidden" checked />
-                                                <span>Naam</span>
+                                                <span>@Localizer["Name"]</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
                                         <li>
                                             <label>
                                                 <input type="checkbox" name="" class="hidden"  />
-                                                <span>Naam</span>
+                                                <span>@Localizer["Name"]</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
                                         <li>
                                             <label>
                                                 <input type="checkbox" name="" class="hidden"  />
-                                                <span>Naam</span>
+                                                <span>@Localizer["Name"]</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
                                         <li>
                                             <label>
                                                 <input type="checkbox" name="" class="hidden"  />
-                                                <span>Naam</span>
+                                                <span>@Localizer["Name"]</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
                                         <li>
                                             <label>
                                                 <input type="checkbox" name="" class="hidden"  />
-                                                <span>Naam</span>
+                                                <span>@Localizer["Name"]</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
                                         <li>
                                             <label>
                                                 <input type="checkbox" name="" class="hidden"  />
-                                                <span>Naam</span>
+                                                <span>@Localizer["Name"]</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
                                         <li>
                                             <label>
                                                 <input type="checkbox" name="" class="hidden"  />
-                                                <span>Naam</span>
+                                                <span>@Localizer["Name"]</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
@@ -143,7 +145,7 @@
                                     <span>Totaal</span>
                                 </button>
                                 <button type="button" role="button" aria-label="Nieuw" data-filter="NewlyCreated">
-                                    <span>Nieuw</span>
+                                    <span>@Localizer["New"]</span>
                                 </button>
                             </div>
                         </div>
@@ -159,8 +161,8 @@
                         </a>
                     </script>
                     <script id="dataselector-rate" type="text/x-kendo-template">
-                        <h3>Uitkomst dataselector</h3>
-                        <div>Content</div>
+                        <h3>@Localizer["Outcome data selector"]</h3>
+                        <div>@Localizer["Content"]</div>
                     </script>
 
                     <!-- container chart templates -->
@@ -171,19 +173,19 @@
 
                             <div class="btn-row" id="itemsTypeFilterButtons">
                                 <button type="button" role="button" aria-label="Alles" data-filter="All" class="selected">
-                                    <span>Alles</span>
+                                    <span>@Localizer["Everything"]</span>
                                 </button>
                                 <button type="button" role="button" aria-label="Nieuw aangemaakt" data-filter="NewlyCreated">
-                                    <span>Nieuw aangemaakt</span>
+                                    <span>@Localizer["Newly created"]</span>
                                 </button>
                                 <button type="button" role="button" aria-label="Gewijzigd" data-filter="Changed">
-                                    <span>Gewijzigd</span>
+                                    <span>@Localizer["Changed"]</span>
                                 </button>
                                 <button type="button" role="button" aria-label="Actief" data-filter="Active" disabled>
-                                    <span>Actief</span>
+                                    <span>@Localizer["Active"]</span>
                                 </button>
                                 <button type="button" role="button" aria-label="Archief" data-filter="Archive" disabled>
-                                    <span>Archief</span>
+                                    <span>@Localizer["Archive"]</span>
                                 </button>
                             </div>
                         </div>
@@ -195,10 +197,10 @@
 
                             <div class="btn-row" id="userDataTypeFilterButtons">
                                 <button type="button" role="button" aria-label="Aantal logins" class="selected" data-filter="loginCount">
-                                    <span>Aantal logins</span>
+                                    <span>@Localizer["Number of logins"]</span>
                                 </button>
                                 <button type="button" role="button" aria-label="Ingelogde tijd" data-filter="loginTime">
-                                    <span>Ingelogde tijd</span>
+                                    <span>@Localizer["Logged in time"]</span>
                                 </button>
                             </div>
                         </div>
@@ -207,19 +209,19 @@
                         <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
                         <div class="tile-content">
                             <div class="tile-row">
-                                <label>Huidige abonnement: Wiser Large.</label>
-                                <span>Prijs per maand: &euro; 75,-</span>
-                                <a href="">abonnement stopzetten?</a>
+                                <label>@Localizer["Current subscription:"] Wiser Large.</label>
+                                <span>@Localizer["Price per month:"] &euro; 75,-</span>
+                                <a href="">@Localizer["cancel subscription?"]</a>
                             </div>
                             <div class="tile-row">
-                                <label>Aantal items:</label>
+                                <label>@Localizer["Number of Items:"]</label>
                                 <div class="progress">
                                     <span style="width: 65%;" data-value="6.500" data-percent="65"></span>
                                     <progress max="100" value="65" data-value="6.500" data-max="10K"></progress>
                                 </div>
                             </div>
                             <div class="tile-row">
-                                <label>Aantal gebruikers:</label>
+                                <label>@Localizer["Number of users:"]</label>
                                 <button type="button" role="button" aria-label="Naar gebruikers">
                                     <span class="k-icon k-i-hyperlink-open"></span>
                                 </button>
@@ -235,7 +237,7 @@
                             <span class="number-item">
                                 <ins class="icon-list"></ins>
                                 <h3 id="totalOpenTaskAlerts">0</h3>
-                                <span>Openstaande agenderingen</span>
+                                <span>@Localizer["Open scheduling"]</span>
                             </span>
                             <div id="status-chart" style="height:98%;width:65%;"></div>
                         </div>

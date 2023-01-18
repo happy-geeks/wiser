@@ -1,10 +1,12 @@
-﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
 @inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html>
 <head runat="server">
-    <title>Wiser 3 - Import</title>
+    <title>@Localizer["Wiser 3 - Import"]</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -44,8 +46,8 @@
             <!-- WINDOW - ALERT -->
             <div id="import-upload" class="x-window alert-window">
                 <div class="item clear">
-                    <p>De import is klaargezet. Zodra deze gereed is, ontvangt u bericht.</p>
-                    <button id="closeButton" class="k-primary button rightButton">OK</button>
+                    <p>@Localizer["The import is prepared. You will be notified as soon as it is completed."]</p>
+                    <button id="closeButton" class="k-primary button rightButton">@Localizer["OK"]</button>
                 </div>
             </div>
         </div>

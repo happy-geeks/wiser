@@ -1,4 +1,6 @@
-﻿@using System.Globalization
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@using System.Globalization
 @model FrontEnd.Modules.Base.Models.BaseModuleViewModel
 @inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
@@ -6,7 +8,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head runat="server">
     <meta charset="utf-8" />
-    <title>Wiser 3 - Task Alerts</title>
+    <title>@Localizer["Wiser 3 - Task Alerts"]</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -29,57 +31,57 @@
 
     <ul id="taskList">
         <li id="taskHistory">
-            <a href="#">Agendering historie</a>
+            <a href="#">@Localizer["Scheduling history"]</a>
         </li>
     </ul>
 
     <div class="taskForm">
         <div class="item">
-            <h4><label>Voeg een taak toe</label></h4>
+            <h4><label>@Localizer["Add a task"]</label></h4>
             <input id="taskDate" class="datepicker" value="@DateTime.Today.ToString("dd MMMM yyyy", new CultureInfo("nl-NL"))" />
         </div>
         <div class="item">
-            <h4><label>Gebruikers toevoegen</label></h4>
-            <select id="taskUsers" class="multi-select" multiple="multiple" data-placeholder="Kies gebruikers..." data-data-text-field="title" data-data-value-field="id" data-auto-bind="false"></select>
+            <h4><label>@Localizer["Add users"]</label></h4>
+            <select id="taskUsers" class="multi-select" multiple="multiple" data-placeholder="@Localizer["Choose users..."]" data-data-text-field="title" data-data-value-field="id" data-auto-bind="false"></select>
         </div>
         <div class="item">
-            <h4><label>Taakomschrijving</label></h4>
-            <textarea id="taskDescription" placeholder="Omschrijving van de taak..."></textarea>
+            <h4><label>@Localizer["Task description"]</label></h4>
+            <textarea id="taskDescription" placeholder="@Localizer["Description of the task..."]"></textarea>
         </div>
         <div class="item">
             <div class="actions btn2">
-                <button type="button" id="saveTask" class="module-button k-primary" data-icon="save">Opslaan</button>
-                <button type="button" id="cancelTask" class="module-button" data-icon="cancel">Annuleren</button>
+                <button type="button" id="saveTask" class="module-button k-primary" data-icon="save">@Localizer["Save"]</button>
+                <button type="button" id="cancelTask" class="module-button" data-icon="cancel">@Localizer["Cancel"]</button>
             </div>
         </div>
     </div>
 
     <div class="editTaskForm">
         <div class="item">
-            <h4><label>Taak aanpassen</label></h4>
+            <h4><label>@Localizer["Edit task"]</label></h4>
             <input id="editTaskDate" class="datepicker" value="@DateTime.Today.ToString("dd MMMM yyyy", new CultureInfo("nl-NL"))" />
         </div>
         <div class="item">
-            <h4><label>Gebruiker</label></h4>
-            <select id="editTaskUser" class="drop-down-list" data-option-label="Kies gebruiker..." data-data-text-field="title" data-data-value-field="id" data-auto-bind="false"></select>
+            <h4><label>@Localizer["User"]</label></h4>
+            <select id="editTaskUser" class="drop-down-list" data-option-label="@Localizer["Choose users..."]" data-data-text-field="title" data-data-value-field="id" data-auto-bind="false"></select>
         </div>
         <div class="item">
-            <h4><label>Taakomschrijving</label></h4>
-            <textarea id="editTaskDescription" placeholder="Omschrijving van de taak..."></textarea>
+            <h4><label>@Localizer["Task description"]</label></h4>
+            <textarea id="editTaskDescription" placeholder="@Localizer["Description of the task..."]"></textarea>
         </div>
         <div class="item">
-            <h4><label>Status</label></h4>
-            <select id="editTaskStatus" class="drop-down-list" data-option-label="Kies een status..." data-data-text-field="name" data-data-value-field="id">
-                <option value="">Geen status</option>
-                <option value="in behandeling">In behandeling</option>
-                <option value="wacht op reactie">Wacht op reactie</option>
-                <option value="afgerond">Afgerond</option>
+            <h4><label>@Localizer["Status"]</label></h4>
+            <select id="editTaskStatus" class="drop-down-list" data-option-label="@Localizer["Choose a status..."]" data-data-text-field="name" data-data-value-field="id">
+                <option value="">@Localizer["No status"]</option>
+                <option value="in behandeling">@Localizer["In progress"]</option>
+                <option value="wacht op reactie">@Localizer["Waiting for response"]</option>
+                <option value="afgerond">@Localizer["Completed"]</option>
             </select>
         </div>
         <div class="item">
             <div class="actions btn2">
-                <button type="button" id="saveEditTask" class="module-button k-primary" data-icon="save">Opslaan</button>
-                <button type="button" id="cancelEditTask" class="module-button" data-icon="cancel">Annuleren</button>
+                <button type="button" id="saveEditTask" class="module-button k-primary" data-icon="save">@Localizer["Save"]</button>
+                <button type="button" id="cancelEditTask" class="module-button" data-icon="cancel">@Localizer["Cancel"]</button>
             </div>
         </div>
     </div>

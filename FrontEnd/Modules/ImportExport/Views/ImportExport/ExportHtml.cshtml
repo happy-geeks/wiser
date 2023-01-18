@@ -1,9 +1,12 @@
-﻿<div class="formview full" id="ExportContainer">
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+
+<div class="formview full" id="ExportContainer">
     <div class="item">
         <div id="DataSelectorContainer">
             <input type="radio" name="exportType" id="ExportDataSelector" class="noForm rToggle" value="dataselector" />
             <header>
-                <label for="ExportDataSelector" class="radio rToggle"><span>Data selector</span></label>
+                <label for="ExportDataSelector" class="radio rToggle"><span>@Localizer["Data selector"]</span></label>
             </header>
             <div>
                 <select id="DataSelectorList" name="dataSelector" class="kendo-dropdown-list">
@@ -14,7 +17,7 @@
         <div id="QueryContainer">
             <input type="radio" name="exportType" id="ExportQuery" class="noForm rToggle" value="query" />
             <header>
-                <label for="ExportQuery" class="radio rToggle"><span>Query</span></label>
+                <label for="ExportQuery" class="radio rToggle"><span>@Localizer["Query"]</span></label>
             </header>
             <div>
                 <select id="QueryList" name="query" class="kendo-dropdown-list">
@@ -25,7 +28,7 @@
         <div id="ModuleContainer">
             <input type="radio" name="exportType" id="ExportModule" class="noForm rToggle" value="module" />
             <header>
-                <label for="ExportModule" class="radio rToggle"><span>Module</span></label>
+                <label for="ExportModule" class="radio rToggle"><span>@Localizer["Module"]</span></label>
             </header>
             <div>
                 <select id="ModuleList" name="module" class="kendo-dropdown-list">
@@ -37,7 +40,7 @@
     <!-- FIXED FOOTER -->
     <footer class="fixed">
         <div class="actions">
-            <button id="startExportButton" class="k-primary button rightButton">Start export</button>
+            <button id="startExportButton" class="k-primary button rightButton">@Localizer["Start export"]</button>
         </div>
     </footer>
 </div>

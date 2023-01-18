@@ -1,4 +1,6 @@
-﻿@using GeeksCoreLibrary.Core.Cms.Attributes
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@using GeeksCoreLibrary.Core.Cms.Attributes
 @using Api.Core.Helpers
 @model FrontEnd.Modules.Templates.Models.FieldViewModel
 @{
@@ -60,8 +62,8 @@
                 <h4><label for="@Model.Name">@Model.PrettyName</label></h4>
                 <div class="form-hint">
                     @Html.Raw(Model.CmsPropertyAttribute.Description)<br />
-                    <span>For each layer that you add, you need to have a column in your query named "idN", where "N" is the depth number (starting with 1).</span><br/>
-                    <span>Layer 0 is a special case; If you only have a single layer, then layer 0 is the one and only layer that you need. If you have more than 1 layers, then layer 0 is where you can add a global header, footer and no-data template. Layer 1 and higher are the templates that correspond with the layers that the query returns.</span>
+                    <span>@Localizer["For each layer that you add, you need to have a column in your query named 'idN', where 'N' is the depth number (starting with 1)."]</span><br/>
+                    <span>@Localizer["Layer 0 is a special case; If you only have a single layer, then layer 0 is the one and only layer that you need. If you have more than 1 layers, then layer 0 is where you can add a global header, footer and no-data template. Layer 1 and higher are the templates that correspond with the layers that the query returns."]</span>
                 </div>
                 <div class="sub-groups" data-property="@Model.Name">
                     @{
@@ -77,14 +79,14 @@
                                 
                                 @if (index != 1)
                                 {
-                                    <button id="removeButton_@Model.Name" class="k-primary k-button k-button-icon remove-subgroup-button"><span class="k-icon k-i-delete"></span><span>Remove layer</span></button>
+                                    <button id="removeButton_@Model.Name" class="k-primary k-button k-button-icon remove-subgroup-button"><span class="k-icon k-i-delete"></span><span>@Localizer["Remove layer"]</span></button>
                                 }
                             </fieldset>
                             index++;
                         }
                     }
                 </div>
-                <button id="addButton_@Model.Name" class="k-primary k-button k-button-icon add-subgroup-button"><span class="k-icon k-i-plus"></span><span>Add layer</span></button>
+                <button id="addButton_@Model.Name" class="k-primary k-button k-button-icon add-subgroup-button"><span class="k-icon k-i-plus"></span><span>@Localizer["Add layer"]</span></button>
             </div>
             break;
 

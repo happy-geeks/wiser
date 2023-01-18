@@ -1,11 +1,13 @@
-﻿@model FrontEnd.Core.Models.BaseViewModel
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@model FrontEnd.Core.Models.BaseViewModel
 @inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head runat="server">
     <meta charset="utf-8" />
-    <title>Wiser 3 - Communicatie</title>
+    <title>@Localizer["Wiser 3 - Communication"]</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -29,15 +31,15 @@
       data-track-js-token="@Model.Settings.TrackJsToken">
 <form id="fullForm">
     <div id="CreateNewCommunicationSettingsContainer">
-        <h2>Nieuwe communicatie-uiting aanmaken</h2>
-        <p>Maak een nieuwe automatische communicatie-uiting aan. Bepaald ontvangers en de inhoud van de e-mail en/of SMS-berichten.</p>
-        <button class="btn btn-primary" id="CreateNewCommunicationSettingsButton">Nieuwe aanmaken</button>
+        <h2>@Localizer["Create a new communication"]</h2>
+        <p>@Localizer["Create a new automatic communication message. Determine recipients and the content of the e-mail and/or text messages."]</p>
+        <button class="btn btn-primary" id="CreateNewCommunicationSettingsButton">@Localizer["Create new one"]</button>
     </div>
     <div id="OpenCommunicationSettingsContainer">
-        <h2>Bestaande communicatie-uiting openen</h2>
-        <p>Kies een van de bestaande communicatie-uitingen om te openen en te bewerken.</p>
+        <h2>@Localizer["Open existing communication"]</h2>
+        <p>@Localizer["Choose one of the existing communications to open and edit."]</p>
         <select id="CommunicationSettingsDropDown"></select>
-        <button class="btn btn-primary" id="OpenCommunicationSettingsButton">Openen</button>
+        <button class="btn btn-primary" id="OpenCommunicationSettingsButton">@Localizer["Open"]</button>
     </div>
 </form>
 
