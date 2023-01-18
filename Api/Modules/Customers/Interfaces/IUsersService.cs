@@ -97,6 +97,16 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         /// <returns></returns>
         Task<ServiceResult<UserModel>> GetUserDataAsync(IUsersService usersService, ClaimsIdentity identity);
+
+        /// <summary>
+        /// Gets settings for the authenticated user for a specific group of settings.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <param name="groupName">The group that the settings belong to.</param>
+        /// <param name="uniqueKey">The unique key for the settings.</param>
+        /// <param name="defaultValue">Optional: The default value to return if there is no setting saved with the given group name and key.</param>
+        /// <returns>The settings as a JSON string.</returns>
+        Task<ServiceResult<string>> GetSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, string defaultValue = null);
         
         /// <summary>
         /// Gets settings for a grid for the authenticated user, so that users can keep their state of all grids in Wiser.
@@ -116,6 +126,16 @@ namespace Api.Modules.Customers.Interfaces
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         Task<ServiceResult<List<int>>> GetAutoLoadModulesAsync(ClaimsIdentity identity);
+
+        /// <summary>
+        /// Saves settings for the authenticated user that belong to a specific group.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <param name="groupName">The group that the settings belong to.</param>
+        /// <param name="uniqueKey">The unique key for the grid settings. This should be unique for each grid in Wiser, so that no 2 grids use the same settings.</param>
+        /// <param name="settings">A JSON object with the settings to save.</param>
+        /// <returns>A boolean whether the save action was successful.</returns>
+        Task<ServiceResult<bool>> SaveSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, JToken settings);
 
         /// <summary>
         /// Saves settings for a grid for the authenticated user, so that the next time the grid is loaded, the user keeps those settings.
