@@ -2667,7 +2667,7 @@ LIMIT 1";
             }
 
             outputHtml = contentToWrite.ToString();
-            outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, true, false, true, false);
+            outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, requestModel.TemplateSettings.HandleRequests, false, true, false);
             outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
             outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
             outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
@@ -2997,6 +2997,15 @@ SELECT
     IFNULL(item.lastchangedby, item.createdby) AS changed_by,
     IF(template.istest = 1, 2, 0) + IF(template.isacceptance = 1, 4, 0) + IF(template.islive = 1, 8, 0) AS published_environment,
     template.usecache AS use_cache,
+    template.cacheminutes AS cache_minutes,
+    template.handlerequest AS handle_request,
+    template.handlesession AS handle_session,
+    template.handleobjects AS handle_objects,
+    template.handlestandards AS handle_standards,
+    template.handletranslations AS handle_translations,
+    template.handledynamiccontent AS handle_dynamic_content,
+    template.handlelogicblocks AS handle_logic_blocks,
+    template.handlemutators AS handle_mutators,
     template.issecure AS login_required,
     template.securedsessionprefix AS login_session_prefix,
     CONCAT_WS(',', template.jstemplates, template.csstemplates) AS linked_templates,
@@ -3144,6 +3153,14 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 clientDatabaseConnection.AddParameter("published_environment", reader.GetValue("published_environment"));
                 clientDatabaseConnection.AddParameter("use_cache", reader.GetValue("use_cache"));
                 clientDatabaseConnection.AddParameter("cache_minutes", reader.GetValue("cache_minutes"));
+                clientDatabaseConnection.AddParameter("handle_request", reader.GetValue("handle_request"));
+                clientDatabaseConnection.AddParameter("handle_session", reader.GetValue("handle_session"));
+                clientDatabaseConnection.AddParameter("handle_objects", reader.GetValue("handle_objects"));
+                clientDatabaseConnection.AddParameter("handle_standards", reader.GetValue("handle_standards"));
+                clientDatabaseConnection.AddParameter("handle_translations", reader.GetValue("handle_translations"));
+                clientDatabaseConnection.AddParameter("handle_dynamic_content", reader.GetValue("handle_dynamic_content"));
+                clientDatabaseConnection.AddParameter("handle_logic_blocks", reader.GetValue("handle_logic_blocks"));
+                clientDatabaseConnection.AddParameter("handle_mutators", reader.GetValue("handle_mutators"));
                 clientDatabaseConnection.AddParameter("login_required", reader.GetValue("login_required"));
                 clientDatabaseConnection.AddParameter("login_session_prefix", reader.GetValue("login_session_prefix"));
                 clientDatabaseConnection.AddParameter("linked_templates", reader.GetValue("linked_templates"));
@@ -3353,6 +3370,11 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     switch (previewVariable.Type.ToUpperInvariant())
                     {
                         case "POST":
+                            if (!requestModel.TemplateSettings.HandleRequests)
+                            {
+                                break;
+                            }
+
                             if (previewVariable.Encrypt)
                             {
                                 previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(customer.EncryptionKey);
@@ -3361,6 +3383,11 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                             httpContextAccessor.HttpContext.Items.Add(previewVariable.Key, previewVariable.Value);
                             break;
                         case "SESSION":
+                            if (!requestModel.TemplateSettings.HandleSession)
+                            {
+                                break;
+                            }
+
                             if (previewVariable.Encrypt)
                             {
                                 previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(customer.EncryptionKey);
