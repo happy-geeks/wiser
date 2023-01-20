@@ -2698,7 +2698,7 @@ LIMIT 1";
                 cssBuilder.AppendLine((await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Css)).Content);
                 cssBuilder.AppendLine(viewModel.Css.PageInlineHeadCss);
                 
-                var regex = new Regex("/css/gclcss_(.*).css");
+                var regex = new Regex("/css/gclcss_(.*).css", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
                 var match = regex.Match(viewModel.Css.PageStandardCssFileName ?? "");
                 if (match.Success)
                 {
@@ -2734,7 +2734,7 @@ LIMIT 1";
                 viewModel.Javascript.PageInlineHeadJavascript ??= new List<string>();
                 viewModel.Javascript.PageInlineHeadJavascript.Insert(0, (await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Js)).Content);
 
-                var regex = new Regex("/css/gcljs_(.*).css");
+                var regex = new Regex("/css/gcljs_(.*).css", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
                 var match = regex.Match(viewModel.Javascript.PageStandardJavascriptFileName ?? "");
                 if (match.Success)
                 {
@@ -3284,7 +3284,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
 
         private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html)
         {
-            var regex = new Regex(@"<img[^>]*?(?:data=['""](?<data>.*?)['""][^>]*?)?contentid=['""](?<contentid>\d+)['""][^>]*?\/?>");
+            var regex = new Regex(@"<img[^>]*?(?:data=['""](?<data>.*?)['""][^>]*?)?contentid=['""](?<contentid>\d+)['""][^>]*?\/?>", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
             var matches = regex.Matches(html);
             foreach (Match match in matches)
             {

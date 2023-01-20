@@ -2065,7 +2065,7 @@ namespace Api.Modules.Grids.Services
             }
 
             // Remove any left over variables that we can't use and handle [if] statements.
-            var regex = new Regex("{[^}]*}");
+            var regex = new Regex("{[^}]*}", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
             selectQuery = regex.Replace(selectQuery, "");
             countQuery = regex.Replace(countQuery, "");
 
