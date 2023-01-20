@@ -72,7 +72,6 @@
                                 <legend>Layer <span class="index">@(index-1)</span></legend>
                                 @foreach (var subField in subGroup.Value)
                                 {
-                                    // ReSharper disable once Mvc.PartialViewNotResolved
                                     <partial name="Partials/InputGenerator" model="subField" />
                                 }
                                 
