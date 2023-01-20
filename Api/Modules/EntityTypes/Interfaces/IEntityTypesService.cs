@@ -71,5 +71,13 @@ namespace Api.Modules.EntityTypes.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="id">The ID of the entity type.</param>
         Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id);
+
+        /// <summary>
+        /// Gets the ID of an API connection (from wiser_api_connection) for a specific entity and action.
+        /// </summary>
+        /// <param name="entityType">The name of the entity type to get the API connection ID for.</param>
+        /// <param name="actionType">The action type, this can be "after_insert", "after_update", "before_update" or "before_delete".</param>
+        /// <returns></returns>
+        Task<ServiceResult<int>> GetApiConnectionIdAsync(string entityType, string actionType);
     }
 }

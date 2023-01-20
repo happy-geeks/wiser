@@ -430,5 +430,34 @@ DELETE FROM {WiserTableNames.WiserEntity} WHERE id = ?id;";
                 StatusCode = HttpStatusCode.NoContent
             };
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<int>> GetApiConnectionIdAsync(string entityType, string actionType)
+        {
+            if (String.IsNullOrWhiteSpace(entityType))
+            {
+                throw new ArgumentNullException(nameof(entityType), "The parameter 'entityType' needs to have a value.");
+            }
+            if (String.IsNullOrWhiteSpace(actionType))
+            {
+                throw new ArgumentNullException(nameof(actionType), "The parameter 'actionType' needs to have a value.");
+            }
+            
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.AddParameter("entityType", entityType);
+            
+            var columnName = actionType.ToLowerInvariant() switch
+            {
+                "after_insert" => "api_after_insert",
+                "after_update" => "api_after_update",
+                "before_update" => "api_before_update",
+                "before_delete" => "api_before_delete",
+                _ => throw new ArgumentOutOfRangeException(nameof(actionType), actionType, $"Invalid value for {nameof(actionType)}")
+            };
+
+            var query = $@"SELECT {columnName} FROM {WiserTableNames.WiserEntity} WHERE name = ?entityType ORDER BY {columnName} DESC LIMIT 1";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            return new ServiceResult<int>(dataTable.Rows.Count == 0 ? 0 : dataTable.Rows[0].Field<int?>(columnName) ?? 0);
+        }
     }
 }

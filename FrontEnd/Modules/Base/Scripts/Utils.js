@@ -620,7 +620,7 @@ export class Wiser {
                 window.processing.addProcess(process);
 
                 // Get the settings.
-                const apiConnectionData = await Wiser.api({ url: `${settings.wiserApiRoot}api-connections/${encodeURIComponent(apiConnectionId)}` });
+                const apiConnectionData = await Wiser.api({ url: `${settings.wiserApiRoot}api-connections/${apiConnectionId}` });
                 if (!apiConnectionData || !apiConnectionData.options) {
                     reject("Er werd geprobeerd om een API aan te roepen, echter zijn er niet genoeg gegevens bekend. Neem a.u.b. contact op met ons.");
                     window.processing.removeProcess(process);
