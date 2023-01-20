@@ -1,7 +1,6 @@
 ﻿using System;
 using Api.Modules.Templates.Models.Template;
 using FrontEnd.Core.Interfaces;
-using FrontEnd.Modules.Base.Models;
 using FrontEnd.Modules.Templates.Interfaces;
 using FrontEnd.Modules.Templates.Models;
 using GeeksCoreLibrary.Modules.Templates.Enums;
@@ -72,6 +71,7 @@ namespace FrontEnd.Modules.Templates.Controllers
                 _ => null
             };
 
+            // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Tabs/DevelopmentTab", tabViewData);
         }
 
@@ -86,18 +86,21 @@ namespace FrontEnd.Modules.Templates.Controllers
                 }
             }
 
+            // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Tabs/HistoryTab", tabViewData);
         }
 
         [HttpGet, Route("PreviewTab")]
         public IActionResult PreviewTab()
         {
+            // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Tabs/PreviewTab");
         }
 
         [HttpPost, Route("PublishedEnvironments")]
         public IActionResult PublishedEnvironments([FromBody]TemplateSettingsModel tabViewData)
         {
+            // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Partials/PublishedEnvironments", tabViewData);
         }
     }
