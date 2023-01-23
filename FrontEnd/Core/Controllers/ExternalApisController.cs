@@ -70,14 +70,15 @@ public class ExternalApisController : Controller
         var restRequest = new RestRequest("", apiMethod);
 
         // Copy all headers to the request to the external API.
+        const string headerPrefix = "X-Extra-";
         foreach (var header in httpContextAccessor.HttpContext.Request.Headers)
         {
-            if (String.Equals(header.Key, "X-Api-Url", StringComparison.InvariantCultureIgnoreCase) || String.Equals(header.Key, "X-Http-Method", StringComparison.InvariantCultureIgnoreCase) || String.Equals(header.Key, "Host", StringComparison.InvariantCultureIgnoreCase))
+            if (!header.Key.StartsWith(headerPrefix))
             {
                 continue;
             }
 
-            restRequest.AddHeader(header.Key, header.Value);
+            restRequest.AddHeader(header.Key[headerPrefix.Length..], header.Value);
         }
 
         // Copy the request body to the request to the external API.
@@ -87,10 +88,6 @@ public class ExternalApisController : Controller
 
         // Do the request and get the results.
         var apiResult = await restClient.ExecuteAsync(restRequest);
-        if (apiResult.ErrorException != null)
-        {
-            throw apiResult.ErrorException;
-        }
 
         // Return the result of the external API.
         var result = new ContentResult

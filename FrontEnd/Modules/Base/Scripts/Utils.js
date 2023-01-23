@@ -696,10 +696,20 @@ export class Wiser {
                         action.function = "/" + action.function;
                     }
 
-                    // Setup the headers for the request.
-                    const headers = $.extend({
+                    // Setup the headers for the request.                    
+                    const headers = {
                         "X-Api-Url": `${apiOptions.baseUrl}${action.function}`
-                    }, extraHeaders, action.extraHeaders);
+                    };
+                    
+                    if (action.extraHeaders) {
+                        for (let headerName in action.extraHeaders) {
+                            if (!action.extraHeaders.hasOwnProperty(headerName)) {
+                                continue;
+                            }
+
+                            headers[`X-Extra-${headerName}`] = action.extraHeaders[headerName];
+                        }
+                    }
 
                     // Do replacements on the request data, if there is any.
                     if (action.data) {
