@@ -13,6 +13,7 @@ require("@progress/kendo-ui/js/kendo.splitter.js");
 require("@progress/kendo-ui/js/kendo.tabstrip.js");
 require("@progress/kendo-ui/js/kendo.treeview.js");
 require("@progress/kendo-ui/js/kendo.grid.js");
+require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
