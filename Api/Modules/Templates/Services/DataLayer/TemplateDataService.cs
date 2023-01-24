@@ -99,14 +99,6 @@ LIMIT 1");
     template.cache_minutes, 
     template.cache_location, 
     template.cache_regex,
-    template.handle_request, 
-    template.handle_session, 
-    template.handle_objects, 
-    template.handle_standards, 
-    template.handle_translations, 
-    template.handle_dynamic_content, 
-    template.handle_logic_blocks, 
-    template.handle_mutators, 
     template.login_required, 
     template.login_role, 
     template.login_redirect_url,
@@ -135,7 +127,9 @@ LIMIT 1");
     template.is_default_header,
     template.is_default_footer,
     template.default_header_footer_regex,
-    is_partial
+    template.is_partial,
+    template.widget_content,
+    template.widget_location
 FROM {WiserTableNames.WiserTemplate} AS template 
 WHERE template.template_id = ?templateId
 {publishedVersionWhere}
@@ -165,14 +159,6 @@ LIMIT 1");
                 CacheMinutes = dataTable.Rows[0].Field<int>("cache_minutes"),
                 CacheLocation = (TemplateCachingLocations)dataTable.Rows[0].Field<int>("cache_location"),
                 CacheRegex = dataTable.Rows[0].Field<string>("cache_regex"),
-                HandleRequests = Convert.ToBoolean(dataTable.Rows[0]["handle_request"]),
-                HandleSession = Convert.ToBoolean(dataTable.Rows[0]["handle_session"]),
-                HandleStandards = Convert.ToBoolean(dataTable.Rows[0]["handle_standards"]),
-                HandleObjects = Convert.ToBoolean(dataTable.Rows[0]["handle_objects"]),
-                HandleTranslations = Convert.ToBoolean(dataTable.Rows[0]["handle_translations"]),
-                HandleDynamicContent = Convert.ToBoolean(dataTable.Rows[0]["handle_dynamic_content"]),
-                HandleLogicBlocks = Convert.ToBoolean(dataTable.Rows[0]["handle_logic_blocks"]),
-                HandleMutators = Convert.ToBoolean(dataTable.Rows[0]["handle_mutators"]),
                 LoginRequired = Convert.ToBoolean(dataTable.Rows[0]["login_required"]),
                 LoginRedirectUrl = dataTable.Rows[0].Field<string>("login_redirect_url"),
                 Ordering = dataTable.Rows[0].Field<int>("ordering"),
@@ -203,7 +189,9 @@ LIMIT 1");
                 IsDefaultHeader = Convert.ToBoolean(dataTable.Rows[0]["is_default_header"]),
                 IsDefaultFooter = Convert.ToBoolean(dataTable.Rows[0]["is_default_footer"]),
                 DefaultHeaderFooterRegex = dataTable.Rows[0].Field<string>("default_header_footer_regex"),
-                IsPartial = Convert.ToBoolean(dataTable.Rows[0]["is_partial"])
+                IsPartial = Convert.ToBoolean(dataTable.Rows[0]["is_partial"]),
+                WidgetContent = dataTable.Rows[0].Field<string>("widget_content"),
+                WidgetLocation = (PageWidgetLocations) Convert.ToInt32(dataTable.Rows[0]["widget_location"])
             };
 
             var loginRolesString = dataTable.Rows[0].Field<string>("login_role");
@@ -463,14 +451,6 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.AddParameter("cacheMinutes", templateSettings.CacheMinutes);
             clientDatabaseConnection.AddParameter("cacheLocation", templateSettings.CacheLocation);
             clientDatabaseConnection.AddParameter("cacheRegex", templateSettings.CacheRegex);
-            clientDatabaseConnection.AddParameter("handleRequests", templateSettings.HandleRequests);
-            clientDatabaseConnection.AddParameter("handleSession", templateSettings.HandleSession);
-            clientDatabaseConnection.AddParameter("handleObjects", templateSettings.HandleObjects);
-            clientDatabaseConnection.AddParameter("handleStandards", templateSettings.HandleStandards);
-            clientDatabaseConnection.AddParameter("handleTranslations", templateSettings.HandleTranslations);
-            clientDatabaseConnection.AddParameter("handleDynamicContent", templateSettings.HandleDynamicContent);
-            clientDatabaseConnection.AddParameter("handleLogicBlocks", templateSettings.HandleLogicBlocks);
-            clientDatabaseConnection.AddParameter("handleMutators", templateSettings.HandleMutators);
             clientDatabaseConnection.AddParameter("loginRequired", templateSettings.LoginRequired);
             clientDatabaseConnection.AddParameter("loginRole", templateSettings.LoginRoles == null ? "" : String.Join(",", templateSettings.LoginRoles.OrderBy(x => x)));
             clientDatabaseConnection.AddParameter("loginRedirectUrl", templateSettings.LoginRedirectUrl);
@@ -502,6 +482,8 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.AddParameter("isDefaultFooter", templateSettings.IsDefaultFooter);
             clientDatabaseConnection.AddParameter("defaultHeaderFooterRegex", templateSettings.DefaultHeaderFooterRegex);
             clientDatabaseConnection.AddParameter("isPartial", templateSettings.IsPartial);
+            clientDatabaseConnection.AddParameter("widgetContent", templateSettings.WidgetContent);
+            clientDatabaseConnection.AddParameter("widgetLocation", (int)templateSettings.WidgetLocation);
 
             var query = $@"SET @VersionNumber = (SELECT MAX(version)+1 FROM {WiserTableNames.WiserTemplate} WHERE template_id = ?templateId GROUP BY template_id);
 INSERT INTO {WiserTableNames.WiserTemplate} (
@@ -518,14 +500,6 @@ INSERT INTO {WiserTableNames.WiserTemplate} (
     cache_minutes, 
     cache_location,
     cache_regex,
-    handle_request, 
-    handle_session, 
-    handle_objects, 
-    handle_standards,
-    handle_translations,
-    handle_dynamic_content,
-    handle_logic_blocks,
-    handle_mutators,
     login_required,
     login_role,
     login_redirect_url,
@@ -553,7 +527,9 @@ INSERT INTO {WiserTableNames.WiserTemplate} (
     trigger_table_name,
     is_default_header,
     is_default_footer,
-    is_partial
+    is_partial,
+    widget_content,
+    widget_location
 ) 
 VALUES (
     ?name,
@@ -569,14 +545,6 @@ VALUES (
     ?cacheMinutes,
     ?cacheLocation,
     ?cacheRegex,
-    ?handleRequests,
-    ?handleSession,
-    ?handleObjects,
-    ?handleStandards,
-    ?handleTranslations,
-    ?handleDynamicContent,
-    ?handleLogicBlocks,
-    ?handleMutators,
     ?loginRequired,
     ?loginRole,
     ?loginRedirectUrl,
@@ -604,7 +572,9 @@ VALUES (
     ?triggerTableName,
     ?isDefaultHeader,
     ?isDefaultFooter,
-    ?isPartial
+    ?isPartial,
+    ?widgetContent,
+    ?widgetLocation
 )";
             return await clientDatabaseConnection.ExecuteAsync(query);
         }
@@ -1146,15 +1116,7 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
     template.use_cache,   
     template.cache_minutes, 
     template.cache_location, 
-    template.cache_regex, 
-    template.handle_request, 
-    template.handle_session, 
-    template.handle_objects, 
-    template.handle_standards, 
-    template.handle_translations, 
-    template.handle_dynamic_content, 
-    template.handle_logic_blocks, 
-    template.handle_mutators, 
+    template.cache_regex,
     template.login_required, 
     template.login_role, 
     template.login_redirect_url, 
@@ -1209,14 +1171,6 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
                     CacheMinutes = dataRow.Field<int>("cache_minutes"),
                     CacheLocation = (TemplateCachingLocations) dataRow.Field<int>("cache_location"),
                     CacheRegex = dataTable.Rows[0].Field<string>("cache_regex"),
-                    HandleRequests = Convert.ToBoolean(dataRow["handle_request"]),
-                    HandleSession = Convert.ToBoolean(dataRow["handle_session"]),
-                    HandleStandards = Convert.ToBoolean(dataRow["handle_standards"]),
-                    HandleObjects = Convert.ToBoolean(dataRow["handle_objects"]),
-                    HandleTranslations = Convert.ToBoolean(dataRow["handle_translations"]),
-                    HandleDynamicContent = Convert.ToBoolean(dataRow["handle_dynamic_content"]),
-                    HandleLogicBlocks = Convert.ToBoolean(dataRow["handle_logic_blocks"]),
-                    HandleMutators = Convert.ToBoolean(dataRow["handle_mutators"]),
                     LoginRequired = Convert.ToBoolean(dataRow["login_required"]),
                     LoginRedirectUrl = dataRow.Field<string>("login_redirect_url"),
                     Ordering = dataRow.Field<int>("ordering"),
