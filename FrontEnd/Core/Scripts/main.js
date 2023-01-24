@@ -131,6 +131,35 @@ class Main {
             case "OpenModule":
                 this.vueApp.openModule(event.data.actionData.moduleId);
                 break;
+            case "OpenItem": {
+                if (!event.data.actionData?.moduleId || (!event.data.actionData?.encryptedItemId && !event.data.actionData?.itemId)) {
+                    return;
+                }
+
+                this.vueApp.openModule({
+                    moduleId: event.data.actionData.moduleId,
+                    name: event.data.actionData.name || "Item",
+                    type: event.data.actionData.type || "dynamicItems",
+                    iframe: true,
+                    itemId: event.data.actionData.encryptedItemId ?? event.data.actionData.itemId,
+                    fileName: "",
+                    queryString: event.data.actionData.queryString ?? ""
+                });
+                break;
+            }
+            case "GetAccessToken": {
+                // Access tokens can only be requested by origins that share the same main domain.
+                if (event.source && (event.origin.endsWith(`.${this.appSettings.currentDomain}`) || this.appSettings.isTestEnvironment)) {
+                    this.vueApp.$store.dispatch(AUTH_REQUEST).then(() => {
+                        event.source.postMessage({
+                            accessToken: this.vueApp.user.access_token,
+                            // Send the original request back so the sender can validate the message event.
+                            originalRequest: event.data
+                        }, event.origin);
+                    });
+                }
+                break;
+            }
         }
     }
 
