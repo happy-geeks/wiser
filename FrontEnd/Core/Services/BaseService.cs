@@ -42,7 +42,7 @@ namespace FrontEnd.Core.Services
                 var lastDotIndex = requestUrl.Host.LastIndexOf('.');
                 result = requestUrl.Host[..lastDotIndex];
             }
-            else if (requestUrl.Host.Contains("."))
+            else if (requestUrl.Host.Contains('.'))
             {
                 result = frontEndSettings.WiserHostNames.Where(host => !String.IsNullOrWhiteSpace(host)).Aggregate(requestUrl.Host, (current, host) => current.Replace(host, ""));
             }

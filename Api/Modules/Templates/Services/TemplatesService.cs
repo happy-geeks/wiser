@@ -720,15 +720,6 @@ WHERE FIND_IN_SET(accepted_childtypes, @_entity_name) > 0");
     IFNULL(JSON_EXTRACT(`options`, '$.gridViewSettings.columns'), '') AS `fields`
 FROM `wiser_module`
 WHERE id = {module_id}");
-                TemplateQueryStrings.Add("GET_API_ACTION", @"SELECT 
-	CASE '{actionType}'
-		WHEN 'after_insert' THEN api_after_insert
-        WHEN 'after_update' THEN api_after_update
-        WHEN 'before_update' THEN api_before_update
-        WHEN 'before_delete' THEN api_before_delete
-    END AS apiConnectionId_encrypt_withdate
-FROM wiser_entity 
-WHERE name = '{entityType}';");
                 TemplateQueryStrings.Add("UPDATE_API_AUTHENTICATION_DATA", @"UPDATE wiser_api_connection SET authentication_data = '{authenticationData}' WHERE id = {id:decrypt(true)};");
                 TemplateQueryStrings.Add("DELETE_MODULE", @"DELETE FROM `wiser_module` WHERE id = {module_id};");
                 TemplateQueryStrings.Add("SAVE_MODULE_SETTINGS", @"SET @moduleType := '{module_type}';

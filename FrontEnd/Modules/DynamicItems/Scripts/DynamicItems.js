@@ -2309,8 +2309,8 @@ const moduleSettings = {
          * @returns {number} The ID of the API action, or 0 if there is no action set.
          */
         async getApiAction(actionType, entityType) {
-            const result = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_API_ACTION?entityType=${encodeURIComponent(entityType)}&actionType=${encodeURIComponent(actionType)}` });
-            return !result || !result.length ? 0 : result[0].apiConnectionId || 0;
+            const result = await Wiser.api({ url: `${this.settings.wiserApiRoot}entity-types/${encodeURIComponent(entityType)}/api-connection/${encodeURIComponent(actionType)}` });
+            return result || 0;
         }
 
         /**

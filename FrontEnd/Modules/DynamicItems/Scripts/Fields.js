@@ -2818,60 +2818,6 @@ export class Fields {
         });
     }
 
-    async wiser1FileHandlerInHtmlEditorCallBack(kendoEditor, codeMirror, imageDialog, fileHandler, imageSettings, imageTitle) {
-        const jsTree = imageDialog.find(".jstree");
-        const selectedNode = jsTree.jstree("get_selected");
-        if (selectedNode.attr("rel") !== "item") {
-            return;
-        }
-
-        const ids = jsTree.jstree("get_path", selectedNode, true);
-        let path = "";
-        let filename = "";
-        $.each(ids, async (index, value) => {
-            if (index === 0) {
-                return;
-            }
-
-            if (path) {
-                path += "/";
-            }
-
-            // .text() and .html() on the A give extra spaces in the name
-            const clone = window.parent.$(`#${value}`).find("a").eq(0).clone();
-            clone.find("ins").remove();
-            path += clone.html();
-            filename = clone.html();
-        });
-
-        const itemHandlerPath = (await window.parent.$.doAjaxPost({
-            url: "/serverrequests/ItemField.aspx/getItemHandlerPath",
-            data: { type: imageSettings.uploadType }
-        })).d;
-
-        let html = itemHandlerPath + path;
-        switch (imageSettings.htmloutput) {
-            case "A":
-                html = `<a href="${itemHandlerPath}${escape(path.replace(/&amp;/g, "&"))}">${filename}</a>`;
-                break;
-            case "IMG":
-                html = `<img src="${itemHandlerPath}${escape(path.replace(/&amp;/g, "&"))}" alt="${imageTitle}" />`;
-                break;
-        }
-
-        if (kendoEditor) {
-            kendoEditor.exec("inserthtml", { value: html });
-        }
-
-        if (codeMirror) {
-            const doc = codeMirror.getDoc();
-            const cursor = doc.getCursor();
-            doc.replaceRange(html, cursor);
-        }
-
-        window.parent.$.hideDialog(imageDialog);
-    }
-
     /**
      * Event that gets called when the user executes the custom action for adding an image from Wiser to the HTML editor.
      * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
