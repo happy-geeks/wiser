@@ -101,6 +101,7 @@ namespace FrontEnd
             services.AddTransient<IImportsService, ImportsService>();
             services.AddTransient<IFrontEndDynamicContentService, FrontEndDynamicContentService>();
             services.AddSingleton<IWebPackService, WebPackService>();
+            services.AddSingleton<IExternalApisService, ExternalApisService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
