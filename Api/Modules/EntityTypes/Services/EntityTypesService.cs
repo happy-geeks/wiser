@@ -443,9 +443,6 @@ DELETE FROM {WiserTableNames.WiserEntity} WHERE id = ?id;";
                 throw new ArgumentNullException(nameof(actionType), "The parameter 'actionType' needs to have a value.");
             }
             
-            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            clientDatabaseConnection.AddParameter("entityType", entityType);
-            
             var columnName = actionType.ToLowerInvariant() switch
             {
                 "after_insert" => "api_after_insert",
@@ -454,6 +451,9 @@ DELETE FROM {WiserTableNames.WiserEntity} WHERE id = ?id;";
                 "before_delete" => "api_before_delete",
                 _ => throw new ArgumentOutOfRangeException(nameof(actionType), actionType, $"Invalid value for {nameof(actionType)}")
             };
+            
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.AddParameter("entityType", entityType);
 
             var query = $@"SELECT {columnName} FROM {WiserTableNames.WiserEntity} WHERE name = ?entityType ORDER BY {columnName} DESC LIMIT 1";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
