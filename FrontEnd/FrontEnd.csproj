@@ -18,8 +18,6 @@
     <Compile Remove="temp\**" />
     <None Remove="temp\**" />
     <Content Remove="temp\**" />
-    <None Remove="wwwroot\scripts\**" />
-    <Content Remove="wwwroot\scripts\**" />
     <None Remove="wwwroot\ContentBox\**" />
     <Content Remove="wwwroot\ContentBox\**" />
     <None Remove="wwwroot\ContentBuilder\**" />
