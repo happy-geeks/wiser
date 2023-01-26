@@ -14,6 +14,7 @@ require("@progress/kendo-ui/js/kendo.tabstrip.js");
 require("@progress/kendo-ui/js/kendo.treeview.js");
 require("@progress/kendo-ui/js/kendo.grid.js");
 require("@progress/kendo-ui/js/kendo.notification.js");
+require("@progress/kendo-ui/js/kendo.datepicker.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
@@ -65,6 +66,7 @@ const moduleSettings = {
             this.initialTemplateSettings = null;
             this.branches = null;
             this.renderLogsGrid = null;
+            this.measurementsLoaded = false;
 
             this.templateTypes = Object.freeze({
                 "UNKNOWN": 0,
@@ -413,6 +415,9 @@ const moduleSettings = {
                 case "history":
                     this.reloadHistoryTab();
                     break;
+                case "measurements":
+                    this.reloadMeasurementsTab();
+                    break;
             }
         }
 
@@ -489,6 +494,7 @@ const moduleSettings = {
 
             this.selectedId = dataItem.id;
             this.historyLoaded = false;
+            this.measurementsLoaded = false;
             this.onMainTabStripActivate();
 
             if (dataItem.isFolder) {
@@ -883,16 +889,6 @@ const moduleSettings = {
                     selectable: "row",
                     filterable: {
                         extra: false,
-                        operators: {
-                            string: {
-                                startswith: "Begint met",
-                                eq: "Is gelijk aan",
-                                neq: "Is ongelijk aan",
-                                contains: "Bevat",
-                                doesnotcontain: "Bevat niet",
-                                endswith: "Eindigt op"
-                            }
-                        },
                         messages: {
                             isTrue: "<span>Ja</span>",
                             isFalse: "<span>Nee</span>"
@@ -1013,98 +1009,6 @@ const moduleSettings = {
 
                 this.preview.initPreviewProfileInputs(true, true);
                 this.preview.bindPreviewButtons();
-                
-                // Measurements.
-                this.renderLogsGrid = $("#renderLogsGrid").kendoGrid({
-                    dataSource: {
-                        transport: {
-                            read: (readOptions) => {
-                                console.log("readOptions renderLogsGrid", readOptions);
-                                Wiser.api({
-                                    url: `${this.settings.wiserApiRoot}templates/${id}/render-logs`,
-                                    dataType: "json",
-                                    method: "GET"
-                                }).then((response) => {
-                                    readOptions.success(response);
-                                }).catch((error) => {
-                                    readOptions.error(error);
-                                });
-                            }
-                        },
-                        pageSize: 500
-                    },
-                    scrollable: true,
-                    resizable: true,
-                    selectable: false,
-                    filterable: {
-                        extra: false,
-                        operators: {
-                            string: {
-                                startswith: "Begint met",
-                                eq: "Is gelijk aan",
-                                neq: "Is ongelijk aan",
-                                contains: "Bevat",
-                                doesnotcontain: "Bevat niet",
-                                endswith: "Eindigt op"
-                            }
-                        },
-                        messages: {
-                            isTrue: "<span>Ja</span>",
-                            isFalse: "<span>Nee</span>"
-                        }
-                    },
-                    pageable: true,
-                    columns: [
-                        {
-                            field: "environment",
-                            title: "Omgeving",
-                            width: 100,
-                            filterable: true
-                        },
-                        {
-                            field: "languageCode",
-                            title: "Taal",
-                            width: 25,
-                            filterable: true
-                        },
-                        {
-                            field: "userId",
-                            title: "Gebruiker",
-                            width: 50,
-                            filterable: true
-                        },
-                        {
-                            field: "start",
-                            title: "Datum",
-                            width: 150,
-                            filterable: true
-                        },
-                        {
-                            field: "timeTaken",
-                            title: "Gemeten tijd",
-                            width: 150,
-                            filterable: true
-                        },
-                        {
-                            field: "url",
-                            title: "Url",
-                            filterable: true
-                        },
-                        {
-                            field: "version",
-                            title: "Versie",
-                            width: 50,
-                            filterable: true
-                        },
-                        {
-                            field: "error",
-                            title: "Gelukt",
-                            width: 150,
-                            filterable: false,
-                            template: `# if (!error) { # Ja # } else { # Nee # } #`
-                        }
-                    ]
-                }).data("kendoGrid");
             } catch (exception) {
                 console.error(exception);
                 kendo.alert(`Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.<br>${exception.responseText || exception}`);
@@ -1926,6 +1830,7 @@ const moduleSettings = {
                 window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
             }
             this.historyLoaded = false;
+            this.measurementsLoaded = false;
             await this.reloadMetaData(templateId);
         }
 
@@ -1961,6 +1866,7 @@ const moduleSettings = {
 
             window.popupNotification.show(`Dynamisch component is succesvol naar de ${environment} omgeving gezet`, "info");
             this.historyLoaded = false;
+            this.measurementsLoaded = false;
             $("#deployDynamicContentWindow").data("kendoWindow").close();
         }
 
@@ -2480,6 +2386,191 @@ const moduleSettings = {
                 });
 
                 document.getElementById("historyTab").innerHTML = historyTab;
+            } catch (exception) {
+                kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                console.error(exception);
+            }
+
+            window.processing.removeProcess(process);
+        }
+
+        /**
+         * Reloads measurements of the template.
+         * @param {any} templateId The ID of the template.
+         */
+        async reloadMeasurementsTab(templateId) {
+            if (this.measurementsLoaded) {
+                return;
+            }
+
+            templateId = templateId || this.selectedId;
+            this.measurementsLoaded = true;
+
+            const process = `reloadMeasurementsTab_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                // Get the measurement settings.
+                const measurementSettings = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/${templateId}/measurement-settings`,
+                    dataType: "json",
+                    method: "GET"
+                });
+
+                const measurementsTab = await Wiser.api({
+                    method: "POST",
+                    contentType: "application/json",
+                    url: "/Modules/Templates/MeasurementsTab",
+                    data: JSON.stringify(measurementSettings)
+                });
+
+                document.getElementById("measurementsTab").innerHTML = measurementsTab;
+                
+                // Initialize save button for settings.
+                $("#saveMeasuringSettingsButton").kendoButton({
+                    icon: "save",
+                    click: (event) => {
+                        event.preventDefault();
+                        
+                        const saveProcess = `saveMeasurementSettings_${Date.now()}`;
+                        window.processing.addProcess(saveProcess);
+                        
+                        Wiser.api({
+                            url: `${this.settings.wiserApiRoot}templates/${templateId}/measurement-settings`,
+                            dataType: "json",
+                            method: "PUT",
+                            contentType: "application/json",
+                            data: JSON.stringify({
+                                measureRenderTimesOnDevelopmentForCurrent: document.querySelector("#measureInDevelopment").checked,
+                                measureRenderTimesOnTestForCurrent: document.querySelector("#measureInTest").checked,
+                                measureRenderTimesOnAcceptanceForCurrent: document.querySelector("#measureInAcceptance").checked,
+                                measureRenderTimesOnLiveForCurrent: document.querySelector("#measureInLive").checked,
+                            })
+                        }).then(() => {
+                            window.popupNotification.show(`Instellingen succesvol opgslagen`, "info");
+                        }).catch((error) => {
+                            console.error(error);
+                            kendo.alert("Er is iets fout gegaan met het opslaan van de instellingen. Probeer het a.u.b. opnieuw of neem contact op met ons.")
+                        }).finally(() => {
+                            window.processing.removeProcess(saveProcess);
+                        });
+                    }
+                });
+                
+                // Initialize the grid with rendering logs.
+                this.renderLogsGrid = $("#renderLogsGrid").kendoGrid({
+                    dataSource: {
+                        transport: {
+                            read: (readOptions) => {
+                                const gridProcess = `renderLogsGrid_${Date.now()}`;
+                                window.processing.addProcess(gridProcess);
+
+                                console.log("readOptions renderLogsGrid", readOptions);
+                                Wiser.api({
+                                    url: `${this.settings.wiserApiRoot}templates/${templateId}/render-logs`,
+                                    dataType: "json",
+                                    method: "GET"
+                                }).then((response) => {
+                                    readOptions.success(response);
+                                }).catch((error) => {
+                                    readOptions.error(error);
+                                }).finally(() => {
+                                    window.processing.removeProcess(gridProcess);
+                                });
+                            }
+                        },
+                        pageSize: 500
+                    },
+                    noRecords: {
+                        template: "Er zijn geen logs gevonden met de opgegeven filters."
+                    },
+                    scrollable: true,
+                    resizable: true,
+                    selectable: false,
+                    filterable: {
+                        extra: false,
+                        operators: {
+                            string: {
+                                startswith: "Begint met",
+                                eq: "Is gelijk aan",
+                                neq: "Is ongelijk aan",
+                                contains: "Bevat",
+                                doesnotcontain: "Bevat niet",
+                                endswith: "Eindigt op"
+                            }
+                        },
+                        messages: {
+                            isTrue: "<span>Ja</span>",
+                            isFalse: "<span>Nee</span>"
+                        }
+                    },
+                    pageable: true,
+                    fields: [
+                        {name: "id", type: "number"},
+                        {name: "version", type: "number"},
+                        {name: "url", type: "string"},
+                        {name: "environment", type: "string"},
+                        {name: "start", type: "datetime"},
+                        {name: "end", type: "datetime"},
+                        {name: "timeTaken", type: "string"},
+                        {name: "userId", type: "number"},
+                        {name: "languageCode", type: "string"},
+                        {name: "error", type: "string"}
+                    ],
+                    columns: [
+                        {
+                            field: "environment",
+                            title: "Omgeving",
+                            width: 150,
+                            filterable: true
+                        },
+                        {
+                            field: "languageCode",
+                            title: "Taal",
+                            width: 100,
+                            filterable: true
+                        },
+                        {
+                            field: "userId",
+                            title: "Gebruiker",
+                            width: 100,
+                            filterable: true
+                        },
+                        {
+                            field: "start",
+                            title: "Datum",
+                            width: 150,
+                            template: "#= kendo.toString(kendo.parseDate(start), 'dd MMM yyyy HH:mm:ss') #",
+                            filterable: {
+                                ui: "datepicker"
+                            }
+                        },
+                        {
+                            field: "timeTaken",
+                            title: "Gemeten tijd",
+                            width: 150,
+                            filterable: false
+                        },
+                        {
+                            field: "url",
+                            title: "Url",
+                            filterable: true
+                        },
+                        {
+                            field: "version",
+                            title: "Versie",
+                            width: 100,
+                            filterable: true
+                        },
+                        {
+                            field: "error",
+                            title: "Gelukt",
+                            width: 150,
+                            filterable: false,
+                            template: `# if (!error) { # Ja # } else { # Nee # } #`
+                        }
+                    ]
+                }).data("kendoGrid");
             } catch (exception) {
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                 console.error(exception);

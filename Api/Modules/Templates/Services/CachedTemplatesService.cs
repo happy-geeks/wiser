@@ -214,19 +214,19 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<MeasurementSettings>> GetMeasurementSettingsAsync(int templateId)
+        public async Task<ServiceResult<MeasurementSettings>> GetMeasurementSettingsAsync(int templateId = 0, int componentId = 0)
         {
-            return await templatesService.GetMeasurementSettingsAsync(templateId);
+            return await templatesService.GetMeasurementSettingsAsync(templateId, componentId);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveMeasurementSettingsAsync(int templateId, MeasurementSettings settings)
+        public async Task<ServiceResult<bool>> SaveMeasurementSettingsAsync(MeasurementSettings settings, int templateId = 0, int componentId = 0)
         {
-            return await templatesService.SaveMeasurementSettingsAsync(templateId, settings);
+            return await templatesService.SaveMeasurementSettingsAsync(settings, templateId, componentId);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0, string urlRegex = null, Environments environment = Environments.Live, ulong userId = 0, string languageCode = null, int pageSize = 500, int pageNumber = 1)
+        public async Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0, string urlRegex = null, Environments? environment = null, ulong userId = 0, string languageCode = null, int pageSize = 500, int pageNumber = 1)
         {
             return await templatesService.GetRenderLogsAsync(templateId, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber);
         }

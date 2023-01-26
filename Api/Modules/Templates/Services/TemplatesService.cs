@@ -3279,59 +3279,179 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<MeasurementSettings>> GetMeasurementSettingsAsync(int templateId)
+        public async Task<ServiceResult<MeasurementSettings>> GetMeasurementSettingsAsync(int templateId = 0, int componentId = 0)
         {
+            switch (templateId)
+            {
+                case <= 0 when componentId <= 0:
+                    throw new Exception("Please specify either a template ID or a component ID.");
+                case > 0 when componentId > 0:
+                    throw new Exception("You have specified both a template ID and a component ID, please specify only one.");
+            }
+
             var result = new MeasurementSettings();
+
+            var name = templateId > 0 ? "templates" : "components";
+            var developmentRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_development");
+            var testRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_test");
+            var acceptanceRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_acceptance");
+            var liveRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_live");
             
-            var developmentRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync("log_rendering_of_components_development");
-            var testRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync("log_rendering_of_components_test");
-            var acceptanceRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync("log_rendering_of_components_acceptance");
-            var liveRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync("log_rendering_of_components_live");
+            var logAllRendering = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}");
+            if (String.IsNullOrWhiteSpace(developmentRenderingSettings))
+            {
+                developmentRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(testRenderingSettings))
+            {
+                testRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(acceptanceRenderingSettings))
+            {
+                acceptanceRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(liveRenderingSettings))
+            {
+                liveRenderingSettings = logAllRendering;
+            }
 
             if (!String.IsNullOrWhiteSpace(developmentRenderingSettings))
             {
-                var logLocations = developmentRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
-                result.MeasureRenderTimesOnDevelopment = String.Equals(developmentRenderingSettings, "all", StringComparison.OrdinalIgnoreCase)
-                                                         || String.Equals(developmentRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
-                                                         || logLocations.Contains(templateId);
+                var ids = developmentRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnDevelopmentForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnDevelopmentForEverything = String.Equals(developmentRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                                      || String.Equals(developmentRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
             }
             
             if (!String.IsNullOrWhiteSpace(testRenderingSettings))
             {
-                var logLocations = testRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
-                result.MeasureRenderTimesOnTest = String.Equals(testRenderingSettings, "all", StringComparison.OrdinalIgnoreCase)
-                                                         || String.Equals(testRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
-                                                         || logLocations.Contains(templateId);
+                var ids = testRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnTestForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnTestForEverything = String.Equals(testRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                               || String.Equals(testRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
             }
             
             if (!String.IsNullOrWhiteSpace(acceptanceRenderingSettings))
             {
-                var logLocations = acceptanceRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
-                result.MeasureRenderTimesOnTest = String.Equals(acceptanceRenderingSettings, "all", StringComparison.OrdinalIgnoreCase)
-                                                  || String.Equals(acceptanceRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
-                                                  || logLocations.Contains(templateId);
+                var ids = acceptanceRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnAcceptanceForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnAcceptanceForEverything = String.Equals(acceptanceRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                                     || String.Equals(acceptanceRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
             }
             
             if (!String.IsNullOrWhiteSpace(liveRenderingSettings))
             {
-                var logLocations = liveRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
-                result.MeasureRenderTimesOnTest = String.Equals(liveRenderingSettings, "all", StringComparison.OrdinalIgnoreCase)
-                                                  || String.Equals(liveRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
-                                                  || logLocations.Contains(templateId);
+                var ids = liveRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnLiveForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnLiveForEverything = String.Equals(liveRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                               || String.Equals(liveRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
             }
 
             return new ServiceResult<MeasurementSettings>(result);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveMeasurementSettingsAsync(int templateId, MeasurementSettings settings)
+        public async Task<ServiceResult<bool>> SaveMeasurementSettingsAsync(MeasurementSettings settings, int templateId = 0, int componentId = 0)
         {
-            throw new NotImplementedException();
+            switch (templateId)
+            {
+                case <= 0 when componentId <= 0:
+                    throw new Exception("Please specify either a template ID or a component ID.");
+                case > 0 when componentId > 0:
+                    throw new Exception("You have specified both a template ID and a component ID, please specify only one.");
+            }
+
+            var previousSettings = (await GetMeasurementSettingsAsync(templateId, componentId)).ModelObject;
+            if (previousSettings.MeasureRenderTimesOnDevelopmentForEverything || previousSettings.MeasureRenderTimesOnTestForEverything || previousSettings.MeasureRenderTimesOnAcceptanceForEverything || previousSettings.MeasureRenderTimesOnLiveForEverything)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Cannot change these settings, because they are enabled globally."
+                };
+            }
+            
+            // Get the current settings from database.
+            var name = templateId > 0 ? "templates" : "components";
+            var developmentRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_development");
+            var testRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_test");
+            var acceptanceRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_acceptance");
+            var liveRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_live");
+            var logAllRendering = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}");
+            if (String.IsNullOrWhiteSpace(developmentRenderingSettings))
+            {
+                developmentRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(testRenderingSettings))
+            {
+                testRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(acceptanceRenderingSettings))
+            {
+                acceptanceRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(liveRenderingSettings))
+            {
+                liveRenderingSettings = logAllRendering;
+            }
+
+            // Add or remove the current template from the settings.
+            var developmentIds = developmentRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+            var testIds = testRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+            var acceptanceIds = acceptanceRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+            var liveIds = liveRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+
+            if (settings.MeasureRenderTimesOnDevelopmentForCurrent)
+            {
+                if (!developmentIds.Contains(templateId)) developmentIds.Add(templateId);
+            }
+            else
+            {
+                if (developmentIds.Contains(templateId)) developmentIds.Remove(templateId);
+            }
+
+            if (settings.MeasureRenderTimesOnTestForCurrent)
+            {
+                if (!testIds.Contains(templateId)) testIds.Add(templateId);
+            }
+            else
+            {
+                if (testIds.Contains(templateId)) testIds.Remove(templateId);
+            }
+            
+            if (settings.MeasureRenderTimesOnAcceptanceForCurrent)
+            {
+                if (!acceptanceIds.Contains(templateId)) acceptanceIds.Add(templateId);
+            }
+            else
+            {
+                if (acceptanceIds.Contains(templateId)) acceptanceIds.Remove(templateId);
+            }
+            
+            if (settings.MeasureRenderTimesOnLiveForCurrent)
+            {
+                if (!liveIds.Contains(templateId)) liveIds.Add(templateId);
+            }
+            else
+            {
+                if (liveIds.Contains(templateId)) liveIds.Remove(templateId);
+            }
+
+            // Save the new settings.
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}", ""); // These are saved empty, because we copied all IDs to the specific environment settings.
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_development", String.Join(",", developmentIds));
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_test", String.Join(",", testIds));
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_acceptance", String.Join(",", acceptanceIds));
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_live", String.Join(",", liveIds));
+            return new ServiceResult<bool>
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
 
         /// <inheritdoc />
         public async Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0,
-            string urlRegex = null, Environments environment = Environments.Live, ulong userId = 0,
+            string urlRegex = null, Environments? environment = null, ulong userId = 0,
             string languageCode = null, int pageSize = 500, int pageNumber = 1)
         {
             var results = await measurementsDataService.GetRenderLogsAsync(templateId, 0, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber);

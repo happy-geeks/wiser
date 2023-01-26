@@ -28,7 +28,7 @@ public class MeasurementsDataService : IMeasurementsDataService, IScopedService
 
     /// <inheritdoc />
     public async Task<List<RenderLogModel>> GetRenderLogsAsync(int templateId = 0, int componentId = 0, int version = 0,
-        string urlRegex = null, Environments environment = Environments.Live, ulong userId = 0,
+        string urlRegex = null, Environments? environment = null, ulong userId = 0,
         string languageCode = null, int pageSize = 500, int pageNumber = 1)
     {
         if (templateId <= 0 && componentId <= 0)
@@ -46,7 +46,6 @@ public class MeasurementsDataService : IMeasurementsDataService, IScopedService
         
         // First build the query with filters and paging.
         clientDatabaseConnection.AddParameter("id", templateId > 0 ? templateId : componentId);
-        clientDatabaseConnection.AddParameter("environment", (int)environment);
         var query = new StringBuilder(@$"SELECT 
     id AS logId,
     {idColumn} AS id,
@@ -60,9 +59,13 @@ public class MeasurementsDataService : IMeasurementsDataService, IScopedService
     language_code,
     error
 FROM {tableName}
-WHERE environment = ?environment
-AND {idColumn} = ?id
+WHERE {idColumn} = ?id
 ");
+        if (environment.HasValue)
+        {
+            clientDatabaseConnection.AddParameter("environment", environment.ToString());
+            query.AppendLine("AND environment = ?environment");
+        }
 
         if (version > 0)
         {
@@ -92,7 +95,7 @@ AND {idColumn} = ?id
         if (pageSize > 0)
         {
             clientDatabaseConnection.AddParameter("take", pageSize);
-            clientDatabaseConnection.AddParameter("skip", pageSize * (pageSize - 1));
+            clientDatabaseConnection.AddParameter("skip", pageSize * (pageNumber - 1));
             query.AppendLine("LIMIT ?skip, ?take");
         }
 

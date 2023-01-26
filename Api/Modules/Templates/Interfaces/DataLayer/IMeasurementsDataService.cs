@@ -17,13 +17,13 @@ public interface IMeasurementsDataService
     /// <param name="componentId">The ID of the component to get the render logs for. Leave empty if you want to get everything or if you want to get logs from a template instead.</param>
     /// <param name="version">The version of the template or component.</param>
     /// <param name="urlRegex">A regex for filtering logs on certain URLs/pages.</param>
-    /// <param name="environment">The environment to get the logs for. Default value is live.</param>
+    /// <param name="environment">The environment to get the logs for. Set to null to get the logs for all environments. Default value is null.</param>
     /// <param name="userId">The ID of the website user, if you want to get the logs for a specific user only.</param>
     /// <param name="languageCode">The language code that is used on the website, if you want to get the logs for a specific language only.</param>
     /// <param name="pageSize">The amount of logs to get. Set to 0 to get all of then. Default value is 500.</param>
     /// <param name="pageNumber">The page number. Default value is 1. Only applicable if pageSize is greater than zero.</param>
     /// <returns>A list of <see cref="RenderLogModel"/> with the results.</returns>
     Task<List<RenderLogModel>> GetRenderLogsAsync(int templateId = 0, int componentId = 0, int version = 0,
-        string urlRegex = null, Environments environment = Environments.Live, ulong userId = 0,
+        string urlRegex = null, Environments? environment = null, ulong userId = 0,
         string languageCode = null, int pageSize = 500, int pageNumber = 1);
 }

@@ -1,34 +1,56 @@
+@model Api.Modules.Templates.Models.Measurements.MeasurementSettings
+
 <div class="formview full previewContainer">
     <div class="row measurement-settings">
         <div class="col col-12">
             <div class="flex-container item">
                 <label>Meten in omgeving:</label>
-                <span class="inline">
+                <span class="inline @(Model.MeasureRenderTimesOnDevelopmentForEverything ? "disabled" : "")">
                     <label class="checkbox">
-                        <input type="checkbox" id="measureInDevelopment" class="textField k-input" name="measureInDevelopment" value="1" />
+                        <input type="checkbox" id="measureInDevelopment" class="textField k-input" name="measureInDevelopment" value="1" @(Model.MeasureRenderTimesOnDevelopment ? "checked" : "") @(Model.MeasureRenderTimesOnDevelopmentForEverything ? "disabled" : "") />
                         <span>Development</span>
                     </label>
+                    @if (Model.MeasureRenderTimesOnDevelopmentForEverything)
+                    {
+                        <span>(Deze optie staat globaal voor alle templates ingeschakeld en kan daarom niet vanuit hier uitgeschakeld worden.)</span>
+                    }
                 </span>
-                <span class="inline">
+                <span class="inline @(Model.MeasureRenderTimesOnTestForEverything ? "disabled" : "")">
                     <label class="checkbox">
-                        <input type="checkbox" id="measureInTest" class="textField k-input" name="measureInTest" value="1" />
+                        <input type="checkbox" id="measureInTest" class="textField k-input" name="measureInTest" value="1" @(Model.MeasureRenderTimesOnTest ? "checked" : "") @(Model.MeasureRenderTimesOnTestForEverything ? "disabled" : "") />
                         <span>Test</span>
                     </label>
+                    @if (Model.MeasureRenderTimesOnTestForEverything)
+                    {
+                        <span>(Deze optie staat globaal voor alle templates ingeschakeld en kan daarom niet vanuit hier uitgeschakeld worden.)</span>
+                    }
                 </span>
-                <span class="inline">
+                <span class="inline @(Model.MeasureRenderTimesOnAcceptanceForEverything ? "disabled" : "")">
                     <label class="checkbox">
-                        <input type="checkbox" id="measureInAcceptance" class="textField k-input" name="measureInAcceptance" value="1" />
+                        <input type="checkbox" id="measureInAcceptance" class="textField k-input" name="measureInAcceptance" value="1" @(Model.MeasureRenderTimesOnAcceptance ? "checked" : "") @(Model.MeasureRenderTimesOnAcceptanceForEverything ? "disabled" : "") />
                         <span>Acceptatie</span>
                     </label>
+                    @if (Model.MeasureRenderTimesOnAcceptanceForEverything)
+                    {
+                        <span>(Deze optie staat globaal voor alle templates ingeschakeld en kan daarom niet vanuit hier uitgeschakeld worden.)</span>
+                    }
                 </span>
-                <span class="inline">
+                <span class="inline @(Model.MeasureRenderTimesOnLiveForEverything ? "disabled" : "")">
                     <label class="checkbox">
-                        <input type="checkbox" id="measureInLive" class="textField k-input" name="measureInLive" value="1" />
+                        <input type="checkbox" id="measureInLive" class="textField k-input" name="measureInLive" value="1" @(Model.MeasureRenderTimesOnLive ? "checked" : "") @(Model.MeasureRenderTimesOnLiveForEverything ? "disabled" : "") />
                         <span>Live</span>
                     </label>
+                    @if (Model.MeasureRenderTimesOnLiveForEverything)
+                    {
+                        <span>(Deze optie staat globaal voor alle templates ingeschakeld en kan daarom niet vanuit hier uitgeschakeld worden.)</span>
+                    }
                 </span>
                 
-                <button id="saveMeasuringSettingsButton" class="k-primary k-button">Opslaan</button>
+                @if (!Model.MeasureRenderTimesOnDevelopmentForEverything || !Model.MeasureRenderTimesOnTestForEverything
+                    || !Model.MeasureRenderTimesOnAcceptanceForEverything || !Model.MeasureRenderTimesOnLiveForEverything)
+                {
+                    <button id="saveMeasuringSettingsButton" class="k-primary k-button">Opslaan</button>
+                }
             </div>
         </div>
     </div>

@@ -252,6 +252,14 @@ ins {
 .item {
 	border: none;
 	position: relative;
+	background: var(--item-bg-color);
+	box-sizing: border-box;
+	padding: 6px;
+	min-width: 10%;
+	max-width: 100%;
+}
+.item .disabled {
+	opacity: 0.5;
 }
 .item .actions {
 	position: relative;
@@ -270,14 +278,6 @@ ins {
 }
 .item .actions.btn2 button:last-child {
 	margin: 0;
-}
-.item {
-	background: var(--item-bg-color);
-	box-sizing: border-box;
-	padding: 6px;
-	position: relative;
-	min-width: 10%;
-	max-width: 100%;
 }
 .emptyItem {
 	padding: 9px;
@@ -865,6 +865,9 @@ ins {
 	padding-top: 16px;
 }
 /* CUSTOM CHECKBOX / RADIOBUTTON */
+.checkbox, .radio {
+	cursor: pointer;
+}
 .checkbox, .radio {
 	cursor: pointer;
 }
