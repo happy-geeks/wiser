@@ -31,6 +31,7 @@ using Microsoft.VisualBasic.FileIO;
 
 namespace Api.Modules.Imports.Services
 {
+    /// <inheritdoc cref="Api.Modules.Imports.Interfaces.IImportsService" />
     public class ImportsService : IImportsService, IScopedService
     {
         private readonly IWiserItemsService wiserItemsService;
@@ -996,6 +997,7 @@ AND item.entity_type = ?entityName";
         /// </summary>
         /// <param name="deleteItemsRequest">The criteria for the items to delete.</param>
         /// <param name="fileLines"></param>
+        /// <param name="tablePrefix">The prefix of the table where the items will be deleted</param>
         /// <returns>Returns the query for after the SELECT statement for an item's property</returns>
         private string CreatePrepareDeleteQueryBottomForProperty(DeleteItemsRequestModel deleteItemsRequest, IEnumerable<string> fileLines, string tablePrefix)
         {

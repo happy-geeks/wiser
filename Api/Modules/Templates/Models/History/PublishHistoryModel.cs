@@ -6,8 +6,19 @@ namespace Api.Modules.Templates.Models.History
 {
     public class PublishHistoryModel
     {
+        /// <summary>
+        /// Gets or sets the ID of the template
+        /// </summary>
         public int Templateid { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the date and time when a template has changed 
+        /// </summary>
         public DateTime ChangedOn { get; set; }
+        
+        /// <summary>
+        /// Gets or sets who changed the template
+        /// </summary>
         public string ChangedBy { get; set; }
 
         public PublishLogModel PublishLog { get; set; }

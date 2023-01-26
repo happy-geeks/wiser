@@ -2,6 +2,7 @@
 
 namespace Api.Modules.Templates.Exceptions
 {
+    /// <inheritdoc />
     public class NoRowsAffectedException : Exception
     {
         public NoRowsAffectedException() : base() { }

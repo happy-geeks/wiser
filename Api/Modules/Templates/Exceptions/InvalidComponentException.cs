@@ -2,6 +2,7 @@
 
 namespace Api.Modules.Templates.Exceptions
 {
+    /// <inheritdoc />
     public class InvalidComponentException : Exception
     {
         public InvalidComponentException() : base() { }
