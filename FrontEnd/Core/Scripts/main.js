@@ -131,6 +131,39 @@ class Main {
             case "OpenModule":
                 this.vueApp.openModule(event.data.actionData.moduleId);
                 break;
+            case "OpenItem": {
+                if (!event.data.actionData?.moduleId || (!event.data.actionData?.encryptedItemId && !event.data.actionData?.itemId)) {
+                    break;
+                }
+
+                this.vueApp.openModule({
+                    moduleId: event.data.actionData.moduleId,
+                    name: event.data.actionData.name || "Item",
+                    type: event.data.actionData.type || "dynamicItems",
+                    iframe: true,
+                    itemId: event.data.actionData.encryptedItemId ?? event.data.actionData.itemId,
+                    fileName: "",
+                    queryString: event.data.actionData.queryString ?? ""
+                });
+                break;
+            }
+            case "GetAccessToken": {
+                // Access tokens can only be requested by origins that share the same main domain and on test environments.
+                if (!event.source || (!event.origin.endsWith(`.${this.appSettings.currentDomain}`) && !this.appSettings.isTestEnvironment)) {
+                    break;
+                }
+
+                // Request authentication, refreshing the token if needed.
+                this.vueApp.$store.dispatch(AUTH_REQUEST).then(() => {
+                    // Post a message back to the sender with the token and original request.
+                    // The original request is sent back to the sender to allow the message data to be validated.
+                    event.source.postMessage({
+                        accessToken: this.vueApp.user.access_token,
+                        originalRequest: event.data
+                    }, event.origin);
+                });
+                break;
+            }
         }
     }
 

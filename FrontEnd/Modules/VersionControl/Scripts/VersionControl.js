@@ -451,6 +451,7 @@ const moduleSettings = {
                         }
                     },
                     selectable: "multiple, row",
+                    resizable : true,
                     columns: [
                         {
                             "field": "templateId",
@@ -562,6 +563,7 @@ const moduleSettings = {
                         }
                     },
                     selectable: "multiple, row",
+                    resizable : true,
                     columns: [
                         {
                             "field": "dynamicContentId",
@@ -669,6 +671,7 @@ const moduleSettings = {
                         }
                     },
                     selectable: "multiple, row",
+                    resizable : true,
                     columns: [
                         {
                             "field": "id",

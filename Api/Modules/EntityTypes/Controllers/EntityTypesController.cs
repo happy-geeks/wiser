@@ -129,5 +129,18 @@ namespace Api.Modules.EntityTypes.Controllers
         {
             return (await entityTypesService.DeleteAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Gets the ID of an API connection (from wiser_api_connection) for a specific entity and action.
+        /// </summary>
+        /// <param name="entityType">The name of the entity type to get the API connection ID for.</param>
+        /// <param name="actionType">The action type, this can be "after_insert", "after_update", "before_update" or "before_delete".</param>
+        [HttpGet]
+        [Route("{entityType}/api-connection/{actionType}")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetApiConnectionIdAsync(string entityType, string actionType)
+        {
+            return (await entityTypesService.GetApiConnectionIdAsync(entityType, actionType)).GetHttpResponseMessage();
+        }
     }
 }

@@ -677,6 +677,12 @@ namespace Api.Modules.Imports.Services
                     value = parsedDecimal.ToString(new CultureInfo("en-US"));
                     break;
                 case "date-time picker":
+                    if (String.IsNullOrEmpty(value))
+                    {
+                        // Don't do anything, empty values are allowed.
+                        break;
+                    }
+
                     if (!DateTime.TryParse(value, new CultureInfo("nl-NL"), DateTimeStyles.AssumeLocal, out var parsedDateTime))
                     {
                         importResult.Failed += 1U;

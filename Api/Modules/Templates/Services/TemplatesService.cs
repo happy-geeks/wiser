@@ -742,15 +742,6 @@ WHERE FIND_IN_SET(accepted_childtypes, @_entity_name) > 0");
     IFNULL(JSON_EXTRACT(`options`, '$.gridViewSettings.columns'), '') AS `fields`
 FROM `wiser_module`
 WHERE id = {module_id}");
-                TemplateQueryStrings.Add("GET_API_ACTION", @"SELECT 
-	CASE '{actionType}'
-		WHEN 'after_insert' THEN api_after_insert
-        WHEN 'after_update' THEN api_after_update
-        WHEN 'before_update' THEN api_before_update
-        WHEN 'before_delete' THEN api_before_delete
-    END AS apiConnectionId_encrypt_withdate
-FROM wiser_entity 
-WHERE name = '{entityType}';");
                 TemplateQueryStrings.Add("UPDATE_API_AUTHENTICATION_DATA", @"UPDATE wiser_api_connection SET authentication_data = '{authenticationData}' WHERE id = {id:decrypt(true)};");
                 TemplateQueryStrings.Add("DELETE_MODULE", @"DELETE FROM `wiser_module` WHERE id = {module_id};");
                 TemplateQueryStrings.Add("SAVE_MODULE_SETTINGS", @"SET @moduleType := '{module_type}';
@@ -2689,7 +2680,7 @@ LIMIT 1";
             }
 
             outputHtml = contentToWrite.ToString();
-            outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, requestModel.TemplateSettings.HandleRequests, false, true, false);
+            outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, true, false, true, false);
             outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
             outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
             outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
@@ -2720,7 +2711,7 @@ LIMIT 1";
                 cssBuilder.AppendLine((await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Css)).Content);
                 cssBuilder.AppendLine(viewModel.Css.PageInlineHeadCss);
                 
-                var regex = new Regex("/css/gclcss_(.*).css");
+                var regex = new Regex("/css/gclcss_(.*).css", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
                 var match = regex.Match(viewModel.Css.PageStandardCssFileName ?? "");
                 if (match.Success)
                 {
@@ -2756,7 +2747,7 @@ LIMIT 1";
                 viewModel.Javascript.PageInlineHeadJavascript ??= new List<string>();
                 viewModel.Javascript.PageInlineHeadJavascript.Insert(0, (await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Js)).Content);
 
-                var regex = new Regex("/css/gcljs_(.*).css");
+                var regex = new Regex("/css/gcljs_(.*).css", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
                 var match = regex.Match(viewModel.Javascript.PageStandardJavascriptFileName ?? "");
                 if (match.Success)
                 {
@@ -3019,15 +3010,6 @@ SELECT
     IFNULL(item.lastchangedby, item.createdby) AS changed_by,
     IF(template.istest = 1, 2, 0) + IF(template.isacceptance = 1, 4, 0) + IF(template.islive = 1, 8, 0) AS published_environment,
     template.usecache AS use_cache,
-    template.cacheminutes AS cache_minutes,
-    template.handlerequest AS handle_request,
-    template.handlesession AS handle_session,
-    template.handleobjects AS handle_objects,
-    template.handlestandards AS handle_standards,
-    template.handletranslations AS handle_translations,
-    template.handledynamiccontent AS handle_dynamic_content,
-    template.handlelogicblocks AS handle_logic_blocks,
-    template.handlemutators AS handle_mutators,
     template.issecure AS login_required,
     template.securedsessionprefix AS login_session_prefix,
     CONCAT_WS(',', template.jstemplates, template.csstemplates) AS linked_templates,
@@ -3175,14 +3157,6 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 clientDatabaseConnection.AddParameter("published_environment", reader.GetValue("published_environment"));
                 clientDatabaseConnection.AddParameter("use_cache", reader.GetValue("use_cache"));
                 clientDatabaseConnection.AddParameter("cache_minutes", reader.GetValue("cache_minutes"));
-                clientDatabaseConnection.AddParameter("handle_request", reader.GetValue("handle_request"));
-                clientDatabaseConnection.AddParameter("handle_session", reader.GetValue("handle_session"));
-                clientDatabaseConnection.AddParameter("handle_objects", reader.GetValue("handle_objects"));
-                clientDatabaseConnection.AddParameter("handle_standards", reader.GetValue("handle_standards"));
-                clientDatabaseConnection.AddParameter("handle_translations", reader.GetValue("handle_translations"));
-                clientDatabaseConnection.AddParameter("handle_dynamic_content", reader.GetValue("handle_dynamic_content"));
-                clientDatabaseConnection.AddParameter("handle_logic_blocks", reader.GetValue("handle_logic_blocks"));
-                clientDatabaseConnection.AddParameter("handle_mutators", reader.GetValue("handle_mutators"));
                 clientDatabaseConnection.AddParameter("login_required", reader.GetValue("login_required"));
                 clientDatabaseConnection.AddParameter("login_session_prefix", reader.GetValue("login_session_prefix"));
                 clientDatabaseConnection.AddParameter("linked_templates", reader.GetValue("linked_templates"));
@@ -3366,7 +3340,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
 
         private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html)
         {
-            var regex = new Regex(@"<img[^>]*?(?:data=['""](?<data>.*?)['""][^>]*?)?contentid=['""](?<contentid>\d+)['""][^>]*?\/?>");
+            var regex = new Regex(@"<img[^>]*?(?:data=['""](?<data>.*?)['""][^>]*?)?contentid=['""](?<contentid>\d+)['""][^>]*?\/?>", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
             var matches = regex.Matches(html);
             foreach (Match match in matches)
             {
@@ -3452,11 +3426,6 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     switch (previewVariable.Type.ToUpperInvariant())
                     {
                         case "POST":
-                            if (!requestModel.TemplateSettings.HandleRequests)
-                            {
-                                break;
-                            }
-
                             if (previewVariable.Encrypt)
                             {
                                 previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(customer.EncryptionKey);
@@ -3465,11 +3434,6 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                             httpContextAccessor.HttpContext.Items.Add(previewVariable.Key, previewVariable.Value);
                             break;
                         case "SESSION":
-                            if (!requestModel.TemplateSettings.HandleSession)
-                            {
-                                break;
-                            }
-
                             if (previewVariable.Encrypt)
                             {
                                 previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(customer.EncryptionKey);
