@@ -62,6 +62,7 @@ public class RenderLogModel
     /// Gets or sets the ID of the user that was logged in when this template or component was rendered.
     /// This is 0 if no user was logged in.
     /// </summary>
+    // ReSharper disable once InconsistentNaming
     public ulong UserId { get; set; }
     
     /// <summary>
@@ -73,4 +74,9 @@ public class RenderLogModel
     /// Gets or sets any error that occurred while rendering the component.
     /// </summary>
     public string Error { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the name of the template or component.
+    /// </summary>
+    public string Name { get; set; }
 }

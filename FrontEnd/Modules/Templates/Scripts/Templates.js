@@ -2469,6 +2469,11 @@ const moduleSettings = {
                     pageable: false,
                     columns: [
                         {
+                            field: "name",
+                            title: "Template of component",
+                            filterable: true
+                        },
+                        {
                             field: "environment",
                             title: "Omgeving",
                             width: 150,
@@ -2535,7 +2540,7 @@ const moduleSettings = {
                     series: [{
                         field: "timeTakenInSeconds",
                         categoryField: "date",
-                        name: "Gemiddelde tijd in secondes",
+                        name: "#= group.value #",
                         aggregate: "avg"
                     }],
                     categoryAxis: {
@@ -2686,7 +2691,28 @@ const moduleSettings = {
                 }));
 
                 const promiseResults = await Promise.all(promises);
-                this.renderingLogsChart.setDataSource(promiseResults[0]);
+                const chartDataSource = new kendo.data.DataSource({
+                    data: promiseResults[0],
+                    group: {
+                        field: "name"
+                    },
+                    schema: {
+                        model: {
+                            fields: {
+                                date: {
+                                    type: "date"
+                                },
+                                start: {
+                                    type: "date"
+                                },
+                                end: {
+                                    type: "date"
+                                }
+                            }
+                        }
+                    }
+                });
+                this.renderingLogsChart.setDataSource(chartDataSource);
                 this.renderLogsGrid.setDataSource(promiseResults[1]);
             }
             catch (exception) {
