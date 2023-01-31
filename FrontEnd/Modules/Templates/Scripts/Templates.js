@@ -2433,39 +2433,13 @@ const moduleSettings = {
                     icon: "save",
                     click: (event) => {
                         event.preventDefault();
-                        
-                        const saveProcess = `saveMeasurementSettings_${Date.now()}`;
-                        window.processing.addProcess(saveProcess);
-                        
-                        Wiser.api({
-                            url: `${this.settings.wiserApiRoot}templates/${templateId}/measurement-settings`,
-                            dataType: "json",
-                            method: "PUT",
-                            contentType: "application/json",
-                            data: JSON.stringify({
-                                measureRenderTimesOnDevelopmentForCurrent: document.querySelector("#measureInDevelopment").checked,
-                                measureRenderTimesOnTestForCurrent: document.querySelector("#measureInTest").checked,
-                                measureRenderTimesOnAcceptanceForCurrent: document.querySelector("#measureInAcceptance").checked,
-                                measureRenderTimesOnLiveForCurrent: document.querySelector("#measureInLive").checked,
-                            })
-                        }).then(() => {
-                            window.popupNotification.show(`Instellingen succesvol opgslagen`, "info");
-                        }).catch((error) => {
-                            console.error(error);
-                            kendo.alert("Er is iets fout gegaan met het opslaan van de instellingen. Probeer het a.u.b. opnieuw of neem contact op met ons.")
-                        }).finally(() => {
-                            window.processing.removeProcess(saveProcess);
-                        });
+                        this.saveMeasurementSettings(templateId);
                     }
                 });
                                 
                 // Initialize the grid with rendering logs.
                 this.renderLogsGrid = $("#renderLogsGrid").kendoGrid({
                     dataSource: {
-                        serverPaging: true,
-                        transport: {
-                            read: `${this.settings.wiserApiRoot}templates/${templateId}/render-logs`
-                        },
                         schema: {
                             model: {
                                 fields: {
@@ -2492,10 +2466,7 @@ const moduleSettings = {
                     selectable: false,
                     filterable: false,
                     sortable: false,
-                    pageable: {
-                        pageSize: 500,
-                        refresh: true
-                    },
+                    pageable: false,
                     columns: [
                         {
                             field: "environment",
@@ -2550,33 +2521,8 @@ const moduleSettings = {
                         }
                     ]
                 }).data("kendoGrid");
-                
-                const getRenderingChartData = async (start = null, end = null) => {
-                    const parameters = [
-                        "getDailyAverage=true",
-                        "pageSize=0"
-                    ];
-                    
-                    if (start) {
-                        parameters.push(`start=${start.toISOString()}`)
-                    }
-                    if (end) {
-                        parameters.push(`end=${end.toISOString()}`)
-                    }
-                    
-                    return await Wiser.api({
-                        url: `${this.settings.wiserApiRoot}templates/${templateId}/render-logs?${parameters.join("&")}`,
-                        dataType: "json",
-                        method: "GET"
-                    });
-                }
-
-                const currentDate = new Date();
-                const oneWeekAgo = new Date(currentDate - 2 * 7 * 24 * 60 * 60 * 1000);
-                const renderingChartData = await getRenderingChartData(oneWeekAgo);
-                
+                                
                 this.renderingLogsChart = $("#measurementCharts").kendoChart({
-                    dataSource: renderingChartData,
                     title: {
                         text: "Rendertijden"
                     },
@@ -2615,7 +2561,34 @@ const moduleSettings = {
                         format: "N3"
                     }
                 }).data("kendoChart");
+                
+                this.measurementUserIdFilter = $("#measurementUserIdFilter").kendoNumericTextBox({
+                    decimals: 0,
+                    format: "#",
+                    change: this.updateRenderingDataOnMeasurementsTab.bind(this, templateId)
+                }).data("kendoNumericTextBox");
+                
+                this.measurementEnvironmentFilter = $("#measurementEnvironmentFilter").kendoDropDownList({
+                    optionLabel: "Alle omgevingen",
+                    change: this.updateRenderingDataOnMeasurementsTab.bind(this, templateId)
+                }).data("kendoDropDownList");
+                this.measurementEnvironmentFilter.value("Live");
 
+                const languages = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}languages`,
+                    dataType: "json",
+                    method: "GET"
+                });
+                this.measurementLanguageCodeFilter = $("#measurementLanguageCodeFilter").kendoDropDownList({
+                    dataSource: languages,
+                    optionLabel: "Alle talen",
+                    dataValueField: "code",
+                    dataTextField: "name",
+                    change: this.updateRenderingDataOnMeasurementsTab.bind(this, templateId)
+                }).data("kendoDropDownList");
+                this.measurementUrlFilter = $("#measurementUrlFilter").change(this.updateRenderingDataOnMeasurementsTab.bind(this, templateId));
+
+                await this.updateRenderingDataOnMeasurementsTab(templateId);
                 this.renderingLogsChart.resize();
             } catch (exception) {
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
@@ -2623,6 +2596,106 @@ const moduleSettings = {
             }
 
             window.processing.removeProcess(process);
+        }
+
+        /**
+         * Save the current measurement settings to database.
+         * @param templateId The ID of the template to save the settings for.
+         * @returns {Promise<void>}
+         */
+        async saveMeasurementSettings(templateId) {
+            const saveProcess = `saveMeasurementSettings_${Date.now()}`;
+            window.processing.addProcess(saveProcess);
+
+            try {
+                await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/${templateId}/measurement-settings`,
+                    dataType: "json",
+                    method: "PUT",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        measureRenderTimesOnDevelopmentForCurrent: document.querySelector("#measureInDevelopment").checked,
+                        measureRenderTimesOnTestForCurrent: document.querySelector("#measureInTest").checked,
+                        measureRenderTimesOnAcceptanceForCurrent: document.querySelector("#measureInAcceptance").checked,
+                        measureRenderTimesOnLiveForCurrent: document.querySelector("#measureInLive").checked,
+                    })
+                });
+                
+                window.popupNotification.show(`Instellingen succesvol opgslagen`, "info");
+            }
+            catch (exception) {
+                console.error(error);
+                kendo.alert("Er is iets fout gegaan met het opslaan van de instellingen. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+            }
+            finally {
+                window.processing.removeProcess(saveProcess);
+            }
+        }
+
+        /**
+         * This method will update the grid and chart on the measurements tabs with the latest data and using the values that the user entered in the filters.
+         * @returns {Promise<void>}
+         */
+        async updateRenderingDataOnMeasurementsTab(templateId) {
+            const process = `updateRenderingData_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                const parametersForGrid = ["pageSize=500"];
+                const parametersForChart = [
+                    "getDailyAverage=true",
+                    "pageSize=0"
+                ];
+
+                const currentDate = new Date();
+                const oneWeekAgo = new Date(currentDate - 2 * 7 * 24 * 60 * 60 * 1000);
+                const userId = this.measurementUserIdFilter.value();
+                const languageCode = this.measurementLanguageCodeFilter.value();
+                const environment = this.measurementEnvironmentFilter.value();
+                const urlRegex = this.measurementUrlFilter.val();
+
+                parametersForChart.push(`start=${oneWeekAgo.toISOString()}`)
+
+                if (userId) {
+                    parametersForChart.push(`userId=${userId}`)
+                    parametersForGrid.push(`userId=${userId}`)
+                }
+                if (languageCode) {
+                    parametersForChart.push(`languageCode=${encodeURIComponent(languageCode)}`)
+                    parametersForGrid.push(`languageCode=${encodeURIComponent(languageCode)}`)
+                }
+                if (environment) {
+                    parametersForChart.push(`environment=${encodeURIComponent(environment)}`)
+                    parametersForGrid.push(`environment=${encodeURIComponent(environment)}`)
+                }
+                if (urlRegex) {
+                    parametersForChart.push(`urlRegex=${encodeURIComponent(urlRegex)}`)
+                    parametersForGrid.push(`urlRegex=${encodeURIComponent(urlRegex)}`)
+                }
+
+                const promises = [];
+                promises.push(Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/${templateId}/render-logs?${parametersForChart.join("&")}`,
+                    dataType: "json",
+                    method: "GET"
+                }));
+                promises.push(Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/${templateId}/render-logs?${parametersForGrid.join("&")}`,
+                    dataType: "json",
+                    method: "GET"
+                }));
+
+                const promiseResults = await Promise.all(promises);
+                this.renderingLogsChart.setDataSource(promiseResults[0]);
+                this.renderLogsGrid.setDataSource(promiseResults[1]);
+            }
+            catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het ophalen van gegevens. Probeer het a.u.b. opnieuw of neem contact op met ons.")
+            }
+            finally {
+                window.processing.removeProcess(process);
+            }
         }
 
         /**
