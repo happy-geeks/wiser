@@ -130,14 +130,14 @@ INSERT IGNORE INTO `easy_objects` (typenr, `key`, `value`) VALUES (-1,'W2CHECKOU
 -- ----------------------------
 INSERT IGNORE INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `dedicated_table_prefix`,`save_history`) VALUES ('basket', 5000, '', 'icon-cart', '','basket', 0);
 INSERT IGNORE INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `dedicated_table_prefix`,`save_history`) VALUES ('basketline', 5000, '', 'icon-doc-invoice', '','basket', 0);
-INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (5002, 'basket', 'basketline', 'Shopping cart line', 0, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (5002, 'basket', 'basketline', 'BasketLineUnderBasket', 0, 0, 'one-to-one', 'none', 1);
 
 -- ----------------------------
 -- Orders
 -- ----------------------------
 INSERT IGNORE INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `dedicated_table_prefix`) VALUES ('order', 5007, '', 'icon-cart', '','');
 INSERT IGNORE INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `dedicated_table_prefix`) VALUES ('orderline', 5007, '', 'icon-doc-invoice', '','');
-INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (5002, 'order', 'orderline', 'Orderline to order', 0, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (5002, 'order', 'orderline', 'OrderLineUnderOrder', 0, 0, 'one-to-one', 'none', 1);
 
 -- ----------------------------
 -- Mailtemplate
