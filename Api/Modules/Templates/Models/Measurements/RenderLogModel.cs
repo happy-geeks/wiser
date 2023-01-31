@@ -36,12 +36,27 @@ public class RenderLogModel
     /// <summary>
     /// Gets or sets the date and time that the rendering was finished.
     /// </summary>
-    public DateTime End { get; set; }
+    public DateTime? End { get; set; }
+
+    /// <summary>
+    /// Gets or sets the date (without time) that the component or template was rendered.
+    /// </summary>
+    public DateTime Date => Start.Date;
     
     /// <summary>
     /// Gets or sets the total time it took to render the template or component.
     /// </summary>
     public TimeSpan TimeTaken { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the total time it took to render the template or component, in milliseconds.
+    /// </summary>
+    public ulong TimeTakenInMilliseconds { get; set; }
+
+    /// <summary>
+    /// Gets the total time it took to render the template or component, in seconds.
+    /// </summary>
+    public decimal TimeTakenInSeconds => (decimal)TimeTakenInMilliseconds / 1000; 
     
     /// <summary>
     /// Gets or sets the ID of the user that was logged in when this template or component was rendered.

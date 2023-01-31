@@ -29,7 +29,8 @@ public class MeasurementsDataService : IMeasurementsDataService, IScopedService
     /// <inheritdoc />
     public async Task<List<RenderLogModel>> GetRenderLogsAsync(int templateId = 0, int componentId = 0, int version = 0,
         string urlRegex = null, Environments? environment = null, ulong userId = 0,
-        string languageCode = null, int pageSize = 500, int pageNumber = 1)
+        string languageCode = null, int pageSize = 500, int pageNumber = 1, 
+        bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
     {
         if (templateId <= 0 && componentId <= 0)
         {
@@ -52,9 +53,8 @@ public class MeasurementsDataService : IMeasurementsDataService, IScopedService
     version,
     url,
     environment,
-    start,
-    end,
-    time_taken,
+    {(getDailyAverage ? "DATE(start) AS `date`" : "start, end")},
+    {(getDailyAverage ? "AVG(time_taken) AS time_taken" : "time_taken")},
     user_id,
     language_code,
     error
@@ -91,7 +91,25 @@ WHERE {idColumn} = ?id
             query.AppendLine("AND language_code = ?languageCode");
         }
 
-        query.AppendLine("ORDER BY logId DESC");
+        if (start.HasValue)
+        {
+            clientDatabaseConnection.AddParameter("start", start.Value);
+            query.AppendLine("AND start >= ?start");
+        }
+
+        if (end.HasValue)
+        {
+            clientDatabaseConnection.AddParameter("start", end.Value);
+            query.AppendLine("AND end <= ?end");
+        }
+
+        if (getDailyAverage)
+        {
+            query.AppendLine("GROUP BY DATE(start)");
+        }
+
+        query.AppendLine("ORDER BY start DESC");
+
         if (pageSize > 0)
         {
             clientDatabaseConnection.AddParameter("take", pageSize);
@@ -100,18 +118,23 @@ WHERE {idColumn} = ?id
         }
 
         var dataTable = await clientDatabaseConnection.GetAsync(query.ToString());
-        return dataTable.Rows.Cast<DataRow>().Select(dataRow => new RenderLogModel
+        return dataTable.Rows.Cast<DataRow>().Select(dataRow =>
         {
-            Id = dataRow.Field<int>("id"),
-            Version = dataRow.Field<int>("version"),
-            Url = new Uri(dataRow.Field<string>("url")),
-            Environment = (Environments)Enum.Parse(typeof(Environments), dataRow.Field<string>("environment"), true),
-            Start = dataRow.Field<DateTime>("start"),
-            End = dataRow.Field<DateTime>("end"),
-            TimeTaken = TimeSpan.FromMilliseconds(dataRow.Field<ulong>("time_taken")),
-            UserId = dataRow.Field<ulong>("user_id"),
-            LanguageCode = dataRow.Field<string>("language_code"),
-            Error = dataRow.Field<string>("error")
+            var timeTaken = Convert.ToUInt64(dataRow["time_taken"]);
+            return new RenderLogModel
+            {
+                Id = dataRow.Field<int>("id"),
+                Version = dataRow.Field<int>("version"),
+                Url = new Uri(dataRow.Field<string>("url")),
+                Environment = (Environments) Enum.Parse(typeof(Environments), dataRow.Field<string>("environment"), true),
+                Start = dataTable.Columns.Contains("start") ? dataRow.Field<DateTime>("start") : dataRow.Field<DateTime>("date"),
+                End = dataTable.Columns.Contains("end") ? dataRow.Field<DateTime>("end") : null,
+                TimeTaken = TimeSpan.FromMilliseconds(timeTaken),
+                TimeTakenInMilliseconds = timeTaken,
+                UserId = dataRow.Field<ulong>("user_id"),
+                LanguageCode = dataRow.Field<string>("language_code"),
+                Error = dataRow.Field<string>("error") ?? ""
+            };
         }).ToList();
     }
 }

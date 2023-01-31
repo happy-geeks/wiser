@@ -542,6 +542,12 @@
     width: 40%;
 }
 
+/** MEASUREMENTS **/
+#measurementCharts {
+    width: 100%;
+    height: 700px
+}
+
 /** ICONS **/
 .k-sprite {
     color: var(--dark-txt);

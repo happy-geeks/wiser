@@ -15,6 +15,8 @@ require("@progress/kendo-ui/js/kendo.treeview.js");
 require("@progress/kendo-ui/js/kendo.grid.js");
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.datepicker.js");
+require("@progress/kendo-ui/js/dataviz/chart/chart.js");
+require("@progress/kendo-ui/js/dataviz/chart/kendo-chart.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
@@ -2456,67 +2458,44 @@ const moduleSettings = {
                         });
                     }
                 });
-                
+                                
                 // Initialize the grid with rendering logs.
                 this.renderLogsGrid = $("#renderLogsGrid").kendoGrid({
                     dataSource: {
+                        serverPaging: true,
                         transport: {
-                            read: (readOptions) => {
-                                const gridProcess = `renderLogsGrid_${Date.now()}`;
-                                window.processing.addProcess(gridProcess);
-
-                                console.log("readOptions renderLogsGrid", readOptions);
-                                Wiser.api({
-                                    url: `${this.settings.wiserApiRoot}templates/${templateId}/render-logs`,
-                                    dataType: "json",
-                                    method: "GET"
-                                }).then((response) => {
-                                    readOptions.success(response);
-                                }).catch((error) => {
-                                    readOptions.error(error);
-                                }).finally(() => {
-                                    window.processing.removeProcess(gridProcess);
-                                });
-                            }
+                            read: `${this.settings.wiserApiRoot}templates/${templateId}/render-logs`
                         },
-                        pageSize: 500
+                        schema: {
+                            model: {
+                                fields: {
+                                    id: { type: "number"},
+                                    version: { type: "number" },
+                                    url: { type: "string" },
+                                    environment: { type: "string" },
+                                    start: { type: "datetime" },
+                                    end: { type: "datetime" },
+                                    timeTaken: { type: "string" },
+                                    userId: { type: "number" },
+                                    languageCode: { type: "string" },
+                                    error: { type: "string" }
+                                }
+                            }
+                        }
                     },
                     noRecords: {
                         template: "Er zijn geen logs gevonden met de opgegeven filters."
                     },
+                    height: 400,
                     scrollable: true,
                     resizable: true,
                     selectable: false,
-                    filterable: {
-                        extra: false,
-                        operators: {
-                            string: {
-                                startswith: "Begint met",
-                                eq: "Is gelijk aan",
-                                neq: "Is ongelijk aan",
-                                contains: "Bevat",
-                                doesnotcontain: "Bevat niet",
-                                endswith: "Eindigt op"
-                            }
-                        },
-                        messages: {
-                            isTrue: "<span>Ja</span>",
-                            isFalse: "<span>Nee</span>"
-                        }
+                    filterable: false,
+                    sortable: false,
+                    pageable: {
+                        pageSize: 500,
+                        refresh: true
                     },
-                    pageable: true,
-                    fields: [
-                        {name: "id", type: "number"},
-                        {name: "version", type: "number"},
-                        {name: "url", type: "string"},
-                        {name: "environment", type: "string"},
-                        {name: "start", type: "datetime"},
-                        {name: "end", type: "datetime"},
-                        {name: "timeTaken", type: "string"},
-                        {name: "userId", type: "number"},
-                        {name: "languageCode", type: "string"},
-                        {name: "error", type: "string"}
-                    ],
                     columns: [
                         {
                             field: "environment",
@@ -2571,6 +2550,73 @@ const moduleSettings = {
                         }
                     ]
                 }).data("kendoGrid");
+                
+                const getRenderingChartData = async (start = null, end = null) => {
+                    const parameters = [
+                        "getDailyAverage=true",
+                        "pageSize=0"
+                    ];
+                    
+                    if (start) {
+                        parameters.push(`start=${start.toISOString()}`)
+                    }
+                    if (end) {
+                        parameters.push(`end=${end.toISOString()}`)
+                    }
+                    
+                    return await Wiser.api({
+                        url: `${this.settings.wiserApiRoot}templates/${templateId}/render-logs?${parameters.join("&")}`,
+                        dataType: "json",
+                        method: "GET"
+                    });
+                }
+
+                const currentDate = new Date();
+                const oneWeekAgo = new Date(currentDate - 2 * 7 * 24 * 60 * 60 * 1000);
+                const renderingChartData = await getRenderingChartData(oneWeekAgo);
+                
+                this.renderingLogsChart = $("#measurementCharts").kendoChart({
+                    dataSource: renderingChartData,
+                    title: {
+                        text: "Rendertijden"
+                    },
+                    legend: {
+                        position: "top"
+                    },
+                    seriesDefaults: {
+                        type: "line"
+                    },
+                    series: [{
+                        field: "timeTakenInSeconds",
+                        categoryField: "date",
+                        name: "Gemiddelde tijd in secondes",
+                        aggregate: "avg"
+                    }],
+                    categoryAxis: {
+                        type: "date",
+                        baseUnit: "days",
+                        baseUnitStep: 1,
+                        labels: {
+                            rotation: "auto",
+                            dateFormats: {
+                                days: "dd-MM"
+                            }
+                        }
+                    },
+                    valueAxis: {
+                        labels: {
+                            format: "N3"
+                        },
+                        majorUnit: 1
+                    },
+                    tooltip: {
+                        visible: true,
+                        shared: true,
+                        format: "N3"
+                    }
+                }).data("kendoChart");
+
+                this.renderingLogsChart.resize();
             } catch (exception) {
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                 console.error(exception);

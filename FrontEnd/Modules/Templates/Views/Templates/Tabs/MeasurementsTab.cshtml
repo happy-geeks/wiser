@@ -54,6 +54,37 @@
             </div>
         </div>
     </div>
+    <div class="row measurement-filters">
+        <div class="col col-4">
+            <div class="flex-container item">
+                <label for="measurementUserIdFilter">Gebruiker ID:</label>
+                <input type="number" id="measurementUserIdFilter" name="measurementUserIdFilter" class="textField k-input" />
+            </div>
+        </div>
+        <div class="col col-4">
+            <div class="flex-container item">
+                <label for="measurementLanguageCodeFilter">Taal:</label>
+                <input type="text" id="measurementLanguageCodeFilter" name="measurementLanguageCodeFilter" class="textField k-input" />
+            </div>
+        </div>
+        <div class="col col-4">
+            <div class="flex-container item">
+                <label for="measurementEnvironmentFilter">Omgeving:</label>
+                <select id="measurementEnvironmentFilter" name="measurementEnvironmentFilter" class="select">
+                    <!option value="Development">Ontwikkeling</!option>
+                    <!option value="Test">Test</!option>
+                    <!option value="Acceptance">Acceptatie</!option>
+                    <!option value="Live">Live</!option>
+                </select>
+            </div>
+        </div>
+        <div class="col col-4">
+            <div class="flex-container item">
+                <label for="measurementUrlFilter">URL (regex):</label>
+                <input type="text" id="measurementUrlFilter" name="measurementUrlFilter" class="textField k-input" />
+            </div>
+        </div>
+    </div>
     <div class="row measurement-results">
         <div class="col col-12">
             <div class="flex-container item">

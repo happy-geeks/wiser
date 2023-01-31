@@ -2395,7 +2395,9 @@ LIMIT 1";
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,
                 WiserTableNames.WiserPreviewProfiles,
-                WiserTableNames.WiserDynamicContentPublishLog
+                WiserTableNames.WiserDynamicContentPublishLog,
+                WiserTableNames.WiserTemplateRenderLog,
+                WiserTableNames.WiserDynamicContentRenderLog
             });
 
             // Make sure the ordering is correct.
@@ -3452,9 +3454,10 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
         /// <inheritdoc />
         public async Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0,
             string urlRegex = null, Environments? environment = null, ulong userId = 0,
-            string languageCode = null, int pageSize = 500, int pageNumber = 1)
+            string languageCode = null, int pageSize = 500, int pageNumber = 1, 
+            bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
         {
-            var results = await measurementsDataService.GetRenderLogsAsync(templateId, 0, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber);
+            var results = await measurementsDataService.GetRenderLogsAsync(templateId, 0, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end);
             return new ServiceResult<List<RenderLogModel>>(results);
         }
 

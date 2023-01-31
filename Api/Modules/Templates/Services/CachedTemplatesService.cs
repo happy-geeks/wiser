@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
@@ -226,9 +227,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0, string urlRegex = null, Environments? environment = null, ulong userId = 0, string languageCode = null, int pageSize = 500, int pageNumber = 1)
+        public async Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0, string urlRegex = null, Environments? environment = null, ulong userId = 0, string languageCode = null, int pageSize = 500, int pageNumber = 1, bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
         {
-            return await templatesService.GetRenderLogsAsync(templateId, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber);
+            return await templatesService.GetRenderLogsAsync(templateId, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end);
         }
     }
 }
