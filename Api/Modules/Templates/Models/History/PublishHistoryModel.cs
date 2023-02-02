@@ -4,11 +4,14 @@ using Api.Modules.Templates.Models.Template;
 
 namespace Api.Modules.Templates.Models.History
 {
+#pragma warning disable CS1591
     public class PublishHistoryModel
+#pragma warning restore CS1591
     {
         /// <summary>
         /// Gets or sets the ID of the template
         /// </summary>
+        // ReSharper disable once UnusedAutoPropertyAccessor.Global
         public int Templateid { get; set; }
         
         /// <summary>
@@ -21,6 +24,9 @@ namespace Api.Modules.Templates.Models.History
         /// </summary>
         public string ChangedBy { get; set; }
 
+        /// <summary>
+        /// Gets or sets a log of what is published
+        /// </summary>
         public PublishLogModel PublishLog { get; set; }
         
         /// <summary>

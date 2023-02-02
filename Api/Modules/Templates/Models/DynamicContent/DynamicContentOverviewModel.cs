@@ -39,6 +39,9 @@ namespace Api.Modules.Templates.Models.DynamicContent
         /// </summary>
         public List<string> Usages { get; set; }
         
+        /// <summary>
+        /// Gets or sets the amount of Renders of a Dynamic Content Overview
+        /// </summary>
         public int? Renders { get; set; }
         
         /// <summary>

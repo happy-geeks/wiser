@@ -41,6 +41,7 @@ using Serilog;
 
 namespace Api
 {
+#pragma warning disable CS1591
     public class Startup
     {
         private const string CorsPolicyName = "AllowAllOrigins";
@@ -315,4 +316,5 @@ namespace Api
             });
         }
     }
+#pragma warning restore CS1591
 }

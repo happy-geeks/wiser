@@ -5,6 +5,7 @@
     /// </summary>
     public enum EntityPropertyInputTypes
     {
+#pragma warning disable CS1591
         Input,
         SecureInput,
         TextBox,
@@ -34,5 +35,6 @@
         Empty,
         Qr,
         Iframe
+#pragma warning restore CS1591
     }
 }

@@ -3,6 +3,9 @@
 namespace Api.Modules.Templates.Models.DynamicContent
 {
   
+    /// <summary>
+    /// Data Access Object for Linked Dynamic Content
+    /// </summary>
     public class LinkedDynamicContentDao
     {
         

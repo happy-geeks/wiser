@@ -3,7 +3,9 @@ using GeeksCoreLibrary.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Helpers
 {
+#pragma warning disable CS1591
     public class TreeViewHelper
+#pragma warning restore CS1591
     {
         /// <summary>
         /// Converts a TemplateTreeViewDAO to a TemplateTreeViewModel

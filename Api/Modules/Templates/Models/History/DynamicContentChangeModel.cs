@@ -34,7 +34,10 @@ namespace Api.Modules.Templates.Models.History
         /// </summary>
         public object OldValue { get; set; }
 
+
+#pragma warning disable CS1591
         public DynamicContentChangeModel(string component, string property, object newValue, object oldValue, string componentMode)
+#pragma warning restore CS1591
         {
             this.Component = component;
             this.ComponentMode = componentMode;
@@ -49,6 +52,9 @@ namespace Api.Modules.Templates.Models.History
             return newCmsSettings.GetProperty(Property);
         }
         
+        /// <summary>
+        /// Gets the attribute of a property
+        /// </summary>
         public CmsPropertyAttribute GetPropertyAttribute()
         {
             var property = GetProperty();

@@ -2,6 +2,7 @@
 
 namespace Api.Modules.Items.Models
 {
+    /// <inheritdoc />
     public class DisplayItemDetailModel : WiserItemDetailModel
     {
         /// <summary>

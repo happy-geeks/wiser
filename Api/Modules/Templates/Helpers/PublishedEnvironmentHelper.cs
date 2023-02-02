@@ -7,7 +7,9 @@ using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.Templates.Helpers
 {
+#pragma warning disable CS1591
     public class PublishedEnvironmentHelper
+#pragma warning restore CS1591
     {
         /// <summary>
         /// Creates a PublishedEnvironmentModel for a given item. To creates this a dictionary containing the versions and their respective publishvalue is used. This model will contain the current live, acceptence and test environment as well as a list of versions that are available.

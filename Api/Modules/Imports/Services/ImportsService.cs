@@ -42,7 +42,9 @@ namespace Api.Modules.Imports.Services
 
         private const uint ImportLimit = 1000000;
 
+#pragma warning disable CS1591
         public ImportsService(IWiserItemsService wiserItemsService, IUsersService usersService, IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, ILogger<ImportsService> logger)
+#pragma warning restore CS1591
         {
             this.wiserItemsService = wiserItemsService;
             this.usersService = usersService;

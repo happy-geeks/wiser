@@ -5,7 +5,9 @@ using GeeksCoreLibrary.Core.Cms;
 
 namespace Api.Modules.Templates.Helpers
 {
+#pragma warning disable CS1591
     public class ReflectionHelper
+#pragma warning restore CS1591
     {
         /// <summary>
         /// Retrieve the Type of a given component name using reflection. This method will exclusively look through the GCL for components of the type CmsComponent&lt;CmsSettings, Enum&gt;. 
