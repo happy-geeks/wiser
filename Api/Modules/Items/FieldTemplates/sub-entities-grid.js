@@ -404,7 +404,7 @@ async function generateGrid(data, model, columns) {
                             entityType: "{entityType}"
                         };
 
-                        var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id;
+                        var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id || transportOptions.data.encryptedid;
                         if (options.fieldGroupName) {
                             encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
