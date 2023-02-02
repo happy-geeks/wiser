@@ -12,8 +12,10 @@ using Api.Core.Models;
 using Api.Modules.Customers.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
+using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Databases.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -51,6 +53,11 @@ namespace Api.Core.Services
         private IDbTransaction transaction;
 
         private readonly ConcurrentDictionary<string, object> parameters = new();
+        
+        private readonly Guid instanceId;
+        private int readConnectionLogId;
+        private int writeConnectionLogId;
+        private bool? logTableExists;
 
         private string subDomain;
 
@@ -64,6 +71,7 @@ namespace Api.Core.Services
             this.apiSettings = apiSettings.Value;
             this.httpContextAccessor = httpContextAccessor;
             this.logger = logger;
+            instanceId = Guid.NewGuid();
         }
 
 
@@ -467,13 +475,36 @@ namespace Api.Core.Services
         }
 
         /// <inheritdoc />
+        public async ValueTask DisposeAsync()
+        {
+            if (dataReader != null)
+            {
+                await dataReader.DisposeAsync();
+            }
+
+            if (ConnectionForReading != null)
+            {
+                await AddConnectionCloseLogAsync(false, true);
+            }
+
+            if (ConnectionForWriting != null)
+            {
+                await AddConnectionCloseLogAsync(true, true);
+            }
+
+            if (WiserDatabaseConnection != null)
+            {
+                await WiserDatabaseConnection.DisposeAsync();
+            }
+        }
+
+        /// <inheritdoc />
         public void Dispose()
         {
+            logger.LogTrace($"Disposing instance of MySqlDatabaseConnection with ID '{instanceId}' on URL {HttpContextHelpers.GetOriginalRequestUri(httpContextAccessor.HttpContext)}");
             dataReader?.Dispose();
-            ConnectionForReading?.Dispose();
-            CommandForReading?.Dispose();
-            ConnectionForWriting?.Dispose();
-            CommandForWriting?.Dispose();
+            AddConnectionCloseLogAsync(false, true);
+            AddConnectionCloseLogAsync(true, true);
             WiserDatabaseConnection?.Dispose();
         }
 
@@ -483,6 +514,8 @@ namespace Api.Core.Services
         /// <returns></returns>
         public async Task EnsureOpenConnectionForReadingAsync()
         {
+            var createdNewConnection = false;
+            
             // If we don't have a connection string yet, get the connection string from the Wiser database.
             if (String.IsNullOrWhiteSpace(connectionStringForReading))
             {
@@ -519,20 +552,22 @@ namespace Api.Core.Services
 
                 ConnectionForReading = new MySqlConnection { ConnectionString = connectionStringForReading };
                 CommandForReading = ConnectionForReading.CreateCommand();
+                createdNewConnection = true;
 
-                if (String.IsNullOrWhiteSpace(connectionStringForWriting))
+               /* if (String.IsNullOrWhiteSpace(connectionStringForWriting))
                 {
                     return;
                 }
 
                 ConnectionForWriting = new MySqlConnection { ConnectionString = connectionStringForWriting };
-                CommandForWriting = ConnectionForWriting.CreateCommand();
+                CommandForWriting = ConnectionForWriting.CreateCommand();*/
             }
 
             if (ConnectionForReading == null)
             {
                 ConnectionForReading = new MySqlConnection { ConnectionString = connectionStringForReading };
                 CommandForReading = ConnectionForReading.CreateCommand();
+                createdNewConnection = true;
             }
 
             CommandForReading ??= ConnectionForReading.CreateCommand();
@@ -575,6 +610,13 @@ namespace Api.Core.Services
                     {
                         logger.LogWarning(exception, $"An error occurred while trying to set the time zone to '{gclSettings.DatabaseTimeZone}' or the collation to 'utf8mb4_general_ci'.");
                     }
+
+                    if (createdNewConnection)
+                    {
+                        // Log the opening of the connection.
+                        await AddConnectionOpenLogAsync(false);
+                    }
+                    
                     break;
             }
         }
@@ -591,10 +633,12 @@ namespace Api.Core.Services
                 return;
             }
 
+            var createdNewConnection = false;
             if (ConnectionForWriting == null)
             {
                 ConnectionForWriting = new MySqlConnection { ConnectionString = connectionStringForWriting };
                 CommandForWriting = ConnectionForWriting.CreateCommand();
+                createdNewConnection = true;
             }
 
             CommandForWriting ??= ConnectionForWriting.CreateCommand();
@@ -637,6 +681,12 @@ namespace Api.Core.Services
                     catch (Exception exception)
                     {
                         logger.LogWarning(exception, $"An error occurred while trying to set the time zone to '{gclSettings.DatabaseTimeZone}' or the collation to 'utf8mb4_general_ci'.");
+                    }
+
+                    if (createdNewConnection)
+                    {
+                        // Log the opening of the connection.
+                        await AddConnectionOpenLogAsync(true);
                     }
                     break;
             }
@@ -684,6 +734,138 @@ namespace Api.Core.Services
             CommandForReading = null;
             CommandForWriting = null;
             dataReader = null;
+        }
+
+        /// <summary>
+        /// Add a mention to the log table that a connection to the database has been opened.
+        /// </summary>
+        /// <param name="isWriteConnection">Is this a write connection (true) or a read connection (false)?</param>
+        private async Task AddConnectionOpenLogAsync(bool isWriteConnection)
+        {
+            try
+            {
+                if (!gclSettings.LogOpeningAndClosingOfConnections)
+                {
+                    return;
+                }
+                
+                var commandToUse = isWriteConnection && !String.IsNullOrWhiteSpace(connectionStringForWriting) ? CommandForWriting : CommandForReading;
+
+                if (!logTableExists.HasValue)
+                {
+                    var dataTable = new DataTable();
+                    commandToUse.CommandText = $"SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_NAME = '{Constants.DatabaseConnectionLogTableName}' AND TABLE_SCHEMA = '{(ConnectionForWriting ?? ConnectionForReading).Database.ToMySqlSafeValue(false)}'";
+                    using var dataAdapter = new MySqlDataAdapter(commandToUse);
+                    await dataAdapter.FillAsync(dataTable);
+                    logTableExists = dataTable.Rows.Count > 0;
+                }
+
+                if (!logTableExists.Value)
+                {
+                    // Table for logging doesn't exist yet, don't do anything. The table gets created during startup, but that also uses this service for doing that.
+                    // So the table obviously won't exist yet during startup and we don't want an error from that.
+                    return;
+                }
+
+                var url = "";
+                var httpMethod = "";
+                if (httpContextAccessor.HttpContext != null)
+                {
+                    url = HttpContextHelpers.GetOriginalRequestUri(httpContextAccessor.HttpContext).ToString();
+                    httpMethod = httpContextAccessor.HttpContext.Request.Method;
+                }
+
+                if(commandToUse.Parameters.Contains("gclConnectionOpened")) commandToUse.Parameters.Remove("gclConnectionOpened");
+                if(commandToUse.Parameters.Contains("gclConnectionUrl")) commandToUse.Parameters.Remove("gclConnectionUrl");
+                if(commandToUse.Parameters.Contains("gclConnectionHttpMethod")) commandToUse.Parameters.Remove("gclConnectionHttpMethod");
+                if(commandToUse.Parameters.Contains("gclConnectionInstanceId")) commandToUse.Parameters.Remove("gclConnectionInstanceId");
+                if(commandToUse.Parameters.Contains("gclConnectionType")) commandToUse.Parameters.Remove("gclConnectionType");
+                commandToUse.Parameters.AddWithValue("gclConnectionOpened", DateTime.Now);
+                commandToUse.Parameters.AddWithValue("gclConnectionUrl", url);
+                commandToUse.Parameters.AddWithValue("gclConnectionHttpMethod", httpMethod);
+                commandToUse.Parameters.AddWithValue("gclConnectionInstanceId", instanceId);
+                commandToUse.Parameters.AddWithValue("gclConnectionType", isWriteConnection ? "write" : "read");
+
+                commandToUse.CommandText = $@"INSERT INTO {Constants.DatabaseConnectionLogTableName} (opened, url, http_method, database_service_instance_id, type)
+VALUES (?gclConnectionOpened, ?gclConnectionUrl, ?gclConnectionHttpMethod, ?gclConnectionInstanceId, ?gclConnectionType);
+SELECT LAST_INSERT_ID();";
+                await using var reader = await commandToUse.ExecuteReaderAsync();
+                var id = !await reader.ReadAsync() ? 0 : (Int32.TryParse(Convert.ToString(reader.GetValue(0)), out var tempId) ? tempId : 0);
+                
+                if (isWriteConnection)
+                {
+                    writeConnectionLogId = id;
+                }
+                else
+                {
+                    readConnectionLogId = id;
+                }
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "Error while trying to add connection open log.");
+            }
+        }
+
+        /// <summary>
+        /// Add a mention to the log table that a connection to the database has been closed.
+        /// </summary>
+        /// <param name="isWriteConnection">Is this a write connection (true) or a read connection (false)?</param>
+        /// <param name="disposeConnection">Set to true to dispose the connection at the end.</param>
+        private async Task AddConnectionCloseLogAsync(bool isWriteConnection, bool disposeConnection = false)
+        {
+            try
+            {
+                if (!gclSettings.LogOpeningAndClosingOfConnections && ((isWriteConnection && writeConnectionLogId == 0) || (!isWriteConnection && readConnectionLogId == 0)))
+                {
+                    return;
+                }
+
+                if (!logTableExists.HasValue || !logTableExists.Value)
+                {
+                    // Table for logging doesn't exist yet, don't do anything. The table gets created during startup, but that also uses this service for doing that.
+                    // So the table obviously won't exist yet during startup and we don't want an error from that.
+                    return;
+                }
+
+                var commandToUse = isWriteConnection && !String.IsNullOrWhiteSpace(connectionStringForWriting) ? CommandForWriting : CommandForReading;
+
+                if (commandToUse == null)
+                {
+                    if (isWriteConnection && !String.IsNullOrWhiteSpace(connectionStringForWriting))
+                    {
+                        commandToUse = CommandForWriting ??= ConnectionForWriting.CreateCommand();
+                    }
+                    else
+                    {
+                        commandToUse = CommandForReading ??= ConnectionForReading.CreateCommand();
+                    }
+                }
+
+                if (commandToUse.Connection.State == ConnectionState.Closed)
+                {
+                    await commandToUse.Connection.OpenAsync();
+                }
+
+                if(commandToUse.Parameters.Contains("gclConnectionClosed")) commandToUse.Parameters.Remove("gclConnectionClosed");
+                if(commandToUse.Parameters.Contains("gclConnectionId")) commandToUse.Parameters.Remove("gclConnectionId");
+                commandToUse.Parameters.AddWithValue("gclConnectionClosed", DateTime.Now);
+                commandToUse.Parameters.AddWithValue("gclConnectionId", isWriteConnection ? writeConnectionLogId : readConnectionLogId);
+                commandToUse.CommandText = $"UPDATE {Constants.DatabaseConnectionLogTableName} SET closed = ?gclConnectionClosed WHERE id = ?gclConnectionId";
+                await commandToUse.ExecuteNonQueryAsync();
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "Error while trying to add connection close log.");
+            }
+            finally
+            {
+                if (disposeConnection)
+                {
+                    await (isWriteConnection ? ConnectionForWriting : ConnectionForReading).DisposeAsync();
+                    await (isWriteConnection ? CommandForWriting : CommandForReading).DisposeAsync();
+                }
+            }
         }
     }
 }
