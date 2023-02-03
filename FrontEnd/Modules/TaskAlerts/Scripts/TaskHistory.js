@@ -184,6 +184,7 @@ const moduleSettings = {
                         filter: [
                             { field: "receiver", operator: "eq", value: this.settings.wiserUserId }
                         ],
+                        sort: { field: "duedate", dir: "desc" },
                         transport: {
                             read: async (transportOptions) => {
                                 try {
@@ -215,7 +216,7 @@ const moduleSettings = {
                     },
                     columns: gridDataResult.columns,
                     resizable: true,
-                    sortable: false,
+                    sortable: true,
                     scrollable: {
                         virtual: true
                     },
