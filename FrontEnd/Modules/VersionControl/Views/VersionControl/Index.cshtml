@@ -1,5 +1,5 @@
 @model FrontEnd.Modules.Base.Models.BaseModuleViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 @{
     ViewBag.Title = "VCS";
@@ -89,8 +89,10 @@
          </div> 
     </div>
 
-    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("VersionControl.js")"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="VersionControl.js"></webpack-script>
 </body>
 </html>

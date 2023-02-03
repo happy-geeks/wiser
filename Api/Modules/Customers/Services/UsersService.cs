@@ -659,19 +659,26 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<string>> GetGridSettingsAsync(ClaimsIdentity identity, string uniqueKey)
+        public async Task<ServiceResult<string>> GetSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, string defaultValue = null)
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+            clientDatabaseConnection.AddParameter("group", groupName);
             clientDatabaseConnection.AddParameter("key", uniqueKey);
 
-            var query = $@"SELECT long_value
-                        FROM {WiserTableNames.WiserItemDetail}
-                        WHERE item_id = ?userId
-                        AND groupname = '{UserGridSettingsGroupName}'
-                        AND `key` = ?key";
+            var query = $@"SELECT settings.long_value
+                        FROM {WiserTableNames.WiserItem} AS `user`
+                        JOIN {WiserTableNames.WiserItemDetail} AS settings ON settings.item_id = `user`.id AND settings.`key` = ?key AND settings.groupname = ?group
+                        WHERE `user`.id = ?userId AND `user`.entity_type = '{WiserUserEntityType}'";
+
             var dataTable = await clientDatabaseConnection.GetAsync(query);
-            return new ServiceResult<string>(dataTable.Rows.Count == 0 ? null : dataTable.Rows[0].Field<string>("long_value"));
+            return new ServiceResult<string>(dataTable.Rows.Count == 0 ? defaultValue : dataTable.Rows[0].Field<string>("long_value"));
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> GetGridSettingsAsync(ClaimsIdentity identity, string uniqueKey)
+        {
+            return await GetSettingsAsync(identity, UserGridSettingsGroupName, uniqueKey);
         }
 
         /// <inheritdoc />
@@ -727,19 +734,26 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveGridSettingsAsync(ClaimsIdentity identity, string uniqueKey, JToken settings)
+        public async Task<ServiceResult<bool>> SaveSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, JToken settings)
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
             clientDatabaseConnection.AddParameter("key", uniqueKey);
+            clientDatabaseConnection.AddParameter("group", groupName);
             clientDatabaseConnection.AddParameter("settings", settings?.ToString(Formatting.None));
 
             var query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, groupname, `key`, long_value)
-                        VALUES (?userId, '{UserGridSettingsGroupName}', ?key, ?settings)
+                        VALUES (?userId, ?group, ?key, ?settings)
                         ON DUPLICATE KEY UPDATE long_value = VALUES(long_value)";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveGridSettingsAsync(ClaimsIdentity identity, string uniqueKey, JToken settings)
+        {
+            return await SaveSettingsAsync(identity, UserGridSettingsGroupName, uniqueKey, settings);
         }
 
         /// <inheritdoc />
@@ -1033,7 +1047,6 @@ namespace Api.Modules.Customers.Services
             }
         }
 
-
         /// <inheritdoc />
         public async Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false)
         {
@@ -1044,30 +1057,13 @@ namespace Api.Modules.Customers.Services
         /// <inheritdoc />
         public async Task<ServiceResult<string>> GetDashboardSettingsAsync(ClaimsIdentity identity)
         {
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
-
-            var query = $@"SELECT settings.long_value
-                        FROM `{WiserTableNames.WiserItem}` AS user
-                        JOIN `{WiserTableNames.WiserItemDetail}` AS settings ON settings.item_id = user.id AND settings.`key` = '{UserDashboardSettingsKey}'
-                        WHERE user.id = ?userId AND user.entity_type = '{WiserUserEntityType}'";
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
-            return new ServiceResult<string>(dataTable.Rows.Count == 0 ? "[]" : dataTable.Rows[0].Field<string>("long_value"));
+            return await GetSettingsAsync(identity, String.Empty, UserDashboardSettingsKey, "[]");
         }
 
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> SaveDashboardSettingsAsync(ClaimsIdentity identity, JToken settings)
         {
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
-            clientDatabaseConnection.AddParameter("settings", settings?.ToString(Formatting.None));
-
-            var query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, long_value)
-                        VALUES (?userId, '{UserDashboardSettingsKey}', ?settings)
-                        ON DUPLICATE KEY UPDATE long_value = VALUES(long_value)";
-            await clientDatabaseConnection.ExecuteAsync(query);
-
-            return new ServiceResult<bool>(true);
+            return await SaveSettingsAsync(identity, String.Empty, UserDashboardSettingsKey, settings);
         }
 
         /// <summary>

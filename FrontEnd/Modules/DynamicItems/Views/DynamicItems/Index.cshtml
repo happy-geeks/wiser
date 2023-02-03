@@ -1,5 +1,5 @@
 ﻿@model FrontEnd.Modules.DynamicItems.Models.DynamicItemsViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 <!DOCTYPE html>
 <html>
@@ -904,9 +904,16 @@
         </div>
     </script>
 
-    @* <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script> *@
-    @* <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script> *@
-    <script src="@await WebPackService.GetManifestFileAsync("DynamicItems.js")"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="DynamicItems.js"></webpack-script>
+    <webpack-script file-name="Fields.js"></webpack-script>
+    <webpack-script file-name="Dialogs.js"></webpack-script>
+    <webpack-script file-name="Windows.js"></webpack-script>
+    <webpack-script file-name="Grids.js"></webpack-script>
+    <webpack-script file-name="DragAndDrop.js"></webpack-script>
 
     <!-- CONTEXT MENU FOR TREEVIEW -->
     <ul id="menu"></ul>

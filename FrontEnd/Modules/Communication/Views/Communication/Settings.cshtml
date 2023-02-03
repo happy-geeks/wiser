@@ -1,5 +1,5 @@
 ﻿@model FrontEnd.Modules.Communication.Models.CommunicationSettingsViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -272,8 +272,8 @@
     </div>
 </div>
 
-<script src="@WebPackService.GetManifestFileAsync("Utils.js")"></script>
-<script src="@WebPackService.GetManifestFileAsync("Base.js")"></script>
-<script src="@WebPackService.GetManifestFileAsync("CommunicationSettings.js")"></script>
+<webpack-script file-name="Utils.js"></webpack-script>
+<webpack-script file-name="Base.js"></webpack-script>
+<webpack-script file-name="CommunicationSettings.js"></webpack-script>
 </body>
 </html>

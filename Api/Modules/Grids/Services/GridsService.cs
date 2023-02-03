@@ -894,12 +894,17 @@ namespace Api.Modules.Grids.Services
                     clientDatabaseConnection.AddParameter("entityType", entityType);
                     clientDatabaseConnection.AddParameter("linkTypeNumber", linkTypeNumber);
                     var columnsDataTable = await clientDatabaseConnection.GetAsync(columnsQuery);
-
+                    var reservedWordsArray = new[] { "abstract","arguments","await","boolean","break","byte","case","catch","char","class","const","continue","debugger","default","delete","do","double","else","enum","eval","export","extends","false","final","finally","float","for","function","goto","if","implements","import","in","instanceof","int","interface","let","long","native","new","null","package","private","protected","public","return","short","static","super","switch","synchronized","this","throw","throws","transient","true","try","typeof","var","void","volatile","while","with","yield" };
+                    
                     if (columnsDataTable.Rows.Count > 0)
                     {
                         foreach (DataRow dataRow in columnsDataTable.Rows)
                         {
                             var fieldName = dataRow.Field<string>("field").ToLowerInvariant().MakeJsonPropertyName();
+                            if (reservedWordsArray.Contains(fieldName))
+                            {
+                                throw new Exception( $"{fieldName}(variable: fieldName) is a reserved Javascript keyword");
+                            }
 
                             var field = new FieldModel
                             {
@@ -2060,7 +2065,7 @@ namespace Api.Modules.Grids.Services
             }
 
             // Remove any left over variables that we can't use and handle [if] statements.
-            var regex = new Regex("{[^}]*}");
+            var regex = new Regex("{[^}]*}", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
             selectQuery = regex.Replace(selectQuery, "");
             countQuery = regex.Replace(countQuery, "");
 
@@ -2432,7 +2437,7 @@ namespace Api.Modules.Grids.Services
 
             var userId = IdentityHelpers.GetWiserUserId(identity);
             query = query.ReplaceCaseInsensitive("{userId}", userId.ToString());
-            query = query.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity) ?? "");
+            query = query.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity, true) ?? "");
             query = query.ReplaceCaseInsensitive("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
             query = query.ReplaceCaseInsensitive("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
             query = query.ReplaceCaseInsensitive("{encryptedId}", encryptedId);

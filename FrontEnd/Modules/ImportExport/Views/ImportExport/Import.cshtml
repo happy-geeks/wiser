@@ -1,5 +1,5 @@
 ﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 <!DOCTYPE html>
 <html>
@@ -51,8 +51,8 @@
         </div>
     </div>
 
-    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Import.js")"></script>
+    <webpack-script file-name="Utils.js"></webpack-script>
+    <webpack-script file-name="Base.js"></webpack-script>
+    <webpack-script file-name="Import.js"></webpack-script>
 </body>
 </html>

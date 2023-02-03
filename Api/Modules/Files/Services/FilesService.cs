@@ -96,7 +96,7 @@ namespace Api.Modules.Files.Services
                 }
 
                 // Fix ordering of files.
-                await FixOrderingAsync(itemId, itemLinkId, propertyName);
+                await FixOrderingAsync(itemId, itemLinkId, propertyName, identity);
 
                 var result = new List<FileModel>();
 
@@ -239,27 +239,33 @@ namespace Api.Modules.Files.Services
                 }
             }
 
+            var username = IdentityHelpers.GetUserName(identity, true);
             databaseConnection.ClearParameters();
+            var columnsForInsertQuery = new List<string> { "content_url", "content_type", "file_name", "extension", "added_by", "title", "property_name", "ordering" };
             var tablePrefix = "";
             if (itemLinkId > 0)
             {
                 tablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(linkType, entityType);
                 databaseConnection.ClearParameters();
                 databaseConnection.AddParameter("itemlink_id", itemLinkId);
+                columnsForInsertQuery.Add("itemlink_id");
             }
             else if (itemId > 0)
             {
                 tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
                 databaseConnection.ClearParameters();
                 databaseConnection.AddParameter("item_id", itemId);
+                columnsForInsertQuery.Add("item_id");
             }
-            databaseConnection.AddParameter("content_url", contentUrl);
+            
             if (content?.Length > 0)
             {
                 databaseConnection.AddParameter("content", content);
+                columnsForInsertQuery.Add("content");
             }
+            
+            databaseConnection.AddParameter("content_url", contentUrl);
             databaseConnection.AddParameter("content_type", contentType);
-            var username = IdentityHelpers.GetUserName(identity);
             databaseConnection.AddParameter("file_name", fileName);
             databaseConnection.AddParameter("extension", Path.GetExtension(fileName));
             databaseConnection.AddParameter("added_by", username ?? "");
@@ -268,7 +274,10 @@ namespace Api.Modules.Files.Services
 
             var ordering = 1;
             var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemlink_id" : "item_id = ?item_id";
-            var query = $@"SELECT IFNULL(MAX(ordering), 0) AS maxOrdering FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE {whereClause} AND property_name = ?property_name";
+            var query = $@"SELECT IFNULL(MAX(ordering), 0) AS maxOrdering
+FROM {tablePrefix}{WiserTableNames.WiserItemFile}
+WHERE {whereClause}
+AND property_name = ?property_name";
             var dataTable = await databaseConnection.GetAsync(query);
             if (dataTable.Rows.Count > 0)
             {
@@ -276,9 +285,15 @@ namespace Api.Modules.Files.Services
             }
             databaseConnection.AddParameter("ordering", ordering);
 
+            query = $@"SET @_username = ?added_by;
+INSERT INTO {tablePrefix}{WiserTableNames.WiserItemFile} ({String.Join(", ", columnsForInsertQuery)})
+VALUES ({String.Join(", ", columnsForInsertQuery.Select(x => $"?{x}"))});
+SELECT LAST_INSERT_ID() AS newId;";
+            var newItem = await databaseConnection.GetAsync(query);
+
             var result = new FileModel
             {
-                FileId = await databaseConnection.InsertOrUpdateRecordBasedOnParametersAsync($"{tablePrefix}{WiserTableNames.WiserItemFile}", 0),
+                FileId = Convert.ToInt32(newItem.Rows[0]["newId"]),
                 Name = fileName,
                 Extension = fileExtension,
                 ItemId = await wiserCustomersService.EncryptValue(itemId, identity),
@@ -670,14 +685,17 @@ namespace Api.Modules.Files.Services
             }
 
             databaseConnection.ClearParameters();
+            var columnsForInsertQuery = new List<string> { "content_url", "content_type", "file_name", "extension", "added_by", "title", "property_name", "ordering" };
 
             if (itemLinkId > 0)
             {
                 databaseConnection.AddParameter("itemlink_id", itemLinkId);
+                columnsForInsertQuery.Add("itemlink_id");
             }
             else
             {
                 databaseConnection.AddParameter("item_id", itemId);
+                columnsForInsertQuery.Add("item_id");
             }
 
             file.Name = String.IsNullOrWhiteSpace(file.Name) ? Path.GetFileName(file.ContentUrl) : file.Name;
@@ -687,10 +705,16 @@ namespace Api.Modules.Files.Services
             databaseConnection.AddParameter("content_url", file.ContentUrl);
             databaseConnection.AddParameter("file_name", Path.GetFileNameWithoutExtension(file.Name).ConvertToSeo() + Path.GetExtension(file.Name)?.ToLowerInvariant());
             databaseConnection.AddParameter("extension", file.Extension);
-            databaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity) ?? "");
+            databaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true) ?? "");
             databaseConnection.AddParameter("title", file.Title ?? "");
             databaseConnection.AddParameter("property_name", propertyName);
-            file.FileId = await databaseConnection.InsertOrUpdateRecordBasedOnParametersAsync($"{tablePrefix}{WiserTableNames.WiserItemFile}", 0);
+
+            var query = $@"SET @_username = ?added_by;
+INSERT INTO {tablePrefix}{WiserTableNames.WiserItemFile} ({String.Join(", ", columnsForInsertQuery)})
+VALUES ({String.Join(", ", columnsForInsertQuery.Select(x => $"?{x}"))});
+SELECT LAST_INSERT_ID() AS newId;";
+            var newItem = await databaseConnection.GetAsync(query);
+            file.FileId = Convert.ToInt32(newItem.Rows[0]["newId"]);
 
             return new ServiceResult<FileModel>(file);
         }
@@ -723,6 +747,7 @@ namespace Api.Modules.Files.Services
             databaseConnection.AddParameter("itemId", itemId);
             databaseConnection.AddParameter("propertyName", propertyName);
             databaseConnection.AddParameter("itemLinkId", itemLinkId);
+            databaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
 
             var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemLinkId" : "item_id = ?itemId";
 
@@ -734,7 +759,8 @@ namespace Api.Modules.Files.Services
             if (newPosition < previousPosition)
             {
                 // Increase the ordering of all files that come later than the new position and earlier than the previous position.
-                query = $@"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} 
+                query = $@"SET @_username = ?username;
+UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} 
 SET ordering = ordering + 1
 WHERE {whereClause}
 AND property_name = ?propertyName
@@ -745,7 +771,8 @@ AND ordering < ?previousPosition";
             else
             {
                 // Lower the ordering of all files that come later than the previous position and earlier than the new position.
-                query = $@"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} 
+                query = $@"SET @_username = ?username;
+UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} 
 SET ordering = ordering - 1
 WHERE {whereClause}
 AND property_name = ?propertyName
@@ -762,7 +789,7 @@ AND ordering <= ?newPosition";
         }
 
         /// <inheritdoc />
-        public async Task FixOrderingAsync(ulong itemId, ulong itemLinkId, string propertyName, string entityType = null, int linkType = 0)
+        public async Task FixOrderingAsync(ulong itemId, ulong itemLinkId, string propertyName, ClaimsIdentity identity, string entityType = null, int linkType = 0)
         {
             var tablePrefix = itemLinkId > 0
                 ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
@@ -771,8 +798,10 @@ AND ordering <= ?newPosition";
             databaseConnection.AddParameter("itemId", itemId);
             databaseConnection.AddParameter("itemLinkId", itemLinkId);
             databaseConnection.AddParameter("propertyName", propertyName);
+            databaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
             var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemLinkId" : "item_id = ?itemId";
             var query = $@"SET @orderingNumber = 0;
+SET @_username = ?username;
 
 UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} AS file
 JOIN (

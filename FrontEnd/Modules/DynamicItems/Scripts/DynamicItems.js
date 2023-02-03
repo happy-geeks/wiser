@@ -19,6 +19,7 @@ require("@progress/kendo-ui/js/kendo.sortable.js");
 require("@progress/kendo-ui/js/kendo.validator.js");
 require("@progress/kendo-ui/js/kendo.splitter.js");
 require("@progress/kendo-ui/js/kendo.treeview.js");
+require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
@@ -172,7 +173,7 @@ const moduleSettings = {
             // Get user data from local storage.
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Admin (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
             if (!this.settings.wiserApiRoot.endsWith("/")) {
@@ -2308,8 +2309,8 @@ const moduleSettings = {
          * @returns {number} The ID of the API action, or 0 if there is no action set.
          */
         async getApiAction(actionType, entityType) {
-            const result = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_API_ACTION?entityType=${encodeURIComponent(entityType)}&actionType=${encodeURIComponent(actionType)}` });
-            return !result || !result.length ? 0 : result[0].apiConnectionId || 0;
+            const result = await Wiser.api({ url: `${this.settings.wiserApiRoot}entity-types/${encodeURIComponent(entityType)}/api-connection/${encodeURIComponent(actionType)}` });
+            return result || 0;
         }
 
         /**

@@ -1,5 +1,5 @@
 ﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 <!DOCTYPE html>
 <html>
@@ -237,10 +237,12 @@
         </div>
     </div>
 
-    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("ImportExport.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Import.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Export.js")"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="ImportExport.js"></webpack-script>
+    <webpack-script file-name="Import.js"></webpack-script>
+    <webpack-script file-name="Export.js"></webpack-script>
 </body>
 </html>

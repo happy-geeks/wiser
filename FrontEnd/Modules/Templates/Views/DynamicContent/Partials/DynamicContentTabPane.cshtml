@@ -17,6 +17,7 @@
                         <h3>@group.PrettyName</h3>
                         @foreach (var field in group.Fields)
                         {
+                            // ReSharper disable once Mvc.PartialViewNotResolved
                             <partial name="Partials/InputGenerator" model="field" />
                         }
                     </div>

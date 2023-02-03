@@ -620,7 +620,7 @@ export class Wiser {
                 window.processing.addProcess(process);
 
                 // Get the settings.
-                const apiConnectionData = await Wiser.api({ url: `${settings.wiserApiRoot}api-connections/${encodeURIComponent(apiConnectionId)}` });
+                const apiConnectionData = await Wiser.api({ url: `${settings.wiserApiRoot}api-connections/${apiConnectionId}` });
                 if (!apiConnectionData || !apiConnectionData.options) {
                     reject("Er werd geprobeerd om een API aan te roepen, echter zijn er niet genoeg gegevens bekend. Neem a.u.b. contact op met ons.");
                     window.processing.removeProcess(process);
@@ -672,7 +672,7 @@ export class Wiser {
                     // If a query ID is set, execute that query first, so that the results can be used in the call to the API.
                     if (action.preRequestQueryId && itemDetails) {
                         const queryResult = await Wiser.api({
-                            method: "POST",
+                            method: action.method,
                             url: `${settings.wiserApiRoot}items/${encodeURIComponent(itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid)}/action-button/0?queryId=${encodeURIComponent(action.preRequestQueryId)}&itemLinkId=${encodeURIComponent(itemDetails.linkId || itemDetails.link_id || 0)}`,
                             data: !extraData ? null : JSON.stringify(extraData),
                             contentType: "application/json"
@@ -696,11 +696,20 @@ export class Wiser {
                         action.function = "/" + action.function;
                     }
 
-                    // Setup the headers for the request.
-                    const headers = $.extend({
-                        "X-Api-Url": `${apiOptions.baseUrl}${action.function}`,
-                        "X-Http-Method": action.method
-                    }, extraHeaders, action.extraHeaders);
+                    // Setup the headers for the request.                    
+                    const headers = {
+                        "X-Api-Url": `${apiOptions.baseUrl}${action.function}`
+                    };
+                    
+                    if (action.extraHeaders) {
+                        for (let headerName in action.extraHeaders) {
+                            if (!action.extraHeaders.hasOwnProperty(headerName)) {
+                                continue;
+                            }
+
+                            headers[`X-Extra-${headerName}`] = action.extraHeaders[headerName];
+                        }
+                    }
 
                     // Do replacements on the request data, if there is any.
                     if (action.data) {
@@ -731,7 +740,7 @@ export class Wiser {
 
                     // Execute the request.
                     let apiResults = await $.ajax({
-                        url: "/Wiser/ApiProxy.aspx",
+                        url: "/ExternalApis/Proxy",
                         headers: headers,
                         method: "POST",
                         contentType: action.contentType,
@@ -784,7 +793,7 @@ export class Wiser {
     /**
      * Use standard full OAUTH2 authentication.
      * If a manual login is required, this will open a window where the user can login.
-     * @param {string} serviceRoot The base URL for json.aspx.
+     * @param {any} settings The module settings. 
      * @param {any} apiOptions The API options from wiser_api_connection.
      * @param {any} apiConnectionId The ID of the API connection/authentication data in wiser_api_connection.
      * @param {any} authenticationData The saved authentication data from wiser_api_connection.
@@ -803,7 +812,7 @@ export class Wiser {
             if (authenticationData.refreshToken || authenticationData.authenticationToken) {
                 const authenticationRequest = {
                     method: "POST",
-                    url: "/Wiser/ApiProxy.aspx",
+                    url: "/ExternalApis/Proxy",
                     headers: { "X-Api-Url": `${apiOptions.baseUrl}${apiOptions.authentication.accessTokenUrl}` },
                     data: {}
                 };

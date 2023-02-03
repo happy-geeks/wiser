@@ -208,6 +208,11 @@ CREATE TRIGGER `{tablePrefix}FileInsert` AFTER INSERT ON `{tablePrefix}wiser_ite
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'property_name', NULL, NEW.property_name);
         END IF;
+
+        IF IFNULL(NEW.ordering, 0) <> 0 THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'ordering', NULL, NEW.ordering);
+        END IF;
     END IF;
 END;
 
@@ -267,6 +272,11 @@ CREATE TRIGGER `{tablePrefix}FileUpdate` AFTER UPDATE ON `{tablePrefix}wiser_ite
         IF NEW.itemlink_id <> OLD.itemlink_id THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'itemlink_id', OLD.itemlink_id, NEW.itemlink_id);
+        END IF;
+
+        IF NEW.ordering <> OLD.ordering THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'ordering', OLD.ordering, NEW.ordering);
         END IF;
     END IF;
 END;

@@ -13,6 +13,7 @@ require("@progress/kendo-ui/js/kendo.splitter.js");
 require("@progress/kendo-ui/js/kendo.tabstrip.js");
 require("@progress/kendo-ui/js/kendo.treeview.js");
 require("@progress/kendo-ui/js/kendo.grid.js");
+require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
@@ -141,7 +142,7 @@ const moduleSettings = {
 
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
@@ -1381,10 +1382,45 @@ const moduleSettings = {
                 preLoadQueryField.data("CodeMirrorInstance", codeMirrorInstance);
             }
 
+            // Pre load query field for HTML templates.
+            const widgetContentField = $("#widgetContent");
+            if (widgetContentField.length > 0) {
+                // Initialize Code Mirror.
+                await Misc.ensureCodeMirror();
+                const codeMirrorInstance = CodeMirror.fromTextArea(widgetContentField[0], {
+                    lineNumbers: true,
+                    indentUnit: 4,
+                    lineWrapping: true,
+                    foldGutter: true,
+                    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
+                    lint: true,
+                    extraKeys: {
+                        "Ctrl-Q": (sender) => {
+                            sender.foldCode(sender.getCursor());
+                        },
+                        "F11": (sender) => {
+                            sender.setOption("fullScreen", !sender.getOption("fullScreen"));
+                        },
+                        "Esc": (sender) => {
+                            if (sender.getOption("fullScreen")) sender.setOption("fullScreen", false);
+                        },
+                        "Ctrl-Space": "autocomplete"
+                    },
+                    mode: widgetContentField.data("editorType")
+                });
+
+                widgetContentField.data("CodeMirrorInstance", codeMirrorInstance);
+            }
+
             const advancedSettingsToggle = $("#advanced");
             advancedSettingsToggle.change((event) => {
-                if (advancedSettingsToggle.prop("checked") && preLoadQueryField.length > 0) {
-                    preLoadQueryField.data("CodeMirrorInstance").refresh();
+                if (advancedSettingsToggle.prop("checked")) {
+                    if (preLoadQueryField.length > 0) {
+                        preLoadQueryField.data("CodeMirrorInstance").refresh();
+                    }
+                    if (widgetContentField.length > 0) {
+                        widgetContentField.data("CodeMirrorInstance").refresh();
+                    }
                 }
             });
 
@@ -1792,7 +1828,10 @@ const moduleSettings = {
                 contentType: "application/json"
             });
 
-            window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
+            // No message needs to be shown if deployed to the development environment because this is default.
+            if (environmentEnum !== 1) {
+                window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
+            }
             this.historyLoaded = false;
             await this.reloadMetaData(templateId);
         }
@@ -2004,7 +2043,7 @@ const moduleSettings = {
             const urlRegexElement = document.getElementById("urlRegex");
 
             const settings = Object.assign({
-                templateId: this.selectedId,
+                templateId: this.selectedId || this.settings.templateId || 0,
                 name: this.templateSettings.name || "",
                 type: this.templateSettings.type,
                 parentId: this.templateSettings.parentId,
@@ -2194,10 +2233,8 @@ const moduleSettings = {
                 window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
                 this.historyLoaded = false;
 
-                if (alsoDeployToTest === true) {
-                    const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
-                    await this.deployEnvironment("test", templateId, version);
-                }
+                const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
+                await this.deployEnvironment(alsoDeployToTest === true ? "test" : "development", templateId, version);
 
                 if (reloadTemplateAfterSave) {
                     await this.loadTemplate(templateId);
@@ -2431,6 +2468,11 @@ const moduleSettings = {
             const preLoadQueryField = $("#preLoadQuery");
             if (preLoadQueryField.length > 0 && preLoadQueryField.data("CodeMirrorInstance")) {
                 settingsList.preLoadQuery = preLoadQueryField.data("CodeMirrorInstance").getValue();
+            }
+            
+            const widgetContentField = $("#widgetContent");
+            if (widgetContentField.length > 0 && widgetContentField.data("CodeMirrorInstance")) {
+                settingsList.widgetContent = widgetContentField.data("CodeMirrorInstance").getValue();
             }
 
             $(".advanced input, .advanced select").each((index, element) => {

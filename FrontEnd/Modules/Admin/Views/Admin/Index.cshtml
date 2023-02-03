@@ -1,5 +1,5 @@
 ﻿@model FrontEnd.Core.Models.BaseViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -1727,8 +1727,10 @@
         </div>
     </div>
     
-    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Admin.js")"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="Admin.js"></webpack-script>
 </body>
 </html>

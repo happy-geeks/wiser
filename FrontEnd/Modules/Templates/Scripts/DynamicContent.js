@@ -13,6 +13,7 @@ require("@progress/kendo-ui/js/kendo.treeview.js");
 require("@progress/kendo-ui/js/kendo.grid.js");
 require("@progress/kendo-ui/js/kendo.datetimepicker.js");
 require("@progress/kendo-ui/js/kendo.multiselect.js");
+require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
@@ -103,7 +104,7 @@ const moduleSettings = {
 
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);

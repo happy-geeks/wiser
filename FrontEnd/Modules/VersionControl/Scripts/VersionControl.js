@@ -92,7 +92,7 @@ const moduleSettings = {
 
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
@@ -451,6 +451,7 @@ const moduleSettings = {
                         }
                     },
                     selectable: "multiple, row",
+                    resizable : true,
                     columns: [
                         {
                             "field": "templateId",
@@ -562,6 +563,7 @@ const moduleSettings = {
                         }
                     },
                     selectable: "multiple, row",
+                    resizable : true,
                     columns: [
                         {
                             "field": "dynamicContentId",
@@ -669,6 +671,7 @@ const moduleSettings = {
                         }
                     },
                     selectable: "multiple, row",
+                    resizable : true,
                     columns: [
                         {
                             "field": "id",

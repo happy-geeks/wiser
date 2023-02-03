@@ -1,5 +1,5 @@
 ﻿@model FrontEnd.Modules.DataSelector.Models.DataSelectorViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 <!DOCTYPE html>
 <html>
@@ -448,10 +448,12 @@
         </div>
     </script>
 
-    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("DataSelectorConnection.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("DataSelectorDataLoad.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("DataSelector.js")"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="DataSelectorConnection.js"></webpack-script>
+    <webpack-script file-name="DataSelectorDataLoad.js"></webpack-script>
+    <webpack-script file-name="DataSelector.js"></webpack-script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 ﻿@using System.Web
 @model FrontEnd.Modules.ContentBuilder.Models.ContentBuilderViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 <!DOCTYPE html>
 <html lang="nl">
@@ -37,6 +37,9 @@
         "markerIoToken": "@Model.Settings.MarkerIoToken"
     }
     </script>
-    <script src="@await WebPackService.GetManifestFileAsync("ContentBuilder.js")"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="contentbuilder.js"></webpack-script>
+    <webpack-script file-name="ContentBuilder.js"></webpack-script>
 </body>
 </html>
