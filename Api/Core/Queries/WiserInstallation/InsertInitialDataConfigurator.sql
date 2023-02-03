@@ -158,33 +158,78 @@ INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `link_type`, `vi
 -- Configurator
 INSERT INTO `wiser_item` (`entity_type`, `moduleid`, `published_environment`, `title`) VALUES ('configurator', 800, 15, 'ExampleConfigurator');
 SET @configuratorId = (SELECT LAST_INSERT_ID());
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@configuratorId, 'template', '<div class="container"><h2>Example configurator</h2>{mainsteps}</div>');
 
 -- Main step 1
 INSERT INTO `wiser_item` (`entity_type`, `moduleid`, `published_environment`, `title`) VALUES ('hoofdstap', 800, 15, 'MainStep1');
 SET @mainStepOneId = (SELECT LAST_INSERT_ID());
 INSERT INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@mainStepOneId, @configuratorId, 1);
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@mainStepOneId, 'variable_name', 'mainStepOne');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@mainStepOneId, 'datasource', 'customquery');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@mainStepOneId, 'step_template', '<h3>Mainstep 1</h3>{steps}');
 
 -- Main step 1 - Step 1
 INSERT INTO `wiser_item` (`entity_type`, `moduleid`, `published_environment`, `title`) VALUES ('stap', 800, 15, 'Step1');
 SET @stepOneOneId = (SELECT LAST_INSERT_ID());
 INSERT INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@stepOneOneId, @mainStepOneId, 1);
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepOneOneId, 'variable_name', 'stepOne');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepOneOneId, 'datasource', 'customquery');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepOneOneId, 'step_template', '<h3>Question 1</h3>{datasource_values}');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepOneOneId, 'values_template', '<input type="radio" name="firstQuestion" class="toggle configurator-value-item" value="{id}" data-jconfigurator-name="Choice 1" data-jconfigurator-value="{id}" data-jconfigurator-valuename="{name}"/>');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepOneOneId, 'custom_query', 'SELECT 1 AS `id`, ''Answer 1'' AS `name` UNION SELECT 2 AS `id`, ''Answer 2'' AS `name`');
 
 -- Main step 1 - Step 2
 INSERT INTO `wiser_item` (`entity_type`, `moduleid`, `published_environment`, `title`) VALUES ('stap', 800, 15, 'Step2');
 SET @stepOneTwoId = (SELECT LAST_INSERT_ID());
 INSERT INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@stepOneTwoId, @mainStepOneId, 1);
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepOneTwoId, 'variable_name', 'stepTwo');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepOneTwoId, 'datasource_connectedid', 'stepOne');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepOneTwoId, 'datasource', 'customquery');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepOneTwoId, 'step_template', '<h3>Question 2</h3>{datasource_values}');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepOneTwoId, 'values_template', '<input type="radio" name="secondQuestion" class="toggle configurator-value-item" value="{id}" data-jconfigurator-name="Choice 2" data-jconfigurator-value="{id}" data-jconfigurator-valuename="{name}"/>');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepOneTwoId, 'custom_query', 'SELECT 1 AS `id`, ''Answer 1'' AS `name` UNION SELECT 2 AS `id`, ''Answer 2'' AS `name` WHERE ''{firstQuestion}'' = ''1''');
 
 -- Main step 2 - Step 2 - Sub step 1
 INSERT INTO `wiser_item` (`entity_type`, `moduleid`, `published_environment`, `title`) VALUES ('substap', 800, 15, 'Substep1');
 SET @subStepOneTwoOneId = (SELECT LAST_INSERT_ID());
 INSERT INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@subStepOneTwoOneId, @stepOneTwoId, 1);
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@subStepOneTwoOneId, 'variable_name', 'substepOne');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@subStepOneTwoOneId, 'datasource_connectedid', 'stepTwo');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@subStepOneTwoOneId, 'datasource', 'customquery');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@subStepOneTwoOneId, 'step_template', '<h3>Question 2.1</h3>{datasource_values}');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@subStepOneTwoOneId, 'values_template', '<input type="radio" name="subQuestion" class="toggle configurator-value-item" value="{id}" data-jconfigurator-name="Choice 2" data-jconfigurator-value="{id}" data-jconfigurator-valuename="{name}"/>');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@subStepOneTwoOneId, 'custom_query', 'SELECT 1 AS `id`, ''Answer 1'' AS `name` WHERE ''{secondQuestion}'' = ''1'' UNION SELECT 2 AS `id`, ''Answer 2'' AS `name` WHERE ''{secondQuestion}'' = ''1'' UNION SELECT 1 AS `id`, ''Answer 1'' AS `name` WHERE ''{secondQuestion}'' = ''2'' UNION SELECT 2 AS `id`, ''Answer 2'' AS `name` WHERE ''{secondQuestion}'' = ''2''');
 
 -- Main step 2
 INSERT INTO `wiser_item` (`entity_type`, `moduleid`, `published_environment`, `title`) VALUES ('hoofdstap', 800, 15, 'MainStep2');
 SET @mainStepTwoId = (SELECT LAST_INSERT_ID());
 INSERT INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@mainStepTwoId, @configuratorId, 1);
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@mainStepTwoId, 'variable_name', 'mainStepTwo');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@mainStepTwoId, 'datasource', 'customquery');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@mainStepTwoId, 'step_template', '<h3>Mainstep 2</h3>{steps}');
 
 -- Main step 2 - Step 1
 INSERT INTO `wiser_item` (`entity_type`, `moduleid`, `published_environment`, `title`) VALUES ('stap', 800, 15, 'Step1');
 SET @stepTwoOneId = (SELECT LAST_INSERT_ID());
 INSERT INTO `wiser_itemlink` (`item_id`, `destination_item_id`, `type`) VALUES (@stepTwoOneId, @mainStepTwoId, 1);
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepTwoOneId, 'variable_name', 'stepThree');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepTwoOneId, 'datasource', 'customquery');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepTwoOneId, 'step_template', '<h3>Question 3</h3>{datasource_values}');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepTwoOneId, 'values_template', '<input type="radio" name="thirdQuestion" class="toggle configurator-value-item" value="{id}" data-jconfigurator-name="Choice 1" data-jconfigurator-value="{id}" data-jconfigurator-valuename="{name}"/>');
+INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepTwoOneId, 'custom_query', 'SELECT 1 AS `id`, ''Answer 1'' AS `name` UNION SELECT 2 AS `id`, ''Answer 2'' AS `name`');
+
+-- Templates
+SET @newContentId = (SELECT MAX(`content_id`) + 1 FROM `wiser_dynamic_content`);
+INSERT INTO `wiser_dynamic_content` (`content_id`, `settings`, `component`, `component_mode`, `version`, `title`, `changed_on`, `changed_by`, `published_environment`) VALUES (@newContentId, '{"ConfiguratorName":"ExampleConfigurator","ValuesCanContainDashes":false,"ProductsApiBaseUrl":"","ProductsApiGetProductsUrl":"","ProductsApiSalesPriceProperty":"","ProductsApiPurchasePriceProperty":"","ProductsApiFromPriceProperty":"","UserNeedsToBeLoggedIn":false,"HandleRequest":false,"EvaluateIfElseInTemplates":true,"RemoveUnknownVariables":true,"CachingMode":"0","CachingLocation":"0","CacheMinutes":0,"ComponentMode":"1"}', 'Configurator', 'Default', 1, 'ExampleConfigurator', NOW(), 'Wiser', 1);
+SET @configuratorDynamicContentId = (SELECT `content_id` FROM `wiser_dynamic_content` WHERE `id` = LAST_INSERT_ID());
+
+SET @htmlFolderTemplateId = (SELECT `template_id` FROM `wiser_template` WHERE `template_name` = 'HTML');
+SET @newTemplateId = (SELECT MAX(`template_id`) + 1 FROM `wiser_template`);
+INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`) VALUES (@htmlFolderTemplateId, 'Configurators', 7, 1, @newTemplateId, NOW(), 'Wiser', 1);
+SET @configuratorTemplateFolder = (SELECT `template_id` FROM `wiser_template` WHERE `id` = LAST_INSERT_ID());
+
+SET @newTemplateId = (SELECT MAX(`template_id`) + 1 FROM `wiser_template`);
+INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_data`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`) VALUES (@configuratorTemplateFolder, 'ExampleConfigurator', CONCAT('<div class="dynamic-content" content-id="', @configuratorDynamicContentId, '"><h2>ExampleConfigurator</h2></div>'), 1, 1, @newTemplateId, NOW(), 'Wiser', 1);
+SET @configuratorHtmlTemplateId = (SELECT `template_id` FROM `wiser_template` WHERE `id` = LAST_INSERT_ID());
+
+INSERT INTO `wiser_template_dynamic_content` (`content_id`, `destination_template_id`, `added_on`, `added_by`) VALUES (@configuratorDynamicContentId, @configuratorHtmlTemplateId, NOW(), 'Wiser');
