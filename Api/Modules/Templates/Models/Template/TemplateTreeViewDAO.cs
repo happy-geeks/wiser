@@ -1,5 +1,4 @@
-﻿using System;
-using GeeksCoreLibrary.Modules.Templates.Enums;
+﻿using GeeksCoreLibrary.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Models.Template
 {
