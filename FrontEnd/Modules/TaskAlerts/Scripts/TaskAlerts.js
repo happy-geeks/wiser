@@ -347,13 +347,32 @@ const moduleSettings = {
                     }
 
                     await TaskUtils.completeTask(input.value, this.settings.username, this.settings.wiserApiRoot);
-                    parent.classList.add("completed");
 
-                    const notification = $("#completedTaskNotification").kendoNotification({
-                        autoHideAfter: 2000
+                    let completionWasUndone = false;
+                    const notification = $("<div />").kendoNotification({
+                        autoHideAfter: 3000,
+                        position: {
+                            left: 10
+                        },
+                        hide: () => {
+                            if (completionWasUndone) {
+                                return;
+                            }
+                            
+                            parent.classList.add("completed");
+                            this.updateTaskCount();
+                        }
                     }).data("kendoNotification");
-                    notification.show();
-                    this.updateTaskCount();
+                    
+                    notification.show(`<p>De taak is gemarkeerd als afgerond.</p><button type="button" class="k-primary" id="undoCompleteTask">Ongedaan maken</button>`);
+                    $("#undoCompleteTask").kendoButton({
+                        click: (event) => {
+                            event.preventDefault();
+                            completionWasUndone = true;
+                            input.checked = false;
+                            TaskUtils.returnTask(input.value, this.settings.username, this.settings.wiserApiRoot);
+                        }
+                    });
                 });
             });
 

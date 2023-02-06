@@ -63,17 +63,16 @@ export class TaskUtils {
      * @returns {Promise<void>}
      */
     static async returnTask(taskId, username, wiserApiRoot) {
-        const { DateTime } = await import("luxon");
-        const checkedOnValue = DateTime.now().toISO();
-
         const inputData = [
             {
                 key: "checkedon",
-                value: checkedOnValue
+                value: "",
+                languageCode: ""
             },
             {
                 key: "status",
-                value: ""
+                value: "",
+                languageCode: ""
             }
         ];
         await this.updateItem(taskId, inputData, username, wiserApiRoot);
