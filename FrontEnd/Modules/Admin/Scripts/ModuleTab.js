@@ -503,6 +503,7 @@ export class ModuleTab {
         
         const moduleId = this.moduleCombobox.dataItem().id;
         $(".delModuleBtn").toggleClass("hidden", !moduleId);
+        $(".module-right-pane").toggleClass("hidden", !moduleId);
         
         await this.getModuleById(moduleId);
     }
