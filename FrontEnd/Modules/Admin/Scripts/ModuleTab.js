@@ -431,8 +431,15 @@ export class ModuleTab {
                 { text: "Communication", value: "Communication" }
             ],
             dataTextField: "text",
-            dataValueField: "value"
+            dataValueField: "value",
+            cascade: this.onModuleTypeChange.bind(this)
         }).data("kendoComboBox");
+        
+        this.moduleGridViewMode = $("#moduleGridViewMode").change(this.onModuleGridViewModeChange.bind(this));
+        this.moduleInitialItemId = $("#moduleInitialItemId").kendoNumericTextBox({
+            decimals: 0,
+            format: "#"
+        }).data("kendoNumericTextBox")
         
         //Combobox for the "Groep" combobox
         this.moduleGroup = $("#moduleGroup").kendoComboBox().data("kendoComboBox");
@@ -507,6 +514,18 @@ export class ModuleTab {
         
         await this.getModuleById(moduleId);
     }
+    
+    onModuleTypeChange(event) {
+        $("[data-module-type-filter]").each((index, element) => {
+            const container = $(element);
+            const modules = container.data("moduleTypeFilter").split(",");
+            container.toggleClass("hidden", modules.indexOf(this.moduleType.value()) === -1);
+        });
+    }
+    
+    onModuleGridViewModeChange(event) {
+        $(".module-tree-view-mode").toggleClass("hidden", this.moduleGridViewMode.prop("checked"));
+    }
 
     async getModules(reloadDataSource = true, moduleIdToSelect = null) {
         if (reloadDataSource) {
@@ -572,11 +591,31 @@ export class ModuleTab {
         this.moduleGroup.value(resultSet.group);
 
         document.getElementById("moduleType").value = typeof (resultSet.type) === "undefined" ? "" : resultSet.type;
-        document.getElementById("moduleOptions").value = typeof (resultSet.options) === "undefined" ? "" : resultSet.options;
 
         this.setCodeMirrorFields(this.moduleCustomQuery, typeof (resultSet.customQuery) === "undefined" ? "" : resultSet.customQuery);
         this.setCodeMirrorFields(this.moduleCountQuery, typeof (resultSet.countQuery) === "undefined" ? "" : resultSet.countQuery);
-        this.setCodeMirrorFields(this.moduleOptions, JSON.stringify(resultSet.options, null, ' '));
+
+        const moduleOptions = resultSet.options || {};
+        document.getElementById("moduleOnlyOneInstanceAllowed").checked = moduleOptions.onlyOneInstanceAllowed || false;
+        document.getElementById("moduleShowNameFieldInWindows").checked = moduleOptions.showNameFieldInWindows || false;
+        this.moduleGridViewMode.prop("checked", moduleOptions.gridViewMode || false).trigger("change");
+        document.getElementById("moduleInitialItemEntityType").value = moduleOptions.entityType || "";
+        
+        if (typeof(moduleOptions.initialItemId) !== "undefined") {
+            this.moduleInitialItemId.value(moduleOptions.initialItemId);
+            delete moduleOptions.initialItemId;
+        }
+        
+        delete moduleOptions.onlyOneInstanceAllowed;
+        delete moduleOptions.showNameFieldInWindows;
+        delete moduleOptions.gridViewMode;
+        delete moduleOptions.entityType;
+        let moduleOptionsString = JSON.stringify(moduleOptions, null, 4);
+        if (moduleOptionsString === "{}") {
+            moduleOptionsString = "";
+        }
+
+        this.setCodeMirrorFields(this.moduleOptions, moduleOptionsString);
     }
 
     // actions handled before save, such as checks
@@ -595,12 +634,35 @@ export class ModuleTab {
             return;
         }
         
+        const moduleOptions = JSON.parse(this.moduleOptions.getValue() || "{}");
+        moduleOptions.onlyOneInstanceAllowed = document.getElementById("moduleOnlyOneInstanceAllowed").checked;
+        moduleOptions.showNameFieldInWindows = document.getElementById("moduleShowNameFieldInWindows").checked;
+        moduleOptions.gridViewMode = document.getElementById("moduleGridViewMode").checked;
+        moduleOptions.initialItemId = this.moduleInitialItemId.value();
+        moduleOptions.entityType = document.getElementById("moduleInitialItemEntityType").value;
+        
+        if (!moduleOptions.onlyOneInstanceAllowed) {
+            delete moduleOptions.onlyOneInstanceAllowed;
+        }
+        if (!moduleOptions.showNameFieldInWindows) {
+            delete moduleOptions.showNameFieldInWindows;
+        }
+        if (!moduleOptions.gridViewMode) {
+            delete moduleOptions.gridViewMode;
+        }
+        if (!moduleOptions.initialItemId) {
+            delete moduleOptions.initialItemId;
+        }
+        if (!moduleOptions.entityType) {
+            delete moduleOptions.entityType;
+        }
+        
         const moduleId = parseInt(moduleIdElement.value);
         const moduleSettingsModel = new ModuleSettingsModel(
             moduleId,
             this.moduleCustomQuery.getValue(),
             this.moduleCountQuery.getValue(),
-            this.moduleOptions.getValue(),
+            JSON.stringify(moduleOptions, null, 4),
             document.getElementById("moduleName").value,
             this.moduleIcon.value(),
             this.moduleType.value(),
