@@ -1332,11 +1332,12 @@ span.k-input .k-input:hover {
 	min-width: 40px;
 	padding: 4px 6px;
 	height: 24px;
+	margin-right: 5px;
 }
 .k-grid .k-command-cell>.k-button+.k-button {
-	margin-left: 5px;
 	-webkit-margin-start: 0;
 	margin-inline-start: 0;
+	margin-right: 5px;
 }
 k-filter-menu .k-autocomplete,
 .k-filter-menu .k-combobox,
