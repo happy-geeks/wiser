@@ -168,7 +168,7 @@ ORDER BY version DESC");
                     DefaultHeaderFooterRegex = row.Field<string>("default_header_footer_regex"),
                     IsPartial = Convert.ToBoolean(row["is_partial"]),
                     WidgetContent = row.Field<string>("widget_content"),
-                    WidgetLocation = (PageWidgetLocations) Convert.ToInt32(row["location"])
+                    WidgetLocation = (PageWidgetLocations) Convert.ToInt32(row["widget_location"])
                 };
                 
                 var loginRolesString = row.Field<string>("login_role");
