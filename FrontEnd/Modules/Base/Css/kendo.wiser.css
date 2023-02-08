@@ -1241,10 +1241,6 @@ span.k-input .k-input:hover {
 	bottom: 6px;
 	right: 5px;
 }
-.k-grid-header th.k-header .k-state-active {
-	background: none;
-	position: static;
-}
 .k-grid-header th.k-header .k-grid-filter.k-state-active:before {
 	content: "";
 	background-color: var(--bg-color);
@@ -1258,11 +1254,6 @@ span.k-input .k-input:hover {
 .k-grid-header th.k-header .k-state-active span {
 	position: relative;
 	z-index: 5;
-}
-.k-grid-header .k-grid-filter {
-	background: rgba(255,255,255,0.2);
-	border: none;
-	margin: -12px -4px -12px 0;
 }
 .k-grid-header .k-grid-filter.k-state-border-down {
 	background-color: var(--filter-color);

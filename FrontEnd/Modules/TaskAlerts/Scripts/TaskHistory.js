@@ -4,7 +4,8 @@ require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
-import "../css/TaskAlerts.css";
+import "../css/TaskHistory.css";
+import {TaskUtils} from "./TaskUtils";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -174,6 +175,18 @@ const moduleSettings = {
                     };
                 }
 
+                gridDataResult.columns.push({
+                    title: "Acties",
+                    width: 150,
+                    template: (dataItem) => {
+                        if (dataItem.receiver !== this.settings.wiserUserId.toString() || !dataItem.checkeddate) {
+                            return "";
+                        }
+                        
+                        return `<button type="button" class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-base returnTaskButton"><span class="k-icon k-i-undo k-button-icon"></span><span class="k-button-text">Terugzetten</span></button>`;
+                    }
+                })
+
                 this.mainGridFirstLoad = true;
                 this.mainGrid = mainGridElement.kendoGrid({
                     dataSource: {
@@ -184,6 +197,7 @@ const moduleSettings = {
                         filter: [
                             { field: "receiver", operator: "eq", value: this.settings.wiserUserId }
                         ],
+                        sort: { field: "duedate", dir: "desc" },
                         transport: {
                             read: async (transportOptions) => {
                                 try {
@@ -215,12 +229,28 @@ const moduleSettings = {
                     },
                     columns: gridDataResult.columns,
                     resizable: true,
-                    sortable: false,
+                    sortable: true,
                     scrollable: {
                         virtual: true
                     },
                     filterable: {
                         extra: false
+                    },
+                    height: "100%",
+                    dataBound: (event) => {
+                        event.sender.content.find(".returnTaskButton").click((clickEvent) => {
+                            clickEvent.preventDefault();
+                            const dataItem = event.sender.dataItem(clickEvent.currentTarget.closest("tr"));
+                            TaskUtils.returnTask(dataItem.encryptedid, this.settings.username, this.settings.wiserApiRoot).then(() => {
+                                event.sender.dataSource.read();
+
+                                const notification = $("<div />").kendoNotification({
+                                    autoHideAfter: 3000
+                                }).data("kendoNotification");
+
+                                notification.show("De taak is teruggezet naar de todo-lijst.");
+                            });
+                        })
                     }
                 }).getKendoGrid();
             } catch (exception) {
