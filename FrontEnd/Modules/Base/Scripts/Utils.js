@@ -888,6 +888,77 @@ export class Wiser {
 
         extraHeaders.Authorization = `${Strings.capitalizeFirst(authenticationData.tokenType)} ${authenticationData.accessToken}`;
     }
+
+    /**
+     * Event that gets called when the user executes the custom action for entering a translation variable.
+     * @param {any} event The event from the execute action.
+     * @param {any} editor The HTML editor where the action is executed in.
+     * @param {string} wiserApiRoot The root of the Wiser API.
+     */
+    static async onHtmlEditorTranslationExec(event, editor, wiserApiRoot) {
+        try {
+            const dialogElement = $("#translationsDialog");
+            let translationsDialog = dialogElement.data("kendoDialog");
+
+            if (translationsDialog) {
+                translationsDialog.destroy();
+            }
+
+            const translationsDropDown = dialogElement.find("#translationsDropDown").kendoDropDownList({
+                optionLabel: "Selecteer een vertaalwoord",
+                dataTextField: "value",
+                dataValueField: "key",
+                dataSource: {
+                    transport: {
+                        read: async (options) => {
+                            try {
+                                const results = await Wiser.api({ url: `${wiserApiRoot}languages/translations` });
+                                options.success(results);
+                            } catch (exception) {
+                                console.error(exception);
+                                options.error(exception);
+                            }
+                        }
+                    }
+                }
+            }).data("kendoDropDownList");
+
+            translationsDialog = dialogElement.kendoDialog({
+                width: "900px",
+                title: "Vertaalwoord invoegen",
+                closable: false,
+                modal: true,
+                actions: [
+                    {
+                        text: "Annuleren"
+                    },
+                    {
+                        text: "Invoegen",
+                        primary: true,
+                        action: (event) => {
+                            const selectedTranslation = translationsDropDown.value();
+                            if (!selectedTranslation) {
+                                kendo.alert("Kies a.u.b. een vertaalwoord.")
+                                return false;
+                            }
+
+                            const originalOptions = editor.options.pasteCleanup;
+                            editor.options.pasteCleanup.none = true;
+                            editor.options.pasteCleanup.span = false;
+                            editor.exec("inserthtml", { value: `[T{${selectedTranslation}}]` });
+                            editor.options.pasteCleanup.none = originalOptions.none;
+                            editor.options.pasteCleanup.span = originalOptions.span;
+                        }
+                    }
+                ]
+            }).data("kendoDialog");
+
+            translationsDialog.open();
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+        }
+    }
 }
 
 /**

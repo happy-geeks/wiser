@@ -165,6 +165,10 @@
     flex-grow: 1;
 }
 
+.k-dialog #translationsDialog {
+    display: block;
+}
+
 /** TREEVIEW **/
 #right-pane {
     width: auto;
