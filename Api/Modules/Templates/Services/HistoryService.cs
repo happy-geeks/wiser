@@ -15,8 +15,6 @@ using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using GeeksCoreLibrary.Core.Extensions;
-using GeeksCoreLibrary.Modules.Templates.Enums;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 

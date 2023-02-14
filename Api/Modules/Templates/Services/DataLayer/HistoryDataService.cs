@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Template;
@@ -169,7 +168,7 @@ ORDER BY version DESC");
                     DefaultHeaderFooterRegex = row.Field<string>("default_header_footer_regex"),
                     IsPartial = Convert.ToBoolean(row["is_partial"]),
                     WidgetContent = row.Field<string>("widget_content"),
-                    WidgetLocation = (PageWidgetLocations) Convert.ToInt32(row["location"])
+                    WidgetLocation = (PageWidgetLocations) Convert.ToInt32(row["widget_location"])
                 };
                 
                 var loginRolesString = row.Field<string>("login_role");
