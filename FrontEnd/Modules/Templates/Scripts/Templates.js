@@ -1151,6 +1151,14 @@ const moduleSettings = {
                     exec: this.onHtmlEditorHtmlSourceExec.bind(this)
                 };
 
+                const wiserApiRoot = this.settings.wiserApiRoot;
+
+                const translationsTool = {
+                    name: "wiserTranslation",
+                    tooltip: "Vertaling invoegen",
+                    exec: function(e) { Wiser.onHtmlEditorTranslationExec.call(Wiser, e, $(this).data("kendoEditor"), wiserApiRoot); }
+                };
+
                 this.mainHtmlEditor = $(".editor").kendoEditor({
                     resizable: true,
                     tools: [
@@ -1172,6 +1180,7 @@ const moduleSettings = {
                         "insertImage",
                         "insertFile",
                         "subscript",
+                        translationsTool,
                         "superscript",
                         "tableWizard",
                         "createTable",
