@@ -1,8 +1,9 @@
 ﻿namespace Api.Modules.Templates.Models.Preview
 {
-#pragma warning disable CS1591
+    /// <summary>
+    /// A model to store information about a preview variable for a template or component.
+    /// </summary>
     public class PreviewVariableModel
-#pragma warning restore CS1591
     {
         /// <summary>
         /// Gets or sets the type of variable in the PreviewVariable object

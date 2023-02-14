@@ -2,10 +2,10 @@
 
 namespace Api.Modules.DigitalOcean.Models
 {
- 
-#pragma warning disable CS1591
+    /// <summary>
+    /// A model that contains the response of database users from the Digital Ocean API.
+    /// </summary>
     public class PostDatabaseUserResponseModel
-#pragma warning restore CS1591
     {
         /// <summary>
         /// List of users that have access to the Digital Ocean database

@@ -4,9 +4,10 @@ using Api.Modules.Templates.Models.Template;
 
 namespace Api.Modules.Templates.Models.History
 {
-#pragma warning disable CS1591
+    /// <summary>
+    /// A model to store information about the history of publishing a template to a specific environment.
+    /// </summary>
     public class PublishHistoryModel
-#pragma warning restore CS1591
     {
         /// <summary>
         /// Gets or sets the ID of the template

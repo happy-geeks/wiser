@@ -2,9 +2,10 @@
 
 namespace Api.Modules.Templates.Models.Preview
 {
-#pragma warning disable CS1591
+    /// <summary>
+    /// A model to store information about a preview for a template.
+    /// </summary>
     public class PreviewProfileModel
-#pragma warning restore CS1591
     {
         /// <summary>
         /// Gets or sets the ID of the PreviewProfile object

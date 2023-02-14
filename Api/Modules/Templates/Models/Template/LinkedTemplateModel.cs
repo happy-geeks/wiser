@@ -2,9 +2,10 @@
 
 namespace Api.Modules.Templates.Models.Template
 {
-#pragma warning disable CS1591
+    /// <summary>
+    /// A model to store information about a link between two templates.
+    /// </summary>
     public class LinkedTemplateModel
-#pragma warning restore CS1591
     {
         /// <summary>
         /// Gets or sets the ID of the linked template
