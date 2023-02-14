@@ -2414,7 +2414,7 @@ LIMIT 1";
             }
 
             var helper = new TreeViewHelper();
-            var convertedList = rawSection.Select(treeViewDao => helper.ConvertTemplateTreeViewDAOToTemplateTreeViewModel(treeViewDao)).ToList();
+            var convertedList = rawSection.Select(TreeViewHelper.ConvertTemplateTreeViewDaoToTemplateTreeViewModel).ToList();
 
             return new ServiceResult<List<TemplateTreeViewModel>>(convertedList);
         }

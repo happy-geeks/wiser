@@ -18,7 +18,7 @@ namespace Api.Modules.EntityTypes.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="onlyEntityTypesWithDisplayName">Optional: Set to <see langword="false"/> to get all entity types, or <see langword="true"/> to get only entity types that have a display name. Default value is <see langword="true"/>.</param>
         /// <param name="includeCount">Optional: Whether to count how many items of each entity type exist in the database.</param>
-        /// <param name="skipEntitiesWithoutItems">Optional: Whether to skip entities that have no items. Only works when <see cref="includeCount"/> is set to <see langword="true" />.</param>
+        /// <param name="skipEntitiesWithoutItems">Optional: Whether to skip entities that have no items. Only works when includeCount is set to <see langword="true" />.</param>
         /// <returns>The list of entity types.</returns>
         Task<ServiceResult<List<EntityTypeModel>>> GetAsync(ClaimsIdentity identity, bool onlyEntityTypesWithDisplayName = true, bool includeCount = false, bool skipEntitiesWithoutItems = false);
 
