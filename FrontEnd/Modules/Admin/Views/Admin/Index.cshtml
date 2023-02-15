@@ -64,7 +64,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="right-pane">
+                        <div class="right-pane module-right-pane hidden">
                             <div class="pane-content">
                                 <div class="formview full">
                                     <div class="item" style="width: 25%;">
@@ -104,23 +104,68 @@
                                         </h4>
                                         <select id="moduleGroup"></select>
                                     </div>
-                                    <div class="item" style="width: 100%;">
-                                        <h4>
-                                            <label>Query</label>
-                                        </h4>
-                                        <textarea id="moduleCustomQuery"></textarea>
+                                    
+                                    <div class="item" data-module-type-filter="DynamicItems" style="width: 20%;">
+                                        <span class="inline">
+                                            <label class="checkbox">
+                                                <input id="moduleOnlyOneInstanceAllowed" type="checkbox" />
+                                                <span>Max 1 instantie mogelijk</span>
+                                            </label>
+                                        </span>
                                     </div>
-                                    <div class="item" style="width: 100%;">
-                                        <h4>
-                                            <label>Query voor het aantal records</label>
-                                        </h4>
-                                        <textarea id="moduleCountQuery"></textarea>
+                                    <div class="item" data-module-type-filter="DynamicItems" style="width: 20%;">
+                                        <span class="inline">
+                                            <label class="checkbox">
+                                                <input id="moduleShowNameFieldInWindows" type="checkbox" />
+                                                <span>Toon titels van items</span>
+                                            </label>
+                                        </span>
                                     </div>
+                                    <div class="item" data-module-type-filter="DynamicItems" style="width: 20%;">
+                                        <span class="inline">
+                                            <label class="checkbox">
+                                                <input id="moduleGridViewMode" type="checkbox" />
+                                                <span>Tabelweergave</span>
+                                            </label>
+                                        </span>
+                                    </div>
+                                    <div class="item module-tree-view-mode hidden" data-module-type-filter="DynamicItems" style="width: 20%;">
+                                        <h4>
+                                            <label for="moduleInitialItemId">Initiële item ID</label>
+                                            <span class="info" data-type="moduleInitialItemId"><ins class="icon-info-full"></ins></span>
+                                        </h4>
+                                        <input id="moduleInitialItemId" type="number" class="numeric" autocomplete="off" />
+                                    </div>
+                                    <div class="item module-tree-view-mode hidden" data-module-type-filter="DynamicItems" style="width: 20%;">
+                                        <h4>
+                                            <label for="moduleInitialItemEntityType">Initiële item entiteitstype</label>
+                                            <span class="info" data-type="moduleInitialItemEntityType"><ins class="icon-info-full"></ins></span>
+                                        </h4>
+                                        <span class="k-widget k-input k-state-default">
+                                            <input id="moduleInitialItemEntityType" type="text" class="textField k-input" autocomplete="off" />
+                                        </span>
+                                    </div>
+                                    
                                     <div class="item" style="width: 100%;">
                                         <h4>
                                             <label>Opties</label>
+                                            <span class="info" data-type="moduleOptions"><ins class="icon-info-full"></ins></span>
                                         </h4>
                                         <textarea id="moduleOptions"></textarea>
+                                    </div>
+                                    <div class="item" data-module-type-filter="DynamicItems,Iframe" style="width: 100%;">
+                                        <h4>
+                                            <label>Query</label>
+                                            <span class="info" data-type="moduleQuery"><ins class="icon-info-full"></ins></span>
+                                        </h4>
+                                        <textarea id="moduleCustomQuery"></textarea>
+                                    </div>
+                                    <div class="item" data-module-type-filter="DynamicItems" style="width: 100%;">
+                                        <h4>
+                                            <label>Query voor het tellen van het totaal aantal resultaten</label>
+                                            <span class="info" data-type="moduleCountQuery"><ins class="icon-info-full"></ins></span>
+                                        </h4>
+                                        <textarea id="moduleCountQuery"></textarea>
                                     </div>
                                 </div>
                             </div>

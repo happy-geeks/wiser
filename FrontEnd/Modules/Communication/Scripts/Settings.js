@@ -270,6 +270,14 @@ const communicationModuleSettings = {
                     }).data("kendoDropDownList");
                 }
                 
+                const wiserApiRoot = this.settings.wiserApiRoot;
+
+                const translationsTool = {
+                    name: "wiserTranslation",
+                    tooltip: "Vertaling invoegen",
+                    exec: function(e) { Wiser.onHtmlEditorTranslationExec.call(Wiser, e, $(this).data("kendoEditor"), wiserApiRoot); }
+                };
+                
                 // Content tab.
                 this.mailBodyEditor = $("#MailBodyEditor").kendoEditor({
                     tools: [
@@ -290,6 +298,7 @@ const communicationModuleSettings = {
                         "insertImage",
                         "insertFile",
                         "subscript",
+                        translationsTool,
                         "superscript",
                         "tableWizard",
                         "createTable",

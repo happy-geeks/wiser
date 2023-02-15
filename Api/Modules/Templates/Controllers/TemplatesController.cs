@@ -219,13 +219,12 @@ namespace Api.Modules.Templates.Controllers
                 ? currentPublished.GetHttpResponseMessage() 
                 : (await templatesService.PublishToEnvironmentAsync((ClaimsIdentity)User.Identity, templateId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Creates an empty template with the given name, type and parent template.
         /// </summary>
         /// <param name="parentId">The id of the parent template of the template that will be created.</param>
-        /// <param name="name">The name to give the template that will be created.</param>
-        /// <param name="type">The type of the new template that will be created.</param>
+        /// <param name="newTemplate">Model class with the needed info to make the template</param>
         /// <returns>The id of the newly created template. This can be used to update the interface accordingly.</returns>
         [HttpPut]
         [Route("{parentId:int}")]

@@ -114,7 +114,8 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserDynamicContentPublishLog,
                 WiserTableNames.WiserQuery,
                 WiserTableNames.WiserPermission,
-                WiserTableNames.WiserCommunication
+                WiserTableNames.WiserCommunication,
+                GeeksCoreLibrary.Modules.Databases.Models.Constants.DatabaseConnectionLogTableName
             });
             var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
             
