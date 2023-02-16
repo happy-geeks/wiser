@@ -1,5 +1,8 @@
 ﻿namespace Api.Modules.Dashboard.Enums;
 
+/// <summary>
+/// All of the states a Service can be in when for an Extra Run
+/// </summary>
 public enum ServiceExtraRunStates
 {
     /// <summary>

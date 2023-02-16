@@ -165,7 +165,7 @@ Wiser.api({
     }
     
     if (!options.hideCommandColumn) {
-        let commandColumnWidth = 80;
+        let commandColumnWidth = 60;
         var commands = [];
         
         if (!options.disableOpeningOfItems) {
@@ -173,18 +173,29 @@ Wiser.api({
                 name: "openDetails",
                 iconClass: "k-icon k-i-hyperlink-open",
                 text: "&nbsp;",
-                click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, grid, options); }
+                click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, grid, options, false); }
             });
+
+            if (options.allowOpeningOfItemsInNewTab) {
+                commandColumnWidth += 60;
+
+                commands.push({
+                    name: "openDetailsInNewTab",
+                    iconClass: "k-icon k-i-window",
+                    text: "",
+                    click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
+                });
+            }
         }
         
         if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off") {
-            commandColumnWidth += 80;
+            commandColumnWidth += 60;
             
             commands.push({
                 name: "remove",
                 text: "",
                 iconClass: "k-icon k-i-delete",
-                click: function(event) { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options); }
+                click: function(event) { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options, false); }
             });
         }
         

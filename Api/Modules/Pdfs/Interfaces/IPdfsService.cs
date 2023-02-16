@@ -24,7 +24,6 @@ namespace Api.Modules.Pdfs.Interfaces
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="data">The HTML and PDF settings.</param>
-        /// <param name="isTest">Optional: Whether or not this is a test environment. Default is <see langword="false"/></param>
         /// <returns>A byte array of the generated PDF.</returns>
         Task<ServiceResult<string>> SaveHtmlAsPdfAsync(ClaimsIdentity identity, HtmlToPdfRequestModel data);
     }

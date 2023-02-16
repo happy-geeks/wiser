@@ -219,8 +219,19 @@ export class Grids {
                         name: "openDetails",
                         iconClass: "k-icon k-i-hyperlink-open",
                         text: "",
-                        click: (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }); }
+                        click: (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }, false); }
                     });
+
+                    if (gridViewSettings.allowOpeningOfItemsInNewTab) {
+                        commandColumnWidth += 60;
+
+                        commands.push({
+                            name: "openDetailsInNewTab",
+                            iconClass: "k-icon k-i-window",
+                            text: "",
+                            click: (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }, true); }
+                        });
+                    }
                 }
 
                 if (gridViewSettings.deleteItemQueryId && (typeof (gridViewSettings.showDeleteButton) === "undefined" || gridViewSettings.showDeleteButton === true)) {
@@ -702,14 +713,25 @@ export class Grids {
                     const commands = [];
 
                     if (!options.disableOpeningOfItems) {
-                        commandColumnWidth += 80;
+                        commandColumnWidth += 60;
 
                         commands.push({
                             name: "openDetails",
                             iconClass: "k-icon k-i-hyperlink-open",
                             text: "",
-                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options); }
+                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options, false); }
                         });
+
+                        if (options.allowOpeningOfItemsInNewTab) {
+                            commandColumnWidth += 60;
+
+                            commands.push({
+                                name: "openDetailsInNewTab",
+                                iconClass: "k-icon k-i-window",
+                                text: "",
+                                click: (event) => { this.onShowDetailsClick(event, kendoComponent, options, true); }
+                            });
+                        }
                     }
 
                     customQueryResults.columns.push({
@@ -779,7 +801,7 @@ export class Grids {
 
                 // Add command columns separately, because of the click event that we can't do properly server-side.
                 if (!options.hideCommandColumn) {
-                    let commandColumnWidth = 80;
+                    let commandColumnWidth = 60;
                     let commands = [];
 
                     if (!options.disableOpeningOfItems) {
@@ -787,8 +809,19 @@ export class Grids {
                             name: "openDetails",
                             iconClass: "k-icon k-i-hyperlink-open",
                             text: "",
-                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options); }
+                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options, false); }
                         });
+
+                        if (options.allowOpeningOfItemsInNewTab) {
+                            commandColumnWidth += 60;
+
+                            commands.push({
+                                name: "openDetailsInNewTab",
+                                iconClass: "k-icon k-i-window",
+                                text: "",
+                                click: (event) => { this.onShowDetailsClick(event, kendoComponent, options, true); }
+                            });
+                        }
                     }
 
                     gridSettings.columns.push({
@@ -1084,8 +1117,9 @@ export class Grids {
      * @param {any} event The event.
      * @param {any} grid The grid that executed the event.
      * @param {any} options The options for the grid.
+     * @param openInNewTab {boolean} Whether to open the item in a new tab in Wiser (like opening a new module).
      */
-    async onShowDetailsClick(event, grid, options) {
+    async onShowDetailsClick(event, grid, options, openInNewTab = false) {
         event.preventDefault();
 
         const dataItem = grid.dataItem($(event.currentTarget).closest("tr"));
@@ -1181,7 +1215,26 @@ export class Grids {
             return;
         }
 
-        this.base.windows.loadItemInWindow(false, itemId, encryptedId, entityType, title, !options.hideTitleFieldInWindow, grid, options, linkId, null, null, linkType);
+        if (openInNewTab) {
+            if (!window.parent) {
+                kendo.alert("Er kan geen parent frame gevonden worden. Waarschijnlijk heeft u deze module in een losse browser tab geopend. Open de module a.u.b. via de normale manier in Wiser.")
+                return;
+            }
+
+            window.parent.postMessage({
+                action: "OpenItem",
+                actionData: {
+                    moduleId: this.base.settings.moduleId,
+                    name: title || `Item #${itemId}`,
+                    type: "dynamicItems",
+                    itemId: encryptedId,
+                    queryString: `?itemId=${encodeURIComponent(encryptedId)}&moduleId=${this.base.settings.moduleId}&iframe=true&entityType=${entityType}`
+                }
+            });
+        }
+        else {
+            this.base.windows.loadItemInWindow(false, itemId, encryptedId, entityType, title, !options.hideTitleFieldInWindow, grid, options, linkId, null, null, linkType);
+        }
     }
 
     /**

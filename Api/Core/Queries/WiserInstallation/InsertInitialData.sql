@@ -111,7 +111,7 @@ INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('filedirectory', 5531, 'filedirectory', '', '');
 # Stamgegevens
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('', 700, 'map', '', '');
-INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `icon_expanded`) VALUES ('map', 700, 'map,template,ftp_configuration,content-builder-snippet,content-box-template,shippingcost,deliverymethod,paymentmethod,mailtemplate,language,filter,vatrate,vatrule,country,dataselector-template,ConfiguratorApi,WiserPaymentProvider,WiserOrderProcess', 'icon-folder-closed', 'icon-folder-add', 'icon-folder');
+INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `icon_expanded`) VALUES ('map', 700, 'map,template,ftp_configuration,content-builder-snippet,content-box-template,shippingcost,deliverymethod,paymentmethod,mailtemplate,language,filter,vatrate,vatrule,country,dataselector-template,ConfiguratorApi,WiserPaymentProvider,WiserOrderProcess,page-widget', 'icon-folder-closed', 'icon-folder-add', 'icon-folder');
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('template', 700, '', 'icon-document', 'icon-document-add');
 # FTP
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('ftp_configuration', 700, '', 'icon-cloud-up', 'icon-cloud-up');
@@ -120,6 +120,8 @@ INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('content-box-template', 700, '', 'icon-document-exam', 'icon-document-add');
 # Data Selector
 INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('dataselector-template', 700, '', 'icon-document-exam', 'icon-document-add');
+# Widgets
+INSERT INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`) VALUES ('page-widget', 700, '', 'icon-line-code', 'icon-line-code');
 
 
 -- ----------------------------
@@ -196,8 +198,12 @@ INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `tab_name`, `gro
 INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `mandatory`, `readonly`, `default_value`, `css`, `width`, `height`, `options`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `link_type`, `extended_explanation`, `label_style`, `label_width`) VALUES (700, 'template', 'PDF', '', 'HTMLeditor', 'Header', 'header', '', 4, 0, 0, NULL, NULL, 100, 400, '{ \"mode\": 99 }', NULL, NULL, NULL, '', NULL, 0, NULL, 0, 0, 0, 'normal', '0');
 INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `mandatory`, `readonly`, `default_value`, `css`, `width`, `height`, `options`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `link_type`, `extended_explanation`, `label_style`, `label_width`) VALUES (700, 'template', 'PDF', '', 'HTMLeditor', 'Footer', 'footer', '', 5, 0, 0, NULL, NULL, 100, 400, '{ \"mode\": 99 }', NULL, NULL, NULL, '', NULL, 0, NULL, 0, 0, 0, 'normal', '0');
 
-# Datas elector
+# Data selector
 INSERT INTO `wiser_entityproperty` (`module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `mandatory`, `readonly`, `default_value`, `css`, `width`, `height`, `options`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `link_type`, `extended_explanation`, `label_style`, `label_width`) VALUES (700, 'dataselector-template', '', '', 'HTMLeditor', 'Template', 'template', '', 1, 0, 0, NULL, NULL, 100, 600, '{ \"mode\": 99 }', NULL, NULL, NULL, '', NULL, 0, NULL, 0, 0, 1, 'normal', '0');
+
+# Widgets
+INSERT INTO `wiser_entityproperty` (`entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `mandatory`, `readonly`, `default_value`, `width`, `height`, `options`, `extended_explanation`) VALUES ('page-widget', '', '', 'textbox', 'HTML', 'html', 'Hiermee kan een stuk javascript, CSS of HTML toegevoegd worden die op elke pagina van de website wordt geladen. Dit moet wel altijd HTML zijn, dus als je bijvoorbeeld javascript wilt toevoegen, dan moet je ook de &lt;script type=\"javascript\"&gt;&lt;/script&gt; tags toevoegen en daartussen de javascript zetten. Bij CSS is dit &lt;style&gt;&lt;/style&gt;. Dit kan alleen CSS zijn, geen SCSS.', 2, 0, 0, '', 100, 0, '{\"type\":\"html\"}', 0);
+INSERT INTO `wiser_entityproperty` (`entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `mandatory`, `readonly`, `default_value`, `width`, `height`, `options`, `extended_explanation`) VALUES ('page-widget', '', '', 'combobox', 'Locatie', 'location', '', 1, 0, 0, 'headerBottom', 100, 0, '{\"useDropDownList\":true,\"dataSource\":[{\"id\":0,\"name\":\"Bovenaan in header van pagina\"},{\"id\":1,\"name\":\"Onderaan in header van pagina\"},{\"id\":2,\"name\":\"Bovenaan in body van pagina\"},{\"id\":3,\"name\":\"Onderaan in body van pagina\"}],\"mode\":\"\",\"mainImageUrl\":\"\",\"imagePropertyName\":\"\"}', 0);
 
 -- ----------------------------
 -- Records of wiser_item

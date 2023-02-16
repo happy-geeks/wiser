@@ -15,8 +15,6 @@ using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using GeeksCoreLibrary.Core.Extensions;
-using GeeksCoreLibrary.Modules.Templates.Enums;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -253,10 +251,14 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <summary>
-        /// Generates the changes between 2 versions. This will loop through the vesrions and will take the settings that have changed to add them to a versions changes.
+        /// Generates the changes between 2 versions. This will loop through the versions and will take the settings that have changed to add them to a versions changes.
         /// </summary>
+        /// <param name="newMode">The mode of the new version</param>
         /// <param name="newVersion">The raw datastring of the newer version</param>
+        /// <param name="oldMode">The mode of the old version</param>
         /// <param name="oldVersion">The raw datastring of the older version</param>
+        /// <param name="newComponent">The component of the new version</param>
+        /// <param name="oldComponent">the component of the old version</param>
         /// <returns>List of changes that can be added to the changes of the newer versions HistoryVersionModel.</returns>
         private List<DynamicContentChangeModel> GenerateChangeLogFromDataStrings(string newComponent, string newMode, string newVersion, string oldComponent, string oldMode, string oldVersion)
         {

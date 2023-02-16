@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Api.Modules.EntityTypes.Models;
 
 namespace Api.Modules.Dashboard.Models;
