@@ -1,4 +1,4 @@
-﻿ using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -17,10 +17,10 @@ using Api.Modules.TaskAlerts.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
- using GeeksCoreLibrary.Modules.Databases.Models;
- using GeeksCoreLibrary.Modules.WiserDashboard.Models;
- using MySql.Data.MySqlClient;
- using Newtonsoft.Json.Linq;
+using GeeksCoreLibrary.Modules.Databases.Models;
+using GeeksCoreLibrary.Modules.WiserDashboard.Models;
+using MySql.Data.MySqlClient;
+using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Dashboard.Services;
 
@@ -101,6 +101,7 @@ public class DashboardService : IDashboardService, IScopedService
         }
 
         // Make sure the tables exist.
+        await KeepTablesUpToDateAsync(databaseName);
         await CheckAndUpdateTablesAsync(databaseName);
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
@@ -851,30 +852,62 @@ WHERE id = ?serviceId");
     /// <summary>
     /// Checks if the MySQL tables for the login log and dashboard are up-to-date.
     /// </summary>
-    private async Task KeepTablesUpToDate()
+    private async Task KeepTablesUpToDateAsync(string databaseName)
     {
-        var databaseName = clientDatabaseConnection.ConnectedDatabaseForWriting ?? clientDatabaseConnection.ConnectedDatabase;
         var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(databaseName);
-
-        // Reusable variable for defining a column.
-        ColumnSettingsModel column;
-
-        // Check if the login log table needs to be updated.
-        if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserLoginLog) || lastTableUpdates[WiserTableNames.WiserLoginLog] < new DateTime(2023, 2, 16))
-        {
-            // Add column.
-            column = new ColumnSettingsModel("time_active_in_seconds", MySqlDbType.Int64, notNull: true, defaultValue: "0", addAfterColumnName: "user_id");
-            await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserLoginLog, column, false, databaseName);
-        }
 
         // Check if the dashboard table needs to be updated.
         if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserDashboard) || lastTableUpdates[WiserTableNames.WiserDashboard] < new DateTime(2023, 2, 16))
         {
             // Add columns.
-            column = new ColumnSettingsModel("user_login_active_top10", MySqlDbType.Int64, notNull: true, defaultValue: "0");
+            var column = new ColumnSettingsModel("user_login_active_top10", MySqlDbType.Int64, notNull: true, defaultValue: "0");
             await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserDashboard, column, false, databaseName);
             column = new ColumnSettingsModel("user_login_active_other", MySqlDbType.Int64, notNull: true, defaultValue: "0");
             await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserDashboard, column, false, databaseName);
+
+            // Convert and drop the "user_login_time_top10" column if it still exists.
+            if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserDashboard, "user_login_time_top10", databaseName))
+            {
+                await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserDashboard, databaseName, "user_login_time_top10", "user_login_active_top10");
+                await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserDashboard, "user_login_time_top10", databaseName);
+            }
+
+            // Convert and drop the "user_login_time_other" column if it still exists.
+            if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserDashboard, "user_login_time_other", databaseName))
+            {
+                await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserDashboard, databaseName, "user_login_time_other", "user_login_active_other");
+                await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserDashboard, "user_login_time_other", databaseName);
+            }
+
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("tableName", WiserTableNames.WiserDashboard);
+            clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+            var lastUpdateData = await clientDatabaseConnection.GetAsync("SELECT `name` FROM `{WiserTableChanges}` WHERE `name` = ?tableName");
+            var queryDatabasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
+            if (lastUpdateData.Rows.Count == 0)
+            {
+                await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {queryDatabasePart}`{WiserTableNames.WiserTableChanges}` (`name`, last_update) VALUES (?tableName, ?lastUpdate)");
+            }
+            else
+            {
+                await clientDatabaseConnection.ExecuteAsync($"UPDATE {queryDatabasePart}`{WiserTableNames.WiserTableChanges}` SET last_update = ?lastUpdate WHERE `name` = ?tableName LIMIT 1");
+            }
+        }
+    }
+
+    private async Task ConvertTimeSpanToSecondsAsync(string tableName, string databaseName, string oldColumnName, string newColumnName)
+    {
+        var queryDatabasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
+
+        var convertDataTable = await clientDatabaseConnection.GetAsync($"SELECT id, `{oldColumnName}` FROM {queryDatabasePart}`{tableName}`");
+        foreach (var dataRow in convertDataTable.Rows.Cast<DataRow>())
+        {
+            var seconds = Convert.ToInt32(Math.Floor(dataRow.Field<TimeSpan>(oldColumnName).TotalSeconds));
+
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("tableId", Convert.ToUInt64(dataRow["id"]));
+            clientDatabaseConnection.AddParameter("seconds", seconds);
+            await clientDatabaseConnection.ExecuteAsync($"UPDATE `{tableName}` SET `{newColumnName}` = ?seconds WHERE id = ?tableId");
         }
     }
 }
