@@ -1,4 +1,4 @@
-﻿using System;
+﻿ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -17,8 +17,10 @@ using Api.Modules.TaskAlerts.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.WiserDashboard.Models;
-using Newtonsoft.Json.Linq;
+ using GeeksCoreLibrary.Modules.Databases.Models;
+ using GeeksCoreLibrary.Modules.WiserDashboard.Models;
+ using MySql.Data.MySqlClient;
+ using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Dashboard.Services;
 
@@ -844,5 +846,35 @@ WHERE id = ?serviceId");
 
         // Simply return the data selector service's result, as it's exactly the same type.
         return await dataSelectorsService.GetDataSelectorResultAsJsonAsync(identity, dataSelectorId, false, null, true);
+    }
+
+    /// <summary>
+    /// Checks if the MySQL tables for the login log and dashboard are up-to-date.
+    /// </summary>
+    private async Task KeepTablesUpToDate()
+    {
+        var databaseName = clientDatabaseConnection.ConnectedDatabaseForWriting ?? clientDatabaseConnection.ConnectedDatabase;
+        var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(databaseName);
+
+        // Reusable variable for defining a column.
+        ColumnSettingsModel column;
+
+        // Check if the login log table needs to be updated.
+        if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserLoginLog) || lastTableUpdates[WiserTableNames.WiserLoginLog] < new DateTime(2023, 2, 16))
+        {
+            // Add column.
+            column = new ColumnSettingsModel("time_active_in_seconds", MySqlDbType.Int64, notNull: true, defaultValue: "0", addAfterColumnName: "user_id");
+            await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserLoginLog, column, false, databaseName);
+        }
+
+        // Check if the dashboard table needs to be updated.
+        if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserDashboard) || lastTableUpdates[WiserTableNames.WiserDashboard] < new DateTime(2023, 2, 16))
+        {
+            // Add columns.
+            column = new ColumnSettingsModel("user_login_active_top10", MySqlDbType.Int64, notNull: true, defaultValue: "0");
+            await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserDashboard, column, false, databaseName);
+            column = new ColumnSettingsModel("user_login_active_other", MySqlDbType.Int64, notNull: true, defaultValue: "0");
+            await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserDashboard, column, false, databaseName);
+        }
     }
 }
