@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;

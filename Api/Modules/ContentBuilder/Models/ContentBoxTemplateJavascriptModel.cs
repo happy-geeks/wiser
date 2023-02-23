@@ -1,5 +1,8 @@
 ﻿namespace Api.Modules.ContentBuilder.Models;
 
+/// <summary>
+/// Model class to get the ContentBoxTemplates for Javascript
+/// </summary>
 public class ContentBoxTemplateJavascriptModel
 {
     /// <summary>
@@ -12,6 +15,9 @@ public class ContentBoxTemplateJavascriptModel
     /// </summary>
     public string Category { get; set; }
     
+    /// <summary>
+    /// Gets or sets the ID of the design
+    /// </summary>
     public ulong DesignId { get; set; }
 
     /// <summary>

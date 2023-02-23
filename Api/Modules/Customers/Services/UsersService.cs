@@ -854,7 +854,7 @@ namespace Api.Modules.Customers.Services
         public async Task<string> GenerateAndSaveNewRefreshTokenAsync(string cookieSelector, string subDomain, string ticket)
         {
             string refreshToken;
-            using (var rng = new RNGCryptoServiceProvider())
+            using (var rng = RandomNumberGenerator.Create())
             {
                 var data = new byte[30];
                 rng.GetBytes(data);

@@ -96,6 +96,11 @@
             { name: "multiSelectMainImageUrl", text: "De URL van de afbeelding die bovenaan de checkboxgroep getoond moet worden. Wordt alleen gebruikt indien 'Hoofdafbeelding ID' leeg of '0' is." },
             { name: "multiSelectImagePropertyName", text: "De waarde van de kolom property_name van wiser_itemfile van de afbeelding die per optie getoond moet worden. De dataSource moet dan een property 'id' bevatten van het item waar deze afbeelding opgeslagen staat. Deze optie hoeft niet ingevuld worden als de dataSource al een eigenschap 'imagePropertyName' heeft, of als afbeeldingen op een andere manier uit de dataSource komen. Voor meer informatie, zie de documentatie van Wiser over multiSelect." },
             { name: "optionsJson", text: "Dit is een JSON object met alle overige opties, waar geen losse velden voor staan. Vrijwel alle velden in Wiser zijn componenten van Kendo UI, alle opties die Kendo heeft, kunnen hier ingevuld worden. Zie de documentatie van Kendo UI voor alle beschikbare opties." },
+            { name: "moduleInitialItemId", text: "Indien de module bij initieel laden direct een specifiek item moet openen, vul dan het ID van dat item hier in." },
+            { name: "moduleInitialItemEntityType", text: "Indien de module bij initieel laden direct een specifiek item moet openen, vul dan het entiteitstype van dat item hier in." },
+            { name: "moduleOptions", text: "Alle overige opties voor de module, zie documentatie voor meer informatie over alle beschikbare opties." },
+            { name: "moduleQuery", text: "De query die de resultaten ophaalt die in de module getoond moeten worden. Zie documentatie voor meer informatie en voorbeelden." },
+            { name: "moduleCountQuery", text: "De query die telt hoeveel resultaten de module in totaal heeft. Dit is nodig voor het gebruik van virtual en inifinite scrolling in de tabel. Voor meer informatie en voorbeelden, zie de documentatie." },
         ];
     }
 }

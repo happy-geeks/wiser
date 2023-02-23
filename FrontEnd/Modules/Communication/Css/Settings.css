@@ -205,6 +205,10 @@ textarea[data-limit] + span {
     gap: 0;
 }
 
+.k-dialog #translationsDialog {
+    display: block;
+}
+
 /* SUMMARY */
 .summary > div {
     padding: 25px 25px 5px 25px;

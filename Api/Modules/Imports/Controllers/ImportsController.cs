@@ -87,7 +87,6 @@ namespace Api.Modules.Imports.Controllers
         /// <summary>
         /// Delete the links corresponding to the provided information.
         /// </summary>
-        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="deleteLinksConfirms">A collection of <see cref="DeleteLinksConfirmModel"/>s containing the information about the links to delete.</param>
         /// <returns>Returns true on success.</returns>
         [HttpPost]

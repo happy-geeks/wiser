@@ -193,6 +193,9 @@ namespace Api.Modules.Templates.Models.Template
         #endregion
 
         #region Js only settings.
+        /// <summary>
+        /// Gets or sets if Js files will be minified
+        /// </summary>
         public bool DisableMinifier { get; set; }
         #endregion
         
@@ -208,20 +211,53 @@ namespace Api.Modules.Templates.Models.Template
         /// </summary>
         public string GroupingPrefix { get; set; }
         
+        /// <summary>
+        /// Gets or sets the key which needs to be grouped, if grouping is needed
+        /// </summary>
         public string GroupingKey { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the column in the query which contains the key for the object.
+        /// </summary>
         public string GroupingKeyColumnName { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the column in the query that contains the value for the object.
+        /// </summary>
         public string GroupingValueColumnName { get; set; }
         #endregion
 
         #region Routine settings.
+        /// <summary>
+        /// Gets or sets the routine type for the template.
+        /// </summary>
         public RoutineTypes RoutineType { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the parameters of the routine
+        /// </summary>
         public string RoutineParameters { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the return type of the routine
+        /// </summary>
         public string RoutineReturnType { get; set; }
         #endregion
 
         #region Trigger settings.
+        /// <summary>
+        /// Gets or sets the name of the table of which has a trigger
+        /// </summary>
         public string TriggerTableName { get; set; }
+        
+        /// <summary>
+        /// Gets or sets if the trigger must happen before or after an action
+        /// </summary>
         public TriggerTimings TriggerTiming { get; set; }
+        
+        /// <summary>
+        /// Gets or sets on which event the trigger needs to happen.
+        /// </summary>
         public TriggerEvents TriggerEvent { get; set; }
         #endregion
     }

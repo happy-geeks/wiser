@@ -147,7 +147,7 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="alsoGetOptions">Whether to also get the options of the property.</param>
         /// <param name="itemId">Optional: If this query needs to be executed for a specific item, you can enter that ID here. If the query then contains the value "{itemId}", then that value will be replaced with this ID.</param>
         /// <typeparam name="T">The return type of the method you call this from.</typeparam>
-        /// <returns>The query, any errors and the options (if <see cref="alsoGetOptions"/> is set to <see langword="true"/>).</returns>
+        /// <returns>The query, any errors and the options (if alsoGetOptions is set to <see langword="true"/>).</returns>
         Task<(string Query, ServiceResult<T> ErrorResult, string RawOptions)> GetPropertyQueryAsync<T>(int propertyId, string queryColumnName, bool alsoGetOptions, ulong? itemId = null);
 
         /// <summary>
