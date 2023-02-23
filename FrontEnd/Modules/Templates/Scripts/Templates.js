@@ -15,6 +15,7 @@ require("@progress/kendo-ui/js/kendo.treeview.js");
 require("@progress/kendo-ui/js/kendo.grid.js");
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.datepicker.js");
+require("@progress/kendo-ui/js/kendo.daterangepicker.js");
 require("@progress/kendo-ui/js/dataviz/chart/chart.js");
 require("@progress/kendo-ui/js/dataviz/chart/kendo-chart.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
@@ -2602,6 +2603,23 @@ const moduleSettings = {
                 }).data("kendoDropDownList");
                 this.measurementUrlFilter = $("#measurementUrlFilter").change(this.updateRenderingDataOnMeasurementsTab.bind(this, templateId));
 
+                const currentDate = new Date();
+                const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7);
+                const end = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1);
+                this.measurementChartDateRangeFilter = $("#measurementChartDateRangeFilter").kendoDateRangePicker({
+                    range: {
+                        start: start,
+                        end: end
+                    },
+                    change: (event) => {
+                        const dateRange = this.measurementChartDateRangeFilter.range();
+                        if (!dateRange || !dateRange.start || !dateRange.end) {
+                            return;
+                        }
+                        this.updateRenderingDataOnMeasurementsTab(templateId);
+                    }
+                }).data("kendoDateRangePicker");
+
                 await this.updateRenderingDataOnMeasurementsTab(templateId);
                 this.renderingLogsChart.resize();
             } catch (exception) {
@@ -2661,14 +2679,14 @@ const moduleSettings = {
                     "pageSize=0"
                 ];
 
-                const currentDate = new Date();
-                const oneWeekAgo = new Date(currentDate - 2 * 7 * 24 * 60 * 60 * 1000);
                 const userId = this.measurementUserIdFilter.value();
                 const languageCode = this.measurementLanguageCodeFilter.value();
                 const environment = this.measurementEnvironmentFilter.value();
                 const urlRegex = this.measurementUrlFilter.val();
+                const dateRange = this.measurementChartDateRangeFilter.range();
 
-                parametersForChart.push(`start=${oneWeekAgo.toISOString()}`)
+                parametersForChart.push(`start=${dateRange.start.toISOString()}`)
+                parametersForChart.push(`end=${dateRange.end.toISOString()}`)
 
                 if (userId) {
                     parametersForChart.push(`userId=${userId}`)

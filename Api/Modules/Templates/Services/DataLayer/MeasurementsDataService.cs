@@ -82,8 +82,8 @@ public class MeasurementsDataService : IMeasurementsDataService, IScopedService
 
         if (end.HasValue)
         {
-            clientDatabaseConnection.AddParameter("start", end.Value);
-            whereClause.Add("log.end <= ?end");
+            clientDatabaseConnection.AddParameter("end", end.Value);
+            whereClause.Add("log.start <= ?end");
         }
 
         var whereClauseString = "";
