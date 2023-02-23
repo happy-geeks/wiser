@@ -295,8 +295,6 @@ ORDER BY template.ordering ASC");
                     {
                         "SEARCH_ITEMS_OLD",
                         "GET_ITEM_DETAILS",
-                        "GET_DESTINATION_ITEMS",
-                        "GET_DESTINATION_ITEMS_REVERSED",
                         "GET_DATA_FOR_TABLE",
                         "GET_DATA_FOR_FIELD_TABLE"
                     }.Contains(templateName))
@@ -1500,76 +1498,6 @@ AND (
 
 GROUP BY i.id
 ORDER BY ilp.ordering, i.title");
-                TemplateQueryStrings.Add("GET_DESTINATION_ITEMS", @"SET @_itemId = {itemId};
-SET @_entityType = IF('{entityType}' LIKE '{%}', 'item', '{entityType}');
-SET @_linkType = IF('{linkTypeNumber}' LIKE '{%}', '1', '{linkTypeNumber}');
-SET @userId = {encryptedUserId:decrypt(true)};
-
-SELECT 
-	i.id, 
-	i.id AS encryptedId_encrypt_withdate,
-    CASE i.published_environment
-    	WHEN 0 THEN 'onzichtbaar'
-        WHEN 1 THEN 'dev'
-        WHEN 2 THEN 'test'
-        WHEN 3 THEN 'acceptatie'
-        WHEN 4 THEN 'live'
-    END AS published_environment,
-	i.title, 
-	i.entity_type, 
-	id.`key` AS property_name,
-	CONCAT(IFNULL(id.`value`, ''), IFNULL(id.`long_value`, '')) AS property_value,
-	il.type AS link_type, 
-    il.id AS link_id
-FROM wiser_itemlink il
-JOIN wiser_item i ON i.id = il.destination_item_id AND i.entity_type = @_entityType
-
-# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-LEFT JOIN wiser_user_roles user_role ON user_role.user_id = @userId
-LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-
-LEFT JOIN wiser_entityproperty p ON p.entity_name = i.entity_type
-LEFT JOIN wiser_itemdetail id ON id.item_id = il.destination_item_id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` = p.property_name) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` = p.display_name))
-WHERE il.item_id = @_itemId
-AND il.type = @_linkType
-AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-GROUP BY il.item_id, id.id
-ORDER BY il.ordering, i.title, i.id");
-                TemplateQueryStrings.Add("GET_DESTINATION_ITEMS_REVERSED", @"SET @_itemId = {itemId};
-SET @_entityType = IF('{entityType}' LIKE '{%}', 'item', '{entityType}');
-SET @_linkType = IF('{linkTypeNumber}' LIKE '{%}', '1', '{linkTypeNumber}');
-SET @userId = {encryptedUserId:decrypt(true)};
-
-SELECT 
-	i.id, 
-	i.id AS encryptedId_encrypt_withdate,
-    CASE i.published_environment
-    	WHEN 0 THEN 'onzichtbaar'
-        WHEN 1 THEN 'dev'
-        WHEN 2 THEN 'test'
-        WHEN 3 THEN 'acceptatie'
-        WHEN 4 THEN 'live'
-    END AS published_environment,
-	i.title, 
-	i.entity_type, 
-	id.`key` AS property_name,
-	CONCAT(IFNULL(id.`value`, ''), IFNULL(id.`long_value`, '')) AS property_value,
-	il.type AS link_type,
-    il.id AS link_id
-FROM wiser_itemlink il
-JOIN wiser_item i ON i.id = il.item_id AND i.entity_type = @_entityType
-
-# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-LEFT JOIN wiser_user_roles user_role ON user_role.user_id = @userId
-LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-
-LEFT JOIN wiser_entityproperty p ON p.entity_name = i.entity_type
-LEFT JOIN wiser_itemdetail id ON id.item_id = il.item_id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` = p.property_name) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` = p.display_name))
-WHERE il.destination_item_id = @_itemId
-AND il.type = @_linkType
-AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-GROUP BY il.destination_item_id, id.id
-ORDER BY il.ordering, i.title, i.id");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_TABLE", @"SET @selected_id = {itemId:decrypt(true)}; # 3077
 
 SELECT 

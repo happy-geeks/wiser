@@ -1666,6 +1666,34 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<List<WiserItemModel>>> GetLinkedItemDetailsAsync(string encryptedId, ClaimsIdentity identity, string entityType = null, string itemIdEntityType = null, int linkType = 0, bool reversed = false)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+
+            // First check if the user is allowed to access the main item.
+            var (success, _, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Read, userId, onlyCheckAccessRights: true, entityType: entityType);
+
+            // If the user is not allowed to read this item, return an empty result.
+            if (!success)
+            {
+                return new ServiceResult<List<WiserItemModel>>();
+            }
+
+            // Now try to retrieve a linked item.
+            var result = await wiserItemsService.GetLinkedItemDetailsAsync(itemId, linkType, entityType, false, userId, reversed, itemIdEntityType);
+            if (result == null) return new ServiceResult<List<WiserItemModel>>();
+
+            foreach (var item in result)
+            {
+                item.EncryptedId = await wiserCustomersService.EncryptValue(item.Id, identity);
+            }
+
+            return new ServiceResult<List<WiserItemModel>>(result);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<ItemMetaDataModel>> GetItemMetaDataAsync(string encryptedId, ClaimsIdentity identity, string entityType = null)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
