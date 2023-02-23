@@ -13,7 +13,7 @@ namespace Api.Modules.Templates.Models.History
         /// Gets or sets the ID of the template
         /// </summary>
         // ReSharper disable once UnusedAutoPropertyAccessor.Global
-        public int Templateid { get; set; }
+        public int TemplateId { get; set; }
         
         /// <summary>
         /// Gets or sets the date and time when a template has changed 
