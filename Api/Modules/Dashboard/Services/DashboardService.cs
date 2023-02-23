@@ -850,14 +850,14 @@ WHERE id = ?serviceId");
     }
 
     /// <summary>
-    /// Checks if the MySQL tables for the login log and dashboard are up-to-date.
+    /// Checks if the MySQL tables for the dashboard is up-to-date.
     /// </summary>
     private async Task KeepTablesUpToDateAsync(string databaseName)
     {
         var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(databaseName);
 
         // Check if the dashboard table needs to be updated.
-        if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserDashboard) || lastTableUpdates[WiserTableNames.WiserDashboard] < new DateTime(2023, 2, 16))
+        if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserDashboard) || lastTableUpdates[WiserTableNames.WiserDashboard] < new DateTime(2023, 2, 23))
         {
             // Add columns.
             var column = new ColumnSettingsModel("user_login_active_top10", MySqlDbType.Int64, notNull: true, defaultValue: "0");

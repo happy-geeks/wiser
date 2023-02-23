@@ -1019,6 +1019,7 @@ namespace Api.Modules.Customers.Services
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
                 // Make sure the WiserLoginLog exists and is up-to-date.
+                await KeepTablesUpToDateAsync(clientDatabaseConnection.ConnectedDatabaseForWriting ?? clientDatabaseConnection.ConnectedDatabase);
                 await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
 
                 clientDatabaseConnection.ClearParameters();
@@ -1274,6 +1275,7 @@ namespace Api.Modules.Customers.Services
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
                 // Make sure the WiserLoginLog exists and is up-to-date.
+                await KeepTablesUpToDateAsync(clientDatabaseConnection.ConnectedDatabaseForWriting ?? clientDatabaseConnection.ConnectedDatabase);
                 await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
                 
                 clientDatabaseConnection.ClearParameters();
@@ -1438,14 +1440,14 @@ ON DUPLICATE KEY UPDATE `value` = VALUES(value);";
         }
         
         /// <summary>
-        /// Checks if the MySQL tables for the login log and dashboard are up-to-date.
+        /// Checks if the MySQL tables for the login log is up-to-date.
         /// </summary>
         private async Task KeepTablesUpToDateAsync(string databaseName)
         {
             var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(databaseName);
 
             // Check if the login log table needs to be updated.
-            if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserLoginLog) || lastTableUpdates[WiserTableNames.WiserLoginLog] < new DateTime(2023, 2, 16))
+            if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserLoginLog) || lastTableUpdates[WiserTableNames.WiserLoginLog] < new DateTime(2023, 2, 23))
             {
                 // Add column.
                 var column = new ColumnSettingsModel("time_active_in_seconds", MySqlDbType.Int64, notNull: true, defaultValue: "0", addAfterColumnName: "user_id");
