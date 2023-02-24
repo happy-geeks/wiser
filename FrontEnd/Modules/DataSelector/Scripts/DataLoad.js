@@ -121,6 +121,7 @@
                 method: "GET",
                 data: { id: id }
             });
+
             if (!Wiser.validateArray(response)) {
                 window.processing.removeProcess("dataSelectorLoad");
                 return;
@@ -134,6 +135,7 @@
             header.style.display = "";
 
             // Will make the save dialog open with the current name.
+            this.dataSelector.currentId = savedData.id;
             this.dataSelector.currentName = savedData.name;
 
             // Parse saved JSON string to an object.
@@ -338,8 +340,20 @@
                     document.getElementById("showInExportModule").checked = savedData.showInExportModule;
                 }
 
+                if (typeof savedData.showInCommunicationModule === "boolean") {
+                    document.getElementById("showInCommunicationModule").checked = savedData.showInCommunicationModule;
+                }
+
                 if (typeof savedData.availableForRendering === "boolean") {
                     document.getElementById("availableForRendering").checked = savedData.availableForRendering;
+                }
+
+                if (typeof savedData.showInDashboard === "boolean") {
+                    document.getElementById("showInDashboard").checked = savedData.showInDashboard;
+                }
+
+                if (savedData.allowedRoles) {
+                    $("#allowedRoles").getKendoMultiSelect().value(savedData.allowedRoles.split(","));
                 }
 
                 // This is where the data selector will complete loading.
@@ -438,7 +452,7 @@
                             switch (scopeRow.operator) {
                                 case "is equal to":
                                 case "is not equal to":
-                                    inputRow.querySelector("div.scope-value-select").style.display = "";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "";
                                     inputRow.querySelector("div.free-input").style.display = "none";
                                     valueSelect.one("dataBound", (e) => {
                                         // Scopes might also have custom values that are not part of the data source.
@@ -451,11 +465,11 @@
                                     break;
                                 case "is empty":
                                 case "is not empty":
-                                    inputRow.querySelector("div.scope-value-select").style.display = "none";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "none";
                                     inputRow.querySelector("div.free-input").style.display = "none";
                                     break;
                                 default:
-                                    inputRow.querySelector("div.scope-value-select").style.display = "none";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "none";
                                     inputRow.querySelector("div.free-input").style.display = "";
                                     freeInput.value = scopeRow.value;
                                     break;
@@ -502,7 +516,7 @@
                             switch (havingRow.operator) {
                                 case "is equal to":
                                 case "is not equal to":
-                                    inputRow.querySelector("div.scope-value-select").style.display = "";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "";
                                     inputRow.querySelector("div.free-input").style.display = "none";
                                     valueSelect.one("dataBound", (e) => {
                                         // Scopes might also have custom values that are not part of the data source.
@@ -515,11 +529,11 @@
                                     break;
                                 case "is empty":
                                 case "is not empty":
-                                    inputRow.querySelector("div.scope-value-select").style.display = "none";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "none";
                                     inputRow.querySelector("div.free-input").style.display = "none";
                                     break;
                                 default:
-                                    inputRow.querySelector("div.scope-value-select").style.display = "none";
+                                    inputRow.querySelector("span.scope-value-select").style.display = "none";
                                     inputRow.querySelector("div.free-input").style.display = "";
                                     freeInput.value = havingRow.value;
                                     break;
@@ -745,9 +759,16 @@
                         existingItem.set("dataType", field.dataType || "string");
                         existingItem.set("havingDataType", field.havingDataType || "string");
 
+                        // Support for older "languagecode" property, which is a single value.
+                        const languagesCodes = [];
                         if (field.hasOwnProperty("languagecode") && field.languagecode !== "") {
-                            existingItem.set("languageCode", field.languagecode);
+                            languagesCodes.push(field.languagecode);
                         }
+                        // Add the language codes in the "languageCodes" property, which should be an array.
+                        if (field.hasOwnProperty("languageCodes") && Array.isArray(field.languageCodes)) {
+                            languagesCodes.push(...field.languageCodes);
+                        }
+                        existingItem.set("languageCode", languagesCodes);
 
                         existingItem.set("aggregation", field.aggregationfunction);
                         existingItem.set("formatting", field.formatting);

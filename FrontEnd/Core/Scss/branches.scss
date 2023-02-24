@@ -56,6 +56,16 @@
                     overflow: hidden;
                     display: contents;
                 }
+                
+                .form-row {
+                    padding-bottom: 10px;
+                    max-width: 100%;
+                    width: 100%;
+                    
+                    input[type=url] {
+                        width: 100%;
+                    }
+                }
             }
     
             + footer {
@@ -89,7 +99,16 @@
     
                 .label-info {
                     float: right;
+                    padding-right: 20px;
                 }
+                
+                &[for=newBranchName] {
+                    padding-right: 15px;
+                }
+            }
+
+            #newBranchName {
+                min-width: 300px;
             }
         }
     
@@ -182,6 +201,10 @@
 
                 .btn {
                     margin-top: 50px;
+                    
+                    &.open-branch {
+                        margin-top: 5px;
+                    }
                 }
             }
         }

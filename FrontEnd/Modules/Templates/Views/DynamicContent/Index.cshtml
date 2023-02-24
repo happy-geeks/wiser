@@ -1,4 +1,5 @@
 ﻿@model FrontEnd.Modules.Templates.Models.DynamicContentViewModel
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 @{
     Layout = "";
 }
@@ -9,8 +10,8 @@
     <title>Wiser 3 - Dynamic content</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.material.min.css" rel="stylesheet" />
 
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
@@ -33,7 +34,7 @@
                 <div id="horizontal" style="border: 0; height: 100%; width: 100%;">
 
                     <div id="left-pane" style="background-color: #eee;">
-                        <div class="pane-content">
+                        <div class="pane-content" id="DynamicContentPane">
 
                             <div class="input-container" id="DynamicContentComponentInputs">
                                 <div class="item" data-label-style="float" data-label-width="0">
@@ -136,8 +137,10 @@
         </div>
     </div>
 
-    <script src="/scripts/Utils.min.js"></script>
-    <script src="/scripts/Base.min.js"></script>
-    <script src="/scripts/DynamicContent.min.js"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="DynamicContent.js"></webpack-script>
 </body>
 </html>

@@ -16,7 +16,7 @@ const importModuleSettings = {
      */
     class Import {
         /**
-         * Initializes a new instance of AisDashboard.
+         * Initializes a new instance of Import.
          * @param {any} settings An object containing the settings for this class.
          */
         constructor(settings) {
@@ -105,7 +105,7 @@ const importModuleSettings = {
 
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = user.adminAccountName;
             
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
@@ -163,9 +163,9 @@ const importModuleSettings = {
             this.startImportButton.addEventListener("click", this.performImport.bind(this));
 
             if (!window.importExport) {
-                $(document).on("moduleClosing", (e) => {
+                document.addEventListener("moduleClosing", (event) => {
                     // You can do anything here that needs to happen before closing the module.
-                    e.success();
+                    event.detail();
                 });
             }
         }
@@ -944,8 +944,8 @@ const importModuleSettings = {
         selectProperty(dataItem, property) {
             dataItem.set("propertyName", property.value);
             dataItem.set("languageCode", property.languageCode);
-            dataItem.set("isImageField", parseInt(property.isImageField) === 1);
-            dataItem.set("allowMultipleImages", parseInt(property.allowMultipleImages) === 1);
+            dataItem.set("isImageField", property.isImageField);
+            dataItem.set("allowMultipleImages", property.allowMultipleImages);
         }
     }
 

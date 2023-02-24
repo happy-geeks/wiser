@@ -99,7 +99,7 @@ export class Preview {
                 ],
                 editable: "inline",
                 save: (editEvent) => {
-                    this.generatePreview();
+                    this.generatePreview(false);
                 }
             }).data("kendoGrid");
         }
@@ -117,7 +117,7 @@ export class Preview {
             return;
         }
 
-        this.generatePreview();
+        this.generatePreview(false);
     }
 
     async loadProfiles() {

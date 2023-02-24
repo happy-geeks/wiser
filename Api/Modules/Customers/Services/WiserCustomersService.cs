@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Models;
@@ -18,6 +15,7 @@ using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
@@ -34,6 +32,7 @@ namespace Api.Modules.Customers.Services
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<WiserCustomersService> logger;
+        private readonly IHttpContextAccessor httpContextAccessor;
         private readonly GclSettings gclSettings;
         private readonly ApiSettings apiSettings;
         private readonly IDatabaseConnection wiserDatabaseConnection;
@@ -43,11 +42,12 @@ namespace Api.Modules.Customers.Services
         /// <summary>
         /// Creates a new instance of WiserCustomersService.
         /// </summary>
-        public WiserCustomersService(IDatabaseConnection connection, IOptions<ApiSettings> apiSettings, IOptions<GclSettings> gclSettings, IDatabaseHelpersService databaseHelpersService, ILogger<WiserCustomersService> logger)
+        public WiserCustomersService(IDatabaseConnection connection, IOptions<ApiSettings> apiSettings, IOptions<GclSettings> gclSettings, IDatabaseHelpersService databaseHelpersService, ILogger<WiserCustomersService> logger, IHttpContextAccessor httpContextAccessor)
         {
             clientDatabaseConnection = connection;
             this.databaseHelpersService = databaseHelpersService;
             this.logger = logger;
+            this.httpContextAccessor = httpContextAccessor;
             this.gclSettings = gclSettings.Value;
             this.apiSettings = apiSettings.Value;
 
@@ -383,6 +383,13 @@ namespace Api.Modules.Customers.Services
 
             try
             {
+                if (httpContextAccessor.HttpContext != null)
+                {
+                    // Set sub domain to main and then make sure the database connection log table in the main database is up-to-date.
+                    httpContextAccessor.HttpContext.Items[HttpContextConstants.SubDomainKey] = apiSettings.MainSubDomain;
+                    await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { GeeksCoreLibrary.Modules.Databases.Models.Constants.DatabaseConnectionLogTableName });
+                }
+
                 wiserDatabaseConnection.ClearParameters();
                 wiserDatabaseConnection.AddParameter("subDomain", subDomain);
 

@@ -219,8 +219,19 @@ export class Grids {
                         name: "openDetails",
                         iconClass: "k-icon k-i-hyperlink-open",
                         text: "",
-                        click: (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }); }
+                        click: (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }, false); }
                     });
+
+                    if (gridViewSettings.allowOpeningOfItemsInNewTab) {
+                        commandColumnWidth += 60;
+
+                        commands.push({
+                            name: "openDetailsInNewTab",
+                            iconClass: "k-icon k-i-window",
+                            text: "",
+                            click: (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }, true); }
+                        });
+                    }
                 }
 
                 if (gridViewSettings.deleteItemQueryId && (typeof (gridViewSettings.showDeleteButton) === "undefined" || gridViewSettings.showDeleteButton === true)) {
@@ -346,6 +357,8 @@ export class Grids {
                 filterable = defaultFilters;
             } else if (typeof gridViewSettings.filterable === "object") {
                 filterable = $.extend(true, {}, defaultFilters, gridViewSettings.filterable);
+            } else if (gridViewSettings.clientSideFiltering === true) {
+                filterable = defaultFilters;
             }
 
             // Delete properties that we have already defined, so that they won't be overwritten again by the $.extend below.
@@ -486,7 +499,7 @@ export class Grids {
                 },
                 filterable: filterable,
                 filterMenuInit: this.onFilterMenuInit.bind(this),
-                filterMenuOpen: this.onFilterMenuOpen.bind(this),
+                filterMenuOpen: this.onFilterMenuOpen.bind(this)
             }, gridViewSettings);
 
             finalGridViewSettings.selectable = gridViewSettings.selectable || false;
@@ -554,7 +567,14 @@ export class Grids {
      * @returns {Promise<void>} The promise of the request.
      */
     async saveGridViewState(key, dataToSave) {
-        sessionStorage.setItem(key, dataToSave);
+        // Add the ID of the logged in user to the key for local storage. Just in case someone logs in as multiple users.
+        let localStorageKey = key;
+        const userData = await Wiser.getLoggedInUserData(this.base.settings.wiserApiRoot);
+        if (userData) {
+            localStorageKey += `_${userData.id}`;
+        }
+        sessionStorage.setItem(localStorageKey, dataToSave);
+        
         return Wiser.api({
             url: `${this.base.settings.wiserApiRoot}users/grid-settings/${encodeURIComponent(key)}`,
             method: "POST",
@@ -570,8 +590,15 @@ export class Grids {
      */
     async loadGridViewState(key) {
         let value;
+        let localStorageKey = key; 
+
+        // Add the ID of the logged in user to the key for local storage. Just in case someone logs in as multiple users.
+        const userData = await Wiser.getLoggedInUserData(this.base.settings.wiserApiRoot);
+        if (userData) {
+            localStorageKey += `_${userData.id}`;
+        }
         
-        value = sessionStorage.getItem(key);
+        value = sessionStorage.getItem(localStorageKey);
         if (!value) {
             value = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}users/grid-settings/${encodeURIComponent(key)}`,
@@ -579,7 +606,7 @@ export class Grids {
                 contentType: "application/json"
             });
 
-            sessionStorage.setItem(key, value || "");
+            sessionStorage.setItem(localStorageKey, value || "");
         }
         
         return value;
@@ -686,14 +713,25 @@ export class Grids {
                     const commands = [];
 
                     if (!options.disableOpeningOfItems) {
-                        commandColumnWidth += 80;
+                        commandColumnWidth += 60;
 
                         commands.push({
                             name: "openDetails",
                             iconClass: "k-icon k-i-hyperlink-open",
                             text: "",
-                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options); }
+                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options, false); }
                         });
+
+                        if (options.allowOpeningOfItemsInNewTab) {
+                            commandColumnWidth += 60;
+
+                            commands.push({
+                                name: "openDetailsInNewTab",
+                                iconClass: "k-icon k-i-window",
+                                text: "",
+                                click: (event) => { this.onShowDetailsClick(event, kendoComponent, options, true); }
+                            });
+                        }
                     }
 
                     customQueryResults.columns.push({
@@ -763,7 +801,7 @@ export class Grids {
 
                 // Add command columns separately, because of the click event that we can't do properly server-side.
                 if (!options.hideCommandColumn) {
-                    let commandColumnWidth = 80;
+                    let commandColumnWidth = 60;
                     let commands = [];
 
                     if (!options.disableOpeningOfItems) {
@@ -771,8 +809,19 @@ export class Grids {
                             name: "openDetails",
                             iconClass: "k-icon k-i-hyperlink-open",
                             text: "",
-                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options); }
+                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options, false); }
                         });
+
+                        if (options.allowOpeningOfItemsInNewTab) {
+                            commandColumnWidth += 60;
+
+                            commands.push({
+                                name: "openDetailsInNewTab",
+                                iconClass: "k-icon k-i-window",
+                                text: "",
+                                click: (event) => { this.onShowDetailsClick(event, kendoComponent, options, true); }
+                            });
+                        }
                     }
 
                     gridSettings.columns.push({
@@ -995,12 +1044,14 @@ export class Grids {
 
     /**
      * Adds all custom buttons in the toolbar for a grid, in the correct groups, based on the given settings.
+     * @param gridSelector {any} The selector to find the corresponding grid in the DOM.
      * @param {any} toolbar The toolbar array of the grid.
      * @param {string} encryptedItemId The encrypted item ID of the item that the grid is located on, if applicable.
      * @param {number} propertyId The ID of the property with the sub-entities-grid, if applicable.
      * @param {any} customActions The custom actions from the grid settings.
+     * @param entityType {string} The entity type of the item that contains the grid.
      */
-    addCustomActionsToToolbar(gridSelector, encryptedItemId, propertyId, toolbar, customActions) {
+    addCustomActionsToToolbar(gridSelector, encryptedItemId, propertyId, toolbar, customActions, entityType) {
         const groups = [];
         const actionsWithoutGroups = [];
         encryptedItemId = encryptedItemId || "";
@@ -1033,12 +1084,12 @@ export class Grids {
                     groups.push(group);
                 }
 
-                group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${gridSelector.replace(/#/g, "\\#")}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
+                group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${gridSelector.replace(/#/g, "\\#")}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event, "${entityType}")' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
             } else {
                 actionsWithoutGroups.push({
                     name: `customAction${i.toString()}`,
                     text: customAction.text,
-                    template: `<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${gridSelector.replace(/#/g, "\\#")}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
+                    template: `<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${gridSelector.replace(/#/g, "\\#")}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event, "${entityType}")' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
                 });
             }
         }
@@ -1066,8 +1117,9 @@ export class Grids {
      * @param {any} event The event.
      * @param {any} grid The grid that executed the event.
      * @param {any} options The options for the grid.
+     * @param openInNewTab {boolean} Whether to open the item in a new tab in Wiser (like opening a new module).
      */
-    async onShowDetailsClick(event, grid, options) {
+    async onShowDetailsClick(event, grid, options, openInNewTab = false) {
         event.preventDefault();
 
         const dataItem = grid.dataItem($(event.currentTarget).closest("tr"));
@@ -1077,10 +1129,10 @@ export class Grids {
         let itemId = dataItem.id || dataItem.itemId || dataItem.itemid || dataItem.item_id;
         let encryptedId = dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid || dataItem.idencrypted;
         const originalEncryptedId = encryptedId;
-        let entityType = dataItem.entityType || dataItem.entity_type;
+        let entityType = dataItem.entityType || dataItem.entity_type || dataItem.entitytype;
         let title = dataItem.title;
-        const linkId = dataItem.linkId || dataItem.link_id;
-        const linkType = dataItem.linkTypeNumber || dataItem.link_type_number || dataItem.linkType || dataItem.link_type;
+        const linkId = dataItem.linkId || dataItem.link_id || dataItem.linkid;
+        const linkType = dataItem.linkTypeNumber || dataItem.link_type_number || dataItem.linktypenumber || dataItem.linkType || dataItem.link_type || dataItem.linktype;
 
         if (options.fromMainGrid && this.base.settings.openGridItemsInBlock) {
             this.base.grids.informationBlockIframe.attr("src", `${"/Modules/DynamicItems"}?itemId=${encryptedId}&moduleId=${this.base.settings.moduleId}&iframe=true`);
@@ -1095,7 +1147,7 @@ export class Grids {
                 encryptedId = dataItem[`encryptedId_${options.entityType || entityType}`] || dataItem[`encryptedid_${options.entityType || entityType}`] || dataItem[`encrypted_id_${options.entityType || entityType}`] || dataItem[`idencrypted_${options.entityType || entityType}`] || encryptedId;
             } else if (!options.usingDataSelector) {
                 // If the clicked column has a field property, it should contain the entity name. Then we can find the ID column for that same entity.
-                const split = column.field.split(/_(.+)/).filter(s => s !== "");
+                const split = Strings.unmakeJsonPropertyName(column.field).split(/_(.+)/).filter(s => s !== "");
                 if (split.length < 2 && !entityType) {
                     if (!options.hideCommandColumn && (!this.base.settings.gridViewSettings || !this.base.settings.gridViewSettings.hideCommandColumn)) {
                         console.error(`Could not retrieve entity type from clicked column ('${column.field}')`);
@@ -1114,13 +1166,15 @@ export class Grids {
                         if (!dataItem.hasOwnProperty(key)) {
                             continue;
                         }
+                        
+                        const columnName = Strings.unmakeJsonPropertyName(key);
 
-                        if (!idFound && (key.indexOf(`ID_${entityType}`) === 0 || key.indexOf(`id_${entityType}`) === 0 || key.indexOf(`itemId_${entityType}`) === 0 || key.indexOf(`itemid_${entityType}`) === 0 || key.indexOf(`item_id_${entityType}`) === 0)) {
+                        if (!idFound && (columnName.indexOf(`ID_${entityType}`) === 0 || columnName.indexOf(`id_${entityType}`) === 0 || columnName.indexOf(`itemId_${entityType}`) === 0 || columnName.indexOf(`itemid_${entityType}`) === 0 || columnName.indexOf(`item_id_${entityType}`) === 0)) {
                             itemId = dataItem[key];
                             idFound = true;
                         }
 
-                        if (!encryptedIdFound && (key.indexOf(`encryptedId_${entityType}`) === 0 || key.indexOf(`encryptedid_${entityType}`) === 0 || key.indexOf(`encrypted_id_${entityType}`) === 0 || key.indexOf(`idencrypted_${entityType}`) === 0)) {
+                        if (!encryptedIdFound && (columnName.indexOf(`encryptedId_${entityType}`) === 0 || columnName.indexOf(`encryptedid_${entityType}`) === 0 || columnName.indexOf(`encrypted_id_${entityType}`) === 0 || columnName.indexOf(`idencrypted_${entityType}`) === 0)) {
                             encryptedId = dataItem[key];
                             encryptedIdFound = true;
                         }
@@ -1161,7 +1215,26 @@ export class Grids {
             return;
         }
 
-        this.base.windows.loadItemInWindow(false, itemId, encryptedId, entityType, title, !options.hideTitleFieldInWindow, grid, options, linkId, null, null, linkType);
+        if (openInNewTab) {
+            if (!window.parent) {
+                kendo.alert("Er kan geen parent frame gevonden worden. Waarschijnlijk heeft u deze module in een losse browser tab geopend. Open de module a.u.b. via de normale manier in Wiser.")
+                return;
+            }
+
+            window.parent.postMessage({
+                action: "OpenItem",
+                actionData: {
+                    moduleId: this.base.settings.moduleId,
+                    name: title || `Item #${itemId}`,
+                    type: "dynamicItems",
+                    itemId: encryptedId,
+                    queryString: `?itemId=${encodeURIComponent(encryptedId)}&moduleId=${this.base.settings.moduleId}&iframe=true&entityType=${entityType}`
+                }
+            });
+        }
+        else {
+            this.base.windows.loadItemInWindow(false, itemId, encryptedId, entityType, title, !options.hideTitleFieldInWindow, grid, options, linkId, null, null, linkType);
+        }
     }
 
     /**
@@ -1326,9 +1399,9 @@ export class Grids {
                                 text: "Alleen koppeling",
                                 primary: true,
                                 action: (e) => {
-                                    console.log("huh", dataItem, senderGrid.element.closest(".item").data());
                                     const destinationItemId = dataItem.encryptedDestinationItemId || senderGrid.element.closest(".item").data("itemIdEncrypted");
-                                    this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.linkTypeNumber || dataItem.link_type_number).then(() => {
+                                    const linkType = dataItem.linkTypeNumber || dataItem.link_type_number || dataItem.linktypenumber || dataItem.linkType || dataItem.link_type || dataItem.linktype;
+                                    this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, linkType).then(() => {
                                         senderGrid.dataSource.read();
                                     });
                                 }
@@ -1365,7 +1438,8 @@ export class Grids {
                     }
 
                     const destinationItemId = dataItem.encryptedDestinationItemId || dataItem.encrypted_destination_item_id || senderGrid.element.closest(".item").data("itemIdEncrypted");
-                    await this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.linkTypeNumber || dataItem.link_type_number);
+                    const linkType = dataItem.linkTypeNumber || dataItem.link_type_number || dataItem.linktypenumber || dataItem.linkType || dataItem.link_type || dataItem.linktype;
+                    await this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, linkType);
                     senderGrid.dataSource.read();
                     break;
                 }

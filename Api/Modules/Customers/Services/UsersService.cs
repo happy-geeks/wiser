@@ -15,9 +15,11 @@ using Api.Modules.Templates.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
+using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Communication.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using Google.Authenticator;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -45,21 +47,30 @@ namespace Api.Modules.Customers.Services
         private const string UserLoginAttemptsKey = "attempts";
         private const string UserBlockedKey = "blocked";
         private const string UserRequirePasswordChangeKey = "require_password_change";
+        private const string UserDashboardSettingsKey = "dashboard_settings";
         private const string UserGridSettingsGroupName = "grid_settings";
         private const string UserModuleSettingsGroupName = "module_settings";
         private const string UserPinnedModulesKey = "pinnedModules";
         private const string UserAutoLoadModulesKey = "autoLoadModules";
-
+        
+        private const string TotpEnabledKey = "totp_enabled";
+        private const string TotpSecretKey = "totp_secret";
+        private const string TotpRequiresSetupKey = "totp_requires_setup";
+        private const string TotpBackupCodesGroupName = "totp_backup_codes";
+        private const int AmountOfBackupCodesToGenerate = 10;
+        
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IDatabaseConnection wiserDatabaseConnection;
         private readonly ITemplatesService templatesService;
         private readonly ICommunicationsService communicationsService;
+        private readonly IRolesService rolesService;
+        private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly GclSettings gclSettings;
 
         /// <summary>
         /// Initializes a new instance of <see cref="UsersService"/>.
         /// </summary>
-        public UsersService(IWiserCustomersService wiserCustomersService, IOptions<ApiSettings> apiSettings, IDatabaseConnection clientDatabaseConnection, ILogger<UsersService> logger, ITemplatesService templatesService, ICommunicationsService communicationsService, IOptions<GclSettings> gclSettings)
+        public UsersService(IWiserCustomersService wiserCustomersService, IOptions<ApiSettings> apiSettings, IDatabaseConnection clientDatabaseConnection, ILogger<UsersService> logger, ITemplatesService templatesService, ICommunicationsService communicationsService, IOptions<GclSettings> gclSettings, IRolesService rolesService, IDatabaseHelpersService databaseHelpersService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.logger = logger;
@@ -67,6 +78,8 @@ namespace Api.Modules.Customers.Services
             this.apiSettings = apiSettings.Value;
             this.templatesService = templatesService;
             this.communicationsService = communicationsService;
+            this.rolesService = rolesService;
+            this.databaseHelpersService = databaseHelpersService;
             this.gclSettings = gclSettings.Value;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
@@ -115,7 +128,7 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null)
+        public async Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null, string totpPin = null)
         {
             if (String.IsNullOrWhiteSpace(username) || String.IsNullOrWhiteSpace(password))
             {
@@ -136,13 +149,19 @@ namespace Api.Modules.Customers.Services
                             password.value AS password,
                             IF(active.value = '1', TRUE, FALSE) AS active,
                             attempts.value AS attempts,
-                            blocked.value AS blocked
+                            blocked.value AS blocked,
+                            IFNULL(totpEnabled.value, '0') = '1' AS totpEnabled,
+                            totpSecret.value as totpSecret,
+                            IFNULL(totpRequiresSetup.value, '1') = '1' AS totpRequiresSetup
                         FROM {WiserTableNames.WiserItem} AS account
                         JOIN {WiserTableNames.WiserItemDetail} AS username ON username.item_id = account.id AND username.`key` = '{UserUsernameKey}' AND username.value = ?username
                         LEFT JOIN {WiserTableNames.WiserItemDetail} AS password ON password.item_id = account.id AND password.`key` = '{UserPasswordKey}'
                         LEFT JOIN {WiserTableNames.WiserItemDetail} AS active ON active.item_id = account.id AND active.`key` = '{UserActiveKey}'
                         LEFT JOIN {WiserTableNames.WiserItemDetail} AS attempts ON attempts.item_id = account.id AND attempts.`key` = '{UserLoginAttemptsKey}'
                         LEFT JOIN {WiserTableNames.WiserItemDetail} AS blocked ON blocked.item_id = account.id AND blocked.`key` = '{UserBlockedKey}'
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} totpEnabled on totpEnabled.item_id = account.id and totpEnabled.`key` = '{TotpEnabledKey}'
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} totpSecret on totpSecret.item_id = account.id and totpSecret.`key` = '{TotpSecretKey}'
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} totpRequiresSetup on totpRequiresSetup.item_id = account.id and totpRequiresSetup.`key` = '{TotpRequiresSetupKey}'
                         WHERE account.entity_type = '{WiserUserEntityType}'
                         LIMIT 1";
 
@@ -168,12 +187,31 @@ namespace Api.Modules.Customers.Services
             
             var result = AdminAccountModel.FromDataRow(dataTable.Rows[0]);
             result.EncryptedId = result.Id.ToString().EncryptWithAes(apiSettings.AdminUsersEncryptionKey, useSlowerButMoreSecureMethod: true);
+
+            // If TOTP is enabled and setup, but we don't have a PIN yet, then return the user without logging in, so that they get the screen for entering the PIN.
+            if (result.TotpAuthentication.Enabled && !result.TotpAuthentication.RequiresSetup && String.IsNullOrWhiteSpace(totpPin))
+            {
+                return new ServiceResult<AdminAccountModel>(result);
+            }
+
+            // Handle TOTP authentication.
+            var (success, _) = await HandleTotpAuthenticationAsync(totpPin, null, result.TotpAuthentication, result.Id, result.Name, clientDatabaseConnection);
+            if (!success)
+            {
+                // If TOTP authentication failed, return invalid credentials error.
+                await AddFailedLoginAttemptAsync(ipAddress, username);
+                return new ServiceResult<AdminAccountModel>
+                {
+                    ErrorMessage = "Invalid credentials",
+                    StatusCode = HttpStatusCode.Unauthorized
+                };
+            }
             
             return new ServiceResult<AdminAccountModel>(result);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null)
+        public async Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null, string totpBackupCode = null)
         {
             if (await UsernameIsBlockedAsync(username, clientDatabaseConnection, apiSettings.MaximumLoginAttemptsForUsers))
             {
@@ -211,7 +249,10 @@ namespace Api.Modules.Customers.Services
                             IF(last_login_date.value IS NULL, ?now, STR_TO_DATE(last_login_date.value, '%Y-%m-%d %H:%i:%s')) AS last_login_date,
                             IFNULL(require_password_change.value, '0') AS require_password_change,
                             IFNULL(role.role_name, '') AS role,
-                            email.value AS emailAddress
+                            email.value AS emailAddress,
+                            IFNULL(totpEnabled.value, '0') = '1' AS totpEnabled,
+                            totpSecret.value as totpSecret,
+                            IFNULL(totpRequiresSetup.value, '1') = '1' AS totpRequiresSetup
                         FROM {WiserTableNames.WiserItem} user
                         JOIN {WiserTableNames.WiserItemDetail} username ON username.item_id = user.id AND username.`key` = '{UserUsernameKey}' AND username.value = ?username
                         JOIN {WiserTableNames.WiserItemDetail} password ON password.item_id = user.id AND password.`key` = '{UserPasswordKey}'
@@ -221,6 +262,9 @@ namespace Api.Modules.Customers.Services
                         LEFT JOIN {WiserTableNames.WiserUserRoles} userRole ON userRole.user_id = user.id
                         LEFT JOIN {WiserTableNames.WiserRoles} role ON role.id = userRole.role_id
                         LEFT JOIN {WiserTableNames.WiserItemDetail} email ON email.item_id = user.id AND email.`key` = '{EmailAddressKey}'
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} totpEnabled on totpEnabled.item_id = user.id and totpEnabled.`key` = '{TotpEnabledKey}'
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} totpSecret on totpSecret.item_id = user.id and totpSecret.`key` = '{TotpSecretKey}'
+                        LEFT JOIN {WiserTableNames.WiserItemDetail} totpRequiresSetup on totpRequiresSetup.item_id = user.id and totpRequiresSetup.`key` = '{TotpRequiresSetupKey}'
                         WHERE user.entity_type = '{WiserUserEntityType}'
                         AND user.published_environment > 0";
 
@@ -251,7 +295,13 @@ namespace Api.Modules.Customers.Services
                     LastLoginIpAddress = dataRow.Field<string>("last_login_ip"),
                     RequirePasswordChange = requirePasswordChange > 0 && !validAdminAccount, // Only require to change the password if the actual user is logged in.
                     Role = dataRow.Field<string>("role"),
-                    EmailAddress = dataRow.Field<string>("emailAddress")
+                    EmailAddress = dataRow.Field<string>("emailAddress"),
+                    TotpAuthentication = new TotpAuthenticationModel
+                    {
+                        RequiresSetup = Convert.ToBoolean(dataRow["totpRequiresSetup"]),
+                        Enabled = Convert.ToBoolean(dataRow["totpEnabled"]),
+                        SecretKey = dataRow.Field<string>("totpSecret")
+                    }
                 };
 
                 // If an admin account is logging in, we don't want to check the password, so just return the first user. 
@@ -276,6 +326,35 @@ namespace Api.Modules.Customers.Services
                 };
             }
 
+            // If TOTP is enabled and setup, but we don't have a PIN yet, then return the user without logging in, so that they get the screen for entering the PIN.
+            if (!validAdminAccount && user.TotpAuthentication.Enabled && !user.TotpAuthentication.RequiresSetup && String.IsNullOrWhiteSpace(totpPin) && String.IsNullOrWhiteSpace(totpBackupCode))
+            {
+                return new ServiceResult<UserModel>(user);
+            }
+
+            // Handle TOTP authentication.
+            var otpStillRequiresSetup = false;
+            if (!validAdminAccount)
+            {
+                (var otpSuccess, otpStillRequiresSetup) = await HandleTotpAuthenticationAsync(totpPin, totpBackupCode, user.TotpAuthentication, user.Id, user.Name, clientDatabaseConnection);
+                if (!otpSuccess)
+                {
+                    // If TOTP authentication failed, return invalid credentials error.
+                    await AddFailedLoginAttemptAsync(ipAddress, username);
+                    return new ServiceResult<UserModel>
+                    {
+                        ErrorMessage = "Invalid credentials",
+                        StatusCode = HttpStatusCode.Unauthorized
+                    };
+                }
+            }
+
+            // If the TOTP authentication still has to be setup by the user, return the user and don't fully login, so they get the screen for setting it up with the QR code.
+            if (otpStillRequiresSetup)
+            {
+                return new ServiceResult<UserModel>(user);
+            }
+
             if (generateAuthenticationTokenForCookie)
             {
                 user.CookieValue = await GenerateNewCookieTokenAsync(user.Id);
@@ -286,6 +365,8 @@ namespace Api.Modules.Customers.Services
             {
                 await LogDateAndIpOfLoginAsync(ipAddress, user.Id);
             }
+
+            user.EncryptedLoginLogId = (await LogSuccessfulLoginAttemptAsync(user.Id)).ToString().EncryptWithAes(apiSettings.AdminUsersEncryptionKey, useSlowerButMoreSecureMethod: true);
 
             await ResetFailedLoginAttemptAsync(username);
 
@@ -319,30 +400,16 @@ namespace Api.Modules.Customers.Services
             var password = SecurityHelpers.GenerateRandomPassword(12);
             clientDatabaseConnection.AddParameter("id", dataTable.Rows[0].Field<ulong>("id"));
             clientDatabaseConnection.AddParameter("password", password.ToSha512Simple());
+            clientDatabaseConnection.AddParameter("username", dataTable.Rows[0].Field<string>("username"));
 
             query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, `value`) VALUES (?id, '{UserPasswordKey}', ?password)
                     ON DUPLICATE KEY UPDATE `value` = ?password;
 
                     INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, `value`) VALUES (?id, '{UserRequirePasswordChangeKey}', '1')
-                    ON DUPLICATE KEY UPDATE `value` = '1';";
+                    ON DUPLICATE KEY UPDATE `value` = '1';
+                    
+                    UPDATE {WiserTableNames.WiserLoginAttempts} SET attempts = 0, blocked = 0 WHERE username = ?username;";
             await clientDatabaseConnection.ExecuteAsync(query);
-
-            int languageId;
-            switch (resetPasswordRequestModel.LanguageCode.ToUpperInvariant())
-            {
-                case "NL":
-                    languageId = 3930;
-                    break;
-                case "EN":
-                    languageId = 3942;
-                    break;
-                case "DE":
-                    languageId = 3572;
-                    break;
-                default:
-                    languageId = 3930;
-                    break;
-            }
             
             var mailTemplate = (await templatesService.GetTemplateByNameAsync("Wachtwoord vergeten", true)).ModelObject;
             mailTemplate.Content = mailTemplate.Content.Replace("{username}", resetPasswordRequestModel.Username).Replace("{password}", password).Replace("{subdomain}", resetPasswordRequestModel.SubDomain);
@@ -450,6 +517,15 @@ namespace Api.Modules.Customers.Services
         /// <inheritdoc />
         public async Task<ServiceResult<UserModel>> ChangePasswordAsync(ClaimsIdentity identity, ChangePasswordModel passwords)
         {
+            if (passwords.OldPassword.Equals(passwords.NewPassword))
+            {
+                return new ServiceResult<UserModel>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Provided old password and new password are not allowed to match"
+                };
+            }
+            
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
@@ -532,6 +608,11 @@ namespace Api.Modules.Customers.Services
 
             var encryptionKey = customer.ModelObject.EncryptionKey;
             var userId = IdentityHelpers.GetWiserUserId(identity);
+            
+            clientDatabaseConnection.AddParameter("userId", userId);
+            var query = $@"SELECT IF(value = '1', TRUE, FALSE) AS totpEnabled FROM {WiserTableNames.WiserItemDetail} WHERE item_id = ?userId AND `key` = '{TotpEnabledKey}'";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            var totpEnabled = dataTable.Rows.Count > 0 && Convert.ToBoolean(dataTable.Rows[0]["totpEnabled"]);
 
             var result = new UserModel
             {
@@ -542,7 +623,11 @@ namespace Api.Modules.Customers.Services
                 EmailAddress = await usersService.GetUserEmailAddressAsync(userId),
                 CurrentBranchName = customer.ModelObject.Name,
                 CurrentBranchId = customer.ModelObject.Id,
-                CurrentBranchIsMainBranch = customer.ModelObject.Id == customer.ModelObject.CustomerId
+                CurrentBranchIsMainBranch = customer.ModelObject.Id == customer.ModelObject.CustomerId,
+                TotpAuthentication = new TotpAuthenticationModel
+                {
+                    Enabled = totpEnabled
+                }
             };
 
             if (result.CurrentBranchIsMainBranch)
@@ -574,19 +659,26 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<string>> GetGridSettingsAsync(ClaimsIdentity identity, string uniqueKey)
+        public async Task<ServiceResult<string>> GetSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, string defaultValue = null)
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+            clientDatabaseConnection.AddParameter("group", groupName);
             clientDatabaseConnection.AddParameter("key", uniqueKey);
 
-            var query = $@"SELECT long_value
-                        FROM {WiserTableNames.WiserItemDetail}
-                        WHERE item_id = ?userId
-                        AND groupname = '{UserGridSettingsGroupName}'
-                        AND `key` = ?key";
+            var query = $@"SELECT settings.long_value
+                        FROM {WiserTableNames.WiserItem} AS `user`
+                        JOIN {WiserTableNames.WiserItemDetail} AS settings ON settings.item_id = `user`.id AND settings.`key` = ?key AND settings.groupname = ?group
+                        WHERE `user`.id = ?userId AND `user`.entity_type = '{WiserUserEntityType}'";
+
             var dataTable = await clientDatabaseConnection.GetAsync(query);
-            return new ServiceResult<string>(dataTable.Rows.Count == 0 ? null : dataTable.Rows[0].Field<string>("long_value"));
+            return new ServiceResult<string>(dataTable.Rows.Count == 0 ? defaultValue : dataTable.Rows[0].Field<string>("long_value"));
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> GetGridSettingsAsync(ClaimsIdentity identity, string uniqueKey)
+        {
+            return await GetSettingsAsync(identity, UserGridSettingsGroupName, uniqueKey);
         }
 
         /// <inheritdoc />
@@ -642,19 +734,26 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveGridSettingsAsync(ClaimsIdentity identity, string uniqueKey, JToken settings)
+        public async Task<ServiceResult<bool>> SaveSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, JToken settings)
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
             clientDatabaseConnection.AddParameter("key", uniqueKey);
+            clientDatabaseConnection.AddParameter("group", groupName);
             clientDatabaseConnection.AddParameter("settings", settings?.ToString(Formatting.None));
 
             var query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, groupname, `key`, long_value)
-                        VALUES (?userId, '{UserGridSettingsGroupName}', ?key, ?settings)
+                        VALUES (?userId, ?group, ?key, ?settings)
                         ON DUPLICATE KEY UPDATE long_value = VALUES(long_value)";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveGridSettingsAsync(ClaimsIdentity identity, string uniqueKey, JToken settings)
+        {
+            return await SaveSettingsAsync(identity, UserGridSettingsGroupName, uniqueKey, settings);
         }
 
         /// <inheritdoc />
@@ -755,7 +854,7 @@ namespace Api.Modules.Customers.Services
         public async Task<string> GenerateAndSaveNewRefreshTokenAsync(string cookieSelector, string subDomain, string ticket)
         {
             string refreshToken;
-            using (var rng = new RNGCryptoServiceProvider())
+            using (var rng = RandomNumberGenerator.Create())
             {
                 var data = new byte[30];
                 rng.GetBytes(data);
@@ -790,7 +889,183 @@ namespace Api.Modules.Customers.Services
 
             return result;
         }
-        
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<TimeSpan>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId)
+        {
+            var result = new ServiceResult<TimeSpan>();
+
+            // Try to decrypt the encrypted log ID.
+            string decryptedLogIdAsString;
+            try
+            {
+                decryptedLogIdAsString = encryptedLoginLogId.DecryptWithAes(apiSettings.AdminUsersEncryptionKey, useSlowerButMoreSecureMethod: true);
+            }
+            catch (Exception exception)
+            {
+                logger.LogError($"UpdateUserTimeActiveAsync: Error trying to decrypt encrypted log ID '{encryptedLoginLogId}': {exception}");
+                result.StatusCode = HttpStatusCode.BadRequest;
+                result.ErrorMessage = $"Error trying to decrypt encrypted log ID '{encryptedLoginLogId}'";
+                return result;
+            }
+
+            // Now try to parse the decrypted log ID to a UInt64.
+            if (!UInt64.TryParse(decryptedLogIdAsString, out var decryptedLogId))
+            {
+                logger.LogError($"UpdateUserTimeActiveAsync: Could not parse log ID '{decryptedLogId}' to a UInt64.");
+                result.StatusCode = HttpStatusCode.BadRequest;
+                result.ErrorMessage = $"Error trying to decrypt encrypted log ID '{encryptedLoginLogId}'";
+                return result;
+            }
+
+            // If the parsing was successful, but the ID is 0.
+            if (decryptedLogId == 0)
+            {
+                logger.LogError("UpdateUserTimeActiveAsync: Log ID should be higher than 0.");
+                result.StatusCode = HttpStatusCode.BadRequest;
+                result.ErrorMessage = "Log ID should be higher than 0";
+                return result;
+            }
+
+            // Log ID parsed successfully and is higher than 0; proceed with function.
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+
+            try
+            {
+                await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+                // Make sure the WiserLoginLog exists and is up-to-date.
+                await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
+
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("id", decryptedLogId);
+                clientDatabaseConnection.AddParameter("user_id", userId);
+                var timeActiveData = await clientDatabaseConnection.GetAsync($"SELECT time_active, time_active_changed_on FROM {WiserTableNames.WiserLoginLog} WHERE id = ?id AND user_id = ?user_id");
+                if (timeActiveData.Rows.Count == 0)
+                {
+                    logger.LogError($"UpdateUserTimeActiveAsync: Log ID '{decryptedLogId}' does not exist or doesn't belong to the current user.");
+                    result.StatusCode = HttpStatusCode.BadRequest;
+                    result.ErrorMessage = $"Log ID '{decryptedLogId}' does not exist or doesn't belong to the current user";
+                    return result;
+                }
+
+                var timeActiveChangedOn = timeActiveData.Rows[0].Field<DateTime>("time_active_changed_on");
+                var currentTimeActive = timeActiveData.Rows[0].Field<TimeSpan>("time_active");
+                var timeActive = currentTimeActive.Add(DateTime.Now.Subtract(timeActiveChangedOn));
+
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("time_active", timeActive);
+                clientDatabaseConnection.AddParameter("time_active_changed_on", DateTime.Now);
+                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserLoginLog, decryptedLogId);
+
+                result.ModelObject = timeActive;
+                result.StatusCode = HttpStatusCode.OK;
+                return result;
+            }
+            catch (Exception exception)
+            {
+                logger.LogError($"Error while updating user active time: {exception}");
+                result.StatusCode = HttpStatusCode.BadRequest;
+                result.ErrorMessage = "Error while updating user active time";
+                return result;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> ResetTimeActiveChangedAsync(ClaimsIdentity identity, string encryptedLoginLogId)
+        {
+            var result = new ServiceResult<bool>();
+
+            // Try to decrypt the encrypted log ID.
+            string decryptedLogIdAsString;
+            try
+            {
+                decryptedLogIdAsString = encryptedLoginLogId.DecryptWithAes(apiSettings.AdminUsersEncryptionKey, useSlowerButMoreSecureMethod: true);
+            }
+            catch (Exception exception)
+            {
+                logger.LogError($"ResetTimeActiveChangedAsync: Error trying to decrypt encrypted log ID '{encryptedLoginLogId}': {exception}");
+                result.StatusCode = HttpStatusCode.BadRequest;
+                result.ErrorMessage = $"Error trying to decrypt encrypted log ID '{encryptedLoginLogId}'";
+                return result;
+            }
+
+            // Now try to parse the decrypted log ID to a UInt64.
+            if (!UInt64.TryParse(decryptedLogIdAsString, out var decryptedLoginLogId))
+            {
+                logger.LogError($"ResetTimeActiveChangedAsync: Could not parse log ID '{decryptedLoginLogId}' to a UInt64.");
+                result.StatusCode = HttpStatusCode.BadRequest;
+                result.ErrorMessage = $"Error trying to decrypt encrypted log ID '{encryptedLoginLogId}'";
+                return result;
+            }
+
+            // If the parsing was successful, but the ID is 0.
+            if (decryptedLoginLogId == 0)
+            {
+                logger.LogError("ResetTimeActiveChangedAsync: Log ID should be higher than 0.");
+                result.StatusCode = HttpStatusCode.BadRequest;
+                result.ErrorMessage = "Log ID should be higher than 0";
+                return result;
+            }
+
+            // Log ID parsed successfully and is higher than 0; proceed with function.
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+
+            try
+            {
+                await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+                // Make sure the WiserLoginLog exists and is up-to-date.
+                await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
+
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("id", decryptedLoginLogId);
+                clientDatabaseConnection.AddParameter("user_id", userId);
+                var currentTimeActive = await clientDatabaseConnection.GetAsync($"SELECT id FROM {WiserTableNames.WiserLoginLog} WHERE id = ?id AND user_id = ?user_id");
+                if (currentTimeActive.Rows.Count == 0)
+                {
+                    logger.LogError($"ResetTimeActiveChangedAsync: Log ID '{decryptedLoginLogId}' does not exist or doesn't belong to the current user.");
+                    result.StatusCode = HttpStatusCode.BadRequest;
+                    result.ErrorMessage = $"Log ID '{decryptedLoginLogId}' does not exist or doesn't belong to the current user";
+                    return result;
+                }
+
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("time_active_changed_on", DateTime.Now);
+                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserLoginLog, decryptedLoginLogId);
+
+                result.ModelObject = true;
+                result.StatusCode = HttpStatusCode.OK;
+                return result;
+            }
+            catch (Exception exception)
+            {
+                logger.LogError($"Error while updating time active changed on timestamp: {exception}");
+                result.StatusCode = HttpStatusCode.BadRequest;
+                result.ErrorMessage = "Error while updating time active changed on timestamp";
+                return result;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false)
+        {
+            var results = await rolesService.GetRolesAsync(includePermissions);
+            return new ServiceResult<List<RoleModel>>(results);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> GetDashboardSettingsAsync(ClaimsIdentity identity)
+        {
+            return await GetSettingsAsync(identity, String.Empty, UserDashboardSettingsKey, "[]");
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveDashboardSettingsAsync(ClaimsIdentity identity, JToken settings)
+        {
+            return await SaveSettingsAsync(identity, String.Empty, UserDashboardSettingsKey, settings);
+        }
+
         /// <summary>
         /// Validates an encrypted admin account ID. 
         /// It checks if it contains a valid integer and then checks in the database if that ID actually exists and whether that user is still active.
@@ -977,6 +1252,186 @@ namespace Api.Modules.Customers.Services
             {
                 logger.LogError($"Error while updating last login information of user: {exception}");
             }
+        }
+
+        /// <summary>
+        /// Add an entry to the login log table.
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <exception cref="ArgumentException"></exception>
+        private async Task<ulong> LogSuccessfulLoginAttemptAsync(ulong userId)
+        {
+            if (userId == 0)
+            {
+                throw new ArgumentException("User ID must be higher than 0.", nameof(userId));
+            }
+
+            try
+            {
+                await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+                // Make sure the WiserLoginLog exists and is up-to-date.
+                await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
+                
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("user_id", userId);
+                clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
+                clientDatabaseConnection.AddParameter("time_active_changed_on", DateTime.Now);
+
+                var logId = await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserLoginLog, 0UL);
+                
+                // Remove outdated logs (data is retained for 3 months).
+                await clientDatabaseConnection.ExecuteAsync($"DELETE FROM {WiserTableNames.WiserLoginLog} WHERE added_on < DATE_SUB(NOW(), INTERVAL 3 MONTH)");
+
+                return logId;
+            }
+            catch (Exception exception)
+            {
+                logger.LogError($"Error while logging successful login attempt: {exception}");
+            }
+
+            return 0UL;
+        }
+
+        /// <inheritdoc />
+        public bool ValidateTotpPin(string key, string code)
+        {
+            var twoFactorAuthenticator = new TwoFactorAuthenticator();
+            return twoFactorAuthenticator.ValidateTwoFactorPIN(key, code);
+        }
+        
+        /// <inheritdoc />
+        public string SetUpTotpAuthentication(string account, string key)
+        {
+            var twoFactorAuthenticator = new TwoFactorAuthenticator();
+            var setupInfo = twoFactorAuthenticator.GenerateSetupCode("Wiser", account, key, false, 3);
+            return setupInfo.QrCodeSetupImageUrl;
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<string>>> GenerateTotpBackupCodesAsync(ClaimsIdentity identity)
+        {
+            // First generate new codes.
+            var results = new List<string>();
+            for (var index = 0; index < AmountOfBackupCodesToGenerate; index++)
+            {
+                results.Add(SecurityHelpers.GenerateRandomPassword(8));
+            }
+
+            // Delete any remaining backup codes from the user.
+            clientDatabaseConnection.AddParameter("groupName", TotpBackupCodesGroupName);
+            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+            var query = $@"DELETE FROM {WiserTableNames.WiserItemDetail} WHERE item_id = ?userId AND groupname = ?groupName";
+            await clientDatabaseConnection.ExecuteAsync(query);
+            
+            // Hash the new backup codes and then save them in the database.
+            var queryBuilder = new List<string>();
+            for (var index = 0; index < results.Count; index++)
+            {
+                var backupCode = results[index];
+                clientDatabaseConnection.AddParameter($"key{index}", index);
+                clientDatabaseConnection.AddParameter($"code{index}", backupCode.ToSha512ForPasswords());
+                queryBuilder.Add($"(?userId, ?groupName, ?key{index}, ?code{index})");
+            }
+            
+            query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (`item_id`, `groupname`, `key`, `value`)
+VALUES {String.Join(", ", queryBuilder)}";
+            await clientDatabaseConnection.ExecuteAsync(query);
+
+            // Return the new backup codes to the user, this is the only time that the user can see them!
+            return new ServiceResult<List<string>>(results);
+        }
+
+        /// <summary>
+        /// Handle TOTP authentication for users and admins.
+        /// </summary>
+        /// <param name="totpPin">The TOTP PIN that the user entered, if any.</param>
+        /// <param name="totpBackupCode">The TOTP backup code that the user entered, if any.</param>
+        /// <param name="totpAuthentication">The <see cref="TotpAuthenticationModel"/> with the TOTP settings.</param>
+        /// <param name="userId">The ID of the user.</param>
+        /// <param name="userName">The full name of the user</param>
+        /// <param name="connectionToUse">The database connection to use (wiserDatabaseConnection for admins and clientDatabaseConnection for normal users).</param>
+        /// <returns></returns>
+        private async Task<(bool Success, bool userIsStillSettingUp)> HandleTotpAuthenticationAsync(string totpPin, string totpBackupCode, TotpAuthenticationModel totpAuthentication, ulong userId, string userName, IDatabaseConnection connectionToUse)
+        {
+            if (!totpAuthentication.Enabled)
+            {
+                return (true, false);
+            }
+            
+            string query;
+            if (totpAuthentication.RequiresSetup && String.IsNullOrWhiteSpace(totpPin))
+            {
+                // If no PIN has been entered, it means the user still needs to scan the QR code for the setup, so generate that here.
+                totpAuthentication.SecretKey = SecurityHelpers.GenerateRandomPassword(30);
+                totpAuthentication.QrImageUrl = SetUpTotpAuthentication(userName, totpAuthentication.SecretKey);
+
+                // Save the secret key in the user's account.
+                connectionToUse.AddParameter("totpSecretKey", totpAuthentication.SecretKey.EncryptWithAes(gclSettings.DefaultEncryptionKey, useSlowerButMoreSecureMethod: true));
+                connectionToUse.AddParameter("userId", userId);
+                query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, `value`) VALUES (?userId, '{TotpSecretKey}', ?totpSecretKey)
+ON DUPLICATE KEY UPDATE `value` = VALUES(value);";
+                await connectionToUse.ExecuteAsync(query);
+
+                return (true, true);
+            }
+            
+            // If the user entered a backup code, check if it's valid and if so, allow the user to login once with this code and then delete the code.
+            if (!String.IsNullOrWhiteSpace(totpBackupCode))
+            {
+                connectionToUse.AddParameter("userId", userId);
+                connectionToUse.AddParameter("groupName", TotpBackupCodesGroupName);
+                query = $@"SELECT id, value FROM {WiserTableNames.WiserItemDetail} WHERE item_id = ?userId AND groupname = ?groupName";
+                var dataTable = await connectionToUse.GetAsync(query);
+                if (dataTable.Rows.Count == 0)
+                {
+                    // User has no more backup codes, so deny the login attempt.
+                    return (false, false);
+                }
+
+                var validCodeId = 0UL;
+                // ReSharper disable once LoopCanBeConvertedToQuery
+                foreach (DataRow dataRow in dataTable.Rows)
+                {
+                    var rowId = dataRow.Field<ulong>("id");
+                    var databaseBackupCode = dataRow.Field<string>("value");
+                    // ReSharper disable once InvertIf
+                    if (totpBackupCode.VerifySha512(databaseBackupCode))
+                    {
+                        validCodeId = rowId;
+                        break;
+                    }
+                }
+
+                // The backup code that the user entered was not found, so deny the login attempt.
+                if (validCodeId == 0)
+                {
+                    return (false, false);
+                }
+
+                // Backup code found, delete the code and allow the login attempt.
+                connectionToUse.AddParameter("detailId", validCodeId);
+                query = $"DELETE FROM {WiserTableNames.WiserItemDetail} WHERE id = ?detailId";
+                await connectionToUse.ExecuteAsync(query);
+                
+                return (true, false);
+            }
+
+            // If we do have a PIN, validate it.
+            var success = ValidateTotpPin(totpAuthentication.SecretKey.DecryptWithAes(gclSettings.DefaultEncryptionKey, useSlowerButMoreSecureMethod: true), totpPin);
+            if (!success)
+            {
+                // Invalid PIN, return unauthorized error.
+                return (false, true);
+            }
+
+            // Correct PIN, set requires setup to false.
+            connectionToUse.AddParameter("userId", userId);
+            query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, `value`) VALUES (?userId, '{TotpRequiresSetupKey}', '0')
+ON DUPLICATE KEY UPDATE `value` = VALUES(value);";
+            await connectionToUse.ExecuteAsync(query);
+
+            return (true, false);
         }
     }
 }

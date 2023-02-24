@@ -31,6 +31,7 @@ using Microsoft.VisualBasic.FileIO;
 
 namespace Api.Modules.Imports.Services
 {
+    /// <inheritdoc cref="Api.Modules.Imports.Interfaces.IImportsService" />
     public class ImportsService : IImportsService, IScopedService
     {
         private readonly IWiserItemsService wiserItemsService;
@@ -41,6 +42,9 @@ namespace Api.Modules.Imports.Services
 
         private const uint ImportLimit = 1000000;
 
+        /// <summary>
+        /// Creates a new instance of <see cref="ImportsService"/>.
+        /// </summary>
         public ImportsService(IWiserItemsService wiserItemsService, IUsersService usersService, IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, ILogger<ImportsService> logger)
         {
             this.wiserItemsService = wiserItemsService;
@@ -173,7 +177,7 @@ namespace Api.Modules.Imports.Services
                         {
                             Item = new WiserItemModel
                             {
-                                ChangedBy = IdentityHelpers.GetUserName(identity),
+                                ChangedBy = IdentityHelpers.GetUserName(identity, true),
                                 ModuleId = moduleId
                             }
                         };
@@ -403,7 +407,7 @@ namespace Api.Modules.Imports.Services
                                         ItemId = importItem.Item.Id,
                                         FileName = Path.GetFileName(image.FilePath),
                                         Extension = Path.GetExtension(image.FilePath),
-                                        AddedBy = IdentityHelpers.GetUserName(identity),
+                                        AddedBy = IdentityHelpers.GetUserName(identity, true),
                                         PropertyName = image.PropertyName
                                     };
                                     importItem.Files.Add(itemFile);
@@ -560,7 +564,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("name", importRequest.Name);
                 clientDatabaseConnection.AddParameter("start_on", parsedDate);
-                clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity));
+                clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true));
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
                 clientDatabaseConnection.AddParameter("user_id", userId);
                 clientDatabaseConnection.AddParameter("customer_id", customer.CustomerId);
@@ -584,7 +588,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("items_failed", importResult.Failed);
                 clientDatabaseConnection.AddParameter("errors", String.Join(Environment.NewLine, importResult.Errors));
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
-                clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity));
+                clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true));
                 await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>(WiserTableNames.WiserImportLog);
             }
             catch (Exception exception)
@@ -598,13 +602,13 @@ namespace Api.Modules.Imports.Services
                 return new ServiceResult<ImportResultModel>(importResult);
             }
 
-            // Extract the images zip to a place where the AIS can find them.
+            // Extract the images zip to a place where the WTS can find them.
             if (String.IsNullOrWhiteSpace(importRequest.ImagesFileName) && String.IsNullOrWhiteSpace(importRequest.ImagesFilePath))
             {
                 return new ServiceResult<ImportResultModel>(importResult);
             }
 
-            var basePath = $@"C:\temp\AIS Import\{customer.CustomerId}\{wiserImportId}\";
+            var basePath = $@"C:\temp\WTS Import\{customer.CustomerId}\{wiserImportId}\";
 
             var imagesDirectory = new DirectoryInfo(basePath);
             imagesDirectory.Create();
@@ -677,6 +681,12 @@ namespace Api.Modules.Imports.Services
                     value = parsedDecimal.ToString(new CultureInfo("en-US"));
                     break;
                 case "date-time picker":
+                    if (String.IsNullOrEmpty(value))
+                    {
+                        // Don't do anything, empty values are allowed.
+                        break;
+                    }
+
                     if (!DateTime.TryParse(value, new CultureInfo("nl-NL"), DateTimeStyles.AssumeLocal, out var parsedDateTime))
                     {
                         importResult.Failed += 1U;
@@ -990,6 +1000,7 @@ AND item.entity_type = ?entityName";
         /// </summary>
         /// <param name="deleteItemsRequest">The criteria for the items to delete.</param>
         /// <param name="fileLines"></param>
+        /// <param name="tablePrefix">The prefix of the table where the items will be deleted</param>
         /// <returns>Returns the query for after the SELECT statement for an item's property</returns>
         private string CreatePrepareDeleteQueryBottomForProperty(DeleteItemsRequestModel deleteItemsRequest, IEnumerable<string> fileLines, string tablePrefix)
         {

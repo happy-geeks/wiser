@@ -105,7 +105,7 @@ namespace Api.Modules.EntityTypes.Controllers
         }
 
         /// <summary>
-        /// Creates a new entity type.
+        /// Updates an existing entity type.
         /// </summary>
         /// <param name="id">The ID of the entity type.</param>
         /// <param name="settings">The settings to save.</param>
@@ -116,6 +116,31 @@ namespace Api.Modules.EntityTypes.Controllers
         public async Task<IActionResult> UpdateAsync(int id, EntitySettingsModel settings)
         {
             return (await entityTypesService.UpdateAsync((ClaimsIdentity)User.Identity, id, settings)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Deletes an entity type. This will only delete the entity type itself, not any items that use this type.
+        /// </summary>
+        /// <param name="id">The ID of the entity type.</param>
+        [HttpDelete]
+        [Route("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeleteAsync(int id)
+        {
+            return (await entityTypesService.DeleteAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Gets the ID of an API connection (from wiser_api_connection) for a specific entity and action.
+        /// </summary>
+        /// <param name="entityType">The name of the entity type to get the API connection ID for.</param>
+        /// <param name="actionType">The action type, this can be "after_insert", "after_update", "before_update" or "before_delete".</param>
+        [HttpGet]
+        [Route("{entityType}/api-connection/{actionType}")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetApiConnectionIdAsync(string entityType, string actionType)
+        {
+            return (await entityTypesService.GetApiConnectionIdAsync(entityType, actionType)).GetHttpResponseMessage();
         }
     }
 }

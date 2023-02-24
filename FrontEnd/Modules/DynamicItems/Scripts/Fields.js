@@ -386,7 +386,7 @@ export class Fields {
 
             switch (dependency.dependsOnAction || this.base.dependencyActionsEnum.toggleVisibility) {
                 case this.base.dependencyActionsEnum.refresh: {
-                    const fields = container.closest(".k-tabstrip-wrapper").find(`[data-property-id='${dependency.propertyId}'].item`).find(this.fieldSelector);
+                    const fields = container.closest(".k-tabstrip").find(`[data-property-id='${dependency.propertyId}'].item`).find(this.fieldSelector);
 
                     for (let field of fields) {
                         field = $(field);
@@ -477,7 +477,7 @@ export class Fields {
                             break;
                     }
 
-                    const fieldContainer = container.closest(".k-tabstrip-wrapper").find(`[data-property-id='${dependency.propertyId}'].item`).toggle(showElement);
+                    const fieldContainer = container.closest(".k-tabstrip").find(`[data-property-id='${dependency.propertyId}'].item`).toggle(showElement);
                     const tabContainer = fieldContainer.closest(".k-content");
                     const allFields = tabContainer.find(".item");
                     const visibleFields = allFields.filter(index => allFields[index].style.display !== "none");
@@ -652,9 +652,11 @@ export class Fields {
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileId`).html(event.response[0].fileId);
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .title`).html(kendo.htmlEncode(event.response[0].title || "(leeg)"));
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileContainer`).data("fileId", event.response[0].fileId).data("itemId", event.response[0].itemId);
-        event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .name`).attr("href", `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(event.response[0].itemId)}/files/${encodeURIComponent(event.response[0].fileId)}/${encodeURIComponent(event.response[0].name)}?itemLinkId=${event.response[0].itemLinkId || 0}&entityType=${encodeURIComponent(event.response[0].entityType || "")}&linkType=${event.response[0].linkType || 0}`);
+        event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .name`).attr("href", `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(event.response[0].itemId)}/files/${encodeURIComponent(event.response[0].fileId)}/${encodeURIComponent(event.response[0].name)}?itemLinkId=${event.response[0].itemLinkId || 0}&entityType=${encodeURIComponent(event.response[0].entityType || "")}&linkType=${event.response[0].linkType || 0}&encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&isTest=${this.base.settings.isTestEnvironment}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`);
         let addedOn = (event.response[0].addedOn ? DateTime.fromISO(event.response[0].addedOn, { locale: "nl-NL" }) : DateTime.now()).toLocaleString(Dates.LongDateTimeFormat);
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileDate`).html(kendo.htmlEncode(addedOn));
+        event.sender.wrapper.find(".editTitle").click(this.onUploaderEditTitleClick.bind(this));
+        event.sender.wrapper.find(".editName").click(this.onUploaderEditNameClick.bind(this));
     }
 
     /**
@@ -782,8 +784,9 @@ export class Fields {
      * @param {number} propertyId The ID of the property / field.
      * @param {any} actionDetails The details of the clicked action.
      * @param {any} event The click event.
+     * @param {string} entityType The entity type of the item that contains the grid.
      */
-    async onSubEntitiesGridToolbarActionClick(gridSelector, itemId, propertyId, actionDetails, event) {
+    async onSubEntitiesGridToolbarActionClick(gridSelector, itemId, propertyId, actionDetails, event, entityType) {
         event.preventDefault();
 
         // Get the grid and the selected data items.
@@ -826,7 +829,7 @@ export class Fields {
         }
 
         // Get the item details so that those values can be used as variables in a string.
-        const itemDetails = !itemId ? { encryptedId: this.base.settings.zeroEncrypted } : (await this.base.getItemDetails(itemId));
+        const itemDetails = !itemId ? { encryptedId: this.base.settings.zeroEncrypted } : (await this.base.getItemDetails(itemId, entityType));
 
         const userParametersWithValues = {};
         const success = await this.executeActionButtonActions(actionDetails.actions, userParametersWithValues, itemDetails, propertyId, selectedItems, senderGrid.element);
@@ -1052,6 +1055,42 @@ export class Fields {
             // Set the initial values from the query.
             dialogElement.find("input[name=fileName]").val(data.fileName);
             dialogElement.find("input[name=title]").val(data.title);
+
+            data.extraData = data.extraData || {};
+            data.extraData.AltTexts = data.extraData.AltTexts || {};
+            dialogElement.find(".alt-text").remove();
+            const altTextTemplateElement = dialogElement.find(".alt-text-template");
+            if (!this.base.allLanguages || !this.base.allLanguages.length) {
+                const clone = altTextTemplateElement.clone(true);
+                clone.removeClass("hidden").removeClass("alt-text-template").addClass("alt-text");
+                
+                const cloneLabel = clone.find("label");
+                cloneLabel.attr("for", `${cloneLabel.attr("for")}General`);
+                
+                const cloneInput = clone.find("input");
+                cloneInput.attr("name", "altText_general");
+                cloneInput.attr("id", `${cloneInput.attr("id")}General`);
+                cloneInput.data("language", "general");
+                cloneInput.val(data.extraData.AltTexts.general || "");
+                dialogElement.find(".formview").append(clone);
+            } else {
+                for (let language of this.base.allLanguages) {
+                    const languageCode = language.code.toLowerCase();
+                    const clone = altTextTemplateElement.clone(true);
+                    clone.removeClass("hidden").removeClass("alt-text-template").addClass("alt-text");
+
+                    const cloneLabel = clone.find("label");
+                    cloneLabel.attr("for", `${cloneLabel.attr("for")}${languageCode}`);
+                    cloneLabel.find(".language").text(language.name);
+
+                    const cloneInput = clone.find("input");
+                    cloneInput.attr("name", `altText_${language.code}`);
+                    cloneInput.attr("id", `${cloneInput.attr("id")}${languageCode}`);
+                    cloneInput.attr("data-language", languageCode);
+                    cloneInput.val(data.extraData.AltTexts[languageCode] || "");
+                    dialogElement.find(".formview").append(clone);
+                }
+            }
             
             if (changeImageDataDialog) {
                 changeImageDataDialog.destroy();
@@ -1070,9 +1109,20 @@ export class Fields {
                         text: "Opslaan",
                         primary: true,
                         action: (event) => {
+                            const process = `updateFile_${Date.now()}`;
+                            window.processing.addProcess(process);
+
                             try {
                                 const newFileName = dialogElement.find("input[name=fileName]").val();
                                 const newTitle = dialogElement.find("input[name=title]").val();
+                                const extraData = $.extend(true, {}, data.extraData);
+                                extraData.AltTexts = {};
+                                dialogElement.find(".alt-text input").each((index, element) => {
+                                    const input = $(element);
+                                    extraData.AltTexts[input.data("language").toLowerCase()] = input.val();
+                                });
+
+                                imageContainer.data("extraData", extraData);
 
                                 const promises = [
                                     Wiser.api({
@@ -1082,12 +1132,22 @@ export class Fields {
                                         dataType: "JSON"
                                     }),
                                     Wiser.api({
+                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/extra-data/?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
+                                        method: "PUT",
+                                        contentType: "application/json",
+                                        dataType: "JSON",
+                                        data: JSON.stringify(extraData)
+                                    })
+                                ];
+
+                                if (newTitle) {
+                                    promises.push(Wiser.api({
                                         url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(data.itemId)}/files/${encodeURIComponent(data.imageId)}/title/${encodeURIComponent(newTitle)}?itemLinkId=${encodeURIComponent(data.itemLinkId || 0)}&entityType=${encodeURIComponent(data.entityType || "")}&linkType=${data.linkType || 0}`,
                                         method: "PUT",
                                         contentType: "application/json",
                                         dataType: "JSON"
-                                    })
-                                ];
+                                    }));
+                                }
 
                                 Promise.all(promises).then(() => {
                                     imageContainer.data("fileName", newFileName);
@@ -1097,10 +1157,13 @@ export class Fields {
                                 }).catch((error) => {
                                     console.error(error);
                                     kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                                }).finally(() => {
+                                    window.processing.removeProcess(process);
                                 });
                             } catch (exception) {
                                 console.error(exception);
                                 kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                                window.processing.removeProcess(process);
                             }
                         }
                     }
@@ -1360,7 +1423,7 @@ export class Fields {
                                     return;
                                 }
 
-                                $(event.currentTarget).next().find(".k-primary").trigger("click");
+                                $(event.currentTarget).next().find(".k-primary, .k-button-solid-primary").trigger("click");
                             });
 
                             // Build the options object for the kendo component.
@@ -1894,7 +1957,7 @@ export class Fields {
                         if (queryActionResult) {
                             windowItemId = windowItemId.replace(/{itemId}/gi, queryActionResult.itemId || 0);
                             windowLinkId = windowLinkId.replace(/{linkId}/gi, queryActionResult.linkId || 0);
-                            windowLinkId = windowLinkId.replace(/{linkType}/gi, queryActionResult.linkType || queryActionResult.linkTypeNumber || 0);
+                            windowLinkType = windowLinkType.replace(/{linkType}/gi, queryActionResult.linkType || queryActionResult.linkTypeNumber || 0);
                         }
                         windowItemId = Wiser.doWiserItemReplacements(windowItemId, mainItemDetails);
 
@@ -2008,12 +2071,14 @@ export class Fields {
                                     linkIds.push(item.dataItem["linkId"]);
                                 }
 
-                                url += `&selectedId=${ids.join(",")}`;
-                                url += `&selectedLinkId=${linkIds.join(",")}`;
+                                // The camel case parameters are for backwards compatibility, because we used snake case in the past for some things like this.
+                                url += `&selectedId=${ids.join(",")}&selected_id=${ids.join(",")}`;
+                                url += `&selectedLinkId=${linkIds.join(",")}&selected_link_id=${linkIds.join(",")}`;
                                 allUrls.push(url);
                             } else {
                                 for (let item of selectedItems) {
-                                    allUrls.push(`${url}&selectedId=${item.dataItem["id"]}&selectedLinkId=${item.dataItem["linkId"]}`);
+                                    // The camel case parameters are for backwards compatibility, because we used snake case in the past for some things like this.
+                                    allUrls.push(`${url}&selectedId=${item.dataItem["id"]}&selected_id=${item.dataItem["id"]}&selectedLinkId=${item.dataItem["linkId"]}&selected_link_id=${item.dataItem["linkId"]}`);
                                 }
                             }
                         }
@@ -2131,7 +2196,7 @@ export class Fields {
                         if (kendoWindow.length === 0) {
                             // The opened item is in the main window.
                             const previouslySelectedTab = this.base.mainTabStrip.select().index();
-                            await this.base.loadItem(this.base.settings.iframeMode ? this.base.settings.initialItemId : this.base.selectedItem.id, previouslySelectedTab);
+                            await this.base.loadItem(this.base.settings.initialItemId ? this.base.settings.initialItemId : this.base.selectedItem.id, previouslySelectedTab);
                         } else {
                             // The opened item is in a window.
                             const previouslySelectedTab = kendoWindow.find(".tabStripPopup").data("kendoTabStrip").select().index();
@@ -2211,7 +2276,7 @@ export class Fields {
                             contentType: "application/json",
                             data: JSON.stringify({
                                 userId: userId,
-                                channel: action.channel || "",
+                                channel: action.channel || "agendering",
                                 eventData: eventData || ""
                             })
                         });
@@ -2543,8 +2608,11 @@ export class Fields {
 
                                                 const loader = mailDialog.element.find(".popup-loader").addClass("loading");
                                                 let documentOptions = "";
-                                                if (currentAction.pdfDocumentOptionsPropertyName) {
-                                                    documentOptions = currentTemplateDetails.property_[currentAction.pdfDocumentOptionsPropertyName] || "";
+                                                if (currentTemplateDetails.details && currentTemplateDetails.details.length > 0) {
+                                                    if (currentAction.pdfDocumentOptionsPropertyName) {
+                                                        const documentOptionsDetail = currentTemplateDetails.details.find(detail => detail.key === currentAction.pdfDocumentOptionsPropertyName);
+                                                        documentOptions = documentOptionsDetail ? (documentOptionsDetail.value || "") : "";
+                                                    }
                                                 }
 
                                                 // We cant use await here, because for some reason the event does not get fired anymore if we make this method async.
@@ -2752,60 +2820,6 @@ export class Fields {
         });
     }
 
-    async wiser1FileHandlerInHtmlEditorCallBack(kendoEditor, codeMirror, imageDialog, fileHandler, imageSettings, imageTitle) {
-        const jsTree = imageDialog.find(".jstree");
-        const selectedNode = jsTree.jstree("get_selected");
-        if (selectedNode.attr("rel") !== "item") {
-            return;
-        }
-
-        const ids = jsTree.jstree("get_path", selectedNode, true);
-        let path = "";
-        let filename = "";
-        $.each(ids, async (index, value) => {
-            if (index === 0) {
-                return;
-            }
-
-            if (path) {
-                path += "/";
-            }
-
-            // .text() and .html() on the A give extra spaces in the name
-            const clone = window.parent.$(`#${value}`).find("a").eq(0).clone();
-            clone.find("ins").remove();
-            path += clone.html();
-            filename = clone.html();
-        });
-
-        const itemHandlerPath = (await window.parent.$.doAjaxPost({
-            url: "/serverrequests/ItemField.aspx/getItemHandlerPath",
-            data: { type: imageSettings.uploadType }
-        })).d;
-
-        let html = itemHandlerPath + path;
-        switch (imageSettings.htmloutput) {
-            case "A":
-                html = `<a href="${itemHandlerPath}${escape(path.replace(/&amp;/g, "&"))}">${filename}</a>`;
-                break;
-            case "IMG":
-                html = `<img src="${itemHandlerPath}${escape(path.replace(/&amp;/g, "&"))}" alt="${imageTitle}" />`;
-                break;
-        }
-
-        if (kendoEditor) {
-            kendoEditor.exec("inserthtml", { value: html });
-        }
-
-        if (codeMirror) {
-            const doc = codeMirror.getDoc();
-            const cursor = doc.getCursor();
-            doc.replaceRange(html, cursor);
-        }
-
-        window.parent.$.hideDialog(imageDialog);
-    }
-
     /**
      * Event that gets called when the user executes the custom action for adding an image from Wiser to the HTML editor.
      * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
@@ -2868,7 +2882,12 @@ export class Fields {
         const textArea = htmlWindow.find("textarea").val(editor.value());
         // Prettify code from minified text.
         const pretty = await require('pretty');
-        textArea[0].value = pretty(textArea[0].value, { ocd: false });
+        textArea[0].value = pretty(textArea[0].value, { 
+            ocd: false,
+            indent_size: 4,
+            unformatted: [],
+            inline: []
+        });
         let codeMirrorInstance;
 
         htmlWindow.kendoWindow({
@@ -2920,7 +2939,7 @@ export class Fields {
             icon: "template-manager"
         });
 
-        htmlWindow.find(".k-primary").kendoButton({
+        htmlWindow.find(".k-primary, .k-button-solid-primary").kendoButton({
             click: () => {
                 editor.value(codeMirrorInstance.getValue());
                 kendoWindow.close();
@@ -2940,12 +2959,19 @@ export class Fields {
      * @param {any} event The event from the execute action.
      * @param {any} editor The HTML editor where the action is executed in.
      * @param {any} itemId The ID of the current item.
+     * @param {string} propertyName The property name that contains the HTML of the item.
+     * @param {string} languageCode The language code of the property to use for the HTML.
+     * @param {string} contentBuilderMode The mode in which to put the ContentBuilder.
      */
-    async onHtmlEditorContentBuilderExec(event, editor, itemId, propertyName, languageCode) {
+    async onHtmlEditorContentBuilderExec(event, editor, itemId, propertyName, languageCode, contentBuilderMode) {
         const htmlWindow = $("#contentBuilderWindow").clone(true);
 
         const iframe = htmlWindow.find("iframe");
-        iframe.attr("src", `/Modules/ContentBuilder?wiserItemId=${encodeURIComponent(itemId)}&propertyName=${encodeURIComponent(propertyName)}&languageCode=${encodeURIComponent(languageCode || "")}`);
+        let moduleName = "ContentBuilder";
+        if (contentBuilderMode === "ContentBox") {
+            moduleName = "ContentBox";
+        }
+        iframe.attr("src", `/Modules/${moduleName}?wiserItemId=${encodeURIComponent(itemId)}&propertyName=${encodeURIComponent(propertyName)}&languageCode=${encodeURIComponent(languageCode || "")}&userId=${encodeURIComponent(this.base.settings.userId)}`);
 
         htmlWindow.kendoWindow({
             width: "100%",
@@ -2959,9 +2985,11 @@ export class Fields {
 
         const kendoWindow = htmlWindow.data("kendoWindow").maximize().open();
 
-        htmlWindow.find(".k-primary").kendoButton({
+        htmlWindow.find(".k-primary, .k-button-solid-primary").kendoButton({
             click: () => {
-                const html = iframe[0].contentWindow.main.vueApp.contentBuilder.html();
+                const html = typeof(iframe[0].contentWindow.main.vueApp.contentBox) === "undefined" 
+                    ? iframe[0].contentWindow.main.vueApp.contentBuilder.html()
+                    : iframe[0].contentWindow.main.vueApp.contentBox.html();
                 editor.value(html);
 
                 const container = editor.element.closest(".entity-container");
@@ -3312,7 +3340,7 @@ export class Fields {
      * @returns {*} The HTML contents of the editor.
      */
     onHtmlEditorSerialization(html) {
-        return html.replace(/\[(>|&gt;)\]([\w]+)\[(<|&lt;)\]/g, "{$2}");
+        return html.replace(/\[(>|&gt;)\]([\w:?]+)\[(<|&lt;)\]/g, "{$2}");
     }
 
     /**
@@ -3321,7 +3349,7 @@ export class Fields {
      * @returns {*} The HTML contents of the editor.
      */
     onHtmlEditorDeserialization(html) {
-        return html.replace(/{([\w]+)}/g, "[>]$1[<]");
+        return html.replace(/{([\w:?]+)}/g, "[>]$1[<]");
     }
 
     /**

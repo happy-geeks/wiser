@@ -5,6 +5,9 @@ using GeeksCoreLibrary.Core.Cms;
 
 namespace Api.Modules.Templates.Helpers
 {
+    /// <summary>
+    /// A helper class for the template module for reflection functions.
+    /// </summary>
     public class ReflectionHelper
     {
         /// <summary>

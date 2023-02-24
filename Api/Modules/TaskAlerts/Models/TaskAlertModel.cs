@@ -43,7 +43,6 @@ namespace Api.Modules.TaskAlerts.Models
         /// </summary>
         public string PlacedBy { get; set; }
 
-
         /// <summary>
         /// Gets or sets the ID of the user that placed the task alert.
         /// </summary>
@@ -58,6 +57,11 @@ namespace Api.Modules.TaskAlerts.Models
         /// Gets or sets the ID of the current user.
         /// </summary>
         public ulong UserId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the user. Note that this is not the username used for logging in, but the name of the user.
+        /// </summary>
+        public string UserName { get; set; }
 
         /// <summary>
         /// Gets or sets the linked item entity type.

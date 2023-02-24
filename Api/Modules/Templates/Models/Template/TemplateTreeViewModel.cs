@@ -2,12 +2,26 @@
 
 namespace Api.Modules.Templates.Models.Template
 {
+    /// <summary>
+    /// Model class that contains all information needed to create a tree view of templates.
+    /// </summary>
     public class TemplateTreeViewModel
     {
         private bool isFolder;
+        
+        /// <summary>
+        /// Gets or sets the ID of the Template
+        /// </summary>
         public int TemplateId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the Template
+        /// </summary>
         public string TemplateName { get; set; }
 
+        /// <summary>
+        /// Gets or sets whether a Template is a folder or not.
+        /// </summary>
         public bool IsFolder
         {
             get => isFolder;
@@ -21,26 +35,48 @@ namespace Api.Modules.Templates.Models.Template
             }
         }
 
+        /// <summary>
+        /// Gets or sets if the template has any children or not.
+        /// </summary>
         public bool HasChildren { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the CSS class (for example the folder) which is collapsed
+        /// </summary>
         public string CollapsedSpriteCssClass { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the CSS class (for example the folder) which is expanded
+        /// </summary>
         public string ExpandedSpriteCssClass { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the base CSS class (for example the folder) 
+        /// </summary>
         public string SpriteCssClass { get; set; }
 
+        /// <summary>
+        /// Gets or sets the settings for the Template
+        /// </summary>
         public TemplateSettingsModel TemplateSettings { get; set; }
 
+        /// <summary>
+        /// Gets or sets a list of all child nodes this template contains
+        /// </summary>
         public List<TemplateTreeViewModel> ChildNodes { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the type of the template
+        /// </summary>
+        public int TemplateType { get; set; }
 
-        public TemplateTreeViewModel()
-        {
-
-        }
-
-        public TemplateTreeViewModel(int templateId, string templateName, bool isFolder, bool hasChildren)
-        {
-            this.TemplateId = templateId;
-            this.TemplateName = templateName;
-            this.IsFolder = isFolder;
-            this.HasChildren = hasChildren;
-        }
+        /// <summary>
+        /// Whether the tree view item was not retrieved from the templates data.
+        /// The <see cref="TemplateType"/> property should identify where this item was retrieved from instead.
+        /// </summary>
+        /// <remarks>
+        /// This is typically meant for views, routines, and triggers that were retrieved from the database.
+        /// </remarks>
+        public bool IsVirtualItem { get; set; }
     }
 }

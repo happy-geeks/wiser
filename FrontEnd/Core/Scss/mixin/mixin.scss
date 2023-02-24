@@ -87,6 +87,10 @@
     box-shadow: 0 2px $blur 0 rgba($color, $opacity);
 }
 
+@mixin tile-shadow($color, $opacity) {
+    box-shadow: 0 4px 16px 0 rgba($color, $opacity);
+}
+
 // VERTICAL ALIGN 
 @mixin v-align($location, $distance) {
     position: absolute;

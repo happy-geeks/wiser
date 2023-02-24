@@ -7,7 +7,6 @@ using Api.Modules.Google.Exceptions;
 using Api.Modules.Google.Interfaces;
 using Api.Modules.Google.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using GeeksCoreLibrary.Core.Helpers;
 using Google.Cloud.Translation.V2;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;

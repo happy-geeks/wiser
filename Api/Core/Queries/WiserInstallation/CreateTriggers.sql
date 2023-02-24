@@ -46,11 +46,6 @@ CREATE TRIGGER `EntityPropertyInsert` AFTER INSERT ON `wiser_entityproperty` FOR
             VALUES ('UPDATE_ENTITYPROPERTY','wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'visible_in_overview', '', NEW.`visible_in_overview`);
         END IF;
 
-        IF IFNULL(NEW.`overview_fieldtype`, '') <> '' THEN
-            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ENTITYPROPERTY','wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'overview_fieldtype', '', NEW.`overview_fieldtype`);
-        END IF;
-
         IF IFNULL(NEW.`overview_width`, '') <> '' THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY','wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'overview_width', '', NEW.`overview_width`);
@@ -269,11 +264,6 @@ CREATE TRIGGER `EntityPropertyUpdate` AFTER UPDATE ON `wiser_entityproperty` FOR
         IF IFNULL(NEW.`visible_in_overview`, '') <> IFNULL(OLD.`visible_in_overview`, '') THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'visible_in_overview', OLD.`visible_in_overview`, NEW.`visible_in_overview`);
-        END IF;
-
-        IF IFNULL(NEW.`overview_fieldtype`, '') <> IFNULL(OLD.`overview_fieldtype`, '') THEN
-            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'overview_fieldtype', OLD.`overview_fieldtype`, NEW.`overview_fieldtype`);
         END IF;
 
         IF IFNULL(NEW.`overview_width`, '') <> IFNULL(OLD.`overview_width`, '') THEN
@@ -769,6 +759,11 @@ CREATE TRIGGER `FileInsert` AFTER INSERT ON `wiser_itemfile` FOR EACH ROW BEGIN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'property_name', NULL, NEW.property_name);
         END IF;
+
+        IF IFNULL(NEW.ordering, 0) <> 0 THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'ordering', NULL, NEW.ordering);
+        END IF;
     END IF;
 END;
 
@@ -829,6 +824,11 @@ CREATE TRIGGER `FileUpdate` AFTER UPDATE ON `wiser_itemfile` FOR EACH ROW BEGIN
 			INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
 			VALUES ('UPDATE_FILE', 'wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'itemlink_id', OLD.itemlink_id, NEW.itemlink_id);
 		END IF;
+
+        IF NEW.ordering <> OLD.ordering THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_FILE', 'wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'ordering', OLD.ordering, NEW.ordering);
+        END IF;
     END IF;
 END;
 
@@ -1659,6 +1659,11 @@ CREATE TRIGGER `DataSelectorInsert` AFTER INSERT ON `wiser_data_selector` FOR EA
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'show_in_export_module', NULL, NEW.`show_in_export_module`);
     END IF;
+
+    IF IFNULL(NEW.`show_in_dashboard`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'show_in_dashboard', NULL, NEW.`show_in_dashboard`);
+    END IF;
 END;
 
 DROP TRIGGER IF EXISTS `DataSelectorUpdate`;
@@ -1692,10 +1697,178 @@ CREATE TRIGGER `DataSelectorUpdate` AFTER UPDATE ON `wiser_data_selector` FOR EA
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'show_in_export_module', OLD.`show_in_export_module`, NEW.`show_in_export_module`);
     END IF;
+
+    IF IFNULL(NEW.`show_in_dashboard`, '') <> IFNULL(OLD.`show_in_dashboard`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'show_in_dashboard', OLD.`show_in_dashboard`, NEW.`show_in_dashboard`);
+    END IF;
 END;
 
 DROP TRIGGER IF EXISTS `DataSelectorDelete`;
 CREATE TRIGGER `DataSelectorDelete` AFTER DELETE ON `wiser_data_selector` FOR EACH ROW BEGIN
     INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
     VALUES ('DELETE_DATA_SELECTOR', 'wiser_data_selector', OLD.id, IFNULL(@_username, USER()), 'name', OLD.name, '');
+END;
+
+-- ----------------------------
+-- Triggers structure for table wiser_communication
+-- ----------------------------
+DROP TRIGGER IF EXISTS `CommunicationInsert`;
+CREATE TRIGGER `CommunicationInsert` AFTER INSERT ON `wiser_communication` FOR EACH ROW BEGIN
+    INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+    VALUES ('INSERT_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'id', NULL, NEW.id);
+
+    IF IFNULL(NEW.`name`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'name', NULL, NEW.`name`);
+    END IF;
+
+    IF IFNULL(NEW.`receiver_list`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'receiver_list', NULL, NEW.`receiver_list`);
+    END IF;
+
+    IF IFNULL(NEW.`receivers_data_selector_id`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'receivers_data_selector_id', NULL, NEW.`receivers_data_selector_id`);
+    END IF;
+
+    IF IFNULL(NEW.`receivers_query_id`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'receivers_query_id', NULL, NEW.`receivers_query_id`);
+    END IF;
+
+    IF IFNULL(NEW.`content_data_selector_id`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'content_data_selector_id', NULL, NEW.`content_data_selector_id`);
+    END IF;
+
+    IF IFNULL(NEW.`content_query_id`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'content_query_id', NULL, NEW.`content_query_id`);
+    END IF;
+
+    IF IFNULL(NEW.`settings`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'settings', NULL, NEW.`settings`);
+    END IF;
+
+    IF IFNULL(NEW.`send_trigger_type`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'send_trigger_type', NULL, NEW.`send_trigger_type`);
+    END IF;
+
+    IF IFNULL(NEW.`trigger_start`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_start', NULL, NEW.`trigger_start`);
+    END IF;
+
+    IF IFNULL(NEW.`trigger_end`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_end', NULL, NEW.`trigger_end`);
+    END IF;
+
+    IF IFNULL(NEW.`trigger_time`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_time', NULL, NEW.`trigger_time`);
+    END IF;
+
+    IF IFNULL(NEW.`trigger_period_value`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_period_value', NULL, NEW.`trigger_period_value`);
+    END IF;
+
+    IF IFNULL(NEW.`trigger_period_type`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_period_type', NULL, NEW.`trigger_period_type`);
+    END IF;
+
+    IF IFNULL(NEW.`trigger_week_days`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_week_days', NULL, NEW.`trigger_week_days`);
+    END IF;
+
+    IF IFNULL(NEW.`trigger_day_of_month`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_day_of_month', NULL, NEW.`trigger_day_of_month`);
+    END IF;
+
+    IF IFNULL(NEW.`last_processed`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'last_processed', NULL, NEW.`last_processed`);
+    END IF;
+END;
+
+DROP TRIGGER IF EXISTS `CommunicationUpdate`;
+CREATE TRIGGER `CommunicationUpdate` AFTER UPDATE ON `wiser_communication` FOR EACH ROW BEGIN
+    IF IFNULL(NEW.`name`, '') <> IFNULL(OLD.`name`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'name', OLD.`name`, NEW.`name`);
+    END IF;
+    IF IFNULL(NEW.`receiver_list`, '') <> IFNULL(OLD.`receiver_list`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'receiver_list', OLD.`receiver_list`, NEW.`receiver_list`);
+    END IF;
+    IF IFNULL(NEW.`receivers_data_selector_id`, '') <> IFNULL(OLD.`receivers_data_selector_id`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'receivers_data_selector_id', OLD.`receivers_data_selector_id`, NEW.`receivers_data_selector_id`);
+    END IF;
+    IF IFNULL(NEW.`receivers_query_id`, '') <> IFNULL(OLD.`receivers_query_id`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'receivers_query_id', OLD.`receivers_query_id`, NEW.`receivers_query_id`);
+    END IF;
+    IF IFNULL(NEW.`content_data_selector_id`, '') <> IFNULL(OLD.`content_data_selector_id`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'content_data_selector_id', OLD.`content_data_selector_id`, NEW.`content_data_selector_id`);
+    END IF;
+    IF IFNULL(NEW.`content_query_id`, '') <> IFNULL(OLD.`content_query_id`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'content_query_id', OLD.`content_query_id`, NEW.`content_query_id`);
+    END IF;
+    IF IFNULL(NEW.`settings`, '') <> IFNULL(OLD.`settings`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'settings', OLD.`settings`, NEW.`settings`);
+    END IF;
+    IF IFNULL(NEW.`send_trigger_type`, '') <> IFNULL(OLD.`send_trigger_type`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'send_trigger_type', OLD.`send_trigger_type`, NEW.`send_trigger_type`);
+    END IF;
+    IF IFNULL(NEW.`trigger_start`, '') <> IFNULL(OLD.`trigger_start`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_start', OLD.`trigger_start`, NEW.`trigger_start`);
+    END IF;
+    IF IFNULL(NEW.`trigger_end`, '') <> IFNULL(OLD.`trigger_end`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_end', OLD.`trigger_end`, NEW.`trigger_end`);
+    END IF;
+    IF IFNULL(NEW.`trigger_time`, '') <> IFNULL(OLD.`trigger_time`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_time', OLD.`trigger_time`, NEW.`trigger_time`);
+    END IF;
+    IF IFNULL(NEW.`trigger_period_value`, '') <> IFNULL(OLD.`trigger_period_value`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_period_value', OLD.`trigger_period_value`, NEW.`trigger_period_value`);
+    END IF;
+    IF IFNULL(NEW.`trigger_period_type`, '') <> IFNULL(OLD.`trigger_period_type`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_period_type', OLD.`trigger_period_type`, NEW.`trigger_period_type`);
+    END IF;
+    IF IFNULL(NEW.`trigger_week_days`, '') <> IFNULL(OLD.`trigger_week_days`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_week_days', OLD.`trigger_week_days`, NEW.`trigger_week_days`);
+    END IF;
+    IF IFNULL(NEW.`trigger_day_of_month`, '') <> IFNULL(OLD.`trigger_day_of_month`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_day_of_month', OLD.`trigger_day_of_month`, NEW.`trigger_day_of_month`);
+    END IF;
+    IF IFNULL(NEW.`last_processed`, '') <> IFNULL(OLD.`last_processed`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'name', OLD.`last_processed`, NEW.`last_processed`);
+    END IF;
+END;
+
+DROP TRIGGER IF EXISTS `CommunicationDelete`;
+CREATE TRIGGER `CommunicationDelete` AFTER DELETE ON `wiser_communication` FOR EACH ROW BEGIN
+    INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+    VALUES ('DELETE_COMMUNICATION', 'wiser_communication', OLD.id, IFNULL(@_username, USER()), 'name', OLD.name, '');
 END;

@@ -1,11 +1,19 @@
 ﻿@using GeeksCoreLibrary.Modules.Templates.Enums
 @model FrontEnd.Modules.Templates.Models.DevelopmentTabViewModel
+@* ReSharper disable Mvc.PartialViewNotResolved *@
 <div class="formview full developmentContainer @Model.TemplateSettings.Type.ToString()Tab">
+    <partial name="Partials/ConnectedUsers" />
+
     <partial name="Partials/PublishedEnvironments" model="@Model.TemplateSettings" />
 
     @if (Model.TemplateSettings.Type == TemplateTypes.Routine)
     {
         <partial name="Partials/RoutineDefinition" model="@Model.TemplateSettings" />
+    }
+
+    @if (Model.TemplateSettings.Type == TemplateTypes.Trigger)
+    {
+        <partial name="Partials/TriggerDefinition" model="@Model.TemplateSettings" />
     }
 
     <partial name="Partials/TemplateEditor" model="@Model" />

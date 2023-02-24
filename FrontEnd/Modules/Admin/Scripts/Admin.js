@@ -6,7 +6,7 @@ import { EntityFieldTab } from "../Scripts/EntityFieldTab.js";
 import { EntityPropertyTab } from "../Scripts/EntityPropertyTab.js";
 import { WiserQueryTab } from "../Scripts/WiserQueryTab.js";
 import { WiserLinkTab } from "../Scripts/WiserLinkTab.js";
-import { Wiser } from "../../Base/Scripts/Utils.js";
+import { Wiser, Misc } from "../../Base/Scripts/Utils.js";
 
 
 require("@progress/kendo-ui/js/kendo.all.js");
@@ -26,7 +26,7 @@ const moduleSettings = {
     class Admin {
 
         /**
-         * Initializes a new instance of AisDashboard.
+         * Initializes a new instance of Admin.
          * @param {any} settings An object containing the settings for this class.
          */
         constructor(settings) {
@@ -34,7 +34,7 @@ const moduleSettings = {
             // Kendo components.
             this.mainWindow = null;
 
-            this.activeMainTab = "entiteiten"; 
+            this.activeMainTab = "Modules"; 
             
             //classes
             this.entityTab = null;
@@ -68,36 +68,32 @@ const moduleSettings = {
 
             // enum of available inputtypes
             this.inputTypes = Object.freeze({
-                ACTIONBUTTON: "action-button",
-                AUTOINCREMENT: "auto-increment",
-                // BUTTON:"button",
-                CHART: "chart",
-                CHECKBOX: "checkbox",
-                COMBOBOX: "combobox",
-                COLORPICKER: "color-picker",
-                DATASELECTOR: "data-selector",
-                DATETIMEPICKER: "date-time picker",
-                //DATERANGE: "daterange",
-                EMPTY: "empty",
-                FILEUPLOAD: "file-upload",
-                GPSLOCATION: "gpslocation",
-                // GRID: "grid",
-                HTMLEDITOR: "HTMLeditor",
-                // IMAGECOORDS:"imagecoords",
-                IMAGEUPLOAD: "image-upload",
-                INPUT: "input",
-                ITEMLINKER: "item-linker",
-                LINKEDITEM: "linked-item",
-                MULTISELECT: "multiselect",
-                NUMERIC: "numeric-input",
-                RADIOBUTTON: "radiobutton",
-                SECUREINPUT: "secure-input",
-                SUBENTITIESGRID: "sub-entities-grid",
-                TEXTBOX: "textbox",
-                TIMELINE: "timeline",
-                QR : "qr",
-                SCHEDULER : "scheduler"
-                //QUERYBUILDER: "querybuilder"
+                ACTIONBUTTON: "ActionButton",
+                AUTOINCREMENT: "AutoIncrement",
+                CHART: "Chart",
+                CHECKBOX: "CheckBox",
+                COMBOBOX: "ComboBox",
+                COLORPICKER: "ColorPicker",
+                DATASELECTOR: "DataSelector",
+                DATETIMEPICKER: "DateTimePicker",
+                EMPTY: "Empty",
+                FILEUPLOAD: "FileUpload",
+                GPSLOCATION: "GpsLocation",
+                HTMLEDITOR: "HtmlEditor",
+                IFRAME: "Iframe",
+                IMAGEUPLOAD: "ImageUpload",
+                INPUT: "Input",
+                ITEMLINKER: "ItemLinker",
+                LINKEDITEM: "LinkedItem",
+                MULTISELECT: "MultiSelect",
+                NUMERICINPUT: "NumericInput",
+                RADIOBUTTON: "RadioButton",
+                SECUREINPUT: "SecureInput",
+                SUBENTITIESGRID: "SubEntitiesGrid",
+                TEXTBOX: "TextBox",
+                TIMELINE: "TimeLine",
+                QR : "Qr",
+                SCHEDULER : "Scheduler"
             });
 
             this.dataSourceType = Object.freeze({
@@ -163,8 +159,8 @@ const moduleSettings = {
 
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
-            this.settings.happyEmployeeLoggedIn = user.juiceEmployeeName;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
+            this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
@@ -236,9 +232,9 @@ const moduleSettings = {
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
          */
         setupBindings() {
-            $(document).on("moduleClosing", (event) => {
+            document.addEventListener("moduleClosing", (event) => {
                 // You can do anything here that needs to happen before closing the module.
-                event.success();
+                event.detail();
             });
 
             //BUTTONS
@@ -281,6 +277,8 @@ const moduleSettings = {
                 },
                 icon: "gear"
             });
+
+            Misc.addEventToFixToolTipPositions();
         }
 
         async saveChanges(e) {
@@ -409,7 +407,7 @@ const moduleSettings = {
                 },
                 activate: (event) => {
                     const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
-                    admin.activeMainTab = tabName;
+                    this.activeMainTab = tabName;
 
                     // Refresh code mirrors in the currently activated tab.
                     if (event.contentElement) {
@@ -439,7 +437,7 @@ const moduleSettings = {
                         if (!event.key || event.key.toLowerCase() !== "enter") {
                             return;
                         }
-                        $(event.currentTarget).closest(".k-prompt-container").next().find(".k-primary").trigger("click");
+                        $(event.currentTarget).closest(".k-prompt-container").next().find(".k-primary, .k-button-solid-primary").trigger("click");
                     });
                     return prompt.open().result;
                 case this.kendoPromptType.CONFIRM:
@@ -447,6 +445,17 @@ const moduleSettings = {
                 case this.kendoPromptType.ALERT:
                     return $("<div></div>").kendoAlert(properties).data("kendoAlert").open().result;
             }
+        }
+
+        /**
+         * Reload the list of modules in the side bar (on the left) of Wiser.
+         */
+        async reloadModulesOnParentFrame() {
+            if (!window.parent || !window.parent.main || !window.parent.main.vueApp || typeof(window.parent.main.vueApp.reloadModules) !== "function") {
+                return;
+            }
+
+            await window.parent.main.vueApp.reloadModules();
         }
     }
 

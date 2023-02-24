@@ -6,10 +6,10 @@
     "setup:mysql": "npm install & npm link & node Scripts/setup-mysql.js"
   },
   "dependencies": {
-    "cli-color": "^2.0.1",
+    "cli-color": "^2.0.3",
     "fs": "^0.0.1-security",
-    "minimist": "^1.2.6",
+    "minimist": "^1.2.7",
     "mysql": "^2.18.1",
-    "util": "^0.12.4"
+    "util": "^0.12.5"
   }
 }

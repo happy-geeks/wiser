@@ -1,0 +1,41 @@
+﻿@model Api.Modules.Templates.Models.Template.TemplateSettingsModel
+
+<div class="triggerTiming">
+    <div class="item" style="width: 100%;">
+        <h4><label for="triggerTable">Tabel</label></h4>
+        <div class="flex-container">
+            <select id="triggerTable" class="combo-select" data-kendo-control="kendoDropDownList" data-filter="contains">
+                <option value="">Kies een tabel</option>
+            </select>
+        </div>
+        <div class="form-hint"><span>Voor welke tabel deze trigger gemaakt of aangepast wordt.</span></div>
+    </div>
+    <div class="item" style="width: 100%;">
+        <h4><label>Timing</label></h4>
+
+        @foreach (var value in Enum.GetValues(Model.TriggerTiming.GetType()))
+        {
+            @if ((int)value == 0) continue;
+
+            <label class="radio">
+                <input name="triggerTiming" type="radio" value="@((int)value)" @((int)Model.TriggerTiming == (int)value ? "checked" : "")/>
+                <span>@value.ToString()</span>
+            </label>
+        }
+    </div>
+    <div class="item" style="width: 100%;">
+        <h4><label for="triggerEvent">Event</label></h4>
+        <div class="flex-container">
+            <select id="triggerEvent" class="combo-select">
+                <!option value="">Kies een event</!option>
+                @foreach (var value in Enum.GetValues(Model.TriggerEvent.GetType()))
+                {
+                    @if ((int)value == 0) continue;
+
+                    <!option value="@((int)value)" @((int)Model.TriggerEvent == (int)value ? "selected" : "")>@value.ToString()</!option>
+                }
+            </select>
+        </div>
+        <div class="form-hint"><span>Voor welk soort event de trigger zal worden uitgevoerd.</span></div>
+    </div>
+</div>

@@ -3,10 +3,10 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Queries.Models;
+using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Queries.Interfaces
 {
-    //TODO Verify comments
     /// <summary>
     /// Service for getting queries for the Wiser modules.
     /// </summary>
@@ -18,6 +18,13 @@ namespace Api.Modules.Queries.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns></returns>
         Task<ServiceResult<List<QueryModel>>> GetForExportModuleAsync(ClaimsIdentity identity);
+        
+        /// <summary>
+        /// Gets the queries that can be used for setting up automatic communications via the communication module.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <returns></returns>
+        Task<ServiceResult<List<QueryModel>>> GetForCommunicationModuleAsync(ClaimsIdentity identity);
         
         /// <summary>
         /// Gets the queries that can be used in the admin module.
@@ -58,5 +65,14 @@ namespace Api.Modules.Queries.Interfaces
         /// <returns></returns>
         Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id);
 
+        /// <summary>
+        /// Execute a query and return the results in JSON format.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="id">The ID from wiser_query.</param>
+        /// <param name="asKeyValuePair">If set to true the result of the query will be converted to a single object. Only columns with the names "key" and "value" are used.</param>
+        /// <param name="parameters">The parameters to set before executing the query.</param>
+        /// <returns></returns>
+        Task<ServiceResult<JToken>> GetQueryResultAsJsonAsync(ClaimsIdentity identity, int id, bool asKeyValuePair, List<KeyValuePair<string, object>> parameters);
     }
 }

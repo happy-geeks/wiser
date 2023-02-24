@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Template;
@@ -72,58 +71,54 @@ namespace Api.Modules.Templates.Services.DataLayer
             connection.ClearParameters();
             connection.AddParameter("templateId", templateId);
             var dataTable = await connection.GetAsync($@"SELECT 
-                                                                template.template_id, 
-                                                                template.parent_id, 
-                                                                template.template_name, 
-                                                                template.template_type, 
-                                                                template.template_data, 
-                                                                template.version, 
-                                                                template.changed_on, 
-                                                                template.changed_by, 
-                                                                template.use_cache,
-                                                                template.cache_minutes, 
-                                                                template.cache_location, 
-                                                                template.cache_regex, 
-                                                                template.handle_request, 
-                                                                template.handle_session, 
-                                                                template.handle_objects, 
-                                                                template.handle_standards, 
-                                                                template.handle_translations, 
-                                                                template.handle_dynamic_content, 
-                                                                template.handle_logic_blocks, 
-                                                                template.handle_mutators, 
-                                                                template.login_required, 
-                                                                template.login_user_type, 
-                                                                template.login_session_prefix, 
-                                                                template.login_role, 
-                                                                template.ordering, 
-                                                                GROUP_CONCAT(CONCAT_WS(';', linkedTemplates.template_id, linkedTemplates.template_name, linkedTemplates.template_type)) AS linkedTemplates,
-                                                                template.insert_mode,
-                                                                template.load_always,
-                                                                template.disable_minifier,
-                                                                template.url_regex,
-                                                                template.external_files,
-                                                                template.grouping_create_object_instead_of_array,
-                                                                template.grouping_prefix,
-                                                                template.grouping_key,
-                                                                template.grouping_key_column_name,
-                                                                template.grouping_value_column_name,
-                                                                template.is_scss_include_template,
-                                                                template.use_in_wiser_html_editors,
-                                                                template.pre_load_query,
-                                                                template.return_not_found_when_pre_load_query_has_no_data,
-                                                                template.routine_type,
-                                                                template.routine_parameters,
-                                                                template.routine_return_type,
-                                                                template.is_default_header,
-                                                                template.is_default_footer,
-                                                                template.default_header_footer_regex
-                                                            FROM {WiserTableNames.WiserTemplate} AS template 
-				                                            LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate WHERE linkedTemplate.removed = 0 GROUP BY template_id) AS linkedTemplates ON FIND_IN_SET(linkedTemplates.template_id, template.linked_templates)
-                                                            WHERE template.template_id = ?templateId
-                                                            AND template.removed = 0
-				                                            GROUP BY template.version
-                                                            ORDER BY version DESC");
+    template.template_id, 
+    template.parent_id, 
+    template.template_name, 
+    template.template_type, 
+    template.template_data, 
+    template.version, 
+    template.changed_on, 
+    template.changed_by, 
+    template.use_cache,
+    template.cache_minutes, 
+    template.cache_location, 
+    template.cache_regex, 
+    template.login_required, 
+    template.login_role, 
+    template.ordering, 
+    GROUP_CONCAT(CONCAT_WS(';', linkedTemplates.template_id, linkedTemplates.template_name, linkedTemplates.template_type)) AS linkedTemplates,
+    template.insert_mode,
+    template.load_always,
+    template.disable_minifier,
+    template.url_regex,
+    template.external_files,
+    template.grouping_create_object_instead_of_array,
+    template.grouping_prefix,
+    template.grouping_key,
+    template.grouping_key_column_name,
+    template.grouping_value_column_name,
+    template.is_scss_include_template,
+    template.use_in_wiser_html_editors,
+    template.pre_load_query,
+    template.return_not_found_when_pre_load_query_has_no_data,
+    template.routine_type,
+    template.routine_parameters,
+    template.routine_return_type,
+    template.trigger_timing,
+    template.trigger_event,
+    template.trigger_table_name,
+    template.is_default_header,
+    template.is_default_footer,
+    template.default_header_footer_regex,
+    template.is_partial,
+    template.widget_content,
+    template.widget_location
+FROM {WiserTableNames.WiserTemplate} AS template 
+LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate WHERE linkedTemplate.removed = 0 GROUP BY template_id) AS linkedTemplates ON FIND_IN_SET(linkedTemplates.template_id, template.linked_templates)
+WHERE template.template_id = ?templateId
+AND template.removed = 0
+GROUP BY template.version
+ORDER BY version DESC");
 
             var resultList = new List<TemplateSettingsModel>();
 
@@ -142,18 +137,7 @@ namespace Api.Modules.Templates.Services.DataLayer
                     UseCache = (TemplateCachingModes)row.Field<int>("use_cache"),
                     CacheMinutes = row.Field<int>("cache_minutes"),
                     CacheLocation= (TemplateCachingLocations)row.Field<int>("cache_location"),
-                    HandleRequests = Convert.ToBoolean(row["handle_request"]),
-                    HandleSession = Convert.ToBoolean(row["handle_session"]),
-                    HandleStandards = Convert.ToBoolean(row["handle_standards"]),
-                    HandleObjects = Convert.ToBoolean(row["handle_objects"]),
-                    HandleTranslations = Convert.ToBoolean(row["handle_translations"]),
-                    HandleDynamicContent = Convert.ToBoolean(row["handle_dynamic_content"]),
-                    HandleLogicBlocks = Convert.ToBoolean(row["handle_logic_blocks"]),
-                    HandleMutators = Convert.ToBoolean(row["handle_mutators"]),
                     LoginRequired = Convert.ToBoolean(row["login_required"]),
-                    LoginUserType = row.Field<string>("login_user_type"),
-                    LoginSessionPrefix = row.Field<string>("login_session_prefix"),
-                    LoginRole = row.Field<string>("login_role"),
                     Ordering = row.Field<int>("ordering"),
                     LinkedTemplates = new LinkedTemplatesModel
                     {
@@ -176,10 +160,22 @@ namespace Api.Modules.Templates.Services.DataLayer
                     RoutineType = (RoutineTypes)row.Field<int>("routine_type"),
                     RoutineParameters = row.Field<string>("routine_parameters"),
                     RoutineReturnType = row.Field<string>("routine_return_type"),
+                    TriggerTiming = (TriggerTimings)row.Field<int>("trigger_timing"),
+                    TriggerEvent = (TriggerEvents)row.Field<int>("trigger_event"),
+                    TriggerTableName = row.Field<string>("trigger_table_name"),
                     IsDefaultHeader = Convert.ToBoolean(row["is_default_header"]),
                     IsDefaultFooter = Convert.ToBoolean(row["is_default_footer"]),
-                    DefaultHeaderFooterRegex = row.Field<string>("default_header_footer_regex")
+                    DefaultHeaderFooterRegex = row.Field<string>("default_header_footer_regex"),
+                    IsPartial = Convert.ToBoolean(row["is_partial"]),
+                    WidgetContent = row.Field<string>("widget_content"),
+                    WidgetLocation = (PageWidgetLocations) Convert.ToInt32(row["widget_location"])
                 };
+                
+                var loginRolesString = row.Field<string>("login_role");
+                if (!String.IsNullOrWhiteSpace(loginRolesString))
+                {
+                    templateData.LoginRoles = loginRolesString.Split(",").Select(Int32.Parse).ToList();
+                }
 
                 resultList.Add(templateData);
             }

@@ -1,6 +1,5 @@
 ﻿import { DateTime } from "luxon";
 import "./Processing.js";
-import {ref} from "vue";
 window.$ = require("jquery");
 
 /**
@@ -242,6 +241,26 @@ export class Strings {
     static isNullOrWhiteSpace(value) {
         return value === undefined || value === null || (typeof value === "string" && value.trim() === "");
     }
+
+    /**
+     * Makes sure that a string can be used as a JSON property by converting certain characters to placeholders.
+     * @param input {string} The input string to convert.
+     * @returns {string} A string that can safely be used as a JSON property.
+     */
+    static makeJsonPropertyName(input) {
+        if (!input) return input;
+        return input.replaceAll("-", "__h__").replaceAll(" ", "__s__").replaceAll(":", "__c__").replaceAll("(", "__bl__").replaceAll(")", "__br__").replaceAll(".", "__d__").replaceAll(",", "__co__");
+    }
+
+    /**
+     * Convert a string that was created by makeJsonPropertyName back into it's original form.
+     * @param input {string} The input string that was converted by makeJsonPropertyName.
+     * @returns {string} The original string.
+     */
+    static unmakeJsonPropertyName(input) {
+        if (!input) return input;
+        return input.replaceAll("__h__", "-").replaceAll("__s__", " ").replaceAll("__c__", ":").replaceAll("__bl__", "(").replaceAll("__br__", ")").replaceAll("__d__", ".").replaceAll("__co__", ",");
+    }
 }
 
 /**
@@ -283,7 +302,7 @@ export class Wiser {
 
                 // If we have no refresh token for some reason, logout the user.
                 if (wiserMainWindow && wiserMainWindow.main && wiserMainWindow.main.vueApp) {
-                    wiserMainWindow.main.vueApp.logout();
+                    await wiserMainWindow.main.vueApp.logout();
                 }
                 
                 return Promise.reject("No refresh token found!");
@@ -600,7 +619,7 @@ export class Wiser {
                 window.processing.addProcess(process);
 
                 // Get the settings.
-                const apiConnectionData = await Wiser.api({ url: `${settings.wiserApiRoot}api-connections/${encodeURIComponent(apiConnectionId)}` });
+                const apiConnectionData = await Wiser.api({ url: `${settings.wiserApiRoot}api-connections/${apiConnectionId}` });
                 if (!apiConnectionData || !apiConnectionData.options) {
                     reject("Er werd geprobeerd om een API aan te roepen, echter zijn er niet genoeg gegevens bekend. Neem a.u.b. contact op met ons.");
                     window.processing.removeProcess(process);
@@ -652,7 +671,7 @@ export class Wiser {
                     // If a query ID is set, execute that query first, so that the results can be used in the call to the API.
                     if (action.preRequestQueryId && itemDetails) {
                         const queryResult = await Wiser.api({
-                            method: "POST",
+                            method: action.method,
                             url: `${settings.wiserApiRoot}items/${encodeURIComponent(itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid)}/action-button/0?queryId=${encodeURIComponent(action.preRequestQueryId)}&itemLinkId=${encodeURIComponent(itemDetails.linkId || itemDetails.link_id || 0)}`,
                             data: !extraData ? null : JSON.stringify(extraData),
                             contentType: "application/json"
@@ -676,11 +695,20 @@ export class Wiser {
                         action.function = "/" + action.function;
                     }
 
-                    // Setup the headers for the request.
-                    const headers = $.extend({
-                        "X-Api-Url": `${apiOptions.baseUrl}${action.function}`,
-                        "X-Http-Method": action.method
-                    }, extraHeaders, action.extraHeaders);
+                    // Setup the headers for the request.                    
+                    const headers = {
+                        "X-Api-Url": `${apiOptions.baseUrl}${action.function}`
+                    };
+                    
+                    if (action.extraHeaders) {
+                        for (let headerName in action.extraHeaders) {
+                            if (!action.extraHeaders.hasOwnProperty(headerName)) {
+                                continue;
+                            }
+
+                            headers[`X-Extra-${headerName}`] = action.extraHeaders[headerName];
+                        }
+                    }
 
                     // Do replacements on the request data, if there is any.
                     if (action.data) {
@@ -711,7 +739,7 @@ export class Wiser {
 
                     // Execute the request.
                     let apiResults = await $.ajax({
-                        url: "/Wiser/ApiProxy.aspx",
+                        url: "/ExternalApis/Proxy",
                         headers: headers,
                         method: "POST",
                         contentType: action.contentType,
@@ -764,7 +792,7 @@ export class Wiser {
     /**
      * Use standard full OAUTH2 authentication.
      * If a manual login is required, this will open a window where the user can login.
-     * @param {string} serviceRoot The base URL for json.aspx.
+     * @param {any} settings The module settings. 
      * @param {any} apiOptions The API options from wiser_api_connection.
      * @param {any} apiConnectionId The ID of the API connection/authentication data in wiser_api_connection.
      * @param {any} authenticationData The saved authentication data from wiser_api_connection.
@@ -783,7 +811,7 @@ export class Wiser {
             if (authenticationData.refreshToken || authenticationData.authenticationToken) {
                 const authenticationRequest = {
                     method: "POST",
-                    url: "/Wiser/ApiProxy.aspx",
+                    url: "/ExternalApis/Proxy",
                     headers: { "X-Api-Url": `${apiOptions.baseUrl}${apiOptions.authentication.accessTokenUrl}` },
                     data: {}
                 };
@@ -859,6 +887,77 @@ export class Wiser {
         }
 
         extraHeaders.Authorization = `${Strings.capitalizeFirst(authenticationData.tokenType)} ${authenticationData.accessToken}`;
+    }
+
+    /**
+     * Event that gets called when the user executes the custom action for entering a translation variable.
+     * @param {any} event The event from the execute action.
+     * @param {any} editor The HTML editor where the action is executed in.
+     * @param {string} wiserApiRoot The root of the Wiser API.
+     */
+    static async onHtmlEditorTranslationExec(event, editor, wiserApiRoot) {
+        try {
+            const dialogElement = $("#translationsDialog");
+            let translationsDialog = dialogElement.data("kendoDialog");
+
+            if (translationsDialog) {
+                translationsDialog.destroy();
+            }
+
+            const translationsDropDown = dialogElement.find("#translationsDropDown").kendoDropDownList({
+                optionLabel: "Selecteer een vertaalwoord",
+                dataTextField: "value",
+                dataValueField: "key",
+                dataSource: {
+                    transport: {
+                        read: async (options) => {
+                            try {
+                                const results = await Wiser.api({ url: `${wiserApiRoot}languages/translations` });
+                                options.success(results);
+                            } catch (exception) {
+                                console.error(exception);
+                                options.error(exception);
+                            }
+                        }
+                    }
+                }
+            }).data("kendoDropDownList");
+
+            translationsDialog = dialogElement.kendoDialog({
+                width: "900px",
+                title: "Vertaalwoord invoegen",
+                closable: false,
+                modal: true,
+                actions: [
+                    {
+                        text: "Annuleren"
+                    },
+                    {
+                        text: "Invoegen",
+                        primary: true,
+                        action: (event) => {
+                            const selectedTranslation = translationsDropDown.value();
+                            if (!selectedTranslation) {
+                                kendo.alert("Kies a.u.b. een vertaalwoord.")
+                                return false;
+                            }
+
+                            const originalOptions = editor.options.pasteCleanup;
+                            editor.options.pasteCleanup.none = true;
+                            editor.options.pasteCleanup.span = false;
+                            editor.exec("inserthtml", { value: `[T{${selectedTranslation}}]` });
+                            editor.options.pasteCleanup.none = originalOptions.none;
+                            editor.options.pasteCleanup.span = originalOptions.span;
+                        }
+                    }
+                ]
+            }).data("kendoDialog");
+
+            translationsDialog.open();
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+        }
     }
 }
 
@@ -1026,6 +1125,20 @@ export class Misc {
         anchor.click();
         document.body.removeChild(anchor);
         window.URL.revokeObjectURL(pdfUrl);
+    }
+
+    static addEventToFixToolTipPositions(toolTipSelector = ".info") {
+        const body = $(document.body);
+        body.on("mouseenter", toolTipSelector, (event) => {
+            const toolTip = event.currentTarget;
+            const rectangle = toolTip.getBoundingClientRect();
+            const isOutOfBoundsRight = body.width() - rectangle.right - 350 <= 0;
+            if (isOutOfBoundsRight) {
+                toolTip.classList.add("tooltip-left");
+            } else {
+                toolTip.classList.remove("tooltip-left");
+            }
+        });
     }
 }
 

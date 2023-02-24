@@ -96,7 +96,7 @@ namespace Api.Modules.Branches.Services
             // Create a valid database and sub domain name for the new environment.
             var databaseNameBuilder = new StringBuilder(settings.Name.Trim().ToLowerInvariant());
             databaseNameBuilder = Path.GetInvalidFileNameChars().Aggregate(databaseNameBuilder, (current, invalidChar) => current.Replace(invalidChar.ToString(), ""));
-            databaseNameBuilder = databaseNameBuilder.Replace(@"\", "_").Replace(@"/", "_").Replace(".", "_").Replace(" ", "_");
+            databaseNameBuilder = databaseNameBuilder.Replace(@"\", "_").Replace(@"/", "_").Replace(".", "_").Replace(" ", "_").Replace(@"'","_");
 
             var databaseName = $"{currentCustomer.Database.DatabaseName}_{databaseNameBuilder}".ToMySqlSafeValue(false);
             if (databaseName.Length > 54)
@@ -141,7 +141,7 @@ namespace Api.Modules.Branches.Services
             settings.WiserTitle = newCustomerTitle;
             settings.DatabaseName = databaseName;
 
-            // Add the new customer environment to easy_customers. We do this here already so that the AIS doesn't need access to the main wiser database.
+            // Add the new customer environment to easy_customers. We do this here already so that the WTS doesn't need access to the main wiser database.
             var newCustomer = new CustomerModel
             {
                 CustomerId = currentCustomer.CustomerId,
@@ -167,7 +167,7 @@ namespace Api.Modules.Branches.Services
             newCustomer.Database.Username = null;
             newCustomer.Database.PortNumber = 0;
             
-            // Add the creation of the branch to the queue, so that the AIS can process it.
+            // Add the creation of the branch to the queue, so that the WTS can process it.
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("name", settings.Name);
             clientDatabaseConnection.AddParameter("action", "create");
@@ -185,6 +185,9 @@ namespace Api.Modules.Branches.Services
         /// <inheritdoc />
         public async Task<ServiceResult<List<CustomerModel>>> GetAsync(ClaimsIdentity identity)
         {
+            // Make sure the queue table exists and is up-to-date.
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserBranchesQueue});
+            
             var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
 
             var query = $@"SELECT id, name, subdomain, db_dbname
@@ -261,9 +264,15 @@ WHERE action = 'create'";
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> IsMainBranchAsync(ClaimsIdentity identity)
         {
-            var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
+            var currentBranch = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
 
-            return new ServiceResult<bool>(currentCustomer.Id == currentCustomer.CustomerId);
+            return IsMainBranch(currentBranch);
+        }
+
+        /// <inheritdoc />
+        public ServiceResult<bool> IsMainBranch(CustomerModel branch)
+        {
+            return new ServiceResult<bool>(branch.Id == branch.CustomerId);
         }
 
         /// <inheritdoc />
@@ -291,11 +300,11 @@ WHERE action = 'create'";
             
             // Get all history since last synchronisation.
             var dataTable = new DataTable();
-            await using (var environmentCommand = branchConnection.CreateCommand())
+            await using (var branchCommand = branchConnection.CreateCommand())
             {
-                environmentCommand.CommandText = $"SELECT action, tablename, item_id, field, oldvalue, newvalue FROM `{WiserTableNames.WiserHistory}` ORDER BY id ASC";
-                using var environmentAdapter = new MySqlDataAdapter(environmentCommand);
-                await environmentAdapter.FillAsync(dataTable);
+                branchCommand.CommandText = $"SELECT action, tablename, item_id, field, oldvalue, newvalue FROM `{WiserTableNames.WiserHistory}` ORDER BY id ASC";
+                using var branchAdapter = new MySqlDataAdapter(branchCommand);
+                await branchAdapter.FillAsync(dataTable);
             }
 
             // Create lists for keeping track of changed items/settings, so that multiple changes to a single item/setting only get counted as one changed item/setting, because we're counting the amount of changed items/settings, not the amount of changes.
@@ -910,7 +919,7 @@ LIMIT 1";
                 }
             }
 
-            // Add the merge to the queue so that the AIS will process it.
+            // Add the merge to the queue so that the WTS will process it.
             await using (var productionCommand = mainConnection.CreateCommand())
             {
                 productionCommand.Parameters.AddWithValue("branch_id", settings.Id);
@@ -930,6 +939,23 @@ VALUES (?branch_id, ?action, ?data, ?added_on, ?start_on, ?added_by, ?user_id)";
             result.Success = true;
 
             return new ServiceResult<MergeBranchResultModel>(result);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> CanAccessBranchAsync(ClaimsIdentity identity, int branchId)
+        {
+            var currentBranch = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
+            var otherBranch = (await wiserCustomersService.GetSingleAsync(branchId, true)).ModelObject;
+
+            return new ServiceResult<bool>(currentBranch.CustomerId == otherBranch.CustomerId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> CanAccessBranchAsync(ClaimsIdentity identity, CustomerModel branch)
+        {
+            var currentBranch = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
+
+            return new ServiceResult<bool>(currentBranch.CustomerId == branch.CustomerId);
         }
 
         /// <summary>

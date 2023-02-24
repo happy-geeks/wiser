@@ -1,0 +1,51 @@
+@import "../../Base/scss/base.scss";
+
+#wiser {
+    display: block;
+    height: 100%;
+}
+
+#NotMainBranchNotification {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
+
+#NotMainBranchNotification p {
+    border: 2px dashed #F5C2C7;
+    color: #842029;
+    background-color: #F8D7DA;
+    padding: 10px;
+    font-size: large;
+}
+
+#templateChangesGrid,
+#dynamicContentChangesGrid {
+    height: 33vh;
+}
+
+#commitButton {
+    margin-top: 10px;
+}
+
+body {
+    margin: 0;
+}
+
+#commitDescription {
+    width: 99%;
+}
+
+.k-grid-content table tr td {
+    vertical-align: top;
+}
+
+#deployToBranchContainer {
+    display: inline-block;
+}
+
+#deployToBranchContainer .k-dropdownlist {
+    width: 200px;
+}

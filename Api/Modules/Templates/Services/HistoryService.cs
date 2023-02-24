@@ -15,8 +15,6 @@ using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using GeeksCoreLibrary.Core.Extensions;
-using GeeksCoreLibrary.Modules.Templates.Enums;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -78,7 +76,7 @@ namespace Api.Modules.Templates.Services
             }
             
             var componentAndMode = await dataService.GetComponentAndModeFromContentIdAsync(contentId);
-            await dataService.SaveSettingsStringAsync(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value, IdentityHelpers.GetUserName(identity));
+            await dataService.SaveSettingsStringAsync(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value, IdentityHelpers.GetUserName(identity, true));
             return new ServiceResult<int>
             {
                 StatusCode = HttpStatusCode.NoContent
@@ -161,18 +159,8 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheMinutes", newVersion.CacheMinutes, oldVersion.CacheMinutes, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheLocation", newVersion.CacheLocation, oldVersion.CacheLocation, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheRegex", newVersion.CacheRegex, oldVersion.CacheRegex, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleRequests", newVersion.HandleRequests, oldVersion.HandleRequests, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleSession", newVersion.HandleSession, oldVersion.HandleSession, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleObjects", newVersion.HandleObjects, oldVersion.HandleObjects, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleStandards", newVersion.HandleStandards, oldVersion.HandleStandards, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleTranslations", newVersion.HandleTranslations, oldVersion.HandleTranslations, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleDynamicContent", newVersion.HandleDynamicContent, oldVersion.HandleDynamicContent, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleLogicBlocks", newVersion.HandleLogicBlocks, oldVersion.HandleLogicBlocks, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleMutators", newVersion.HandleMutators, oldVersion.HandleMutators, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRequired", newVersion.LoginRequired, oldVersion.LoginRequired, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginUserType", newVersion.LoginUserType, oldVersion.LoginUserType, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginSessionPrefix", newVersion.LoginSessionPrefix, oldVersion.LoginSessionPrefix, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRole", newVersion.LoginRole, oldVersion.LoginRole, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRole", newVersion.LoginRoles == null ? "" : String.Join(",", newVersion.LoginRoles), oldVersion.LoginRoles == null ? "" : String.Join(",", oldVersion.LoginRoles), historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("insertMode", newVersion.InsertMode, oldVersion.InsertMode, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loadAlways", newVersion.LoadAlways, oldVersion.LoadAlways, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("disableMinifier", newVersion.DisableMinifier, oldVersion.DisableMinifier, historyModel);
@@ -190,9 +178,15 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("routineType", newVersion.RoutineType, oldVersion.RoutineType, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("routineParameters", newVersion.RoutineParameters, oldVersion.RoutineParameters, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("routineReturnType", newVersion.RoutineReturnType, oldVersion.RoutineReturnType, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("triggerTiming", newVersion.TriggerTiming, oldVersion.TriggerTiming, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("triggerEvent", newVersion.TriggerEvent, oldVersion.TriggerEvent, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("triggerTableName", newVersion.TriggerTableName, oldVersion.TriggerTableName, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("isDefaultHeader", newVersion.IsDefaultHeader, oldVersion.IsDefaultHeader, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("isDefaultFooter", newVersion.IsDefaultFooter, oldVersion.IsDefaultFooter, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("defaultHeaderFooterRegex", newVersion.DefaultHeaderFooterRegex, oldVersion.DefaultHeaderFooterRegex, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("isPartial", newVersion.IsPartial, oldVersion.IsPartial, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("widgetContent", newVersion.WidgetContent, oldVersion.WidgetContent, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("widgetLocation", newVersion.WidgetLocation, oldVersion.WidgetLocation, historyModel);
 
             var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
@@ -257,10 +251,14 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <summary>
-        /// Generates the changes between 2 versions. This will loop through the vesrions and will take the settings that have changed to add them to a versions changes.
+        /// Generates the changes between 2 versions. This will loop through the versions and will take the settings that have changed to add them to a versions changes.
         /// </summary>
+        /// <param name="newMode">The mode of the new version</param>
         /// <param name="newVersion">The raw datastring of the newer version</param>
+        /// <param name="oldMode">The mode of the old version</param>
         /// <param name="oldVersion">The raw datastring of the older version</param>
+        /// <param name="newComponent">The component of the new version</param>
+        /// <param name="oldComponent">the component of the old version</param>
         /// <returns>List of changes that can be added to the changes of the newer versions HistoryVersionModel.</returns>
         private List<DynamicContentChangeModel> GenerateChangeLogFromDataStrings(string newComponent, string newMode, string newVersion, string oldComponent, string oldMode, string oldVersion)
         {

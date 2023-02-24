@@ -4,8 +4,14 @@ using IdentityServer4.Models;
 
 namespace Api.Core.Models
 {
+    /// <summary>
+    /// Class with methods for configuring a Identity Server
+    /// </summary>
     public class ConfigureIdentityServer
     {
+        /// <summary>
+        /// Get the resources needed for the Identity Server
+        /// </summary>
         public static IEnumerable<IdentityResource> GetIdentityResources()
         {
             return new List<IdentityResource>
@@ -16,6 +22,11 @@ namespace Api.Core.Models
             };
         }
 
+        /// <summary>
+        /// Gets the API resources that are needed.
+        /// </summary>
+        /// <param name="clientSecret">The client secret needed for authentication</param>
+        /// <returns></returns>
         public static IEnumerable<ApiResource> GetApiResources(string clientSecret)
         {
             return new List<ApiResource>
@@ -34,6 +45,9 @@ namespace Api.Core.Models
             };
         }
 
+        /// <summary>
+        /// Gets the needed scopes for the API
+        /// </summary>
         public static IEnumerable<ApiScope> GetApiScopes()
         {
             return new List<ApiScope>
@@ -47,7 +61,12 @@ namespace Api.Core.Models
             };
         }
 
-        // clients want to access resources (aka scopes)
+        
+        /// <summary>
+        /// Gets the needed clients
+        /// </summary>
+        /// <param name="clientSecret">The clientSecret needed for authentication</param>
+        /// <returns></returns>
         public static IEnumerable<Client> GetClients(string clientSecret)
         {
             return new List<Client>

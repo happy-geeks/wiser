@@ -15,10 +15,13 @@ using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Services;
 using Api.Modules.DigitalOcean.Models;
 using Api.Modules.Google.Models;
+using Api.Modules.Languages.Interfaces;
+using Api.Modules.Languages.Services;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Services;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Databases.Services;
 using IdentityServer4.Services;
 using JavaScriptEngineSwitcher.ChakraCore;
 using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
@@ -39,6 +42,7 @@ using Serilog;
 
 namespace Api
 {
+#pragma warning disable CS1591
     public class Startup
     {
         private const string CorsPolicyName = "AllowAllOrigins";
@@ -147,6 +151,7 @@ namespace Api
 
             // Services from GCL. Some services are registered because they are required by other GCL services, not because this API uses them.
             services.AddGclServices(Configuration, false, true);
+            services.Decorate<IDatabaseHelpersService, CachedDatabaseHelpersService>();
 
             // Set default settings for JSON.NET.
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
@@ -240,6 +245,7 @@ namespace Api
             services.Decorate<IDatabaseConnection, ClientDatabaseConnection>();
             services.Decorate<ITemplatesService, CachedTemplatesService>();
             services.Decorate<IUsersService, CachedUsersService>();
+            services.Decorate<ILanguagesService, CachedLanguagesService>();
 
             // Add JavaScriptEngineSwitcher services to the services container.
             services.AddJsEngineSwitcher(options => options.DefaultEngineName = ChakraCoreJsEngine.EngineName).AddChakraCore();
@@ -312,4 +318,5 @@ namespace Api
             });
         }
     }
+#pragma warning restore CS1591
 }

@@ -1,13 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Models;
 using GeeksCoreLibrary.Core.Enums;
-using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
@@ -23,22 +22,18 @@ namespace Api.Modules.Customers.Services
         private readonly IAppCache cache;
         private readonly ICacheService cacheService;
         private readonly IUsersService usersService;
-        private readonly IWiserCustomersService wiserCustomersService;
         private readonly IDatabaseConnection databaseConnection;
-        private readonly GclSettings gclSettings;
         private readonly ApiSettings apiSettings;
 
         /// <summary>
         /// Creates a new instance of CachedUsersService.
         /// </summary>
-        public CachedUsersService(IAppCache cache, IOptions<ApiSettings> apiSettings, ICacheService cacheService, IUsersService usersService, IWiserCustomersService wiserCustomersService, IDatabaseConnection databaseConnection, IOptions<GclSettings> gclSettings)
+        public CachedUsersService(IAppCache cache, IOptions<ApiSettings> apiSettings, ICacheService cacheService, IUsersService usersService, IDatabaseConnection databaseConnection)
         {
             this.cache = cache;
             this.cacheService = cacheService;
             this.usersService = usersService;
-            this.wiserCustomersService = wiserCustomersService;
             this.databaseConnection = databaseConnection;
-            this.gclSettings = gclSettings.Value;
             this.apiSettings = apiSettings.Value;
         }
 
@@ -49,21 +44,21 @@ namespace Api.Modules.Customers.Services
             return await cache.GetOrAdd($"users_{databaseConnection.GetDatabaseNameForCaching()}",
                 async cacheEntry =>
                 {
-                    cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
+                    cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
                     return await usersService.GetAsync();
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
 
         /// <inheritdoc />
-        public Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null)
+        public Task<ServiceResult<AdminAccountModel>> LoginAdminAccountAsync(string username, string password, string ipAddress = null, string totpPin = null)
         {
-            return usersService.LoginAdminAccountAsync(username, password, ipAddress);
+            return usersService.LoginAdminAccountAsync(username, password, ipAddress, totpPin);
         }
 
         /// <inheritdoc />
-        public Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null)
+        public Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null, string totpBackupCode = null)
         {
-            return usersService.LoginCustomerAsync(username, password, encryptedAdminAccountId, subDomain, generateAuthenticationTokenForCookie, ipAddress, identity);
+            return usersService.LoginCustomerAsync(username, password, encryptedAdminAccountId, subDomain, generateAuthenticationTokenForCookie, ipAddress, identity, totpPin, totpBackupCode);
         }
 
         /// <inheritdoc />
@@ -103,6 +98,12 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
+        public Task<ServiceResult<string>> GetSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, string defaultValue = null)
+        {
+            return usersService.GetSettingsAsync(identity, groupName, uniqueKey, defaultValue);
+        }
+
+        /// <inheritdoc />
         public Task<ServiceResult<string>> GetGridSettingsAsync(ClaimsIdentity identity, string uniqueKey)
         {
             return usersService.GetGridSettingsAsync(identity, uniqueKey);
@@ -118,6 +119,12 @@ namespace Api.Modules.Customers.Services
         public Task<ServiceResult<List<int>>> GetAutoLoadModulesAsync(ClaimsIdentity identity)
         {
             return usersService.GetAutoLoadModulesAsync(identity);
+        }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<bool>> SaveSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, JToken settings)
+        {
+            return usersService.SaveSettingsAsync(identity, groupName, uniqueKey, settings);
         }
 
         /// <inheritdoc />
@@ -145,7 +152,7 @@ namespace Api.Modules.Customers.Services
             return await cache.GetOrAdd($"users_{databaseConnection.GetDatabaseNameForCaching()}_{id}_email",
                 async cacheEntry =>
                 {
-                    cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
+                    cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
                     return await usersService.GetUserEmailAddressAsync(id);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
@@ -157,7 +164,7 @@ namespace Api.Modules.Customers.Services
             return await cache.GetOrAdd($"user_data_wiser_settings_{databaseConnection.GetDatabaseNameForCaching()}",
                 async cacheEntry =>
                 {
-                    cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
+                    cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
                     return await usersService.GetWiserSettingsForUserAsync(encryptionKey);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.Objects));
         }
@@ -172,6 +179,60 @@ namespace Api.Modules.Customers.Services
         public Task<string> UseRefreshTokenAsync(string subDomain, string refreshToken)
         {
             return usersService.UseRefreshTokenAsync(subDomain, refreshToken);
+        }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<TimeSpan>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId)
+        {
+            return usersService.UpdateUserTimeActiveAsync(identity, encryptedLoginLogId);
+        }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<bool>> ResetTimeActiveChangedAsync(ClaimsIdentity identity, string encryptedLoginLogId)
+        {
+            return usersService.ResetTimeActiveChangedAsync(identity, encryptedLoginLogId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false)
+        {
+            await databaseConnection.EnsureOpenConnectionForReadingAsync();
+            return await cache.GetOrAdd($"user_roles_{databaseConnection.GetDatabaseNameForCaching()}",
+                async cacheEntry =>
+                {
+                    cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
+                    return await usersService.GetRolesAsync(includePermissions);
+                }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.Objects));
+        }
+        
+        /// <inheritdoc />
+        public bool ValidateTotpPin(string key, string code)
+        {
+            return usersService.ValidateTotpPin(key, code); 
+        }
+        
+        /// <inheritdoc />
+        public string SetUpTotpAuthentication(string account, string key)
+        {
+            return usersService.SetUpTotpAuthentication(account, key);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<string>>> GenerateTotpBackupCodesAsync(ClaimsIdentity identity)
+        {
+            return await usersService.GenerateTotpBackupCodesAsync(identity);
+        }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<string>> GetDashboardSettingsAsync(ClaimsIdentity identity)
+        {
+            return usersService.GetDashboardSettingsAsync(identity);
+        }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<bool>> SaveDashboardSettingsAsync(ClaimsIdentity identity, JToken settings)
+        {
+            return usersService.SaveDashboardSettingsAsync(identity, settings);
         }
     }
 }

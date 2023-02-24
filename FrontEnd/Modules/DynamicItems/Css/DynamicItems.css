@@ -26,7 +26,8 @@ dd {
 .k-dialog #changeImageDataDialog,
 .k-dialog #dataSelectorTemplateDialog,
 .k-dialog #youTubeDialog,
-.k-dialog #translateItemDialog {
+.k-dialog #translateItemDialog,
+.k-dialog #translationsDialog {
     display: block;
 }
 
@@ -400,18 +401,6 @@ body.iframe .editMenu {
     float: right;
     top: 0px;
     right: 0px;
-}
-
-.k-grid .k-auto-scrollable {
-    padding-right: 0 !important;
-}
-
-.k-grid .k-virtual-scrollable-wrap {
-    overflow-y: auto;
-}
-
-.k-grid .k-virtual-scrollable-wrap ~ .k-scrollbar {
-    display: none;
 }
 
 /** Information block, for gridViewMode **/

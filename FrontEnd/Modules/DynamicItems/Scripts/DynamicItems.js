@@ -19,6 +19,7 @@ require("@progress/kendo-ui/js/kendo.sortable.js");
 require("@progress/kendo-ui/js/kendo.validator.js");
 require("@progress/kendo-ui/js/kendo.splitter.js");
 require("@progress/kendo-ui/js/kendo.treeview.js");
+require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
@@ -172,7 +173,7 @@ const moduleSettings = {
             // Get user data from local storage.
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Admin (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
             if (!this.settings.wiserApiRoot.endsWith("/")) {
@@ -190,7 +191,7 @@ const moduleSettings = {
             this.settings.mainDomain = userData.mainDomain;
 
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
-            this.settings.htmlEditorCssUrl = `${this.settings.wiserApiRoot}templates/css-for-html-editors?encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&isTest=${this.base.settings.isTestEnvironment}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&username=${encodeURIComponent(this.base.settings.username)}&userType=${encodeURIComponent(this.base.settings.userType)}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`
+            this.settings.htmlEditorCssUrl = `${this.settings.wiserApiRoot}templates/css-for-html-editors?encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`
 
             // Get list of all entity types, so we can show friendly names wherever we need to and don't have to get them from database via different places.
             try {
@@ -256,20 +257,20 @@ const moduleSettings = {
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
          */
         setupBindings() {
-            // Do stuff when the module is being closed in Wiser 1.0.
-            $(document).on("moduleClosing", (event) => {
+            // Do stuff when the module is being closed in Wiser.
+            document.addEventListener("moduleClosing", async (event) => {
                 try {
                     const kendoWindows = $(".popup-container:not(#itemWindow_template)");
                     if (!kendoWindows.length) {
-                        event.success();
+                        event.detail();
                         return;
                     }
 
                     var promises = [];
-                    kendoWindows.each((index, element) => {
+                    for (let element of kendoWindows) {
                         // If the current item is a new item and it's not being saved at the moment, then delete it because it was a temporary item.
                         if (!$(element).data("isNewItem") || $(element).data("saving")) {
-                            return;
+                            continue;
                         }
 
                         let canDelete = true;
@@ -288,17 +289,31 @@ const moduleSettings = {
                         if (canDelete) {
                             promises.push(this.base.deleteItem($(element).data("itemId"), $(element).data("entityType")));
                         }
-                    });
+                    }
 
-                    Promise.all(promises).then(event.success);
+                    await Promise.all(promises);
+                    event.detail();
                 } catch (exception) {
                     console.error(exception);
                     // To make sure the module can always be closed.
-                    event.success();
+                    event.detail();
                 }
             });
 
             // Keyboard shortcuts
+            $("body").on("keydown", async (event) => {
+                const target = $(event.target);
+
+                if ((event.ctrlKey || event.metaKey) && event.key.toUpperCase() === "S") {
+                    event.preventDefault();
+
+                    const entityContainer = target.closest(".entity-container");
+                    if (entityContainer.length > 0) {
+                        entityContainer.find(".saveButton").first().click();
+                    }
+                }
+            });
+            
             $("body").on("keyup", async (event) => {
                 const target = $(event.target);
 
@@ -346,7 +361,7 @@ const moduleSettings = {
             $("body").on("click", "#left-pane, .main-window .k-window-titlebar", async (event) => {
                 const target = $(event.target);
 
-                if (target.closest(".k-window-titlebar").length === 0 && (target.hasClass("k-in") || target.hasClass("k-i-expand") || target.prop("tagName") === "BUTTON" || target.prop("tagName") === "INPUT")) {
+                if (target.closest(".k-window-titlebar").length === 0 && (target.hasClass("k-treeview-leaf") || target.hasClass("k-treeview-leaf-text") || target.hasClass("k-i-expand") || target.hasClass("k-treeview-toggle") || target.prop("tagName") === "BUTTON" || target.prop("tagName") === "INPUT")) {
                     return;
                 }
 
@@ -412,15 +427,15 @@ const moduleSettings = {
 
             $("#mainEditMenu .reloadItem").click(async (event) => {
                 const previouslySelectedTab = this.mainTabStrip.select().index();
-                await this.loadItem(this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
+                await this.loadItem(this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.id : this.settings.initialItemId, previouslySelectedTab, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.entityType : this.settings.entityType);
             });
 
             $("#mainEditMenu .deleteItem").click(async (event) => {
-                await this.onDeleteItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
+                await this.onDeleteItemClick(event, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.id : this.settings.initialItemId, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.entityType : this.settings.entityType);
             });
 
             $("#mainEditMenu .undeleteItem").click(async (event) => {
-                await this.onUndeleteItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id);
+                await this.onUndeleteItemClick(event, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.id : this.settings.initialItemId);
             });
 
             $("#mainEditMenu .copyToEnvironment").click(async (event) => {
@@ -430,7 +445,7 @@ const moduleSettings = {
             });
 
             $("#mainEditMenu .translateItem").click(async (event) => {
-                await this.onTranslateItemClick(event, this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
+                await this.onTranslateItemClick(event, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.id : this.settings.initialItemId, this.selectedItem && this.selectedItem.plainItemId ? this.selectedItem.entityType : this.settings.entityType);
             });
         }
 
@@ -832,7 +847,7 @@ const moduleSettings = {
                 if (!this.settings.iframeMode) {
                     this.mainTreeView.dataSource.read();
                 }
-                if (this.selectedItem || this.settings.initialItemId) {
+                if (this.selectedItem || (this.settings.iframeMode && this.settings.initialItemId)) {
                     const previouslySelectedTab = this.mainTabStrip.select().index();
                     this.loadItem(this.settings.iframeMode ? this.settings.initialItemId : this.selectedItem.id, previouslySelectedTab, this.settings.iframeMode ? this.settings.entityType : this.selectedItem.entityType);
                 }
@@ -1455,7 +1470,7 @@ const moduleSettings = {
             event.preventDefault();
             
             const title = $("#tabstrip .itemNameFieldContainer .itemNameField").val();
-            await Wiser.showConfirmDialog(`Weet u zeker dat u het verwijderen ongedaan wilt maken voor '${title}'?`);
+            await Wiser.showConfirmDialog(`Weet u zeker dat u het verwijderen ongedaan wilt maken voor '${title}'?`, "Verwijderen ongedaan maken", "Annuleren", "Terugzetten");
 
             const process = `undeleteItem_${Date.now()}`;
             window.processing.addProcess(process);
@@ -1466,7 +1481,7 @@ const moduleSettings = {
                 popupWindowContainer.find(".popup-loader").addClass("loading");
                 popupWindowContainer.data("saving", true);
 
-                let entityType = popupWindowContainer.data("entityTypeDetails");
+                let entityType = popupWindowContainer.data("entityTypeDetails") || this.settings.entityType;
 
                 if (Wiser.validateArray(entityType)) {
                     entityType = entityType[0];
@@ -1511,6 +1526,9 @@ const moduleSettings = {
 
             try {
                 const dialogElement = $("#translateItemDialog");
+                // Set encrypted item ID and entity type in dialog element, so that it will be updated everytime. Otherwise it will keep the old item ID when translating multiple items in a row.
+                dialogElement.data("encryptedItemId", encryptedItemId);
+                dialogElement.data("entityType", entityType);
                 let translateItemDialog = dialogElement.data("kendoDialog");
 
                 await require("@progress/kendo-ui/js/kendo.multiselect.js");                
@@ -1563,11 +1581,11 @@ const moduleSettings = {
                                     window.processing.addProcess(process);
 
                                     Wiser.api({
-                                        url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}/translate`,
+                                        url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(dialogElement.data("encryptedItemId"))}/translate`,
                                         method: "PUT",
                                         contentType: "application/json",
                                         data: JSON.stringify({
-                                            entityType: entityType,
+                                            entityType: dialogElement.data("entityType"),
                                             sourceLanguageCode: sourceLanguageDropDown.value(),
                                             targetLanguageCodes: targetLanguagesMultiSelect.value()
                                         })
@@ -1578,7 +1596,20 @@ const moduleSettings = {
                                         this.notification.show({message: "Vertalen is gelukt"}, "success");
                                     }).catch((error) => {
                                         console.error("An error occurred while translating an item", error);
-                                        kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                                        let errorMessage = "";
+                                        if (error.responseJSON && error.responseJSON.error) {
+                                            errorMessage = error.responseJSON.error;
+                                        } else if (error.responseText) {
+                                            errorMessage = error.responseText;
+                                        } else if (error.statusText) {
+                                            errorMessage = error.statusText;
+                                        }
+                                        
+                                        if (errorMessage) {
+                                            kendo.alert(`Er is iets fout gegaan met vertalen. De fout was:<br><pre>${errorMessage}</pre>`);
+                                        } else {
+                                            kendo.alert(`Er is iets fout gegaan met vertalen. Probeer het a.u.b. nogmaals of neem contact op.`);
+                                        }
                                     }).finally(() => {
                                         window.processing.removeProcess(process);
                                     });
@@ -1881,8 +1912,8 @@ const moduleSettings = {
                 }
 
                 editMenu.find(".copyToEnvironment").closest("li").toggle(itemMetaData.enableMultipleEnvironments > 0);
-                deleteButtons.toggle(itemMetaData.canDelete && !itemMetaData.removed && itemId !== this.settings.initialItemId);
-                undeleteButtons.toggle(itemMetaData.canDelete && !!itemMetaData.removed && itemId !== this.settings.initialItemId); // Double exclamation mark, because jQuery expects a true/false, but removed has a 0 or 1 most of the time.
+                deleteButtons.toggle(itemMetaData.canDelete && !itemMetaData.removed);
+                undeleteButtons.toggle(itemMetaData.canDelete && !!itemMetaData.removed); // Double exclamation mark, because jQuery expects a true/false, but removed has a 0 or 1 most of the time.
 
                 $("#alert-first").addClass("hidden");
 
@@ -2278,8 +2309,8 @@ const moduleSettings = {
          * @returns {number} The ID of the API action, or 0 if there is no action set.
          */
         async getApiAction(actionType, entityType) {
-            const result = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_API_ACTION?entityType=${encodeURIComponent(entityType)}&actionType=${encodeURIComponent(actionType)}` });
-            return !result || !result.length ? 0 : result[0].apiConnectionId || 0;
+            const result = await Wiser.api({ url: `${this.settings.wiserApiRoot}entity-types/${encodeURIComponent(entityType)}/api-connection/${encodeURIComponent(actionType)}` });
+            return result || 0;
         }
 
         /**

@@ -1,4 +1,4 @@
-﻿((jQuery) => {
+﻿(() => {
     class Connection {
         constructor(dataSelector, parentContainer, isMainConnection = false) {
             this.dataSelector = dataSelector;
@@ -70,9 +70,9 @@
                 document.dispatchEvent(new CustomEvent("entitySelectionUpdate"));
             });
 
-            selectDetailsWidget.wrapper.on("click", "li.k-button", (e) => {
+            selectDetailsWidget.wrapper.on("click", "span.k-chip", (e) => {
                 const clickedElement = $(e.target);
-                if (clickedElement.has(".k-i-close").length > 0 || clickedElement.closest(".k-i-close").length > 0) {
+                if (clickedElement.closest("span.k-chip-remove-action").length > 0) {
                     return;
                 }
 
@@ -158,16 +158,16 @@
                     switch (value) {
                         case "is equal to":
                         case "is not equal to":
-                            dbInput.find("div.scope-value-select").show();
+                            dbInput.find("span.scope-value-select").show();
                             dbInput.find("div.free-input").hide();
                             break;
                         case "is empty":
                         case "is not empty":
-                            dbInput.find("div.scope-value-select").hide();
+                            dbInput.find("span.scope-value-select").hide();
                             dbInput.find("div.free-input").hide();
                             break;
                         default:
-                            dbInput.find("div.scope-value-select").hide();
+                            dbInput.find("span.scope-value-select").hide();
                             dbInput.find("div.free-input").show();
                             break;
                     }
@@ -273,7 +273,7 @@
                 elements = Array.from(elementsToUpdate);
             } else if (Wiser.validateArray(elementsToUpdate)) {
                 elements = elementsToUpdate;
-            } else if (elementsToUpdate instanceof jQuery && elementsToUpdate.length > 0) {
+            } else if (elementsToUpdate instanceof $ && elementsToUpdate.length > 0) {
                 elements = elementsToUpdate.toArray();
             } else {
                 return;
@@ -306,7 +306,7 @@
                 elements = Array.from(elementsToUpdate);
             } else if (Wiser.validateArray(elementsToUpdate)) {
                 elements = elementsToUpdate;
-            } else if (elementsToUpdate instanceof jQuery && elementsToUpdate.length > 0) {
+            } else if (elementsToUpdate instanceof $ && elementsToUpdate.length > 0) {
                 elements = elementsToUpdate.toArray();
             } else {
                 return;
@@ -519,4 +519,4 @@
     }
 
     window.Connection = Connection;
-})($);
+})();

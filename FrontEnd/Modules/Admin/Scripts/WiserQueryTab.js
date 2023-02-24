@@ -25,6 +25,19 @@ export class WiserQueryTab {
         }).data("kendoDropDownList");
 
         this.queryCombobox.one("dataBound", () => { this.queryListInitialized = true; });
+        
+        this.rolesWithPermissions = $("#rolesWithPermissions").kendoMultiSelect({
+            dataSource: {
+                transport: {
+                    read: {
+                        url: `${this.base.settings.serviceRoot}/GET_ROLES`
+                    }
+                }
+            },
+            dataTextField: "roleName",
+            dataValueField: "id",
+            multiple: "multiple"
+        }).data("kendoMultiSelect");
 
         await Misc.ensureCodeMirror();
 
@@ -72,7 +85,7 @@ export class WiserQueryTab {
     // actions handled before save, such as checks
     async beforeSave() {
         if (this.checkIfQueryIsSet(true)) {
-            const queryModel = new QueryModel(this.queryCombobox.dataItem().id, document.getElementById("queryDescription").value, this.queryFromWiser.getValue(), document.getElementById("showInExportModule").checked);
+            const queryModel = new QueryModel(this.queryCombobox.dataItem().id, document.getElementById("queryDescription").value, this.queryFromWiser.getValue(), document.getElementById("showInExportModule").checked, false, this.rolesWithPermissions.value().join(), document.getElementById("showInCommunicationModule").checked);
             await this.updateQuery(queryModel.id, queryModel);
         }
     }
@@ -95,6 +108,7 @@ export class WiserQueryTab {
             }
         }
 
+        this.queryCombobox.value("");
         this.queryCombobox.setDataSource(this.queryList);
 
         if (queryIdToSelect !== null) {
@@ -144,8 +158,8 @@ export class WiserQueryTab {
         
         try {
             const result = await Wiser.api({
-                url: `${this.base.settings.wiserApiRoot}queries/`,
-                contentType: "application/json; charset=utf-8",
+                url: `${this.base.settings.wiserApiRoot}queries`,
+                contentType: "application/json",
                 dataType: "json",
                 data: JSON.stringify(description),
                 method: "POST"
@@ -179,14 +193,18 @@ export class WiserQueryTab {
 
     async setQueryProperties(resultSet) {
         document.getElementById("queryDescription").value = resultSet.description;
-        document.getElementById("showInExportModule").checked = resultSet.show_in_export_module;
+        document.getElementById("showInExportModule").checked = resultSet.showInExportModule;
+        document.getElementById("showInCommunicationModule").checked = resultSet.showInCommunicationModule;
+        this.rolesWithPermissions.value(resultSet.rolesWithPermissions.split(","));
         await this.setCodeMirrorFields(this.queryFromWiser, resultSet.query);
     }
 
     async setQueryPropertiesToDefault() {
         document.getElementById("queryDescription").value = "";
         document.getElementById("showInExportModule").checked = false;
-        this.queryFromWiser.setValue("");
+        document.getElementById("showInCommunicationModule").checked = false;
+        this.queryFromWiser.setValue("")
+        this.rolesWithPermissions.value([]);
     }
 
     async setCodeMirrorFields(field, value) {

@@ -29,6 +29,7 @@ const moduleSettings = {
             this.propertyComboBox = null;
             this.operatorComboBox = null;
             this.searchField = null;
+            this.allEntityTypes = [];
 
             this.allOperators = [
                 { value: "eq", text: "Gelijk aan" },
@@ -50,7 +51,6 @@ const moduleSettings = {
             };
             Object.assign(this.settings, settings);
             
-            console.log("access token:", localStorage.getItem("accessToken"));
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
                 headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
@@ -89,6 +89,14 @@ const moduleSettings = {
             this.searchField.focus();
 
             this.setupBindings();
+            
+            // Get list of all entity types, so we can show friendly names wherever we need to and don't have to get them from database via different places.
+            try {
+                this.allEntityTypes = (await Wiser.api({url: `${this.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
+            } catch (exception) {
+                console.error("Error occurred while trying to load all entity types", exception);
+                this.allEntityTypes = [];
+            }
 
             // Initialize search results grid.
             this.resultsGrid = $("#search-grid").kendoGrid({
@@ -110,7 +118,10 @@ const moduleSettings = {
                         width: 70
                     },
                     {
-                        template: "<strong>#: title #</strong><br><small>#: entity_type #</small>",
+                        template: (dataItem) => {
+                            const entityType = this.allEntityTypes.find(x => x.id === (dataItem.entityType || dataItem.entitytype)) || {};
+                            return `<strong>${dataItem.title}</strong><br><small>${entityType.displayName || dataItem.entityType || dataItem.entitytype}</small>`;
+                        },
                         field: "title",
                         title: "Titel",
                         filterable: {
@@ -163,15 +174,9 @@ const moduleSettings = {
             this.resultsGrid.element.on("dblclick", "tbody tr[data-uid] td", this.onShowDetailsClick.bind(this));
 
             this.entityTypeComboBox = $("#entityTypeComboBox").kendoComboBox({
-                dataTextField: "name",
-                dataValueField: "value",
-                dataSource: {
-                    transport: {
-                        read: {
-                            url: `${this.settings.serviceRoot}/GET_ALL_ENTITY_TYPES`
-                        }
-                    }
-                },
+                dataTextField: "displayName",
+                dataValueField: "id",
+                dataSource: this.allEntityTypes,
                 autoWidth: true,
                 filter: "contains",
                 suggest: true,
@@ -208,9 +213,9 @@ const moduleSettings = {
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
          */
         setupBindings() {
-            $(document).on("moduleClosing", (event) => {
+            document.addEventListener("moduleClosing", (event) => {
                 // You can do anything here that needs to happen before closing the module.
-                event.success();
+                event.detail();
             });
 
             // Search field.
@@ -409,7 +414,7 @@ const moduleSettings = {
          */
         onShowDetailsClick(event) {
             const dataItem = this.resultsGrid.dataItem($(event.currentTarget).closest("tr"));
-            this.openDynamicItem(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid, dataItem.moduleId || dataItem.moduleid || dataItem.moduleId, dataItem.entityType);
+            this.openDynamicItem(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid, dataItem.moduleId || dataItem.moduleid || dataItem.moduleId, dataItem.entityType || dataItem.entitytype);
         }
     }
 

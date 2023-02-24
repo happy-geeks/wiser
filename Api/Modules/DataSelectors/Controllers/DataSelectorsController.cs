@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Api.Modules.DataSelectors.Interfaces;
 using Api.Modules.DataSelectors.Models;
-using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -57,11 +56,15 @@ namespace Api.Modules.DataSelectors.Controllers
         /// <summary>
         /// Get the saved data selectors.
         /// </summary>
+        /// <param name="forExportModule">Optional: Set to true to only get data selectors that can be shown in the export module.</param>
+        /// <param name="forRendering">Optional: Set to true to only get data selectors to use with templating rendering.</param>
+        /// <param name="forCommunicationModule">Optional: Set to true to only get data selectors that can be shown in the communication module.</param>
+        /// <returns>A list of <see cref="DataSelectorModel"/>.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(List<DataSelectorModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAsync(bool forExportModule = false, bool forRendering = false)
+        public async Task<IActionResult> GetAsync(bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false)
         {
-            return (await dataSelectorsService.GetAsync((ClaimsIdentity)User.Identity, forExportModule, forRendering)).GetHttpResponseMessage();
+            return (await dataSelectorsService.GetAsync((ClaimsIdentity)User.Identity, forExportModule, forRendering, forCommunicationModule)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -188,7 +191,6 @@ namespace Api.Modules.DataSelectors.Controllers
         /// <summary>
         /// Replaces data selectors in a string to preview them in an HTML editor.
         /// </summary>
-        /// <param name="html">The HTML to replace the data selectors in for previewing in HTML editor.</param>
         [HttpPost]
         [Route("preview-for-html-editor")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
@@ -208,6 +210,38 @@ namespace Api.Modules.DataSelectors.Controllers
             return Content(output, MediaTypeNames.Text.Html);
         }
 
+        /// <summary>
+        /// Execute a data selector by ID and return the results as JSON.
+        /// </summary>
+        /// <param name="id">The ID from the data selector.</param>
+        /// <param name="asKeyValuePair">If set to true the result of the date selector will be converted to a single object. Only columns with the names "key" and "value" are used.</param>
+        /// <param name="parameters">The parameters to set before executing the query.</param>
+        /// <returns>The results of the data selector as JSON.</returns>
+        [HttpPost]
+        [Route("{id:int}/json-result")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetDataSelectorResultsAsJson(int id, [FromQuery] bool asKeyValuePair = false, [FromBody] List<KeyValuePair<string, object>> parameters = null)
+        {
+            return (await dataSelectorsService.GetDataSelectorResultAsJsonAsync((ClaimsIdentity) User.Identity, id, asKeyValuePair, parameters)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Checks if there is a data selector that already has "show in dashboard" enabled. If so, the name of the
+        /// data selector will be returned. Otherwise, `null`.
+        /// </summary>
+        /// <param name="id">The ID of the current data selector, which will be excluded from the check. This will be 0 if it's a new data selector.</param>
+        /// <returns>Name of a data selector that has "show in dashboard" enabled, or <see langword="null">null</see> if no data selector has that option enabled.</returns>
+        [HttpGet]
+        [Route("{id:int}/check-dashboard-conflict")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> CheckForDashboardConflictAsync(int id)
+        {
+            var dataSelectorName = await dataSelectorsService.CheckDashboardConflictAsync(id);
+            return Content(dataSelectorName.ModelObject, MediaTypeNames.Text.Plain);
+        }
+        
         /// <summary>
         /// Combine two <see cref="WiserDataSelectorRequestModel"/>s. Used to combine information from the body with the information from the query.
         /// </summary>

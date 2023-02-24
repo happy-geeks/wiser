@@ -42,7 +42,7 @@ namespace FrontEnd
             // Get the base directory for secrets and then load the secrets file from that directory.
             var secretsBasePath = Configuration.GetSection("GCL").GetValue<string>("SecretsBaseDirectory");
             builder
-                .AddJsonFile($"{secretsBasePath}appsettings-secrets.json", false, false)
+                .AddJsonFile($"{secretsBasePath}appsettings-secrets.json", true, false)
                 .AddJsonFile($"appsettings.{webHostEnvironment.EnvironmentName}.json", true, true);
 
             // Build the final configuration with all combined settings.
@@ -99,10 +99,12 @@ namespace FrontEnd
             services.AddTransient<IBaseService, BaseService>();
             services.AddTransient<IImportsService, ImportsService>();
             services.AddTransient<IFrontEndDynamicContentService, FrontEndDynamicContentService>();
+            services.AddSingleton<IWebPackService, WebPackService>();
+            services.AddSingleton<IExternalApisService, ExternalApisService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IWebPackService webPackService)
         {
             if (env.IsDevelopment())
             {
@@ -128,6 +130,8 @@ namespace FrontEnd
                     Predicate = _ => true
                 });
             });
+
+            webPackService.InitializeAsync();
         }
     }
 }

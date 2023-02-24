@@ -39,4 +39,16 @@ public class LanguagesController
     {
         return (await languagesService.GetAllLanguagesAsync()).GetHttpResponseMessage();
     }
+    
+    /// <summary>
+    /// Gets all values from the translations module.
+    /// </summary>
+    /// <returns>A dictionary where the key is the translation key and the value is the translation of the default language.</returns>
+    [HttpGet]
+    [Route("translations")]
+    [ProducesResponseType(typeof(List<LanguageModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTranslationsAsync()
+    {
+        return (await languagesService.GetAllTranslationsAsync()).GetHttpResponseMessage();
+    }
 }

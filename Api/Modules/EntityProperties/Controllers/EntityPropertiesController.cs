@@ -101,6 +101,19 @@ namespace Api.Modules.EntityProperties.Controllers
         {
             return (await entityPropertiesService.UpdateAsync((ClaimsIdentity)User.Identity, id, entityProperty)).GetHttpResponseMessage();
         }
+        
+        /// <summary>
+        /// Duplicates an entity property.
+        /// </summary>
+        /// <param name="id">The ID of the entity property to duplicate.</param>
+        /// <param name="newName">The name for the new entity property.</param>
+        [HttpPost]
+        [Route("{id:int}/duplicate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> DuplicateAsync(int id, [FromBody]string newName)
+        {
+            return (await entityPropertiesService.DuplicateAsync((ClaimsIdentity)User.Identity, id, newName)).GetHttpResponseMessage();
+        }
 
         /// <summary>
         /// Deletes an entity property.
@@ -125,6 +138,32 @@ namespace Api.Modules.EntityProperties.Controllers
         public async Task<IActionResult> CopyToAllAvailableLanguagesAsync(int id, [FromQuery]CopyToOtherLanguagesTabOptions tabOption)
         {
             return (await entityPropertiesService.CopyToAllAvailableLanguagesAsync((ClaimsIdentity)User.Identity, id, tabOption)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Fixes the ordering of an entity property
+        /// </summary>
+        /// <param name="entityName">The name of the entity property</param>
+        /// <returns></returns>
+        [HttpPut]
+        [Route("{entityName}/fix-ordering")]
+        [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> FixOrderingAsync(string entityName)
+        {
+            return (await entityPropertiesService.FixOrderingAsync((ClaimsIdentity)User.Identity, entityName)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Fixes the ordering of a link type
+        /// </summary>
+        /// <param name="linkType">The ID of a link type</param>
+        /// <returns></returns>
+        [HttpPut]
+        [Route("{linkType:int}/fix-ordering")]
+        [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> FixOrderingAsync(int linkType)
+        {
+            return (await entityPropertiesService.FixOrderingAsync((ClaimsIdentity)User.Identity, linkType: linkType)).GetHttpResponseMessage();
         }
     }
 }

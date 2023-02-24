@@ -34,6 +34,16 @@ namespace Api.Modules.Queries.Models
         public bool ShowInExportModule { get; set; }
 
         /// <summary>
+        /// Gets or sets whether the query should be shown in the communication module.
+        /// </summary>
+        public bool ShowInCommunicationModule { get; set; }
+
+        /// <summary>
+        /// Gets or sets the roles that have permissions on the query.
+        /// </summary>
+        public string RolesWithPermissions { get; set; }
+
+        /// <summary>
         /// Gets or sets when the query was last changed on.
         /// </summary>
         public DateTime? ChangedOn { get; set; }

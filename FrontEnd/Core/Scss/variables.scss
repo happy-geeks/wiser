@@ -22,6 +22,7 @@ $black-color: #000000;
 $button-cancel-color: #CCCCCC;
 $grey-color: #777777;
 $thead-color: #666666;
+$topbar-color: #EEEEEE;
 $line-color: #E6E6E6;
 $line-md-color: #F0F0F0;
 $line-lt-color: #F5F5F5;
@@ -38,12 +39,22 @@ $scroll-track-color: $line-color;
 $scroll-thumb-color: $grey-color;
 $scroll-bar-radius: 4px;
 
-//// SITE VARIABLES 
+//// STATUS COLORS
+$color-success: #77C67E;
+$color-failed: #E79493;
+$color-paused: #8CB3E9;
+$color-warning: #F2C89B;
 
+//// PROGRESS COLORS
+$color-progress-green: #2ECC71;
+$color-progress-yellow: #FFE162;
+$color-progress-orange: #FF6800;
+$color-progress-red: #CC0000;
+
+//// SITE VARIABLES
 // Base width defines the site width
 // gutter-width will be added to the total to provide spacing on the outside.
 // e.g. base-width: 1280px + gutter-width: 20px will result in a container width of 1300px
-
 $base-width: 1280px;
 
 // Gutter width defines the spacing around a colum.

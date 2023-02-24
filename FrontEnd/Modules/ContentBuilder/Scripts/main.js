@@ -5,8 +5,8 @@ import ContentBuilder from "@innovastudio/contentbuilder"
 import "./lang/en.js";
 import "../Css/contentbuilder.css"
 import "../Css/contentbuilder-wiser.scss"
-import { createApp, ref } from "vue";
-import * as axios from "axios";
+import { createApp, ref, isProxy, toRaw } from "vue";
+import axios from "axios";
 
 import ContentBuildersService from "../../../Core/Scripts/shared/contentBuilders.service";
 import {AUTH_LOGOUT, AUTH_REQUEST} from "../../../Core/Scripts/store/mutation-types";
@@ -90,10 +90,15 @@ import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.ser
                     const params = new URLSearchParams(uri);
                     promises.push(main.contentBuildersService.getHtml(params.get("wiserItemId"), params.get("languageCode"), params.get("propertyName")));
                     promises.push(main.contentBuildersService.getCustomerSnippets());
+                    promises.push(main.contentBuildersService.getFramework());
                     const data = await Promise.all(promises);
                     this.html = data[0].data || "";
                     window.customerSnippets = data[1].data.customerSnippets;
                     const snippetCategories = data[1].data.snippetCategories;
+                    let framework = (data[2].data || "").toLowerCase();
+                    if (framework === "contentbuilder") {
+                        framework = "";
+                    }
 
                     this.contentBuilder = new ContentBuilder({
                         container: ".container",
@@ -109,6 +114,7 @@ import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.ser
                         snippetData: "/ContentBuilder/assets/minimalist-blocks/snippetlist.html",
                         snippetCategories: snippetCategories,
                         defaultSnippetCategory: snippetCategories[0][0],
+                        framework: framework,
                         plugins: [
                             { name: 'WiserDataSelector', showInMainToolbar: true, showInElementToolbar: true }
                         ],
@@ -130,7 +136,9 @@ import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.ser
                     },
 
                     viewHtml() {
-                        this.contentBuilder.viewHtml();
+                        // We use toRaw here, because Vue adds a Proxy around the object, but that causes problems when calling some functions from the content builder. 
+                        // For example, the vieHtml function crashes the browser tab when you try to call it via the proxy of Vue.
+                        toRaw(this.contentBuilder).viewHtml();
                     }
                 }
             });

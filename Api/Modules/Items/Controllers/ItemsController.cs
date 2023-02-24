@@ -350,7 +350,6 @@ namespace Api.Modules.Items.Controllers
         /// This method will get the different entity types with the given ID.
         /// </summary>
         /// <param name="itemId">The ID of the item to render to HTML.</param>
-        /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns>A list of all entity types that contain an item with this ID.</returns>
         [HttpGet]
         [Route("{itemId:long}/entity-types")]

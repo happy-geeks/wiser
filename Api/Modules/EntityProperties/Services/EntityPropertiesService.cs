@@ -133,7 +133,6 @@ namespace Api.Modules.EntityProperties.Services
             clientDatabaseConnection.AddParameter("module_id", entityProperty.ModuleId);
             clientDatabaseConnection.AddParameter("entity_name", entityProperty.EntityType ?? "");
             clientDatabaseConnection.AddParameter("visible_in_overview", entityProperty.Overview?.Visible ?? false);
-            clientDatabaseConnection.AddParameter("overview_fieldtype", entityProperty.Overview?.FieldType ?? "");
             clientDatabaseConnection.AddParameter("overview_width", entityProperty.Overview?.Width ?? 100);
             clientDatabaseConnection.AddParameter("tab_name", entityProperty.TabName ?? "");
             clientDatabaseConnection.AddParameter("group_name", entityProperty.GroupName ?? "");
@@ -167,7 +166,7 @@ namespace Api.Modules.EntityProperties.Services
             clientDatabaseConnection.AddParameter("link_type", entityProperty.LinkType);
             clientDatabaseConnection.AddParameter("extended_explanation", entityProperty.ExtendedExplanation);
             clientDatabaseConnection.AddParameter("label_style", ToDatabaseValue(entityProperty.LabelStyle));
-            clientDatabaseConnection.AddParameter("label_width", entityProperty.LabelWidth);
+            clientDatabaseConnection.AddParameter("label_width", entityProperty.LabelWidth.ToString());
             clientDatabaseConnection.AddParameter("enable_aggregation", entityProperty.EnableAggregation);
             clientDatabaseConnection.AddParameter("aggregate_options", entityProperty.AggregateOptions);
             clientDatabaseConnection.AddParameter("access_key", entityProperty.AccessKey);
@@ -179,7 +178,6 @@ INSERT INTO {WiserTableNames.WiserEntityProperty}
     module_id,
     entity_name,
     visible_in_overview,
-    overview_fieldtype,
     overview_width,
     tab_name,
     group_name,
@@ -224,7 +222,6 @@ VALUES
     ?module_id,
     ?entity_name,
     ?visible_in_overview,
-    ?overview_fieldtype,
     ?overview_width,
     ?tab_name,
     ?group_name,
@@ -315,7 +312,6 @@ VALUES
             clientDatabaseConnection.AddParameter("module_id", entityProperty.ModuleId);
             clientDatabaseConnection.AddParameter("entity_name", entityProperty.EntityType ?? "");
             clientDatabaseConnection.AddParameter("visible_in_overview", entityProperty.Overview?.Visible ?? false);
-            clientDatabaseConnection.AddParameter("overview_fieldtype", entityProperty.Overview?.FieldType ?? "");
             clientDatabaseConnection.AddParameter("overview_width", entityProperty.Overview?.Width ?? 100);
             clientDatabaseConnection.AddParameter("tab_name", entityProperty.TabName ?? "");
             clientDatabaseConnection.AddParameter("group_name", entityProperty.GroupName ?? "");
@@ -341,7 +337,7 @@ VALUES
             clientDatabaseConnection.AddParameter("depends_on_field", entityProperty.DependsOn?.Field ?? "");
             clientDatabaseConnection.AddParameter("depends_on_operator", ToDatabaseValue(entityProperty.DependsOn?.Operator));
             clientDatabaseConnection.AddParameter("depends_on_value", entityProperty.DependsOn?.Value ?? "");
-            clientDatabaseConnection.AddParameter("depends_on_action", entityProperty.DependsOn?.Action);
+            clientDatabaseConnection.AddParameter("depends_on_action", ToDatabaseValue(entityProperty.DependsOn?.Action));
             clientDatabaseConnection.AddParameter("language_code", entityProperty.LanguageCode ?? "");
             clientDatabaseConnection.AddParameter("custom_script", entityProperty.CustomScript ?? "");
             clientDatabaseConnection.AddParameter("also_save_seo_value", entityProperty.AlsoSaveSeoValue);
@@ -349,7 +345,7 @@ VALUES
             clientDatabaseConnection.AddParameter("link_type", entityProperty.LinkType);
             clientDatabaseConnection.AddParameter("extended_explanation", entityProperty.ExtendedExplanation);
             clientDatabaseConnection.AddParameter("label_style", ToDatabaseValue(entityProperty.LabelStyle));
-            clientDatabaseConnection.AddParameter("label_width", entityProperty.LabelWidth);
+            clientDatabaseConnection.AddParameter("label_width", entityProperty.LabelWidth.ToString());
             clientDatabaseConnection.AddParameter("enable_aggregation", entityProperty.EnableAggregation);
             clientDatabaseConnection.AddParameter("aggregate_options", entityProperty.AggregateOptions);
             clientDatabaseConnection.AddParameter("access_key", entityProperty.AccessKey);
@@ -360,7 +356,6 @@ UPDATE {WiserTableNames.WiserEntityProperty}
 SET module_id = ?module_id,
     entity_name = ?entity_name,
     visible_in_overview = ?visible_in_overview,
-    overview_fieldtype = ?overview_fieldtype,
     overview_width = ?overview_width,
     tab_name = ?tab_name,
     group_name = ?group_name,
@@ -426,6 +421,118 @@ WHERE id = ?id";
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<int>> DuplicateAsync(ClaimsIdentity identity, int id, string newName)
+        {
+            if (String.IsNullOrWhiteSpace(newName))
+            {
+                return new ServiceResult<int>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Please enter a name"
+                };
+            }
+
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            
+            clientDatabaseConnection.AddParameter("id", id);
+            clientDatabaseConnection.AddParameter("newName", newName);
+            clientDatabaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
+
+            var query = $@"SET @_username = ?username;
+INSERT INTO {WiserTableNames.WiserEntityProperty}
+(
+    display_name,
+    property_name,
+    module_id,
+    entity_name,
+    link_type,
+    visible_in_overview,
+    overview_width,
+    tab_name,
+    group_name,
+    inputtype,
+    explanation,
+    ordering,
+    regex_validation,
+    mandatory,
+    readonly,
+    default_value,
+    width,
+    height,
+    options,
+    data_query,
+    action_query,
+    search_query,
+    search_count_query,
+    grid_delete_query,
+    grid_insert_query,
+    grid_update_query,
+    depends_on_field,
+    depends_on_operator,
+    depends_on_value,
+    language_code,
+    custom_script,
+    also_save_seo_value,
+    depends_on_action,
+    save_on_change,
+    extended_explanation,
+    label_style,
+    label_width,
+    enable_aggregation,
+    aggregate_options,
+    access_key,
+    visibility_path_regex
+)
+SELECT
+    ?newName AS display_name,
+    ?newName AS property_name,
+    module_id,
+    entity_name,
+    link_type,
+    visible_in_overview,
+    overview_width,
+    tab_name,
+    group_name,
+    inputtype,
+    explanation,
+    ordering,
+    regex_validation,
+    mandatory,
+    readonly,
+    default_value,
+    width,
+    height,
+    options,
+    data_query,
+    action_query,
+    search_query,
+    search_count_query,
+    grid_delete_query,
+    grid_insert_query,
+    grid_update_query,
+    depends_on_field,
+    depends_on_operator,
+    depends_on_value,
+    language_code,
+    custom_script,
+    also_save_seo_value,
+    depends_on_action,
+    save_on_change,
+    extended_explanation,
+    label_style,
+    label_width,
+    enable_aggregation,
+    aggregate_options,
+    access_key,
+    visibility_path_regex
+FROM {WiserTableNames.WiserEntityProperty}
+WHERE id = ?id";
+
+            var newId = (int)await clientDatabaseConnection.InsertRecordAsync(query);
+            return new ServiceResult<int>(newId);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -461,7 +568,6 @@ INSERT INTO {WiserTableNames.WiserEntityProperty}
 	module_id,
 	entity_name,
 	visible_in_overview,
-	overview_fieldtype,
 	overview_width,
 	tab_name,
 	group_name,
@@ -504,7 +610,6 @@ SELECT
 	entityProperty.module_id,
 	entityProperty.entity_name,
 	entityProperty.visible_in_overview,
-	entityProperty.overview_fieldtype,
 	entityProperty.overview_width,
     CASE ?tabOption
         WHEN {(int)CopyToOtherLanguagesTabOptions.General} THEN ''
@@ -555,6 +660,36 @@ AND otherEntityProperty.id IS NULL";
 
             await clientDatabaseConnection.ExecuteAsync(query);
             return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> FixOrderingAsync(ClaimsIdentity identity, string entityType = null, int linkType = 0)
+        {
+            clientDatabaseConnection.AddParameter("entityType", entityType);
+            clientDatabaseConnection.AddParameter("linkType", linkType);
+            var whereClause = linkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
+            var query = $@"SET @orderingNumber = 0;
+
+UPDATE {WiserTableNames.WiserEntityProperty} AS property
+JOIN (
+	SELECT 
+		x.id,
+		(@orderingNumber := @orderingNumber + 1) AS ordering
+	FROM (
+		SELECT
+			id
+		FROM {WiserTableNames.WiserEntityProperty}
+		WHERE {whereClause}
+		ORDER BY ordering ASC
+	) AS x
+) AS ordering ON ordering.id = property.id
+SET property.ordering = ordering.ordering
+WHERE {whereClause}";
+            await clientDatabaseConnection.ExecuteAsync(query);
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
 
         private static FilterOperators? ToFilterOperator(string value)
@@ -801,10 +936,9 @@ AND otherEntityProperty.id IS NULL";
             result.AlsoSaveSeoValue = Convert.ToBoolean(dataRow["also_save_seo_value"]);
             result.SaveOnChange = Convert.ToBoolean(dataRow["save_on_change"]);
             result.LabelStyle = ToLabelStyle(dataRow.Field<string>("label_style"));
-            result.LabelWidth = Convert.ToInt32(dataRow.Field<object>("label_width"));
+            result.LabelWidth = dataRow.IsNull("label_width") ? 0 : Convert.ToInt32(dataRow["label_width"]);
             result.Overview = new EntityPropertyOverviewModel();
             result.Overview.Visible = Convert.ToBoolean(dataRow["visible_in_overview"]);
-            result.Overview.FieldType = dataRow.Field<string>("overview_fieldtype");
             result.Overview.Width = Convert.ToInt32(dataRow["overview_width"]);
             result.DependsOn = new EntityPropertyDependencyModel();
             result.DependsOn.Action = ToDependencyAction(dataRow.Field<string>("depends_on_action"));

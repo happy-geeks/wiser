@@ -13,6 +13,7 @@ require("@progress/kendo-ui/js/kendo.treeview.js");
 require("@progress/kendo-ui/js/kendo.grid.js");
 require("@progress/kendo-ui/js/kendo.datetimepicker.js");
 require("@progress/kendo-ui/js/kendo.multiselect.js");
+require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
@@ -103,7 +104,7 @@ const moduleSettings = {
 
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
@@ -118,6 +119,8 @@ const moduleSettings = {
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
+            
+            this.stickyHeader();
 
             this.initializeKendoComponents();
 
@@ -146,6 +149,23 @@ const moduleSettings = {
             }
         }
 
+        /**
+         * Sticky header within Dynamic Content.
+         */
+        stickyHeader() {
+            const elem = document.getElementById('DynamicContentPane');
+            let lastScrollTop = 0;
+
+            elem.onscroll = (e) => {
+                if (elem.scrollTop < lastScrollTop){
+                    elem.classList.add('sticky');
+                } else {
+                    elem.classList.remove('sticky');
+                }
+                lastScrollTop = elem.scrollTop <= 0 ? 0 : elem.scrollTop;
+            }
+        }
+        
         /**
          * Initializes all kendo components for the base class.
          */
@@ -345,7 +365,6 @@ const moduleSettings = {
         initializeButtons() {
             document.body.addEventListener("keydown", (event) => {
                 if ((event.ctrlKey || event.metaKey) && event.keyCode === 83) {
-                    console.log("ctrl+s dynamic content", event);
                     event.preventDefault();
                     this.save();
                 }
@@ -390,27 +409,35 @@ const moduleSettings = {
             try {
                 this.saving = true;
                 const title = document.querySelector('input[name="visibleDescription"]').value;
-                const contentId = await Wiser.api({
-                    url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
-                    dataType: "json",
-                    method: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify({
-                        component: document.getElementById("componentTypeDropDown").value,
-                        componentModeId: document.getElementById("componentMode").value,
-                        title: title,
-                        data: this.getNewSettings()
-                    })
-                });
-
-                if (!this.settings.selectedId) {
-                    this.settings.selectedId = contentId;
-                    this.settings.selectedTitle = title;
-                    await this.addLinkToTemplate(this.settings.templateId);
+                if (!title) {
+                    kendo.alert("Naam is verplicht! Vul een naam in om verder te gaan");
+                    this.saving = false;
+                    window.processing.removeProcess(process);
+                    return;
                 }
+                    const contentId = await Wiser.api({
+                        url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
+                        dataType: "json",
+                        method: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            component: document.getElementById("componentTypeDropDown").value,
+                            componentModeId: document.getElementById("componentMode").value,
+                            title: title,
+                            data: this.getNewSettings()
+                        })
+                    });
 
-                window.popupNotification.show(`Dynamisch component '${document.querySelector('input[name="visibleDescription"]').value}' is succesvol opgeslagen.`, "info");
+                    if (!this.settings.selectedId) {
+                        this.settings.selectedId = contentId;
+                        this.settings.selectedTitle = title;
+                        await this.addLinkToTemplate(this.settings.templateId);
+                    }
 
+
+                    window.popupNotification.show(`Dynamisch component '${document.querySelector('input[name="visibleDescription"]').value}' is succesvol opgeslagen.`, "info");
+
+                
                 if (alsoDeployToTest) {
                     const version = (parseInt($(".historyContainer .historyLine:first").data("historyVersion")) || 0) + 1;
     
@@ -559,7 +586,7 @@ const moduleSettings = {
 
             this.preview.initPreviewProfileInputs(true, true);
             this.preview.bindPreviewButtons();
-            this.preview.generatePreview();
+            this.preview.generatePreview(false);
         }
 
         async transformCodeMirrorViews(container = null) {

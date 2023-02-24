@@ -32,7 +32,7 @@ namespace Api.Modules.Imports.Controllers
         }
 
         /// <summary>
-        /// Prepare an import to be imported by the AIS.
+        /// Prepare an import to be imported by the WTS.
         /// </summary>
         /// <param name="importRequest">The information needed for the import.</param>
         /// <returns>A ImportResultModel containing the result of the import.</returns>
@@ -87,7 +87,6 @@ namespace Api.Modules.Imports.Controllers
         /// <summary>
         /// Delete the links corresponding to the provided information.
         /// </summary>
-        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="deleteLinksConfirms">A collection of <see cref="DeleteLinksConfirmModel"/>s containing the information about the links to delete.</param>
         /// <returns>Returns true on success.</returns>
         [HttpPost]

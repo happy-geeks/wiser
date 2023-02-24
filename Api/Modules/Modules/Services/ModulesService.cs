@@ -81,7 +81,8 @@ namespace Api.Modules.Modules.Services
                 737, // Admin
                 738, // Import / export
                 806, // Wiser users
-                5505 // Webpagina's
+                5505, // Webpagina's
+                6000 // Version control
             };
 
             var isAdminAccount = IdentityHelpers.IsAdminAccount(identity);
@@ -110,12 +111,16 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,
                 WiserTableNames.WiserPreviewProfiles,
-                WiserTableNames.WiserDynamicContentPublishLog
+                WiserTableNames.WiserDynamicContentPublishLog,
+                WiserTableNames.WiserQuery,
+                WiserTableNames.WiserPermission,
+                WiserTableNames.WiserCommunication,
+                GeeksCoreLibrary.Modules.Databases.Models.Constants.DatabaseConnectionLogTableName
             });
             var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
             
             // Make sure that all triggers for Wiser tables are up-to-date.
-            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2022, 8, 5))
+            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2023, 1, 3))
             {
                 var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
                 await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
@@ -124,49 +129,49 @@ namespace Api.Modules.Modules.Services
                 clientDatabaseConnection.AddParameter("tableName", TriggersName);
                 clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
                 await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
-                                                            VALUES (?tableName, ?lastUpdate) 
-                                                            ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)");
+VALUES (?tableName, ?lastUpdate) 
+ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)");
             }
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
 
             var query = $@"(
-                            SELECT
-	                            permission.module_id,
-	                            MAX(permission.permissions) AS permissions,
-                                module.name,
-                                module.icon,
-                                module.type,
-                                module.group,
-                                module.options,
-                                module.custom_query
-                            FROM {WiserTableNames.WiserUserRoles} AS user_role
-                            JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
-                            JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
-                            JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
-                            WHERE user_role.user_id = ?userId
-                            GROUP BY permission.module_id
-                            ORDER BY permission.module_id, permission.permissions
-                        )";
+    SELECT
+	    permission.module_id,
+	    MAX(permission.permissions) AS permissions,
+        module.name,
+        module.icon,
+        module.type,
+        module.group,
+        module.options,
+        module.custom_query
+    FROM {WiserTableNames.WiserUserRoles} AS user_role
+    JOIN {WiserTableNames.WiserRoles} AS role ON role.id = user_role.role_id
+    JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = role.id AND permission.module_id > 0
+    JOIN {WiserTableNames.WiserModule} AS module ON module.id = permission.module_id
+    WHERE user_role.user_id = ?userId
+    GROUP BY permission.module_id
+    ORDER BY permission.module_id, permission.permissions
+)";
 
             if (isAdminAccount)
             {
                 query += $@"
-                        UNION
-                        (
-                            SELECT
-                                module.id AS module_id,
-                                15 AS permissions,
-                                module.name,
-                                module.icon,
-                                module.type,
-                                module.group,
-                                module.options,
-                                module.custom_query
-                            FROM {WiserTableNames.WiserModule} AS module
-                            WHERE module.id IN ({String.Join(",", modulesForAdmins)})
-                        )";
+UNION
+(
+    SELECT
+        module.id AS module_id,
+        15 AS permissions,
+        module.name,
+        module.icon,
+        module.type,
+        module.group,
+        module.options,
+        module.custom_query
+    FROM {WiserTableNames.WiserModule} AS module
+    WHERE module.id IN ({String.Join(",", modulesForAdmins)})
+)";
             }
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
@@ -452,6 +457,27 @@ namespace Api.Modules.Modules.Services
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
+                        case 6000: // Version control
+                            groupName = isPinned ? PinnedModulesGroupName : "Systeem";
+                            if (!results.ContainsKey(groupName))
+                            {
+                                results.Add(groupName, new List<ModuleAccessRightsModel>());
+                            }
+                            results[groupName].Add(new ModuleAccessRightsModel
+                            {
+                                Group = "Systeem",
+                                CanCreate = true,
+                                CanDelete = true,
+                                CanRead = true,
+                                CanWrite = true,
+                                Icon = "git",
+                                ModuleId = moduleId,
+                                Name = "Version control",
+                                Type = "VersionControl",
+                                Pinned = isPinned,
+                                PinnedGroup = PinnedModulesGroupName
+                            });
+                            break;
                         default:
                             throw new NotImplementedException($"Trying to hard-code add module '{moduleId}' to list for admin account, but no case has been added for this module in the switch statement.");
                     }
@@ -631,6 +657,40 @@ namespace Api.Modules.Modules.Services
 
             var result = excelService.JsonArrayToExcel(newData);
             return new ServiceResult<byte[]>(result);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<string>>> GetModuleGroupsAsync(ClaimsIdentity identity)
+        {
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT DISTINCT `group`
+FROM {WiserTableNames.WiserModule}
+WHERE `group` IS NOT NULL
+AND `group` <> ''
+ORDER BY `group` ASC");
+            var results = dataTable.Rows.Cast<DataRow>().Select(dataRow => dataRow.Field<string>("group"));
+            return new ServiceResult<List<string>>(results.ToList());
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id)
+        {
+            if (id <= 0)
+            {
+                throw new ArgumentException("Id must be greater than 0.", nameof(id));
+            }
+
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.AddParameter("id", id);
+
+            // Delete the module itself and any permissions that have been set for the module.
+            var query = $@"DELETE FROM {WiserTableNames.WiserModule} WHERE id = ?id;
+DELETE FROM {WiserTableNames.WiserPermission} WHERE module_id = ?id;";
+            await clientDatabaseConnection.ExecuteAsync(query);
+
+            return new ServiceResult<bool>(true)
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
         }
 
         /// <inheritdoc />

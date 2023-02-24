@@ -146,15 +146,18 @@ export class Windows {
                     kendo.alert("Er is geen HTML editor gevonden waar deze afbeelding toegevoegd kan worden. Sluit aub dit scherm en probeer het opnieuw, of neem contact op met ons.");
                     return;
                 }
+                
+                const selectedItem = this.imagesUploaderWindowTreeView.dataItem(this.imagesUploaderWindowTreeView.select());
+                const extension = selectedItem.name.split(selectedItem.name.lastIndexOf(".") + 1);
 
-                const imagePreviewUrl = this.generateImagePreviewUrl('jpg');
-                const html = `<figure>` +
-                    `<picture>` +
-                    `<source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('jpg').url}" type="image/jpeg" />` +
-                    `<source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('webp').url}" type="image/webp" />` +
-                    `<img width="100%" height="auto" loading="lazy" src="${imagePreviewUrl.url}" alt="${imagePreviewUrl.altText}" />` +
-                    `</picture>` +
-                    `</figure>`;
+                const imagePreviewUrl = this.generateImagePreviewUrl(extension);
+                const html = `<figure>
+    <picture>
+        <source media="(min-width: 0px)" srcset="${imagePreviewUrl.url}" type="image/${extension}" />
+        <source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('webp').url}" type="image/webp" />
+        <img width="100%" height="auto" loading="lazy" src="${imagePreviewUrl.url}" alt="${imagePreviewUrl.altText}" />
+    </picture>
+</figure>`;
                 if (this.imagesUploaderSender.kendoEditor) {
                     this.imagesUploaderSender.kendoEditor.exec("inserthtml", { value: html });
                 }
@@ -1070,12 +1073,20 @@ export class Windows {
         const altText = this.imagesUploaderWindow.element.find("#altText").val() || "";
 
         let fileName = selectedItem.name;
+        const dotIndex = fileName.lastIndexOf(".");
         if (extension) {
-            fileName = `${fileName.substr(0, fileName.lastIndexOf("."))}.${extension}`;
+            fileName = dotIndex > -1 ? `${fileName.substr(0, dotIndex)}.${extension}` : `${fileName}.${extension}`;
+        } else if (!extension && dotIndex === -1) {
+            fileName = `${fileName}.png`;
+        }
+        
+        let domain = this.base.settings.mainDomain;
+        if (!domain.endsWith("/")) {
+            domain += "/";
         }
 
         return {
-            url: `${this.base.settings.mainDomain}image/wiser2/${selectedItem.plainId}/direct/${selectedItem.property_name}/${resizeMode}/${width}/${height}/${fileName}`,
+            url: `${domain}image/wiser2/${selectedItem.plainId}/direct/${selectedItem.propertyName || "global_file"}/${resizeMode}/${width}/${height}/${fileName}`,
             altText: altText
         };
     }
@@ -1086,7 +1097,7 @@ export class Windows {
      */
     generateFilePreviewUrl() {
         const selectedItem = this.filesUploaderWindowTreeView.dataItem(this.filesUploaderWindowTreeView.select());
-        let result = `${this.base.settings.mainDomain}/file/wiser2/${selectedItem.plainId}/direct/${selectedItem.propertyName}/${selectedItem.name}`;
+        let result = `${this.base.settings.mainDomain}/file/wiser2/${selectedItem.plainId}/direct/${selectedItem.propertyName || "global_file"}/${selectedItem.name}`;
         return result.replace("//file", "/file");
     }
 
@@ -1828,15 +1839,19 @@ export class Windows {
                             column.hidden = this.searchGridSettings.hideIdColumn || false;
                             break;
                         case "link_id":
+                        case "linkid":
                             column.hidden = this.searchGridSettings.hideLinkIdColumn || false;
                             break;
                         case "entity_type":
+                        case "entitytype":
                             column.hidden = this.searchGridSettings.hideTypeColumn || false;
                             break;
                         case "published_environment":
+                        case "publishedenvironment":
                             column.hidden = this.searchGridSettings.hideEnvironmentColumn || false;
                             break;
                         case "name":
+                        case "title":
                             column.hidden = this.searchGridSettings.hideTitleColumn || false;
                             break;
                         case "encrypted_id":

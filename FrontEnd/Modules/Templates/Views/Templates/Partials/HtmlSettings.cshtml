@@ -1,5 +1,12 @@
 ﻿@using GeeksCoreLibrary.Modules.Templates.Enums
 @model Api.Modules.Templates.Models.Template.TemplateSettingsModel
+<div class="item full-width" data-label-style="float" data-label-width="0">
+    <h4><label for="cacheMinutes">URL Regex</label></h4>
+    <span class="k-widget k-input k-state-default">
+        <input type="text" id="urlRegex" class="textField k-input" name="urlRegex" value="@Model.UrlRegex" autocomplete="off" pattern=".*">
+    </span>
+    <div class="form-hint"><span>Vanaf welke URL moet deze template bereikbaar zijn? Hier kan een regular expression opgegeven worden voor dynamische waardes en parameters. Indien je de regular expression opdeelt in groepen en die groepen namen geeft, dan kunnen die namen gebruikt worden als variabelen in deze template. Voorbeeld: \/product\/(?&lt;productId&gt;[0-9]+)\/</span></div>
+</div>
 <div class="item item-left" style="width: 60%;">
     <div class="item full-width" data-label-style="float" data-label-width="0">
         <h4><label for="combo-cache">Cache</label></h4>
@@ -10,9 +17,15 @@
                 <!option value="@((int)TemplateCachingModes.ServerSideCachingPerUrl)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerUrl ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL verschillend)</!option>
                 <!option value="@((int)TemplateCachingModes.ServerSideCachingPerUrlAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerUrlAndQueryString ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL + querystring combinatie verschillend)</!option>
                 <!option value="@((int)TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString ? "selected" : "")>server caching volledige template (obv volledige URL, inclusief domein en querystring)</!option>
+                <!option value="@((int)TemplateCachingModes.ServerSideCachingBasedOnUrlRegex)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingBasedOnUrlRegex ? "selected" : "")>server caching op basis van regex</!option>
             </select>
         </div>
-        <div class="form-hint"><span>Moet caching ingeschakeld worden voor deze template? Zo ja, wat voor caching. Caching kan bijvoorbeeld hetzelfde zijn voor alle URL's, of per URL/querystring aparte cache.</span></div>
+        <div class="form-hint">
+            <p>Moet caching ingeschakeld worden voor deze template? Zo ja, wat voor caching. Caching kan bijvoorbeeld hetzelfde zijn voor alle URL's, of per URL/querystring aparte cache.</p>
+            <p>Indien de optie "server caching op basis van regex" is gekozen, moet hieronder het veld "Cache regex" ook ingevuld worden. De template wordt dan gecached per unieke combinatie van alle genaamde groepen in de regex.</p>
+            <p>Voorbeeld: Als je de regex "\/products\/(?&lt;category&gt;.*)\/(?&lt;subCategory&gt;.*)\/(?&lt;product&gt;.*)\/" gebruikt, daar staan 3 groepen in met een naam (category, subCategory en product). Als je dan de URL "/products/drinks/soda/coca-cola/" zou openen, dan krijg je de volgende naam voor de cache: "Template_123_drinks_soda_coca-cola". Dit zorgt er dan dus voor dat deze template per product apart wordt gecacht.</p>
+            <p>Voorbeeld 2: Als je de regex "\/(?&lt;page&gt;[^\/]*)?(\/.*)?" gebruikt, dan wordt deze template alleen apart gecacht voor elke hoofdpagina en juist niet apart per product.</p>
+        </div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
@@ -53,12 +66,12 @@
 <div class="item item-right" style="width: 40%;">
     <input id="isDefaultHeader" name="isDefaultHeader" type="checkbox" @(Model.IsDefaultHeader ? "checked" : "") class="hidden" />
     <label class="checkbox" for="isDefaultHeader">
-        <span>Deze template is de default header</span>
+        <span>Deze template is de standaard header</span>
     </label>
 
     <input id="isDefaultFooter" name="isDefaultFooter" type="checkbox" @(Model.IsDefaultFooter ? "checked" : "") class="hidden" />
     <label class="checkbox" for="isDefaultFooter">
-        <span>Deze template is de default footer</span>
+        <span>Deze template is de standaard footer</span>
     </label>
     
     <div class="header-footer-regex-panel">
@@ -70,6 +83,16 @@
             <div class="form-hint"><span>Indien hier een geldige regex is ingevuld, wordt deze header of footer alleen gebruikt voor URL's die voldoen aan deze regex.</span></div>
         </div>
     </div>
+    
+    <input id="isPartial" name="isPartial" type="checkbox" @(Model.IsPartial ? "checked" : "") class="hidden" />
+    <label class="checkbox" for="isPartial">
+        <span>Is een partial template</span>
+    </label>
+    <div class="form-hint">
+        <span>
+            Wanneer aangevinkt wordt de ombouw nooit om de template gedaan wanneer deze wordt opgevraagd via een XHR call.
+        </span>
+    </div>
 
     <input id="loginRequired" name="loginRequired" type="checkbox" @(Model.LoginRequired ? "checked" : "") class="hidden">
     <label class="checkbox" for="loginRequired">
@@ -78,37 +101,9 @@
 
     <div class="user-check-panel">
         <div class="item" data-label-style="float" data-label-width="0">
-            <h4><label for="loginUserType">Type gebruiker</label></h4>
+            <h4><label for="loginRoles">Rollen</label></h4>
             <div class="flex-container">
-                <select id="loginUserType" class="combo-select" placeholder="Maak uw keuze..." data-kendo-control="kendoDropDownList">
-                    <option value="1">Type gebruiker 1</option>
-                    <option value="2">Type gebruiker 2</option>
-                    <option value="3">Type gebruiker 3</option>
-                    <option value="4">Type gebruiker 4</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="item" data-label-style="float" data-label-width="0">
-            <h4><label for="loginSessionPrefix">Login session prefix</label></h4>
-            <div class="flex-container">
-                <select id="loginSessionPrefix" class="combo-select" placeholder="Maak uw keuze..." data-kendo-control="kendoDropDownList">
-                    <option value="1">Login session prefix 1</option>
-                    <option value="2">Login session prefix 2</option>
-                    <option value="3">Login session prefix 3</option>
-                    <option value="4">Login session prefix 4</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="item" data-label-style="float" data-label-width="0">
-            <h4><label for="loginRole">Rol</label></h4>
-            <div class="flex-container">
-                <select id="loginRole" class="combo-select" placeholder="Maak uw keuze..." data-kendo-control="kendoDropDownList">
-                    <option value="1">Rol 1</option>
-                    <option value="2">Rol 2</option>
-                    <option value="3">Rol 3</option>
-                    <option value="4">Rol 4</option>
+                <select id="loginRoles" name="loginRoles" multiple="multiple" data-kendo-control="kendoMultiSelect">
                 </select>
             </div>
         </div>
@@ -126,4 +121,23 @@
     <h4><label for="preLoadQuery">Pre-load query</label></h4>
     <textarea rows="10" cols="30" id="preLoadQuery" data-editor-type="text/x-mysql">@Model.PreLoadQuery</textarea>
     <div class="form-hint"><span>Deze query wordt 1 keer helemaal aan het begin uitgevoerd tijdens het laden van deze template. De resultaten van deze query kunnen dan op andere plekken in de template gebruikt worden met de prefix "template.". Als de query bijvoorbeeld een kolom "title" terruggeeft, dan kan de variabele "{template.title}" overal in de template gebruikt worden, inclusief dynamische componenten. Alleen de eerste regel van het resultaat van de query kan gebruikt worden. Deze query kan ook gebruikt worden om SEO meta tags op de pagina te zetten. De query moet dan een of meer van de volgende kolommen bevatten, die worden dan automatisch verwerkt: SEOtitle, SEOdescription, SEOkeywords, SEOcanonical, noindex, nofollow en SEOrobots.</span></div>
+</div>
+
+<div class="item item-full">
+    <h4><label for="widgetContent">Widget</label></h4>
+    <textarea rows="10" cols="30" id="widgetContent" data-editor-type="text/html">@Model.WidgetContent</textarea>
+    <div class="form-hint"><span>Hiermeee kan een stukje HTML toegevoegd worden die op een bepaalde plek op de pagina gezet wordt. Dit mag ook een script tag zijn met daarin javascript-code, of een style tag met daairn CSS. Deze widget wordt alleen getoond op pagina's die deze template gebruiken. Als je een widget wilt hebben voor alle pagina's, dan kun je die toevoegen aan de module Stamgegevens. Hieronder kan gekozen worden op welke locatie de widget geladen moet worden.</span></div>
+</div>
+
+<div class="item" data-label-style="float" data-label-width="0">
+    <h4><label for="widgetLocation">Widget locatie</label></h4>
+    <div class="flex-container">
+        <select id="widgetLocation" class="combo-select" data-kendo-control="kendoDropDownList" name="widgetLocation">
+            <!option value="@((int)PageWidgetLocations.HeaderTop)" @(Model.WidgetLocation == PageWidgetLocations.HeaderTop ? "selected" : "")>Bovenaan in header van pagina</!option>
+            <!option value="@((int)PageWidgetLocations.HeaderBottom)" @(Model.WidgetLocation == PageWidgetLocations.HeaderBottom ? "selected" : "")>Onderaan in header van pagina</!option>
+            <!option value="@((int)PageWidgetLocations.BodyTop)" @(Model.WidgetLocation == PageWidgetLocations.BodyTop ? "selected" : "")>Bovenaan in body van pagina</!option>
+            <!option value="@((int)PageWidgetLocations.BodyBottom)" @(Model.WidgetLocation == PageWidgetLocations.BodyBottom ? "selected" : "")>Onderaan in body van pagina</!option>
+        </select>
+    </div>
+    <div class="form-hint"><span>Waar moet de widget geladen worden?</span></div>
 </div>

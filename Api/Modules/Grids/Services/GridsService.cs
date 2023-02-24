@@ -112,6 +112,7 @@ namespace Api.Modules.Grids.Services
 
             // Get entity type settings, so see whether we can have different versions of a single item for different environments or if the items have their own dedicated table.
             var versionJoinClause = "";
+            var subQueryVersionJoinClause = "";
             var versionWhereClause = "";
             var tablePrefix = "";
             var linkTablePrefix = "";
@@ -124,6 +125,8 @@ namespace Api.Modules.Grids.Services
                 {
                     versionJoinClause = $@"# Only get the latest version of an item.
                                         LEFT JOIN {tablePrefix}{WiserTableNames.WiserItem}{{0}} AS otherVersion ON otherVersion.original_item_id > 0 AND i.original_item_id > 0 AND otherVersion.original_item_id = i.original_item_id AND (otherVersion.changed_on > i.changed_on OR (otherVersion.changed_on = i.changed_on AND otherVersion.id > i.id))";
+                    subQueryVersionJoinClause = $@"# Only get the latest version of an item.
+                                        LEFT JOIN {tablePrefix}{WiserTableNames.WiserItem}{{0}} AS otherVersion ON otherVersion.original_item_id > 0 AND i.originalItemId > 0 AND otherVersion.original_item_id = i.originalItemId AND (otherVersion.changed_on > i.changedOn OR (otherVersion.changed_on = i.changedOn AND otherVersion.id > i.id))";
                     versionWhereClause = "AND otherVersion.id IS NULL";
                 }
             }
@@ -223,7 +226,7 @@ namespace Api.Modules.Grids.Services
                     countQuery = countQuery?.ReplaceCaseInsensitive("'{itemId}'", "?itemId");
                     selectQuery = selectQuery.ReplaceCaseInsensitive("{itemId}", "?itemId");
                     countQuery = countQuery?.ReplaceCaseInsensitive("{itemId}", "?itemId");
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "", fieldMappings: fieldMappings);
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "", fieldMappings: fieldMappings, tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -239,20 +242,20 @@ namespace Api.Modules.Grids.Services
                 case EntityGridModes.ChangeHistory:
                 {
                     // Data for the change history of an item.
-                    results.Columns.Add(new GridColumn {Field = "changedOn", Title = "Datum", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
+                    results.Columns.Add(new GridColumn {Field = "changedon", Title = "Datum", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
                     results.Columns.Add(new GridColumn {Field = "field", Title = "Veldnaam"});
                     results.Columns.Add(new GridColumn {Field = "action", Title = "Actie type"});
                     results.Columns.Add(new GridColumn {Field = "oldvalue", Title = "Oude waarde"});
                     results.Columns.Add(new GridColumn {Field = "newvalue", Title = "Nieuwe waarde"});
-                    results.Columns.Add(new GridColumn {Field = "changedBy", Title = "Gewijzigd door"});
+                    results.Columns.Add(new GridColumn {Field = "changedby", Title = "Gewijzigd door"});
 
                     hasPredefinedSchema = true;
                     results.SchemaModel.Fields.Add("id", new FieldModel {Type = "number"});
-                    results.SchemaModel.Fields.Add("changedOn", new FieldModel {Type = "date"});
+                    results.SchemaModel.Fields.Add("changedon", new FieldModel {Type = "date"});
                     results.SchemaModel.Fields.Add("tablename", new FieldModel {Type = "string"});
-                    results.SchemaModel.Fields.Add("itemId", new FieldModel {Type = "number"});
+                    results.SchemaModel.Fields.Add("itemid", new FieldModel {Type = "number"});
                     results.SchemaModel.Fields.Add("action", new FieldModel {Type = "string"});
-                    results.SchemaModel.Fields.Add("changedBy", new FieldModel {Type = "string"});
+                    results.SchemaModel.Fields.Add("changedby", new FieldModel {Type = "string"});
                     results.SchemaModel.Fields.Add("field", new FieldModel {Type = "string"});
                     results.SchemaModel.Fields.Add("oldvalue", new FieldModel {Type = "string"});
                     results.SchemaModel.Fields.Add("newvalue", new FieldModel {Type = "string"});
@@ -260,30 +263,46 @@ namespace Api.Modules.Grids.Services
                     clientDatabaseConnection.ClearParameters();
                     clientDatabaseConnection.AddParameter("itemId", itemId);
 
-                    countQuery = $@"SELECT COUNT(*) FROM {WiserTableNames.WiserHistory} WHERE item_id = ?itemid AND action <> 'UPDATE_ITEMLINK'";
+                    countQuery = $@"SELECT COUNT(*)
+                                    FROM {WiserTableNames.WiserHistory}
+                                    WHERE item_id = ?itemid
+                                    AND action <> 'UPDATE_ITEMLINK'
+                                    [if({{changedby_has_filter}}=1)]AND changed_by {{changedby_filter}}[endif]
+                                    [if({{changedon_has_filter}}=1)]AND DATE(changed_on) {{changedon_filter}}[endif]
+                                    [if({{field_has_filter}}=1)]AND field {{field_filter}}[endif]
+                                    [if({{action_has_filter}}=1)]AND `action` {{action_filter}}[endif]
+                                    [if({{oldvalue_has_filter}}=1)]AND oldvalue {{oldvalue_filter}}[endif]
+                                    [if({{newvalue_has_filter}}=1)]AND newvalue {{newvalue_filter}}[endif]";
 
                     selectQuery = $@"SELECT 
 	                                    current.id AS id,
-	                                    current.changed_on AS changedOn,
+	                                    current.changed_on AS changedon,
 	                                    current.tablename AS tablename,
-	                                    current.item_id AS itemId,
+	                                    current.item_id AS itemid,
 	                                    current.action AS action,
-	                                    current.changed_by AS changedBby,
+	                                    current.changed_by AS changedby,
 	                                    current.field AS field,
 	                                    current.oldvalue AS oldvalue,
 	                                    current.newvalue AS newvalue
                                     FROM {WiserTableNames.WiserHistory} current
-	                                   
+	                                
                                     WHERE current.item_id=?itemid
                                     # Item link IDs will also be saved in the column 'item_id'.
                                     # To prevent showing the history of an item link with the same id as the currently opened item, don't get history with action = 'UPDATE_ITEMLINK'.
                                     AND current.action <> 'UPDATE_ITEMLINK'
+                                    [if({{changedby_has_filter}}=1)]AND changed_by {{changedby_filter}}[endif]
+                                    [if({{changedon_has_filter}}=1)]AND DATE(changed_on) {{changedon_filter}}[endif]
+                                    [if({{field_has_filter}}=1)]AND field {{field_filter}}[endif]
+                                    [if({{action_has_filter}}=1)]AND `action` {{action_filter}}[endif]
+                                    [if({{oldvalue_has_filter}}=1)]AND oldvalue {{oldvalue_filter}}[endif]
+                                    [if({{newvalue_has_filter}}=1)]AND newvalue {{newvalue_filter}}[endif]
+                                    
                                     GROUP BY current.id
                                     
                                     ORDER BY current.changed_on DESC, current.id DESC
                                     {{limit}}";
 
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY current.changed_on DESC, current.id DESC");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY current.changed_on DESC, current.id DESC", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -298,20 +317,20 @@ namespace Api.Modules.Grids.Services
                 }
                 case EntityGridModes.TaskHistory:
                 {
-                    results.Columns.Add(new GridColumn {Field = "dueDate", Title = "Due-date", Format = "{0:dd MMMM yyyy}"});
+                    results.Columns.Add(new GridColumn {Field = "duedate", Title = "Due-date", Format = "{0:dd MMMM yyyy}"});
                     results.Columns.Add(new GridColumn {Field = "sender", Title = "Verzonden door"});
                     results.Columns.Add(new GridColumn {Field = "receiver", Title = "Verzonden aan"});
                     results.Columns.Add(new GridColumn {Field = "content", Title = "Tekst", Width = "600px"});
-                    results.Columns.Add(new GridColumn {Field = "checkedDate", Title = "Afgevinkt op", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
+                    results.Columns.Add(new GridColumn {Field = "checkeddate", Title = "Afgevinkt op", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
 
                     countQuery = $@"SELECT COUNT(*)
                                     FROM {WiserTableNames.WiserItem} i
 
-                                    JOIN {WiserTableNames.WiserItemDetail} dueDate ON dueDate.item_id = i.id AND dueDate.`key` = 'agendering_date' [if({{due_date}}!)]AND dueDate.`value` IS NOT NULL AND dueDate.`value` <> '' AND DATE(dueDate.`value`) {{due_date_filter}}[endif] 
-                                    [if({{checked_date}}=)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} checkedDate ON checkedDate.item_id = i.id AND checkedDate.`key` = 'checkedon' [if({{checked_date}}!)]AND checkedDate.`value` IS NOT NULL AND checkedDate.`value` <> '' AND DATE(checkedDate.`value`) {{checked_date_filter}}[endif] 
-                                    [if({{sender}}=)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} sender ON sender.item_id = i.id AND sender.`key` = 'placed_by_id' [if({{sender}}!)]AND sender.`value` {{sender_filter}}[endif] 
-                                    JOIN {WiserTableNames.WiserItemDetail} receiver ON receiver.item_id = i.id AND receiver.`key` = 'userid' [if({{receiver}}!)]AND receiver.`value` {{receiver_filter}}[endif] 
-                                    JOIN {WiserTableNames.WiserItemDetail} content ON content.item_id = i.id AND content.`key` = 'content' [if({{content}}!)]AND content.`value` {{content_filter}}[endif] 
+                                    JOIN {WiserTableNames.WiserItemDetail} AS dueDate ON dueDate.item_id = i.id AND dueDate.`key` = 'agendering_date' [if({{due_date}}!)]AND dueDate.`value` IS NOT NULL AND dueDate.`value` <> '' AND DATE(dueDate.`value`) {{due_date_filter}}[endif] 
+                                    [if({{checked_date_has_filter}}!1)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} checkedDate ON checkedDate.item_id = i.id AND checkedDate.`key` = 'checkedon' [if({{checked_date_has_filter}}=1)]AND checkedDate.`value` IS NOT NULL AND checkedDate.`value` <> '' AND DATE(checkedDate.`value`) {{checked_date_filter}}[endif] 
+                                    [if({{sender_has_filter}}!1)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} sender ON sender.item_id = i.id AND sender.`key` = 'placed_by_id' [if({{sender_has_filter}}=1)]AND sender.`value` {{sender_filter}}[endif] 
+                                    JOIN {WiserTableNames.WiserItemDetail} receiver ON receiver.item_id = i.id AND receiver.`key` = 'userid' [if({{receiver_has_filter}}=1)]AND receiver.`value` {{receiver_filter}}[endif] 
+                                    JOIN {WiserTableNames.WiserItemDetail} content ON content.item_id = i.id AND content.`key` = 'content' [if({{content_has_filter}}=1)]AND content.`value` {{content_filter}}[endif] 
 
                                     WHERE i.entity_type = 'agendering'";
 
@@ -335,7 +354,7 @@ namespace Api.Modules.Grids.Services
                                     {{sort}}
                                     {{limit}}";
 
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY due_date DESC");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY dueDate DESC", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -390,7 +409,7 @@ namespace Api.Modules.Grids.Services
                     countQuery = countQuery?.ReplaceCaseInsensitive("'{itemId}'", "?itemId");
                     selectQuery = selectQuery.ReplaceCaseInsensitive("{itemId}", "?itemId");
                     countQuery = countQuery?.ReplaceCaseInsensitive("{itemId}", "?itemId");
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (!String.IsNullOrWhiteSpace(countQuery) && (options?.FirstLoad ?? true))
@@ -420,10 +439,10 @@ namespace Api.Modules.Grids.Services
                 case EntityGridModes.SearchModule:
                 {
                     results.Columns.Add(new GridColumn {Field = "icon", Title = "&nbsp;", Filterable = false, Width = "70px", Template = "<div class='grid-icon #:icon# icon-bg-#:color#'></div>"});
-                    results.Columns.Add(new GridColumn {Field = "title", Title = "Titel", Template = "<strong>#: title #</strong><br><small>#: entity_type #</small>"});
-                    results.Columns.Add(new GridColumn {Field = "addedOn", Title = "Aangemaakt op", Format = "{0:dd MMMM yyyy}"});
-                    results.Columns.Add(new GridColumn {Field = "addedBy", Title = "Aangemaakt door"});
-                    results.Columns.Add(new GridColumn {Field = "moreInfo", Title = "Overige info"});
+                    results.Columns.Add(new GridColumn {Field = "title", Title = "Titel", Template = "<strong>#: title #</strong><br><small>#: entitytype #</small>"});
+                    results.Columns.Add(new GridColumn {Field = "addedon", Title = "Aangemaakt op", Format = "{0:dd MMMM yyyy}"});
+                    results.Columns.Add(new GridColumn {Field = "addedby", Title = "Aangemaakt door"});
+                    results.Columns.Add(new GridColumn {Field = "moreinfo", Title = "Overige info"});
 
                     if (options?.Filter?.Filters == null || !options.Filter.Filters.Any())
                     {
@@ -747,7 +766,7 @@ namespace Api.Modules.Grids.Services
                     }
 
                     clientDatabaseConnection.AddParameter("userId", userId);
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY due_date DESC");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY due_date DESC", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     clientDatabaseConnection.AddParameter("entityType", entityType.Equals("all", StringComparison.OrdinalIgnoreCase) ? "" : entityType);
@@ -773,7 +792,7 @@ namespace Api.Modules.Grids.Services
                     results.Columns.Add(new GridColumn {Field = "value", Title = "Waarde"});
                     if (String.IsNullOrWhiteSpace(results.LanguageCode))
                     {
-                        results.Columns.Add(new GridColumn {Field = "languageCode", Title = "Taalcode", Width = "100px"});
+                        results.Columns.Add(new GridColumn {Field = "languagecode", Title = "Taalcode", Width = "100px"});
                     }
 
                     results.Columns.Add(new GridColumn {Field = "command", Title = "&nbsp;", Width = "120px", Command = new List<string> {"destroy"}});
@@ -781,7 +800,7 @@ namespace Api.Modules.Grids.Services
                     results.SchemaModel.Fields.Add("id", new FieldModel {Editable = false, Type = "number", Nullable = false});
                     results.SchemaModel.Fields.Add("key", new FieldModel {Editable = true, Type = "string", Nullable = false});
                     results.SchemaModel.Fields.Add("value", new FieldModel {Editable = true, Type = "string", Nullable = true});
-                    results.SchemaModel.Fields.Add("languageCode", new FieldModel {Editable = true, Type = "string", Nullable = true});
+                    results.SchemaModel.Fields.Add("languagecode", new FieldModel {Editable = true, Type = "string", Nullable = true});
 
                     hasPredefinedSchema = true;
 
@@ -824,7 +843,7 @@ namespace Api.Modules.Grids.Services
                                 {{sort}}
                                 {{limit}}";
 
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY language_code ASC, `key` ASC");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY language_code ASC, `key` ASC", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -846,25 +865,25 @@ namespace Api.Modules.Grids.Services
                         var filterable = new Dictionary<string, object> {{"extra", true}};
                         results.Columns.Add(new GridColumn {Selectable = true, Width = "55px"});
                         results.Columns.Add(new GridColumn {Field = "id", Title = "ID", Width = "80px", Filterable = filterable});
-                        results.Columns.Add(new GridColumn {Field = "linkId", Title = "Koppel-ID", Width = "55px", Filterable = filterable});
-                        results.Columns.Add(new GridColumn {Field = "entityType", Title = "Type", Width = "100px", Filterable = filterable, Template = "#: window.dynamicItems.getEntityTypeFriendlyName(entityType) #"});
-                        results.Columns.Add(new GridColumn {Field = "publishedEnvironment", Title = "Gepubliceerde omgeving", Width = "50px", Template = "<ins title='#: publishedEnvironment #' class='icon-#: publishedEnvironment #'></ins>"});
+                        results.Columns.Add(new GridColumn {Field = "linkid", Title = "Koppel-ID", Width = "55px", Filterable = filterable});
+                        results.Columns.Add(new GridColumn {Field = "entitytype", Title = "Type", Width = "100px", Filterable = filterable, Template = "#: window.dynamicItems.getEntityTypeFriendlyName(entitytype) #"});
+                        results.Columns.Add(new GridColumn {Field = "publishedenvironment", Title = "Gepubliceerde omgeving", Width = "50px", Template = "<ins title='#: publishedenvironment #' class='icon-#: publishedenvironment #'></ins>"});
                         results.Columns.Add(new GridColumn {Field = "title", Title = "Naam", Filterable = filterable});
                     }
 
                     hasPredefinedSchema = true;
                     results.SchemaModel.Fields.Add("id", new FieldModel {Editable = false, Type = "number", Nullable = false});
-                    results.SchemaModel.Fields.Add("encryptedId", new FieldModel {Editable = false, Type = "string", Nullable = false});
-                    results.SchemaModel.Fields.Add("uniqueUuid", new FieldModel {Editable = false, Type = "string", Nullable = false});
-                    results.SchemaModel.Fields.Add("entityType", new FieldModel {Type = "string"});
-                    results.SchemaModel.Fields.Add("publishedEnvironment", new FieldModel {Type = "number"});
+                    results.SchemaModel.Fields.Add("encryptedid", new FieldModel {Editable = false, Type = "string", Nullable = false});
+                    results.SchemaModel.Fields.Add("uniqueuuid", new FieldModel {Editable = false, Type = "string", Nullable = false});
+                    results.SchemaModel.Fields.Add("entitytype", new FieldModel {Type = "string"});
+                    results.SchemaModel.Fields.Add("publishedenvironment", new FieldModel {Type = "number"});
                     results.SchemaModel.Fields.Add("title", new FieldModel {Type = "string"});
-                    results.SchemaModel.Fields.Add("linkTypeNumber", new FieldModel {Type = "number"});
-                    results.SchemaModel.Fields.Add("linkId", new FieldModel {Type = "number", Editable = false});
-                    results.SchemaModel.Fields.Add("addedOn", new FieldModel {Type = "date", Editable = false});
-                    results.SchemaModel.Fields.Add("addedBy", new FieldModel {Type = "string", Editable = false});
-                    results.SchemaModel.Fields.Add("changedOn", new FieldModel {Type = "date", Editable = false});
-                    results.SchemaModel.Fields.Add("changedBy", new FieldModel {Type = "string", Editable = false});
+                    results.SchemaModel.Fields.Add("linktypenumber", new FieldModel {Type = "number"});
+                    results.SchemaModel.Fields.Add("linkid", new FieldModel {Type = "number", Editable = false});
+                    results.SchemaModel.Fields.Add("addedon", new FieldModel {Type = "date", Editable = false});
+                    results.SchemaModel.Fields.Add("addedby", new FieldModel {Type = "string", Editable = false});
+                    results.SchemaModel.Fields.Add("changedon", new FieldModel {Type = "date", Editable = false});
+                    results.SchemaModel.Fields.Add("changedby", new FieldModel {Type = "string", Editable = false});
                     results.SchemaModel.Fields.Add(WiserItemsService.LinkOrderingFieldName, new FieldModel {Type = "number", Nullable = false});
 
                     await itemsService.FixTreeViewOrderingAsync(moduleId, identity, encryptedId, linkTypeNumber);
@@ -872,7 +891,6 @@ namespace Api.Modules.Grids.Services
                     var columnsQuery = $@"SELECT  
 	                                        IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name) AS field,
                                             p.display_name AS title,
-                                            p.overview_fieldtype AS fieldType,
                                             p.overview_width AS width,
                                             p.inputtype,
                                             p.options,
@@ -892,12 +910,17 @@ namespace Api.Modules.Grids.Services
                     clientDatabaseConnection.AddParameter("entityType", entityType);
                     clientDatabaseConnection.AddParameter("linkTypeNumber", linkTypeNumber);
                     var columnsDataTable = await clientDatabaseConnection.GetAsync(columnsQuery);
-
+                    var reservedWordsArray = new[] { "abstract","arguments","await","boolean","break","byte","case","catch","char","class","const","continue","debugger","default","delete","do","double","else","enum","eval","export","extends","false","final","finally","float","for","function","goto","if","implements","import","in","instanceof","int","interface","let","long","native","new","null","package","private","protected","public","return","short","static","super","switch","synchronized","this","throw","throws","transient","true","try","typeof","var","void","volatile","while","with","yield" };
+                    
                     if (columnsDataTable.Rows.Count > 0)
                     {
                         foreach (DataRow dataRow in columnsDataTable.Rows)
                         {
                             var fieldName = dataRow.Field<string>("field").ToLowerInvariant().MakeJsonPropertyName();
+                            if (reservedWordsArray.Contains(fieldName))
+                            {
+                                throw new Exception( $"{fieldName}(variable: fieldName) is a reserved Javascript keyword");
+                            }
 
                             var field = new FieldModel
                             {
@@ -917,7 +940,7 @@ namespace Api.Modules.Grids.Services
                             var column = new GridColumn
                             {
                                 Field = fieldName,
-                                Width = dataRow.IsNull("width") ? "" : dataRow["width"].ToString(),
+                                Width = dataRow.IsNull("width") ? "" : $"{dataRow["width"]}px",
                                 Title = dataRow.Field<string>("title"),
                                 DataQuery = dataRow.Field<string>("data_query"),
                                 IsLinkProperty = Convert.ToBoolean(dataRow["isLinkProperty"])
@@ -1063,10 +1086,10 @@ namespace Api.Modules.Grids.Services
 
                     if (!hasColumnsFromOptions)
                     {
-                        results.Columns.Add(new GridColumn {Field = "addedOn", Title = "Toegevoegd op", Width = "150px", Format = "{0:dd-MM-yyyy HH:mm:ss}", Hidden = true});
-                        results.Columns.Add(new GridColumn {Field = "addedBy", Title = "Toegevoegd door", Width = "100px", Hidden = true});
-                        results.Columns.Add(new GridColumn {Field = "changedOn", Title = "Gewijzigd op", Width = "150px", Format = "{0:dd-MM-yyyy HH:mm:ss}", Hidden = true});
-                        results.Columns.Add(new GridColumn {Field = "changedBy", Title = "Gewijzigd door", Width = "100px", Hidden = true});
+                        results.Columns.Add(new GridColumn {Field = "addedon", Title = "Toegevoegd op", Width = "150px", Format = "{0:dd-MM-yyyy HH:mm:ss}", Hidden = true});
+                        results.Columns.Add(new GridColumn {Field = "addedby", Title = "Toegevoegd door", Width = "100px", Hidden = true});
+                        results.Columns.Add(new GridColumn {Field = "changedon", Title = "Gewijzigd op", Width = "150px", Format = "{0:dd-MM-yyyy HH:mm:ss}", Hidden = true});
+                        results.Columns.Add(new GridColumn {Field = "changedby", Title = "Gewijzigd door", Width = "100px", Hidden = true});
                     }
 
                     // Build the queries.
@@ -1131,7 +1154,7 @@ namespace Api.Modules.Grids.Services
                                                 SELECT 
 	                                                i.id,
 	                                                i.id AS encryptedId_encrypt_withdate,
-                                                    i.originalItemId,
+                                                    i.original_item_id AS originalItemId,
 	                                                i.title,
                                                     CASE i.published_environment
     	                                                WHEN 0 THEN 'onzichtbaar'
@@ -1166,9 +1189,9 @@ namespace Api.Modules.Grids.Services
                                                 {{limit}}
                                             ) AS i
 
-                                            {String.Format(versionJoinClause, "")}
+                                            {String.Format(subQueryVersionJoinClause, "")}
 
-                                            LEFT JOIN {WiserTableNames.WiserEntityProperty} p ON p.entity_name = i.entity_type AND p.visible_in_overview = 1
+                                            LEFT JOIN {WiserTableNames.WiserEntityProperty} p ON p.entity_name = i.entityType AND p.visible_in_overview = 1
                                             LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} id ON id.item_id = i.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` = p.property_name) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` = p.display_name))
                                             LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} idt ON idt.item_id = i.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND idt.`key` = CONCAT(p.property_name, '_input')) OR ((p.property_name IS NULL OR p.property_name = '') AND idt.`key` = CONCAT(p.display_name, '_input')))
 
@@ -1366,7 +1389,7 @@ namespace Api.Modules.Grids.Services
                     }
 
                     var defaultSorting = mode == EntityGridModes.LinkOverview ? "ORDER BY i.title ASC" : $"ORDER BY {WiserItemsService.LinkOrderingFieldName} ASC, title ASC";
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, defaultSorting);
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, defaultSorting, tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -1469,11 +1492,7 @@ namespace Api.Modules.Grids.Services
 
                     foreach (DataColumn dataColumn in dataTable.Columns)
                     {
-                        var columnName = dataColumn.ColumnName.Replace("_encrypt_withdate", "").Replace("_encrypt", "").Replace("_hide", "").MakeJsonPropertyName();
-                        if (mode == EntityGridModes.CustomQuery)
-                        {
-                            columnName = columnName.ToLowerInvariant();
-                        }
+                        var columnName = dataColumn.ColumnName.ToLowerInvariant().Replace("_encrypt_withdate", "").Replace("_encrypt", "").Replace("_hide", "").MakeJsonPropertyName();
 
                         if (dataColumn.ColumnName.Contains("_encrypt", StringComparison.OrdinalIgnoreCase)
                             || dataColumn.ColumnName.Contains("_encrypt_hide", StringComparison.OrdinalIgnoreCase)
@@ -1729,8 +1748,11 @@ namespace Api.Modules.Grids.Services
             string countQuery,
             ClaimsIdentity identity,
             string defaultSort = null,
-            List<FieldMapModel> fieldMappings = null)
+            List<FieldMapModel> fieldMappings = null,
+            string tablePrefix = null)
         {
+            tablePrefix ??= "";
+            
             // Note that this function contains ' ?? ""' after every ReplaceCaseInsensitive. This is because that function returns null if the input string is an empty string, which would cause lots of problems in the rest of the code.
             fieldMappings ??= new List<FieldMapModel>();
             
@@ -1939,7 +1961,7 @@ namespace Api.Modules.Grids.Services
                         }
                         else
                         {
-                            filtersQuery.AppendLine($"JOIN {WiserTableNames.WiserItemDetail} AS `idv{counter}` ON `idv{counter}`.item_id = `{itemTableAlias}`.id AND `idv{counter}`.`key` = '{fieldName}' AND ({valueSelector} {@operator} {parameterInWhere} OR {longValueSelector} {@operator} {parameterInWhere})");
+                            filtersQuery.AppendLine($"JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} AS `idv{counter}` ON `idv{counter}`.item_id = `{itemTableAlias}`.id AND `idv{counter}`.`key` = '{fieldName}' AND ({valueSelector} {@operator} {parameterInWhere} OR {longValueSelector} {@operator} {parameterInWhere})");
                         }
                     }
 
@@ -1993,7 +2015,7 @@ namespace Api.Modules.Grids.Services
 
                             fieldName = fieldName.ToMySqlSafeValue(false);
 
-                            joinsForSorting.AppendLine($"LEFT JOIN {WiserTableNames.WiserItemDetail} AS `{fieldName}` ON `{fieldName}`.item_id = `{itemTableAlias}`.id AND `{fieldName}`.`key` = '{fieldName}'");
+                            joinsForSorting.AppendLine($"LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} AS `{fieldName}` ON `{fieldName}`.item_id = `{itemTableAlias}`.id AND `{fieldName}`.`key` = '{fieldName}'");
                         }
 
                         selectQuery = selectQuery.ReplaceCaseInsensitive("{joinsForSorting}", joinsForSorting.ToString());
@@ -2059,7 +2081,7 @@ namespace Api.Modules.Grids.Services
             }
 
             // Remove any left over variables that we can't use and handle [if] statements.
-            var regex = new Regex("{[^}]*}");
+            var regex = new Regex("{[^}]*}", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
             selectQuery = regex.Replace(selectQuery, "");
             countQuery = regex.Replace(countQuery, "");
 
@@ -2431,7 +2453,7 @@ namespace Api.Modules.Grids.Services
 
             var userId = IdentityHelpers.GetWiserUserId(identity);
             query = query.ReplaceCaseInsensitive("{userId}", userId.ToString());
-            query = query.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity) ?? "");
+            query = query.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity, true) ?? "");
             query = query.ReplaceCaseInsensitive("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
             query = query.ReplaceCaseInsensitive("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
             query = query.ReplaceCaseInsensitive("{encryptedId}", encryptedId);

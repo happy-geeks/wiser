@@ -17,7 +17,7 @@ const exportModuleSettings = {
      */
     class Export {
         /**
-         * Initializes a new instance of AisDashboard.
+         * Initializes a new instance of Export.
          * @param {any} settings An object containing the settings for this class.
          */
         constructor(settings) {
@@ -92,7 +92,7 @@ const exportModuleSettings = {
             
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
             
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
@@ -106,7 +106,7 @@ const exportModuleSettings = {
             this.setupBindings();
 
             this.initializeKendoWindows();
-            this.initializeKendoComponents(this.exportHtml);
+            await this.initializeKendoComponents(this.exportHtml);
 
             this.toggleMainLoader(false);
         }
@@ -128,9 +128,9 @@ const exportModuleSettings = {
             this.startExportButton.addEventListener("click", this.performExport.bind(this));
 
             if (!window.importExport) {
-                $(document).on("moduleClosing", (e) => {
+                document.addEventListener("moduleClosing", (event) => {
                     // You can do anything here that needs to happen before closing the module.
-                    e.success();
+                    event.detail();
                 });
             }
         }

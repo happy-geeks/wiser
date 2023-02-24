@@ -11,7 +11,7 @@ import "../css/DataSelector.css";
 const moduleSettings = {
 };
 
-((jQuery, moduleSettings) => {
+((moduleSettings) => {
     class DataSelector {
         constructor(settings) {
             kendo.culture("nl-NL");
@@ -40,11 +40,13 @@ const moduleSettings = {
             this.selectedEntityType = "";
 
             // Saving and loading.
+            this.currentId = 0;
             this.currentName = "";
             this.dataLoad = new DataLoad(this);
 
             // Other.
             this.mainLoader = null;
+            this.dialogZindex = 20000;
 
             // Fire event on page ready for direct actions
             document.addEventListener("DOMContentLoaded", () => {
@@ -89,9 +91,9 @@ const moduleSettings = {
 
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
-          
+
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
@@ -154,6 +156,7 @@ const moduleSettings = {
 
         setBindings() {
             const exportModeCheckbox = document.getElementById("useExportMode");
+            const showInDashboardCheckbox = document.getElementById("showInDashboard");
             const newButton = document.getElementById("newButton");
             const saveButton = document.getElementById("saveButton");
             const loadButton = document.getElementById("loadButton");
@@ -180,6 +183,9 @@ const moduleSettings = {
                         exportModeCheckbox.checked = !exportModeCheckbox.checked;
                     });
                 });
+            }
+            if (showInDashboardCheckbox) {
+                showInDashboardCheckbox.addEventListener("change", this.checkForDashboardConflict.bind(this));
             }
 
             if (newButton) {
@@ -374,9 +380,9 @@ const moduleSettings = {
                 this.handleWindowMessage(e.data);
             });
 
-            $(document).on("moduleClosing", (e) => {
+            document.addEventListener("moduleClosing", (event) => {
                 // You can do anything here that needs to happen before closing the module.
-                e.success();
+                event.detail();
             });
         }
 
@@ -412,7 +418,7 @@ const moduleSettings = {
                         value: "treeview",
                         entityName: "",
                         displayName: "Treeview",
-                        languageCode: "",
+                        languageCode: [],
                         aggregation: "",
                         formatting: "",
                         fieldAlias: "",
@@ -674,12 +680,19 @@ const moduleSettings = {
                     tempArray = [];
                     const selectDetails = $(item.querySelector("select.select-details")).getKendoMultiSelect();
                     selectDetails.dataItems().forEach((dataItem) => {
+                        const languageCodes = [];
+                        if (typeof dataItem.languageCode === "string") {
+                            languageCodes.push(dataItem.languageCode);
+                        } else {
+                            languageCodes.push(...Array.from(dataItem.languageCode));
+                        }
+
                         const newItem = {
                             fieldname: dataItem.propertyName,
                             fieldalias: dataItem.fieldAlias,
                             dataType: dataItem.dataType || "string",
                             havingDataType: dataItem.havingDataType || "string",
-                            languagecode: dataItem.languageCode,
+                            languageCodes: languageCodes,
                             aggregationfunction: dataItem.aggregation,
                             formatting: dataItem.formatting
                         };
@@ -688,12 +701,19 @@ const moduleSettings = {
                             const subTempArray = [];
 
                             dataItem.subSelection.fields.forEach((subDataItem) => {
+                                const languageCodes = [];
+                                if (typeof subDataItem.languageCode === "string") {
+                                    languageCodes.push(subDataItem.languageCode);
+                                } else {
+                                    languageCodes.push(...Array.from(subDataItem.languageCode));
+                                }
+
                                 subTempArray.push({
                                     fieldname: subDataItem.propertyName,
                                     fieldalias: subDataItem.fieldAlias,
                                     dataType: subDataItem.dataType || "string",
                                     havingDataType: subDataItem.havingDataType || "string",
-                                    languagecode: subDataItem.languageCode,
+                                    languageCodes: languageCodes,
                                     aggregationfunction: subDataItem.aggregation,
                                     formatting: subDataItem.formatting
                                 });
@@ -815,7 +835,7 @@ const moduleSettings = {
                     }
 
                     let value;
-                    if (getComputedStyle(scope.querySelector("div.scope-value-select")).display !== "none") {
+                    if (getComputedStyle(scope.querySelector("span.scope-value-select")).display !== "none") {
                         value = $(scope).find("select.scope-value-select").getKendoMultiSelect().value();
                     } else if (getComputedStyle(scope.querySelector("div.free-input")).display !== "none") {
                         value = scope.querySelector("div.free-input > input").value;
@@ -832,10 +852,17 @@ const moduleSettings = {
                     }
 
                     if (!forSaving) {
+                        const languageCodes = [];
+                        if (typeof dataItem.languageCode === "string") {
+                            languageCodes.push(dataItem.languageCode);
+                        } else {
+                            languageCodes.push(...Array.from(dataItem.languageCode));
+                        }
+
                         scopeSection[rowsArrayName].push({
                             key: {
                                 fieldname: fieldName,
-                                languagecode: dataItem.languageCode,
+                                languageCodes: languageCodes,
                                 dataType: dataItem.dataType || "string",
                                 havingDataType: dataItem.havingDataType || "string",
                                 aggregationfunction: forHaving ? dataItem.havingAggregation : dataItem.aggregation,
@@ -845,6 +872,13 @@ const moduleSettings = {
                             value: value
                         });
                     } else {
+                        const languageCodes = [];
+                        if (typeof dataItem.languageCode === "string") {
+                            languageCodes.push(dataItem.languageCode);
+                        } else {
+                            languageCodes.push(...Array.from(dataItem.languageCode));
+                        }
+
                         scopeSection[rowsArrayName].push({
                             key: {
                                 entityName: dataItem.entityName,
@@ -852,7 +886,7 @@ const moduleSettings = {
                                 fieldAlias: dataItem.fieldAlias,
                                 dataType: dataItem.dataType || "string",
                                 havingDataType: dataItem.havingDataType || "string",
-                                languageCode: dataItem.languageCode,
+                                languageCodes: languageCodes,
                                 aggregation: forHaving ? dataItem.havingAggregation : dataItem.aggregation,
                                 formatting: forHaving ? dataItem.havingFormatting : dataItem.formatting
                             },
@@ -933,12 +967,19 @@ const moduleSettings = {
                                 tempArray = [];
                                 const selectDetails = $(item.querySelector("select.select-details")).getKendoMultiSelect();
                                 Array.from(selectDetails.dataItems()).forEach((dataItem) => {
+                                    const languageCodes = [];
+                                    if (typeof dataItem.languageCode === "string") {
+                                        languageCodes.push(dataItem.languageCode);
+                                    } else {
+                                        languageCodes.push(...Array.from(dataItem.languageCode));
+                                    }
+
                                     const newItem = {
                                         fieldname: dataItem.propertyName,
                                         fieldalias: dataItem.fieldAlias,
                                         dataType: dataItem.dataType || "string",
                                         havingDataType: dataItem.havingDataType || "string",
-                                        languagecode: dataItem.languageCode,
+                                        languageCodes: languageCodes,
                                         aggregationfunction: dataItem.aggregation,
                                         formatting: dataItem.formatting
                                     };
@@ -947,12 +988,19 @@ const moduleSettings = {
                                         const subTempArray = [];
 
                                         dataItem.subSelection.fields.forEach((subDataItem) => {
+                                            const languageCodes = [];
+                                            if (typeof dataItem.languageCode === "string") {
+                                                languageCodes.push(subDataItem.languageCode);
+                                            } else {
+                                                languageCodes.push(...Array.from(subDataItem.languageCode));
+                                            }
+
                                             subTempArray.push({
                                                 fieldname: subDataItem.propertyName,
                                                 fieldalias: subDataItem.fieldAlias,
                                                 dataType: subDataItem.dataType || "string",
                                                 havingDataType: subDataItem.havingDataType || "string",
-                                                languagecode: subDataItem.languageCode,
+                                                languageCodes: languageCodes,
                                                 aggregationfunction: subDataItem.aggregation,
                                                 formatting: subDataItem.formatting
                                             });
@@ -1043,7 +1091,10 @@ const moduleSettings = {
                 requestJson: JSON.stringify(this.createJsonRequest()),
                 savedJson: JSON.stringify(this.createJsonRequest(true)),
                 showInExportModule: document.getElementById("showInExportModule").checked ? 1 : 0,
-                availableForRendering: document.getElementById("availableForRendering").checked ? 1 : 0
+                showInCommunicationModule: document.getElementById("showInCommunicationModule").checked ? 1 : 0,
+                availableForRendering: document.getElementById("availableForRendering").checked ? 1 : 0,
+                showInDashboard: document.getElementById("showInDashboard").checked ? 1 : 0,
+                allowedRoles: this.allowedRoles.value().join()
             };
 
             const saveResult = await Wiser.api({
@@ -1061,9 +1112,13 @@ const moduleSettings = {
                 dropdown.getKendoDropDownList().dataSource.read();
             }
 
+            // Remember current ID and name.
+            this.currentId = saveResult;
+            this.currentName = name;
+
             // Set ID and name in header.
             const header = document.getElementById("dataSelectorId");
-            header.querySelector("h3 > label").innerHTML = `${name} (ID: ${saveResult})`;
+            header.querySelector("h3 > label").innerHTML = `${this.currentName} (ID: ${this.currentId})`;
             header.style.display = "";
 
             // Trigger save event. This event can be used on places that load the data selector in an iframe, such as the module DynamicItems.
@@ -1353,16 +1408,16 @@ const moduleSettings = {
                     switch (value) {
                         case "is equal to":
                         case "is not equal to":
-                            dbInput.find("div.scope-value-select").show();
+                            dbInput.find("span.scope-value-select").show();
                             dbInput.find("div.free-input").hide();
                             break;
                         case "is empty":
                         case "is not empty":
-                            dbInput.find("div.scope-value-select").hide();
+                            dbInput.find("span.scope-value-select").hide();
                             dbInput.find("div.free-input").hide();
                             break;
                         default:
-                            dbInput.find("div.scope-value-select").hide();
+                            dbInput.find("span.scope-value-select").hide();
                             dbInput.find("div.free-input").show();
                             break;
                     }
@@ -1490,6 +1545,7 @@ const moduleSettings = {
                 closeEditor();
                 return;
             }
+
             // Save current value.
             itemProperties.data("currentValue", dataItem.value);
 
@@ -1512,17 +1568,47 @@ const moduleSettings = {
             }
 
             if (languageCodeField.length > 0) {
-                const languageCode = languageCodeField.getKendoComboBox();
+                const languageCode = languageCodeField.getKendoMultiSelect();
+                languageCode.bind("change", (event) => {
+                    itemProperties.find("div.havingDataTypeWrapper, div.aggregationWrapper, div.formattingWrapper, div.fieldAliasWrapper, div.isItemIdWrapper, div.subSelectionWrapper").toggleClass("hidden", event.sender.value().length > 1);
+                });
 
                 // Update language codes.
-                Wiser.api({ url: `${this.settings.serviceRoot}/GET_LANGUAGE_CODES?entityName=${dataItem.entityName || ""}&linkType=${dataItem.linkType || "0"}&propertyName=${dataItem.propertyName}` }).then((response) => {
+                try {
+                    const languageCodesData = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_LANGUAGE_CODES?entityName=${dataItem.entityName || ""}&linkType=${dataItem.linkType || "0"}&propertyName=${dataItem.propertyName}` });
+                    console.log("languageCodesData", languageCodesData);
                     languageCode.setDataSource({
-                        data: [...response]
-                    });
+                        data: [...languageCodesData]
+                    })
+
+                    if (dataItem.languageCode) {
+                        if (typeof dataItem.languageCode === "string") {
+                            // Old method; single string value.
+                            languageCode.value(dataItem.languageCode || "");
+                        } else {
+                            // New method; array with language codes.
+                            const selectedLanguageCodes = Array.from(dataItem.languageCode);
+
+                            // Check if there are custom language codes in the array which should be added first.
+                            selectedLanguageCodes.forEach((lc) => {
+                                if (languageCodesData.findIndex((item) => item.value === lc) === -1) {
+                                    // Custom language code; add it first.
+                                    languageCode.dataSource.add({ text: lc, value: lc });
+                                }
+                            });
+
+                            languageCode.value(selectedLanguageCodes);
+                        }
+                    }
 
                     // Set current language code.
                     languageCode.value(dataItem.languageCode || "");
-                });
+                    if (languageCode.value().length > 1) {
+                        itemProperties.find("div.havingDataTypeWrapper, div.aggregationWrapper, div.formattingWrapper, div.fieldAliasWrapper, div.isItemIdWrapper, div.subSelectionWrapper").addClass("hidden");
+                    }
+                } catch (e) {
+                    console.error("Error while trying to update language codes", e);
+                }
             }
 
             // Update values.
@@ -1590,7 +1676,7 @@ const moduleSettings = {
                 }
 
                 if (languageCodeField.length > 0) {
-                    const languageCode = languageCodeField.getKendoComboBox();
+                    const languageCode = languageCodeField.getKendoMultiSelect();
                     dataItem.set("languageCode", languageCode.value());
                 }
 
@@ -1633,6 +1719,10 @@ const moduleSettings = {
                 dialog.title(`Eigenschappen van '${dataItem.displayName}'`);
             }
             dialog.open();
+
+            // Increase z-index, because otherwise the k-animation-container of the multiselect will be painted on top of this dialog, causing you to not be able to click everything in the dialog.
+            this.dialogZindex++;
+            dialog.wrapper.css("z-index", this.dialogZindex);
         }
 
         /**
@@ -1713,9 +1803,9 @@ const moduleSettings = {
             }
 
             // Clicking on the tags.
-            subPropertySelectWidget.wrapper.on("click", "li.k-button", (e) => {
+            subPropertySelectWidget.wrapper.find("div.k-chip-list").on("click", "span.k-chip", (e) => {
                 const clickedElement = $(e.target);
-                if (clickedElement.has(".k-i-close").length > 0 || clickedElement.closest(".k-i-close").length > 0) {
+                if (clickedElement.closest("span.k-chip-remove-action").length > 0) {
                     return;
                 }
 
@@ -1874,6 +1964,19 @@ const moduleSettings = {
                 }
             });
 
+            this.allowedRoles = $("#allowedRoles").kendoMultiSelect({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: `${this.settings.serviceRoot}/GET_ROLES`
+                        }
+                    }
+                },
+                dataTextField: "roleName",
+                dataValueField: "id",
+                multiple: "multiple"
+            }).data("kendoMultiSelect");
+
             //TREEVIEW
             context.querySelectorAll(".checkTree").forEach((e) => {
                 const element = $(e);
@@ -1912,8 +2015,8 @@ const moduleSettings = {
 
             const onDataBound = (e) => {
                 const element = e.sender.element.closest(".k-multiselect");
-                element.find(".k-input").off("keyup");
-                element.find(".k-input").on("keyup", { widget: e.sender }, onClickEnter);
+                element.find(".k-input-inner").off("keyup");
+                element.find(".k-input-inner").on("keyup", { widget: e.sender }, onClickEnter);
             };
 
             return Object.assign(options, {
@@ -1957,7 +2060,7 @@ const moduleSettings = {
                 widgetElement.data("canOpen", false);
             });
             widget.wrapper.on("click", (e) => {
-                if (e.target.closest("li.k-button, span.tagListItem") !== null) {
+                if (e.target.closest("span.k-chip") !== null) {
                     widget.close();
                     return;
                 }
@@ -1998,7 +2101,7 @@ const moduleSettings = {
          * @param {HTMLElement | Document | jQuery} context The context, which can be a DOM element, Document, or jQuery object.
          */
         destroyChildKendoWidgets(context) {
-            if (!(context instanceof HTMLElement) && !(context instanceof HTMLDocument) && !(context instanceof jQuery)) {
+            if (!(context instanceof HTMLElement) && !(context instanceof Document) && !(context instanceof $)) {
                 return;
             }
 
@@ -2022,7 +2125,27 @@ const moduleSettings = {
                 kendoWidget.destroy();
             });
         }
+
+        /**
+         * Checks if there's a data selector that has "show in dashboard" already enabled. This will only occur if the
+         * checkbox for "show in dashboard" is be enabled.
+         */
+        async checkForDashboardConflict(event) {
+            if (!event.currentTarget.checked) return;
+
+            const result = await Wiser.api({
+                url: `${this.settings.wiserApiRoot}data-selectors/${this.currentId}/check-dashboard-conflict`,
+                method: "GET"
+            });
+
+            if (!result) return;
+
+            Wiser.alert({
+                title: "Andere data selector in gebruik",
+                content: `De data selector '${result}' wordt al gebruikt om te tonen in het dashboard. Als u deze data selector opslaat, dan zal '${result}' niet meer gebruikt worden in het dashboard.`
+            });
+        }
     }
 
     window.dataSelector = new DataSelector(moduleSettings);
-})($, moduleSettings);
+})(moduleSettings);

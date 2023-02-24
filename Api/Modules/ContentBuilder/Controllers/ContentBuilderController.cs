@@ -1,12 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Api.Modules.ContentBuilder.Interfaces;
 using Api.Modules.ContentBuilder.Models;
+using Api.Modules.Customers.Models;
+using GeeksCoreLibrary.Core.Extensions;
+using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 
 namespace Api.Modules.ContentBuilder.Controllers
 {
@@ -21,13 +27,15 @@ namespace Api.Modules.ContentBuilder.Controllers
     public class ContentBuilderController : ControllerBase
     {
         private readonly IContentBuilderService contentBuilderService;
+        private readonly GclSettings gclSettings;
 
         /// <summary>
         /// Creates a new instance of <see cref="ContentBuilderController"/>.
         /// </summary>
-        public ContentBuilderController(IContentBuilderService contentBuilderService)
+        public ContentBuilderController(IContentBuilderService contentBuilderService, IOptions<GclSettings> gclSettings)
         {
             this.contentBuilderService = contentBuilderService;
+            this.gclSettings = gclSettings.Value;
         }
         
         /// <summary>
@@ -37,9 +45,33 @@ namespace Api.Modules.ContentBuilder.Controllers
         [HttpGet]
         [Route("snippets")]
         [ProducesResponseType(typeof(List<ContentBuilderSnippetModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetSnippetsAsync(bool isTest = false)
+        public async Task<IActionResult> GetSnippetsAsync()
         {
             return (await contentBuilderService.GetSnippetsAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Gets all templates for the content box. Templates are pieces of HTML that the user can add in the Content Box.
+        /// </summary>
+        /// <returns>A list with zero or more <see cref="ContentBuilderSnippetModel"/>.</returns>
+        [HttpGet]
+        [Route("templates")]
+        [ProducesResponseType(typeof(List<ContentBuilderSnippetModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetTemplatesAsync()
+        {
+            return (await contentBuilderService.GetTemplatesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Gets all categories for templates for the content box. Templates are pieces of HTML that the user can add in the Content Box.
+        /// </summary>
+        /// <returns>A list with zero or more <see cref="ContentBuilderSnippetModel"/>.</returns>
+        [HttpGet]
+        [Route("template-categories")]
+        [ProducesResponseType(typeof(List<ContentBuilderSnippetModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetTemplateCategoriesAsync()
+        {
+            return (await contentBuilderService.GetTemplateCategoriesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -55,6 +87,42 @@ namespace Api.Modules.ContentBuilder.Controllers
         public async Task<IActionResult> GetHtmlAsync(ulong itemId, string languageCode = null, string propertyName = "html")
         {
             return (await contentBuilderService.GetHtmlAsync((ClaimsIdentity)User.Identity, itemId, languageCode, propertyName)).GetHttpResponseMessage(MediaTypeNames.Text.Html);
+        }
+
+        /// <summary>
+        /// Gets the framework to use for the content builder.
+        /// </summary>
+        /// <returns>The name of the framework to use.</returns>
+        [HttpGet]
+        [Route("framework")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetFrameworkAsync()
+        {
+            return (await contentBuilderService.GetFrameworkAsync()).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Gets the template javascript file for the ContentBox so that the tenant's templates can be used in the ContentBox.
+        /// </summary>
+        /// <returns>A string with the contents of the javascript file.</returns>
+        [HttpGet]
+        [Route("template.js")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "text/javascript")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetTemplateJavascriptFileAsync([FromQuery] CustomerInformationModel customerInformation)
+        {
+            // Create a ClaimsIdentity based on query parameters instead the Identity from the bearer token due to being called from an image source where no headers can be set.
+            var userId = String.IsNullOrWhiteSpace(customerInformation.encryptedUserId) ? 0 : Int32.Parse(customerInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+                new Claim(ClaimTypes.GroupSid, customerInformation.subDomain ?? "")
+            };
+            var dummyClaimsIdentity = new ClaimsIdentity(claims);
+            //Set the sub domain for the database connection.
+            HttpContext.Items[HttpContextConstants.SubDomainKey] = customerInformation.subDomain;
+            
+            return (await contentBuilderService.GetTemplateJavascriptFileAsync(dummyClaimsIdentity)).GetHttpResponseMessage("text/javascript");
         }
     }
 }

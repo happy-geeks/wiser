@@ -12,6 +12,11 @@
         public string Channel { get; set; }
 
         /// <summary>
+        /// Gets or sets the name of the event that Pusher will trigger.
+        /// </summary>
+        public string EventName { get; set; }
+
+        /// <summary>
         /// Gets or sets the event data of the message.
         /// </summary>
         public object EventData { get; set; }
@@ -25,5 +30,10 @@
         /// Gets or sets the ID of the user to send the message to.
         /// </summary>
         public ulong UserId { get; set; }
+
+        /// <summary>
+        /// Whether the message is not meant for a specific user, but for all connected users.
+        /// </summary>
+        public bool IsGlobalMessage { get; set; }
     }
 }

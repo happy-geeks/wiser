@@ -50,7 +50,7 @@ namespace Api.Modules.Pusher.Services
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> SendMessageToUserAsync(string subDomain, PusherMessageRequestModel data)
         {
-            if (data == null || data.UserId == 0)
+            if (data == null || (data.UserId == 0 && !data.IsGlobalMessage))
             {
                 return new ServiceResult<bool>(false)
                 {
@@ -61,7 +61,7 @@ namespace Api.Modules.Pusher.Services
 
             if (String.IsNullOrWhiteSpace(data.Channel))
             {
-                data.Channel = "agendering";
+                data.Channel = "Wiser";
             }
 
             if (data.EventData == null)
@@ -81,8 +81,11 @@ namespace Api.Modules.Pusher.Services
                 Encrypted = true
             };
 
+            // Global messages do not fire events for a specific user.
+            var eventName = !String.IsNullOrWhiteSpace(data.EventName) ? data.EventName : data.IsGlobalMessage ? data.Channel : $"{data.Channel}_{pusherId}";
+
             var pusher = new PusherServer.Pusher(apiSettings.PusherAppId, apiSettings.PusherAppKey, apiSettings.PusherAppSecret, options);
-            var result = await pusher.TriggerAsync("Wiser", $"{data.Channel}_{pusherId}", data.EventData);
+            var result = await pusher.TriggerAsync(data.Channel, eventName, data.EventData);
             var success = (int)result.StatusCode >= 200 && (int)result.StatusCode < 300;
             return new ServiceResult<bool>(success)
             {

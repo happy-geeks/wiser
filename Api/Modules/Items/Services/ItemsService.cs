@@ -33,6 +33,7 @@ using GeeksCoreLibrary.Core.Services;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using GeeksCoreLibrary.Modules.Languages.Interfaces;
+using GeeksCoreLibrary.Modules.Objects.Interfaces;
 using Google.Cloud.Translation.V2;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -61,6 +62,7 @@ namespace Api.Modules.Items.Services
         private readonly ILanguagesService languagesService;
         private readonly IEntityPropertiesService entityPropertiesService;
         private readonly IGoogleTranslateService googleTranslateService;
+        private readonly IObjectsService objectsService;
 
         /// <summary>
         /// Creates a new instance of <see cref="ItemsService"/>.
@@ -78,7 +80,8 @@ namespace Api.Modules.Items.Services
                             IDatabaseHelpersService databaseHelpersService,
                             ILanguagesService languagesService,
                             IEntityPropertiesService entityPropertiesService,
-                            IGoogleTranslateService googleTranslateService)
+                            IGoogleTranslateService googleTranslateService,
+                            IObjectsService objectsService)
         {
             this.templatesService = templatesService;
             this.wiserCustomersService = wiserCustomersService;
@@ -94,6 +97,7 @@ namespace Api.Modules.Items.Services
             this.languagesService = languagesService;
             this.entityPropertiesService = entityPropertiesService;
             this.googleTranslateService = googleTranslateService;
+            this.objectsService = objectsService;
         }
 
         /// <inheritdoc />
@@ -198,9 +202,9 @@ namespace Api.Modules.Items.Services
                     0 AS readonly,
                     CAST(JSON_ARRAYAGG(JSON_OBJECT(
                         'id', IFNULL(field.id, 0),
-                        'languageCode', field.language_code,
-                        'groupName', field.groupname,
-                        'key', IFNULL(property.property_name, property.display_name),
+                        'languageCode', IFNULL(field.language_code, property.language_code),
+                        'groupName', IFNULL(field.groupname, property.group_name),
+                        'key', COALESCE(field.`key`, property.property_name, property.display_name),
                         'value', CONCAT_WS('', field.value, field.long_value),
                         'displayName', IFNULL(property.display_name, '')
                     )) AS CHAR) AS fields
@@ -215,8 +219,7 @@ namespace Api.Modules.Items.Services
                         item.added_on,
                         item.added_by,
                         item.changed_on,
-                        item.changed_by,
-                        item.removed
+                        item.changed_by
                     FROM {WiserTableNames.WiserItem} AS item
 
                     {extraJoins}
@@ -240,7 +243,7 @@ namespace Api.Modules.Items.Services
                     LIMIT {(pagedRequest.Page - 1) * pagedRequest.PageSize}, {pagedRequest.PageSize}
                 ) AS x
                 LEFT JOIN {WiserTableNames.WiserEntityProperty} AS property ON property.entity_name = x.entity_type AND property.inputtype NOT IN ('file-upload', 'querybuilder', 'grid', 'button', 'image-upload', 'sub-entities-grid', 'item-linker', 'linked-item', 'action-button', 'data-selector', 'chart', 'scheduler', 'timeline', 'empty', 'qr')
-                LEFT JOIN {WiserTableNames.WiserItemDetail} AS field ON field.item_id = x.id AND field.`key` = IFNULL(property.property_name, property.display_name)
+                LEFT JOIN {WiserTableNames.WiserItemDetail} AS field ON field.item_id = x.id AND field.`key` = IFNULL(property.property_name, property.display_name) AND field.language_code = property.language_code
                 GROUP BY x.id
 				ORDER BY IFNULL(x.changed_on, x.added_on) DESC
             ";
@@ -313,7 +316,7 @@ namespace Api.Modules.Items.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
             var parentId = await wiserCustomersService.DecryptValue<ulong>(encryptedParentId, identity);
-            var username = IdentityHelpers.GetUserName(identity);
+            var username = IdentityHelpers.GetUserName(identity, true);
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
 
@@ -380,7 +383,7 @@ namespace Api.Modules.Items.Services
                 }
 
                 var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(item.EntityType);
-                var username = IdentityHelpers.GetUserName(identity);
+                var username = IdentityHelpers.GetUserName(identity, true);
                 var customer = await wiserCustomersService.GetSingleAsync(identity);
                 var encryptionKey = customer.ModelObject.EncryptionKey;
                 var allLinkSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
@@ -612,7 +615,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var username = IdentityHelpers.GetUserName(identity);
+            var username = IdentityHelpers.GetUserName(identity, true);
             var encryptionKey = customer.ModelObject.EncryptionKey;
 
             ulong parentId = 0;
@@ -661,7 +664,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var username = IdentityHelpers.GetUserName(identity);
+            var username = IdentityHelpers.GetUserName(identity, true);
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
             if (itemId <= 0)
             {
@@ -709,7 +712,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var username = IdentityHelpers.GetUserName(identity);
+            var username = IdentityHelpers.GetUserName(identity, true);
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
             if (itemId <= 0)
             {
@@ -753,7 +756,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var username = IdentityHelpers.GetUserName(identity);
+            var username = IdentityHelpers.GetUserName(identity, true);
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
             if (itemId <= 0)
             {
@@ -851,7 +854,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var username = IdentityHelpers.GetUserName(identity);
+            var username = IdentityHelpers.GetUserName(identity, true);
             var userEmailAddress = IdentityHelpers.GetEmailAddress(identity);
             var userType = IdentityHelpers.GetRoles(identity);
             var queryId = await wiserCustomersService.DecryptValue<int>(encryptedQueryId, identity);
@@ -1073,7 +1076,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                                 LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail}{{0}} d ON d.item_id = ?itemId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
                                 # TODO: Find a more efficient way to load images and files?
                                 LEFT JOIN (
-                                    SELECT item_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'added_on', added_on, 'content_url', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
+                                    SELECT item_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'addedOn', added_on, 'contentUrl', IFNULL(content_url, ''), 'extraData', extra_data) ORDER BY ordering ASC), ']') AS json
                                     FROM {wiserItemFileTable}{{0}}
                                     WHERE item_id = ?itemId
                                     GROUP BY property_name
@@ -1107,7 +1110,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                                 LEFT JOIN {linkTablePrefix}{WiserTableNames.WiserItemLinkDetail}{{0}} d ON d.itemlink_id = ?itemLinkId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
                                 # TODO: Find a more efficient way to load images and files?
                                 LEFT JOIN (
-                                    SELECT itemlink_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'added_on', added_on, 'content_url', IFNULL(content_url, '')) ORDER BY ordering ASC), ']') AS json
+                                    SELECT itemlink_id, property_name, CONCAT('[', GROUP_CONCAT(JSON_OBJECT('itemId', item_id, 'itemLinkId', itemlink_id, 'fileId', id, 'name', REPLACE(file_name, '/', '-'), 'title', title, 'extension', extension, 'size', IFNULL(OCTET_LENGTH(content), 0), 'addedOn', added_on, 'contentUrl', IFNULL(content_url, ''), 'extraData', extra_data) ORDER BY ordering ASC), ']') AS json
                                     FROM {wiserItemFileTableForLink}{{0}}
                                     WHERE itemlink_id = ?itemLinkId
                                     GROUP BY property_name
@@ -1307,7 +1310,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     filesJson = parsedFilesJson.ToString();
                     
                     // Fix the ordering of the files in this field, to prevent problems with changing the ordering later.
-                    await filesService.FixOrderingAsync(itemId, itemLinkId, propertyName);
+                    await filesService.FixOrderingAsync(itemId, itemLinkId, propertyName, identity);
                 }
 
                 var extraAttributes = "";
@@ -1510,6 +1513,8 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
                 defaultValue = defaultValue.Replace("{itemId}", itemId.ToString()).Replace("{userId}", userId.ToString());
 
+                var contentBuilderMode = await objectsService.GetSystemObjectValueAsync("ContentBuilder_Mode") ?? "";
+
                 // Replace values in html template.
                 if (!String.IsNullOrWhiteSpace(htmlTemplate))
                 {
@@ -1533,7 +1538,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         .Replace("{propertyId}", propertyId.ToString())
                         .Replace("{propertyIdWithSuffix}", propertyId + (propertyIdSuffix ?? ""))
                         .Replace("{propertyIdSuffix}", propertyIdSuffix ?? "")
-                        .Replace("{propertyName}", String.IsNullOrWhiteSpace(propertyName) ? displayName ?? "" : propertyName)
+                        .Replace("{propertyName}", String.IsNullOrWhiteSpace(propertyName) ? displayName ?? "" : propertyName.Trim())
                         .Replace("{extraAttribute}", extraAttributes)
                         .Replace("{itemId}", itemId.ToString())
                         .Replace("{style}", containerCss)
@@ -1565,6 +1570,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         .Replace("{containerCssClass}", String.Join(" ", containerCssClasses))
                         .Replace("{linkType}", linkType.ToString())
                         .Replace("{entityType}", entityType)
+                        .Replace("{contentBuilderMode}", contentBuilderMode)
                         .Replace("{default_value}", valueToReplace);
                 }
 
@@ -1580,7 +1586,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         .Replace("{moduleId}", (dataRow.Field<short?>("module_id") ?? 0).ToString())
                         .Replace("{options}", String.IsNullOrWhiteSpace(options) ? "{}" : options)
                         .Replace("{initialFiles}", String.IsNullOrWhiteSpace(filesJson) ? "[]" : filesJson)
-                        .Replace("{propertyName}", String.IsNullOrWhiteSpace(propertyName) ? displayName ?? "" : propertyName)
+                        .Replace("{propertyName}", String.IsNullOrWhiteSpace(propertyName) ? displayName ?? "" : propertyName.Trim())
                         .Replace("{title}", String.IsNullOrWhiteSpace(displayName) ? propertyName ?? "" : displayName)
                         .Replace("{dependsOnField}", dataRow.Field<string>("depends_on_field") ?? "")
                         .Replace("{dependsOnOperator}", dataRow.Field<string>("depends_on_operator") ?? "")
@@ -1596,6 +1602,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         .Replace("{fieldMode}", fieldMode)
                         .Replace("{linkType}", linkType.ToString())
                         .Replace("{entityType}", entityType)
+                        .Replace("{contentBuilderMode}", contentBuilderMode)
                         .Replace("{default_value}", $"'{HttpUtility.JavaScriptStringEncode(defaultValue)}'");
                 }
 
@@ -1816,10 +1823,11 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("itemId", itemId);
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT IFNULL(friendly_name, name) AS name, name AS value, dedicated_table_prefix
+
+            var query = $@"SELECT IFNULL(friendly_name, name) AS name, name AS value, dedicated_table_prefix
 FROM {WiserTableNames.WiserEntity}
-GROUP BY dedicated_table_prefix
-ORDER BY IFNULL(friendly_name, name) ASC");
+ORDER BY IFNULL(friendly_name, name) ASC";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             var results = new List<EntityTypeModel>();
             if (dataTable.Rows.Count == 0)
@@ -1832,7 +1840,15 @@ ORDER BY IFNULL(friendly_name, name) ASC");
             foreach (var group in groups)
             {
                 var tablePrefix = group.Key;
-                var query = $@"SELECT entity_type FROM {tablePrefix}{(!String.IsNullOrWhiteSpace(tablePrefix) && !tablePrefix.EndsWith("_") ? "_" : "")}{WiserTableNames.WiserItem} WHERE id = ?itemId";
+                var tableName = $"{tablePrefix}{(!String.IsNullOrWhiteSpace(tablePrefix) && !tablePrefix.EndsWith("_") ? "_" : "")}{WiserTableNames.WiserItem}";
+                if (!await databaseHelpersService.TableExistsAsync(tableName))
+                {
+                    continue;
+                }
+
+                query = $@"SELECT entity_type FROM {tableName} WHERE id = ?itemId
+UNION
+SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
                 dataTable = await clientDatabaseConnection.GetAsync(query);
                 if (dataTable.Rows.Count == 0)
                 {
@@ -2016,43 +2032,43 @@ ORDER BY IFNULL(friendly_name, name) ASC");
             }
 
             // Get items via wiser_itemlink.
-            var query = $@"SELECT 
-	                        item.id,
-	                        item.original_item_id,
-	                        IF(item.title IS NULL OR item.title = '', item.id, item.title) AS name,
-	                        entity.icon,
-	                        entity.icon_expanded,
-	                        IF(MAX(item.published_environment) = 0, 'hiddenOnWebsite', '') AS nodeCssClass,
-	                        item.entity_type,
-	                        GROUP_CONCAT(DISTINCT entity.accepted_childtypes) AS accepted_childtypes,
-                            {(checkId > 0 ? "IF(checked.id IS NULL, 0, 1)" : "0")} AS checked
+            var query = $@"SELECT
+	item.id,
+	item.original_item_id,
+	IF(item.title IS NULL OR item.title = '', item.id, item.title) AS name,
+	IFNULL(entityModule.icon, entity.icon) AS icon,
+	IFNULL(entityModule.icon_expanded, entity.icon_expanded) AS icon_expanded,
+	IF(MAX(item.published_environment) = 0, 'hiddenOnWebsite', '') AS nodeCssClass,
+	item.entity_type,
+	GROUP_CONCAT(DISTINCT IFNULL(entityModule.accepted_childtypes, entity.accepted_childtypes)) AS accepted_childtypes,
+    {(checkId > 0 ? "IF(checked.id IS NULL, 0, 1)" : "0")} AS checked
 
-                        # Get the items linked to the parent.
-                        FROM {WiserTableNames.WiserItem} AS item
-                        JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
-                        LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
-                        JOIN {WiserTableNames.WiserItemLink} AS link_parent ON link_parent.destination_item_id = ?parentId AND link_parent.item_id = item.id
+# Get the items linked to the parent.
+FROM {WiserTableNames.WiserItem} AS item
+JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
+LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
+JOIN {WiserTableNames.WiserItemLink} AS link_parent ON link_parent.destination_item_id = ?parentId AND link_parent.item_id = item.id
 
-                        # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                        LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
-                        LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
+# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
+LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
 
-                        # Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
-                        LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = link_parent.destination_item_id
-                        JOIN {WiserTableNames.WiserEntity} AS parent_entity ON ((link_parent.destination_item_id = 0 AND parent_entity.`name` = '') OR parent_entity.`name` = parent_item.entity_type) AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
+# Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
+LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = link_parent.destination_item_id
+JOIN {WiserTableNames.WiserEntity} AS parent_entity ON ((link_parent.destination_item_id = 0 AND parent_entity.`name` = '') OR parent_entity.`name` = parent_item.entity_type) AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
 
-                        # Link settings to check if these links should be shown.
-                        LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.type = link_parent.type AND link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
+# Link settings to check if these links should be shown.
+LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.type = link_parent.type AND link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
 
-                        {checkIdJoin}
+{checkIdJoin}
 
-                        WHERE {(String.IsNullOrWhiteSpace(entityType) ? "TRUE" : $"item.entity_type IN({String.Join(",", entityType.Split(',').Select(x => x.ToMySqlSafeValue(true)))})")}
-                        AND item.moduleid = ?moduleId
-                        AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                        AND IFNULL(link_settings.show_in_tree_view, 1) = 1
-                        GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
+WHERE {(String.IsNullOrWhiteSpace(entityType) ? "TRUE" : $"item.entity_type IN({String.Join(",", entityType.Split(',').Select(x => x.ToMySqlSafeValue(true)))})")}
+AND item.moduleid = ?moduleId
+AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+AND IFNULL(link_settings.show_in_tree_view, 1) = 1
+GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
 
-                        ORDER BY {orderByClause}";
+ORDER BY {orderByClause}";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count > 0)
@@ -2095,40 +2111,40 @@ ORDER BY IFNULL(friendly_name, name) ASC");
 
                 // Get children via the column parent_item_id of the table wiser_item.
                 query = $@"SELECT 
-	                        item.id,
-	                        item.original_item_id,
-	                        IF(item.title IS NULL OR item.title = '', item.id, item.title) AS name,
-	                        entity.icon,
-	                        entity.icon_expanded,
-	                        IF(MAX(item.published_environment) = 0, 'hiddenOnWebsite', '') AS nodeCssClass,
-	                        item.entity_type,
-	                        GROUP_CONCAT(DISTINCT entity.accepted_childtypes) AS accepted_childtypes,
-                            IF(item.parent_item_id > 0 AND item.parent_item_id = ?checkId, 1, 0) AS checked
+	item.id,
+	item.original_item_id,
+	IF(item.title IS NULL OR item.title = '', item.id, item.title) AS name,
+	IFNULL(entityModule.icon, entity.icon) AS icon,
+	IFNULL(entityModule.icon_expanded, entity.icon_expanded) AS icon_expanded,
+	IF(MAX(item.published_environment) = 0, 'hiddenOnWebsite', '') AS nodeCssClass,
+	item.entity_type,
+	GROUP_CONCAT(DISTINCT IFNULL(entityModule.accepted_childtypes, entity.accepted_childtypes)) AS accepted_childtypes,
+    IF(item.parent_item_id > 0 AND item.parent_item_id = ?checkId, 1, 0) AS checked
 
-                        # Get the items linked to the parent.
-                        FROM {WiserTableNames.WiserItem} AS item
-                        JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
-                        LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
+# Get the items linked to the parent.
+FROM {WiserTableNames.WiserItem} AS item
+JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
+LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
 
-                        # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                        LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
-                        LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
+# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
+LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
 
-                        # Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
-                        LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = item.parent_item_id
-                        JOIN {WiserTableNames.WiserEntity} AS parent_entity ON {(parentId == 0 ? "parent_entity.module_id = ?moduleId AND parent_entity.`name` = ''" : "parent_entity.`name` = parent_item.entity_type")} AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
+# Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
+LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = item.parent_item_id
+JOIN {WiserTableNames.WiserEntity} AS parent_entity ON {(parentId == 0 ? "parent_entity.module_id = ?moduleId AND parent_entity.`name` = ''" : "parent_entity.`name` = parent_item.entity_type")} AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
 
-                        # Link settings to check if these links should be shown.
-                        LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
+# Link settings to check if these links should be shown.
+LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
 
-                        WHERE item.parent_item_id = ?parentId
-                        AND (?entityType = '' OR FIND_IN_SET(item.entity_type, ?entityType))
-                        AND item.moduleid = ?moduleId
-                        AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                        AND IFNULL(link_settings.show_in_tree_view, 1) = 1
-                        GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
+WHERE item.parent_item_id = ?parentId
+AND (?entityType = '' OR FIND_IN_SET(item.entity_type, ?entityType))
+AND item.moduleid = ?moduleId
+AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+AND IFNULL(link_settings.show_in_tree_view, 1) = 1
+GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
 
-                        ORDER BY {orderByClause}";
+ORDER BY {orderByClause}";
                 dataTable = await clientDatabaseConnection.GetAsync(query);
 
                 if (dataTable.Rows.Count > 0)
@@ -2431,9 +2447,16 @@ ORDER BY IFNULL(friendly_name, name) ASC");
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             var destinationIds = encryptedDestinationIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
             var sourceIds = encryptedSourceIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
-            var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
             var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType);
             var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
+
+            if (String.IsNullOrWhiteSpace(sourceEntityType))
+            {
+                sourceEntityType = linkTypeSettings.SourceEntityType;
+            }
+
+            var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
+            var destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkTypeSettings.DestinationEntityType);
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("linkType", linkType);
@@ -2458,7 +2481,7 @@ ORDER BY IFNULL(friendly_name, name) ASC");
                 query = $@"INSERT IGNORE INTO {linkTablePrefix}{WiserTableNames.WiserItemLink} (item_id, destination_item_id, type)
                         SELECT source.id, destination.id, ?linkType
                         FROM {tablePrefix}{WiserTableNames.WiserItem} AS source
-                        JOIN {tablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id IN ({String.Join(",", destinationIds)})
+                        JOIN {destinationTablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id IN ({String.Join(",", destinationIds)})
                         WHERE source.id IN ({String.Join(",", sourceIds)})";
             }
 
@@ -2477,9 +2500,15 @@ ORDER BY IFNULL(friendly_name, name) ASC");
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             var destinationIds = encryptedDestinationIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
             var sourceIds = encryptedSourceIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
-            var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
             var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType);
             var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
+
+            if (String.IsNullOrWhiteSpace(sourceEntityType))
+            {
+                sourceEntityType = linkTypeSettings.SourceEntityType;
+            }
+            
+            var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("linkType", linkType);
@@ -2525,7 +2554,7 @@ ORDER BY IFNULL(friendly_name, name) ASC");
             
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
-            var username = IdentityHelpers.GetUserName(identity);
+            var username = IdentityHelpers.GetUserName(identity, true);
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
