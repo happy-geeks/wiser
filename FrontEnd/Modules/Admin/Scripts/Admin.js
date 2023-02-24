@@ -171,6 +171,23 @@ const moduleSettings = {
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
 
+
+            // These are all entities, including duplicate ones that have the same name in different modules.
+            try {
+                this.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
+            } catch (exception) {
+                console.error("Error occurred while trying to load all entity types 1", exception);
+                this.entityList = [];
+            }
+
+            // These are all entities grouped by name.
+            try {
+                this.allUniqueEntityTypes = (await Wiser.api({url: `${this.base.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
+            } catch (exception) {
+                console.error("Error occurred while trying to load all entity types", exception);
+                this.allUniqueEntityTypes = [];
+            }
+
             this.moduleTab = new ModuleTab(this);
             this.entityTab = new EntityTab(this);
             this.entityFieldsTab = new EntityFieldTab(this);

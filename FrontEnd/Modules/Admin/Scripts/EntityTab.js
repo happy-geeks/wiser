@@ -484,30 +484,30 @@ export class EntityTab {
     }
 
     setEntityLists() {
-        this.entitiesCombobox.setDataSource(this.entityList);
-        this.dataSourceEntities.setDataSource(this.allUniqueEntityTypes);
-        this.linkedItemEntity.setDataSource(this.allUniqueEntityTypes);
-        this.itemLinkerEntity.setDataSource(this.allUniqueEntityTypes);
-        this.subEntityGridEntity.setDataSource(this.allUniqueEntityTypes);
-        this.timelineEntity.setDataSource(this.allUniqueEntityTypes);
+        this.entitiesCombobox.setDataSource(this.base.entityList);
+        this.dataSourceEntities.setDataSource(this.base.allUniqueEntityTypes);
+        this.linkedItemEntity.setDataSource(this.base.allUniqueEntityTypes);
+        this.itemLinkerEntity.setDataSource(this.base.allUniqueEntityTypes);
+        this.subEntityGridEntity.setDataSource(this.base.allUniqueEntityTypes);
+        this.timelineEntity.setDataSource(this.base.allUniqueEntityTypes);
     }
 
     async reloadEntityList(reloadDataSource = false) {
         if (reloadDataSource) {
             // These are all entities, including duplicate ones that have the same name in different modules.
             try {
-                this.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
+                this.base.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
             } catch (exception) {
                 console.error("Error occurred while trying to load all entity types 1", exception);
-                this.entityList = [];
+                this.base.entityList = [];
             }
             
             // These are all entities grouped by name.
             try {
-                this.allUniqueEntityTypes = (await Wiser.api({url: `${this.base.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
+                this.base.allUniqueEntityTypes = (await Wiser.api({url: `${this.base.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
             } catch (exception) {
                 console.error("Error occurred while trying to load all entity types 2", exception);
-                this.allUniqueEntityTypes = [];
+                this.base.allUniqueEntityTypes = [];
             }
         }
         
@@ -1262,22 +1262,6 @@ export class EntityTab {
                 this.hideShowElementsBasedOnValue(changeEvent.sender.dataItem().text);
             }
         }).data("kendoDropDownList");
-
-        // These are all entities, including duplicate ones that have the same name in different modules.
-        try {
-            this.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
-        } catch (exception) {
-            console.error("Error occurred while trying to load all entity types 1", exception);
-            this.entityList = [];
-        }
-
-        // These are all entities grouped by name.
-        try {
-            this.allUniqueEntityTypes = (await Wiser.api({url: `${this.base.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
-        } catch (exception) {
-            console.error("Error occurred while trying to load all entity types", exception);
-            this.allUniqueEntityTypes = [];
-        }
 
         this.dataSourceEntities = $("#dataSourceEntities").kendoDropDownList({
             clearButton: false,
