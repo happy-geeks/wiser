@@ -2071,12 +2071,14 @@ export class Fields {
                                     linkIds.push(item.dataItem["linkId"]);
                                 }
 
-                                url += `&selectedId=${ids.join(",")}`;
-                                url += `&selectedLinkId=${linkIds.join(",")}`;
+                                // The camel case parameters are for backwards compatibility, because we used snake case in the past for some things like this.
+                                url += `&selectedId=${ids.join(",")}&selected_id=${ids.join(",")}`;
+                                url += `&selectedLinkId=${linkIds.join(",")}&selected_link_id=${linkIds.join(",")}`;
                                 allUrls.push(url);
                             } else {
                                 for (let item of selectedItems) {
-                                    allUrls.push(`${url}&selectedId=${item.dataItem["id"]}&selectedLinkId=${item.dataItem["linkId"]}`);
+                                    // The camel case parameters are for backwards compatibility, because we used snake case in the past for some things like this.
+                                    allUrls.push(`${url}&selectedId=${item.dataItem["id"]}&selected_id=${item.dataItem["id"]}&selectedLinkId=${item.dataItem["linkId"]}&selected_link_id=${item.dataItem["linkId"]}`);
                                 }
                             }
                         }
