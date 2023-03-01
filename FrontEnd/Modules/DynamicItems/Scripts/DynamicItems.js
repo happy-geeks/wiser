@@ -1772,79 +1772,39 @@ const moduleSettings = {
          * @returns {any} A promise with the result of the AJAX call.
          */
         async updateItem(encryptedItemId, inputData, fieldsContainer, isNewItem, title = null, showSuccessMessage = true, executeWorkFlow = true, entityType = null) {
-            const updateItemData = {
-                title: title,
-                details: inputData,
-                changedBy: this.settings.username,
-                entityType: entityType
-            };
+            const updateResult = await Wiser.updateItem(this.settings, encryptedItemId, inputData, isNewItem, title, executeWorkFlow, entityType);
 
-            if (executeWorkFlow) {
-                const apiActionId = await this.getApiAction("before_update", entityType);
-                if (apiActionId) {
-                    await Wiser.doApiCall(this.settings, apiActionId, updateItemData);
+            if (fieldsContainer) {
+                const windowId = fieldsContainer.hasClass("popup-container") ? fieldsContainer.attr("id") : "mainScreen";
+
+                if (this.base.fields.originalItemValues[windowId] && this.base.fields.unsavedItemValues[windowId]) {
+                    $.extend(true, this.base.fields.originalItemValues[windowId], this.base.fields.unsavedItemValues[windowId]);
+                }
+                this.base.fields.unsavedItemValues[windowId] = {};
+
+                if (updateResult && updateResult.details && updateResult.details.length) {
+                    updateResult.details.forEach((itemDetail) => {
+                        if (!itemDetail || !itemDetail.id) {
+                            return;
+                        }
+
+                        const field = fieldsContainer.find(`[name=${itemDetail.key}]`);
+                        if (field.is(":disabled,[readonly]")) {
+                            field.val(itemDetail.value);
+                        }
+                    });
                 }
             }
-
-            return Wiser.api({
-                url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}?isNewItem=${!!isNewItem}`,
-                method: "PUT",
-                contentType: "application/json",
-                dataType: "JSON",
-                data: JSON.stringify(updateItemData)
-            }).then((updateResult) => {
-                if (fieldsContainer) {
-
-                    const windowId = fieldsContainer.hasClass("popup-container") ? fieldsContainer.attr("id") : "mainScreen";
-
-                    if (this.base.fields.originalItemValues[windowId] && this.base.fields.unsavedItemValues[windowId]) {
-                        $.extend(true, this.base.fields.originalItemValues[windowId], this.base.fields.unsavedItemValues[windowId]);
-                    }
-                    this.base.fields.unsavedItemValues[windowId] = {};
-
-                    if (updateResult && updateResult.details && updateResult.details.length) {
-                        updateResult.details.forEach((itemDetail) => {
-                            if (!itemDetail || !itemDetail.id) {
-                                return;
-                            }
-
-                            const field = fieldsContainer.find(`[name=${itemDetail.key}]`);
-                            if (field.is(":disabled,[readonly]")) {
-                                field.val(itemDetail.value);
-                            }
-                        });
-                    }
-                }
-
-                // Check if we need to execute any API action and do that.
-                try {
-                    if (executeWorkFlow) {
-                        this.getApiAction("after_update", updateResult.entityType).then((apiActionId) => {
-                            if (apiActionId) {
-                                Wiser.doApiCall(this.settings, apiActionId, updateResult).then(() => {
-                                    if (showSuccessMessage) {
-                                        this.notification.show({ message: "Opslaan is gelukt" }, "success");
-                                    }
-                                }).catch((error) => {
-                                    console.error(error);
-                                    kendo.alert("Er is iets fout gegaan tijdens het uitvoeren (of opzoeken) van de actie 'api_after_update'. Indien er een koppeling is opgezet met een extern systeem, dan zijn de wijzigingen nu niet gesynchroniseerd naar dat systeem. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
-                                });
-                            }
-                        });
-                    } else if (showSuccessMessage) {
-                        this.notification.show({ message: "Opslaan is gelukt" }, "success");
-                    }
-                } catch (exception) {
-                    console.error(exception);
-                    kendo.alert("Er is iets fout gegaan tijdens het uitvoeren (of opzoeken) van de actie 'api_after_update'. Indien er een koppeling is opgezet met een extern systeem, dan zijn de wijzigingen nu niet gesynchroniseerd naar dat systeem. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
-                }
-            });
+            
+            if (showSuccessMessage) {
+                this.notification.show({ message: "Opslaan is gelukt" }, "success");
+            }
         }
 
         /**
          * Loads the meta data of an item and add it to the given meta data container.
          * @param {string} itemId The encrypted ID of the item.
-         * @param {string} itemId The entity type of the item.
+         * @param {string} entityType The entity type of the item.
          * @param {any} metaDataContainer The container that contains the list (<ul>) with meta data values.
          * @param {boolean} isForItemWindow Optional: Indicates whether or not the current item is being loaded in a window. If it's not, some extra things will be done such as setting up dependencies on fields.
          * @param {any} mainFieldsContainer Optional: The container that contains all the fields of the item. Required if isForItemWindow is set to false.
@@ -2030,65 +1990,7 @@ const moduleSettings = {
          * @param {number} moduleId Optional: The id of the module in which the item should be created.
          */
         async createItem(entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null) {
-            try {
-                const newItem = {
-                    entityType: entityType,
-                    title: name,
-                    moduleId: moduleId || this.settings.moduleId
-                };
-
-                const parentIdUrlPart = parentId ? `&parentId=${encodeURIComponent(parentId)}` : "";
-                const createItemResult = await Wiser.api({
-                    url: `${this.settings.wiserApiRoot}items?linkType=${linkTypeNumber || 0}${parentIdUrlPart}&isNewItem=true`,
-                    method: "POST",
-                    contentType: "application/json",
-                    dataType: "JSON",
-                    data: JSON.stringify(newItem)
-                });
-
-                // Call updateItem with only the title, to make sure the SEO value of the title gets saved if needed.
-                let newItemDetails = [];
-                if (!skipUpdate) newItemDetails = await this.base.updateItem(createItemResult.newItemId, data || [], null, false, name, false, false, entityType);
-
-                const workflowResult = await Wiser.api({
-                    url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(createItemResult.newItemId)}/workflow?isNewItem=true`,
-                    method: "POST",
-                    contentType: "application/json",
-                    dataType: "JSON",
-                    data: JSON.stringify(newItem)
-                });
-                let apiActionResult = null;
-
-                // Check if we need to execute any API action and do that.
-                try {
-                    const apiActionId = await this.getApiAction("after_insert", entityType);
-                    if (apiActionId) {
-                        apiActionResult = await Wiser.doApiCall(this.settings, apiActionId, newItemDetails);
-                    }
-                } catch (exception) {
-                    console.error(exception);
-                    kendo.alert("Er is iets fout gegaan tijdens het uitvoeren (of opzoeken) van de actie 'api_after_update'. Indien er een koppeling is opgezet met een extern systeem, dan zijn de wijzigingen nu niet gesynchroniseerd naar dat systeem. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
-                }
-
-                return {
-                    itemId: createItemResult.newItemId,
-                    itemIdPlain: createItemResult.newItemIdPlain,
-                    linkId: createItemResult.newLinkId,
-                    icon: createItemResult.icon,
-                    workflowResult: workflowResult,
-                    apiActionResult: apiActionResult
-                };
-            } catch (exception) {
-                console.error(exception);
-                let error = exception;
-                if (exception.responseText) {
-                    error = exception.responseText;
-                } else if (exception.statusText) {
-                    error = exception.statusText;
-                }
-                kendo.alert(`Er is iets fout gegaan met het aanmaken van het item. Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br><pre>${kendo.htmlEncode(error)}</pre>`);
-                return null;
-            }
+            return Wiser.createItem(this.settings, entityType, parentId, name, linkTypeNumber, data, skipUpdate, moduleId);
         }
 
         /**
@@ -2098,27 +2000,7 @@ const moduleSettings = {
          * @returns {Promise} A promise with the result of the AJAX call.
          */
         async deleteItem(encryptedItemId, entityType) {
-            console.warn("deleteItem in dynamicItems.js called");
-
-            try {
-                const apiActionId = await this.getApiAction("before_delete", entityType);
-                if (apiActionId) {
-                    await Wiser.doApiCall(this.settings, apiActionId, { encryptedId: encryptedItemId });
-                }
-            } catch (exception) {
-                console.error(exception);
-                kendo.alert("Er is iets fout gegaan tijdens het uitvoeren (of opzoeken) van de actie 'api_before_delete'. Hierdoor is het betreffende item ook niet uit Wiser verwijderd. Probeer het a.u.b. nogmaals of neem contact op met ons.");
-                return new Promise((resolve, reject) => {
-                    reject(exception);
-                });
-            }
-
-            return Wiser.api({
-                url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}?entityType=${entityType || ""}`,
-                method: "DELETE",
-                contentType: "application/json",
-                dataType: "JSON"
-            });
+            return Wiser.deleteItem(this.settings, encryptedItemId, entityType);
         }
 
         /**
@@ -2128,14 +2010,7 @@ const moduleSettings = {
          * @returns {Promise} A promise with the result of the AJAX call.
          */
         async undeleteItem(encryptedItemId, entityType) {
-            console.warn("undeleteItem in dynamicItems.js called");
-
-            return Wiser.api({
-                url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}?undelete=true&entityType=${entityType || ""}`,
-                method: "DELETE",
-                contentType: "application/json",
-                dataType: "JSON"
-            });
+            return Wiser.undeleteItem(this.settings, encryptedItemId, entityType);
         }
 
         /**
@@ -2147,34 +2022,7 @@ const moduleSettings = {
          * @returns {Promise} The details about the newly created item.
          */
         async duplicateItem(itemId, parentId, entityType = null, parentEntityType = null) {
-            try {
-                const entityTypeQueryString = !entityType ? "" : `?entityType=${encodeURIComponent(entityType)}`;
-                const parentEntityTypeQueryString = !parentEntityType ? "" : `${!entityType ? "?" : "&"}parentEntityType=${encodeURIComponent(parentEntityType)}`;
-                const createItemResult = await Wiser.api({
-                    method: "POST",
-                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/duplicate/${encodeURIComponent(parentId)}${entityTypeQueryString}${parentEntityTypeQueryString}`,
-                    contentType: "application/json",
-                    dataType: "JSON"
-                });
-                const workflowResult = await Wiser.api({
-                    method: "POST",
-                    url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(createItemResult.newItemId)}/workflow?isNewItem=true`,
-                    contentType: "application/json",
-                    dataType: "JSON"
-                });
-                return {
-                    itemId: createItemResult.newItemId,
-                    itemIdPlain: createItemResult.newItemIdPlain,
-                    linkId: createItemResult.newLinkId,
-                    icon: createItemResult.icon,
-                    workflowResult: workflowResult,
-                    title: createItemResult.title
-                };
-            } catch (exception) {
-                console.error(exception);
-                kendo.alert("Er is iets fout gegaan met het dupliceren van het item. Neem a.u.b. contact op met ons.");
-                return {};
-            }
+            return Wiser.duplicateItem(this.settings, itemId, parentId, entityType, parentEntityType);
         }
 
         /**
@@ -2309,8 +2157,7 @@ const moduleSettings = {
          * @returns {number} The ID of the API action, or 0 if there is no action set.
          */
         async getApiAction(actionType, entityType) {
-            const result = await Wiser.api({ url: `${this.settings.wiserApiRoot}entity-types/${encodeURIComponent(entityType)}/api-connection/${encodeURIComponent(actionType)}` });
-            return result || 0;
+            return Wiser.getApiAction(this.settings, actionType, entityType);
         }
 
         /**
