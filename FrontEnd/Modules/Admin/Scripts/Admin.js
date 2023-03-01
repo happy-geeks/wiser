@@ -260,41 +260,6 @@ const moduleSettings = {
                 icon: "save"
             });
 
-            $("#generateStandardEntities").kendoButton({
-                click: () => {
-                    const entitiesToGenerate = [], entitiesToGeneratePrettyName = [];
-                    document.querySelectorAll("#generateEntitiesGroup input[type=checkbox]:checked").forEach((e) => {
-                        entitiesToGenerate.push(e.dataset.entityGroup);
-                        entitiesToGeneratePrettyName.push(e.dataset.entityPrettyName);
-                    });
-                    if (entitiesToGenerate.length === 0) return;
-                    this.openDialog("Standaard entiteiten genereren", `Weet u zeker dat u de entiteiten ${entitiesToGeneratePrettyName.join()} voor wilt genereren?`, this.kendoPromptType.CONFIRM).then((data) => {
-
-                        entitiesToGenerate.forEach(async (e) => {
-                            const templateName = e;
-                            if (!templateName) {
-                                this.openDialog("Oeps...!", `Entiteiten groep "${e}", is nog niet correct ingesteld. Probeer het later opnieuw.`, this.kendoPromptType.ALERT);
-                                return;
-                            }
-                            try {
-                                const qResult = await Wiser.api({ 
-                                    url: `${this.settings.serviceRoot}/${templateName}?isTest=${encodeURIComponent(this.settings.isTestEnvironment)}`,
-                                    method: "GET"
-                                });
-                                if (qResult.success) {
-                                    this.showNotification(null, "Entiteiten zijn succesvol aangemaakt of bijgewerkt!", "success", 2000);
-                                }
-                            } catch (e) {
-                                console.log(e);
-                                this.openDialog("Oeps...!", `Er ging iets mis bij het genereren van de entiteiten, neem contact op met ons.`, this.kendoPromptType.ALERT);
-                            }
-                        });
-
-                    });
-                },
-                icon: "gear"
-            });
-
             Misc.addEventToFixToolTipPositions();
         }
 
