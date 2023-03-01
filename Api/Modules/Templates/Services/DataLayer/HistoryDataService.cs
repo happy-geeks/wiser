@@ -199,7 +199,7 @@ ORDER BY version DESC");
             {
                 var publishHistory = new PublishHistoryModel
                 {
-                    Templateid = row.Field<int>("template_id"),
+                    TemplateId = row.Field<int>("template_id"),
                     ChangedOn = row.Field<DateTime>("changed_on"),
                     ChangedBy = row.Field<string>("changed_by"),
                     PublishLog = new PublishLogModel(

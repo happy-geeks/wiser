@@ -24,6 +24,7 @@ using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
+using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -85,11 +86,31 @@ namespace Api.Modules.Templates.Services
         private readonly ApiSettings apiSettings;
         private readonly IWebHostEnvironment webHostEnvironment;
         private readonly IBranchesService branchesService;
+        private readonly IMeasurementsDataService measurementsDataService;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IOptions<GclSettings> gclSettings, IOptions<ApiSettings> apiSettings, IWebHostEnvironment webHostEnvironment, IBranchesService branchesService)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor,
+            IWiserCustomersService wiserCustomersService,
+            IStringReplacementsService stringReplacementsService,
+            GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService,
+            IDatabaseConnection clientDatabaseConnection,
+            IApiReplacementsService apiReplacementsService,
+            ITemplateDataService templateDataService,
+            IHistoryService historyService,
+            IWiserItemsService wiserItemsService,
+            IPagesService pagesService,
+            IRazorViewEngine razorViewEngine,
+            ITempDataProvider tempDataProvider,
+            IObjectsService objectsService,
+            IDatabaseHelpersService databaseHelpersService,
+            ILogger<TemplatesService> logger,
+            IOptions<GclSettings> gclSettings,
+            IOptions<ApiSettings> apiSettings,
+            IWebHostEnvironment webHostEnvironment,
+            IBranchesService branchesService,
+            IMeasurementsDataService measurementsDataService)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -110,6 +131,7 @@ namespace Api.Modules.Templates.Services
             this.apiSettings = apiSettings.Value;
             this.webHostEnvironment = webHostEnvironment;
             this.branchesService = branchesService;
+            this.measurementsDataService = measurementsDataService;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -2373,7 +2395,9 @@ LIMIT 1";
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,
                 WiserTableNames.WiserPreviewProfiles,
-                WiserTableNames.WiserDynamicContentPublishLog
+                WiserTableNames.WiserDynamicContentPublishLog,
+                WiserTableNames.WiserTemplateRenderLog,
+                WiserTableNames.WiserDynamicContentRenderLog
             });
 
             // Make sure the ordering is correct.
@@ -3254,6 +3278,187 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             {
                 StatusCode = HttpStatusCode.NoContent
             };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<MeasurementSettings>> GetMeasurementSettingsAsync(int templateId = 0, int componentId = 0)
+        {
+            switch (templateId)
+            {
+                case <= 0 when componentId <= 0:
+                    throw new Exception("Please specify either a template ID or a component ID.");
+                case > 0 when componentId > 0:
+                    throw new Exception("You have specified both a template ID and a component ID, please specify only one.");
+            }
+
+            var result = new MeasurementSettings();
+
+            var name = templateId > 0 ? "templates" : "components";
+            var developmentRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_development");
+            var testRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_test");
+            var acceptanceRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_acceptance");
+            var liveRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_live");
+            
+            var logAllRendering = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}");
+            if (String.IsNullOrWhiteSpace(developmentRenderingSettings))
+            {
+                developmentRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(testRenderingSettings))
+            {
+                testRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(acceptanceRenderingSettings))
+            {
+                acceptanceRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(liveRenderingSettings))
+            {
+                liveRenderingSettings = logAllRendering;
+            }
+
+            if (!String.IsNullOrWhiteSpace(developmentRenderingSettings))
+            {
+                var ids = developmentRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnDevelopmentForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnDevelopmentForEverything = String.Equals(developmentRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                                      || String.Equals(developmentRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
+            }
+            
+            if (!String.IsNullOrWhiteSpace(testRenderingSettings))
+            {
+                var ids = testRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnTestForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnTestForEverything = String.Equals(testRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                               || String.Equals(testRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
+            }
+            
+            if (!String.IsNullOrWhiteSpace(acceptanceRenderingSettings))
+            {
+                var ids = acceptanceRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnAcceptanceForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnAcceptanceForEverything = String.Equals(acceptanceRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                                     || String.Equals(acceptanceRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
+            }
+            
+            if (!String.IsNullOrWhiteSpace(liveRenderingSettings))
+            {
+                var ids = liveRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnLiveForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnLiveForEverything = String.Equals(liveRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                               || String.Equals(liveRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
+            }
+
+            return new ServiceResult<MeasurementSettings>(result);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveMeasurementSettingsAsync(MeasurementSettings settings, int templateId = 0, int componentId = 0)
+        {
+            switch (templateId)
+            {
+                case <= 0 when componentId <= 0:
+                    throw new Exception("Please specify either a template ID or a component ID.");
+                case > 0 when componentId > 0:
+                    throw new Exception("You have specified both a template ID and a component ID, please specify only one.");
+            }
+
+            var previousSettings = (await GetMeasurementSettingsAsync(templateId, componentId)).ModelObject;
+            if (previousSettings.MeasureRenderTimesOnDevelopmentForEverything || previousSettings.MeasureRenderTimesOnTestForEverything || previousSettings.MeasureRenderTimesOnAcceptanceForEverything || previousSettings.MeasureRenderTimesOnLiveForEverything)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Cannot change these settings, because they are enabled globally."
+                };
+            }
+            
+            // Get the current settings from database.
+            var name = templateId > 0 ? "templates" : "components";
+            var developmentRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_development");
+            var testRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_test");
+            var acceptanceRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_acceptance");
+            var liveRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_live");
+            var logAllRendering = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}");
+            if (String.IsNullOrWhiteSpace(developmentRenderingSettings))
+            {
+                developmentRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(testRenderingSettings))
+            {
+                testRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(acceptanceRenderingSettings))
+            {
+                acceptanceRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(liveRenderingSettings))
+            {
+                liveRenderingSettings = logAllRendering;
+            }
+
+            // Add or remove the current template from the settings.
+            var developmentIds = developmentRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+            var testIds = testRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+            var acceptanceIds = acceptanceRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+            var liveIds = liveRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+
+            if (settings.MeasureRenderTimesOnDevelopmentForCurrent)
+            {
+                if (!developmentIds.Contains(templateId)) developmentIds.Add(templateId);
+            }
+            else
+            {
+                if (developmentIds.Contains(templateId)) developmentIds.Remove(templateId);
+            }
+
+            if (settings.MeasureRenderTimesOnTestForCurrent)
+            {
+                if (!testIds.Contains(templateId)) testIds.Add(templateId);
+            }
+            else
+            {
+                if (testIds.Contains(templateId)) testIds.Remove(templateId);
+            }
+            
+            if (settings.MeasureRenderTimesOnAcceptanceForCurrent)
+            {
+                if (!acceptanceIds.Contains(templateId)) acceptanceIds.Add(templateId);
+            }
+            else
+            {
+                if (acceptanceIds.Contains(templateId)) acceptanceIds.Remove(templateId);
+            }
+            
+            if (settings.MeasureRenderTimesOnLiveForCurrent)
+            {
+                if (!liveIds.Contains(templateId)) liveIds.Add(templateId);
+            }
+            else
+            {
+                if (liveIds.Contains(templateId)) liveIds.Remove(templateId);
+            }
+
+            // Save the new settings.
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}", ""); // These are saved empty, because we copied all IDs to the specific environment settings.
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_development", String.Join(",", developmentIds));
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_test", String.Join(",", testIds));
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_acceptance", String.Join(",", acceptanceIds));
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_live", String.Join(",", liveIds));
+            return new ServiceResult<bool>
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0,
+            string urlRegex = null, Environments? environment = null, ulong userId = 0,
+            string languageCode = null, int pageSize = 500, int pageNumber = 1, 
+            bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
+        {
+            var results = await measurementsDataService.GetRenderLogsAsync(templateId, 0, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end);
+            return new ServiceResult<List<RenderLogModel>>(results);
         }
 
         private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html)
