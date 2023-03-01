@@ -48,13 +48,6 @@
         }
 
         /// <summary>
-        /// Creates a new instance of <see cref="PublishLogModel"/>.
-        /// </summary>
-        public PublishLogModel()
-        {
-        }
-
-        /// <summary>
         /// Create a PublishLogModel with all values set to a base. Will set the old environments as new values.
         /// </summary>
         /// <param name="id">The id of the template</param>
