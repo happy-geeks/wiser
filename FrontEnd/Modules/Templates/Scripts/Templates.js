@@ -23,6 +23,10 @@ require("@progress/kendo-ui/js/dataviz/chart/kendo-chart.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
+import "../css/Templates.css";
+import "../css/ConfigTab.css";
+import {Init} from "codemirror/src/edit/options";
+
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
 
@@ -353,6 +357,273 @@ const moduleSettings = {
                     dataSpriteCssClassField: "spriteCssClass"
                 }).data("kendoTreeView");
             });
+
+            this.searchResultsTreeView = $("#search-results-treeview").kendoTreeView({
+                loadOnDemand: false,
+                dragAndDrop: false,
+                dataTextField: "templateName",
+                dataSpriteCssClassField: "spriteCssClass",
+                select: this.onTreeViewSelect.bind(this),
+            }).data("kendoTreeView");
+
+            this.treeViewContextMenu = $("#treeViewContextMenu").kendoContextMenu({
+                dataSource: [
+                    {text: "Item toevoegen", attr: {action: "addNewItem"}},
+                    {text: "Hernoemen", attr: {action: "rename"}},
+                    {text: "Verwijderen", attr: {action: "delete"}}
+                ],
+                target: ".tabstrip-treeview",
+                filter: ".k-item",
+                open: this.onContextMenuOpen.bind(this),
+                select: this.onContextMenuSelect.bind(this)
+            }).data("kendoContextMenu");
+
+            /**
+             * Configuration tab
+             */
+            this.commitEnvironmentField = $("#wts-log-level").kendoDropDownList({
+                optionLabel: "Selecteer log level",
+                dataTextField: "text",
+                dataValueField: "value",
+                dataSource: [
+                    {text: "Debug", value: 1},
+                    {text: "Information", value: 2},
+                    {text: "Warning", value: 3},
+                    {text: "Error", value: 4},
+                    {text: "Critical", value: 5}
+                ]
+            }).data("kendoDropDownList");
+
+            this.commitEnvironmentField = $("#wts-timing-type").kendoDropDownList({
+                optionLabel: "Selecteer herhaling",
+                dataTextField: "text",
+                dataValueField: "value",
+                dataSource: [
+                    {text: "Loopt continue", value: 1},
+                    {text: "Dagelijks", value: 2},
+                    {text: "Wekelijks", value: 3},
+                    {text: "Maandelijks", value: 4}
+                ]
+            }).data("kendoDropDownList");
+
+            this.commitEnvironmentField = $("#wts-timing-weekly").kendoDropDownList({
+                optionLabel: "Selecteer dag",
+                dataTextField: "text",
+                dataValueField: "value",
+                dataSource: [
+                    {text: "Op maandag", value: 1},
+                    {text: "Op dinsdag", value: 2},
+                    {text: "Op woensdag", value: 3},
+                    {text: "Op donderdag", value: 4},
+                    {text: "Op vrijdag", value: 5},
+                    {text: "Op zaterdag", value: 6},
+                    {text: "Op zondag", value: 7}
+                ]
+            }).data("kendoDropDownList");
+
+            this.commitEnvironmentField = $("#wts-timing-monthly").kendoDropDownList({
+                optionLabel: "Selecteer herhaal dag",
+                dataTextField: "text",
+                dataValueField: "value",
+                dataSource: [
+                    {text: "Op 1e dag van de maand", value: 1},
+                    {text: "Op 2e dag van de maand", value: 2},
+                    {text: "Op 3e dag van de maand", value: 3},
+                    {text: "Op 4e dag van de maand", value: 4},
+                    {text: "Op 5e dag van de maand", value: 5},
+                    {text: "Op 6e dag van de maand", value: 6},
+                    {text: "Op 7e dag van de maand", value: 7},
+                    {text: "Op 8e dag van de maand", value: 8},
+                    {text: "Op 9e dag van de maand", value: 9},
+                    {text: "Op 10e dag van de maand", value: 10}
+                ]
+            }).data("kendoDropDownList");
+
+            this.commitEnvironmentField = $("#wts-timing-log").kendoDropDownList({
+                optionLabel: "Selecteer herhaling",
+                dataTextField: "text",
+                dataValueField: "value",
+                dataSource: [
+                    {text: "Loopt continue", value: 1},
+                    {text: "Dagelijks", value: 2},
+                    {text: "Wekelijks", value: 3},
+                    {text: "Maandelijks", value: 4}
+                ]
+            }).data("kendoDropDownList");
+
+            this.commitEnvironmentField = $("#wts-timing-hold").kendoDropDownList({
+                optionLabel: "Selecteer dag",
+                dataTextField: "text",
+                dataValueField: "value",
+                dataSource: [
+                    {text: "Op maandag", value: 1},
+                    {text: "Op dinsdag", value: 2},
+                    {text: "Op woensdag", value: 3},
+                    {text: "Op donderdag", value: 4},
+                    {text: "Op vrijdag", value: 5},
+                    {text: "Op zaterdag", value: 6},
+                    {text: "Op zondag", value: 7}
+                ]
+            }).data("kendoDropDownList");
+
+            this.commitEnvironmentField = $("#wts-continuous-start").kendoDropDownList({
+                optionLabel: "Start tijd",
+                dataTextField: "text",
+                dataValueField: "value",
+                dataSource: [
+                    {text: "0:00", value: 1},
+                    {text: "0:30", value: 2},
+                    {text: "1:00", value: 3},
+                    {text: "1:30", value: 4},
+                    {text: "2:00", value: 5},
+                    {text: "2:30", value: 6},
+                    {text: "3:00", value: 7},
+                    {text: "3:30", value: 8},
+                    {text: "4:00", value: 9},
+                    {text: "4:30", value: 10},
+                    {text: "5:00", value: 11},
+                    {text: "5:30", value: 12},
+                    {text: "6:00", value: 13},
+                    {text: "6:30", value: 14},
+                    {text: "7:00", value: 15},
+                    {text: "7:30", value: 16},
+                    {text: "8:00", value: 17},
+                    {text: "8:30", value: 18},
+                    {text: "9:00", value: 19},
+                    {text: "9:30", value: 20},
+                    {text: "10:00", value: 21},
+                    {text: "10:30", value: 22},
+                    {text: "11:00", value: 23},
+                    {text: "11:30", value: 24},
+                    {text: "12:00", value: 25},
+                ]
+            }).data("kendoDropDownList");
+
+            this.commitEnvironmentField = $("#wts-continuous-from").kendoDropDownList({
+                optionLabel: "Start tijd",
+                dataTextField: "text",
+                dataValueField: "value",
+                dataSource: [
+                    {text: "0:00", value: 1},
+                    {text: "0:30", value: 2},
+                    {text: "1:00", value: 3},
+                    {text: "1:30", value: 4},
+                    {text: "2:00", value: 5},
+                    {text: "2:30", value: 6},
+                    {text: "3:00", value: 7},
+                    {text: "3:30", value: 8},
+                    {text: "4:00", value: 9},
+                    {text: "4:30", value: 10},
+                    {text: "5:00", value: 11},
+                    {text: "5:30", value: 12},
+                    {text: "6:00", value: 13},
+                    {text: "6:30", value: 14},
+                    {text: "7:00", value: 15},
+                    {text: "7:30", value: 16},
+                    {text: "8:00", value: 17},
+                    {text: "8:30", value: 18},
+                    {text: "9:00", value: 19},
+                    {text: "9:30", value: 20},
+                    {text: "10:00", value: 21},
+                    {text: "10:30", value: 22},
+                    {text: "11:00", value: 23},
+                    {text: "11:30", value: 24},
+                    {text: "12:00", value: 25},
+                ]
+            }).data("kendoDropDownList");
+
+            this.commitEnvironmentField = $("#wts-continuous-till").kendoDropDownList({
+                optionLabel: "Start tijd",
+                dataTextField: "text",
+                dataValueField: "value",
+                dataSource: [
+                    {text: "0:00", value: 1},
+                    {text: "0:30", value: 2},
+                    {text: "1:00", value: 3},
+                    {text: "1:30", value: 4},
+                    {text: "2:00", value: 5},
+                    {text: "2:30", value: 6},
+                    {text: "3:00", value: 7},
+                    {text: "3:30", value: 8},
+                    {text: "4:00", value: 9},
+                    {text: "4:30", value: 10},
+                    {text: "5:00", value: 11},
+                    {text: "5:30", value: 12},
+                    {text: "6:00", value: 13},
+                    {text: "6:30", value: 14},
+                    {text: "7:00", value: 15},
+                    {text: "7:30", value: 16},
+                    {text: "8:00", value: 17},
+                    {text: "8:30", value: 18},
+                    {text: "9:00", value: 19},
+                    {text: "9:30", value: 20},
+                    {text: "10:00", value: 21},
+                    {text: "10:30", value: 22},
+                    {text: "11:00", value: 23},
+                    {text: "11:30", value: 24},
+                    {text: "12:00", value: 25},
+                ]
+            }).data("kendoDropDownList");
+
+            this.commitEnvironmentField = $("#wts-continuous-interval").kendoDropDownList({
+                optionLabel: "Start tijd",
+                dataTextField: "text",
+                dataValueField: "value",
+                dataSource: [
+                    {text: "0:00", value: 1},
+                    {text: "0:30", value: 2},
+                    {text: "1:00", value: 3},
+                    {text: "1:30", value: 4},
+                    {text: "2:00", value: 5},
+                    {text: "2:30", value: 6},
+                    {text: "3:00", value: 7},
+                    {text: "3:30", value: 8},
+                    {text: "4:00", value: 9},
+                    {text: "4:30", value: 10},
+                    {text: "5:00", value: 11},
+                    {text: "5:30", value: 12},
+                    {text: "6:00", value: 13},
+                    {text: "6:30", value: 14},
+                    {text: "7:00", value: 15},
+                    {text: "7:30", value: 16},
+                    {text: "8:00", value: 17},
+                    {text: "8:30", value: 18},
+                    {text: "9:00", value: 19},
+                    {text: "9:30", value: 20},
+                    {text: "10:00", value: 21},
+                    {text: "10:30", value: 22},
+                    {text: "11:00", value: 23},
+                    {text: "11:30", value: 24},
+                    {text: "12:00", value: 25},
+                ]
+            }).data("kendoDropDownList");
+
+            this.grid = $("#wtsLinkedActions").kendoGrid({
+                resizable: true,
+                columns: [
+                    {
+                        field: "Type",
+                        title: "Type"
+                    }, {
+                        field: "Naam",
+                        title: "Naam"
+                    }, {
+                        field: "Laatste run",
+                        title: "Laatste run"
+                    }, {
+                        field: "Laatste run-tijd",
+                        title: "Laatste run-tijd"
+                    }, { 
+                        command: "destroy", 
+                        title: "&nbsp;", 
+                        width: 120 
+                    },{
+                        command: "edit",
+                        title: "&nbsp;",
+                        width: 120
+                    }
+                ]
+            }).data("kendoGrid");
         }
 
         /**
