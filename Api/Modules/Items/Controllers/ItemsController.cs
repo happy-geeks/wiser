@@ -461,5 +461,23 @@ namespace Api.Modules.Items.Controllers
         {
             return (await itemsService.TranslateAllFieldsAsync((ClaimsIdentity)User.Identity, encryptedId, settings)).GetHttpResponseMessage();
         }
+        
+        /// <summary>
+        /// By default this function gets all items linked to the given <see cref="itemId"/>, unless the parameter <see cref="reverse"/> is set to true,
+        /// then this function will return all items that the <see cref="itemId"/> is linked to.
+        /// </summary>
+        /// <param name="itemId">The item ID.</param>
+        /// <param name="linkType">Optional: The type number of links to get.</param>
+        /// <param name="entityType">Optional: Enter an entity type here to only get items of that type. Default is null.</param>
+        /// <param name="reverse">Optional: Set to true to get the items that this item is linked to, instead of the items linked to this item. Default is false.</param>
+        /// <param name="itemIdEntityType">Optional: You can enter the entity type of the given itemId here, if you want to get items from a dedicated table and those items can have multiple different entity types. This only works if all those items exist in the same table. Default is null.</param>
+        /// <returns>A list of <see cref="WiserItemModel"/>. Empty list if no items have been found.</returns>
+        [HttpGet]
+        [Route("{itemId:long}/linked-items")]
+        [ProducesResponseType(typeof(List<WiserItemModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetLinkedItemDetailsAsync(ulong itemId, int linkType = -1, string entityType = null, bool reverse = false, string itemIdEntityType = null)
+        {
+            return (await itemsService.GetLinkedItemDetailsAsync((ClaimsIdentity)User.Identity, itemId, linkType, entityType, reverse, itemIdEntityType)).GetHttpResponseMessage();
+        }
     }
 }

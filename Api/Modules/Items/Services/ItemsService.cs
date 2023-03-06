@@ -2569,6 +2569,17 @@ ORDER BY {orderByClause}";
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<List<WiserItemModel>>> GetLinkedItemDetailsAsync(ClaimsIdentity identity, ulong itemId, int linkType = -1, string entityType = null, bool reverse = false, string itemIdEntityType = null)
+        {
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var customer = await wiserCustomersService.GetSingleAsync(identity);
+            var encryptionKey = customer.ModelObject.EncryptionKey;
+            var results = await wiserItemsService.GetLinkedItemDetailsAsync(itemId, linkType, entityType, false, userId, reverse, itemIdEntityType);
+            results.ForEach(result => result.EncryptedId = result.Id.ToString().EncryptWithAesWithSalt(encryptionKey, true));
+            return new ServiceResult<List<WiserItemModel>>(results);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<bool>> TranslateAllFieldsAsync(ClaimsIdentity identity, string encryptedId, TranslateItemRequestModel settings)
         {
             if (String.IsNullOrWhiteSpace(encryptedId))

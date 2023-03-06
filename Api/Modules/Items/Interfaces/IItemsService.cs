@@ -247,6 +247,19 @@ namespace Api.Modules.Items.Interfaces
         Task<ServiceResult<bool>> RemoveMultipleLinksAsync(ClaimsIdentity identity, List<string> encryptedSourceIds, List<string> encryptedDestinationIds, int linkType, string sourceEntityType = null);
 
         /// <summary>
+        /// By default this function gets all items linked to the given <see cref="itemId"/>, unless the parameter <see cref="reverse"/> is set to true,
+        /// then this function will return all items that the <see cref="itemId"/> is linked to.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="itemId">The item ID.</param>
+        /// <param name="linkType">Optional: The type number of links to get.</param>
+        /// <param name="entityType">Optional: Enter an entity type here to only get items of that type. Default is null.</param>
+        /// <param name="reverse">Optional: Set to true to get the items that this item is linked to, instead of the items linked to this item. Default is false.</param>
+        /// <param name="itemIdEntityType">Optional: You can enter the entity type of the given itemId here, if you want to get items from a dedicated table and those items can have multiple different entity types. This only works if all those items exist in the same table. Default is null.</param>
+        /// <returns>A list of <see cref="WiserItemModel"/>. Empty list if no items have been found.</returns>
+        Task<ServiceResult<List<WiserItemModel>>> GetLinkedItemDetailsAsync(ClaimsIdentity identity, ulong itemId, int linkType = -1, string entityType = null, bool reverse = false, string itemIdEntityType = null);
+
+        /// <summary>
         /// Translate all fields of an item into one or more other languages, using the Google Translation API.
         /// This will only translate fields that don't have a value yet for the destination language
         /// </summary>
