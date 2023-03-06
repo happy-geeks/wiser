@@ -2068,7 +2068,7 @@ export class Fields {
                                 let linkIds = [];
                                 for (let item of selectedItems) {
                                     ids.push(item.dataItem["id"]);
-                                    linkIds.push(item.dataItem["linkId"]);
+                                    linkIds.push(item.dataItem["linkId"] || item.dataItem["link_id"]);
                                 }
 
                                 // The camel case parameters are for backwards compatibility, because we used snake case in the past for some things like this.
@@ -2078,7 +2078,7 @@ export class Fields {
                             } else {
                                 for (let item of selectedItems) {
                                     // The camel case parameters are for backwards compatibility, because we used snake case in the past for some things like this.
-                                    allUrls.push(`${url}&selectedId=${item.dataItem["id"]}&selected_id=${item.dataItem["id"]}&selectedLinkId=${item.dataItem["linkId"]}&selected_link_id=${item.dataItem["linkId"]}`);
+                                    allUrls.push(`${url}&selectedId=${item.dataItem["id"]}&selected_id=${item.dataItem["id"]}&selectedLinkId=${item.dataItem["linkId"] || item.dataItem["link_id"]}&selected_link_id=${item.dataItem["linkId"] || item.dataItem["link_id"]}`);
                                 }
                             }
                         }
