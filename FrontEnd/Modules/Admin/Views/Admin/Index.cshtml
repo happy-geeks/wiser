@@ -128,7 +128,7 @@
                                             </label>
                                         </span>
                                     </div>
-                                    <div class="itemmodule-tree-view-mode hidden" data-module-type-filter="DynamicItems" style="width: 20%;">
+                                    <div class="item module-tree-view-mode hidden" data-module-type-filter="DynamicItems" style="width: 20%;">
                                         <h4>
                                             <label for="moduleInitialItemId">Initiële item ID</label>
                                             <span class="info" data-type="moduleInitialItemId"><ins class="icon-info-full"></ins></span>
@@ -211,15 +211,14 @@
 
                                                 <div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label>Tabelnaam voorvoegsel </label>
+                                                        <label>Tabelnaam voorvoegsel</label>
                                                         <span class="info" data-type="entityDedicatedTablePrefix"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <span class="k-widget k-input k-state-default">
                                                         <input id="entityDedicatedTablePrefix" type="text" class="textField k-input" autocomplete="off" />
                                                     </span>
                                                 </div>
-                                                <div class="item" style="width:  25%;">
-
+                                                <div class="item" style="width: 25%;">
                                                     <h4>
                                                         <label>Module</label>
                                                         <span class="info" data-type="entityModule"><ins class="icon-info-full"></ins></span>
@@ -228,7 +227,6 @@
                                                     </select>
                                                 </div>
                                                 <div class="item" style="width: 25%;">
-
                                                     <h4>
                                                         <label>Geaccepteerde entiteit(en)</label>
                                                         <span class="info" data-type="entityAcceptedChildTypes"><ins class="icon-info-full"></ins></span>
@@ -246,7 +244,7 @@
                                                 </div>
                                                 <div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label for="input-type">Icoon</label>
+                                                        <label for="entityIcon">Icoon</label>
                                                         <span class="info" data-type="entityIcon"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <select id="entityIcon">
@@ -254,7 +252,7 @@
                                                 </div>
                                                 <div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label for="input-type">Icoontoevoegen</label>
+                                                        <label for="entityIconAdd">Icoon toevoegen</label>
                                                         <span class="info" data-type="entityIconAdd"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <select id="entityIconAdd">
@@ -262,14 +260,13 @@
                                                 </div>
                                                 <div class="item" style="width: 25%;">
                                                     <h4>
-                                                        <label for="input-type">Icoon uitgeklapt</label>
+                                                        <label for="entityIconExpanded">Icoon uitgeklapt</label>
                                                         <span class="info" data-type="entityIconExpanded"><ins class="icon-info-full"></ins></span>
                                                     </h4>
                                                     <select id="entityIconExpanded">
                                                     </select>
                                                 </div>
                                                 <div class="item" style="width: 25%;">
-
                                                     <h4>
                                                         <label>Kleur</label>
                                                         <span class="info" data-type="entityColor"><ins class="icon-info-full"></ins></span>
@@ -287,7 +284,6 @@
                                                 </div>
                                                 <div class="item" style="width: 25%;">
                                                 </div>
-
                                                 <div class="item" style="width: 15%;">
                                                     <span class="inline">
                                                         <label class="checkbox">
@@ -329,8 +325,7 @@
                                                         <span class="info" data-type="enableMultipleEnvironments"><ins class="icon-info-full"></ins></span>
                                                     </span>
                                                 </div>
-
-                                                <div class="item" style="width: 10%;">
+                                            <div class="item" style="width: 10%;">
                                                     <span class="inline">
                                                         <label class="checkbox">
                                                             <input id="showTitleField" type="checkbox" />
@@ -359,8 +354,8 @@
                                                         <label>Query na toevoegen</label>
                                                         <span class="info" data-type="queryAfterInsert"><ins class="icon-info-full"></ins></span>
                                                     </h4>
+                                                    
                                                     <textarea id="queryAfterInsert"></textarea>
-
                                                 </div>
                                                 <div class="item half">
                                                     <h4>
@@ -369,7 +364,6 @@
                                                     </h4>
 
                                                     <textarea id="queryBeforeDelete"></textarea>
-
                                                 </div>
                                                 <div class="item half">
                                                     <h4>
@@ -378,7 +372,6 @@
                                                     </h4>
 
                                                     <textarea id="queryBeforeUpdate"></textarea>
-
                                                 </div>
                                                 <div class="item half">
                                                     <h4>
@@ -479,7 +472,6 @@
                                                                 </select>
                                                             </div>
                                                             <div class="item" style="width: 25%;">
-
                                                                 <h4>
                                                                     <label>Groep</label>
                                                                     <span class="info" data-type="groupName"><ins class="icon-info-full"></ins></span>
@@ -535,7 +527,6 @@
                                                                     <select id="labelWidth"></select>
                                                                 </span>
                                                             </div>
-
                                                             <div class="item" style="width: 25%;">
                                                                 <h4>
                                                                     <label>Regex voor pad</label>
@@ -544,7 +535,8 @@
                                                                 <span class="k-widget k-input k-state-default">
                                                                     <input id="visibilityPathRegex" type="text" class="textField k-input" max="255" autocomplete="off" />
                                                                 </span>
-                                                            </div><div class="item" style="width: 50%;" data-visible="Input SecureInput TextBox GpsLocation HtmlEditor ColorPicker ComboBox DataSelector DateTimePicker MultiSelect Qr Empty">
+                                                            </div>
+                                                            <div class="item" style="width: 50%;" data-visible="Input SecureInput TextBox GpsLocation HtmlEditor ColorPicker ComboBox DataSelector DateTimePicker MultiSelect Qr Empty">
                                                                 <h4>
                                                                     <label>Standaardwaarde</label>
                                                                     <span class="info" data-type="defaultValue"><ins class="icon-info-full"></ins></span>
@@ -562,7 +554,6 @@
                                                                     <input id="defaultNumeric" type="number" class="numeric" value="" min="0" step="1" autocomplete="off" />
                                                                 </span>
                                                             </div>
-
                                                             <div class="item" style="width: 50%" data-visible="RadioButton CheckBox">
                                                                 <h4>
                                                                     <label>Standaardwaarde</label>
@@ -573,7 +564,6 @@
                                                                     <option value="1">Aangevinkt</option>
                                                                 </select>
                                                             </div>
-
                                                             <div class="item" data-invisible="FileUpload ImageUpload ColorPicker DataSelector SubEntitiesGrid">
                                                                 <div class="toggle">
                                                                     <input id="visible-in-table" type="checkbox" class="noForm">
@@ -590,7 +580,8 @@
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                            </div><div class="item" data-invisible="FileUpload ImageUpload DataSelector SubEntitiesGrid">
+                                                            </div>
+                                                            <div class="item" data-invisible="FileUpload ImageUpload DataSelector SubEntitiesGrid">
                                                                 <div class="toggle">
                                                                     <input id="enableAggregation" type="checkbox" class="noForm">
                                                                     <label class="checkbox" for="enableAggregation">
@@ -628,8 +619,7 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
-
-                                                            <div class="item">
+                                                        <div class="item">
                                                                 <span class="inline">
                                                                     <label class="checkbox" data-invisible="RadioButton CheckBox Empty">
                                                                         <input id="mandatory" type="checkbox">
@@ -675,7 +665,6 @@
                                                                 </h4>
                                                                 <textarea id="explanation"></textarea>
                                                             </div>
-
                                                             <div class="item">
                                                                 <input id="extendedExplanation" type="checkbox" class="noForm">
                                                                 <label class="checkbox" for="extendedExplanation">
@@ -683,7 +672,6 @@
                                                                 </label>
                                                                 <span class="info" data-type="extendedExplanation"><ins class="icon-info-full"></ins></span>
                                                             </div>
-
                                                             <div class="item">
                                                                 <h4>
                                                                     <label>Script</label>
@@ -723,7 +711,6 @@
                                                                     </label>
                                                                 </span>
                                                             </div>
-
                                                             <div class="item tagList" data-show-for-panel="panel2">
                                                                 <h4>
                                                                     <label>Zoek in velden</label>
@@ -809,7 +796,6 @@
                                                                     <input id="factorNumber" type="number" class="numeric" value="1" max="99999" autocomplete="off" />
                                                                 </div>
                                                                 <div class="item" style="width: 10%;">
-
                                                                     <h4>
                                                                         <label>Cultuur</label>
                                                                     </h4>
@@ -935,7 +921,6 @@
                                                                         </span>
                                                                     </div>
                                                                     <div class="item" style="width: 20%;">
-
                                                                         <span class="inline titleMargin">
                                                                             <label class="checkbox" data-visible="LinkedItem">
                                                                                 <input id="reverse" type="checkbox" />
@@ -1054,7 +1039,6 @@
                                                                     </span>
                                                                 </div>
                                                                 <div class="item">
-
                                                                     <span class="inline checkboxGrid">
                                                                         <label class="checkbox" data-visible="SubEntitiesGrid">
                                                                             <input id="showAddedOnColumn" type="checkbox">
@@ -1157,8 +1141,8 @@
                                                                                 <label>Query</label>
                                                                                 <span class="info" data-type="dataQuery"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
+                                                                            
                                                                             <textarea id="queryWindow"></textarea>
-
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -1177,7 +1161,6 @@
                                                                             </h4>
 
                                                                             <textarea id="queryFieldSubEntities"></textarea>
-
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -1192,6 +1175,7 @@
                                                                                 <label>Custom insert-query</label>
                                                                                 <span class="info" data-type="dataQuery"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
+                                                                            
                                                                             <textarea id="queryInsert"></textarea>
                                                                         </div>
                                                                     </div>
@@ -1227,16 +1211,14 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
-
                                                             <div class="item" data-visible="SubEntitiesGrid">
                                                                 <h4>
                                                                     <label>Zoek-query</label>
                                                                     <span class="info" data-type="searchQuery"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
+                                                                
                                                                 <textarea id="searchQuery"></textarea>
-
                                                             </div>
-
                                                             <div class="item" data-visible="SubEntitiesGrid">
                                                                 <h4>
                                                                     <label>Zoek-teller-query</label>
@@ -1457,7 +1439,6 @@
                                                                     <input type="text" id="allowedExtensions" class="textField k-input" maxlength="100" autocomplete="off" />
                                                                 </div>
                                                                 <div class="item" style="width: 25%;">
-
                                                                     <span class="inline titleMargin">
                                                                         <label class="checkbox">
                                                                             <input id="allowMultipleFiles" type="checkbox" />
@@ -1482,8 +1463,7 @@
                                                                     <input id="daterangeTill" />
                                                                 </div>
                                                             </div>
-
-                                                            <div class="item" data-visible="Qr">
+                                                        <div class="item" data-visible="Qr">
                                                                 <div class="item" style="width: 25%;">
                                                                     <h4>
                                                                         <label>Grootte in pixels</label>
@@ -1500,7 +1480,6 @@
                                                                     </h4>
 
                                                                     <textarea id="queryContent"></textarea>
-
                                                                 </div>
                                                             </div>
                                                             <div class="item " data-visible="CheckBox">
@@ -1541,25 +1520,23 @@
                                                                     <select id="multiSelectMode" class="combo-toggle">
                                                                         <option value="" selected>Standaard</option>
                                                                         <option value="checkBoxGroup">Checkboxgroep</option>
-
                                                                     </select>
                                                                     <div class="togglePanel multiSelectMode" data-panel="checkBoxGroup">
-                                                                        <div class="item " style="width: 25%;">
+                                                                        <div class="item" style="width: 25%;">
                                                                             <h4>
                                                                                 <label>Hoofdafbeelding ID</label>
                                                                                 <span class="info" data-type="multiSelectMainImageId"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input id="multiSelectMainImageId" type="number" class="numeric" step="1" autocomplete="off" />
                                                                         </div>
-                                                                        <div class="item " style="width: 50%;">
+                                                                        <div class="item" style="width: 50%;">
                                                                             <h4>
                                                                                 <label>Hoofdafbeelding URL</label>
                                                                                 <span class="info" data-type="multiSelectMainImageUrl"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input id="multiSelectMainImageUrl" type="text" class="textField k-input" autocomplete="off" />
                                                                         </div>
-                                                                        <div class="item " style="width: 25%;">
-
+                                                                        <div class="item" style="width: 25%;">
                                                                             <h4>
                                                                                 <label>Afbeeldingtype</label>
                                                                                 <span class="info" data-type="multiSelectImagePropertyName"><ins class="icon-info-full"></ins></span>
@@ -1577,8 +1554,8 @@
                                                                     <label>Opties JSON</label>
                                                                     <span class="info" data-type="optionsJson"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
+                                                                
                                                                 <textarea id="optionsJson"></textarea>
-
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1701,7 +1678,7 @@
                                 </div>
                                 <div class="item">
                                     <div class="pane-content flex-container">
-                                        <div class="item " style="width: 50%;">
+                                        <div class="item" style="width: 50%;">
                                             <span class="handler">&nbsp;</span>
                                             <h4>
                                                 <label>Link type</label>
@@ -1710,7 +1687,7 @@
                                                 <input id="wiserLinkType" type="number" step="1" class="numeric" autocomplete="off" />
                                             </span>
                                         </div>
-                                        <div class="item " style="width: 50%;">
+                                        <div class="item" style="width: 50%;">
                                             <span class="handler">&nbsp;</span>
                                             <h4>
                                                 <label>Naam voor koppeling</label>
@@ -1745,7 +1722,7 @@
                                         </div>
                                     </div>
                                     <div class="pane-content flex-container linkPopupContent" style="display:none">
-                                        <div class="item ">
+                                        <div class="item">
                                             <span class="handler">&nbsp;</span>
                                             <h4>
                                                 <label>Link naam</label>
@@ -1754,7 +1731,7 @@
                                                 <input id="wiserLinkNamePopup" type="text" class="textField k-input" autocomplete="off" />
                                             </span>
                                         </div>
-                                        <div class="item ">
+                                        <div class="item">
                                             <span class="handler">&nbsp;</span>
                                             <h4>
                                                 <label>Link type</label>
@@ -1763,7 +1740,6 @@
                                                 <input id="wiserLinkTypePopup" type="number" step="1" min="1" class="numeric" autocomplete="off" />
                                             </span>
                                         </div>
-
                                         <div class="item">
                                             <h4>
                                                 <label>Entiteit vanaf</label>

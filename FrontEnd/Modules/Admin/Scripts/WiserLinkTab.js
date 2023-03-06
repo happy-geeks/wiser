@@ -130,9 +130,9 @@ export class WiserLinkTab {
                 format: "#"
             }).data("kendoNumericTextBox"); 
 
-            //Main combobox for selecting a link
+            // Main combobox for selecting a link
             this.wiserLinkCombobox = $("#wiserLinks").kendoDropDownList({
-                placeholder: "Select gewenste link...",
+                placeholder: "Selecteer een bestaand koppeltype...",
                 clearButton: false,
                 height: 400,
                 dataTextField: "formattedName",

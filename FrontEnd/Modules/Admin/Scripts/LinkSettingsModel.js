@@ -2,7 +2,6 @@
     constructor(id = -1, type = null, destinationEntityType = null, sourceEntityType = null, name = null, showInTreeView = null, showInDataSelector =
         null, relationship = null, duplicationMethod = null, useItemParentId = null) {
 
-
         this.id = id;
         this.type = type;
         this.destinationEntityType = destinationEntityType;

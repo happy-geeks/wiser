@@ -244,6 +244,7 @@ const moduleSettings = {
             grid.dataSource.remove(record);
             grid.dataSource.insert(newIndex, record);
         }
+        
         /**
          * Setup all basis bindings for this module.
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
@@ -281,7 +282,7 @@ const moduleSettings = {
                     await this.moduleTab.beforeSave();
                     break;
                 case "links":
-                    this.wiserLinkTab.beforeSave();
+                    await this.wiserLinkTab.beforeSave();
                     break;
                 default:
                     await this.entityTab.beforeSave();
