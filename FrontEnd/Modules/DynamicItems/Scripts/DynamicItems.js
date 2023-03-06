@@ -883,11 +883,20 @@ const moduleSettings = {
                 return true;
             } catch (exception) {
                 console.error(exception);
-                if (exception.status === 409) {
-                    const message = exception.responseText || "Het is niet meer mogelijk om aanpassingen te maken in dit item.";
-                    kendo.alert(message);
-                } else {
-                    kendo.alert("Er is iets fout gegaan tijdens het opslaan van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                switch (exception.status) {
+                    case 409: {
+                        const message = exception.responseText || "Het is niet meer mogelijk om aanpassingen te maken in dit item.";
+                        kendo.alert(message);
+                        break;
+                    }
+                    case 403: {
+                        const message = exception.responseText || "U heeft niet de juiste rechten om dit item te wijzigen.";
+                        kendo.alert(message);
+                        break;
+                    }
+                    default:
+                        kendo.alert("Er is iets fout gegaan tijdens het opslaan van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                        break;
                 }
 
                 window.processing.removeProcess(process);
